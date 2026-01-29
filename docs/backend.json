@@ -1,5 +1,39 @@
 {
   "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile and agency settings.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "agencyName": {
+          "type": "string",
+          "description": "The name of the user's agency."
+        },
+        "agencyLogoUrl": {
+          "type": "string",
+          "description": "URL for the agency's logo.",
+          "format": "uri"
+        },
+        "agencyPrimaryColor": {
+          "type": "string",
+          "description": "The primary branding color for the agency in hex format."
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ]
+    },
     "Contact": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contact",
@@ -237,6 +271,22 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user-specific profile data and agency branding settings. Authorization is based on the `userId` parameter.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user."
+            }
+          ]
+        }
+      },
       {
         "path": "/users/{userId}/contacts/{contactId}",
         "definition": {

@@ -1,4 +1,5 @@
 
+
 export type Property = {
   id: string;
   title: string;
@@ -95,4 +96,13 @@ export type Task = {
   contactName?: string;
   startTime?: string;
   duration?: number;
+};
+
+export type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+  agencyName?: string;
+  agencyLogoUrl?: string;
+  agencyPrimaryColor?: string;
 };

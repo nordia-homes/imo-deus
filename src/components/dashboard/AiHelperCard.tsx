@@ -1,13 +1,18 @@
+'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useUser } from '@/firebase';
 import { Bot, Sparkles, Wand2 } from 'lucide-react';
 
 export function AiHelperCard() {
+    const { user } = useUser();
+    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
+
     return (
         <Card className="bg-muted/50">
             <CardHeader>
-                <CardTitle className="text-base font-semibold">Salut, Adam! Cum te pot ajuta?</CardTitle>
+                <CardTitle className="text-base font-semibold">Salut, {displayName}! Cum te pot ajuta?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-2 text-center">

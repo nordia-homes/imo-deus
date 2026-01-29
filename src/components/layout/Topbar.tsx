@@ -6,9 +6,16 @@ import { Input } from '../ui/input';
 import { SidebarTrigger } from '../ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@/firebase';
 
 export function Topbar() {
     const { logout } = useAuth();
+    const { user } = useUser();
+
+    const getInitials = (email?: string | null) => {
+        if (!email) return 'U';
+        return email.substring(0, 2).toUpperCase();
+    }
 
     return (
         <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
@@ -32,8 +39,8 @@ export function Topbar() {
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Avatar className="cursor-pointer">
-                            <AvatarImage src="https://i.pravatar.cc/150?u=adam" />
-                            <AvatarFallback>AD</AvatarFallback>
+                            <AvatarImage src={user?.photoURL || undefined} />
+                            <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
                         </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
