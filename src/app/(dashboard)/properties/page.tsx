@@ -1,5 +1,5 @@
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PropertyList } from "@/components/properties/PropertyList";
 
 export default function PropertiesPage() {
   return (
@@ -13,12 +13,7 @@ export default function PropertiesPage() {
             </div>
             <AddPropertyDialog />
         </div>
-        <Card className="flex items-center justify-center h-96">
-            <CardHeader className="text-center">
-                <CardTitle>Listă Proprietăți</CardTitle>
-                <CardDescription>Această secțiune este în construcție.</CardDescription>
-            </CardHeader>
-        </Card>
+        <PropertyList />
     </div>
   );
 }
