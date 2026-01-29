@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -99,9 +98,9 @@ export default function PropertyDetailPage() {
         }
     };
 
-    const pageIsLoading = isUserLoading || !user || isDocLoading;
+    const isLoading = isUserLoading || (user && isDocLoading);
 
-    if (pageIsLoading) {
+    if (isLoading) {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-[550px] w-full rounded-lg" />
@@ -122,7 +121,8 @@ export default function PropertyDetailPage() {
         return <div className="text-center text-red-500">A apărut o eroare la încărcarea proprietății.</div>;
     }
 
-    if (!property) {
+    // After all loading is done, if there's no user (logged out) or no property, it's a 404.
+    if (!user || !property) {
         notFound();
         return null;
     }

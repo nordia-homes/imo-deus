@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
@@ -249,10 +249,10 @@ export default function LeadDetailPage() {
         }
     }
 
-    const pageIsLoading = isUserLoading || !user || isContactLoading;
+    const isLoading = isUserLoading || (user && isContactLoading);
 
     // --- RENDER LOGIC ---
-    if (pageIsLoading) {
+    if (isLoading) {
         return (
              <div className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -271,8 +271,9 @@ export default function LeadDetailPage() {
         return <div className="text-center text-red-500">A apărut o eroare la încărcarea lead-ului. Este posibil să nu aveți permisiunea de a-l vizualiza.</div>;
     }
 
-    if (!contact) {
-        return <div className="text-center text-muted-foreground">Lead-ul nu a fost găsit.</div>;
+    if (!user || !contact) {
+        notFound();
+        return null;
     }
 
     return (
