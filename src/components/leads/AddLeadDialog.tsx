@@ -64,7 +64,7 @@ const locations = {
         // Sector 6
         'Compozitorilor', 'Crangasi', 'Drumul Taberei', 'Giulesti', 'Militari', 'Lujerului', 'Pacea', 'Regie', 'Uverturii',
         // Ilfov
-        'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciolpani', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'
+        'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Ciolpani', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'
     ],
     'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu', 'Gilau', 'Dezmir'],
     'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz', 'Sanmihaiu Roman', 'Urseni'],
@@ -149,7 +149,7 @@ export function AddLeadDialog() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-[60vh] p-1">
-                <div className="space-y-6 px-3">
+                <div className="space-y-8 px-4">
                     <section>
                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii de Bază</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -259,42 +259,39 @@ export function AddLeadDialog() {
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                            <ScrollArea className="h-72">
-                                                    <div className="p-4">
-                                                        {locations[watchedCity].map((zone) => (
-                                                            <FormField
-                                                            key={zone}
-                                                            control={form.control}
-                                                            name="zones"
-                                                            render={({ field }) => {
-                                                                return (
-                                                                <FormItem
-                                                                    key={zone}
-                                                                    className="flex flex-row items-center space-x-3 space-y-0 mb-3"
-                                                                >
-                                                                    <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(zone)}
-                                                                        onCheckedChange={(checked) => {
-                                                                        const newValue = checked
-                                                                            ? [...(field.value || []), zone]
-                                                                            : (field.value || []).filter(
-                                                                                (value) => value !== zone
-                                                                            );
-                                                                        field.onChange(newValue);
-                                                                        }}
-                                                                    />
-                                                                    </FormControl>
-                                                                    <FormLabel className="font-normal text-sm">
-                                                                    {zone}
-                                                                    </FormLabel>
-                                                                </FormItem>
-                                                                );
-                                                            }}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                            </ScrollArea>
+                                                <ScrollArea className="h-72 p-4">
+                                                    {locations[watchedCity].map((zone) => (
+                                                        <FormField
+                                                        key={zone}
+                                                        control={form.control}
+                                                        name="zones"
+                                                        render={({ field }) => {
+                                                            return (
+                                                            <FormItem
+                                                                className="flex flex-row items-center space-x-3 space-y-0 mb-3"
+                                                            >
+                                                                <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.includes(zone)}
+                                                                    onCheckedChange={(checked) => {
+                                                                    const newValue = checked
+                                                                        ? [...(field.value || []), zone]
+                                                                        : (field.value || []).filter(
+                                                                            (value) => value !== zone
+                                                                        );
+                                                                    field.onChange(newValue);
+                                                                    }}
+                                                                />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal text-sm">
+                                                                {zone}
+                                                                </FormLabel>
+                                                            </FormItem>
+                                                            );
+                                                        }}
+                                                        />
+                                                    ))}
+                                                </ScrollArea>
                                             </PopoverContent>
                                         </Popover>
                                         <FormMessage />
@@ -323,5 +320,3 @@ export function AddLeadDialog() {
     </Dialog>
   );
 }
-
-  
