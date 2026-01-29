@@ -9,7 +9,7 @@ import { PropertyGallery } from "@/components/properties/PropertyGallery";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Share2, Heart } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 
 export default function PropertyDetailPage({ params }: { params: { propertyId: string }}) {
     // Placeholder data - replace with Firestore data
