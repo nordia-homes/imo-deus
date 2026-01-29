@@ -49,11 +49,26 @@ const leadSchema = z.object({
 });
 
 const locations = {
-    'Bucuresti-Ilfov': ['1 Mai', '13 Septembrie', 'Andronache', 'Aviatiei', 'Aviatorilor', 'Balta Alba', 'Baneasa', 'Berceni', 'Brancoveanu', 'Bucurestii Noi', 'Centrul Civic', 'Centrul Vechi', 'Colentina', 'Cotroceni', 'Crangasi', 'Damaroaia', 'Dealul Spirii', 'Domenii', 'Dorobanti', 'Dristor', 'Drumul Taberei', 'Dudesti', 'Ferentari', 'Floreasca', 'Gara de Nord', 'Ghencea', 'Giulesti', 'Grivita', 'Iancului', 'Militari', 'Mosilor', 'Obor', 'Pajura', 'Pantelimon', 'Pipera', 'Primaverii', 'Rahova', 'Regie', 'Stefan cel Mare', 'Tei', 'Tineretului', 'Titan', 'Unirii', 'Vatra Luminoasa', 'Vitan', 'Voluntari', 'Otopeni', 'Bragadiru', 'Chiajna', 'Popesti-Leordeni', 'Magurele', 'Corbeanca'],
-    'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu'],
-    'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz'],
-    'Iasi': ['Alexandru cel Bun', 'Aviatiei', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Gara', 'Metalurgie', 'Mircea cel Batran', 'Moara de Vant', 'Nicolina', 'Pacurari', 'Podu Ros', 'Sararie', 'Soseaua Nationala', 'Tatarasi', 'Tudor Vladimirescu', 'Valea Adanca', 'Valea Lupului', 'Zorilor', 'Barnova', 'Miroslava', 'Rediu', 'Holboca'],
-    'Constanta': ['Abator', 'Badea Cartan', 'Brick', 'Casa de Cultura', 'Centru', 'Coiciu', 'Dacia', 'Energia', 'Faleza Nord', 'Faleza Sud', 'Far', 'Gara', 'Halta Traian', 'ICIL', 'Inel I', 'Inel II', 'Km 4', 'Km 5', 'Mamaia', 'Mamaia Nord', 'Palas', 'Peninsula', 'Piata Chiliei', 'Piata Grivitei', 'Poarta 6', 'Port', 'Tomis I', 'Tomis II', 'Tomis III', 'Tomis Nord', 'Agigea', 'Eforie Nord', 'Eforie Sud', 'Lazu', 'Navodari', 'Ovidiu'],
+    'Bucuresti-Ilfov': [
+        // Sector 1
+        '1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Bucurestii Noi', 'Damaroaia', 'Domenii', 'Dorobanti', 'Gara de Nord', 'Grivita', 'Pajura', 'Piata Romana', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Herastrau', 'Floreasca', 'Chitila',
+        // Sector 2
+        'Andronache', 'Baicului', 'Colentina', 'Doamna Ghica', 'Fundeni', 'Iancului', 'Mosilor', 'Obor', 'Pantelimon (sector)', 'Piata Muncii', 'Stefan cel Mare', 'Tei', 'Vatra Luminoasa',
+        // Sector 3
+        'Balta Alba', 'Centrul Civic', 'Dristor', 'Dudesti', 'Mihai Bravu', 'Salajan', 'Titan', 'Unirii', 'Vitan', 'Timpuri Noi',
+        // Sector 4
+        'Aparatorii Patriei', 'Berceni', 'Brancoveanu', 'Giurgiului', 'Oltenitei', 'Piata Sudului', 'Tineretului', 'Vacaresti',
+        // Sector 5
+        '13 Septembrie', 'Cotroceni', 'Dealul Spirii', 'Ferentari', 'Ghencea', 'Panduri', 'Rahova', 'Salaj',
+        // Sector 6
+        'Compozitorilor', 'Crangasi', 'Drumul Taberei', 'Giulesti', 'Militari', 'Lujerului', 'Pacea', 'Regie', 'Uverturii',
+        // Ilfov
+        'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciolpani', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'
+    ],
+    'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu', 'Gilau', 'Dezmir'],
+    'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz', 'Sanmihaiu Roman', 'Urseni'],
+    'Iasi': ['Alexandru cel Bun', 'Aviatiei', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Gara', 'Metalurgie', 'Mircea cel Batran', 'Moara de Vant', 'Nicolina', 'Pacurari', 'Podu Ros', 'Sararie', 'Soseaua Nationala', 'Tatarasi', 'Tudor Vladimirescu', 'Valea Adanca', 'Valea Lupului', 'Zorilor', 'Barnova', 'Miroslava', 'Rediu', 'Holboca', 'Tomesti', 'Ciurea'],
+    'Constanta': ['Abator', 'Badea Cartan', 'Brick', 'Casa de Cultura', 'Centru', 'Coiciu', 'Dacia', 'Energia', 'Faleza Nord', 'Faleza Sud', 'Far', 'Gara', 'Halta Traian', 'ICIL', 'Inel I', 'Inel II', 'Km 4', 'Km 5', 'Mamaia', 'Mamaia Nord', 'Palas', 'Peninsula', 'Piata Chiliei', 'Piata Grivitei', 'Poarta 6', 'Port', 'Tomis I', 'Tomis II', 'Tomis III', 'Tomis Nord', 'Agigea', 'Eforie Nord', 'Eforie Sud', 'Lazu', 'Navodari', 'Ovidiu', 'Lumina', 'Cumpana', 'Valu lui Traian'],
 };
 type City = keyof typeof locations;
 
@@ -308,4 +323,4 @@ export function AddLeadDialog() {
   );
 }
 
-    
+  
