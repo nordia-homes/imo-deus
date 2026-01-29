@@ -259,7 +259,7 @@ export function AddLeadDialog() {
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                <ScrollArea className="h-72 p-4">
+                                                <div className="h-72 overflow-y-auto p-4">
                                                     {locations[watchedCity].map((zone) => (
                                                         <FormField
                                                         key={zone}
@@ -291,7 +291,7 @@ export function AddLeadDialog() {
                                                         }}
                                                         />
                                                     ))}
-                                                </ScrollArea>
+                                                </div>
                                             </PopoverContent>
                                         </Popover>
                                         <FormMessage />
