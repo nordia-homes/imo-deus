@@ -1,9 +1,10 @@
+import { AppShell } from '@/components/layout/app-shell';
+import React from 'react';
 
-// This file is no longer used in the new site structure.
-export default function DeprecatedLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }

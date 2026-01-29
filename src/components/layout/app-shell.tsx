@@ -6,6 +6,12 @@ import {
   CheckSquare,
   Home,
   Users,
+  MessageSquare,
+  CreditCard,
+  Settings,
+  AppWindow,
+  Waypoints,
+  FileText
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -19,6 +25,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
+import { Topbar } from './Topbar'; 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/" legacyBehavior passHref>
+              <Link href="/dashboard" legacyBehavior passHref>
                 <SidebarMenuButton tooltip="Dashboard">
                   <BarChart3 />
                   <span>Dashboard</span>
@@ -43,26 +50,82 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/contacts" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Contacts">
+              <Link href="/leads" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Lead-uri">
                   <Users />
-                  <span>Contacts</span>
+                  <span>Lead-uri</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <Link href="/properties" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Properties">
+                <SidebarMenuButton tooltip="Proprietăți">
                   <Building2 />
-                  <span>Properties</span>
+                  <span>Proprietăți</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/pipeline" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Pipeline">
+                  <Waypoints />
+                  <span>Pipeline</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <Link href="/tasks" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Tasks">
+                <SidebarMenuButton tooltip="Task-uri">
                   <CheckSquare />
-                  <span>Tasks</span>
+                  <span>Task-uri</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/contracts" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Contracte">
+                  <FileText />
+                  <span>Contracte</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/ai-assistant" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="AI Assistant">
+                  <MessageSquare />
+                  <span>AI Assistant</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/reports" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Rapoarte">
+                  <BarChart3 />
+                  <span>Rapoarte</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/portal-sync" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Integrări">
+                  <AppWindow />
+                  <span>Integrări</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/billing" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Facturare">
+                  <CreditCard />
+                  <span>Facturare</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <Link href="/settings" legacyBehavior passHref>
+                <SidebarMenuButton tooltip="Setări">
+                  <Settings />
+                  <span>Setări</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -75,14 +138,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 sticky top-0 z-30">
-            <SidebarTrigger className="md:hidden" />
-            <div className='flex-1'>
-                {/* Maybe breadcrumbs or page title here later */}
-            </div>
-            {/* User menu can go here */}
-        </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <Topbar />
+        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-background">
             {children}
         </main>
       </SidebarInset>
