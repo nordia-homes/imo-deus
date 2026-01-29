@@ -18,22 +18,25 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { Grid } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
   const [api, setApi] = React.useState<CarouselApi>();
   const [open, setOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
 
+  // This effect re-initializes the carousel when the dialog is opened.
+  // It's crucial for the carousel to calculate its dimensions correctly inside the modal.
   React.useEffect(() => {
     if (!api) return;
 
-    // When the dialog opens, re-initialize the carousel to ensure it sizes correctly
-    // and scroll to the image that was clicked to open the gallery.
     if (open) {
+      // A small delay ensures the dialog's CSS transitions are complete
       setTimeout(() => {
         api.reInit();
-        api.scrollTo(activeIndex, true); // Use 'true' for an instant jump without animation
-      }, 50); // A small delay ensures the dialog is fully rendered and sized
+        // Instantly jump to the image that was clicked, without animation
+        api.scrollTo(activeIndex, true); 
+      }, 100); 
     }
   }, [open, api, activeIndex]);
 
@@ -50,79 +53,49 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
     setOpen(true);
   };
 
+  // Create a helper component for repeated image items to keep the code clean
+  const ImageItem = ({ index, className }: { index: number; className?: string }) => {
+    const imageUrl = images[index];
+    if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>;
+
+    return (
+      <div
+        className={cn("relative cursor-pointer group overflow-hidden rounded-lg", className)}
+        onClick={() => openDialog(index)}
+      >
+        <Image 
+          src={imageUrl} 
+          alt={`${title} image ${index + 1}`} 
+          fill 
+          className="object-cover transition-transform group-hover:scale-105"
+          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
+        />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+      </div>
+    );
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      {/* The main gallery container */}
       <div className="relative">
-        {/* --- Layout Container --- */}
-        <div className="rounded-lg overflow-hidden">
-          {/* --- Mobile View (Single Image) --- */}
-          <div
-            className="md:hidden aspect-video relative cursor-pointer group"
-            onClick={() => openDialog(0)}
-          >
-            <Image
-              src={images[0]}
-              alt={title}
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+        
+        {/* --- Desktop Grid Layout (Airbnb Style) --- */}
+        <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 md:gap-2 h-[550px]">
+          {/* Main image */}
+          <div className="col-span-2 row-span-2">
+            <ImageItem index={0} className="w-full h-full" />
           </div>
+          {/* The other 4 images */}
+          <ImageItem index={1} />
+          <ImageItem index={2} />
+          <ImageItem index={3} />
+          <ImageItem index={4} />
+        </div>
 
-          {/* --- Desktop Grid Layout (Airbnb Style) --- */}
-           <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 md:gap-2 h-[550px]">
-                {/* Main image */}
-                <div className="col-span-2 row-span-2 relative cursor-pointer group" onClick={() => openDialog(0)}>
-                    {images[0] && (
-                        <>
-                            <Image src={images[0]} alt={title} fill priority className="object-cover" sizes="(min-width: 768px) 50vw, 100vw" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                        </>
-                    )}
-                </div>
-                
-                {/* Image 2 */}
-                <div className="relative cursor-pointer group" onClick={() => openDialog(1)}>
-                    {images[1] ? (
-                        <>
-                            <Image src={images[1]} alt={`${title} 1`} fill className="object-cover" sizes="25vw"/>
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                        </>
-                    ) : <div className="bg-muted w-full h-full"></div>}
-                </div>
-
-                {/* Image 3 */}
-                <div className="relative cursor-pointer group" onClick={() => openDialog(2)}>
-                    {images[2] ? (
-                        <>
-                            <Image src={images[2]} alt={`${title} 2`} fill className="object-cover" sizes="25vw"/>
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                        </>
-                    ) : <div className="bg-muted w-full h-full"></div>}
-                </div>
-
-                {/* Image 4 */}
-                <div className="relative cursor-pointer group" onClick={() => openDialog(3)}>
-                    {images[3] ? (
-                        <>
-                            <Image src={images[3]} alt={`${title} 3`} fill className="object-cover" sizes="25vw"/>
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                        </>
-                    ) : <div className="bg-muted w-full h-full"></div>}
-                </div>
-                
-                {/* Image 5 */}
-                <div className="relative cursor-pointer group" onClick={() => openDialog(4)}>
-                    {images[4] ? (
-                        <>
-                            <Image src={images[4]} alt={`${title} 4`} fill className="object-cover" sizes="25vw"/>
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                        </>
-                    ) : <div className="bg-muted w-full h-full"></div>}
-                </div>
-            </div>
+        {/* --- Mobile View (Single Image) --- */}
+        <div className="md:hidden aspect-video">
+            <ImageItem index={0} className="w-full h-full" />
         </div>
 
         {/* --- Show all photos button --- */}
@@ -136,37 +109,40 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         </Button>
       </div>
 
-      {/* Modal Content */}
-      <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
-        <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
-        <DialogDescription className="sr-only">
-          A carousel of images for the property: {title}. Use the left and right
-          arrows to navigate.
-        </DialogDescription>
-        <Carousel
-          setApi={setApi}
-          className="w-full max-w-5xl"
-          opts={{ loop: true, startIndex: activeIndex }}
-        >
-          <CarouselContent>
-            {images.map((src, index) => (
-              <CarouselItem key={index}>
-                <div className="relative aspect-video">
-                  <Image
-                    src={src}
-                    alt={`${title} image ${index + 1}`}
-                    fill
-                    className="object-contain"
-                    sizes="90vw"
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-4 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-          <CarouselNext className="right-4 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-        </Carousel>
-      </DialogContent>
-    </Dialog>
+      {/* --- Dialog for the full-screen carousel --- */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
+            {/* Accessibility Titles */}
+            <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              A carousel of {images.length} images for the property: {title}.
+            </DialogDescription>
+        
+            <Carousel
+              setApi={setApi}
+              className="w-full max-w-5xl"
+              opts={{ loop: true, startIndex: activeIndex }}
+            >
+              <CarouselContent>
+                {images.map((src, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative aspect-video">
+                      <Image
+                        src={src}
+                        alt={`${title} image ${index + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="90vw"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+            </Carousel>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
