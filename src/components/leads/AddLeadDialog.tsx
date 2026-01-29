@@ -32,6 +32,7 @@ import { collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -238,22 +239,22 @@ export function AddLeadDialog() {
                             />
                             
                             {watchedCity && locations[watchedCity] && (
-                                <div className="space-y-2">
+                               <div className="space-y-2">
                                     <Label>Zone de interes</Label>
                                     <div className="max-h-60 overflow-y-auto rounded-md border p-4">
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-wrap gap-x-6 gap-y-2">
                                             {locations[watchedCity].map((zone) => (
-                                                <div key={zone}>
-                                                    <input
+                                                <div key={zone} className="flex items-center gap-2">
+                                                    <Checkbox
                                                         id={`zone-${zone}`}
-                                                        type="checkbox"
-                                                        className="peer sr-only"
                                                         checked={selectedZones.includes(zone)}
-                                                        onChange={() => handleZoneToggle(zone)}
+                                                        onCheckedChange={() => {
+                                                            handleZoneToggle(zone)
+                                                        }}
                                                     />
                                                     <Label
                                                         htmlFor={`zone-${zone}`}
-                                                        className="cursor-pointer rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                                                        className="font-normal cursor-pointer"
                                                     >
                                                         {zone}
                                                     </Label>
