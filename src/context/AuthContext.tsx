@@ -17,6 +17,8 @@ import {
   AuthError,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 
 function FullScreenLoader() {
@@ -36,6 +38,7 @@ type AuthContextType = {
   logout: () => void;
   isUserLoading: boolean;
   resetPassword: (email: string, onSuccess: () => void, onError: (error: AuthError) => void) => void;
+  loginWithGoogle: (onError: (error: AuthError) => void) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -69,13 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
   }, [auth]);
 
+  const loginWithGoogle = useCallback((onError: (error: AuthError) => void) => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .catch((error: AuthError) => {
+        onError(error);
+      });
+  }, [auth]);
+
   const logout = useCallback(() => {
     signOut(auth).then(() => {
         router.push('/login');
     });
   }, [auth, router]);
 
-  const value = { isLoggedIn: !!user, login, signup, logout, isUserLoading, resetPassword };
+  const value = { isLoggedIn: !!user, login, signup, logout, isUserLoading, resetPassword, loginWithGoogle };
 
   // We use isUserLoading from Firebase provider, which handles the initial auth state check.
   if (isUserLoading) {

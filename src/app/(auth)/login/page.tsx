@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import type { AuthError } from "firebase/auth";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
 
 
 const loginSchema = z.object({
@@ -22,7 +23,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, isLoggedIn } = useAuth();
+  const { login, loginWithGoogle, isLoggedIn } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -53,6 +54,19 @@ export default function LoginPage() {
         setIsSubmitting(false);
     });
   };
+
+  const handleGoogleLogin = () => {
+    setIsSubmitting(true);
+    loginWithGoogle((error: AuthError) => {
+        console.error("Google Login failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Autentificare eșuată",
+            description: "Nu am putut finaliza autentificarea cu Google. Vă rugăm să încercați din nou.",
+        });
+        setIsSubmitting(false);
+    });
+  }
 
   if (isLoggedIn) {
     return null; // Or a loader while redirecting
@@ -114,6 +128,20 @@ export default function LoginPage() {
                     <Button className="w-full" type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Intră în cont
+                    </Button>
+                    <div className="relative w-full">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-card px-2 text-muted-foreground">
+                            SAU CONTINUĂ CU
+                            </span>
+                        </div>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isSubmitting}>
+                        <GoogleIcon className="mr-2 h-4 w-4" />
+                        Continuă cu Google
                     </Button>
                     <p className="text-xs text-muted-foreground">
                         Nu ai cont? <Link href="/register" className="underline">Înregistrează-te</Link>
