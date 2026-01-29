@@ -1,25 +1,39 @@
 
 export type Property = {
-  id:string;
-  address: string; // Used in property-matcher
+  id: string;
   title: string;
-  tagline: string;
+  address: string;
+  location: string;
   price: number;
   bedrooms: number;
   bathrooms: number;
-  squareFootage: number;
+  squareFootage: number; // Suprafata Utila
+  totalSurface?: number; // Suprafata Construita
   description: string;
-  images: { url: string; alt: string }[];
-  location: string;
+  images: { url: string; alt: string; }[];
   amenities: string[];
   agent: {
     name: string;
     avatarUrl: string;
-  },
-  latitude: number;
-  longitude: number;
+  };
+  latitude?: number;
+  longitude?: number;
 
-  // Additional fields for matcher
+  // New detailed fields
+  propertyType: string; // Apartament, Casa, etc.
+  transactionType: string; // Vanzare, Inchiriere
+  constructionYear?: number;
+  floor?: string; // Parter, 1, 2...
+  totalFloors?: number;
+  comfort?: string; // e.g. 'Lux'
+  interiorState?: string; // Renovat, Buna, etc.
+  furnishing?: string; // Complet, Partial, Nemobilat
+  heatingSystem?: string; // Centrala proprie, Termoficare
+  parking?: string; // Garaj, Exterior
+  keyFeatures: string; // Used for AI, comma separated
+  
+  // For compatibility with existing components that might use these
+  tagline: string;
   imageUrl: string;
   imageHint: string;
 };

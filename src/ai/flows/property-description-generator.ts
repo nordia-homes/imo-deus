@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -23,7 +24,7 @@ const PropertyDescriptionInputSchema = z.object({
 export type PropertyDescriptionInput = z.infer<typeof PropertyDescriptionInputSchema>;
 
 const PropertyDescriptionOutputSchema = z.object({
-  description: z.string().describe('An engaging and detailed property description.'),
+  description: z.string().describe('An engaging and detailed property description written in Romanian.'),
 });
 export type PropertyDescriptionOutput = z.infer<typeof PropertyDescriptionOutputSchema>;
 
@@ -35,7 +36,7 @@ const prompt = ai.definePrompt({
   name: 'propertyDescriptionPrompt',
   input: {schema: PropertyDescriptionInputSchema},
   output: {schema: PropertyDescriptionOutputSchema},
-  prompt: `You are a real estate expert, and will write a property description to attract potential buyers.
+  prompt: `You are a real estate expert, and will write a property description in Romanian to attract potential buyers.
 
   Use the following information about the property to craft a compelling description:
 
@@ -43,11 +44,11 @@ const prompt = ai.definePrompt({
   Location: {{{location}}}
   Bedrooms: {{{bedrooms}}}
   Bathrooms: {{{bathrooms}}}
-  Square Footage: {{{squareFootage}}}
+  Square Footage: {{{squareFootage}}} mp
   Key Features: {{{keyFeatures}}}
-  Price: {{{price}}}
+  Price: {{{price}}} EUR
 
-  Write a description that is engaging, highlights the key selling points, and appeals to a broad range of potential buyers.  Be sure to mention the price in the description.
+  Write a description in Romanian that is engaging, highlights the key selling points, and appeals to a broad range of potential buyers.  Be sure to mention the price in the description. The tone should be professional, but also appealing and persuasive.
   `,
 });
 
