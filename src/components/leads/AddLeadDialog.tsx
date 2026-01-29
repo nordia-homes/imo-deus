@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -51,7 +52,7 @@ const leadSchema = z.object({
 const locations = {
     'Bucuresti-Ilfov': [
         // Sector 1
-        '1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Bucurestii Noi', 'Damaroaia', 'Domenii', 'Dorobanti', 'Gara de Nord', 'Grivita', 'Pajura', 'Piata Romana', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Herastrau', 'Floreasca', 'Chitila',
+        '1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Bucurestii Noi', 'Damaroaia', 'Domenii', 'Dorobanti', 'Gara de Nord', 'Grivita', 'Pajura', 'Piata Romana', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Herastrau', 'Floreasca',
         // Sector 2
         'Andronache', 'Baicului', 'Colentina', 'Doamna Ghica', 'Fundeni', 'Iancului', 'Mosilor', 'Obor', 'Pantelimon (sector)', 'Piata Muncii', 'Stefan cel Mare', 'Tei', 'Vatra Luminoasa',
         // Sector 3
