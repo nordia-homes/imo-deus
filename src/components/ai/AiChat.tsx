@@ -1,33 +1,64 @@
 
 'use client';
 import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
+import { CardContent } from "../ui/card";
 import { Input } from "../ui/input";
-import { Send } from "lucide-react";
+import { Send, Bot, User } from "lucide-react";
 import { useState } from "react";
-// import { useGemini } from '@/lib/gemini'; // Placeholder hook
+import { chat } from "@/ai/flows/chat";
+import type { Message } from "genkit";
+import { useToast } from "@/hooks/use-toast";
+
+interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
+}
 
 export function AiChat() {
-    // const { generateResponse, loading } = useGemini(); // Placeholder
-    const [messages, setMessages] = useState([
-        { from: 'ai', text: 'Bună! Cum te pot ajuta astăzi?' }
+    const { toast } = useToast();
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { role: 'model', text: 'Bună! Sunt asistentul tău AI. Cum te pot ajuta astăzi cu activitățile tale imobiliare?' }
     ]);
     const [input, setInput] = useState('');
-    const loading = false; // Placeholder
+    const [loading, setLoading] = useState(false);
 
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMessage = { from: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const userMessage: ChatMessage = { role: 'user', text: input };
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
         setInput('');
+        setLoading(true);
 
-        // const aiResponse = await generateResponse(input); // Placeholder
-        // Simulating AI response
-        setTimeout(() => {
-             const aiResponse = { from: 'ai', text: `Răspuns AI pentru: "${input}"`};
-             setMessages(prev => [...prev, aiResponse]);
-        }, 1000);
+        try {
+            // Convert our chat format to Genkit's Message format
+            const history: Message[] = newMessages.slice(0, -1).map(msg => ({
+                role: msg.role,
+                content: [{ text: msg.text }]
+            }));
+
+            const result = await chat({
+                history: history,
+                prompt: input,
+            });
+
+            const aiMessage: ChatMessage = { role: 'model', text: result.response };
+            setMessages(prev => [...prev, aiMessage]);
+
+        } catch (error) {
+            console.error("AI chat failed", error);
+            toast({
+                variant: "destructive",
+                title: "A apărut o eroare",
+                description: "Nu am putut comunica cu asistentul AI. Încearcă din nou.",
+            });
+             // Remove the user message that failed to get a response, so they can try again.
+            setMessages(prev => prev.filter(m => m !== userMessage));
+
+        } finally {
+            setLoading(false);
+        }
     };
 
     const suggestedPrompts = [
@@ -37,31 +68,46 @@ export function AiChat() {
     ];
 
   return (
-    <div className="flex-1 flex flex-col mt-6">
-        <CardContent className="flex-1 overflow-y-auto space-y-4">
+    <div className="flex-1 flex flex-col mt-6 h-full">
+        <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
             {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.from === 'ai' ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`p-3 rounded-lg max-w-lg ${msg.from === 'ai' ? 'bg-gray-200' : 'bg-primary text-primary-foreground'}`}>
-                        {msg.text}
+                <div key={i} className={`flex items-start gap-4 ${msg.role === 'model' ? 'justify-start' : 'justify-end'}`}>
+                    {msg.role === 'model' && <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>}
+                     <div className={`p-4 rounded-lg max-w-2xl shadow-sm ${msg.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
                     </div>
+                     {msg.role === 'user' && <div className="p-2 rounded-full bg-secondary"><User className="h-5 w-5" /></div>}
                 </div>
             ))}
+            {loading && (
+                 <div className="flex items-start gap-4 justify-start">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>
+                     <div className="p-4 rounded-lg max-w-2xl shadow-sm bg-muted">
+                        <div className="flex items-center gap-2">
+                           <span className="h-2 w-2 bg-primary rounded-full animate-bounce " style={{animationDelay: '0s'}}></span>
+                           <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                           <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </CardContent>
-        <div className="p-4 bg-white border-t">
-             <div className="flex gap-2 mb-2">
+        <div className="p-4 bg-background border-t">
+             <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
                  {suggestedPrompts.map(prompt => (
-                     <Button key={prompt} variant="outline" size="sm" onClick={() => setInput(prompt)}>{prompt}</Button>
+                     <Button key={prompt} variant="outline" size="sm" onClick={() => setInput(prompt)} className="flex-shrink-0">{prompt}</Button>
                  ))}
              </div>
             <div className="relative">
                 <Input
-                    placeholder="Scrie un mesaj..."
+                    placeholder="Scrie un mesaj către asistentul AI..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}
                     disabled={loading}
+                    className="pr-12 h-12"
                 />
-                <Button onClick={handleSend} size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" disabled={loading}>
+                <Button onClick={handleSend} size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" disabled={loading}>
                     <Send className="h-4 w-4" />
                 </Button>
             </div>
