@@ -249,7 +249,7 @@ export default function LeadDetailPage() {
         }
     }
 
-    const pageIsLoading = isUserLoading || isContactLoading;
+    const pageIsLoading = isUserLoading || !user || isContactLoading;
 
     // --- RENDER LOGIC ---
     if (pageIsLoading) {

@@ -99,7 +99,7 @@ export default function PropertyDetailPage() {
         }
     };
 
-    const pageIsLoading = isUserLoading || isDocLoading;
+    const pageIsLoading = isUserLoading || !user || isDocLoading;
 
     if (pageIsLoading) {
         return (
