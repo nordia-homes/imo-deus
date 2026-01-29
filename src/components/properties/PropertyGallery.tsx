@@ -28,7 +28,9 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                                 src={mainImage}
                                 alt={title}
                                 fill
-                                className="object-cover w-full h-full"
+                                className="object-cover"
+                                priority
+                                sizes="(max-width: 768px) 100vw, 50vw"
                             />
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -42,7 +44,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                                     src={src}
                                     alt={`${title} ${index + 2}`}
                                     fill
-                                    className="object-cover w-full h-full"
+                                    className="object-cover"
+                                    sizes="25vw"
                                 />
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -68,7 +71,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                                     src={src}
                                     alt={`${title} ${index + 1}`}
                                     fill
-                                    className="object-cover w-full h-full rounded-md"
+                                    className="object-cover rounded-md"
+                                    sizes="(max-width: 1400px) 50vw, 33vw"
                                 />
                             </div>
                         ))}
