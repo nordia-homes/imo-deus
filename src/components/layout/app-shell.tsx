@@ -11,7 +11,8 @@ import {
   Settings,
   AppWindow,
   Waypoints,
-  FileText
+  FileText,
+  UserCheck,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -95,6 +96,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <span>AI Assistant</span>
                     </Link>
                 </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Potrivire Proprietăți AI" asChild>
+                <Link href="/matching">
+                  <UserCheck />
+                  <span>Potrivire AI</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Rapoarte" asChild>

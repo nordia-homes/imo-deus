@@ -61,23 +61,23 @@ const propertyMatcherPrompt = ai.definePrompt({
 
 Given the following client preferences:
 
-Desired Price Range: ${'{{clientPreferences.desiredPriceRangeMin}}'} - ${'{{clientPreferences.desiredPriceRangeMax}}'}
-Desired Bedrooms: ${'{{clientPreferences.desiredBedrooms}}'}
-Desired Bathrooms: ${'{{clientPreferences.desiredBathrooms}}'}
-Desired Square Footage: ${'{{clientPreferences.desiredSquareFootageMin}}'} - ${'{{clientPreferences.desiredSquareFootageMax}}'}
-Desired Features: ${'{{clientPreferences.desiredFeatures}}'}
-Location Preferences: ${'{{clientPreferences.locationPreferences}}'}
+Desired Price Range: {{clientPreferences.desiredPriceRangeMin}} - {{clientPreferences.desiredPriceRangeMax}}
+Desired Bedrooms: {{clientPreferences.desiredBedrooms}}
+Desired Bathrooms: {{clientPreferences.desiredBathrooms}}
+Desired Square Footage: {{clientPreferences.desiredSquareFootageMin}} - {{clientPreferences.desiredSquareFootageMax}}
+Desired Features: {{clientPreferences.desiredFeatures}}
+Location Preferences: {{clientPreferences.locationPreferences}}
 
 And the following list of available properties:
 
 {{#each properties}}
-Address: ${'{{this.address}}'}
-Price: ${'{{this.price}}'}
-Bedrooms: ${'{{this.bedrooms}}'}
-Bathrooms: ${'{{this.bathrooms}}'}
-Square Footage: ${'{{this.squareFootage}}'}
-Description: ${'{{this.description}}'}
-Image: ${'{{this.image}}'}
+Address: {{this.address}}
+Price: {{this.price}}
+Bedrooms: {{this.bedrooms}}
+Bathrooms: {{this.bathrooms}}
+Square Footage: {{this.squareFootage}}
+Description: {{this.description}}
+Image: {{this.image}}
 {{/each}}
 
 Match the properties to the client preferences and return a list of matched properties, sorted by match score in descending order.
