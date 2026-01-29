@@ -83,7 +83,7 @@ export default function LeadDetailPage() {
         return collection(firestore, 'users', user.uid, 'properties');
     }, [firestore, user]);
 
-    const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(userPropertiesQuery);
+    const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
 
     // --- STATE MANAGEMENT ---
