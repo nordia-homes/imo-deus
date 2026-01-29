@@ -10,9 +10,9 @@ service cloud.firestore {
     // Rules for the top-level 'users' collection.
     match /users/{userId} {
       // A user can create, read, and update their own profile document.
-      // Deleting the main user document is disallowed. Listing all users is disallowed.
+      // Deleting the main user document or listing all users is disallowed.
       allow get, update, create: if isOwner(userId);
-      allow delete, list: if false;
+      allow delete: if false;
 
       // This is a recursive wildcard rule that applies to ALL subcollections of a user document.
       // It ensures that a user can only read and write to their own data tree.
