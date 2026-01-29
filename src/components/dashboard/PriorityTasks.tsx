@@ -1,34 +1,57 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Calendar, CheckCircle2, FileText, MessageSquare } from 'lucide-react';
+import { ArrowRight, CheckSquare, Clock } from 'lucide-react';
 import Link from 'next/link';
+import type { Task } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
 
-const tasks = [
-    { title: 'Follow-ups', date: 'Apr 1', progress: '3/4 completat', icon: <MessageSquare className="text-blue-500" />, description: 'Reminders AI pentru follow-ups și check-ins.' },
-    { title: 'Revizuire Contract', date: 'Apr 1', progress: '1/2 completat', icon: <FileText className="text-orange-500" />, description: 'Revizuire și aprobare AI a contractelor.' },
-    { title: 'Facturi', date: 'Apr 2', progress: '1/5 plătit', icon: <CheckCircle2 className="text-green-500" />, description: 'Notifică clienții despre plată.' },
-];
+export function PriorityTasks({ tasks, isLoading }: { tasks: Task[] | null, isLoading: boolean }) {
+    
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            )
+        }
 
-export function PriorityTasks() {
+        if (!tasks || tasks.length === 0) {
+            return <p className="text-sm text-center text-muted-foreground py-4">Niciun task prioritar. Ești la zi!</p>
+        }
+
+        return (
+            <div className="space-y-4">
+                {tasks.map((task) => (
+                    <Link href={`/tasks`} key={task.id} className="flex items-center gap-4 group p-2 rounded-md hover:bg-accent">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                           <CheckSquare className="text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-medium text-sm truncate">{task.description}</p>
+                             <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}
+                                {task.contactName && ` | ${task.contactName}`}
+                            </p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </Link>
+                ))}
+            </div>
+        )
+    }
+    
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold">Task-uri Prioritare</CardTitle>
                 <Link href="/tasks" className="text-sm text-primary hover:underline">Vezi tot</Link>
             </CardHeader>
-            <CardContent className="space-y-4">
-                {tasks.map((task, index) => (
-                    <div key={index} className="flex items-center gap-4 group">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                            {task.icon}
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-medium text-sm">{task.title}</p>
-                            <p className="text-xs text-muted-foreground">{task.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{task.date} &middot; {task.progress}</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </div>
-                ))}
+            <CardContent>
+                {renderContent()}
             </CardContent>
         </Card>
     );
