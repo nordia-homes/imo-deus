@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/lead-scoring.ts';
+import '@/ai/flows/property-matcher.ts';
+import '@/ai/flows/property-description-generator.ts';

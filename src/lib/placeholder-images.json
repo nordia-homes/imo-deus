@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "p1",
+      "description": "Charming suburban home with a large backyard.",
+      "imageUrl": "https://images.unsplash.com/photo-1712832866094-898b5c1b882b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdWJ1cmJhbiUyMGhvbWV8ZW58MHx8fHwxNzY5NzAxODgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "suburban home"
+    },
+    {
+      "id": "p2",
+      "description": "Modern condo in the heart of downtown.",
+      "imageUrl": "https://images.unsplash.com/photo-1662454419716-c4c504728811?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBjb25kb3xlbnwwfHx8fDE3Njk3MDE4ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern condo"
+    },
+    {
+      "id": "p3",
+      "description": "Spacious family house in a quiet neighborhood.",
+      "imageUrl": "https://images.unsplash.com/photo-1606788075819-9574a6edfab3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmYW1pbHklMjBob3VzZXxlbnwwfHx8fDE3Njk2NDgyMDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "family house"
+    },
+    {
+      "id": "p4",
+      "description": "Bright and airy top-floor apartment.",
+      "imageUrl": "https://images.unsplash.com/photo-1579632151052-92f741fb9b79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxicmlnaHQlMjBhcGFydG1lbnR8ZW58MHx8fHwxNzY5NzAxODgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bright apartment"
+    }
+  ]
 }
