@@ -1,14 +1,41 @@
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { FilePlus2, Download, Send, MessageSquare } from "lucide-react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Contract } from '@/lib/types';
+import Link from "next/link";
+
+
+function getStatusBadge(status: string) {
+    switch (status) {
+        case 'Trimis': return 'warning';
+        case 'Semnat': return 'success';
+        case 'Draft': return 'secondary';
+        case 'Anulat': return 'destructive';
+        default: return 'outline';
+    }
+}
+
 
 export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
-    // Placeholder data, filtered for the current propertyId
-    const contracts = [
-        { id: 'C001', type: 'Vânzare-Cumpărare', client: 'Alex Popescu', status: 'Semnat', date: '20.05.2024' },
-    ];
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const contractsQuery = useMemoFirebase(() => {
+        if (!user || !propertyId) return null;
+        return query(
+            collection(firestore, 'users', user.uid, 'contracts'),
+            where('propertyId', '==', propertyId)
+        );
+    }, [firestore, user, propertyId]);
+    
+    const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
     return (
         <Card>
@@ -17,7 +44,8 @@ export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
                     <CardTitle>Contracte pentru Proprietate</CardTitle>
                     <CardDescription>Generează și urmărește contractele asociate.</CardDescription>
                 </div>
-                <Button>
+                {/* Button is decorative for now until we have contacts list here */}
+                <Button disabled>
                     <FilePlus2 className="mr-2 h-4 w-4" />
                     Generează Contract
                 </Button>
@@ -26,7 +54,6 @@ export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>ID</TableHead>
                             <TableHead>Tip</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead>Data</TableHead>
@@ -35,13 +62,22 @@ export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {contracts.length > 0 ? contracts.map((contract) => (
+                        {isLoading ? (
+                            [...Array(1)].map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : contracts && contracts.length > 0 ? contracts.map((contract) => (
                             <TableRow key={contract.id}>
-                                <TableCell>{contract.id}</TableCell>
-                                <TableCell>{contract.type}</TableCell>
-                                <TableCell>{contract.client}</TableCell>
-                                <TableCell>{contract.date}</TableCell>
-                                <TableCell>{contract.status}</TableCell>
+                                <TableCell>{contract.contractType}</TableCell>
+                                <TableCell>
+                                     <Link href={`/leads/${contract.contactId}`} className="hover:underline">
+                                        {contract.contactName}
+                                     </Link>
+                                </TableCell>
+                                <TableCell>{new Date(contract.date).toLocaleDateString('ro-RO')}</TableCell>
+                                <TableCell><Badge variant={getStatusBadge(contract.status) as any}>{contract.status}</Badge></TableCell>
                                 <TableCell className="text-right space-x-2">
                                      <Button variant="outline" size="icon" title="Trimite pe Email">
                                         <Send className="h-4 w-4" />
@@ -56,7 +92,7 @@ export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={5} className="h-24 text-center">
                                     Niciun contract generat pentru această proprietate.
                                 </TableCell>
                             </TableRow>
