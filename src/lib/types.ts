@@ -83,3 +83,14 @@ export type LeadSourceData = {
   count: number;
   fill: string;
 };
+
+export type Task = {
+  id: string;
+  description: string;
+  dueDate: string;
+  status: 'open' | 'completed';
+  contactId?: string;
+  contactName?: string;
+  startTime?: string;
+  duration?: number;
+};

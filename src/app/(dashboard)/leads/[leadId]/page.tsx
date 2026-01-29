@@ -6,7 +6,7 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Contact, Property } from '@/lib/types';
+import type { Contact, Property, Task } from '@/lib/types';
 import { properties } from "@/lib/data"; // Using placeholder properties
 import { leadScoring } from '@/ai/flows/lead-scoring';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
@@ -30,7 +30,6 @@ import Link from 'next/link';
 // Icons
 import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
-import type { Task as TaskTypeProp } from '@/app/(dashboard)/tasks/page';
 
 
 // Schemas for AI forms
@@ -51,14 +50,6 @@ const propertyMatchSchema = z.object({
 });
 
 type MatchedProperty = Property & { matchScore: number; reasoning: string };
-// A simplified task type for this page
-type Task = {
-  id: string;
-  description: string;
-  dueDate: string; // Stored as string
-  status: 'open' | 'completed';
-  contactId: string;
-};
 
 // Main Component
 export default function LeadDetailPage() {
@@ -137,24 +128,21 @@ export default function LeadDetailPage() {
         });
     };
 
-    const handleAddTask = (newTask: Omit<TaskTypeProp, 'id' | 'completed'>) => {
-        if (!user) return;
+    const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
+        if (!user || !contact) return;
         const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
         
         const taskToAdd = {
-            description: newTask.title,
-            dueDate: newTask.dueDate,
-            contactId: leadId, // Associate with the current lead
-            contactName: contact?.name,
+            ...newTask,
+            contactId: leadId,
+            contactName: contact.name,
             status: 'open',
-            startTime: newTask.startTime || '',
-            duration: newTask.duration || 0,
         };
 
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({
             title: "Task Adăugat!",
-            description: `Task-ul "${newTask.title}" a fost adăugat pentru ${contact?.name}.`
+            description: `Task-ul "${newTask.description}" a fost adăugat pentru ${contact.name}.`
         });
     };
 

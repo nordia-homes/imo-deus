@@ -15,12 +15,12 @@ import { Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/app/(dashboard)/tasks/page';
+import type { Task } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
 
 const taskSchema = z.object({
-  title: z.string().min(1, { message: "Titlul este obligatoriu." }),
+  description: z.string().min(1, { message: "Descrierea este obligatorie." }),
   dueDate: z.date({ required_error: "Data scadentă este obligatorie." }),
   startTime: z.string().optional(),
   duration: z.coerce.number().optional(),
@@ -30,17 +30,16 @@ const taskSchema = z.object({
 type ContactStub = { id: string; name: string; };
 
 type AddTaskDialogProps = {
-    onAddTask: (task: Omit<Task, 'id' | 'completed'>) => void;
+    onAddTask: (task: Omit<Task, 'id' | 'status'>) => void;
     contacts: ContactStub[];
 }
 
 export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { toast } = useToast();
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      title: '',
+      description: '',
       duration: 30,
     },
   });
@@ -69,7 +68,7 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
     const selectedContact = contacts.find(c => c.id === values.contactId);
     
     onAddTask({
-        title: values.title,
+        description: values.description,
         dueDate: format(values.dueDate, 'yyyy-MM-dd'),
         startTime: values.startTime,
         duration: values.duration,
@@ -77,10 +76,6 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
         contactName: selectedContact?.name,
     });
 
-    toast({
-        title: "Task adăugat!",
-        description: `Task-ul "${values.title}" a fost adăugat.`,
-    });
     setIsOpen(false);
     form.reset();
   }
@@ -102,7 +97,7 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-              <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Task</FormLabel><FormControl><Input {...field} placeholder="ex: Sună clientul X" /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Task</FormLabel><FormControl><Textarea {...field} placeholder="ex: Sună clientul X pentru follow-up" /></FormControl><FormMessage /></FormItem> )} />
               
               <FormField
                 control={form.control}
@@ -173,7 +168,7 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Durată</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                            <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={String(field.value)}>
                                 <FormControl>
                                     <SelectTrigger><SelectValue placeholder="Alege durata" /></SelectTrigger>
                                 </FormControl>
