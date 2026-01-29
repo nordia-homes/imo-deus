@@ -26,15 +26,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, ChevronsUpDown } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 
 const leadSchema = z.object({
@@ -64,7 +63,7 @@ const locations = {
         // Sector 6
         'Compozitorilor', 'Crangasi', 'Drumul Taberei', 'Giulesti', 'Militari', 'Lujerului', 'Pacea', 'Regie', 'Uverturii',
         // Ilfov
-        'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Ciolpani', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'
+        'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciolpani', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'
     ],
     'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu', 'Gilau', 'Dezmir'],
     'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz', 'Sanmihaiu Roman', 'Urseni'],
@@ -75,7 +74,6 @@ type City = keyof typeof locations;
 
 export function AddLeadDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -215,7 +213,7 @@ export function AddLeadDialog() {
 
                     <section>
                         <h3 className="text-lg font-semibold text-primary mb-4">Preferințe Locație</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div className="space-y-4">
                             <FormField
                             control={form.control}
                             name="city"
@@ -241,59 +239,40 @@ export function AddLeadDialog() {
                             />
                             
                             {watchedCity && locations[watchedCity] && (
-                                <FormField
+                               <FormField
                                 control={form.control}
                                 name="zones"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Zone de interes</FormLabel>
-                                        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal", !field.value?.length && "text-muted-foreground")}>
-                                                        <span className='truncate'>
-                                                            {field.value?.length ? `${field.value.length} zone selectate` : 'Selectează zonele'}
-                                                        </span>
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                <div className="h-72 overflow-y-auto p-4">
-                                                    {locations[watchedCity].map((zone) => (
-                                                        <FormField
-                                                        key={zone}
-                                                        control={form.control}
-                                                        name="zones"
-                                                        render={({ field }) => {
-                                                            return (
-                                                            <FormItem
-                                                                className="flex flex-row items-center space-x-3 space-y-0 mb-3"
-                                                            >
-                                                                <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value?.includes(zone)}
-                                                                    onCheckedChange={(checked) => {
-                                                                    const newValue = checked
-                                                                        ? [...(field.value || []), zone]
-                                                                        : (field.value || []).filter(
-                                                                            (value) => value !== zone
-                                                                        );
-                                                                    field.onChange(newValue);
-                                                                    }}
-                                                                />
-                                                                </FormControl>
-                                                                <FormLabel className="font-normal text-sm">
-                                                                {zone}
-                                                                </FormLabel>
-                                                            </FormItem>
-                                                            );
-                                                        }}
+                                         <div className="max-h-60 overflow-y-auto rounded-md border p-4">
+                                            <div className="flex flex-wrap gap-2">
+                                                 {locations[watchedCity].map((zone) => (
+                                                    <div key={zone}>
+                                                        <Checkbox
+                                                            id={`zone-${zone}`}
+                                                            className="peer sr-only"
+                                                            checked={field.value?.includes(zone)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), zone])
+                                                                : field.onChange(
+                                                                    (field.value || []).filter(
+                                                                    (value) => value !== zone
+                                                                    )
+                                                                )
+                                                            }}
                                                         />
-                                                    ))}
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
+                                                        <Label
+                                                            htmlFor={`zone-${zone}`}
+                                                            className="cursor-pointer rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                                                        >
+                                                            {zone}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
