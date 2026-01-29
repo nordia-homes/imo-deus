@@ -2,24 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the requester is the owner of the data.
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
     // Rules for the top-level 'users' collection.
     match /users/{userId} {
-      // A user can create, read, and update their own profile document.
-      // Deleting the main user document or listing all users is disallowed.
-      allow get, update, create: if isOwner(userId);
+      // A user can get, create and update their own profile document.
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      // Main user document deletion is disallowed.
       allow delete: if false;
 
-      // This is a recursive wildcard rule that applies to ALL subcollections of a user document.
+      // This recursive wildcard rule applies to ALL subcollections of a user document.
       // It ensures that a user can only read and write to their own data tree.
-      // This single rule secures collections like 'contacts', 'properties', 'tasks', etc.
-      // It explicitly allows 'read' (which includes 'get' and 'list') and 'write' operations.
+      // This secures 'contacts', 'properties', 'tasks', etc.
       match /{allPaths=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
   }
