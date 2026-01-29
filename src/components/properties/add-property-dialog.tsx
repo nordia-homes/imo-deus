@@ -172,35 +172,39 @@ export function AddPropertyDialog() {
       user.uid,
       'properties'
     );
-    
-    const { images, ...restOfValues } = values;
 
     const randomSeed = Math.floor(Math.random() * 1000);
+    
+    // Construct the object manually and ensure unserializable data (File objects) is excluded.
     const newPropertyData = {
-      ...restOfValues,
-      address: values.location, // Assuming location is the full address for now
-      // Image upload to storage should be handled here. For now, using placeholders.
+      title: values.title,
+      propertyType: values.propertyType,
+      transactionType: values.transactionType,
+      location: values.location,
+      price: values.price,
+      bedrooms: values.bedrooms,
+      bathrooms: values.bathrooms,
+      squareFootage: values.squareFootage,
+      totalSurface: values.totalSurface || null,
+      constructionYear: values.constructionYear || null,
+      floor: values.floor,
+      totalFloors: values.totalFloors || null,
+      comfort: values.comfort,
+      interiorState: values.interiorState,
+      furnishing: values.furnishing,
+      heatingSystem: values.heatingSystem,
+      parking: values.parking,
+      keyFeatures: values.keyFeatures,
+      description: values.description,
+      
+      // Add other fields and placeholder images
+      address: values.location,
       images: [
-        {
-          url: `https://picsum.photos/seed/${randomSeed}/1200/800`,
-          alt: 'Placeholder Image 1',
-        },
-        {
-          url: `https://picsum.photos/seed/${randomSeed + 1}/1200/800`,
-          alt: 'Placeholder Image 2',
-        },
-        {
-          url: `https://picsum.photos/seed/${randomSeed + 2}/1200/800`,
-          alt: 'Placeholder Image 3',
-        },
-        {
-          url: `https://picsum.photos/seed/${randomSeed + 3}/1200/800`,
-          alt: 'Placeholder Image 4',
-        },
-        {
-          url: `https://picsum.photos/seed/${randomSeed + 4}/1200/800`,
-          alt: 'Placeholder Image 5',
-        },
+        { url: `https://picsum.photos/seed/${randomSeed}/1200/800`, alt: 'Placeholder Image 1'},
+        { url: `https://picsum.photos/seed/${randomSeed + 1}/1200/800`, alt: 'Placeholder Image 2'},
+        { url: `https://picsum.photos/seed/${randomSeed + 2}/1200/800`, alt: 'Placeholder Image 3'},
+        { url: `https://picsum.photos/seed/${randomSeed + 3}/1200/800`, alt: 'Placeholder Image 4'},
+        { url: `https://picsum.photos/seed/${randomSeed + 4}/1200/800`, alt: 'Placeholder Image 5'},
       ],
       imageUrl: `https://picsum.photos/seed/${randomSeed}/800/600`,
       imageHint: values.propertyType?.toLowerCase() || 'property',
@@ -375,5 +379,3 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
-
-    
