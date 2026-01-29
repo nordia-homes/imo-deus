@@ -7,18 +7,10 @@ import Link from 'next/link';
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import type { Task } from '@/lib/types';
+import type { Task, Contact } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-// Dummy contacts data to be passed to the dialog
-const contacts = [
-    { id: '1', name: 'Alex Popescu' },
-    { id: '2', name: 'Ana Ionescu' },
-    { id: '3', name: 'Dan Georgescu' },
-    { id: '4', name: 'Laura Mihai' },
-];
 
 export default function TasksPage() {
     const { toast } = useToast();
@@ -30,7 +22,14 @@ export default function TasksPage() {
         return collection(firestore, 'users', user.uid, 'tasks');
     }, [firestore, user]);
 
-    const { data: tasks, isLoading } = useCollection<Task>(tasksQuery);
+    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
+    
+    const contactsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'contacts');
+    }, [firestore, user]);
+
+    const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
     const handleToggleTask = (task: Task) => {
         if (!user) return;
@@ -61,7 +60,7 @@ export default function TasksPage() {
     }, [tasks]);
 
     const renderTaskList = (taskList: Task[], isCompletedList = false) => {
-      if (isLoading) {
+      if (areTasksLoading) {
         return (
           <>
             <Skeleton className="h-16 w-full" />
@@ -111,7 +110,7 @@ export default function TasksPage() {
                 Organizează-ți activitățile și nu rata niciun detaliu.
             </p>
         </div>
-        <AddTaskDialog onAddTask={handleAddTask} contacts={contacts} />
+        <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
