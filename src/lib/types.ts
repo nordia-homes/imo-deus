@@ -72,6 +72,7 @@ export type Contact = {
     preferences: ContactPreferences;
     city?: string;
     zones?: string[];
+    leadScore?: number;
 }
 
 export type SalesData = {
