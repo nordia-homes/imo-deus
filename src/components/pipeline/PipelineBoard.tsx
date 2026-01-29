@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { useCollection, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking, doc } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useCollection, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 import type { Contact } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import Link from "next/link";
