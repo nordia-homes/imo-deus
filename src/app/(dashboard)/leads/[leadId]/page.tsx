@@ -33,6 +33,7 @@ import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
 import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
 import { DeleteTaskAlert } from '@/components/tasks/DeleteTaskAlert';
+import { AiEmailGenerator } from '@/components/leads/AiEmailGenerator';
 
 // Schemas for AI forms
 const leadScoreSchema = z.object({
@@ -297,6 +298,7 @@ export default function LeadDetailPage() {
                 
                 {/* --- LEFT COLUMN --- */}
                 <div className="lg:col-span-2 space-y-6">
+                    <AiEmailGenerator contact={contact} agent={user} />
                     <Card>
                         <CardHeader>
                             <CardTitle>Potrivire Proprietăți (AI)</CardTitle>
