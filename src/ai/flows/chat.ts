@@ -42,13 +42,13 @@ const chatFlow = ai.defineFlow(
         ...input.history,
     ];
 
-    const {output} = await ai.generate({
+    const response = await ai.generate({
       prompt: input.prompt,
       history,
     });
     
     return {
-      response: output.text,
+      response: response.text,
     };
   }
 );
