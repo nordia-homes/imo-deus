@@ -28,6 +28,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -42,6 +44,9 @@ const leadSchema = z.object({
 export function AddLeadDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
@@ -56,8 +61,24 @@ export function AddLeadDialog() {
   });
 
   function onSubmit(values: z.infer<typeof leadSchema>) {
-    console.log(values);
-    // Here you would typically call a function to save the data to Firestore
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Autentificare necesară",
+            description: "Trebuie să fii autentificat pentru a adăuga un lead.",
+        });
+        return;
+    }
+
+    const contactsCollection = collection(firestore, 'users', user.uid, 'contacts');
+    const newLeadData = {
+        ...values,
+        contactType: 'Lead',
+        createdAt: new Date().toISOString(),
+    };
+
+    addDocumentNonBlocking(contactsCollection, newLeadData);
+
     toast({
         title: "Lead adăugat!",
         description: `${values.name} a fost adăugat în lista ta de lead-uri.`,

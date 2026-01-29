@@ -5,19 +5,42 @@ import {
   TableHeader,
   TableHead,
   TableRow,
+  TableCell,
 } from "@/components/ui/table";
 import { LeadCard } from "./LeadCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from "../ui/skeleton";
 
 export function LeadList() {
-  // Placeholder Data, replace with Firestore data fetching
-  const leads = [
-    { id: '1', name: 'Alex Popescu', phone: '0722 123 456', source: 'Website', budget: 150000, status: 'Contactat', aiScore: 88, urgency: 'Ridicata' },
-    { id: '2', name: 'Ana Ionescu', phone: '0745 654 321', source: 'Recomandare', budget: 250000, status: 'Nou', aiScore: 75, urgency: 'Medie' },
-    { id: '3', name: 'Dan Georgescu', phone: '0733 987 123', source: 'Imobiliare.ro', budget: 90000, status: 'Vizionare', aiScore: 92, urgency: 'Ridicata' },
-    { id: '4', name: 'Laura Mihai', phone: '0766 555 888', source: 'Telefon', budget: 450000, status: 'În negociere', aiScore: 65, urgency: 'Scazuta' },
-  ];
+    const { user } = useUser();
+    const firestore = useFirestore();
 
+    const contactsCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'contacts');
+    }, [firestore, user]);
+
+    const { data: leads, isLoading } = useCollection<any>(contactsCollection);
+
+    if (isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Listă Lead-uri</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+  
   return (
     <Card>
         <CardHeader>
@@ -38,9 +61,19 @@ export function LeadList() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {leads.map(lead => (
-                        <LeadCard key={lead.id} lead={lead} />
-                    ))}
+                    {leads && leads.length > 0 ? leads.map(lead => (
+                        <LeadCard key={lead.id} lead={{
+                            ...lead,
+                            aiScore: lead.aiScore || 0,
+                            urgency: lead.urgency || 'N/A'
+                        }} />
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={8} className="h-24 text-center">
+                                Nu ai adăugat niciun lead. Folosește butonul "Adaugă Lead" pentru a începe.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
         </CardContent>

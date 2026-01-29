@@ -10,13 +10,9 @@
           "type": "string",
           "description": "Unique identifier for the contact."
         },
-        "firstName": {
+        "name": {
           "type": "string",
-          "description": "The first name of the contact."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the contact."
+          "description": "The full name of the contact."
         },
         "email": {
           "type": "string",
@@ -27,9 +23,17 @@
           "type": "string",
           "description": "The phone number of the contact."
         },
-        "address": {
+        "source": {
           "type": "string",
-          "description": "The address of the contact."
+          "description": "The source of the lead (e.g., Website, Referral)."
+        },
+        "budget": {
+          "type": "number",
+          "description": "The estimated budget of the contact."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the lead (e.g., Nou, Contactat)."
         },
         "contactType": {
           "type": "string",
@@ -42,12 +46,16 @@
         "notes": {
           "type": "string",
           "description": "Notes about the contact."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the contact was created."
         }
       },
       "required": [
         "id",
-        "firstName",
-        "lastName",
+        "name",
         "email",
         "contactType"
       ]
