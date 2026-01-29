@@ -49,7 +49,7 @@ const leadSchema = z.object({
 });
 
 const locations = {
-    'Bucuresti-Ilfov': ['1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Bucurestii Noi', 'Damaroaia', 'Domenii', 'Dorobanti', 'Gara de Nord', 'Grivita', 'Pajura', 'Piata Romana', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Herastrau', 'Floreasca', 'Andronache', 'Baicului', 'Colentina', 'Doamna Ghica', 'Fundeni', 'Iancului', 'Mosilor', 'Obor', 'Pantelimon (sector)', 'Piata Muncii', 'Stefan cel Mare', 'Tei', 'Vatra Luminoasa', 'Balta Alba', 'Centrul Civic', 'Dristor', 'Dudesti', 'Mihai Bravu', 'Salajan', 'Titan', 'Unirii', 'Vitan', 'Timpuri Noi', 'Aparatorii Patriei', 'Berceni', 'Brancoveanu', 'Giurgiului', 'Oltenitei', 'Piata Sudului', 'Tineretului', 'Vacaresti', '13 Septembrie', 'Cotroceni', 'Dealul Spirii', 'Ferentari', 'Ghencea', 'Panduri', 'Rahova', 'Salaj', 'Compozitorilor', 'Crangasi', 'Drumul Taberei', 'Giulesti', 'Militari', 'Lujerului', 'Pacea', 'Regie', 'Uverturii', 'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'],
+    'Bucuresti-Ilfov': ['1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Berceni', 'Brancoveanu', 'Bucurestii Noi', 'Centrul Civic', 'Centrul Istoric', 'Colentina', 'Cotroceni', 'Damaroaia', 'Dealul Spirii', 'Domenii', 'Dorobanti', 'Dristor', 'Drumul Taberei', 'Dudesti', 'Ferentari', 'Floreasca', 'Gara de Nord', 'Ghencea', 'Giulesti', 'Giurgiului', 'Grivita', 'Herastrau', 'Iancului', 'Militari', 'Mosilor', 'Obor', 'Oltenitei', 'Pajura', 'Panduri', 'Pantelimon (sector)', 'Piata Muncii', 'Piata Romana', 'Piata Sudului', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Rahova', 'Regie', 'Salajan', 'Stefan cel Mare', 'Tei', 'Tineretului', 'Titan', 'Unirii', 'Vatra Luminoasa', 'Vacaresti', 'Vitan', 'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'],
     'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu', 'Gilau', 'Dezmir'],
     'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz', 'Sanmihaiu Roman', 'Urseni'],
     'Iasi': ['Alexandru cel Bun', 'Aviatiei', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Gara', 'Metalurgie', 'Mircea cel Batran', 'Moara de Vant', 'Nicolina', 'Pacurari', 'Podu Ros', 'Sararie', 'Soseaua Nationala', 'Tatarasi', 'Tudor Vladimirescu', 'Valea Adanca', 'Valea Lupului', 'Zorilor', 'Barnova', 'Miroslava', 'Rediu', 'Holboca', 'Tomesti', 'Ciurea'],
@@ -239,15 +239,15 @@ export function AddLeadDialog() {
                                                             className="peer sr-only"
                                                             checked={field.value?.includes(zone)}
                                                             onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    field.onChange([...(field.value || []), zone]);
-                                                                } else {
-                                                                    field.onChange(
-                                                                        (field.value || []).filter(
-                                                                        (value) => value !== zone
-                                                                        )
-                                                                    );
-                                                                }
+                                                              if (checked) {
+                                                                field.onChange([...(field.value || []), zone]);
+                                                              } else {
+                                                                field.onChange(
+                                                                  (field.value || []).filter(
+                                                                    (value) => value !== zone
+                                                                  )
+                                                                );
+                                                              }
                                                             }}
                                                         />
                                                         <Label
