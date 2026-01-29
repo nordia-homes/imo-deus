@@ -5,10 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from 'next/link';
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
-import { useUser, useFirestore, useCollection, useMemoFirebase, collection, doc, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { Task } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 // Dummy contacts data to be passed to the dialog
 const contacts = [
