@@ -1,4 +1,4 @@
-
+'use client';
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Check } from "lucide-react";
@@ -10,9 +10,10 @@ interface PlanCardProps {
     price: string;
     features: string[];
     recommended?: boolean;
+    onChoosePlan: () => void;
 }
 
-export default function PlanCard({ name, price, features, recommended }: PlanCardProps) {
+export default function PlanCard({ name, price, features, recommended, onChoosePlan }: PlanCardProps) {
     const isCustom = price.toLowerCase() === 'custom';
     
     return (
@@ -34,7 +35,7 @@ export default function PlanCard({ name, price, features, recommended }: PlanCar
                 ))}
             </CardContent>
             <CardFooter>
-                <Button className="w-full" variant={recommended ? "default" : "outline"}>
+                <Button className="w-full" variant={recommended ? "default" : "outline"} onClick={onChoosePlan}>
                     {isCustom ? 'Contactează-ne' : 'Alege Planul'}
                 </Button>
             </CardFooter>
