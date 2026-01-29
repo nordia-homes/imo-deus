@@ -2,11 +2,11 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, arrayUnion } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Contact, Property, Task } from '@/lib/types';
+import type { Contact, Property, Task, Interaction } from '@/lib/types';
 import { leadScoring } from '@/ai/flows/lead-scoring';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
@@ -34,6 +34,8 @@ import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
 import { DeleteTaskAlert } from '@/components/tasks/DeleteTaskAlert';
 import { AiEmailGenerator } from '@/components/leads/AiEmailGenerator';
+import { InteractionList } from '@/components/leads/InteractionList';
+import { InteractionLogger } from '@/components/leads/InteractionLogger';
 
 // Schemas for AI forms
 const leadScoreSchema = z.object({
@@ -102,6 +104,7 @@ export default function LeadDetailPage() {
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+    const [isLogging, setIsLogging] = useState(false);
 
     const leadScoreForm = useForm<z.infer<typeof leadScoreSchema>>({
         resolver: zodResolver(leadScoreSchema),
@@ -187,6 +190,25 @@ export default function LeadDetailPage() {
             description: `Task-ul a fost șters.`,
         });
         setDeletingTask(null);
+    };
+    
+    const handleLogInteraction = (interaction: Omit<Interaction, 'id' | 'date'>) => {
+        if (!contactDocRef) return;
+        
+        setIsLogging(true);
+
+        const newInteraction: Interaction = {
+            ...interaction,
+            id: new Date().getTime().toString(),
+            date: new Date().toISOString(),
+        };
+
+        updateDocumentNonBlocking(contactDocRef, {
+            interactionHistory: arrayUnion(newInteraction)
+        });
+        
+        toast({ title: 'Interacțiune adăugată!' });
+        setIsLogging(false);
     };
 
     const allContactsForDialog = useMemo(() => {
@@ -298,6 +320,17 @@ export default function LeadDetailPage() {
                 
                 {/* --- LEFT COLUMN --- */}
                 <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Istoric Interacțiuni</CardTitle></CardHeader>
+                        <CardContent>
+                            <InteractionList interactions={contact.interactionHistory || []} />
+                        </CardContent>
+                        <CardFooter className="flex-col items-start gap-4 border-t pt-6">
+                            <h3 className="font-semibold">Adaugă Interacțiune Nouă</h3>
+                            <InteractionLogger onLogInteraction={handleLogInteraction} isLogging={isLogging} />
+                        </CardFooter>
+                    </Card>
+                    
                     <AiEmailGenerator contact={contact} agent={user} />
                     <Card>
                         <CardHeader>
