@@ -15,20 +15,19 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import type { AuthError } from "firebase/auth";
 
-
-const loginSchema = z.object({
+const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
   password: z.string().min(6, { message: 'Parola trebuie să aibă cel puțin 6 caractere.' }),
 });
 
-export default function LoginPage() {
-  const { login, isLoggedIn } = useAuth();
+export default function RegisterPage() {
+  const { signup, isLoggedIn } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -41,14 +40,20 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, router]);
 
-  const handleLogin = (values: z.infer<typeof loginSchema>) => {
+  const handleRegister = (values: z.infer<typeof registerSchema>) => {
     setIsSubmitting(true);
-    login(values.email, values.password, (error: AuthError) => {
-        console.error("Login failed:", error);
+    signup(values.email, values.password, (error: AuthError) => {
+        console.error("Registration failed:", error);
+        
+        let description = "A apărut o eroare. Vă rugăm să încercați din nou.";
+        if (error.code === 'auth/email-already-in-use') {
+            description = "Adresa de email este deja folosită de alt cont.";
+        }
+
         toast({
             variant: "destructive",
-            title: "Autentificare eșuată",
-            description: "Adresa de email sau parola este incorectă. Vă rugăm să încercați din nou.",
+            title: "Înregistrare eșuată",
+            description: description,
         });
         setIsSubmitting(false);
     });
@@ -61,7 +66,7 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleLogin)} className="w-full max-w-sm">
+        <form onSubmit={form.handleSubmit(handleRegister)} className="w-full max-w-sm">
             <Card>
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
@@ -70,8 +75,8 @@ export default function LoginPage() {
                         EstateFlow
                         </h1>
                     </div>
-                    <CardTitle>Autentificare</CardTitle>
-                    <CardDescription>Introdu datele pentru a accesa platforma.</CardDescription>
+                    <CardTitle>Creează un cont nou</CardTitle>
+                    <CardDescription>Introdu datele pentru a te înregistra.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <FormField
@@ -104,10 +109,10 @@ export default function LoginPage() {
                 <CardFooter className="flex flex-col gap-4">
                     <Button className="w-full" type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Intră în cont
+                        Creează cont
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                        Nu ai cont? <Link href="/register" className="underline">Înregistrează-te</Link>
+                        Ai deja cont? <Link href="/login" className="underline">Autentifică-te</Link>
                     </p>
                 </CardFooter>
             </Card>
