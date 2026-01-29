@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -22,9 +21,10 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         <Dialog>
             <div className="relative">
                 <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-lg overflow-hidden h-[550px]">
+                    
                     {/* Main Image */}
                     <div className="md:col-span-2 md:row-span-2 relative group">
-                         <Image
+                        <Image
                             src={mainImage}
                             alt={title}
                             fill
@@ -33,9 +33,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                             className="object-cover"
                         />
                         <DialogTrigger asChild>
-                            <div className="absolute inset-0 cursor-pointer">
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
+                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
                         </DialogTrigger>
                     </div>
 
@@ -50,9 +48,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                                 className="object-cover"
                             />
                             <DialogTrigger asChild>
-                                <div className="absolute inset-0 cursor-pointer">
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
+                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
                             </DialogTrigger>
                         </div>
                     ))}
@@ -87,5 +83,3 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         </Dialog>
     );
 }
-
-    
