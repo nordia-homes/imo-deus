@@ -51,6 +51,17 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp of when the contact was created."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the contact is looking for a property."
+        },
+        "zones": {
+          "type": "array",
+          "description": "A list of preferred zones within the selected city.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
