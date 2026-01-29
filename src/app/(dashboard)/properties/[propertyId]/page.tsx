@@ -1,12 +1,17 @@
 
-import { properties } from "@/lib/data";
-import { Property } from "@/lib/types";
-import { notFound } from "next/navigation";
+'use client';
 
+import { useMemo } from 'react';
+import { useParams, notFound } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Property } from '@/lib/types';
+import React from 'react';
+
+import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyGallery } from "@/components/properties/PropertyGallery";
 import { PropertyContractsTab } from "@/components/properties/PropertyContractsTab";
@@ -29,12 +34,7 @@ import {
     Tag,
     HandCoins
 } from "lucide-react";
-import React from "react";
 
-
-const getPropertyById = async (id: string): Promise<Property | undefined> => {
-    return properties.find(p => p.id === id);
-}
 
 const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
     if (!value && value !== 0) return null;
@@ -49,14 +49,47 @@ const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: str
     );
 };
 
-export default async function PropertyDetailPage({ params }: { params: { propertyId: string } }) {
-    const property = await getPropertyById(params.propertyId);
+export default function PropertyDetailPage() {
+    const params = useParams();
+    const propertyId = params.propertyId as string;
+
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const propertyDocRef = useMemoFirebase(() => {
+        if (!user || !propertyId) return null;
+        return doc(firestore, 'users', user.uid, 'properties', propertyId);
+    }, [firestore, user, propertyId]);
+
+    const { data: property, isLoading, error } = useDoc<Property>(propertyDocRef);
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <Skeleton className="h-[550px] w-full rounded-lg" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-48 w-full" />
+                    </div>
+                    <div className="lg:col-span-1">
+                        <Skeleton className="h-48 w-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
+    if (error) {
+        return <div className="text-center text-red-500">A apărut o eroare la încărcarea proprietății.</div>;
+    }
 
     if (!property) {
         notFound();
+        return null;
     }
     
-    const allImages = property.images.map(img => img.url);
+    const allImages = property.images?.map(img => img.url) || ['https://placehold.co/1200x800'];
 
     // Placeholder for AI Insights
     const aiInsights = {
@@ -72,7 +105,7 @@ export default async function PropertyDetailPage({ params }: { params: { propert
                      <h1 className="text-3xl font-headline font-bold">{property.title}</h1>
                      <p className="text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {property.address}</p>
                 </div>
-                <PropertyGallery images={allImages} title={property.title} />
+                <PropertyGallery images={allImages} title={property.title || 'Proprietate'} />
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -112,26 +145,29 @@ export default async function PropertyDetailPage({ params }: { params: { propert
                                  </CardContent>
                              </Card>
 
-                              <Card>
-                                 <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
-                                 <CardContent>
-                                     <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-2">
-                                         {property.amenities.map(amenity => (
-                                             <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
-                                                 <CheckCircle2 className="h-5 w-5 text-primary" />
-                                                 <span className="text-sm">{amenity}</span>
-                                             </div>
-                                         ))}
-                                     </div>
-                                 </CardContent>
-                             </Card>
+                              {property.amenities && property.amenities.length > 0 && (
+                                <Card>
+                                    <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-2">
+                                            {property.amenities.map(amenity => (
+                                                <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
+                                                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                                                    <span className="text-sm">{amenity}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                              )}
+
 
                              <Card>
                                  <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
                                  <CardContent>
                                       <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
                                           <p className="text-muted-foreground">
-                                              Placeholder hartă (iframe) pentru {property.latitude}, {property.longitude}
+                                              Placeholder hartă (iframe) pentru {property.latitude || 'lat'}, {property.longitude || 'long'}
                                           </p>
                                       </div>
                                  </CardContent>
@@ -151,15 +187,17 @@ export default async function PropertyDetailPage({ params }: { params: { propert
                              <CardDescription>{property.transactionType}</CardDescription>
                          </CardHeader>
                         <CardContent className="space-y-4">
-                             <div className="flex items-center gap-4">
-                                 <Avatar className="h-14 w-14">
-                                     <AvatarFallback>{property.agent.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                 </Avatar>
-                                 <div>
-                                     <p className="font-semibold">{property.agent.name}</p>
-                                     <p className="text-sm text-muted-foreground">Agent imobiliar</p>
-                                 </div>
-                             </div>
+                             {property.agent && (
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-14 w-14">
+                                        <AvatarFallback>{property.agent.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold">{property.agent.name}</p>
+                                        <p className="text-sm text-muted-foreground">Agent imobiliar</p>
+                                    </div>
+                                </div>
+                             )}
                              <Button size="lg" className="w-full">Contactează Agentul</Button>
                         </CardContent>
                     </Card>

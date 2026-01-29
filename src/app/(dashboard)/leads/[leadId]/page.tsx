@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -7,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 import type { Contact, Property, Task } from '@/lib/types';
-import { properties } from "@/lib/data"; // Using placeholder properties
 import { leadScoring } from '@/ai/flows/lead-scoring';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
@@ -75,6 +75,13 @@ export default function LeadDetailPage() {
     }, [firestore, user, leadId]);
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
+    
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'properties');
+    }, [firestore, user]);
+
+    const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
 
     // --- STATE MANAGEMENT ---
@@ -156,6 +163,9 @@ export default function LeadDetailPage() {
             leadDetails: `Name: ${contact.name}, Status: ${contact.status}, Notes: ${contact.notes}`,
           });
           setScoreResult(result);
+          if (contactDocRef && result.score) {
+            updateDocumentNonBlocking(contactDocRef, { leadScore: result.score });
+          }
           toast({ title: "Scor AI generat!", description: `Lead-ul a primit scorul ${result.score}.` });
         } catch (error) {
           console.error('Lead scoring failed', error);
@@ -166,13 +176,23 @@ export default function LeadDetailPage() {
     }
     
       async function onPropertyMatchSubmit(values: z.infer<typeof propertyMatchSchema>) {
+        if (!userProperties) {
+            toast({ variant: "destructive", title: "Nicio proprietate", description: "Nu ai nicio proprietate în portofoliu pentru a face potriviri."});
+            return;
+        }
+
         setIsMatching(true);
         setMatchedProperties([]);
-        const matcherProperties: (Property & { image: string })[] = properties.map(p => ({
+        
+        const matcherProperties = userProperties.map(p => ({
             ...p,
-            image: p.images[0]?.url || '',
-            imageUrl: p.images[0]?.url || '',
-            imageHint: '',
+            image: p.imageUrl || 'https://placehold.co/400x300',
+            bedrooms: p.bedrooms || 0,
+            bathrooms: p.bathrooms || 0,
+            squareFootage: p.squareFootage || 0,
+            description: p.description || '',
+            address: p.address || '',
+            price: p.price || 0,
         }));
 
         try {
@@ -260,7 +280,7 @@ export default function LeadDetailPage() {
                                 {matchedProperties.map(prop => (
                                     <Card key={prop.id} className="p-2">
                                         <div className="flex gap-4 items-center">
-                                            <Image src={prop.image || 'https://placehold.co/400x300'} alt={prop.address} width={120} height={80} className="rounded-md object-cover aspect-video" data-ai-hint={prop.imageHint} />
+                                            <Image src={prop.imageUrl || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" data-ai-hint={prop.imageHint} />
                                             <div className="flex-1">
                                                 <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
                                                 <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>

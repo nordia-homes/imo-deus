@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +12,8 @@ export function PropertyCard({ property }: { property: Property }) {
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg">
         <div className="relative aspect-video">
             <Image
-                src={property.images[0].url}
-                alt={property.title}
+                src={property.imageUrl || 'https://placehold.co/800x600'}
+                alt={property.title || 'Proprietate'}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
                 data-ai-hint={property.imageHint}

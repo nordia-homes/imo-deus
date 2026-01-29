@@ -32,6 +32,9 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 const propertySchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
@@ -65,6 +68,8 @@ export function AddPropertyDialog() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -143,10 +148,59 @@ export function AddPropertyDialog() {
   }
 
   function onSubmit(values: z.infer<typeof propertySchema>) {
-    console.log(values);
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Autentificare necesară',
+        description: 'Trebuie să fii autentificat pentru a adăuga o proprietate.',
+      });
+      return;
+    }
+
+    const propertiesCollection = collection(
+      firestore,
+      'users',
+      user.uid,
+      'properties'
+    );
+
+    const newPropertyData = {
+      ...values,
+      address: values.location, // Assuming location is the full address for now
+      // Image upload to storage should be handled here. For now, using placeholders.
+      images: [
+        {
+          url: 'https://picsum.photos/seed/prop1/1200/800',
+          alt: 'Placeholder Image',
+        },
+      ],
+      imageUrl: 'https://picsum.photos/seed/prop1/800/600',
+      imageHint: values.propertyType?.toLowerCase() || 'property',
+      tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
+      createdAt: new Date().toISOString(),
+      agent: {
+        name: user.displayName || user.email || 'Agent',
+        avatarUrl:
+          user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+      },
+      amenities: values.keyFeatures.split(',').map((f) => f.trim()),
+    };
+    
+    // The 'images' field from the form contains File objects which are not serializable for Firestore.
+    // We have already created a placeholder `images` array above, so we can delete the form one.
+    delete (newPropertyData as any).images;
+
+
+    addDocumentNonBlocking(propertiesCollection, newPropertyData);
+
+    toast({
+      title: 'Proprietate adăugată!',
+      description: `${values.title} a fost adăugată în portofoliul tău.`,
+    });
+
     setIsOpen(false);
     form.reset();
-    imagePreviews.forEach(p => URL.revokeObjectURL(p));
+    imagePreviews.forEach((p) => URL.revokeObjectURL(p));
     setImagePreviews([]);
   }
 

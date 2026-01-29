@@ -9,10 +9,10 @@ export type Property = {
   bathrooms: number;
   squareFootage: number; // Suprafata Utila
   totalSurface?: number; // Suprafata Construita
-  description: string;
-  images: { url: string; alt: string; }[];
-  amenities: string[];
-  agent: {
+  description?: string;
+  images?: { url: string; alt: string; }[];
+  amenities?: string[];
+  agent?: {
     name: string;
     avatarUrl: string;
   };
@@ -30,12 +30,13 @@ export type Property = {
   furnishing?: string; // Complet, Partial, Nemobilat
   heatingSystem?: string; // Centrala proprie, Termoficare
   parking?: string; // Garaj, Exterior
-  keyFeatures: string; // Used for AI, comma separated
+  keyFeatures?: string; // Used for AI, comma separated
   
   // For compatibility with existing components that might use these
-  tagline: string;
-  imageUrl: string;
-  imageHint: string;
+  tagline?: string;
+  imageUrl?: string;
+  imageHint?: string;
+  createdAt?: string;
 };
 
 
