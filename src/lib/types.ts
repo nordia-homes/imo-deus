@@ -69,6 +69,8 @@ export type Contact = {
     notes: string;
     interactionHistory: Interaction[];
     preferences: ContactPreferences;
+    city?: string;
+    zones?: string[];
 }
 
 export type SalesData = {
