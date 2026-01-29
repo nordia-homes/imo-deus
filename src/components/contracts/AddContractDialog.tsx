@@ -51,7 +51,10 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
   const form = useForm<z.infer<typeof contractSchema>>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
+      contactId: '',
+      propertyId: '',
       contractType: 'Vânzare-Cumpărare',
+      price: 0,
       date: new Date(),
     },
   });
