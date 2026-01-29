@@ -172,10 +172,12 @@ export function AddPropertyDialog() {
       user.uid,
       'properties'
     );
+    
+    const { images, ...restOfValues } = values;
 
     const randomSeed = Math.floor(Math.random() * 1000);
     const newPropertyData = {
-      ...values,
+      ...restOfValues,
       address: values.location, // Assuming location is the full address for now
       // Image upload to storage should be handled here. For now, using placeholders.
       images: [
@@ -212,7 +214,6 @@ export function AddPropertyDialog() {
       amenities: values.keyFeatures.split(',').map((f) => f.trim()),
     };
     
-    // The form `images` are overwritten by the hardcoded ones above, so no need to delete.
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
 
     toast({
@@ -374,3 +375,5 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
+
+    
