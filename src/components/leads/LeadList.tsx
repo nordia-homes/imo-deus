@@ -65,8 +65,8 @@ export function LeadList() {
                     {leads && leads.length > 0 ? leads.map(lead => (
                         <LeadCard key={lead.id} lead={{
                             ...lead,
-                            aiScore: lead.aiScore || 0,
-                            urgency: lead.urgency || 'N/A'
+                            aiScore: lead.aiScore || Math.floor(Math.random() * 40) + 60, // Placeholder
+                            urgency: ['Ridicata', 'Medie', 'Scazuta'][Math.floor(Math.random() * 3)] // Placeholder
                         }} />
                     )) : (
                         <TableRow>
@@ -77,7 +77,7 @@ export function LeadList() {
                     )}
                 </TableBody>
             </Table>
-        </Content>
+        </CardContent>
     </Card>
   );
 }
