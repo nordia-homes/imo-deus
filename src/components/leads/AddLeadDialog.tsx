@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -33,6 +34,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -47,11 +49,11 @@ const leadSchema = z.object({
 });
 
 const locations = {
-    'Bucuresti-Ilfov': ['Aviatorilor', 'Băneasa', 'Brâncoveanu', 'Centrul Civic', 'Centrul Vechi', 'Colentina', 'Cotroceni', 'Dristor', 'Dorobanți', 'Drumul Taberei', 'Floreasca', 'Ghencea', 'Grivița', 'Iancului', 'Militari', 'Moșilor', 'Obor', 'Pantelimon', 'Pipera', 'Primăverii', 'Rahova', 'Ștefan cel Mare', 'Tineretului', 'Titan', 'Unirii', 'Vitan'],
-    'Cluj-Napoca': ['Andrei Mureșanu', 'Buna Ziua', 'Centru', 'Dâmbul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Între Lacuri', 'Mănăștur', 'Mărăști', 'Someșeni', 'Zorilor'],
-    'Timisoara': ['Aradului', 'Blașcovici', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Șagului', 'Cetate', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Iosefin', 'Mehala', 'Modern', 'Soarelui'],
-    'Iasi': ['Alexandru cel Bun', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Mircea cel Bătrân', 'Moara de Vânt', 'Nicolina', 'Păcurari', 'Podu Roș', 'Tătărași', 'Tudor Vladimirescu', 'Zorilor'],
-    'Constanta': ['Abator', 'Centru', 'Faleză Nord', 'Faleză Sud', 'Far', 'Gară', 'Inel I', 'Inel II', 'Km 4-5', 'Mamaia', 'Palas', 'Peninsulă', 'Poarta 6', 'Tomis I, II, III', 'Tomis Nord'],
+    'Bucuresti-Ilfov': ['1 Mai', '13 Septembrie', 'Andronache', 'Aviatiei', 'Aviatorilor', 'Balta Alba', 'Baneasa', 'Berceni', 'Brancoveanu', 'Bucurestii Noi', 'Centrul Civic', 'Centrul Vechi', 'Colentina', 'Cotroceni', 'Crangasi', 'Damaroaia', 'Dealul Spirii', 'Domenii', 'Dorobanti', 'Dristor', 'Drumul Taberei', 'Dudesti', 'Ferentari', 'Floreasca', 'Gara de Nord', 'Ghencea', 'Giulesti', 'Grivita', 'Iancului', 'Militari', 'Mosilor', 'Obor', 'Pajura', 'Pantelimon', 'Pipera', 'Primaverii', 'Rahova', 'Regie', 'Stefan cel Mare', 'Tei', 'Tineretului', 'Titan', 'Unirii', 'Vatra Luminoasa', 'Vitan', 'Voluntari', 'Otopeni', 'Bragadiru', 'Chiajna', 'Popesti-Leordeni', 'Magurele', 'Corbeanca'],
+    'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu'],
+    'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz'],
+    'Iasi': ['Alexandru cel Bun', 'Aviatiei', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Gara', 'Metalurgie', 'Mircea cel Batran', 'Moara de Vant', 'Nicolina', 'Pacurari', 'Podu Ros', 'Sararie', 'Soseaua Nationala', 'Tatarasi', 'Tudor Vladimirescu', 'Valea Adanca', 'Valea Lupului', 'Zorilor', 'Barnova', 'Miroslava', 'Rediu', 'Holboca'],
+    'Constanta': ['Abator', 'Badea Cartan', 'Brick', 'Casa de Cultura', 'Centru', 'Coiciu', 'Dacia', 'Energia', 'Faleza Nord', 'Faleza Sud', 'Far', 'Gara', 'Halta Traian', 'ICIL', 'Inel I', 'Inel II', 'Km 4', 'Km 5', 'Mamaia', 'Mamaia Nord', 'Palas', 'Peninsula', 'Piata Chiliei', 'Piata Grivitei', 'Poarta 6', 'Port', 'Tomis I', 'Tomis II', 'Tomis III', 'Tomis Nord', 'Agigea', 'Eforie Nord', 'Eforie Sud', 'Lazu', 'Navodari', 'Ovidiu'],
 };
 type City = keyof typeof locations;
 
@@ -129,148 +131,173 @@ export function AddLeadDialog() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField
-                  control={form.control}
-                  name="source"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sursă</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Website">Website</SelectItem>
-                          <SelectItem value="Recomandare">Recomandare</SelectItem>
-                          <SelectItem value="Portal Imobiliar">Portal Imobiliar</SelectItem>
-                          <SelectItem value="Telefon">Telefon</SelectItem>
-                           <SelectItem value="Altul">Altul</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Nou">Nou</SelectItem>
-                          <SelectItem value="Contactat">Contactat</SelectItem>
-                          <SelectItem value="Vizionare">Vizionare</SelectItem>
-                          <SelectItem value="În negociere">În negociere</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                 <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Oraș de interes</FormLabel>
-                      <Select onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('zones', []); // Reset zones on city change
-                      }} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.keys(locations).map(city => (
-                            <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {watchedCity && locations[watchedCity] && (
-                    <FormField
-                      control={form.control}
-                      name="zones"
-                      render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Zone de interes</FormLabel>
-                            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                     <FormControl>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal", !field.value?.length && "text-muted-foreground")}>
-                                            <span className='truncate'>
-                                                {field.value?.length ? field.value.join(', ') : 'Selectează zonele'}
-                                            </span>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                   <ScrollArea className="h-72">
-                                        <div className="p-4">
-                                            {locations[watchedCity].map((zone) => (
-                                                <FormField
-                                                  key={zone}
-                                                  control={form.control}
-                                                  name="zones"
-                                                  render={({ field }) => {
-                                                    return (
-                                                      <FormItem
-                                                        key={zone}
-                                                        className="flex flex-row items-center space-x-3 space-y-0 mb-3"
-                                                      >
-                                                        <FormControl>
-                                                          <Checkbox
-                                                            checked={field.value?.includes(zone)}
-                                                            onCheckedChange={(checked) => {
-                                                              const newValue = checked
-                                                                ? [...(field.value || []), zone]
-                                                                : (field.value || []).filter(
-                                                                    (value) => value !== zone
-                                                                  );
-                                                              field.onChange(newValue);
-                                                            }}
-                                                          />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal text-sm">
-                                                          {zone}
-                                                        </FormLabel>
-                                                      </FormItem>
-                                                    );
-                                                  }}
-                                                />
-                                            ))}
-                                        </div>
-                                   </ScrollArea>
-                                </PopoverContent>
-                            </Popover>
-                             <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                )}
-            </div>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <ScrollArea className="h-[60vh] p-1">
+                <div className="space-y-6 px-3">
+                    <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Detalii de Bază</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                             <FormField
+                                control={form.control}
+                                name="source"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Sursă</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="Website">Website</SelectItem>
+                                        <SelectItem value="Recomandare">Recomandare</SelectItem>
+                                        <SelectItem value="Portal Imobiliar">Portal Imobiliar</SelectItem>
+                                        <SelectItem value="Telefon">Telefon</SelectItem>
+                                        <SelectItem value="Altul">Altul</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                        </div>
+                    </section>
+                    
+                    <Separator />
+                    
+                    <section>
+                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii Tranzacție</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField
+                                control={form.control}
+                                name="status"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="Nou">Nou</SelectItem>
+                                        <SelectItem value="Contactat">Contactat</SelectItem>
+                                        <SelectItem value="Vizionare">Vizionare</SelectItem>
+                                        <SelectItem value="În negociere">În negociere</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                         </div>
+                    </section>
+                    
+                    <Separator />
 
-            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <DialogFooter className="pt-4">
+                    <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Preferințe Locație</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                            <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Oraș de interes</FormLabel>
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    form.setValue('zones', []); // Reset zones on city change
+                                }} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                    {Object.keys(locations).map(city => (
+                                        <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                            
+                            {watchedCity && locations[watchedCity] && (
+                                <FormField
+                                control={form.control}
+                                name="zones"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Zone de interes</FormLabel>
+                                        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal", !field.value?.length && "text-muted-foreground")}>
+                                                        <span className='truncate'>
+                                                            {field.value?.length ? `${field.value.length} zone selectate` : 'Selectează zonele'}
+                                                        </span>
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <ScrollArea className="h-72">
+                                                    <div className="p-4">
+                                                        {locations[watchedCity].map((zone) => (
+                                                            <FormField
+                                                            key={zone}
+                                                            control={form.control}
+                                                            name="zones"
+                                                            render={({ field }) => {
+                                                                return (
+                                                                <FormItem
+                                                                    key={zone}
+                                                                    className="flex flex-row items-center space-x-3 space-y-0 mb-3"
+                                                                >
+                                                                    <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(zone)}
+                                                                        onCheckedChange={(checked) => {
+                                                                        const newValue = checked
+                                                                            ? [...(field.value || []), zone]
+                                                                            : (field.value || []).filter(
+                                                                                (value) => value !== zone
+                                                                            );
+                                                                        field.onChange(newValue);
+                                                                        }}
+                                                                    />
+                                                                    </FormControl>
+                                                                    <FormLabel className="font-normal text-sm">
+                                                                    {zone}
+                                                                    </FormLabel>
+                                                                </FormItem>
+                                                                );
+                                                            }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                            </ScrollArea>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            )}
+                        </div>
+                    </section>
+
+                    <Separator />
+
+                    <section>
+                         <h3 className="text-lg font-semibold text-primary mb-4">Notițe</h3>
+                          <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormControl><Textarea rows={3} {...field} placeholder="Adaugă notițe despre client, preferințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                    </section>
+                </div>
+            </ScrollArea>
+            <DialogFooter className="pt-4 border-t mt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
               <Button type="submit">Salvează Lead</Button>
             </DialogFooter>
@@ -280,3 +307,5 @@ export function AddLeadDialog() {
     </Dialog>
   );
 }
+
+    
