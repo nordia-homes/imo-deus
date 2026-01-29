@@ -1,11 +1,24 @@
 'use client';
+
+import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Grid } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
+    const [api, setApi] = React.useState<CarouselApi>()
+    const [open, setOpen] = React.useState(false)
+
+    React.useEffect(() => {
+        if (open) {
+            // Re-initialize carousel when dialog opens to fix button state
+            setTimeout(() => api?.reInit(), 50); 
+        }
+    }, [open, api])
+
     if (!images || images.length === 0) {
         return (
              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
@@ -19,30 +32,34 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
     const hasGridDisplay = images.length >= 5;
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <div className="relative">
-                {/* --- Grid Layout (Desktop) --- */}
+                {/* --- Airbnb-style Grid Layout for Desktop (>= 5 images) --- */}
                 {hasGridDisplay && (
-                    <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 md:gap-2 aspect-video rounded-lg overflow-hidden">
+                    <div className="hidden md:flex gap-2 rounded-lg overflow-hidden aspect-[16/9]">
+                        {/* Main Image (Left) */}
                         <DialogTrigger asChild>
-                            <div className="col-span-2 row-span-2 relative cursor-pointer group">
-                                <Image src={mainImage} alt={title} fill priority className="object-cover" sizes="(min-width: 768px) 50vw, 100vw"/>
+                            <div className="w-1/2 relative cursor-pointer group">
+                                <Image src={mainImage} alt={title} fill priority className="object-cover" sizes="(min-width: 768px) 50vw"/>
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-all"></div>
                             </div>
                         </DialogTrigger>
-                        {gridImages.map((src, index) => (
-                            <DialogTrigger asChild key={index}>
-                                <div className="relative cursor-pointer group">
-                                    <Image src={src} alt={`${title} thumbnail ${index + 2}`} fill className="object-cover" sizes="(min-width: 768px) 25vw, 50vw"/>
-                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-all"></div>
-                                </div>
-                            </DialogTrigger>
-                        ))}
+                        {/* 4 Small Images (Right) */}
+                        <div className="w-1/2 grid grid-cols-2 gap-2">
+                             {gridImages.map((src, index) => (
+                                <DialogTrigger asChild key={index}>
+                                    <div className="relative cursor-pointer group">
+                                        <Image src={src} alt={`${title} thumbnail ${index + 2}`} fill className="object-cover" sizes="(min-width: 768px) 25vw"/>
+                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-all"></div>
+                                    </div>
+                                </DialogTrigger>
+                            ))}
+                        </div>
                     </div>
                 )}
                 
-                {/* --- Single Image Layout (Mobile or < 5 images) --- */}
-                <div className={hasGridDisplay ? "md:hidden" : ""}>
+                {/* --- Single Image Layout for Mobile, or if < 5 images --- */}
+                <div className={cn(hasGridDisplay && "md:hidden")}>
                     <DialogTrigger asChild>
                         <div className="aspect-video relative cursor-pointer group rounded-lg overflow-hidden">
                             <Image src={mainImage} alt={title} fill priority className="object-cover" sizes="100vw" />
@@ -60,7 +77,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             </div>
             
             <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
-                 <Carousel className="w-full max-w-5xl" opts={{ loop: true }}>
+                 <Carousel setApi={setApi} className="w-full max-w-5xl" opts={{ loop: true }}>
                     <CarouselContent>
                         {images.map((src, index) => (
                             <CarouselItem key={index}>
@@ -70,8 +87,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                             </CarouselItem>
                         ))}
                     </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
+                    <CarouselPrevious className="left-4 text-white border-white hover:bg-white/20 hover:text-white" />
+                    <CarouselNext className="right-4 text-white border-white hover:bg-white/20 hover:text-white" />
                 </Carousel>
             </DialogContent>
         </Dialog>
