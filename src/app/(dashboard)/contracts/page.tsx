@@ -1,20 +1,44 @@
 'use client';
 
 import { useMemo } from "react";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { Contract, Property, Contact } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Send, MessageSquare } from "lucide-react";
+import { Download, Send, MessageSquare, MoreHorizontal } from "lucide-react";
 import { AddContractDialog } from "@/components/contracts/AddContractDialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuPortal,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+function getStatusBadge(status: string) {
+    switch (status) {
+        case 'Trimis': return 'warning';
+        case 'Semnat': return 'success';
+        case 'Draft': return 'secondary';
+        case 'Anulat': return 'destructive';
+        default: return 'outline';
+    }
+}
 
 export default function ContractsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
 
     const contractsQuery = useMemoFirebase(() => {
         if (!user) return null;
@@ -35,6 +59,16 @@ export default function ContractsPage() {
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
     const isLoading = areContractsLoading || arePropertiesLoading || areContactsLoading;
+
+    const handleStatusChange = (contract: Contract, newStatus: Contract['status']) => {
+        if (!user) return;
+        const contractRef = doc(firestore, 'users', user.uid, 'contracts', contract.id);
+        updateDocumentNonBlocking(contractRef, { status: newStatus });
+        toast({
+            title: "Status actualizat!",
+            description: `Statusul contractului pentru ${contract.contactName} a fost schimbat în "${newStatus}".`,
+        });
+    };
 
     return (
         <div className="space-y-6">
@@ -77,17 +111,45 @@ export default function ContractsPage() {
                                     <TableCell>{contract.contactName}</TableCell>
                                     <TableCell className="max-w-xs truncate">{contract.propertyTitle}</TableCell>
                                     <TableCell>{new Date(contract.date).toLocaleDateString('ro-RO')}</TableCell>
-                                    <TableCell><Badge variant="outline">{contract.status}</Badge></TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        <Button variant="outline" size="icon" title="Trimite pe Email">
-                                            <Send className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="outline" size="icon" title="Trimite pe WhatsApp">
-                                            <MessageSquare className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="outline" size="icon" title="Descarcă PDF">
-                                            <Download className="h-4 w-4" />
-                                        </Button>
+                                    <TableCell><Badge variant={getStatusBadge(contract.status) as any}>{contract.status}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Acțiuni</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger>Schimbă statusul</DropdownMenuSubTrigger>
+                                                    <DropdownMenuPortal>
+                                                        <DropdownMenuSubContent>
+                                                            {['Draft', 'Trimis', 'Semnat', 'Anulat'].map((status) => (
+                                                                <DropdownMenuItem
+                                                                    key={status}
+                                                                    onSelect={() => handleStatusChange(contract, status as Contract['status'])}
+                                                                    disabled={contract.status === status}
+                                                                >
+                                                                    {status}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuPortal>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem disabled>
+                                                    <Send className="mr-2 h-4 w-4" /> Trimite pe Email
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>
+                                                    <MessageSquare className="mr-2 h-4 w-4" /> Trimite pe WhatsApp
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>
+                                                    <Download className="mr-2 h-4 w-4" /> Descarcă PDF
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             )) : (
@@ -104,5 +166,3 @@ export default function ContractsPage() {
         </div>
     );
 }
-
-    
