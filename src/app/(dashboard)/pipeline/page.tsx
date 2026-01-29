@@ -1,3 +1,4 @@
+'use client';
 
 import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
 

@@ -192,32 +192,22 @@ export function PipelineBoard() {
     const activeContainer = active.data.current?.sortable.containerId as Contact['status'];
     const overContainer = over.data.current?.sortable.containerId as Contact['status'] || over.id as Contact['status'];
 
-    setDeals((prev) => {
-        if (activeContainer && overContainer && activeContainer !== overContainer) {
-            // Dropped in a new column
-            if (user) {
-                const dealRef = doc(firestore, 'users', user.uid, 'contacts', String(active.id));
-                updateDocumentNonBlocking(dealRef, { status: overContainer });
-            }
+    if (activeContainer && overContainer && activeContainer !== overContainer) {
+        // Dropped in a new column
+        if (user) {
+            const dealRef = doc(firestore, 'users', user.uid, 'contacts', String(active.id));
+            updateDocumentNonBlocking(dealRef, { status: overContainer });
+        }
 
-            // Optimistic UI Update
+        // Optimistic UI Update
+        setDeals((prev) => {
             return prev.map(item => 
                 item.id === active.id 
                 ? { ...item, status: overContainer } 
                 : item
             );
-        }
-
-        // Reordering within the same column
-        const oldIndex = prev.findIndex(d => d.id === active.id);
-        const newIndex = prev.findIndex(d => d.id === over.id);
-
-        if (oldIndex !== -1 && newIndex !== -1) {
-             return arrayMove(prev, oldIndex, newIndex);
-        }
-
-        return prev;
-    });
+        });
+    }
   }
 
   if (isLoading && deals.length === 0) {
