@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from 'react';
@@ -32,9 +31,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
+import { ScrollArea } from '../ui/scroll-area';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -49,7 +48,7 @@ const leadSchema = z.object({
 });
 
 const locations = {
-    'Bucuresti-Ilfov': ['1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Berceni', 'Brancoveanu', 'Bucurestii Noi', 'Centrul Civic', 'Centrul Istoric', 'Colentina', 'Cotroceni', 'Damaroaia', 'Dealul Spirii', 'Domenii', 'Dorobanti', 'Dristor', 'Drumul Taberei', 'Dudesti', 'Ferentari', 'Floreasca', 'Gara de Nord', 'Ghencea', 'Giulesti', 'Giurgiului', 'Grivita', 'Herastrau', 'Iancului', 'Militari', 'Mosilor', 'Obor', 'Oltenitei', 'Pajura', 'Panduri', 'Pantelimon (sector)', 'Piata Muncii', 'Piata Romana', 'Piata Sudului', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Rahova', 'Regie', 'Salajan', 'Stefan cel Mare', 'Tei', 'Tineretului', 'Titan', 'Unirii', 'Vatra Luminoasa', 'Vacaresti', 'Vitan', 'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Chitila', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari'],
+    'Bucuresti-Ilfov': ['1 Mai', 'Aviatorilor', 'Aviatiei', 'Baneasa', 'Berceni', 'Brancoveanu', 'Bucurestii Noi', 'Centrul Civic', 'Centrul Istoric', 'Colentina', 'Cotroceni', 'Damaroaia', 'Dealul Spirii', 'Domenii', 'Dorobanti', 'Dristor', 'Drumul Taberei', 'Dudesti', 'Ferentari', 'Floreasca', 'Gara de Nord', 'Ghencea', 'Giulesti', 'Giurgiului', 'Grivita', 'Herastrau', 'Iancului', 'Militari', 'Mosilor', 'Obor', 'Oltenitei', 'Pajura', 'Panduri', 'Pantelimon (sector)', 'Piata Muncii', 'Piata Romana', 'Piata Sudului', 'Piata Victoriei', 'Pipera', 'Primaverii', 'Rahova', 'Regie', 'Salajan', 'Stefan cel Mare', 'Tei', 'Tineretului', 'Titan', 'Unirii', 'Vatra Luminoasa', 'Vacaresti', 'Vitan', 'Afumati', 'Balotesti', 'Bragadiru', 'Buftea', 'Cernica', 'Chiajna', 'Ciorogarla', 'Clinceni', 'Corbeanca', 'Cornetu', 'Darasti', 'Dascalu', 'Dobroesti', 'Domnesti', 'Dragomiresti-Vale', 'Glina', 'Gradistea', 'Gruiu', 'Jilava', 'Magurele', 'Moara Vlasiei', 'Mogosoaia', 'Nuci', 'Otopeni', 'Pantelimon (oras)', 'Petrachioaia', 'Popesti-Leordeni', 'Snagov', 'Stefanestii de Jos', 'Tunari', 'Vidra', 'Voluntari', 'Chitila'],
     'Cluj-Napoca': ['Andrei Muresanu', 'Borhanci', 'Buna Ziua', 'Centru', 'Dambul Rotund', 'Gheorgheni', 'Grigorescu', 'Gruia', 'Iris', 'Intre Lacuri', 'Manastur', 'Marasti', 'Someseni', 'Sopor', 'Zorilor', 'Europa', 'Faget', 'Floresti', 'Apahida', 'Baciu', 'Chinteni', 'Feleacu', 'Gilau', 'Dezmir'],
     'Timisoara': ['Aradului', 'Blascovici', 'Braytim', 'Bucovina', 'Calea Girocului', 'Calea Lipovei', 'Calea Sagului', 'Cetate', 'Complex Studentesc', 'Dacia', 'Elisabetin', 'Fabric', 'Freidorf', 'Fratelia', 'Ghiroda', 'Giroc', 'Iosefin', 'Kuncz', 'Mehala', 'Modern', 'Olimpia-Stadion', 'Plopi', 'Ronat', 'Soarelui', 'Tipografilor', 'Torontalului', 'Dumbravita', 'Chisoda', 'Mosnita Noua', 'Sacalaz', 'Sanmihaiu Roman', 'Urseni'],
     'Iasi': ['Alexandru cel Bun', 'Aviatiei', 'Baza 3', 'Bucium', 'Bularga', 'Canta', 'Centru', 'Centru Civic', 'Copou', 'CUG', 'Dacia', 'Galata', 'Gara', 'Metalurgie', 'Mircea cel Batran', 'Moara de Vant', 'Nicolina', 'Pacurari', 'Podu Ros', 'Sararie', 'Soseaua Nationala', 'Tatarasi', 'Tudor Vladimirescu', 'Valea Adanca', 'Valea Lupului', 'Zorilor', 'Barnova', 'Miroslava', 'Rediu', 'Holboca', 'Tomesti', 'Ciurea'],
@@ -239,17 +238,15 @@ export function AddLeadDialog() {
                                                             className="peer sr-only"
                                                             checked={field.value?.includes(zone)}
                                                             onCheckedChange={(checked) => {
-                                                              const isChecked = checked === true;
-                                                              const currentZones = field.value || [];
-                                                              if (isChecked) {
-                                                                field.onChange([...currentZones, zone]);
-                                                              } else {
-                                                                field.onChange(
-                                                                  currentZones.filter(
-                                                                    (value) => value !== zone
-                                                                  )
-                                                                );
-                                                              }
+                                                                if (checked) {
+                                                                    field.onChange([...(field.value || []), zone]);
+                                                                } else {
+                                                                    field.onChange(
+                                                                        (field.value || []).filter(
+                                                                            (value) => value !== zone
+                                                                        )
+                                                                    );
+                                                                }
                                                             }}
                                                         />
                                                         <Label
