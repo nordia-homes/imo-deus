@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Grid } from 'lucide-react';
 
@@ -43,7 +43,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         <Dialog open={open} onOpenChange={setOpen}>
             <div className="relative">
                 {/* --- Layout Container --- */}
-                <div className="rounded-lg overflow-hidden">
+                <div className="rounded-lg overflow-hidden md:h-[550px]">
                     {/* --- Mobile View (Single Image) --- */}
                      <div 
                         className="md:hidden aspect-video relative cursor-pointer group"
@@ -54,21 +54,21 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                     </div>
 
                     {/* --- Desktop Grid Layout (Airbnb Style) --- */}
-                    <div className="hidden md:grid md:grid-cols-2 md:gap-2 h-[550px]">
+                    <div className="hidden md:grid md:grid-cols-2 md:gap-2 h-full">
                         {/* Left: Main Image */}
                         <div 
-                            className="relative cursor-pointer group"
+                            className="relative cursor-pointer group h-full"
                             onClick={() => openDialog(0)}
                         >
                             <Image src={mainImage} alt={title} fill priority className="object-cover" sizes="(min-width: 768px) 50vw, 100vw"/>
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
                         </div>
                         {/* Right: 4-image grid */}
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 h-full">
                             {gridImages.map((src, index) => (
                                 <div 
                                     key={index} 
-                                    className="relative cursor-pointer group"
+                                    className="relative cursor-pointer group h-full"
                                     onClick={() => openDialog(index + 1)}
                                 >
                                     <Image src={src} alt={`${title} thumbnail ${index + 2}`} fill className="object-cover" sizes="25vw"/>
@@ -92,6 +92,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             
             {/* Modal Content */}
             <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
+                 <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
+                 <DialogDescription className="sr-only">A carousel of images for the property: {title}. Use the left and right arrows to navigate.</DialogDescription>
                  <Carousel setApi={setApi} className="w-full max-w-5xl" opts={{ loop: true, startIndex: activeIndex }}>
                     <CarouselContent>
                         {images.map((src, index) => (
