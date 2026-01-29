@@ -1,11 +1,7 @@
 "use client";
 import type { LeadSourceData } from '@/lib/types';
-import { Pie, PieChart, Cell, Tooltip } from 'recharts';
 import {
   ChartContainer,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from '@/components/ui/chart';
 
 export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
@@ -20,26 +16,9 @@ export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[250px]"
+      className="mx-auto aspect-square max-h-[250px] flex items-center justify-center"
     >
-      <PieChart>
-        <Tooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-        <Pie
-          data={data}
-          dataKey="count"
-          nameKey="source"
-          innerRadius={60}
-          strokeWidth={5}
-        >
-            {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-        </Pie>
-        <ChartLegend
-            content={<ChartLegendContent nameKey="source" />}
-            className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
-        />
-      </PieChart>
+      <p className="text-sm text-muted-foreground p-4 text-center">Graficul este temporar indisponibil.</p>
     </ChartContainer>
   );
 }
