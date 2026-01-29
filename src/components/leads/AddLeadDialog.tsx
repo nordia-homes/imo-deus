@@ -239,11 +239,13 @@ export function AddLeadDialog() {
                                                             className="peer sr-only"
                                                             checked={field.value?.includes(zone)}
                                                             onCheckedChange={(checked) => {
-                                                              if (checked) {
-                                                                field.onChange([...(field.value || []), zone]);
+                                                              const isChecked = checked === true;
+                                                              const currentZones = field.value || [];
+                                                              if (isChecked) {
+                                                                field.onChange([...currentZones, zone]);
                                                               } else {
                                                                 field.onChange(
-                                                                  (field.value || []).filter(
+                                                                  currentZones.filter(
                                                                     (value) => value !== zone
                                                                   )
                                                                 );
