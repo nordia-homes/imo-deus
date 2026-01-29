@@ -45,7 +45,6 @@ export default function DashboardPage() {
         return query(
             collection(firestore, 'users', user.uid, 'tasks'), 
             where('status', '==', 'open'), 
-            orderBy('dueDate', 'asc'), 
             limit(3)
         );
     }, [firestore, user]);
