@@ -1,62 +1,386 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-import { ContactDetailsClient } from "@/components/contacts/contact-details-client";
-import { properties } from "@/lib/data"; // Using placeholder properties
 import type { Contact, Property } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { properties } from "@/lib/data"; // Using placeholder properties
+import { leadScoring } from '@/ai/flows/lead-scoring';
+import { propertyMatcher } from '@/ai/flows/property-matcher';
 
+// UI Components
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Image from 'next/image';
+import Link from 'next/link';
+
+// Icons
+import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2 } from 'lucide-react';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import type { Task as TaskTypeProp } from '@/app/(dashboard)/tasks/page';
+
+
+// Schemas for AI forms
+const leadScoreSchema = z.object({
+  engagementLevel: z.string().min(1, 'Engagement level is required.'),
+  potentialValue: z.string().min(1, 'Potential value is required.'),
+});
+
+const propertyMatchSchema = z.object({
+  desiredPriceRangeMin: z.coerce.number(),
+  desiredPriceRangeMax: z.coerce.number(),
+  desiredBedrooms: z.coerce.number(),
+  desiredBathrooms: z.coerce.number(),
+  desiredSquareFootageMin: z.coerce.number(),
+  desiredSquareFootageMax: z.coerce.number(),
+  desiredFeatures: z.string(),
+  locationPreferences: z.string(),
+});
+
+type MatchedProperty = Property & { matchScore: number; reasoning: string };
+// A simplified task type for this page
+type Task = {
+  id: string;
+  description: string;
+  dueDate: string; // Stored as string
+  status: 'open' | 'completed';
+  contactId: string;
+};
+
+// Main Component
 export default function LeadDetailPage() {
     const params = useParams();
     const leadId = params.leadId as string;
     
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
 
+    // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
         if (!user || !leadId) return null;
         return doc(firestore, 'users', user.uid, 'contacts', leadId);
     }, [firestore, user, leadId]);
 
-    const { data: contact, isLoading, error } = useDoc<Contact>(contactDocRef);
+    const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
-    if (isLoading) {
+    const tasksQuery = useMemoFirebase(() => {
+        if (!user || !leadId) return null;
+        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
+        return query(tasksCollection, where('contactId', '==', leadId));
+    }, [firestore, user, leadId]);
+
+    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
+
+
+    // --- STATE MANAGEMENT ---
+    const [notes, setNotes] = useState('');
+    useEffect(() => {
+        if (contact) {
+            setNotes(contact.notes || '');
+        }
+    }, [contact]);
+    
+    // AI Forms and Results State
+    const [isScoring, setIsScoring] = useState(false);
+    const [scoreResult, setScoreResult] = useState<{ score: number, reason: string } | null>(null);
+    const [isMatching, setIsMatching] = useState(false);
+    const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
+
+    const leadScoreForm = useForm<z.infer<typeof leadScoreSchema>>({
+        resolver: zodResolver(leadScoreSchema),
+        defaultValues: { engagementLevel: 'medium', potentialValue: 'medium' },
+      });
+    
+      const propertyMatchForm = useForm<z.infer<typeof propertyMatchSchema>>({
+        resolver: zodResolver(propertyMatchSchema),
+        defaultValues: contact?.preferences || {
+          desiredPriceRangeMin: 100000,
+          desiredPriceRangeMax: 500000,
+          desiredBedrooms: 3,
+          desiredBathrooms: 2,
+          desiredSquareFootageMin: 70,
+          desiredSquareFootageMax: 120,
+          desiredFeatures: 'modern kitchen, backyard',
+          locationPreferences: 'suburbs'
+        },
+    });
+
+     // Reset property match form when contact data loads
+    useEffect(() => {
+        if (contact?.preferences) {
+            propertyMatchForm.reset(contact.preferences);
+        }
+    }, [contact, propertyMatchForm]);
+
+
+    // --- HANDLERS ---
+    const handleSaveNotes = () => {
+        if (!contactDocRef) return;
+        updateDocumentNonBlocking(contactDocRef, { notes: notes });
+        toast({
+            title: "Notițe salvate!",
+            description: "Modificările au fost salvate în baza de date.",
+        });
+    };
+
+    const handleAddTask = (newTask: Omit<TaskTypeProp, 'id' | 'completed'>) => {
+        if (!user) return;
+        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
+        
+        const taskToAdd = {
+            description: newTask.title,
+            dueDate: newTask.dueDate,
+            contactId: leadId, // Associate with the current lead
+            contactName: contact?.name,
+            status: 'open',
+            startTime: newTask.startTime || '',
+            duration: newTask.duration || 0,
+        };
+
+        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        toast({
+            title: "Task Adăugat!",
+            description: `Task-ul "${newTask.title}" a fost adăugat pentru ${contact?.name}.`
+        });
+    };
+
+    async function onLeadScoreSubmit(values: z.infer<typeof leadScoreSchema>) {
+        if(!contact) return;
+        setIsScoring(true);
+        setScoreResult(null);
+        try {
+          const result = await leadScoring({
+            ...values,
+            leadDetails: `Name: ${contact.name}, Status: ${contact.status}, Notes: ${contact.notes}`,
+          });
+          setScoreResult(result);
+          toast({ title: "Scor AI generat!", description: `Lead-ul a primit scorul ${result.score}.` });
+        } catch (error) {
+          console.error('Lead scoring failed', error);
+          toast({ variant: "destructive", title: "A apărut o eroare", description: "Nu am putut genera scorul AI." });
+        } finally {
+          setIsScoring(false);
+        }
+    }
+    
+      async function onPropertyMatchSubmit(values: z.infer<typeof propertyMatchSchema>) {
+        setIsMatching(true);
+        setMatchedProperties([]);
+        const matcherProperties: (Property & { image: string })[] = properties.map(p => ({
+            ...p,
+            image: p.images[0]?.url || '',
+            imageUrl: p.images[0]?.url || '',
+            imageHint: '',
+        }));
+
+        try {
+            const result = await propertyMatcher({
+                clientPreferences: values,
+                properties: matcherProperties
+            });
+            setMatchedProperties(result.matchedProperties as MatchedProperty[]);
+        } catch (error) {
+            console.error('Property matching failed:', error);
+            toast({ variant: "destructive", title: "A apărut o eroare", description: "Nu am putut găsi proprietăți potrivite."});
+        } finally {
+            setIsMatching(false);
+        }
+    }
+
+    // --- RENDER LOGIC ---
+    if (isContactLoading) {
         return (
              <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Skeleton className="h-24 w-24 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-48" />
-                        <Skeleton className="h-6 w-24" />
-                    </div>
+                    <div className="space-y-2"> <Skeleton className="h-8 w-48" /> <Skeleton className="h-6 w-24" /> </div>
                 </div>
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-96 w-full" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <Skeleton className="lg:col-span-2 h-96" />
+                    <Skeleton className="lg:col-span-1 h-96" />
+                </div>
             </div>
         );
     }
 
-    if (error) {
-        console.error(error);
+    if (contactError) {
         return <div className="text-center text-red-500">A apărut o eroare la încărcarea lead-ului. Este posibil să nu aveți permisiunea de a-l vizualiza.</div>;
     }
 
     if (!contact) {
         return <div className="text-center text-muted-foreground">Lead-ul nu a fost găsit.</div>;
     }
-    
-    // Convert property format for the property matcher
-    const matcherProperties: (Property & { image: string })[] = properties.map(p => ({
-        ...p,
-        image: p.images[0]?.url || '',
-        imageUrl: p.images[0]?.url || '',
-        imageHint: '',
-    }));
 
     return (
-        <ContactDetailsClient contact={contact} properties={matcherProperties} />
+        <div className="space-y-6">
+            {/* --- HEADER --- */}
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-24 w-24 text-3xl">
+                        <AvatarFallback>{contact.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <h1 className="text-3xl font-bold">{contact.name}</h1>
+                        <Badge variant="outline" className="mt-1">{contact.status}</Badge>
+                    </div>
+                </div>
+                <AddTaskDialog onAddTask={handleAddTask} contacts={[{id: contact.id, name: contact.name}]} />
+            </header>
+
+            {/* --- DASHBOARD GRID --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* --- LEFT COLUMN --- */}
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Potrivire Proprietăți (AI)</CardTitle>
+                            <CardDescription>Găsește proprietățile ideale pe baza preferințelor clientului.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <Form {...propertyMatchForm}>
+                                <form onSubmit={propertyMatchForm.handleSubmit(onPropertyMatchSubmit)} className="space-y-4">
+                                     <div className="flex gap-4">
+                                        <FormField control={propertyMatchForm.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                        <FormField control={propertyMatchForm.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                    </div>
+                                    <FormField control={propertyMatchForm.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )}/>
+                                    <FormField control={propertyMatchForm.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2}/></FormControl></FormItem> )}/>
+                                    <Button type="submit" className="w-full" disabled={isMatching}>
+                                        {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                        Găsește Potriviri
+                                    </Button>
+                                </form>
+                            </Form>
+                            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                               {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Caut cele mai bune potriviri...</p>}
+                               {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground text-center pt-10">Nicio proprietate găsită. Rulează căutarea pentru a vedea rezultatele.</p>}
+                                {matchedProperties.map(prop => (
+                                    <Card key={prop.id} className="p-2">
+                                        <div className="flex gap-4 items-center">
+                                            <Image src={prop.image || 'https://placehold.co/400x300'} alt={prop.address} width={120} height={80} className="rounded-md object-cover aspect-video" data-ai-hint={prop.imageHint} />
+                                            <div className="flex-1">
+                                                <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
+                                                <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
+                                                 <Card className="mt-2 bg-accent/50 text-xs">
+                                                     <CardHeader className="p-2"><p className="font-semibold text-primary">Scor: {prop.matchScore}/100</p></CardHeader>
+                                                     <CardContent className="p-2 pt-0"><p>{prop.reasoning}</p></CardContent>
+                                                 </Card>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Task-uri Asociate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {areTasksLoading ? ( <p>Se încarcă task-urile...</p> ) :
+                             tasks && tasks.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {tasks.map(task => (
+                                        <li key={task.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle className="h-5 w-5 text-muted-foreground" />
+                                                <div>
+                                                    <p className="font-medium">{task.description}</p>
+                                                    <p className="text-sm text-muted-foreground">Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-muted-foreground text-center py-4">Niciun task asociat cu acest lead.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* --- RIGHT COLUMN --- */}
+                <div className="lg:col-span-1 space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Informații Contact</CardTitle></CardHeader>
+                        <CardContent className="space-y-4 text-sm">
+                             <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{contact.phone || 'N/A'}</span></div>
+                             <div className="flex items-center gap-3"><Mail className="h-4 w-4 text-muted-foreground" /><span>{contact.email || 'N/A'}</span></div>
+                             <div className="flex items-center gap-3"><Info className="h-4 w-4 text-muted-foreground" /><span>Sursa: {contact.source || 'N/A'}</span></div>
+                             <div className="flex items-center gap-3"><Euro className="h-4 w-4 text-muted-foreground" /><span>Buget: €{contact.budget?.toLocaleString() || 'N/A'}</span></div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Preferințe Locație</CardTitle></CardHeader>
+                        <CardContent>
+                           {contact.city ? ( <>
+                                <div className="flex items-center gap-2 font-semibold mb-3"><MapPin className="h-5 w-5 text-primary" /><span>{contact.city}</span></div>
+                                {contact.zones && contact.zones.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {contact.zones.map(zone => (<Badge key={zone} variant="secondary">{zone}</Badge>))}
+                                    </div>
+                                ) : (<p className="text-muted-foreground mt-2">Nicio zonă specifică.</p>)}
+                            </> ) : (<p className="text-muted-foreground">Nicio preferință de locație.</p>)}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Notițe</CardTitle></CardHeader>
+                        <CardContent>
+                            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={5} placeholder="Adaugă notițe aici..."/>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveNotes} className="w-full">Salvează Notițe</Button>
+                        </CardFooter>
+                    </Card>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Scor AI pentru Lead</CardTitle>
+                        </CardHeader>
+                        <Form {...leadScoreForm}>
+                            <form onSubmit={leadScoreForm.handleSubmit(onLeadScoreSubmit)}>
+                            <CardContent className="space-y-4">
+                                <FormField control={leadScoreForm.control} name="engagementLevel" render={({ field }) => (<FormItem><FormLabel>Nivel Angajament</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="high">Ridicat</SelectItem><SelectItem value="medium">Mediu</SelectItem><SelectItem value="low">Scăzut</SelectItem></SelectContent></Select></FormItem>)}/>
+                                <FormField control={leadScoreForm.control} name="potentialValue" render={({ field }) => (<FormItem><FormLabel>Valoare Potențială</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="high">Ridicat</SelectItem><SelectItem value="medium">Mediu</SelectItem><SelectItem value="low">Scăzut</SelectItem></SelectContent></Select></FormItem>)}/>
+                            </CardContent>
+                            <CardFooter>
+                                <Button type="submit" disabled={isScoring} className="w-full">
+                                {isScoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Generează Scor
+                                </Button>
+                            </CardFooter>
+                            </form>
+                        </Form>
+                        {scoreResult && (
+                            <CardContent>
+                                <Card className="bg-blue-50 border-blue-200"><CardHeader><CardTitle className="flex items-center gap-2 text-blue-800"><span>Scor: {scoreResult.score}/100</span></CardTitle></CardHeader><CardContent><p className="text-sm text-blue-700">{scoreResult.reason}</p></CardContent></Card>
+                            </CardContent>
+                        )}
+                    </Card>
+                </div>
+            </div>
+        </div>
     );
 }
