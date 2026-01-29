@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -18,6 +18,8 @@ import { PropertyContractsTab } from "@/components/properties/PropertyContractsT
 import { PropertyPromotionsTab } from "@/components/properties/PropertyPromotionsTab";
 import { PropertyPresentationsTab } from "@/components/properties/PropertyPresentationsTab";
 import AiInsightCard from "@/components/ai/AiInsightCard";
+import { generatePropertyInsights, type PropertyInsightsOutput } from '@/ai/flows/property-insights-generator';
+import { useToast } from '@/hooks/use-toast';
 
 import {
     BedDouble,
@@ -52,9 +54,13 @@ const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: str
 export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
+    const { toast } = useToast();
 
     const { user } = useUser();
     const firestore = useFirestore();
+
+    const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!user || !propertyId) return null;
@@ -62,6 +68,36 @@ export default function PropertyDetailPage() {
     }, [firestore, user, propertyId]);
 
     const { data: property, isLoading, error } = useDoc<Property>(propertyDocRef);
+
+    const handleGenerateInsights = async () => {
+        if (!property) return;
+        setIsGenerating(true);
+        try {
+            const result = await generatePropertyInsights({
+                propertyType: property.propertyType,
+                location: property.location,
+                price: property.price,
+                bedrooms: property.bedrooms,
+                squareFootage: property.squareFootage,
+                constructionYear: property.constructionYear,
+                keyFeatures: property.keyFeatures || '',
+            });
+            setInsights(result);
+            toast({
+                title: "Perspective AI generate!",
+                description: "Analiza de piață pentru proprietate este gata.",
+            });
+        } catch (error) {
+            console.error("Failed to generate AI insights:", error);
+            toast({
+                variant: "destructive",
+                title: "A apărut o eroare",
+                description: "Nu am putut genera perspectivele AI. Încercați din nou.",
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -90,13 +126,6 @@ export default function PropertyDetailPage() {
     }
     
     const allImages = property.images?.map(img => img.url) || ['https://placehold.co/1200x800'];
-
-    // Placeholder for AI Insights
-    const aiInsights = {
-        marketScore: 85,
-        pricingFeedback: 'Prețul este cu 5% peste media pieței pentru proprietăți similare în această zonă, dar se justifică prin finisajele de lux.',
-        buyerProfile: 'Ideal pentru cupluri tinere sau profesioniști din domeniul IT, care caută o locuință modernă, conectată la oraș.'
-    };
 
     return (
         <div className="space-y-6">
@@ -202,7 +231,11 @@ export default function PropertyDetailPage() {
                         </CardContent>
                     </Card>
                     
-                    <AiInsightCard insights={aiInsights} />
+                    <AiInsightCard 
+                        insights={insights}
+                        isGenerating={isGenerating}
+                        onGenerate={handleGenerateInsights}
+                    />
                 </div>
             </div>
         </div>
