@@ -43,8 +43,8 @@ export default function DashboardPage() {
     const tasksQuery = useMemoFirebase(() => {
         if (!user) return null;
         return query(
-            collection(firestore, 'users', user.uid, 'tasks'), 
-            where('status', '==', 'open'), 
+            collection(firestore, 'users', user.uid, 'tasks'),
+            where('status', '==', 'open'),
             limit(3)
         );
     }, [firestore, user]);
@@ -57,6 +57,43 @@ export default function DashboardPage() {
     const activeProperties = useMemo(() => properties?.length ?? 0, [properties]);
     
     const isLoading = areContactsLoading || areWonLeadsLoading || arePropertiesLoading;
+
+    const salesAnalyticsData = useMemo(() => {
+        if (!wonLeads) return [];
+
+        const last30Days = new Map<string, number>();
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const key = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+            last30Days.set(key, 0);
+        }
+
+        wonLeads.forEach(lead => {
+            if (lead.createdAt) {
+                const leadDate = new Date(lead.createdAt);
+                const key = leadDate.toLocaleDateString('en-CA');
+                if (last30Days.has(key)) {
+                    last30Days.set(key, (last30Days.get(key) || 0) + (lead.budget || 0));
+                }
+            }
+        });
+
+        const sortedData = Array.from(last30Days.entries())
+            .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+            .map(([dateStr, sales]) => {
+                const date = new Date(dateStr);
+                return {
+                    name: date.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }),
+                    'Actual': sales,
+                    // Keep AI projected as a mock for now
+                    'AI Projected': sales > 0 ? sales * (1 + (Math.random() - 0.4) * 0.3) : (Math.random() * 5000), 
+                };
+            });
+        
+        return sortedData;
+    }, [wonLeads]);
 
     // --- RENDER ---
 
@@ -80,7 +117,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                    <SalesAnalyticsChart />
+                    <SalesAnalyticsChart data={salesAnalyticsData} isLoading={isLoading} />
                 </div>
                 <div className="space-y-6">
                     <PriorityTasks tasks={tasks} isLoading={areTasksLoading} />
