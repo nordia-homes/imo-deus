@@ -158,9 +158,9 @@ export default function PropertyDetailPage() {
                      <Tabs defaultValue="details">
                         <TabsList className="mb-4">
                             <TabsTrigger value="details">Detalii Proprietate</TabsTrigger>
+                            <TabsTrigger value="promotions">Promovare</TabsTrigger>
                             <TabsTrigger value="contracts">Contracte</TabsTrigger>
                             <TabsTrigger value="presentations">Prezentări</TabsTrigger>
-                            <TabsTrigger value="promotions">Promovare</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details">
                            <div className="space-y-6">
@@ -219,9 +219,9 @@ export default function PropertyDetailPage() {
                              </Card>
                            </div>
                         </TabsContent>
+                         <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
                          <TabsContent value="contracts"><PropertyContractsTab propertyId={property.id} /></TabsContent>
                          <TabsContent value="presentations"><PropertyPresentationsTab propertyId={property.id} /></TabsContent>
-                         <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
                      </Tabs>
 
                 </div>
