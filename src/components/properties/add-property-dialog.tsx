@@ -173,17 +173,34 @@ export function AddPropertyDialog() {
       'properties'
     );
 
+    const randomSeed = Math.floor(Math.random() * 1000);
     const newPropertyData = {
       ...values,
       address: values.location, // Assuming location is the full address for now
       // Image upload to storage should be handled here. For now, using placeholders.
       images: [
         {
-          url: 'https://picsum.photos/seed/prop1/1200/800',
-          alt: 'Placeholder Image',
+          url: `https://picsum.photos/seed/${randomSeed}/1200/800`,
+          alt: 'Placeholder Image 1',
+        },
+        {
+          url: `https://picsum.photos/seed/${randomSeed + 1}/1200/800`,
+          alt: 'Placeholder Image 2',
+        },
+        {
+          url: `https://picsum.photos/seed/${randomSeed + 2}/1200/800`,
+          alt: 'Placeholder Image 3',
+        },
+        {
+          url: `https://picsum.photos/seed/${randomSeed + 3}/1200/800`,
+          alt: 'Placeholder Image 4',
+        },
+        {
+          url: `https://picsum.photos/seed/${randomSeed + 4}/1200/800`,
+          alt: 'Placeholder Image 5',
         },
       ],
-      imageUrl: 'https://picsum.photos/seed/prop1/800/600',
+      imageUrl: `https://picsum.photos/seed/${randomSeed}/800/600`,
       imageHint: values.propertyType?.toLowerCase() || 'property',
       tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
       createdAt: new Date().toISOString(),
@@ -195,11 +212,7 @@ export function AddPropertyDialog() {
       amenities: values.keyFeatures.split(',').map((f) => f.trim()),
     };
     
-    // The 'images' field from the form contains File objects which are not serializable for Firestore.
-    // We have already created a placeholder `images` array above, so we can delete the form one.
-    delete (newPropertyData as any).images;
-
-
+    // The form `images` are overwritten by the hardcoded ones above, so no need to delete.
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
 
     toast({
