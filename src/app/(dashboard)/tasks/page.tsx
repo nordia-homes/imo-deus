@@ -1,33 +1,39 @@
-import { tasks } from '@/lib/data';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { PlusCircle } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PlusCircle } from "lucide-react";
 import Link from 'next/link';
 
+
 export default function TasksPage() {
-    const today = new Date().toISOString().split('T')[0];
-    const upcomingTasks = tasks.filter(task => !task.completed && task.dueDate >= today);
+    // Placeholder data
+    const tasks = [
+        { id: 't1', title: 'Follow up cu Alex Popescu', dueDate: '2024-06-05', completed: false, contactId: '1', contactName: 'Alex Popescu' },
+        { id: 't2', title: 'Programează vizionare pentru Ana Ionescu', dueDate: '2024-06-02', completed: false, contactId: '2', contactName: 'Ana Ionescu' },
+        { id: 't3', title: 'Pregătește acte vânzare proprietate #P345', dueDate: '2024-05-30', completed: true },
+    ];
+    const upcomingTasks = tasks.filter(task => !task.completed);
     const completedTasks = tasks.filter(task => task.completed);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-3xl font-headline font-bold">Tasks</h1>
+            <h1 className="text-3xl font-headline font-bold">Task-uri</h1>
             <p className="text-muted-foreground">
-                Stay on top of your to-do list.
+                Organizează-ți activitățile și nu rata niciun detaliu.
             </p>
         </div>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Task
+          Adaugă Task
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section>
-            <h2 className="text-xl font-headline font-semibold mb-4">Upcoming Tasks</h2>
+            <h2 className="text-xl font-headline font-semibold mb-4">De făcut</h2>
             <div className="space-y-4">
                 {upcomingTasks.length > 0 ? upcomingTasks.map(task => (
                     <Card key={task.id}>
@@ -36,11 +42,11 @@ export default function TasksPage() {
                             <div className="flex-1">
                                 <label htmlFor={`task-${task.id}`} className="font-medium cursor-pointer">{task.title}</label>
                                 <p className="text-sm text-muted-foreground">
-                                    Due: {task.dueDate}
+                                    Scadent: {task.dueDate}
                                     {task.contactName && (
                                         <>
-                                         {' | For: '}
-                                         <Link href={`/contacts/${task.contactId}`} className="text-primary hover:underline">
+                                         {' | Pentru: '}
+                                         <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline">
                                             {task.contactName}
                                          </Link>
                                         </>
@@ -49,11 +55,11 @@ export default function TasksPage() {
                             </div>
                         </CardContent>
                     </Card>
-                )) : <p className="text-muted-foreground">No upcoming tasks. Great job!</p>}
+                )) : <p className="text-muted-foreground">Niciun task. Ești la zi!</p>}
             </div>
         </section>
         <section>
-            <h2 className="text-xl font-headline font-semibold mb-4">Completed Tasks</h2>
+            <h2 className="text-xl font-headline font-semibold mb-4">Completate</h2>
             <div className="space-y-4">
                  {completedTasks.map(task => (
                     <Card key={task.id} className="bg-muted">

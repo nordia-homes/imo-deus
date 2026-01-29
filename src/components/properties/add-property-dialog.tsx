@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -44,13 +45,13 @@ export function AddPropertyDialog() {
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
-        propertyType: 'House',
-        location: 'Springfield',
-        bedrooms: 3,
-        bathrooms: 2,
-        squareFootage: 1800,
-        keyFeatures: 'renovated kitchen, large backyard, finished basement',
-        price: 350000,
+        propertyType: 'Apartament',
+        location: 'București',
+        bedrooms: 2,
+        bathrooms: 1,
+        squareFootage: 55,
+        keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+        price: 120000,
         description: '',
     },
   });
@@ -79,27 +80,27 @@ export function AddPropertyDialog() {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Property
+          Adaugă Proprietate
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add New Property</DialogTitle>
+          <DialogTitle>Adaugă Proprietate Nouă</DialogTitle>
           <DialogDescription>
-            Fill in the details below. You can use AI to generate a description.
+            Completează detaliile de mai jos. Poți folosi AI pentru a genera o descriere.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Property Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="bedrooms" render={({ field }) => ( <FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" step="0.5" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Sq. Footage</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Locație</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="bedrooms" render={({ field }) => ( <FormItem><FormLabel>Dormitoare</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" step="0.5" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață (mp)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
-            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem><FormLabel>Key Features</FormLabel><FormControl><Input {...field} placeholder="e.g., renovated kitchen, large backyard" /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Cheie</FormLabel><FormControl><Input {...field} placeholder="ex: bucătărie renovată, curte mare" /></FormControl><FormMessage /></FormItem> )} />
             
             <FormField
               control={form.control}
@@ -107,10 +108,10 @@ export function AddPropertyDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center justify-between">
-                    <span>Description</span>
+                    <span>Descriere</span>
                     <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4 text-accent"/>}
-                        Generate with AI
+                        Generează cu AI
                     </Button>
                   </FormLabel>
                   <FormControl>
@@ -121,7 +122,8 @@ export function AddPropertyDialog() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Save Property</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
+              <Button type="submit">Salvează Proprietatea</Button>
             </DialogFooter>
           </form>
         </Form>

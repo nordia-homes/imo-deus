@@ -1,11 +1,13 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
-import { AppShell } from '@/components/layout/app-shell';
 import { Toaster } from "@/components/ui/toaster";
+import { AgencyProvider } from '@/context/AgencyContext';
+import { UserProvider } from '@/context/UserContext';
 
 export const metadata: Metadata = {
   title: 'EstateFlow',
-  description: 'A Real Estate CRM to manage clients, leads, and properties.',
+  description: 'Platformă CRM pentru agenții imobiliare.',
 };
 
 export default function RootLayout({
@@ -14,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ro" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -22,10 +24,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AppShell>
-          {children}
-        </AppShell>
-        <Toaster />
+        <UserProvider>
+          <AgencyProvider>
+            {children}
+            <Toaster />
+          </AgencyProvider>
+        </UserProvider>
       </body>
     </html>
   );
