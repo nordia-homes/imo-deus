@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +9,9 @@ import { collection, doc } from "firebase/firestore";
 import type { Contact } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import Link from "next/link";
-import { DollarSign, User as UserIcon } from "lucide-react";
+import { DollarSign, User as UserIcon, Archive, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "../ui/button";
 
 import {
   DndContext,
@@ -106,6 +109,8 @@ export function PipelineBoard() {
           distance: 8,
       },
   }));
+  const { toast } = useToast();
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const [deals, setDeals] = useState<Contact[]>([]);
 
@@ -121,6 +126,57 @@ export function PipelineBoard() {
       setDeals(fetchedContacts);
     }
   }, [fetchedContacts]);
+
+  const handleArchiveInactive = () => {
+    if (!user) return;
+    setIsArchiving(true);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const activeStages: Contact['status'][] = ['Nou', 'Contactat', 'Vizionare', 'În negociere'];
+    const dealsToProcess = deals.filter(d => activeStages.includes(d.status));
+
+    const inactiveDeals = dealsToProcess.filter(deal => {
+      let lastActivityDate: Date | null = null;
+      
+      if (deal.interactionHistory && deal.interactionHistory.length > 0) {
+        const mostRecentInteraction = deal.interactionHistory.reduce((latest, current) => 
+            new Date(current.date) > new Date(latest.date) ? current : latest
+        );
+        lastActivityDate = new Date(mostRecentInteraction.date);
+      } else if (deal.createdAt) {
+        lastActivityDate = new Date(deal.createdAt);
+      }
+
+      if (!lastActivityDate) {
+        return false;
+      }
+
+      return lastActivityDate < thirtyDaysAgo;
+    });
+
+    if (inactiveDeals.length === 0) {
+      toast({
+        title: 'Niciun lead inactiv',
+        description: 'Toate lead-urile active au avut activitate în ultimele 30 de zile.',
+      });
+      setIsArchiving(false);
+      return;
+    }
+
+    inactiveDeals.forEach(deal => {
+      const dealRef = doc(firestore, 'users', user.uid, 'contacts', deal.id);
+      updateDocumentNonBlocking(dealRef, { status: 'Pierdut' });
+    });
+
+    toast({
+      title: 'Arhivare finalizată',
+      description: `${inactiveDeals.length} lead-uri inactive au fost mutate în stadiul "Pierdut".`,
+    });
+
+    setIsArchiving(false);
+  };
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -183,16 +239,30 @@ export function PipelineBoard() {
   }
   
   return (
-     <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-    >
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto h-full pb-4">
-        {stages.map(stage => (
-            <PipelineColumn key={stage} title={stage} deals={dealsByStage(stage)} />
-        ))}
+    <>
+        <div className="mb-6 flex items-start justify-between">
+            <div>
+                <h1 className="text-3xl font-headline font-bold">Pipeline Vânzări</h1>
+                <p className="text-muted-foreground">
+                    Urmărește progresul tranzacțiilor în timp real.
+                </p>
+            </div>
+            <Button onClick={handleArchiveInactive} disabled={isArchiving || isLoading}>
+                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+                Arhivează Inactive
+            </Button>
         </div>
-    </DndContext>
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+        >
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto h-full pb-4">
+            {stages.map(stage => (
+                <PipelineColumn key={stage} title={stage} deals={dealsByStage(stage)} />
+            ))}
+            </div>
+        </DndContext>
+    </>
   );
 }
