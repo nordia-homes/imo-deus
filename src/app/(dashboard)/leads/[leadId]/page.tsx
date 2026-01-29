@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 import type { Contact, Property, Task } from '@/lib/types';
@@ -24,6 +23,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -31,6 +31,8 @@ import Link from 'next/link';
 import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
+import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
+import { DeleteTaskAlert } from '@/components/tasks/DeleteTaskAlert';
 
 // Schemas for AI forms
 const leadScoreSchema = z.object({
@@ -81,7 +83,7 @@ export default function LeadDetailPage() {
         return collection(firestore, 'users', user.uid, 'properties');
     }, [firestore, user]);
 
-    const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+    const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(userPropertiesQuery);
 
 
     // --- STATE MANAGEMENT ---
@@ -97,6 +99,8 @@ export default function LeadDetailPage() {
     const [scoreResult, setScoreResult] = useState<{ score: number, reason: string } | null>(null);
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
     const leadScoreForm = useForm<z.infer<typeof leadScoreSchema>>({
         resolver: zodResolver(leadScoreSchema),
@@ -152,6 +156,42 @@ export default function LeadDetailPage() {
             description: `Task-ul "${newTask.description}" a fost adăugat pentru ${contact.name}.`
         });
     };
+    
+    const handleToggleTask = (task: Task) => {
+        if (!user) return;
+        const taskRef = doc(firestore, 'users', user.uid, 'tasks', task.id);
+        const newStatus = task.status === 'completed' ? 'open' : 'completed';
+        updateDocumentNonBlocking(taskRef, { status: newStatus });
+    };
+
+    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+        if (!user || !editingTask) return;
+        const taskRef = doc(firestore, 'users', user.uid, 'tasks', editingTask.id);
+        const { id, ...dataToUpdate } = updatedTask;
+        updateDocumentNonBlocking(taskRef, dataToUpdate);
+        toast({
+            title: "Task actualizat!",
+            description: `Task-ul a fost actualizat.`,
+        });
+        setEditingTask(null);
+    };
+
+    const handleDeleteTask = () => {
+        if (!user || !deletingTask) return;
+        const taskRef = doc(firestore, 'users', user.uid, 'tasks', deletingTask.id);
+        deleteDocumentNonBlocking(taskRef);
+        toast({
+            variant: 'destructive',
+            title: "Task șters!",
+            description: `Task-ul a fost șters.`,
+        });
+        setDeletingTask(null);
+    };
+
+    const allContactsForDialog = useMemo(() => {
+        if (!contact) return [];
+        return [{ id: contact.id, name: contact.name }];
+    }, [contact]);
 
     async function onLeadScoreSubmit(values: z.infer<typeof leadScoreSchema>) {
         if(!contact) return;
@@ -246,7 +286,7 @@ export default function LeadDetailPage() {
                         <Badge variant="outline" className="mt-1">{contact.status}</Badge>
                     </div>
                 </div>
-                <AddTaskDialog onAddTask={handleAddTask} contacts={[{id: contact.id, name: contact.name}]} />
+                <AddTaskDialog onAddTask={handleAddTask} contacts={allContactsForDialog} />
             </header>
 
             {/* --- DASHBOARD GRID --- */}
@@ -305,18 +345,22 @@ export default function LeadDetailPage() {
                              tasks && tasks.length > 0 ? (
                                 <ul className="space-y-3">
                                     {tasks.map(task => (
-                                        <li key={task.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-                                            <div className="flex items-center gap-3">
-                                                <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                                                <div>
-                                                    <p className="font-medium">{task.description}</p>
-                                                    <p className="text-sm text-muted-foreground">Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                            </div>
+                                        <li key={task.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50 transition-colors hover:bg-muted">
+                                             <div className="flex items-center gap-3">
+                                                <Checkbox id={`task-${task.id}`} checked={task.status === 'completed'} onCheckedChange={() => handleToggleTask(task)} />
+                                                 <div>
+                                                     <label htmlFor={`task-${task.id}`} className="font-medium cursor-pointer">{task.description}</label>
+                                                     <p className="text-sm text-muted-foreground">Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}</p>
+                                                 </div>
+                                             </div>
+                                             <div className="flex gap-2">
+                                                <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeletingTask(task)}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                             </div>
                                         </li>
                                     ))}
                                 </ul>
@@ -389,6 +433,20 @@ export default function LeadDetailPage() {
                     </Card>
                 </div>
             </div>
+
+            <EditTaskDialog 
+                isOpen={!!editingTask}
+                onOpenChange={(isOpen) => !isOpen && setEditingTask(null)}
+                task={editingTask}
+                onUpdateTask={handleUpdateTask}
+                contacts={allContactsForDialog}
+            />
+            <DeleteTaskAlert 
+                isOpen={!!deletingTask}
+                onOpenChange={(isOpen) => !isOpen && setDeletingTask(null)}
+                task={deletingTask}
+                onDelete={handleDeleteTask}
+            />
         </div>
     );
 }
