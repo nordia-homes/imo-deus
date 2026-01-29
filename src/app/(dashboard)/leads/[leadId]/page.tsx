@@ -1,3 +1,8 @@
+'use client';
+
+import { useParams } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 import { ContactDetailsClient } from "@/components/contacts/contact-details-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -5,32 +10,62 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { properties } from "@/lib/data"; // Using placeholder properties
 import type { Contact, Property } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, Euro, User, Calendar, Info } from "lucide-react";
+import { Phone, Mail, Euro, Info } from "lucide-react";
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Placeholder for fetching a single contact
-const getContactById = async (id: string): Promise<Contact | null> => {
-    const contacts: Contact[] = [
-        { 
-            id: '1', name: 'Alex Popescu', phone: '0722 123 456', email: 'alex.p@email.com', source: 'Website', budget: 150000, status: 'Contactat', 
-            notes: 'Caută apartament cu 3 camere în zona de nord, preferabil aproape de parc. Are un copil mic, deci o școală bună în apropiere este un plus. Buget flexibil dacă proprietatea este excepțională.',
-            interactionHistory: [
-                {id: 'h1', type: 'Apel telefonic', date: '15.05.2024', notes: 'Discuție inițială, am stabilit preferințele generale.'},
-                {id: 'h2', type: 'Email', date: '16.05.2024', notes: 'I-am trimis 3 proprietăți care se potrivesc.'}
-            ],
-            preferences: {
-                desiredPriceRangeMin: 120000, desiredPriceRangeMax: 180000, desiredBedrooms: 3, desiredBathrooms: 2, 
-                desiredSquareFootageMin: 70, desiredSquareFootageMax: 90, desiredFeatures: 'parc apropiat, etaj intermediar, balcon', locationPreferences: 'București, zona de nord'
-            }
-        },
-    ];
-    return contacts.find(c => c.id === id) || null;
-}
+export default function LeadDetailPage() {
+    const params = useParams();
+    const leadId = params.leadId as string;
+    
+    const { user } = useUser();
+    const firestore = useFirestore();
 
-export default async function LeadDetailPage({ params }: { params: { leadId: string } }) {
-    const contact = await getContactById(params.leadId);
+    const contactDocRef = useMemoFirebase(() => {
+        if (!user || !leadId) return null;
+        return doc(firestore, 'users', user.uid, 'contacts', leadId);
+    }, [firestore, user, leadId]);
+
+    const { data: contact, isLoading, error } = useDoc<Contact>(contactDocRef);
+
+    if (isLoading) {
+        return (
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 space-y-6">
+                    <Card>
+                        <CardHeader className="text-center items-center">
+                            <Skeleton className="h-24 w-24 rounded-full" />
+                            <Skeleton className="h-8 w-48 mt-4" />
+                            <Skeleton className="h-6 w-24 mt-2" />
+                        </CardHeader>
+                        <CardContent className="space-y-4 p-6">
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
+                 <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                             <Skeleton className="h-10 w-full" />
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <Skeleton className="h-96 w-full" />
+                        </CardContent>
+                    </Card>
+                 </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        console.error(error);
+        return <div className="text-center text-red-500">Error loading lead. You may not have permission to view it.</div>;
+    }
 
     if (!contact) {
-        return <div>Lead not found</div>;
+        return <div className="text-center text-muted-foreground">Lead not found</div>;
     }
     
     // Convert property format for the property matcher
@@ -63,7 +98,7 @@ export default async function LeadDetailPage({ params }: { params: { leadId: str
                         </div>
                         <div className="flex items-center gap-3">
                             <Euro className="h-4 w-4 text-muted-foreground" />
-                            <span>Buget: €{contact.budget.toLocaleString()}</span>
+                            <span>Buget: €{contact.budget?.toLocaleString()}</span>
                         </div>
                          <div className="flex items-center gap-3">
                             <Info className="h-4 w-4 text-muted-foreground" />

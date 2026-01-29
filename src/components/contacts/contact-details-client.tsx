@@ -293,9 +293,9 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
                 <CardTitle>Istoric Interacțiuni</CardTitle>
             </CardHeader>
             <CardContent>
-                {contact.interactionHistory.length > 0 ? (
+                {(contact.interactionHistory || []).length > 0 ? (
                     <ul className="space-y-4">
-                        {contact.interactionHistory.map(interaction => (
+                        {(contact.interactionHistory || []).map(interaction => (
                             <li key={interaction.id} className="border-l-2 pl-4 border-primary/50">
                                 <p className="font-semibold">{interaction.type} - <time className="font-normal text-muted-foreground text-sm">{interaction.date}</time></p>
                                 <p className="text-sm text-muted-foreground">{interaction.notes}</p>

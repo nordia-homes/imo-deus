@@ -43,7 +43,6 @@ const leadSchema = z.object({
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
   notes: z.string().optional(),
   city: z.string().min(1, { message: "Orașul este obligatoriu." }),
-  zones: z.array(z.string()).optional(), // This will be handled manually
 });
 
 const locations = {
@@ -73,13 +72,11 @@ export function AddLeadDialog() {
       status: 'Nou',
       notes: '',
       city: '',
-      zones: [],
     },
   });
 
   const watchedCity = form.watch('city') as City;
 
-  // Reset local state for zones when the city changes
   useEffect(() => {
     setSelectedZones([]);
   }, [watchedCity]);
@@ -96,12 +93,22 @@ export function AddLeadDialog() {
 
     const contactsCollection = collection(firestore, 'users', user.uid, 'contacts');
     
-    // Manually add the zones from local state to the data being submitted
     const newLeadData = {
         ...values,
         zones: selectedZones,
         contactType: 'Lead',
         createdAt: new Date().toISOString(),
+        interactionHistory: [],
+        preferences: {
+            desiredPriceRangeMin: values.budget > 0 ? Math.round(values.budget * 0.8) : 0,
+            desiredPriceRangeMax: values.budget > 0 ? Math.round(values.budget * 1.2) : 0,
+            desiredBedrooms: 0,
+            desiredBathrooms: 0,
+            desiredSquareFootageMin: 0,
+            desiredSquareFootageMax: 0,
+            desiredFeatures: '',
+            locationPreferences: values.city || ''
+        }
     };
 
     addDocumentNonBlocking(contactsCollection, newLeadData);
@@ -124,12 +131,12 @@ export function AddLeadDialog() {
       }
   }
 
-  const handleZoneToggle = (zone: string) => {
-    setSelectedZones((prev) =>
-      prev.includes(zone)
-        ? prev.filter((z) => z !== zone)
-        : [...prev, zone]
-    );
+  const handleZoneToggle = (zone: string, checked: boolean) => {
+    if (checked) {
+      setSelectedZones((prev) => [...prev, zone]);
+    } else {
+      setSelectedZones((prev) => prev.filter((z) => z !== zone));
+    }
   };
 
   return (
@@ -248,8 +255,8 @@ export function AddLeadDialog() {
                                                     <Checkbox
                                                         id={`zone-${zone}`}
                                                         checked={selectedZones.includes(zone)}
-                                                        onCheckedChange={() => {
-                                                            handleZoneToggle(zone)
+                                                        onCheckedChange={(checked) => {
+                                                            handleZoneToggle(zone, !!checked);
                                                         }}
                                                     />
                                                     <Label
