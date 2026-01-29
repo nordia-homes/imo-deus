@@ -13,12 +13,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PropertyDescriptionInputSchema = z.object({
-  propertyType: z.string().describe('The type of property (e.g., house, apartment, condo).'),
-  location: z.string().describe('The location of the property (city, neighborhood).'),
-  bedrooms: z.number().int().positive().describe('The number of bedrooms in the property.'),
-  bathrooms: z.number().positive().describe('The number of bathrooms in the property.'),
+  propertyType: z.string().min(1).describe('The type of property (e.g., house, apartment, condo).'),
+  location: z.string().min(1).describe('The location of the property (city, neighborhood).'),
+  bedrooms: z.number().int().nonnegative().describe('The number of bedrooms in the property.'),
+  bathrooms: z.number().nonnegative().describe('The number of bathrooms in the property.'),
   squareFootage: z.number().positive().describe('The square footage of the property.'),
-  keyFeatures: z.string().describe('A comma separated list of key features of the property.'),
+  keyFeatures: z.string().min(1).describe('A comma separated list of key features of the property.'),
   price: z.number().positive().describe('The price of the property'),
 });
 export type PropertyDescriptionInput = z.infer<typeof PropertyDescriptionInputSchema>;

@@ -26,11 +26,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
-import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
+import { generatePropertyDescription, PropertyDescriptionInput } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 const propertySchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
@@ -63,6 +64,7 @@ export function AddPropertyDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -107,6 +109,21 @@ export function AddPropertyDialog() {
 
   async function handleGenerateDescription() {
     setIsGenerating(true);
+    const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
+      'propertyType', 'location', 'bedrooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
+    ];
+    const isValid = await form.trigger(fieldsToValidate);
+
+    if (!isValid) {
+      toast({
+        variant: "destructive",
+        title: "Completați câmpurile obligatorii",
+        description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
+      });
+      setIsGenerating(false);
+      return;
+    }
+    
     const { propertyType, location, bedrooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
     try {
       const result = await generatePropertyDescription({
@@ -115,6 +132,11 @@ export function AddPropertyDialog() {
       form.setValue('description', result.description);
     } catch (error) {
       console.error("Failed to generate description:", error);
+       toast({
+        variant: "destructive",
+        title: "A apărut o eroare",
+        description: "Nu am putut genera descrierea. Încercați din nou.",
+      });
     } finally {
       setIsGenerating(false);
     }
