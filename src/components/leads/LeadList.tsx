@@ -1,3 +1,4 @@
+'use client';
 
 import {
   Table,
@@ -76,7 +77,7 @@ export function LeadList() {
                     )}
                 </TableBody>
             </Table>
-        </CardContent>
+        </Content>
     </Card>
   );
 }
