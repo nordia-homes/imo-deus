@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -40,6 +41,7 @@ const leadSchema = z.object({
 
 export function AddLeadDialog() {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
@@ -56,6 +58,10 @@ export function AddLeadDialog() {
   function onSubmit(values: z.infer<typeof leadSchema>) {
     console.log(values);
     // Here you would typically call a function to save the data to Firestore
+    toast({
+        title: "Lead adăugat!",
+        description: `${values.name} a fost adăugat în lista ta de lead-uri.`,
+    });
     setIsOpen(false);
     form.reset();
   }
@@ -76,7 +82,7 @@ export function AddLeadDialog() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -95,7 +101,7 @@ export function AddLeadDialog() {
                         <SelectContent>
                           <SelectItem value="Website">Website</SelectItem>
                           <SelectItem value="Recomandare">Recomandare</SelectItem>
-                          <SelectItem value="Portal">Portal</SelectItem>
+                          <SelectItem value="Portal Imobiliar">Portal Imobiliar</SelectItem>
                           <SelectItem value="Telefon">Telefon</SelectItem>
                            <SelectItem value="Altul">Altul</SelectItem>
                         </SelectContent>
@@ -127,7 +133,7 @@ export function AddLeadDialog() {
                 />
             </div>
             <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
               <Button type="submit">Salvează Lead</Button>
             </DialogFooter>

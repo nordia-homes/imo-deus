@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Contact, Property } from '@/lib/types';
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const leadScoreSchema = z.object({
   engagementLevel: z.string().min(1, 'Engagement level is required.'),
@@ -35,12 +38,15 @@ const propertyMatchSchema = z.object({
   locationPreferences: z.string(),
 });
 
-export function ContactDetailsClient({ contact, properties }: { contact: Contact, properties: Property[] }) {
+type MatchedProperty = Property & { matchScore: number; reasoning: string };
+
+export function ContactDetailsClient({ contact, properties }: { contact: Contact, properties: (Property & { image: string})[] }) {
+  const { toast } = useToast();
   const [isScoring, setIsScoring] = useState(false);
   const [scoreResult, setScoreResult] = useState<{ score: number, reason: string } | null>(null);
 
   const [isMatching, setIsMatching] = useState(false);
-  const [matchedProperties, setMatchedProperties] = useState<(Property & { matchScore: number; reasoning: string })[]>([]);
+  const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
 
   const leadScoreForm = useForm<z.infer<typeof leadScoreSchema>>({
     resolver: zodResolver(leadScoreSchema),
@@ -49,13 +55,13 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
 
   const propertyMatchForm = useForm<z.infer<typeof propertyMatchSchema>>({
     resolver: zodResolver(propertyMatchSchema),
-    defaultValues: {
+    defaultValues: contact.preferences || {
       desiredPriceRangeMin: 100000,
       desiredPriceRangeMax: 500000,
       desiredBedrooms: 3,
       desiredBathrooms: 2,
-      desiredSquareFootageMin: 1500,
-      desiredSquareFootageMax: 2500,
+      desiredSquareFootageMin: 70,
+      desiredSquareFootageMax: 120,
       desiredFeatures: 'modern kitchen, backyard',
       locationPreferences: 'suburbs'
     },
@@ -70,9 +76,17 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
         leadDetails: `Name: ${contact.name}, Status: ${contact.status}, Notes: ${contact.notes}`,
       });
       setScoreResult(result);
+      toast({
+        title: "Scor AI generat!",
+        description: `Lead-ul a primit scorul ${result.score}.`,
+      });
     } catch (error) {
       console.error('Lead scoring failed', error);
-      // Here you would use a toast to show the error
+      toast({
+        variant: "destructive",
+        title: "A apărut o eroare",
+        description: "Nu am putut genera scorul AI.",
+      });
     } finally {
       setIsScoring(false);
     }
@@ -84,137 +98,67 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
     try {
         const result = await propertyMatcher({
             clientPreferences: values,
-            properties: properties.map(p => ({...p, image: p.imageUrl}))
+            properties: properties
         });
-        setMatchedProperties(result.matchedProperties);
+        setMatchedProperties(result.matchedProperties as MatchedProperty[]);
     } catch (error) {
         console.error('Property matching failed:', error);
+        toast({
+            variant: "destructive",
+            title: "A apărut o eroare",
+            description: "Nu am putut găsi proprietăți potrivite.",
+        });
     } finally {
         setIsMatching(false);
     }
   }
 
   return (
-    <Tabs defaultValue="details" className="w-full">
+    <Tabs defaultValue="match" className="w-full">
       <TabsList>
-        <TabsTrigger value="details">Details</TabsTrigger>
-        <TabsTrigger value="score">Lead Score</TabsTrigger>
-        <TabsTrigger value="match">Property Matcher</TabsTrigger>
-        <TabsTrigger value="history">History</TabsTrigger>
+        <TabsTrigger value="match">Potrivire Proprietăți</TabsTrigger>
+        <TabsTrigger value="score">Scor AI Lead</TabsTrigger>
+        <TabsTrigger value="details">Notițe</TabsTrigger>
+        <TabsTrigger value="history">Istoric</TabsTrigger>
       </TabsList>
-      <TabsContent value="details">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Notes</CardTitle>
-            <CardDescription>All your notes and details about {contact.name}.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea defaultValue={contact.notes} rows={8} />
-          </CardContent>
-          <CardFooter>
-            <Button>Save Notes</Button>
-          </CardFooter>
-        </Card>
-      </TabsContent>
-      <TabsContent value="score">
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Lead Scoring</CardTitle>
-            <CardDescription>Prioritize this lead based on engagement and potential.</CardDescription>
-          </CardHeader>
-          <Form {...leadScoreForm}>
-            <form onSubmit={leadScoreForm.handleSubmit(onLeadScoreSubmit)}>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={leadScoreForm.control}
-                  name="engagementLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Engagement Level</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select engagement" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="low">Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={leadScoreForm.control}
-                  name="potentialValue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Potential Value</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select potential" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="low">Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isScoring}>
-                  {isScoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate Score
-                </Button>
-              </CardFooter>
-            </form>
-          </Form>
-          {scoreResult && (
-            <CardContent>
-                <Card className="bg-accent/20">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <span>Lead Score: {scoreResult.score} / 100</span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm">{scoreResult.reason}</p>
-                    </CardContent>
-                </Card>
-            </CardContent>
-          )}
-        </Card>
-      </TabsContent>
-      <TabsContent value="match">
+       <TabsContent value="match">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Client Preferences</CardTitle>
-                        <CardDescription>Set the client's preferences to find matching properties.</CardDescription>
+                        <CardTitle>Preferințele Clientului</CardTitle>
+                        <CardDescription>Setează preferințele pentru a găsi proprietăți potrivite.</CardDescription>
                     </CardHeader>
                      <Form {...propertyMatchForm}>
                         <form onSubmit={propertyMatchForm.handleSubmit(onPropertyMatchSubmit)}>
-                            <CardContent className="space-y-4">
-                               <FormField control={propertyMatchForm.control} name="desiredBedrooms" render={({ field }) => (
-                                    <FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                                )}/>
-                                 <FormField control={propertyMatchForm.control} name="desiredBathrooms" render={({ field }) => (
-                                    <FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" step="0.5" {...field} /></FormControl></FormItem>
+                            <CardContent className="space-y-3">
+                               <div className="flex gap-2">
+                                    <FormField control={propertyMatchForm.control} name="desiredPriceRangeMin" render={({ field }) => (
+                                        <FormItem><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                    )}/>
+                                     <FormField control={propertyMatchForm.control} name="desiredPriceRangeMax" render={({ field }) => (
+                                        <FormItem><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                    )}/>
+                               </div>
+                                <div className="flex gap-2">
+                                     <FormField control={propertyMatchForm.control} name="desiredBedrooms" render={({ field }) => (
+                                        <FormItem><FormLabel>Dormitoare</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                    )}/>
+                                    <FormField control={propertyMatchForm.control} name="desiredBathrooms" render={({ field }) => (
+                                        <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" step="1" {...field} /></FormControl></FormItem>
+                                    )}/>
+                               </div>
+                                <FormField control={propertyMatchForm.control} name="locationPreferences" render={({ field }) => (
+                                    <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                 )}/>
                                 <FormField control={propertyMatchForm.control} name="desiredFeatures" render={({ field }) => (
-                                    <FormItem><FormLabel>Desired Features</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>
+                                    <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>
                                 )}/>
                             </CardContent>
                             <CardFooter>
                                 <Button type="submit" className="w-full" disabled={isMatching}>
                                     {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                    Find Matches
+                                    Găsește Potriviri
                                 </Button>
                             </CardFooter>
                         </form>
@@ -224,23 +168,23 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
             <div className="lg:col-span-2">
                  <Card>
                     <CardHeader>
-                        <CardTitle>Matched Properties</CardTitle>
-                        <CardDescription>Top properties matching the client's needs.</CardDescription>
+                        <CardTitle>Proprietăți Potrivite</CardTitle>
+                        <CardDescription>Cele mai bune proprietăți conform preferințelor.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Searching for best matches...</p>}
-                        {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground">No properties matched yet. Run the matcher to see results.</p>}
+                        {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Caut cele mai bune potriviri...</p>}
+                        {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground">Nicio proprietate găsită. Rulează căutarea pentru a vedea rezultatele.</p>}
                         {matchedProperties.map(prop => (
                             <Card key={prop.id}>
-                                <CardContent className="p-4 flex gap-4">
-                                     <Image src={prop.imageUrl} alt={prop.address} width={150} height={100} className="rounded-md object-cover" data-ai-hint={prop.imageHint} />
+                                <CardContent className="p-4 flex gap-4 items-center">
+                                     <Image src={prop.image || 'https://placehold.co/400x300'} alt={prop.address} width={150} height={100} className="rounded-md object-cover aspect-[4/3]" data-ai-hint={prop.imageHint} />
                                      <div className="flex-1">
-                                        <h3 className="font-bold">{prop.address}</h3>
-                                        <p className="text-sm text-primary font-semibold">${prop.price.toLocaleString()}</p>
-                                        <p className="text-xs text-muted-foreground">{prop.bedrooms} bed | {prop.bathrooms} bath | {prop.squareFootage} sqft</p>
-                                        <Card className="mt-2 bg-accent/10 text-xs">
+                                        <Link href={`/properties/${prop.id}`} className="font-bold hover:underline">{prop.address}</Link>
+                                        <p className="text-sm text-primary font-semibold">€{prop.price.toLocaleString()}</p>
+                                        <p className="text-xs text-muted-foreground">{prop.bedrooms} dorm. | {prop.bathrooms} băi | {prop.squareFootage} mp</p>
+                                        <Card className="mt-2 bg-accent/50 text-xs">
                                             <CardHeader className="p-2">
-                                                <p className="font-semibold">Match Score: {prop.matchScore}/100</p>
+                                                <p className="font-semibold text-primary">Scor Potrivire: {prop.matchScore}/100</p>
                                             </CardHeader>
                                             <CardContent className="p-2 pt-0">
                                                 <p>{prop.reasoning}</p>
@@ -255,22 +199,110 @@ export function ContactDetailsClient({ contact, properties }: { contact: Contact
             </div>
         </div>
       </TabsContent>
+      <TabsContent value="score">
+        <Card>
+          <CardHeader>
+            <CardTitle>Scor AI pentru Lead</CardTitle>
+            <CardDescription>Prioritizează acest lead pe baza angajamentului și potențialului.</CardDescription>
+          </CardHeader>
+          <Form {...leadScoreForm}>
+            <form onSubmit={leadScoreForm.handleSubmit(onLeadScoreSubmit)}>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={leadScoreForm.control}
+                  name="engagementLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nivel de Angajament</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Selectează angajamentul" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="high">Ridicat</SelectItem>
+                          <SelectItem value="medium">Mediu</SelectItem>
+                          <SelectItem value="low">Scăzut</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={leadScoreForm.control}
+                  name="potentialValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valoare Potențială</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Selectează potențialul" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="high">Ridicat</SelectItem>
+                          <SelectItem value="medium">Mediu</SelectItem>
+                          <SelectItem value="low">Scăzut</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isScoring}>
+                  {isScoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generează Scor
+                </Button>
+              </CardFooter>
+            </form>
+          </Form>
+          {scoreResult && (
+            <CardContent>
+                <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-blue-800">
+                            <span>Scor Lead: {scoreResult.score} / 100</span>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-blue-700">{scoreResult.reason}</p>
+                    </CardContent>
+                </Card>
+            </CardContent>
+          )}
+        </Card>
+      </TabsContent>
+      <TabsContent value="details">
+        <Card>
+          <CardHeader>
+            <CardTitle>Notițe Contact</CardTitle>
+            <CardDescription>Toate notițele și detaliile despre {contact.name}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea defaultValue={contact.notes} rows={8} />
+          </CardContent>
+          <CardFooter>
+            <Button>Salvează Notițe</Button>
+          </CardFooter>
+        </Card>
+      </TabsContent>
       <TabsContent value="history">
         <Card>
             <CardHeader>
-                <CardTitle>Interaction History</CardTitle>
+                <CardTitle>Istoric Interacțiuni</CardTitle>
             </CardHeader>
             <CardContent>
                 {contact.interactionHistory.length > 0 ? (
                     <ul className="space-y-4">
                         {contact.interactionHistory.map(interaction => (
-                            <li key={interaction.id} className="border-l-2 pl-4">
-                                <p className="font-semibold">{interaction.type} on {interaction.date}</p>
+                            <li key={interaction.id} className="border-l-2 pl-4 border-primary/50">
+                                <p className="font-semibold">{interaction.type} - <time className="font-normal text-muted-foreground text-sm">{interaction.date}</time></p>
                                 <p className="text-sm text-muted-foreground">{interaction.notes}</p>
                             </li>
                         ))}
                     </ul>
-                ) : <p className="text-muted-foreground">No interactions logged yet.</p>}
+                ) : <p className="text-muted-foreground">Nicio interacțiune înregistrată.</p>}
             </CardContent>
         </Card>
       </TabsContent>

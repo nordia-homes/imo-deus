@@ -31,21 +31,25 @@ function getUrgencyBadgeVariant(urgency: string) {
 
 export function LeadCard({ lead }: { lead: Lead }) {
   return (
-    <TableRow>
-      <TableCell className="font-medium">{lead.name}</TableCell>
+    <TableRow className="cursor-pointer hover:bg-muted/50">
+      <TableCell className="font-medium">
+        <Link href={`/leads/${lead.id}`} className="hover:underline">{lead.name}</Link>
+      </TableCell>
       <TableCell>{lead.phone}</TableCell>
       <TableCell>{lead.source}</TableCell>
       <TableCell>€{lead.budget.toLocaleString()}</TableCell>
       <TableCell><Badge variant="outline">{lead.status}</Badge></TableCell>
       <TableCell>
-          <Badge variant={getScoreBadgeVariant(lead.aiScore) as any}>{lead.aiScore}</Badge>
+          <Badge variant={getScoreBadgeVariant(lead.aiScore)}>{lead.aiScore}</Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={getUrgencyBadgeVariant(lead.urgency) as any}>{lead.urgency}</Badge>
+        <Badge variant={getUrgencyBadgeVariant(lead.urgency)}>{lead.urgency}</Badge>
       </TableCell>
       <TableCell className="text-right">
-        <Link href={`/leads/${lead.id}`} className="text-primary hover:underline flex items-center justify-end">
-            Detalii <ArrowRight className="ml-1 h-4 w-4" />
+        <Link href={`/leads/${lead.id}`} className="text-primary hover:underline flex items-center justify-end" passHref>
+            <Button variant="ghost" size="sm">
+                Detalii <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
         </Link>
       </TableCell>
     </TableRow>
