@@ -56,6 +56,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
   // Create a helper component for repeated image items to keep the code clean
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index];
+    // If an image doesn't exist for a given index, render a placeholder.
+    // This makes the grid layout robust even with fewer than 5 images.
     if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>;
 
     return (
