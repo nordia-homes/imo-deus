@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Skeleton } from "../ui/skeleton";
+import type { Contact } from "@/lib/types";
 
 export function LeadList() {
     const { user } = useUser();
@@ -23,7 +25,7 @@ export function LeadList() {
         return collection(firestore, 'users', user.uid, 'contacts');
     }, [firestore, user]);
 
-    const { data: leads, isLoading } = useCollection<any>(contactsCollection);
+    const { data: leads, isLoading } = useCollection<Contact>(contactsCollection);
 
     if (isLoading) {
         return (
@@ -57,20 +59,15 @@ export function LeadList() {
                     <TableHead>Buget</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Scor AI</TableHead>
-                    <TableHead>Urgență</TableHead>
                     <TableHead></TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
                     {leads && leads.length > 0 ? leads.map(lead => (
-                        <LeadCard key={lead.id} lead={{
-                            ...lead,
-                            aiScore: lead.aiScore || Math.floor(Math.random() * 40) + 60, // Placeholder
-                            urgency: ['Ridicata', 'Medie', 'Scazuta'][Math.floor(Math.random() * 3)] // Placeholder
-                        }} />
+                        <LeadCard key={lead.id} lead={lead} />
                     )) : (
                         <TableRow>
-                            <TableCell colSpan={8} className="h-24 text-center">
+                            <TableCell colSpan={7} className="h-24 text-center">
                                 Nu ai adăugat niciun lead. Folosește butonul "Adaugă Lead" pentru a începe.
                             </TableCell>
                         </TableRow>

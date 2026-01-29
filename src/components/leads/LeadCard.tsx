@@ -2,21 +2,10 @@
 import Link from 'next/link';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowRight, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { Contact } from '@/lib/types';
 
-
-type Lead = {
-    id: string;
-    name: string;
-    phone: string;
-    source: string;
-    budget: number;
-    status: string;
-    aiScore: number;
-    urgency: string;
-}
 
 function getScoreBadgeVariant(score: number) {
     if (score > 85) return 'success';
@@ -24,40 +13,35 @@ function getScoreBadgeVariant(score: number) {
     return 'destructive';
 }
 
-function getUrgencyBadgeVariant(urgency: string) {
-    if (urgency === 'Ridicata') return 'destructive';
-    if (urgency === 'Medie') return 'warning';
-    return 'secondary';
-}
-
-export function LeadCard({ lead }: { lead: Lead }) {
+export function LeadCard({ lead }: { lead: Contact }) {
   return (
-    <TableRow className="cursor-pointer hover:bg-muted/50">
+    <TableRow className="hover:bg-muted/50">
       <TableCell className="font-medium">
         <Link href={`/leads/${lead.id}`} className="hover:underline">{lead.name}</Link>
       </TableCell>
       <TableCell>{lead.phone}</TableCell>
       <TableCell>{lead.source}</TableCell>
-      <TableCell>€{lead.budget.toLocaleString()}</TableCell>
+      <TableCell>€{lead.budget?.toLocaleString() ?? 'N/A'}</TableCell>
       <TableCell><Badge variant="outline">{lead.status}</Badge></TableCell>
       <TableCell>
-          <Badge variant={getScoreBadgeVariant(lead.aiScore)}>{lead.aiScore}</Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant={getUrgencyBadgeVariant(lead.urgency)}>{lead.urgency}</Badge>
+          {typeof lead.leadScore === 'number' ? (
+            <Badge variant={getScoreBadgeVariant(lead.leadScore)}>{lead.leadScore}</Badge>
+          ) : (
+             <Button variant="outline" size="sm" asChild>
+                 <Link href={`/leads/${lead.id}`}>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generează
+                 </Link>
+             </Button>
+          )}
       </TableCell>
       <TableCell className="text-right">
-        <Link href={`/leads/${lead.id}`} className="text-primary hover:underline flex items-center justify-end" passHref>
-            <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" asChild>
+             <Link href={`/leads/${lead.id}`} className="flex items-center justify-end" passHref>
                 Detalii <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-        </Link>
+            </Link>
+        </Button>
       </TableCell>
     </TableRow>
   );
 }
-
-// Note: you may need to add 'success' and 'warning' variants to your Badge component for this to work as intended.
-// e.g. in badgeVariants in src/components/ui/badge.tsx
-// success: "border-transparent bg-green-500 text-white",
-// warning: "border-transparent bg-yellow-500 text-white",

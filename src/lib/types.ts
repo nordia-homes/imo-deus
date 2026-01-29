@@ -1,6 +1,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -77,7 +78,7 @@ export type Contact = {
     phone: string;
     email: string;
     source: string;
-    budget: number;
+    budget?: number;
     status: 'Nou' | 'Contactat' | 'Vizionare' | 'În negociere' | 'Câștigat' | 'Pierdut';
     notes: string;
     interactionHistory: Interaction[];
