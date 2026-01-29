@@ -22,6 +22,7 @@ import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
+  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -44,7 +45,7 @@ function DealCard({ deal }: { deal: Contact }) {
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <Card className="mb-4 bg-card shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
-                <Link href={`/leads/${deal.id}`} className="block">
+                <Link href={`/leads/${deal.id}`} className="block" draggable={false}>
                     <CardContent className="p-3">
                         <p className="font-semibold truncate">{deal.name}</p>
                         <div className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
@@ -124,32 +125,43 @@ export function PipelineBoard() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    if (!over) return;
+    if (!over) {
+      return;
+    }
     
-    const activeId = active.id as string;
-    const overId = over.id as string;
-    
-    if (activeId === overId) return;
+    if (active.id === over.id) {
+        return;
+    }
 
     const activeContainer = active.data.current?.sortable.containerId as Contact['status'];
-    const overContainer = over.data.current?.sortable.containerId as Contact['status'] || overId as Contact['status'];
+    const overContainer = over.data.current?.sortable.containerId as Contact['status'] || over.id as Contact['status'];
 
-    if (activeContainer && overContainer && activeContainer !== overContainer) {
-        // Dropped in a new column
-        if (!user) return;
-        const dealRef = doc(firestore, 'users', user.uid, 'contacts', activeId);
-        updateDocumentNonBlocking(dealRef, { status: overContainer });
+    setDeals((prev) => {
+        if (activeContainer && overContainer && activeContainer !== overContainer) {
+            // Dropped in a new column
+            if (user) {
+                const dealRef = doc(firestore, 'users', user.uid, 'contacts', String(active.id));
+                updateDocumentNonBlocking(dealRef, { status: overContainer });
+            }
 
-        // Optimistic UI Update
-        setDeals((items) => {
-            return items.map(item => {
-                if (item.id === activeId) {
-                    return { ...item, status: overContainer };
-                }
-                return item;
-            });
-        });
-    }
+            // Optimistic UI Update
+            return prev.map(item => 
+                item.id === active.id 
+                ? { ...item, status: overContainer } 
+                : item
+            );
+        }
+
+        // Reordering within the same column
+        const oldIndex = prev.findIndex(d => d.id === active.id);
+        const newIndex = prev.findIndex(d => d.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+             return arrayMove(prev, oldIndex, newIndex);
+        }
+
+        return prev;
+    });
   }
 
   if (isLoading && deals.length === 0) {
