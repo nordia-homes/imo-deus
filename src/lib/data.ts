@@ -1,158 +1,93 @@
-import type { Contact, Property, Task, SalesData, LeadSourceData } from './types';
 
-export const contacts: Contact[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.d@example.com',
-    phone: '555-123-4567',
-    status: 'Client',
-    avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    lastContacted: '2024-05-20',
-    notes: 'Looking for a 3-bedroom house in the suburbs. Budget is around $500k.',
-    interactionHistory: [
-        { id: 'i1', type: 'Email', date: '2024-05-20', notes: 'Sent initial list of properties.'},
-        { id: 'i2', type: 'Call', date: '2024-05-22', notes: 'Discussed property feedback.'},
-    ]
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.s@example.com',
-    phone: '555-987-6543',
-    status: 'Lead',
-    avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026705d',
-    lastContacted: '2024-05-28',
-    notes: 'Interested in downtown condos. Just starting her search.',
-    interactionHistory: [
-        { id: 'i3', type: 'Email', date: '2024-05-28', notes: 'Initial contact from website form.'},
-    ]
-  },
-  {
-    id: '3',
-    name: 'Michael Johnson',
-    email: 'mike.j@example.com',
-    phone: '555-234-5678',
-    status: 'Client',
-    avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026706d',
-    lastContacted: '2024-05-15',
-    notes: 'Sold his old house, now looking to downsize. Prefers a single-story home.',
-    interactionHistory: []
-  },
-    {
-    id: '4',
-    name: 'Emily Davis',
-    email: 'emily.d@example.com',
-    phone: '555-345-6789',
-    status: 'Partner',
-    avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026707d',
-    lastContacted: '2024-05-25',
-    notes: 'Mortgage broker at City Bank. Great to work with.',
-    interactionHistory: []
-  },
-];
+import type { Property } from './types';
 
 export const properties: Property[] = [
   {
     id: 'p1',
-    address: '123 Maple St, Springfield',
-    price: 450000,
-    bedrooms: 3,
-    bathrooms: 2.5,
-    squareFootage: 2200,
-    description: 'Charming suburban home with a large backyard. Perfect for families. Recently renovated kitchen and hardwood floors throughout.',
-    imageUrl: 'https://picsum.photos/seed/1/600/400',
-    imageHint: 'suburban home',
-    type: 'House',
-    status: 'For Sale',
-  },
-  {
-    id: 'p2',
-    address: '456 Oak Ave, Metropolis',
+    title: 'Modern Downtown Loft with Skyline Views',
+    tagline: '2 beds | 2 baths | 1,500 sqft',
     price: 650000,
     bedrooms: 2,
     bathrooms: 2,
     squareFootage: 1500,
-    description: 'Modern condo in the heart of downtown. Features a rooftop terrace, gym, and stunning city views.',
-    imageUrl: 'https://picsum.photos/seed/2/600/400',
-    imageHint: 'modern condo',
-    type: 'Condo',
-    status: 'For Sale',
+    description: 'A stunning downtown loft offering breathtaking skyline views. This modern space features an open-concept layout, floor-to-ceiling windows, and high-end finishes. The gourmet kitchen is equipped with state-of-the-art appliances, perfect for entertaining. The master suite includes a spa-like bathroom and a spacious walk-in closet. Enjoy access to building amenities such as a rooftop terrace, fitness center, and 24/7 concierge service.',
+    images: [
+        { url: 'https://picsum.photos/seed/p1a/1200/800', alt: 'Living room with city view' },
+        { url: 'https://picsum.photos/seed/p1b/1200/800', alt: 'Modern kitchen' },
+        { url: 'https://picsum.photos/seed/p1c/1200/800', alt: 'Bedroom with large window' },
+        { url: 'https://picsum.photos/seed/p1d/1200/800', alt: 'Rooftop terrace' },
+        { url: 'https://picsum.photos/seed/p1e/1200/800', alt: 'Spa-like bathroom' }
+    ],
+    location: 'Metropolis, USA',
+    amenities: ['Rooftop Terrace', 'Fitness Center', '24/7 Concierge', 'Secure Parking', 'Gourmet Kitchen', 'Walk-in Closet'],
+    agent: { name: 'Jane Doe', avatarUrl: 'https://i.pravatar.cc/150?u=jane' },
+    latitude: 40.7128,
+    longitude: -74.0060,
+  },
+  {
+    id: 'p2',
+    title: 'Charming Suburban Home with Large Backyard',
+    tagline: '3 beds | 2.5 baths | 2,200 sqft',
+    price: 450000,
+    bedrooms: 3,
+    bathrooms: 2.5,
+    squareFootage: 2200,
+    description: 'This charming suburban home is perfect for a growing family. It features a spacious living room with a cozy fireplace, a recently renovated kitchen with granite countertops, and hardwood floors throughout. The large backyard is an oasis with a custom deck and mature trees, ideal for summer barbecues. Located in a family-friendly neighborhood with top-rated schools and parks nearby.',
+    images: [
+        { url: 'https://picsum.photos/seed/p2a/1200/800', alt: 'Exterior of suburban home' },
+        { url: 'https://picsum.photos/seed/p2b/1200/800', alt: 'Cozy living room with fireplace' },
+        { url: 'https://picsum.photos/seed/p2c/1200/800', alt: 'Renovated kitchen' },
+        { url: 'https://picsum.photos/seed/p2d/1200/800', alt: 'Large backyard with deck' },
+        { url: 'https://picsum.photos/seed/p2e/1200/800', alt: 'Master bedroom' }
+    ],
+    location: 'Springfield, USA',
+    amenities: ['Large Backyard', 'Fireplace', 'Renovated Kitchen', 'Hardwood Floors', 'Two-car Garage', 'Deck'],
+    agent: { name: 'John Smith', avatarUrl: 'https://i.pravatar.cc/150?u=john' },
+    latitude: 39.7817,
+    longitude: -89.6501,
   },
   {
     id: 'p3',
-    address: '789 Pine Ln, Greenfield',
-    price: 320000,
+    title: 'Secluded Beachfront Villa with Private Pool',
+    tagline: '4 beds | 5 baths | 4,000 sqft',
+    price: 1800000,
     bedrooms: 4,
-    bathrooms: 3,
-    squareFootage: 2800,
-    description: 'Spacious family house in a quiet neighborhood. Close to parks and excellent schools. Needs some TLC.',
-    imageUrl: 'https://picsum.photos/seed/3/600/400',
-    imageHint: 'family house',
-    type: 'House',
-    status: 'Sold',
+    bathrooms: 5,
+    squareFootage: 4000,
+    description: 'Experience luxury living at its finest in this secluded beachfront villa. This magnificent property offers direct beach access and a private infinity pool overlooking the ocean. Each of the four bedrooms is a master suite with its own private balcony. The expansive living area seamlessly connects to the outdoors, creating a perfect environment for relaxation and entertainment. A true paradise retreat.',
+    images: [
+        { url: 'https://picsum.photos/seed/p3a/1200/800', alt: 'Beachfront villa exterior' },
+        { url: 'https://picsum.photos/seed/p3b/1200/800', alt: 'Infinity pool overlooking the ocean' },
+        { url: 'https://picsum.photos/seed/p3c/1200/800', alt: 'Spacious living area' },
+        { url: 'https://picsum.photos/seed/p3d/1200/800', alt: 'Master suite with ocean view' },
+        { url: 'https://picsum.photos/seed/p3e/1200/800', alt: 'Private beach access' }
+    ],
+    location: 'Malibu, USA',
+    amenities: ['Direct Beach Access', 'Infinity Pool', 'Private Balconies', 'Ocean Views', 'Gated Community', 'Home Theater'],
+    agent: { name: 'Jane Doe', avatarUrl: 'https://i.pravatar.cc/150?u=jane' },
+    latitude: 34.0259,
+    longitude: -118.7798,
   },
   {
     id: 'p4',
-    address: '101 Elm Ct, Central City',
-    price: 280000,
-    bedrooms: 1,
+    title: 'Cozy Mountain Cabin Retreat',
+    tagline: '2 beds | 1 bath | 1,200 sqft',
+    price: 320000,
+    bedrooms: 2,
     bathrooms: 1,
-    squareFootage: 900,
-    description: 'Bright and airy top-floor apartment with a balcony. Ideal for a young professional.',
-    imageUrl: 'https://picsum.photos/seed/4/600/400',
-    imageHint: 'bright apartment',
-    type: 'Apartment',
-    status: 'Pending',
+    squareFootage: 1200,
+    description: 'Escape to this cozy mountain cabin, surrounded by nature. This charming retreat features rustic wood interiors, a stone fireplace, and a large deck with stunning mountain views. It\'s the perfect getaway for hiking, skiing, or simply relaxing by the fire. The property is sold fully furnished and is ready to be enjoyed.',
+    images: [
+        { url: 'https://picsum.photos/seed/p4a/1200/800', alt: 'Exterior of mountain cabin' },
+        { url: 'https://picsum.photos/seed/p4b/1200/800', alt: 'Living room with stone fireplace' },
+        { url: 'https://picsum.photos/seed/p4c/1200/800', alt: 'Deck with mountain views' },
+        { url: 'https://picsum.photos/seed/p4d/1200/800', alt: 'Cozy bedroom' },
+        { url: 'https://picsum.photos/seed/p4e/1200/800', alt: 'Kitchen area' }
+    ],
+    location: 'Aspen, USA',
+    amenities: ['Mountain Views', 'Stone Fireplace', 'Large Deck', 'Fully Furnished', 'Ski-in/Ski-out Access', 'Hot Tub'],
+    agent: { name: 'John Smith', avatarUrl: 'https://i.pravatar.cc/150?u=john' },
+    latitude: 39.1911,
+    longitude: -106.8175,
   },
-];
-
-export const tasks: Task[] = [
-  {
-    id: 't1',
-    title: 'Follow up with Jane Smith',
-    dueDate: '2024-06-05',
-    completed: false,
-    contactId: '2',
-    contactName: 'Jane Smith',
-  },
-  {
-    id: 't2',
-    title: 'Schedule showing for John Doe at 123 Maple St',
-    dueDate: '2024-06-02',
-    completed: false,
-    contactId: '1',
-    contactName: 'John Doe',
-  },
-  {
-    id: 't3',
-    title: 'Prepare closing documents for 789 Pine Ln',
-    dueDate: '2024-05-30',
-    completed: true,
-  },
-  {
-    id: 't4',
-    title: 'Send market report to Michael Johnson',
-    dueDate: '2024-06-07',
-    completed: false,
-    contactId: '3',
-    contactName: 'Michael Johnson',
-  },
-];
-
-
-export const salesData: SalesData[] = [
-    { month: 'Jan', sales: 2 },
-    { month: 'Feb', sales: 3 },
-    { month: 'Mar', sales: 5 },
-    { month: 'Apr', sales: 4 },
-    { month: 'May', sales: 7 },
-    { month: 'Jun', sales: 6 },
-];
-
-export const leadSourceData: LeadSourceData[] = [
-    { source: 'Website', count: 45, fill: 'var(--color-chart-1)' },
-    { source: 'Referral', count: 30, fill: 'var(--color-chart-2)' },
-    { source: 'Ad Campaign', count: 15, fill: 'var(--color-chart-3)' },
-    { source: 'Social Media', count: 10, fill: 'var(--color-chart-4)' },
 ];

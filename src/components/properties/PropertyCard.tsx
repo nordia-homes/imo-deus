@@ -1,38 +1,45 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 type Property = {
-    id: string;
-    address: string;
-    price: number;
-    imageUrl: string;
-    imageHint: string;
-    status: string;
+  id: string;
+  title: string;
+  tagline: string;
+  price: number;
+  images: { url: string; alt: string }[];
 }
 
 export function PropertyCard({ property }: { property: Property }) {
   return (
-    <Link href={`/properties/${property.id}`}>
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-            <CardHeader className="p-0 relative">
-                <Image
-                    src={property.imageUrl}
-                    alt={property.address}
-                    width={400}
-                    height={250}
-                    className="object-cover w-full aspect-[4/3]"
-                    data-ai-hint={property.imageHint}
-                />
-                 <Badge className="absolute top-2 right-2">{property.status}</Badge>
-            </CardHeader>
-            <CardContent className="p-4">
-                <h3 className="font-semibold truncate">{property.address}</h3>
-                <p className="text-primary font-bold text-lg">€{property.price.toLocaleString()}</p>
-            </CardContent>
-        </Card>
+    <Link href={`/properties/${property.id}`} className="group">
+      <Card className="overflow-hidden h-full flex flex-col">
+        <Carousel className="w-full">
+            <CarouselContent>
+                {property.images.map((image, index) => (
+                    <CarouselItem key={index}>
+                        <div className="aspect-square relative">
+                            <Image
+                                src={image.url}
+                                alt={image.alt}
+                                fill
+                                className="object-cover rounded-t-lg transition-transform group-hover:scale-105"
+                            />
+                        </div>
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+        </Carousel>
+        <CardHeader>
+          <CardTitle className="text-lg truncate">{property.title}</CardTitle>
+          <CardDescription>{property.tagline}</CardDescription>
+        </CardHeader>
+        <CardFooter className="mt-auto">
+          <p className="font-semibold text-lg">€{property.price.toLocaleString()}</p>
+        </CardFooter>
+      </Card>
     </Link>
   );
 }

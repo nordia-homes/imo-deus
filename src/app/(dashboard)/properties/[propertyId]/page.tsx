@@ -1,120 +1,99 @@
 
-import AiInsightCard from "@/components/ai/AiInsightCard";
-import { PropertyDetails } from "@/components/properties/PropertyDetails";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PropertyContractsTab } from "@/components/properties/PropertyContractsTab";
-import { PropertyPromotionsTab } from "@/components/properties/PropertyPromotionsTab";
-import { PropertyPresentationsTab } from "@/components/properties/PropertyPresentationsTab";
+import { properties } from "@/lib/data";
+import type { Property } from "@/lib/types";
+import { notFound } from "next/navigation";
+import Image from "next/image";
 import { PropertyGallery } from "@/components/properties/PropertyGallery";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Share2, Heart } from "lucide-react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bed, Bath, Car, Check, MapPin, Square } from "lucide-react";
 
 export default function PropertyDetailPage({ params }: { params: { propertyId: string }}) {
-    // Placeholder data - replace with Firestore data
-    const property = {
-        id: params.propertyId,
-        title: 'Apartament 2 camere, decomandat, zona Dristor',
-        price: 120000,
-        location: 'Dristor, București',
-        images: [
-            'https://picsum.photos/seed/detail1/1200/800',
-            'https://picsum.photos/seed/detail2/600/400',
-            'https://picsum.photos/seed/detail3/600/400',
-            'https://picsum.photos/seed/detail4/600/400',
-            'https://picsum.photos/seed/detail5/600/400',
-            'https://picsum.photos/seed/detail6/800/600',
-            'https://picsum.photos/seed/detail7/800/600',
-            'https://picsum.photos/seed/detail8/800/600',
-            'https://picsum.photos/seed/detail9/800/600',
-            'https://picsum.photos/seed/detail10/800/600',
-            'https://picsum.photos/seed/detail11/800/600',
-            'https://picsum.photos/seed/detail12/800/600',
-            'https://picsum.photos/seed/detail13/800/600',
-            'https://picsum.photos/seed/detail14/800/600',
-            'https://picsum.photos/seed/detail15/800/600',
-            'https://picsum.photos/seed/detail16/800/600',
-        ],
-        surface: 55,
-        rooms: 2,
-        floor: '3/8',
-        year: 2010,
-        comfort: '1',
-        description: 'Vă prezentăm spre vânzare un apartament de 2 camere, situat în zona Dristor, la 5 minute de metrou. Apartamentul este decomandat, se află la etajul 3 al unui imobil cu 8 niveluri construit în 2010 și dispune de o suprafață utilă de 55 mp.\n\nSe vinde mobilat și utilat complet. Dispune de centrală proprie, aer condiționat și loc de parcare inclus în preț. Apartamentul este luminos și spațios, cu finisaje de calitate superioară. Zona este liniștită, cu acces facil la parcuri, școli și centre comerciale.',
-        latitude: 44.42,
-        longitude: 26.14,
-        status: 'De vânzare',
-        agent: { name: 'Mihai Ionescu' },
-        aiInsights: {
-            marketScore: 85,
-            pricingFeedback: 'Prețul este cu 5% peste media zonei, dar justificat de finisaje și locul de parcare.',
-            buyerProfile: 'Ideal pentru tineri profesioniști sau cupluri care lucrează în zona centrală sau de est a orașului.'
-        }
+    const property = properties.find(p => p.id === params.propertyId) as Property | undefined;
+
+    if (!property) {
+        notFound();
     }
 
     return (
-        <div className="max-w-7xl mx-auto">
-             {/* Title Section */}
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h1 className="text-3xl font-headline font-bold">{property.title}</h1>
-                    <p className="text-muted-foreground hover:underline cursor-pointer mt-1">{property.location}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Distribuie
-                    </Button>
-                    <Button variant="outline">
-                         <Heart className="mr-2 h-4 w-4" />
-                        Salvează
-                    </Button>
-                </div>
+        <div className="max-w-6xl mx-auto">
+            {/* Title and Location */}
+            <div className="mb-4">
+                <h1 className="text-3xl font-bold tracking-tight">{property.title}</h1>
+                <p className="text-muted-foreground mt-1 hover:underline cursor-pointer">{property.location}</p>
             </div>
 
             {/* Image Gallery */}
-            <PropertyGallery images={property.images} title={property.title} />
+            <PropertyGallery images={property.images.map(i => i.url)} title={property.title} />
 
             {/* Main Content */}
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
                  <div className="lg:col-span-2">
-                    <PropertyDetails property={property} />
-                    <Separator className="my-8"/>
-                    <h2 className="text-2xl font-headline font-semibold mb-4">Management Proprietate</h2>
-                    <Tabs defaultValue="contracts" className="w-full">
-                        <TabsList>
-                            <TabsTrigger value="contracts">Contracte</TabsTrigger>
-                            <TabsTrigger value="promotions">Promovare</TabsTrigger>
-                            <TabsTrigger value="presentations">Prezentări PDF</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="contracts" className="mt-6">
-                            <PropertyContractsTab propertyId={property.id} />
-                        </TabsContent>
-                        <TabsContent value="promotions" className="mt-6">
-                            <PropertyPromotionsTab propertyId={property.id} />
-                        </TabsContent>
-                        <TabsContent value="presentations" className="mt-6">
-                            <PropertyPresentationsTab propertyId={property.id} />
-                        </TabsContent>
-                    </Tabs>
+                    {/* Host and Stats */}
+                    <div className="pb-6 border-b">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-semibold">Entire apartment hosted by {property.agent.name}</h2>
+                                <div className="text-muted-foreground flex items-center gap-2 mt-1">
+                                    <span>{property.bedrooms} beds</span>
+                                    <span>&middot;</span>
+                                    <span>{property.bathrooms} baths</span>
+                                    <span>&middot;</span>
+                                    <span>{property.squareFootage} sqft</span>
+                                </div>
+                            </div>
+                            <Avatar className="h-14 w-14">
+                                <AvatarImage src={property.agent.avatarUrl} alt={property.agent.name} />
+                                <AvatarFallback>{property.agent.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <div className="py-6 border-b">
+                        <p className="text-muted-foreground">{property.description}</p>
+                    </div>
+
+                    {/* Amenities */}
+                    <div className="py-6 border-b">
+                        <h2 className="text-2xl font-semibold mb-4">What this place offers</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            {property.amenities.map(amenity => (
+                                <div key={amenity} className="flex items-center gap-2">
+                                    <Check className="h-5 w-5" />
+                                    <span>{amenity}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Sticky Right Column */}
                  <div className="lg:col-span-1">
                     <div className="sticky top-24">
-                         <Card>
+                         <Card className="shadow-lg rounded-xl p-2">
                             <CardHeader>
                                 <CardTitle className="text-2xl">€{property.price.toLocaleString()}</CardTitle>
+                                <p className="text-sm text-muted-foreground">{property.bedrooms} beds &middot; {property.bathrooms} baths</p>
                             </CardHeader>
-                            <CardContent>
-                                <Button className="w-full" size="lg">Contactează Agentul</Button>
+                            <CardContent className="space-y-4">
+                                <Button className="w-full" size="lg">Request a tour</Button>
+                                <Button className="w-full" size="lg" variant="outline">Contact Agent</Button>
                             </CardContent>
                         </Card>
-                        <div className="mt-6">
-                            <AiInsightCard insights={property.aiInsights} />
-                        </div>
                     </div>
+                </div>
+            </div>
+
+             {/* Map section */}
+            <div className="mt-8 pt-8 border-t">
+                <h2 className="text-2xl font-semibold mb-4">Where you’ll be</h2>
+                <div className="aspect-video bg-gray-200 rounded-xl flex items-center justify-center">
+                    <p className="text-muted-foreground">
+                        Map placeholder for {property.location}
+                    </p>
                 </div>
             </div>
         </div>
