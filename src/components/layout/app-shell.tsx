@@ -41,92 +41,92 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-                <Link href="/dashboard" asChild>
-                    <SidebarMenuButton tooltip="Dashboard">
+                <SidebarMenuButton tooltip="Dashboard" asChild>
+                    <Link href="/dashboard">
                         <BarChart3 />
                         <span>Dashboard</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/leads" asChild>
-                    <SidebarMenuButton tooltip="Lead-uri">
+                <SidebarMenuButton tooltip="Lead-uri" asChild>
+                    <Link href="/leads">
                         <Users />
                         <span>Lead-uri</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/properties" asChild>
-                    <SidebarMenuButton tooltip="Proprietăți">
+                <SidebarMenuButton tooltip="Proprietăți" asChild>
+                    <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/pipeline" asChild>
-                    <SidebarMenuButton tooltip="Pipeline">
+                <SidebarMenuButton tooltip="Pipeline" asChild>
+                    <Link href="/pipeline">
                         <Waypoints />
                         <span>Pipeline</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/tasks" asChild>
-                    <SidebarMenuButton tooltip="Task-uri">
+                <SidebarMenuButton tooltip="Task-uri" asChild>
+                    <Link href="/tasks">
                         <CheckSquare />
                         <span>Task-uri</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/contracts" asChild>
-                    <SidebarMenuButton tooltip="Contracte">
+                <SidebarMenuButton tooltip="Contracte" asChild>
+                    <Link href="/contracts">
                         <FileText />
                         <span>Contracte</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/ai-assistant" asChild>
-                    <SidebarMenuButton tooltip="AI Assistant">
+                <SidebarMenuButton tooltip="AI Assistant" asChild>
+                    <Link href="/ai-assistant">
                         <MessageSquare />
                         <span>AI Assistant</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/reports" asChild>
-                    <SidebarMenuButton tooltip="Rapoarte">
+                <SidebarMenuButton tooltip="Rapoarte" asChild>
+                    <Link href="/reports">
                         <BarChart3 />
                         <span>Rapoarte</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/portal-sync" asChild>
-                    <SidebarMenuButton tooltip="Integrări">
+                <SidebarMenuButton tooltip="Integrări" asChild>
+                    <Link href="/portal-sync">
                         <AppWindow />
                         <span>Integrări</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/billing" asChild>
-                    <SidebarMenuButton tooltip="Facturare">
+                <SidebarMenuButton tooltip="Facturare" asChild>
+                    <Link href="/billing">
                         <CreditCard />
                         <span>Facturare</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/settings" asChild>
-                    <SidebarMenuButton tooltip="Setări">
+                <SidebarMenuButton tooltip="Setări" asChild>
+                    <Link href="/settings">
                         <Settings />
                         <span>Setări</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
