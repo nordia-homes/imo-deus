@@ -63,7 +63,10 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
     const selectedProperty = properties.find(p => p.id === propertyId);
     if (selectedProperty) {
       form.setValue('price', selectedProperty.price);
-      form.setValue('contractType', selectedProperty.transactionType);
+      const contractTypeForFlow = selectedProperty.transactionType === 'Vânzare' 
+        ? 'Vânzare-Cumpărare' 
+        : selectedProperty.transactionType;
+      form.setValue('contractType', contractTypeForFlow);
     }
   };
 
