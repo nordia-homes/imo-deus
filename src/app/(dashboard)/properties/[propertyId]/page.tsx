@@ -56,7 +56,7 @@ export default function PropertyDetailPage() {
     const propertyId = params.propertyId as string;
     const { toast } = useToast();
 
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
@@ -67,7 +67,7 @@ export default function PropertyDetailPage() {
         return doc(firestore, 'users', user.uid, 'properties', propertyId);
     }, [firestore, user, propertyId]);
 
-    const { data: property, isLoading, error } = useDoc<Property>(propertyDocRef);
+    const { data: property, isLoading: isDocLoading, error } = useDoc<Property>(propertyDocRef);
 
     const handleGenerateInsights = async () => {
         if (!property) return;
@@ -99,7 +99,9 @@ export default function PropertyDetailPage() {
         }
     };
 
-    if (isLoading) {
+    const pageIsLoading = isUserLoading || isDocLoading;
+
+    if (pageIsLoading) {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-[550px] w-full rounded-lg" />

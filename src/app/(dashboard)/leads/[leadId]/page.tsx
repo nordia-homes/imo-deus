@@ -58,7 +58,7 @@ export default function LeadDetailPage() {
     const params = useParams();
     const leadId = params.leadId as string;
     
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -249,8 +249,10 @@ export default function LeadDetailPage() {
         }
     }
 
+    const pageIsLoading = isUserLoading || isContactLoading;
+
     // --- RENDER LOGIC ---
-    if (isContactLoading) {
+    if (pageIsLoading) {
         return (
              <div className="space-y-6">
                 <div className="flex items-center gap-4">
