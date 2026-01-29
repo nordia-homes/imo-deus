@@ -1,7 +1,13 @@
 
+'use client';
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
 
 export function PropertyDetails({ property }: { property: any }) {
+    const [showExactLocation, setShowExactLocation] = useState(true);
+
     return (
         <div className="space-y-6">
             <div>
@@ -53,12 +59,18 @@ export function PropertyDetails({ property }: { property: any }) {
             </Card>
 
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Hartă</CardTitle>
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="location-toggle">Arată locația exactă</Label>
+                        <Switch id="location-toggle" checked={showExactLocation} onCheckedChange={setShowExactLocation} />
+                    </div>
                 </CardHeader>
                 <CardContent>
                      <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
-                        <p className="text-muted-foreground">Placeholder hartă (iframe)</p>
+                        <p className="text-muted-foreground">
+                            {showExactLocation ? `Placeholder hartă (iframe) pentru ${property.latitude}, ${property.longitude}` : 'Placeholder hartă (iframe) pentru locație aproximativă'}
+                        </p>
                      </div>
                 </CardContent>
             </Card>

@@ -2,6 +2,10 @@
 import AiInsightCard from "@/components/ai/AiInsightCard";
 import { PropertyDetails } from "@/components/properties/PropertyDetails";
 import { PropertyGallery } from "@/components/properties/PropertyGallery";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PropertyContractsTab } from "@/components/properties/PropertyContractsTab";
+import { PropertyPromotionsTab } from "@/components/properties/PropertyPromotionsTab";
+import { PropertyPresentationsTab } from "@/components/properties/PropertyPresentationsTab";
 
 export default function PropertyDetailPage({ params }: { params: { propertyId: string }}) {
     // Placeholder data - replace with Firestore data
@@ -35,14 +39,38 @@ export default function PropertyDetailPage({ params }: { params: { propertyId: s
     return (
         <div className="space-y-8">
             <PropertyGallery images={property.images} />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <PropertyDetails property={property} />
-                </div>
-                <div>
-                    <AiInsightCard insights={property.aiInsights} />
-                </div>
-            </div>
+
+            <Tabs defaultValue="details" className="w-full">
+                <TabsList>
+                    <TabsTrigger value="details">Detalii Proprietate</TabsTrigger>
+                    <TabsTrigger value="contracts">Contracte</TabsTrigger>
+                    <TabsTrigger value="promotions">Promovare</TabsTrigger>
+                    <TabsTrigger value="presentations">Prezentări PDF</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="details" className="mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                            <PropertyDetails property={property} />
+                        </div>
+                        <div>
+                            <AiInsightCard insights={property.aiInsights} />
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="contracts" className="mt-6">
+                    <PropertyContractsTab propertyId={property.id} />
+                </TabsContent>
+
+                <TabsContent value="promotions" className="mt-6">
+                    <PropertyPromotionsTab propertyId={property.id} />
+                </TabsContent>
+
+                <TabsContent value="presentations" className="mt-6">
+                    <PropertyPresentationsTab propertyId={property.id} />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

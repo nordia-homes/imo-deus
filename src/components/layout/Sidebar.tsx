@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Building2, KanbanSquare, CheckSquare, Bot, CreditCard, Share2, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { Home, Users, Building2, KanbanSquare, CheckSquare, Bot, CreditCard, Share2, Settings, LogOut, BarChart3, FileText, Map, LineChart } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +14,9 @@ const navItems = [
     { href: '/properties', label: 'Proprietăți', icon: Building2 },
     { href: '/pipeline', label: 'Pipeline', icon: KanbanSquare },
     { href: '/tasks', label: 'Task-uri', icon: CheckSquare },
+    { href: '/contracts', label: 'Contracte', icon: FileText },
+    { href: '/map', label: 'Hartă', icon: Map },
+    { href: '/reports', label: 'Rapoarte', icon: LineChart },
     { href: '/ai-assistant', label: 'AI Assistant', icon: Bot },
     { href: '/billing', label: 'Facturare', icon: CreditCard },
     { href: '/portal-sync', label: 'Integrări', icon: Share2 },
@@ -35,7 +39,7 @@ export function Sidebar() {
                     </div>
                  )}
             </div>
-            <nav className="flex-1 px-2 py-4 space-y-1">
+            <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
                     return (
