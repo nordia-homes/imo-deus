@@ -85,7 +85,7 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data Scadentă</FormLabel>
-                    <Popover>
+                    <Popover modal={true}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
