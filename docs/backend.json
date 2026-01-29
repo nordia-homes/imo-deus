@@ -347,6 +347,10 @@
         "price": {
           "type": "number",
           "description": "The final agreed price for the transaction."
+        },
+        "content": {
+          "type": "string",
+          "description": "The full, AI-generated legal text of the contract."
         }
       },
       "required": [

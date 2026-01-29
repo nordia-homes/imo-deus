@@ -3,6 +3,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -131,6 +132,7 @@ export type Contract = {
   status: 'Draft' | 'Trimis' | 'Semnat' | 'Anulat';
   date: string;
   price: number;
+  content?: string;
 };
 
     
