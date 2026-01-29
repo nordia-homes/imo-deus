@@ -1,7 +1,6 @@
 'use client';
 import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Dot } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
 
 type ChartData = {
@@ -35,18 +34,9 @@ export function SalesAnalyticsChart({ data, isLoading }: { data: ChartData[], is
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
-                <div className="flex justify-between items-center">
+                 <div>
                     <CardTitle>Analiza Veniturilor</CardTitle>
-                    <Select defaultValue="last-30-days">
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Selectează perioada" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="last-30-days">Ultimele 30 de zile</SelectItem>
-                            <SelectItem value="last-3-months" disabled>Ultimele 3 luni</SelectItem>
-                            <SelectItem value="last-year" disabled>Ultimul an</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <CardDescription>Ultimele 30 de zile</CardDescription>
                 </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">

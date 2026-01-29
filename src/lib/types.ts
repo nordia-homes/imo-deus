@@ -2,6 +2,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -86,6 +87,7 @@ export type Contact = {
     city?: string;
     zones?: string[];
     leadScore?: number;
+    createdAt?: string;
 }
 
 export type SalesData = {
