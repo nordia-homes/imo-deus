@@ -23,7 +23,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                 <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-lg overflow-hidden h-[550px]">
                     
                     {/* Main Image */}
-                    <div className="md:col-span-2 md:row-span-2 relative group">
+                    <div className="md:col-span-2 md:row-span-2 relative">
                         <Image
                             src={mainImage}
                             alt={title}
@@ -32,14 +32,11 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                             sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover"
                         />
-                        <DialogTrigger asChild>
-                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
-                        </DialogTrigger>
                     </div>
 
                     {/* Other Images */}
                     {otherImages.map((src, index) => (
-                        <div key={index} className="relative group hidden md:block">
+                        <div key={index} className="relative hidden md:block">
                             <Image
                                 src={src}
                                 alt={`${title} ${index + 2}`}
@@ -47,9 +44,6 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
                                 sizes="25vw"
                                 className="object-cover"
                             />
-                            <DialogTrigger asChild>
-                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
-                            </DialogTrigger>
                         </div>
                     ))}
                 </div>
