@@ -98,7 +98,7 @@ export default function PropertyDetailPage() {
         }
     };
 
-    const isLoading = isUserLoading || (user && isDocLoading);
+    const isLoading = isUserLoading || isDocLoading;
 
     if (isLoading) {
         return (
@@ -121,13 +121,16 @@ export default function PropertyDetailPage() {
         return <div className="text-center text-red-500">A apărut o eroare la încărcarea proprietății.</div>;
     }
 
-    // After all loading is done, if there's no user (logged out) or no property, it's a 404.
     if (!user || !property) {
         notFound();
         return null;
     }
     
-    const allImages = property.images?.map(img => img.url) || ['https://placehold.co/1200x800'];
+    const propertyImages = (property.images || [])
+        .map(img => (typeof img === 'object' && img !== null && 'url' in img && typeof img.url === 'string') ? img.url : null)
+        .filter(Boolean) as string[];
+
+    const allImages = propertyImages.length > 0 ? propertyImages : ['https://placehold.co/1200x800'];
 
     return (
         <div className="space-y-6">
