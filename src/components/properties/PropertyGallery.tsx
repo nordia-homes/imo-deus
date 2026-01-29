@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -23,8 +22,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             <div className="relative">
                 <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-lg overflow-hidden h-[550px]">
                     {/* Main Image */}
-                    <DialogTrigger asChild className="md:col-span-2 md:row-span-2 relative group cursor-pointer">
-                        <div>
+                    <DialogTrigger asChild>
+                        <div className="md:col-span-2 md:row-span-2 relative group cursor-pointer">
                              <Image
                                 src={mainImage}
                                 alt={title}
@@ -37,8 +36,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
 
                     {/* Other Images */}
                     {otherImages.map((src, index) => (
-                         <DialogTrigger asChild key={index} className="relative group cursor-pointer hidden md:block">
-                            <div>
+                         <DialogTrigger asChild key={index}>
+                            <div className="relative group cursor-pointer hidden md:block">
                                 <Image
                                     src={src}
                                     alt={`${title} ${index + 2}`}
