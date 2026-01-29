@@ -2,14 +2,13 @@
 
 import { useMemo } from 'react';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { SalesAnalyticsChart } from '@/components/dashboard/SalesAnalyticsChart';
 import { Building, TrendingUp, Users } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import type { Contact, Property, Task } from '@/lib/types';
+import { collection, query, where } from 'firebase/firestore';
+import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
@@ -38,17 +37,6 @@ export default function DashboardPage() {
         return collection(firestore, 'users', user.uid, 'properties');
     }, [firestore, user]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
-    
-    // Priority Tasks
-    const tasksQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'tasks'),
-            where('status', '==', 'open'),
-            limit(3)
-        );
-    }, [firestore, user]);
-    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
 
 
     // --- DATA CALCULATION ---
@@ -120,7 +108,6 @@ export default function DashboardPage() {
                     <SalesAnalyticsChart data={salesAnalyticsData} isLoading={isLoading} />
                 </div>
                 <div className="space-y-6">
-                    <PriorityTasks tasks={tasks} isLoading={areTasksLoading} />
                     <AiHelperCard />
                 </div>
             </div>
