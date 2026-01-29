@@ -1,48 +1,26 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model.
- * All data is isolated within a user's own data tree, ensuring that a user can only ever access
- * their own information. There is no concept of shared or public data in this model.
- *
- * This version simplifies the rules by using a wildcard match for all user subcollections,
- * ensuring consistent ownership-based security across all user-related data.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
+    // Helper function to check if the requester is the owner of the data.
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // ------------------------------------------------------------------------
-    // User Profile Rules
-    // ------------------------------------------------------------------------
+    // Rules for the top-level 'users' collection.
     match /users/{userId} {
-      // Users can read and update their own profile.
-      allow get, update: if isOwner(userId);
-      // Users can create their own profile document.
-      allow create: if isOwner(userId);
-      // Prevent listing all users for security.
-      allow list: if false;
-      // Prevent users from deleting their own root document.
-      allow delete: if false;
-    }
+      // A user can create, read, and update their own profile document.
+      // Deleting the main user document is disallowed. Listing all users is disallowed.
+      allow get, update, create: if isOwner(userId);
+      allow delete, list: if false;
 
-    // ------------------------------------------------------------------------
-    // Generic Sub-collection Rules
-    // This uses a wildcard to match all subcollections of a user (e.g., contacts, properties, tasks).
-    // ------------------------------------------------------------------------
-    match /users/{userId}/{collection}/{documentId} {
-      // A user can perform any read or write operation on documents in their own subcollections.
-      allow read, write: if isOwner(userId);
+      // This is a recursive wildcard rule that applies to ALL subcollections of a user document.
+      // It ensures that a user can only read and write to their own data tree.
+      // This single rule secures collections like 'contacts', 'properties', 'tasks', etc.
+      // It explicitly allows 'read' (which includes 'get' and 'list') and 'write' operations.
+      match /{allPaths=**} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
