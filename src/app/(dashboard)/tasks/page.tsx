@@ -19,14 +19,16 @@ export type Task = {
     title: string;
     dueDate: string;
     completed: boolean;
+    startTime?: string;
+    duration?: number;
     contactId?: string;
     contactName?: string;
 };
 
 export default function TasksPage() {
     const [tasks, setTasks] = useState<Task[]>([
-        { id: 't1', title: 'Follow up cu Alex Popescu', dueDate: '2024-06-05', completed: false, contactId: '1', contactName: 'Alex Popescu' },
-        { id: 't2', title: 'Programează vizionare pentru Ana Ionescu', dueDate: '2024-06-02', completed: false, contactId: '2', contactName: 'Ana Ionescu' },
+        { id: 't1', title: 'Follow up cu Alex Popescu', dueDate: '2024-06-05', completed: false, contactId: '1', contactName: 'Alex Popescu', startTime: '14:30' },
+        { id: 't2', title: 'Programează vizionare pentru Ana Ionescu', dueDate: '2024-06-02', completed: false, contactId: '2', contactName: 'Ana Ionescu', startTime: '11:00' },
         { id: 't3', title: 'Pregătește acte vânzare proprietate #P345', dueDate: '2024-05-30', completed: true },
     ]);
 
@@ -78,6 +80,7 @@ export default function TasksPage() {
                                 <label htmlFor={`task-${task.id}`} className="font-medium cursor-pointer">{task.title}</label>
                                 <p className="text-sm text-muted-foreground">
                                     Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                    {task.startTime && ` la ${task.startTime}`}
                                     {task.contactName && (
                                         <>
                                          {' | Pentru: '}
@@ -108,6 +111,7 @@ export default function TasksPage() {
                                 <label htmlFor={`task-${task.id}`} className="font-medium text-muted-foreground line-through cursor-pointer">{task.title}</label>
                                  <p className="text-sm text-muted-foreground line-through">
                                     Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                    {task.startTime && ` la ${task.startTime}`}
                                 </p>
                             </div>
                         </CardContent>

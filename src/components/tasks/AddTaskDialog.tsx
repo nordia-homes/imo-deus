@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -22,6 +22,8 @@ import type { Task } from '@/app/(dashboard)/tasks/page';
 const taskSchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
   dueDate: z.date({ required_error: "Data scadentă este obligatorie." }),
+  startTime: z.string().optional(),
+  duration: z.coerce.number().optional(),
   contactId: z.string().optional(),
 });
 
@@ -39,8 +41,29 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: '',
+      duration: 30,
     },
   });
+
+  const timeSlots = useMemo(() => {
+      const slots = [];
+      for (let h = 8; h < 22; h++) {
+          for (let m = 0; m < 60; m += 30) {
+              const hour = h.toString().padStart(2, '0');
+              const minute = m.toString().padStart(2, '0');
+              slots.push(`${hour}:${minute}`);
+          }
+      }
+      return slots;
+  }, []);
+
+  const durationOptions = [
+    { value: 15, label: '15 minute' },
+    { value: 30, label: '30 minute' },
+    { value: 45, label: '45 minute' },
+    { value: 60, label: '1 oră' },
+    { value: 90, label: '1.5 ore' },
+  ];
 
   function onSubmit(values: z.infer<typeof taskSchema>) {
     const selectedContact = contacts.find(c => c.id === values.contactId);
@@ -48,6 +71,8 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
     onAddTask({
         title: values.title,
         dueDate: format(values.dueDate, 'yyyy-MM-dd'),
+        startTime: values.startTime,
+        duration: values.duration,
         contactId: values.contactId,
         contactName: selectedContact?.name,
     });
@@ -120,6 +145,49 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Ora de început</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {timeSlots.map(time => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Durată</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                                <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Alege durata" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {durationOptions.map(option => (
+                                        <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              </div>
 
               <FormField
                   control={form.control}
