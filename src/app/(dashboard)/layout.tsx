@@ -20,16 +20,18 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isUserLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    // We only want to redirect when we are certain about the auth state
+    if (!isUserLoading && !isLoggedIn) {
       router.replace('/login');
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, isUserLoading, router]);
 
-  if (!isLoggedIn) {
+  // While checking auth state or if user is not logged in (and about to be redirected), show a loader.
+  if (isUserLoading || !isLoggedIn) {
       return <FullScreenLoader />;
   }
 

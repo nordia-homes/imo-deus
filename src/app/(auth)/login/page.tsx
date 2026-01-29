@@ -3,16 +3,37 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Home } from "lucide-react";
+import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import type { AuthError } from "firebase/auth";
+
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Adresă de email invalidă.' }),
+  password: z.string().min(6, { message: 'Parola trebuie să aibă cel puțin 6 caractere.' }),
+});
 
 export default function LoginPage() {
   const { login, isLoggedIn } = useAuth();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -20,10 +41,17 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, router]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Here you would normally validate credentials against a backend
-    login();
+  const handleLogin = (values: z.infer<typeof loginSchema>) => {
+    setIsSubmitting(true);
+    login(values.email, values.password, (error: AuthError) => {
+        console.error("Login failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Autentificare eșuată",
+            description: "Adresa de email sau parola este incorectă. Vă rugăm să încercați din nou.",
+        });
+        setIsSubmitting(false);
+    });
   };
 
   if (isLoggedIn) {
@@ -32,38 +60,59 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <form onSubmit={handleLogin}>
-        <Card className="w-full max-w-sm">
-            <CardHeader className="text-center">
-                 <div className="flex justify-center items-center gap-2 mb-4">
-                    <Home className="text-primary h-8 w-8" />
-                    <h1 className="font-headline text-3xl font-bold">
-                    EstateFlow
-                    </h1>
-                </div>
-                <CardTitle>Autentificare</CardTitle>
-                <CardDescription>Introdu datele pentru a accesa platforma.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="nume@agentie.ro" required defaultValue="mihai.i@exemplu.ro" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password">Parolă</Label>
-                    <Input id="password" type="password" required defaultValue="password" />
-                </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" type="submit">
-                    Intră în cont
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                    Ai uitat parola? <Link href="#" className="underline">Recuperează</Link>
-                </p>
-            </CardFooter>
-        </Card>
-      </form>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleLogin)} className="w-full max-w-sm">
+            <Card>
+                <CardHeader className="text-center">
+                     <div className="flex justify-center items-center gap-2 mb-4">
+                        <Home className="text-primary h-8 w-8" />
+                        <h1 className="font-headline text-3xl font-bold">
+                        EstateFlow
+                        </h1>
+                    </div>
+                    <CardTitle>Autentificare</CardTitle>
+                    <CardDescription>Introdu datele pentru a accesa platforma.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input type="email" placeholder="nume@agentie.ro" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Parolă</FormLabel>
+                                <FormControl>
+                                    <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                    <Button className="w-full" type="submit" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Intră în cont
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                        Nu ai cont? <Link href="#" className="underline">Înregistrează-te</Link>
+                    </p>
+                </CardFooter>
+            </Card>
+        </form>
+      </Form>
     </div>
   );
 }

@@ -2,15 +2,21 @@
 
 import { useRouter } from 'next/navigation';
 import React, {
-  useState,
-  useEffect,
   createContext,
   useContext,
   ReactNode,
   useCallback,
 } from 'react';
+import {
+  useAuth as useFirebaseAuth,
+  useUser,
+} from '@/firebase';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  AuthError,
+} from 'firebase/auth';
 
-// A simple skeleton loader
 function FullScreenLoader() {
     return (
         <div className="h-screen w-screen flex items-center justify-center bg-background">
@@ -23,39 +29,35 @@ function FullScreenLoader() {
 
 type AuthContextType = {
   isLoggedIn: boolean;
-  login: () => void;
+  login: (email: string, pass: string, onError: (error: AuthError) => void) => void;
   logout: () => void;
+  isUserLoading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const auth = useFirebaseAuth();
+  const { user, isUserLoading } = useUser();
 
-  useEffect(() => {
-    // localStorage is not available on the server, so we use useEffect.
-    const storedAuth = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(storedAuth);
-    setLoading(false);
-  }, []);
-
-  const login = useCallback(() => {
-    localStorage.setItem('isLoggedIn', 'true');
-    setIsLoggedIn(true);
-    router.push('/dashboard');
-  }, [router]);
+  const login = useCallback((email: string, pass: string, onError: (error: AuthError) => void) => {
+    signInWithEmailAndPassword(auth, email, pass)
+      .catch((error: AuthError) => {
+        onError(error);
+      });
+  }, [auth]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
-    router.push('/login');
-  }, [router]);
+    signOut(auth).then(() => {
+        router.push('/login');
+    });
+  }, [auth, router]);
 
-  const value = { isLoggedIn, login, logout };
+  const value = { isLoggedIn: !!user, login, logout, isUserLoading };
 
-  if (loading) {
+  // We use isUserLoading from Firebase provider, which handles the initial auth state check.
+  if (isUserLoading) {
       return <FullScreenLoader />;
   }
 
