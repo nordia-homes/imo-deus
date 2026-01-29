@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Send, Bot, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { chat } from "@/ai/flows/chat";
 import type { Message } from "genkit";
 import { useToast } from "@/hooks/use-toast";
@@ -18,15 +18,22 @@ interface ChatMessage {
 interface AiChatProps {
     suggestedPrompts: string[];
     promptsLoading: boolean;
+    initialPrompt?: string;
 }
 
-export function AiChat({ suggestedPrompts, promptsLoading }: AiChatProps) {
+export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt }: AiChatProps) {
     const { toast } = useToast();
     const [messages, setMessages] = useState<ChatMessage[]>([
         { role: 'model', text: 'Bună! Sunt asistentul tău AI. Cum te pot ajuta astăzi cu activitățile tale imobiliare?' }
     ]);
-    const [input, setInput] = useState('');
+    const [input, setInput] = useState(initialPrompt || '');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (initialPrompt) {
+            setInput(initialPrompt);
+        }
+    }, [initialPrompt]);
 
     const handleSend = async () => {
         if (!input.trim()) return;

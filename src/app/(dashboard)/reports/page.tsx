@@ -107,9 +107,9 @@ export default function ReportsPage() {
                     </>
                 ) : (
                     <>
-                        <StatCard title="Total Vânzări Câștigate" value={totalWonLeads.toString()} icon={<DollarSign />} change="" period="Număr total de tranzacții" changeType="increase"/>
-                        <StatCard title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} change="" period="Din totalul de lead-uri" changeType="increase"/>
-                        <StatCard title="Valoare Medie Tranzacție" value={`€${averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<TrendingUp />} change="" period="Pe tranzacție câștigată" changeType="increase"/>
+                        <StatCard title="Total Vânzări Câștigate" value={totalWonLeads.toString()} icon={<DollarSign />} period="Număr total de tranzacții"/>
+                        <StatCard title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} period="Din totalul de lead-uri"/>
+                        <StatCard title="Valoare Medie Tranzacție" value={`€${averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<TrendingUp />} period="Pe tranzacție câștigată"/>
                     </>
                 )}
             </div>

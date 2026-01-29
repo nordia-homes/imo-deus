@@ -1,15 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { AiChat } from "@/components/ai/AiChat";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSearchParams } from 'next/navigation';
 
-export default function AiAssistantPage() {
+function AiAssistantContent() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const initialPrompt = searchParams.get('prompt') || undefined;
 
   const contactsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -57,7 +60,20 @@ export default function AiAssistantPage() {
                 Asistentul tău personal pentru orice întrebare imobiliară.
             </p>
         </div>
-        <AiChat suggestedPrompts={suggestedPrompts} promptsLoading={isLoading}/>
+        <AiChat 
+            suggestedPrompts={suggestedPrompts} 
+            promptsLoading={isLoading}
+            initialPrompt={initialPrompt}
+        />
     </div>
   );
+}
+
+
+export default function AiAssistantPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <AiAssistantContent />
+        </Suspense>
+    )
 }

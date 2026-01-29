@@ -78,9 +78,9 @@ export default function LeadsPage() {
                 </>
             ) : (
                 <>
-                    <StatCard title="Lead-uri Noi" value={newLeadsCount.toString()} change="+0" changeType="increase" period="săptămâna aceasta" icon={<Users />} />
-                    <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} change="+0" changeType="increase" period="față de luna trecută" icon={<Target />} />
-                    <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} change="0" changeType="increase" period="față de luna trecută" icon={<BarChart />} />
+                    <StatCard title="Lead-uri Noi" value={newLeadsCount.toString()} period="în ultima săptămână" icon={<Users />} />
+                    <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toate lead-urile" icon={<Target />} />
+                    <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru lead-urile cu scor" icon={<BarChart />} />
                 </>
             )}
         </div>

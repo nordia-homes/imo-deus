@@ -108,9 +108,9 @@ export default function DashboardPage() {
                     </>
                 ) : (
                     <>
-                        <StatCard title="Total Lead-uri" value={totalLeads.toString()} change="+0" changeType="increase" period="față de luna trecută" icon={<Users />} />
-                        <StatCard title="Volum Vânzări" value={`€${salesVolume.toLocaleString()}`} change="+0%" changeType="increase" period="față de luna trecută" icon={<TrendingUp />} />
-                        <StatCard title="Proprietăți Active" value={activeProperties.toString()} change="+0" changeType="increase" period="față de luna trecută" icon={<Building />} />
+                        <StatCard title="Total Lead-uri" value={totalLeads.toString()} icon={<Users />} period={`${totalLeads} lead-uri în total`} />
+                        <StatCard title="Volum Vânzări" value={`€${salesVolume.toLocaleString()}`} icon={<TrendingUp />} period="Total din tranzacții câștigate" />
+                        <StatCard title="Proprietăți Active" value={activeProperties.toString()} icon={<Building />} period={`${activeProperties} proprietăți în portofoliu`} />
                     </>
                 )}
             </div>

@@ -141,6 +141,7 @@ export default function PropertyDetailPage() {
         .filter(Boolean) as string[];
 
     const allImages = propertyImages.length > 0 ? propertyImages : (property.imageUrl ? [property.imageUrl] : ['https://placehold.co/1200x800']);
+    const agentEmail = user?.email;
 
     return (
         <div className="space-y-6">
@@ -242,7 +243,11 @@ export default function PropertyDetailPage() {
                                     </div>
                                 </div>
                              )}
-                             <Button size="lg" className="w-full">Contactează Agentul</Button>
+                             <Button size="lg" className="w-full" asChild disabled={!agentEmail}>
+                                <a href={`mailto:${agentEmail}?subject=Interes%20pentru%20proprietatea%20${encodeURIComponent(property.title || '')}`}>
+                                    Contactează Agentul
+                                </a>
+                            </Button>
                         </CardContent>
                     </Card>
                     
