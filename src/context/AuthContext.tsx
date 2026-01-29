@@ -16,6 +16,7 @@ import {
   signOut,
   AuthError,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 
 function FullScreenLoader() {
@@ -34,6 +35,7 @@ type AuthContextType = {
   signup: (email: string, pass: string, onError: (error: AuthError) => void) => void;
   logout: () => void;
   isUserLoading: boolean;
+  resetPassword: (email: string, onSuccess: () => void, onError: (error: AuthError) => void) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -56,6 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         onError(error);
       });
   }, [auth]);
+  
+  const resetPassword = useCallback((email: string, onSuccess: () => void, onError: (error: AuthError) => void) => {
+    sendPasswordResetEmail(auth, email)
+        .then(() => {
+            onSuccess();
+        })
+        .catch((error: AuthError) => {
+            onError(error);
+        });
+  }, [auth]);
 
   const logout = useCallback(() => {
     signOut(auth).then(() => {
@@ -63,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [auth, router]);
 
-  const value = { isLoggedIn: !!user, login, signup, logout, isUserLoading };
+  const value = { isLoggedIn: !!user, login, signup, logout, isUserLoading, resetPassword };
 
   // We use isUserLoading from Firebase provider, which handles the initial auth state check.
   if (isUserLoading) {
