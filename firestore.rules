@@ -1,0 +1,175 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for a real estate CRM application.
+ * All data is isolated within a user's own data tree, ensuring that a user can only ever access
+ * their own information. There is no concept of shared or public data in this model.
+ *
+ * Data Structure: The data is hierarchically organized under the `/users/{userId}` path. Each
+ * user has their own set of subcollections for contacts, properties, tasks, reports, and emails.
+ * This structure makes security rules simple and performant, as ownership is determined directly
+ * from the document path.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: All operations (read, write, delete) on any document are restricted to the
+ *   authenticated user whose UID matches the `{userId}` in the path.
+ * - No Public Access: There are no publicly readable collections. All data is private.
+ * - No User Listing: It is not possible to list documents in the top-level `/users` collection,
+ *   preventing enumeration of the application's users.
+ * - User Self-Creation: A user is allowed to create their own root user document (at /users/{userId})
+ *   to store profile information, but they cannot read, update, or delete other users' documents.
+ *
+ * Denormalization for Authorization: This ruleset relies on path-based security, which is a form of
+ * structural denormalization. By placing a user's data in a subcollection under their own ID,
+ * we avoid the need for costly `get()` calls to check for an `ownerId` field on every document.
+ * The path itself contains all the information needed for the authorization decision.
+ *
+ * Structural Segregation: All user data is inherently private by being stored under a user-specific
+ * path (`/users/{userId}/...`). This is the most secure and performant way to handle private data,
+ * especially for list operations, as queries are naturally scoped to a single user's data tree.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's ID matches the provided userId.
+     * This is the primary function for enforcing the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the user is the owner AND the resource already exists.
+     * This is a critical check for all update and delete operations to prevent
+     * modifying or deleting documents that do not exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // ------------------------------------------------------------------------
+    // User Profile Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to a user's root document, often used for profiles.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own user document: `auth.uid == userId`.
+     * @deny (create) An authenticated user trying to create a document for another user.
+     * @principle Enforces self-creation and ownership for a user's own root document.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow listing all users for security.
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if false; // Prevent users from deleting their own root document.
+    }
+
+    // ------------------------------------------------------------------------
+    // Contact Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of contacts.
+     * @path /users/{userId}/contacts/{contactId}
+     * @allow (get) An authenticated user reading one of their own contacts: `auth.uid == userId`.
+     * @deny (get) An authenticated user trying to read another user's contact.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/contacts/{contactId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Property Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of property listings.
+     * @path /users/{userId}/properties/{propertyId}
+     * @allow (create) An authenticated user creating a new property listing for themselves: `auth.uid == userId`.
+     * @deny (list) An authenticated user trying to list another user's properties.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/properties/{propertyId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Task Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of tasks.
+     * @path /users/{userId}/tasks/{taskId}
+     * @allow (update) An authenticated user updating one of their own tasks: `auth.uid == userId`.
+     * @deny (delete) An authenticated user trying to delete another user's task.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/tasks/{taskId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Report Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of generated reports.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (get) An authenticated user reading one of their own reports: `auth.uid == userId`.
+     * @deny (create) An unauthenticated user trying to create a report.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/reports/{reportId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Email Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of emails.
+     * @path /users/{userId}/emails/{emailId}
+     * @allow (list) An authenticated user listing their own emails: `auth.uid == userId`.
+     * @deny (get) An authenticated user trying to read an email belonging to another user.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/emails/{emailId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

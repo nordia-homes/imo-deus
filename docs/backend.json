@@ -1,0 +1,324 @@
+{
+  "entities": {
+    "Contact": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contact",
+      "type": "object",
+      "description": "Represents a contact, which can be a client, lead, or partner.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the contact."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the contact."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the contact."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the contact.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the contact."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address of the contact."
+        },
+        "contactType": {
+          "type": "string",
+          "description": "The type of contact (e.g., client, lead, partner)."
+        },
+        "leadScore": {
+          "type": "number",
+          "description": "The lead score of the contact."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes about the contact."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "contactType"
+      ]
+    },
+    "Property": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Property",
+      "type": "object",
+      "description": "Represents a property listing.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the property."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address of the property."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the property."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the property."
+        },
+        "propertyType": {
+          "type": "string",
+          "description": "The type of property (e.g., house, apartment)."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the property image.",
+          "format": "uri"
+        },
+        "contactId": {
+          "type": "string",
+          "description": "Reference to Contact. (Relationship: Contact 1:N Property). Represents the agent or contact associated with the listing."
+        }
+      },
+      "required": [
+        "id",
+        "address",
+        "price",
+        "propertyType"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task to be completed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the task."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date of the task.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the task (e.g., open, completed)."
+        },
+        "contactId": {
+          "type": "string",
+          "description": "Reference to Contact. (Relationship: Contact 1:N Task). Represents contact associated with the task."
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "dueDate",
+        "status"
+      ]
+    },
+    "Report": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Report",
+      "type": "object",
+      "description": "Represents a report on sales performance, lead conversion rates, and agent activity.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the report."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the report."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the report's content."
+        },
+        "dateGenerated": {
+          "type": "string",
+          "description": "The date the report was generated.",
+          "format": "date-time"
+        },
+        "metrics": {
+          "type": "string",
+          "description": "Key metrics included in the report (e.g., sales performance, lead conversion rates)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "dateGenerated",
+        "metrics"
+      ]
+    },
+    "Email": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Email",
+      "type": "object",
+      "description": "Represents an email communication.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the email."
+        },
+        "sender": {
+          "type": "string",
+          "description": "Email address of the sender."
+        },
+        "recipient": {
+          "type": "string",
+          "description": "Email address of the recipient."
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject line of the email."
+        },
+        "body": {
+          "type": "string",
+          "description": "Content of the email."
+        },
+        "sentDate": {
+          "type": "string",
+          "description": "Date and time the email was sent.",
+          "format": "date-time"
+        },
+        "contactId": {
+          "type": "string",
+          "description": "Reference to Contact. (Relationship: Contact 1:N Email). Represents contact associated with the email."
+        }
+      },
+      "required": [
+        "id",
+        "sender",
+        "recipient",
+        "subject",
+        "sentDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/contacts/{contactId}",
+        "definition": {
+          "entityName": "Contact",
+          "schema": {
+            "$ref": "#/backend/entities/Contact"
+          },
+          "description": "Stores contacts owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their contacts.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the contact."
+            },
+            {
+              "name": "contactId",
+              "description": "The unique ID of the contact."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/properties/{propertyId}",
+        "definition": {
+          "entityName": "Property",
+          "schema": {
+            "$ref": "#/backend/entities/Property"
+          },
+          "description": "Stores property listings owned by a specific user. Uses path-based ownership for security.  Authorization is based on the `userId` parameter, ensuring only the user can access their properties.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the property listing."
+            },
+            {
+              "name": "propertyId",
+              "description": "The unique ID of the property listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their tasks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the task."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique ID of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reports/{reportId}",
+        "definition": {
+          "entityName": "Report",
+          "schema": {
+            "$ref": "#/backend/entities/Report"
+          },
+          "description": "Stores reports owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their reports.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the report."
+            },
+            {
+              "name": "reportId",
+              "description": "The unique ID of the report."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/emails/{emailId}",
+        "definition": {
+          "entityName": "Email",
+          "schema": {
+            "$ref": "#/backend/entities/Email"
+          },
+          "description": "Stores emails owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their emails.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the email."
+            },
+            {
+              "name": "emailId",
+              "description": "The unique ID of the email."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage real estate CRM data, emphasizing security, scalability, and ease of debugging. It follows a hierarchical structure for user-owned data and employs denormalization techniques to ensure authorization independence. The structure also segregates data based on access needs, facilitating secure list operations (QAPs) and simplifying security rules. Path-based ownership is prioritized, and data clarity is maintained through explicit state modeling and consistent naming conventions.\n\nAuthorization Independence:\nDenormalization is implemented to avoid using `get()` calls in security rules. This is achieved by including relevant authorization data (e.g., user roles or membership) directly within the documents needing protection, eliminating hierarchical authorization dependencies.\n\nQAPs (Rules are not Filters):\nThe structure enables secure `list` operations by segregating data based on access needs. Private user data is stored under the `/users/{userId}` path, ensuring that listing operations can be secured using path-based rules. Shared or collaborative data can be secured via membership maps denormalized into the documents."
+  }
+}
