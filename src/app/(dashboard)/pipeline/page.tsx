@@ -1,11 +1,17 @@
 'use client';
 
-import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
-
 export default function PipelinePage() {
-  return (
-    <div className="h-full flex flex-col">
-        <PipelineBoard />
-    </div>
-  );
-}
+    return (
+      <div className="space-y-6">
+         <div>
+              <h1 className="text-3xl font-headline font-bold">Pipeline Vânzări</h1>
+              <p className="text-muted-foreground">
+                  Urmărește progresul tranzacțiilor în timp real.
+              </p>
+          </div>
+          <div className="text-center py-10 border rounded-lg">
+            <p className="text-muted-foreground">Această funcționalitate este momentan în revizuire tehnică.</p>
+          </div>
+      </div>
+    );
+  }
