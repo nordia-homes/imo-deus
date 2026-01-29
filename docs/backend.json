@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -139,6 +140,38 @@
         "contactId": {
           "type": "string",
           "description": "Reference to Contact. (Relationship: Contact 1:N Property). Represents the agent or contact associated with the listing."
+        },
+        "promotions": {
+          "type": "object",
+          "description": "An object tracking the promotion status on various real estate portals.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unpublished",
+                  "pending",
+                  "published",
+                  "error"
+                ]
+              },
+              "lastSync": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "link": {
+                "type": "string",
+                "format": "uri"
+              },
+              "views": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
         }
       },
       "required": [
@@ -475,5 +508,3 @@
     "reasoning": "The Firestore structure is designed to manage real estate CRM data, emphasizing security, scalability, and ease of debugging. It follows a hierarchical structure for user-owned data and employs denormalization techniques to ensure authorization independence. The structure also segregates data based on access needs, facilitating secure list operations (QAPs) and simplifying security rules. Path-based ownership is prioritized, and data clarity is maintained through explicit state modeling and consistent naming conventions.\n\nAuthorization Independence:\nDenormalization is implemented to avoid using `get()` calls in security rules. This is achieved by including relevant authorization data (e.g., user roles or membership) directly within the documents needing protection, eliminating hierarchical authorization dependencies.\n\nQAPs (Rules are not Filters):\nThe structure enables secure `list` operations by segregating data based on access needs. Private user data is stored under the `/users/{userId}` path, ensuring that listing operations can be secured using path-based rules. Shared or collaborative data can be secured via membership maps denormalized into the documents."
   }
 }
-
-    

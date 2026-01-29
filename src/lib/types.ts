@@ -1,6 +1,13 @@
 
 
 
+export type PromotionStatus = {
+  status: 'unpublished' | 'pending' | 'published' | 'error';
+  lastSync?: string;
+  link?: string;
+  views?: number;
+}
+
 export type Property = {
   id: string;
   title: string;
@@ -39,6 +46,9 @@ export type Property = {
   imageUrl?: string;
   imageHint?: string;
   createdAt?: string;
+  promotions?: {
+    [portalName: string]: PromotionStatus;
+  };
 };
 
 
