@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const PropertyInsightsInputSchema = z.object({
+const PropertyInsightsInputSchema = z.object({
   propertyType: z.string().describe('The type of property (e.g., house, apartment).'),
   location: z.string().describe('The location of the property (city, neighborhood).'),
   price: z.number().describe('The asking price of the property in EUR.'),
@@ -21,7 +21,7 @@ export const PropertyInsightsInputSchema = z.object({
 });
 export type PropertyInsightsInput = z.infer<typeof PropertyInsightsInputSchema>;
 
-export const PropertyInsightsOutputSchema = z.object({
+const PropertyInsightsOutputSchema = z.object({
   marketScore: z.number().min(0).max(100).describe('A score from 0-100 representing how attractive the property is on the current market. Higher is better.'),
   pricingFeedback: z.string().describe('A brief, constructive analysis of the property\'s price compared to the market. Written in Romanian.'),
   buyerProfile: z.string().describe('A short description of the ideal buyer profile for this property. Written in Romanian.'),
