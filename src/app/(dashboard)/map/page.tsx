@@ -1,24 +1,36 @@
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Property } from '@/lib/types';
+import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MapPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'properties');
+    }, [firestore, user]);
+
+    const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
+
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div>
-                <h1 className="text-3xl font-headline font-bold">Hartă Agregată</h1>
+                <h1 className="text-3xl font-headline font-bold">Hartă Proprietăți</h1>
                 <p className="text-muted-foreground">
-                    Vezi toate proprietățile tale și ale competitorilor într-un singur loc.
+                    Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
                 </p>
             </div>
-            <Card className="flex-1">
-                <CardContent className="p-0 h-full">
-                    <div className="h-full bg-gray-200 rounded-lg flex items-center justify-center">
-                        <p className="text-muted-foreground">
-                            Placeholder pentru harta agregată (iframe sau componentă de hartă).
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+            {isLoading ? (
+                 <Skeleton className="flex-1 w-full" />
+            ) : (
+                <PropertiesMap properties={properties || []} />
+            )}
         </div>
     );
 }
