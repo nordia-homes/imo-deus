@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +29,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -44,7 +42,7 @@ const leadSchema = z.object({
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
   notes: z.string().optional(),
   city: z.string().min(1, { message: "Orașul este obligatoriu." }),
-  zones: z.array(z.string()).default([]),
+  zones: z.array(z.string()).optional(), // This will be handled manually
 });
 
 const locations = {
@@ -58,6 +56,7 @@ type City = keyof typeof locations;
 
 export function AddLeadDialog() {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -79,6 +78,11 @@ export function AddLeadDialog() {
 
   const watchedCity = form.watch('city') as City;
 
+  // Reset local state for zones when the city changes
+  useEffect(() => {
+    setSelectedZones([]);
+  }, [watchedCity]);
+
   function onSubmit(values: z.infer<typeof leadSchema>) {
     if (!user) {
         toast({
@@ -90,8 +94,11 @@ export function AddLeadDialog() {
     }
 
     const contactsCollection = collection(firestore, 'users', user.uid, 'contacts');
+    
+    // Manually add the zones from local state to the data being submitted
     const newLeadData = {
         ...values,
+        zones: selectedZones,
         contactType: 'Lead',
         createdAt: new Date().toISOString(),
     };
@@ -102,16 +109,27 @@ export function AddLeadDialog() {
         title: "Lead adăugat!",
         description: `${values.name} a fost adăugat în lista ta de lead-uri.`,
     });
+
     setIsOpen(false);
     form.reset();
+    setSelectedZones([]);
   }
   
   const handleOpenChange = (open: boolean) => {
       setIsOpen(open);
       if (!open) {
           form.reset();
+          setSelectedZones([]);
       }
   }
+
+  const handleZoneToggle = (zone: string) => {
+    setSelectedZones((prev) =>
+      prev.includes(zone)
+        ? prev.filter((z) => z !== zone)
+        : [...prev, zone]
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -204,10 +222,7 @@ export function AddLeadDialog() {
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Oraș de interes</FormLabel>
-                                <Select onValueChange={(value) => {
-                                    field.onChange(value);
-                                    form.setValue('zones', []); // Reset zones on city change
-                                }} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                     <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
                                     </FormControl>
@@ -223,46 +238,30 @@ export function AddLeadDialog() {
                             />
                             
                             {watchedCity && locations[watchedCity] && (
-                               <FormField
-                                control={form.control}
-                                name="zones"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Zone de interes</FormLabel>
-                                         <div className="max-h-60 overflow-y-auto rounded-md border p-4">
-                                            <div className="flex flex-wrap gap-2">
-                                                 {locations[watchedCity].map((zone) => (
-                                                    <div key={zone}>
-                                                        <Checkbox
-                                                            id={`zone-${zone}`}
-                                                            className="peer sr-only"
-                                                            checked={field.value?.includes(zone)}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    field.onChange([...(field.value || []), zone]);
-                                                                } else {
-                                                                    field.onChange(
-                                                                        (field.value || []).filter(
-                                                                            (value) => value !== zone
-                                                                        )
-                                                                    );
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Label
-                                                            htmlFor={`zone-${zone}`}
-                                                            className="cursor-pointer rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-                                                        >
-                                                            {zone}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                <div className="space-y-2">
+                                    <Label>Zone de interes</Label>
+                                    <div className="max-h-60 overflow-y-auto rounded-md border p-4">
+                                        <div className="flex flex-wrap gap-2">
+                                            {locations[watchedCity].map((zone) => (
+                                                <div key={zone}>
+                                                    <input
+                                                        id={`zone-${zone}`}
+                                                        type="checkbox"
+                                                        className="peer sr-only"
+                                                        checked={selectedZones.includes(zone)}
+                                                        onChange={() => handleZoneToggle(zone)}
+                                                    />
+                                                    <Label
+                                                        htmlFor={`zone-${zone}`}
+                                                        className="cursor-pointer rounded-full border border-input bg-background px-3 py-1.5 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                                                    >
+                                                        {zone}
+                                                    </Label>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </section>
