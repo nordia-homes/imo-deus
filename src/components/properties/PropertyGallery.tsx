@@ -23,34 +23,38 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             <div className="relative">
                 <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-lg overflow-hidden h-[550px]">
                     {/* Main Image */}
-                    <DialogTrigger asChild>
-                        <div className="md:col-span-2 md:row-span-2 relative group cursor-pointer">
-                             <Image
-                                src={mainImage}
-                                alt={title}
-                                fill
-                                className="object-cover"
-                                priority
-                                sizes="(max-width: 768px) 100vw, 50vw"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                    </DialogTrigger>
-
-                    {/* Other Images */}
-                    {otherImages.map((src, index) => (
-                         <DialogTrigger asChild key={index}>
-                            <div className="relative group cursor-pointer hidden md:block">
-                                <Image
-                                    src={src}
-                                    alt={`${title} ${index + 2}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="25vw"
-                                />
+                    <div className="md:col-span-2 md:row-span-2 relative group">
+                         <Image
+                            src={mainImage}
+                            alt={title}
+                            fill
+                            priority
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            className="object-cover"
+                        />
+                        <DialogTrigger asChild>
+                            <div className="absolute inset-0 cursor-pointer">
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                         </DialogTrigger>
+                    </div>
+
+                    {/* Other Images */}
+                    {otherImages.map((src, index) => (
+                        <div key={index} className="relative group hidden md:block">
+                            <Image
+                                src={src}
+                                alt={`${title} ${index + 2}`}
+                                fill
+                                sizes="25vw"
+                                className="object-cover"
+                            />
+                            <DialogTrigger asChild>
+                                <div className="absolute inset-0 cursor-pointer">
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </DialogTrigger>
+                        </div>
                     ))}
                 </div>
                  <DialogTrigger asChild>

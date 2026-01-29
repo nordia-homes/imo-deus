@@ -166,64 +166,56 @@ export function AddPropertyDialog() {
       return;
     }
 
-    // De-structure to explicitly exclude the 'images' field which may contain non-serializable File objects
-    const { images, ...serializableValues } = values;
-
     const propertiesCollection = collection(
       firestore,
       'users',
       user.uid,
       'properties'
     );
-
-    const randomSeed = Math.floor(Math.random() * 1000);
     
+    const randomSeed = Math.floor(Math.random() * 1000);
+
     const newPropertyData = {
-      title: serializableValues.title,
-      propertyType: serializableValues.propertyType,
-      transactionType: serializableValues.transactionType,
-      location: serializableValues.location,
-      price: serializableValues.price,
-      bedrooms: serializableValues.bedrooms,
-      bathrooms: serializableValues.bathrooms,
-      squareFootage: serializableValues.squareFootage,
-      totalSurface: serializableValues.totalSurface || null,
-      constructionYear: serializableValues.constructionYear || null,
-      floor: serializableValues.floor,
-      totalFloors: serializableValues.totalFloors || null,
-      comfort: serializableValues.comfort,
-      interiorState: serializableValues.interiorState,
-      furnishing: serializableValues.furnishing,
-      heatingSystem: serializableValues.heatingSystem,
-      parking: serializableValues.parking,
-      keyFeatures: serializableValues.keyFeatures,
-      description: serializableValues.description,
-      
-      address: serializableValues.location,
-      images: [
-        { url: `https://picsum.photos/seed/${randomSeed}/1200/800`, alt: 'Placeholder Image 1'},
-        { url: `https://picsum.photos/seed/${randomSeed + 1}/1200/800`, alt: 'Placeholder Image 2'},
-        { url: `https://picsum.photos/seed/${randomSeed + 2}/1200/800`, alt: 'Placeholder Image 3'},
-        { url: `https://picsum.photos/seed/${randomSeed + 3}/1200/800`, alt: 'Placeholder Image 4'},
-        { url: `https://picsum.photos/seed/${randomSeed + 4}/1200/800`, alt: 'Placeholder Image 5'},
-      ],
+      title: values.title,
+      propertyType: values.propertyType,
+      transactionType: values.transactionType,
+      location: values.location,
+      price: values.price,
+      bedrooms: values.bedrooms,
+      bathrooms: values.bathrooms,
+      squareFootage: values.squareFootage,
+      totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
+      constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
+      floor: values.floor || null,
+      totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
+      comfort: values.comfort || null,
+      interiorState: values.interiorState || null,
+      furnishing: values.furnishing || null,
+      heatingSystem: values.heatingSystem || null,
+      parking: values.parking || null,
+      keyFeatures: values.keyFeatures,
+      description: values.description || '',
+      address: values.location,
       imageUrl: `https://picsum.photos/seed/${randomSeed}/800/600`,
-      imageHint: serializableValues.propertyType?.toLowerCase() || 'property',
-      tagline: `${serializableValues.bedrooms} dorm. | ${serializableValues.bathrooms} băi | ${serializableValues.squareFootage}mp`,
+      imageHint: values.propertyType?.toLowerCase() || 'property',
+      images: Array.from({ length: 5 }, (_, i) => ({
+        url: `https://picsum.photos/seed/${randomSeed + i}/1200/800`,
+        alt: `Placeholder Image ${i + 1}`,
+      })),
+      tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
       createdAt: new Date().toISOString(),
       agent: {
         name: user.displayName || user.email || 'Agent',
-        avatarUrl:
-          user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+        avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
       },
-      amenities: serializableValues.keyFeatures.split(',').map((f) => f.trim()),
+      amenities: values.keyFeatures.split(',').map((f) => f.trim()),
     };
     
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
 
     toast({
       title: 'Proprietate adăugată!',
-      description: `${serializableValues.title} a fost adăugată în portofoliul tău.`,
+      description: `${values.title} a fost adăugată în portofoliul tău.`,
     });
 
     setIsOpen(false);
