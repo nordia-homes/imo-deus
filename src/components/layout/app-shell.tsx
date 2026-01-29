@@ -42,92 +42,92 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/dashboard" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Dashboard">
-                  <BarChart3 />
-                  <span>Dashboard</span>
+                <SidebarMenuButton tooltip="Dashboard" asChild>
+                  <Link href="/dashboard">
+                    <BarChart3 />
+                    <span>Dashboard</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/leads" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Lead-uri">
-                  <Users />
-                  <span>Lead-uri</span>
+                <SidebarMenuButton tooltip="Lead-uri" asChild>
+                  <Link href="/leads">
+                    <Users />
+                    <span>Lead-uri</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/properties" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Proprietăți">
-                  <Building2 />
-                  <span>Proprietăți</span>
+                <SidebarMenuButton tooltip="Proprietăți" asChild>
+                  <Link href="/properties">
+                    <Building2 />
+                    <span>Proprietăți</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/pipeline" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Pipeline">
-                  <Waypoints />
-                  <span>Pipeline</span>
+                <SidebarMenuButton tooltip="Pipeline" asChild>
+                  <Link href="/pipeline">
+                    <Waypoints />
+                    <span>Pipeline</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/tasks" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Task-uri">
-                  <CheckSquare />
-                  <span>Task-uri</span>
+                <SidebarMenuButton tooltip="Task-uri" asChild>
+                  <Link href="/tasks">
+                    <CheckSquare />
+                    <span>Task-uri</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/contracts" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Contracte">
-                  <FileText />
-                  <span>Contracte</span>
+                <SidebarMenuButton tooltip="Contracte" asChild>
+                  <Link href="/contracts">
+                    <FileText />
+                    <span>Contracte</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/ai-assistant" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="AI Assistant">
-                  <MessageSquare />
-                  <span>AI Assistant</span>
+                <SidebarMenuButton tooltip="AI Assistant" asChild>
+                  <Link href="/ai-assistant">
+                    <MessageSquare />
+                    <span>AI Assistant</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/reports" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Rapoarte">
-                  <BarChart3 />
-                  <span>Rapoarte</span>
+                <SidebarMenuButton tooltip="Rapoarte" asChild>
+                  <Link href="/reports">
+                    <BarChart3 />
+                    <span>Rapoarte</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/portal-sync" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Integrări">
-                  <AppWindow />
-                  <span>Integrări</span>
+                <SidebarMenuButton tooltip="Integrări" asChild>
+                  <Link href="/portal-sync">
+                    <AppWindow />
+                    <span>Integrări</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/billing" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Facturare">
-                  <CreditCard />
-                  <span>Facturare</span>
+                <SidebarMenuButton tooltip="Facturare" asChild>
+                  <Link href="/billing">
+                    <CreditCard />
+                    <span>Facturare</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <Link href="/settings" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Setări">
-                  <Settings />
-                  <span>Setări</span>
+                <SidebarMenuButton tooltip="Setări" asChild>
+                  <Link href="/settings">
+                    <Settings />
+                    <span>Setări</span>
+                  </Link>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
