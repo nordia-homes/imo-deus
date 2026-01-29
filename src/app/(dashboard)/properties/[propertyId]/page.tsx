@@ -127,10 +127,20 @@ export default function PropertyDetailPage() {
     }
     
     const propertyImages = (property.images || [])
-        .map(img => (typeof img === 'object' && img !== null && 'url' in img && typeof img.url === 'string') ? img.url : null)
+        .map(img => {
+            // Case 1: img is an object with a 'url' property
+            if (typeof img === 'object' && img !== null && 'url' in img && typeof (img as any).url === 'string') {
+                return (img as any).url;
+            }
+            // Case 2: img is already a string
+            if (typeof img === 'string') {
+                return img;
+            }
+            return null;
+        })
         .filter(Boolean) as string[];
 
-    const allImages = propertyImages.length > 0 ? propertyImages : ['https://placehold.co/1200x800'];
+    const allImages = propertyImages.length > 0 ? propertyImages : (property.imageUrl ? [property.imageUrl] : ['https://placehold.co/1200x800']);
 
     return (
         <div className="space-y-6">

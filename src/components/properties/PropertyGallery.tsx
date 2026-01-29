@@ -1,11 +1,11 @@
 'use client';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Image as ImageIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '../ui/scroll-area';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
+    const [mainImage, setMainImage] = useState(images[0]);
+
     if (!images || images.length === 0) {
         return (
              <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
@@ -14,66 +14,44 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         )
     }
 
-    const mainImage = images[0];
-    const otherImages = images.slice(1, 5); // Show up to 4 other images in the grid
-
     return (
-        <Dialog>
-            <div className="relative">
-                <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-lg overflow-hidden h-[550px]">
-                    
-                    {/* Main Image */}
-                    <div className="md:col-span-2 md:row-span-2 relative">
-                        <Image
-                            src={mainImage}
-                            alt={title}
-                            fill
-                            priority
-                            sizes="(max-width: 768px) 100vw, 50vw"
-                            className="object-cover"
-                        />
-                    </div>
-
-                    {/* Other Images */}
-                    {otherImages.map((src, index) => (
-                        <div key={index} className="relative hidden md:block">
+        <div className="space-y-2">
+            {/* Main Image */}
+            <div className="relative w-full h-[400px] md:h-[550px] rounded-lg overflow-hidden">
+                <Image
+                    key={mainImage} // Add key to force re-render on change
+                    src={mainImage}
+                    alt={title}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 80vw"
+                />
+            </div>
+            
+            {/* Thumbnails */}
+            {images.length > 1 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                    {images.map((src, index) => (
+                        <div 
+                            key={index}
+                            className={cn(
+                                "relative aspect-video rounded-md overflow-hidden cursor-pointer border-2",
+                                mainImage === src ? 'border-primary' : 'border-transparent'
+                            )}
+                            onClick={() => setMainImage(src)}
+                        >
                             <Image
                                 src={src}
-                                alt={`${title} ${index + 2}`}
+                                alt={`${title} thumbnail ${index + 1}`}
                                 fill
-                                sizes="25vw"
                                 className="object-cover"
+                                sizes="20vw"
                             />
                         </div>
                     ))}
                 </div>
-                 <DialogTrigger asChild>
-                    <Button variant="secondary" className="absolute bottom-4 right-4">
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        Show all photos
-                    </Button>
-                </DialogTrigger>
-            </div>
-             <DialogContent className="max-w-7xl h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>Photos for: {title}</DialogTitle>
-                </DialogHeader>
-                 <ScrollArea className="h-full">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                        {images.map((src, index) => (
-                             <div key={index} className="aspect-video relative">
-                                <Image
-                                    src={src}
-                                    alt={`${title} ${index + 1}`}
-                                    fill
-                                    className="object-cover rounded-md"
-                                    sizes="(max-width: 1400px) 50vw, 33vw"
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
+            )}
+        </div>
     );
 }
