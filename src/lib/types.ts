@@ -1,5 +1,6 @@
 
 
+
 export type Property = {
   id: string;
   title: string;
@@ -106,3 +107,17 @@ export type UserProfile = {
   agencyLogoUrl?: string;
   agencyPrimaryColor?: string;
 };
+
+export type Contract = {
+  id: string;
+  propertyId: string;
+  propertyTitle?: string;
+  contactId: string;
+  contactName?: string;
+  contractType: 'Vânzare-Cumpărare' | 'Închiriere';
+  status: 'Draft' | 'Trimis' | 'Semnat' | 'Anulat';
+  date: string;
+  price: number;
+};
+
+    

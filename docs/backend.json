@@ -261,6 +261,70 @@
         "subject",
         "sentDate"
       ]
+    },
+    "Contract": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contract",
+      "type": "object",
+      "description": "Represents a real estate contract between a client and an agent for a property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the contract."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to the Property involved in the contract."
+        },
+        "propertyTitle": {
+          "type": "string",
+          "description": "Denormalized title of the property for easy display."
+        },
+        "contactId": {
+          "type": "string",
+          "description": "Reference to the Contact (client) involved in the contract."
+        },
+        "contactName": {
+          "type": "string",
+          "description": "Denormalized name of the contact for easy display."
+        },
+        "contractType": {
+          "type": "string",
+          "enum": [
+            "Vânzare-Cumpărare",
+            "Închiriere"
+          ],
+          "description": "The type of contract."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Draft",
+            "Trimis",
+            "Semnat",
+            "Anulat"
+          ],
+          "description": "The current status of the contract."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the contract was generated or signed."
+        },
+        "price": {
+          "type": "number",
+          "description": "The final agreed price for the transaction."
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "contactId",
+        "contractType",
+        "status",
+        "date",
+        "price"
+      ]
     }
   },
   "auth": {
@@ -386,8 +450,30 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/contracts/{contractId}",
+        "definition": {
+          "entityName": "Contract",
+          "schema": {
+            "$ref": "#/backend/entities/Contract"
+          },
+          "description": "Stores contracts owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their contracts.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the contract."
+            },
+            {
+              "name": "contractId",
+              "description": "The unique ID of the contract."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to manage real estate CRM data, emphasizing security, scalability, and ease of debugging. It follows a hierarchical structure for user-owned data and employs denormalization techniques to ensure authorization independence. The structure also segregates data based on access needs, facilitating secure list operations (QAPs) and simplifying security rules. Path-based ownership is prioritized, and data clarity is maintained through explicit state modeling and consistent naming conventions.\n\nAuthorization Independence:\nDenormalization is implemented to avoid using `get()` calls in security rules. This is achieved by including relevant authorization data (e.g., user roles or membership) directly within the documents needing protection, eliminating hierarchical authorization dependencies.\n\nQAPs (Rules are not Filters):\nThe structure enables secure `list` operations by segregating data based on access needs. Private user data is stored under the `/users/{userId}` path, ensuring that listing operations can be secured using path-based rules. Shared or collaborative data can be secured via membership maps denormalized into the documents."
   }
 }
+
+    

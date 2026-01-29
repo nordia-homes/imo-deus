@@ -90,7 +90,7 @@ service cloud.firestore {
      */
     match /users/{userId}/contacts/{contactId} {
       allow get: if isOwner(userId);
-      allow list: if request.auth.uid == userId;
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
@@ -109,7 +109,7 @@ service cloud.firestore {
      */
     match /users/{userId}/properties/{propertyId} {
       allow get: if isOwner(userId);
-      allow list: if request.auth.uid == userId;
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
@@ -128,7 +128,7 @@ service cloud.firestore {
      */
     match /users/{userId}/tasks/{taskId} {
       allow get: if isOwner(userId);
-      allow list: if request.auth.uid == userId;
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
@@ -147,7 +147,7 @@ service cloud.firestore {
      */
     match /users/{userId}/reports/{reportId} {
       allow get: if isOwner(userId);
-      allow list: if request.auth.uid == userId;
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
@@ -166,10 +166,31 @@ service cloud.firestore {
      */
     match /users/{userId}/emails/{emailId} {
       allow get: if isOwner(userId);
-      allow list: if request.auth.uid == userId;
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Contract Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Secures a user's private collection of contracts.
+     * @path /users/{userId}/contracts/{contractId}
+     * @allow (get) An authenticated user reading one of their own contracts: `auth.uid == userId`.
+     * @deny (create) An unauthenticated user trying to create a contract.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/contracts/{contractId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
   }
 }
+
+    
