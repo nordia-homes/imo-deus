@@ -112,6 +112,7 @@ export default function SettingsPage() {
         // Use a batch to update both documents atomically
         const batch = writeBatch(firestore);
 
+        // 1. Create the agency document
         batch.set(newAgencyRef, {
             name: values.name,
             ownerId: user.uid,
@@ -119,14 +120,16 @@ export default function SettingsPage() {
             primaryColor: values.primaryColor,
         });
         
-        // Update user's profile with the new agencyId and make them an admin
-        batch.update(userDocRef, { 
+        // 2. Create or merge the user's profile document
+        batch.set(userDocRef, { 
+            name: user.displayName || user.email, // Set a default name
+            email: user.email,
             agencyId: newAgencyRef.id, 
             role: 'admin',
             agencyName: values.name,
             agencyLogoUrl: values.logoUrl,
             agencyPrimaryColor: values.primaryColor,
-        });
+        }, { merge: true });
 
         await batch.commit();
         
