@@ -2,13 +2,13 @@
 import { collection, getDocs, query, where, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import type { Property, Agency } from '@/lib/types';
+import type { Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 import { notFound } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
+import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
   // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
@@ -23,20 +23,6 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
       notFound();
   }
   const agency = agencySnap.data() as Agency;
-
-  // Secure query that only fetches active properties.
-  const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  const q = query(propertiesRef, where('status', '==', 'Activ'));
-  
-  const querySnapshot = await getDocs(q);
-  
-  const activeProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
-  
-  // Filter for featured properties in code after fetching.
-  const featuredProperties = activeProperties
-    .filter(property => property.featured === true)
-    .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0))
-    .slice(0, 3);
 
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
   const tagline = agency?.name ? `Partenerul dumneavoastră de încredere în imobiliare.` : 'Găsiți proprietatea visurilor dumneavoastră.';
@@ -69,17 +55,8 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
         </div>
       </section>
 
-      {/* Featured Properties Section */}
-      {featuredProperties.length > 0 && (
-        <section className="container mx-auto py-16 px-4">
-          <h2 className="text-3xl font-bold text-center mb-8">Proprietăți Recomandate</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map(property => (
-              <PublicPropertyCard key={property.id} property={property} agencyId={params.agencyId} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Featured Properties Section - Now a Client Component */}
+      <FeaturedProperties agencyId={params.agencyId} />
     </div>
   );
 }
