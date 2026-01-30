@@ -1,6 +1,6 @@
 'use client';
 import { AppShell } from '@/components/layout/app-shell';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { AgencyProvider, useAgency } from '@/context/AgencyContext';
@@ -58,6 +58,7 @@ function hexToHsl(hex: string): string | null {
 function DashboardRoot({ children }: { children: React.ReactNode }) {
     const { userProfile, agencyId, isAgencyLoading } = useAgency();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         const root = document.documentElement;
@@ -84,16 +85,17 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     }, [userProfile]);
 
     useEffect(() => {
-        // After loading is complete, if there's no agencyId, the user needs to set one up.
-        if (!isAgencyLoading && !agencyId) {
+        // Redirect to settings if loading is done, there's no agency, and we are not already on the settings page.
+        if (!isAgencyLoading && !agencyId && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [isAgencyLoading, agencyId, router]);
+    }, [isAgencyLoading, agencyId, router, pathname]);
 
-
-    // Show a loader while the agency context is loading or if we are about to redirect.
-    if (isAgencyLoading || !agencyId) {
-      return <FullScreenLoader />;
+    // Show a loader if:
+    // 1. We are loading the agency info.
+    // 2. We are NOT on the settings page AND we are missing an agency ID (which implies a redirect is about to happen).
+    if (isAgencyLoading || (!agencyId && pathname !== '/settings')) {
+        return <FullScreenLoader />;
     }
 
     return <AppShell>{children}</AppShell>;
