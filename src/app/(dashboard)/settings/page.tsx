@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, useCollection } from '@/firebase';
-import { collection, doc, writeBatch, query, where } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { userProfile, agencyId, isAgencyLoading } = useAgency();
+  const { userProfile, agencyId, isAgencyLoading: isContextLoading } = useAgency();
 
   const [isCreatingAgency, setIsCreatingAgency] = useState(false);
 
@@ -85,7 +85,6 @@ export default function SettingsPage() {
   const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
     if (!agencyDocRef) return;
     
-    // Also update the mirrored properties on the user profile for the theme to work
     if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
         updateDocumentNonBlocking(userDocRef, {
@@ -107,13 +106,9 @@ export default function SettingsPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
 
       try {
-        // Create the new agency document
         const newAgencyRef = doc(agenciesCollection);
-        
-        // Use a batch to update both documents atomically
         const batch = writeBatch(firestore);
 
-        // 1. Create the agency document
         batch.set(newAgencyRef, {
             name: values.name,
             ownerId: user.uid,
@@ -122,9 +117,8 @@ export default function SettingsPage() {
             agentIds: [user.uid],
         });
         
-        // 2. Create or merge the user's profile document
         batch.set(userDocRef, { 
-            name: user.displayName || user.email, // Set a default name
+            name: user.displayName || user.email,
             email: user.email,
             agencyId: newAgencyRef.id, 
             role: 'admin',
@@ -136,7 +130,6 @@ export default function SettingsPage() {
         await batch.commit();
         
         toast({ title: 'Agenție creată!', description: `Bun venit la ${values.name}!` });
-        // The context will automatically update and the layout will redirect to the dashboard.
       } catch (error) {
           console.error("Failed to create agency:", error);
           toast({ variant: 'destructive', title: 'Creare eșuată', description: 'Nu am putut crea agenția.' });
@@ -145,10 +138,9 @@ export default function SettingsPage() {
       }
   }
 
-  const isLoading = isUserLoading || isAgencyLoading || isAgencyDataLoading;
+  const isLoading = isUserLoading || isContextLoading || isAgencyDataLoading;
   
-  // This screen handles the case where a user is authenticated but has no agency.
-  if (!isAgencyLoading && !agencyId) {
+  if (!isContextLoading && !agencyId) {
       return (
           <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
               <Card className="w-full max-w-lg">
@@ -216,9 +208,7 @@ export default function SettingsPage() {
         </Form>
       </Card>
 
-      {userProfile?.role === 'admin' && agencyId && <AgentManagementCard agencyId={agencyId} />}
+      {userProfile?.role === 'admin' && agencyData && <AgentManagementCard agency={agencyData} />}
     </div>
   );
 }
-
-    

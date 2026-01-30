@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking, useUser } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import type { Agency, UserProfile } from '@/lib/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,18 +16,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, UserPlus } from 'lucide-react';
-import { useAgency } from '@/context/AgencyContext';
 
 const inviteSchema = z.object({
     email: z.string().email('Adresa de email este invalidă.'),
 });
 
-export function AgentManagementCard({ agencyId }: { agencyId: string }) {
+export function AgentManagementCard({ agency }: { agency: Agency }) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
-    const { userProfile: adminProfile, agents, isAgencyLoading } = useAgency();
 
+    const [agents, setAgents] = useState<UserProfile[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isInviting, setIsInviting] = useState(false);
 
     const form = useForm<z.infer<typeof inviteSchema>>({
@@ -35,31 +35,56 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
         defaultValues: { email: '' },
     });
 
-    const isLoading = isAgencyLoading;
+    useEffect(() => {
+        if (!agency.agentIds || agency.agentIds.length === 0) {
+            setAgents([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchAgents = async () => {
+            setIsLoading(true);
+            try {
+                const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
+                const agentDocs = await Promise.all(agentPromises);
+                const agentProfiles = agentDocs
+                    .filter(docSnap => docSnap.exists())
+                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                setAgents(agentProfiles);
+            } catch (error) {
+                console.error("Error fetching agent profiles:", error);
+                toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
+                setAgents([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, [agency.agentIds, firestore, toast]);
 
     async function handleInviteAgent(values: z.infer<typeof inviteSchema>) {
-        if (!user || !adminProfile?.agencyName) {
-            toast({ variant: 'destructive', title: 'Eroare', description: 'Numele agenției nu a putut fi găsit.' });
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Eroare', description: 'Trebuie sa fii autentificat.' });
             return;
         }
 
         setIsInviting(true);
         try {
-            // Use btoa to create a filesystem-safe ID from the email
             const inviteId = btoa(values.email);
             const inviteRef = doc(firestore, 'invites', inviteId);
             
             await setDocumentNonBlocking(inviteRef, {
                 email: values.email,
-                agencyId: agencyId,
-                agencyName: adminProfile.agencyName,
+                agencyId: agency.id,
+                agencyName: agency.name,
                 role: 'agent',
                 invitedBy: user.uid,
             }, {});
 
             toast({
                 title: 'Invitație trimisă!',
-                description: `${values.email} a fost invitat să se alăture agenției. Trebuie să se înregistreze cu acest email.`,
+                description: `${values.email} a fost invitat. Acum trebuie să se înregistreze cu acest email.`,
             });
             form.reset();
 
@@ -118,9 +143,11 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell>
-                                </TableRow>
+                                [...Array(3)].map((_, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell>
+                                    </TableRow>
+                                ))
                             ) : agents && agents.length > 0 ? (
                                 agents.map(agent => (
                                     <TableRow key={agent.id}>
@@ -131,7 +158,9 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground">Niciun agent în agenție.</TableCell>
+                                    <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                        Niciun agent în agenție. Invită unul mai sus.
+                                    </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -141,4 +170,3 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
         </Card>
     );
 }
-    
