@@ -13,6 +13,7 @@ import {
   Waypoints,
   FileText,
   UserCheck,
+  Map,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -62,6 +63,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Hartă" asChild>
+                    <Link href="/map">
+                        <Map />
+                        <span>Hartă</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

@@ -7,10 +7,12 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { SalesAnalyticsChart } from '@/components/dashboard/SalesAnalyticsChart';
 import { Building, TrendingUp, Users } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Contact, Property } from '@/lib/types';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import type { Contact, Property, Task } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
+import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
+import { startOfToday } from 'date-fns';
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -45,13 +47,26 @@ export default function DashboardPage() {
     }, [firestore, agencyCollectionPath]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
+    // Priority Tasks
+    const priorityTasksQuery = useMemoFirebase(() => {
+        if (!agencyCollectionPath) return null;
+        return query(
+            collection(firestore, agencyCollectionPath, 'tasks'), 
+            where('status', '==', 'open'),
+            where('dueDate', '<=', new Date().toISOString().split('T')[0]),
+            orderBy('dueDate', 'asc'),
+            limit(5)
+        );
+    }, [firestore, agencyCollectionPath]);
+    const { data: priorityTasks, isLoading: areTasksLoading } = useCollection<Task>(priorityTasksQuery);
+
 
     // --- DATA CALCULATION ---
     const totalLeads = useMemo(() => contacts?.length ?? 0, [contacts]);
     const salesVolume = useMemo(() => wonLeads?.reduce((sum, lead) => sum + (lead.budget || 0), 0) ?? 0, [wonLeads]);
     const activeProperties = useMemo(() => properties?.length ?? 0, [properties]);
     
-    const isLoading = isAgencyLoading || areContactsLoading || areWonLeadsLoading || arePropertiesLoading;
+    const isLoading = isAgencyLoading || areContactsLoading || areWonLeadsLoading || arePropertiesLoading || areTasksLoading;
 
     const salesAnalyticsData = useMemo(() => {
         if (!wonLeads) return [];
@@ -116,6 +131,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-6">
                     <AiHelperCard />
+                    <PriorityTasks tasks={priorityTasks} isLoading={isLoading} />
                 </div>
             </div>
             
