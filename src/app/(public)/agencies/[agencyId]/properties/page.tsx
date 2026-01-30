@@ -1,17 +1,15 @@
-
 'use client';
-import { PublicPropertyList } from '@/components/public/PublicPropertyList';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AgencyPropertiesPage({ params }: { params: { agencyId: string } }) {
+  const router = useRouter();
 
-  return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold">Proprietățile Noastre</h1>
-        <p className="text-muted-foreground mt-2">Explorați portofoliul nostru de proprietăți disponibile.</p>
-      </div>
+  useEffect(() => {
+    // Redirect to the main agency page, which is now the properties list.
+    router.replace(`/agencies/${params.agencyId}`);
+  }, [router, params.agencyId]);
 
-      <PublicPropertyList agencyId={params.agencyId} />
-    </div>
-  );
+  // Render nothing, or a loading spinner, while redirecting.
+  return null;
 }

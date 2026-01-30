@@ -1,57 +1,85 @@
-
 import Image from "next/image";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BedDouble, Bath, Ruler, MapPin } from "lucide-react";
+import { Star } from "lucide-react";
 import type { Property } from "@/lib/types";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
-export function PropertyCard({ property }: { property: Property }) {
-  const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
-  
+export function PropertyCard({ property, agencyId }: { property: Property; agencyId?: string }) {
+  const href = agencyId
+    ? `/agencies/${agencyId}/properties/${property.id}`
+    : `/properties/${property.id}`;
+    
+  const hasImages = property.images && property.images.length > 0;
+  const primaryImageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
+
   return (
-    <Link href={`/properties/${property.id}`} className="group">
-      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg">
-        <div className="relative aspect-video">
-            <Image
-                src={primaryImageUrl}
-                alt={property.title || 'Proprietate'}
-                fill
-                className="object-cover transition-transform group-hover:scale-105"
-            />
-            <div className="absolute top-2 right-2 flex gap-2">
-                 <Badge variant="default" className="">{property.transactionType}</Badge>
+    <div className="group">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: hasImages,
+          }}
+          className="w-full relative rounded-xl overflow-hidden"
+        >
+          <CarouselContent>
+            {hasImages ? property.images.map((image, index) => (
+              <CarouselItem key={index}>
+                <Link href={href} className="block aspect-square relative">
+                  <Image
+                    src={image.url}
+                    alt={image.alt || property.title || 'Proprietate'}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </Link>
+              </CarouselItem>
+            )) : (
+                 <CarouselItem>
+                    <Link href={href} className="block aspect-square relative bg-muted">
+                        <Image
+                            src={primaryImageUrl}
+                            alt={property.title || 'Proprietate'}
+                            fill
+                            className="object-cover"
+                        />
+                    </Link>
+                </CarouselItem>
+            )}
+          </CarouselContent>
+           {hasImages && property.images.length > 1 && (
+            <>
+                <CarouselPrevious className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white" />
+                <CarouselNext className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white" />
+            </>
+           )}
+           <Badge variant="default" className="absolute top-3 right-3">{property.transactionType}</Badge>
+        </Carousel>
+
+        <Link href={href} className="block py-3">
+          <div className="flex justify-between items-start">
+             <h3 className="font-semibold text-base text-foreground truncate pr-2">{property.title}</h3>
+             <div className="flex items-center gap-1 shrink-0">
+                <Star className="h-4 w-4 fill-current text-yellow-500" />
+                <span className="text-sm font-medium">Nou</span>
+             </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{property.location}</p>
+           <div className="text-sm text-muted-foreground mt-1">
+                {property.bedrooms} dorm. &middot; {property.bathrooms} băi &middot; {property.squareFootage} mp
             </div>
-        </div>
-        <CardHeader>
-          <CardTitle className="truncate text-xl">{property.title}</CardTitle>
-          <CardDescription className="flex items-center gap-1 text-sm">
-            <MapPin className="h-4 w-4" />
-            {property.address}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1">
-            <div className="flex justify-around text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                    <BedDouble className="h-5 w-5 text-primary" />
-                    <span>{property.bedrooms} dorm.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Bath className="h-5 w-5 text-primary" />
-                    <span>{property.bathrooms} băi</span>
-                </div>
-                 <div className="flex items-center gap-2">
-                    <Ruler className="h-5 w-5 text-primary" />
-                    <span>{property.squareFootage} mp</span>
-                </div>
-            </div>
-        </CardContent>
-        <CardFooter className="mt-auto">
-          <p className="font-bold text-2xl text-primary">€{property.price.toLocaleString()}</p>
-        </CardFooter>
-      </Card>
-    </Link>
+          <p className="font-semibold text-base mt-2">
+            €{property.price.toLocaleString()}
+            {property.transactionType === 'Închiriere' && <span className="font-normal text-muted-foreground"> / lună</span>}
+          </p>
+        </Link>
+    </div>
   );
 }
-
-    
