@@ -210,15 +210,25 @@ export default function PropertyDetailPage() {
 
 
                              <Card>
-                                 <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
-                                 <CardContent>
-                                      <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
-                                          <p className="text-muted-foreground">
-                                              Placeholder hartă (iframe) pentru {property.latitude || 'lat'}, {property.longitude || 'long'}
-                                          </p>
-                                      </div>
-                                 </CardContent>
-                             </Card>
+                                <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
+                                <CardContent>
+                                    {(property.latitude && property.longitude) ? (
+                                        <iframe
+                                            className="w-full aspect-video rounded-md"
+                                            loading="lazy"
+                                            allowFullScreen
+                                            src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
+                                        >
+                                        </iframe>
+                                    ) : (
+                                        <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
+                                            <p className="text-muted-foreground">
+                                                Coordonatele GPS nu sunt disponibile pentru această proprietate.
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                            </div>
                         </TabsContent>
                          <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
