@@ -2,9 +2,8 @@
 import { AppShell } from '@/components/layout/app-shell';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/types';
+import { useUser } from '@/firebase';
+import { AgencyProvider, useAgency } from '@/context/AgencyContext';
 
 
 // A simple skeleton loader
@@ -56,6 +55,50 @@ function hexToHsl(hex: string): string | null {
     return `${h} ${s}% ${l}%`;
 }
 
+function DashboardRoot({ children }: { children: React.ReactNode }) {
+    const { userProfile, agencyId, isAgencyLoading } = useAgency();
+    const router = useRouter();
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const defaultPrimary = '250 65% 55%';
+
+        if (userProfile?.agencyPrimaryColor) {
+            const hslColor = hexToHsl(userProfile.agencyPrimaryColor);
+            if (hslColor) {
+                 root.style.setProperty('--primary', hslColor);
+                 root.style.setProperty('--ring', hslColor);
+            } else {
+                 root.style.setProperty('--primary', defaultPrimary);
+                 root.style.setProperty('--ring', defaultPrimary);
+            }
+        } else {
+          root.style.setProperty('--primary', defaultPrimary);
+          root.style.setProperty('--ring', defaultPrimary);
+        }
+        
+        return () => {
+            root.style.setProperty('--primary', defaultPrimary);
+            root.style.setProperty('--ring', defaultPrimary);
+        }
+    }, [userProfile]);
+
+    useEffect(() => {
+        // After loading is complete, if there's no agencyId, the user needs to set one up.
+        if (!isAgencyLoading && !agencyId) {
+            router.replace('/settings');
+        }
+    }, [isAgencyLoading, agencyId, router]);
+
+
+    // Show a loader while the agency context is loading or if we are about to redirect.
+    if (isAgencyLoading || !agencyId) {
+      return <FullScreenLoader />;
+    }
+
+    return <AppShell>{children}</AppShell>;
+}
+
 
 export default function DashboardLayout({
   children,
@@ -64,14 +107,6 @@ export default function DashboardLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-
-  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
     // We only want to redirect when we are certain about the auth state
@@ -80,36 +115,14 @@ export default function DashboardLayout({
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    const defaultPrimary = '250 65% 55%';
-
-    if (userProfile?.agencyPrimaryColor) {
-        const hslColor = hexToHsl(userProfile.agencyPrimaryColor);
-        if (hslColor) {
-             root.style.setProperty('--primary', hslColor);
-             root.style.setProperty('--ring', hslColor);
-        } else {
-             root.style.setProperty('--primary', defaultPrimary);
-             root.style.setProperty('--ring', defaultPrimary);
-        }
-    } else {
-      // Reset to default when color is removed or not present
-      root.style.setProperty('--primary', defaultPrimary);
-      root.style.setProperty('--ring', defaultPrimary);
-    }
-    
-    // Cleanup function to reset styles when component unmounts or user logs out
-    return () => {
-        root.style.setProperty('--primary', defaultPrimary);
-        root.style.setProperty('--ring', defaultPrimary);
-    }
-  }, [userProfile]);
-
   // While checking auth state or if user is not logged in (and about to be redirected), show a loader.
   if (isUserLoading || !user) {
       return <FullScreenLoader />;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AgencyProvider>
+        <DashboardRoot>{children}</DashboardRoot>
+    </AgencyProvider>
+  );
 }

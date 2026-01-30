@@ -2,19 +2,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Rules for the top-level 'users' collection.
+    // Helper function to check if a user belongs to a specific agency
+    function isUserInAgency(agencyId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
+    }
+
+    // Users can read and update their own profile.
     match /users/{userId} {
-      // A user can get, create and update their own profile document.
-      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow read, update, create: if request.auth != null && request.auth.uid == userId;
       // Main user document deletion is disallowed.
       allow delete: if false;
+    }
 
-      // This recursive wildcard rule applies to ALL subcollections of a user document.
-      // It ensures that a user can only read and write to their own data tree.
-      // This secures 'contacts', 'properties', 'tasks', etc.
-      match /{allPaths=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    // Agencies can be read by anyone, but only modified by admins of that agency.
+    match /agencies/{agencyId} {
+      allow get: if true;
+      allow list: if request.auth != null; // Allow logged-in users to list agencies
+      // Only agency admins can update agency details.
+      allow update: if request.auth != null && isUserInAgency(agencyId) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Agency creation is handled by specific logic (e.g. in settings page)
+      allow create: if request.auth != null;
+      allow delete: if false; // Disallow direct deletion
+    }
+
+    // Secure all sub-collections within an agency.
+    match /agencies/{agencyId}/{allPaths=**} {
+      // Only users who are part of the agency can read and write its data.
+      allow read, write: if request.auth != null && isUserInAgency(agencyId);
     }
   }
 }

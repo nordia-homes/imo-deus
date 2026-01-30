@@ -1,9 +1,4 @@
 
-
-
-
-
-
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -52,6 +47,8 @@ export type Property = {
   promotions?: {
     [portalName: string]: PromotionStatus;
   };
+  agentId?: string;
+  agentName?: string;
 };
 
 
@@ -89,6 +86,8 @@ export type Contact = {
     zones?: string[];
     leadScore?: number;
     createdAt?: string;
+    agentId?: string;
+    agentName?: string;
 }
 
 export type SalesData = {
@@ -111,12 +110,26 @@ export type Task = {
   contactName?: string;
   startTime?: string;
   duration?: number;
+  agentId?: string;
+  agentName?: string;
 };
+
+export type Agency = {
+  id: string;
+  name: string;
+  ownerId: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}
 
 export type UserProfile = {
   id: string;
   name: string;
   email: string;
+  agencyId?: string;
+  role?: 'admin' | 'agent';
+  // These were part of the old model, let's keep them on the user for now
+  // but they should be migrated to the Agency entity.
   agencyName?: string;
   agencyLogoUrl?: string;
   agencyPrimaryColor?: string;
@@ -133,6 +146,6 @@ export type Contract = {
   date: string;
   price: number;
   content?: string;
+  agentId?: string;
+  agentName?: string;
 };
-
-    

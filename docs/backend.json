@@ -1,6 +1,24 @@
-
 {
   "entities": {
+    "Agency": {
+      "title": "Agency",
+      "type": "object",
+      "description": "Represents a real estate agency.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The official name of the agency."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The user ID of the person who created and owns the agency."
+        }
+      },
+      "required": [
+        "name",
+        "ownerId"
+      ]
+    },
     "UserProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User Profile",
@@ -16,18 +34,17 @@
           "description": "The user's email address.",
           "format": "email"
         },
-        "agencyName": {
+        "agencyId": {
           "type": "string",
-          "description": "The name of the user's agency."
+          "description": "The ID of the agency this user belongs to."
         },
-        "agencyLogoUrl": {
+        "role": {
           "type": "string",
-          "description": "URL for the agency's logo.",
-          "format": "uri"
-        },
-        "agencyPrimaryColor": {
-          "type": "string",
-          "description": "The primary branding color for the agency in hex format."
+          "enum": [
+            "admin",
+            "agent"
+          ],
+          "description": "The user's role within the agency (e.g., admin, agent)."
         }
       },
       "required": [
@@ -41,10 +58,6 @@
       "type": "object",
       "description": "Represents a contact, which can be a client, lead, or partner.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the contact."
-        },
         "name": {
           "type": "string",
           "description": "The full name of the contact."
@@ -97,10 +110,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "agentId": {
+            "type": "string",
+            "description": "The ID of the agent who created or is assigned to this contact."
         }
       },
       "required": [
-        "id",
         "name",
         "email",
         "contactType"
@@ -112,10 +128,6 @@
       "type": "object",
       "description": "Represents a property listing.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the property."
-        },
         "address": {
           "type": "string",
           "description": "The address of the property."
@@ -172,10 +184,13 @@
               "status"
             ]
           }
+        },
+        "agentId": {
+            "type": "string",
+            "description": "The ID of the agent who created or is assigned to this property."
         }
       },
       "required": [
-        "id",
         "address",
         "price",
         "propertyType"
@@ -187,10 +202,6 @@
       "type": "object",
       "description": "Represents a task to be completed.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the task."
-        },
         "description": {
           "type": "string",
           "description": "Description of the task."
@@ -207,10 +218,13 @@
         "contactId": {
           "type": "string",
           "description": "Reference to Contact. (Relationship: Contact 1:N Task). Represents contact associated with the task."
+        },
+        "agentId": {
+            "type": "string",
+            "description": "The ID of the agent who created or is assigned to this task."
         }
       },
       "required": [
-        "id",
         "description",
         "dueDate",
         "status"
@@ -222,10 +236,6 @@
       "type": "object",
       "description": "Represents a report on sales performance, lead conversion rates, and agent activity.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the report."
-        },
         "name": {
           "type": "string",
           "description": "The name of the report."
@@ -245,7 +255,6 @@
         }
       },
       "required": [
-        "id",
         "name",
         "dateGenerated",
         "metrics"
@@ -257,10 +266,6 @@
       "type": "object",
       "description": "Represents an email communication.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the email."
-        },
         "sender": {
           "type": "string",
           "description": "Email address of the sender."
@@ -288,7 +293,6 @@
         }
       },
       "required": [
-        "id",
         "sender",
         "recipient",
         "subject",
@@ -301,10 +305,6 @@
       "type": "object",
       "description": "Represents a real estate contract between a client and an agent for a property.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the contract."
-        },
         "propertyId": {
           "type": "string",
           "description": "Reference to the Property involved in the contract."
@@ -354,7 +354,6 @@
         }
       },
       "required": [
-        "id",
         "propertyId",
         "contactId",
         "contractType",
@@ -380,7 +379,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user-specific profile data and agency branding settings. Authorization is based on the `userId` parameter.",
+          "description": "Stores user-specific profile data, including their agency affiliation and role. Authorization is based on the `userId`.",
           "params": [
             {
               "name": "userId",
@@ -390,17 +389,33 @@
         }
       },
       {
-        "path": "/users/{userId}/contacts/{contactId}",
+        "path": "/agencies/{agencyId}",
+        "definition": {
+          "entityName": "Agency",
+          "schema": {
+            "$ref": "#/backend/entities/Agency"
+          },
+          "description": "Top-level collection for all agencies. Each document contains agency-specific branding and details.",
+          "params": [
+            {
+              "name": "agencyId",
+              "description": "The unique ID of the agency."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/agencies/{agencyId}/contacts/{contactId}",
         "definition": {
           "entityName": "Contact",
           "schema": {
             "$ref": "#/backend/entities/Contact"
           },
-          "description": "Stores contacts owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their contacts.",
+          "description": "Stores contacts for a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the contact."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the contact."
             },
             {
               "name": "contactId",
@@ -410,37 +425,37 @@
         }
       },
       {
-        "path": "/users/{userId}/properties/{propertyId}",
+        "path": "/agencies/{agencyId}/properties/{propertyId}",
         "definition": {
           "entityName": "Property",
           "schema": {
             "$ref": "#/backend/entities/Property"
           },
-          "description": "Stores property listings owned by a specific user. Uses path-based ownership for security.  Authorization is based on the `userId` parameter, ensuring only the user can access their properties.",
+          "description": "Stores property listings for a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the property listing."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the property."
             },
             {
               "name": "propertyId",
-              "description": "The unique ID of the property listing."
+              "description": "The unique ID of the property."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/tasks/{taskId}",
+        "path": "/agencies/{agencyId}/tasks/{taskId}",
         "definition": {
           "entityName": "Task",
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "Stores tasks owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their tasks.",
+          "description": "Stores tasks for a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the task."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the task."
             },
             {
               "name": "taskId",
@@ -450,17 +465,17 @@
         }
       },
       {
-        "path": "/users/{userId}/reports/{reportId}",
+        "path": "/agencies/{agencyId}/reports/{reportId}",
         "definition": {
           "entityName": "Report",
           "schema": {
             "$ref": "#/backend/entities/Report"
           },
-          "description": "Stores reports owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their reports.",
+          "description": "Stores reports for a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the report."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the report."
             },
             {
               "name": "reportId",
@@ -470,17 +485,17 @@
         }
       },
       {
-        "path": "/users/{userId}/emails/{emailId}",
+        "path": "/agencies/{agencyId}/emails/{emailId}",
         "definition": {
           "entityName": "Email",
           "schema": {
             "$ref": "#/backend/entities/Email"
           },
-          "description": "Stores emails owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their emails.",
+          "description": "Stores emails related to a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the email."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the email."
             },
             {
               "name": "emailId",
@@ -490,17 +505,17 @@
         }
       },
       {
-        "path": "/users/{userId}/contracts/{contractId}",
+        "path": "/agencies/{agencyId}/contracts/{contractId}",
         "definition": {
           "entityName": "Contract",
           "schema": {
             "$ref": "#/backend/entities/Contract"
           },
-          "description": "Stores contracts owned by a specific user. Uses path-based ownership for security. Authorization is based on the `userId` parameter, ensuring only the user can access their contracts.",
+          "description": "Stores contracts for a specific agency. Authorization is based on the user's membership in the agency.",
           "params": [
             {
-              "name": "userId",
-              "description": "The ID of the user who owns the contract."
+              "name": "agencyId",
+              "description": "The ID of the agency that owns the contract."
             },
             {
               "name": "contractId",
@@ -510,6 +525,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to manage real estate CRM data, emphasizing security, scalability, and ease of debugging. It follows a hierarchical structure for user-owned data and employs denormalization techniques to ensure authorization independence. The structure also segregates data based on access needs, facilitating secure list operations (QAPs) and simplifying security rules. Path-based ownership is prioritized, and data clarity is maintained through explicit state modeling and consistent naming conventions.\n\nAuthorization Independence:\nDenormalization is implemented to avoid using `get()` calls in security rules. This is achieved by including relevant authorization data (e.g., user roles or membership) directly within the documents needing protection, eliminating hierarchical authorization dependencies.\n\nQAPs (Rules are not Filters):\nThe structure enables secure `list` operations by segregating data based on access needs. Private user data is stored under the `/users/{userId}` path, ensuring that listing operations can be secured using path-based rules. Shared or collaborative data can be secured via membership maps denormalized into the documents."
+    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management."
   }
 }

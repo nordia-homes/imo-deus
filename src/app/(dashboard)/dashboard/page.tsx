@@ -10,32 +10,39 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAgency } from '@/context/AgencyContext';
 
 export default function DashboardPage() {
     const { user } = useUser();
+    const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
 
     // --- DATA FETCHING ---
 
+    const agencyCollectionPath = useMemo(() => {
+        if (!agencyId) return null;
+        return `agencies/${agencyId}`;
+    }, [agencyId]);
+
     // Leads
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyCollectionPath) return null;
+        return collection(firestore, agencyCollectionPath, 'contacts');
+    }, [firestore, agencyCollectionPath]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
     
     // Won Leads for Sales Volume
     const wonLeadsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'contacts'), where('status', '==', 'Câștigat'));
-    }, [firestore, user]);
+        if (!agencyCollectionPath) return null;
+        return query(collection(firestore, agencyCollectionPath, 'contacts'), where('status', '==', 'Câștigat'));
+    }, [firestore, agencyCollectionPath]);
     const { data: wonLeads, isLoading: areWonLeadsLoading } = useCollection<Contact>(wonLeadsQuery);
 
     // Properties
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyCollectionPath) return null;
+        return collection(firestore, agencyCollectionPath, 'properties');
+    }, [firestore, agencyCollectionPath]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
 
@@ -44,7 +51,7 @@ export default function DashboardPage() {
     const salesVolume = useMemo(() => wonLeads?.reduce((sum, lead) => sum + (lead.budget || 0), 0) ?? 0, [wonLeads]);
     const activeProperties = useMemo(() => properties?.length ?? 0, [properties]);
     
-    const isLoading = areContactsLoading || areWonLeadsLoading || arePropertiesLoading;
+    const isLoading = isAgencyLoading || areContactsLoading || areWonLeadsLoading || arePropertiesLoading;
 
     const salesAnalyticsData = useMemo(() => {
         if (!wonLeads) return [];

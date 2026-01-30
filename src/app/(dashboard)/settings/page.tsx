@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/types';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,28 +15,32 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
+import { useAgency } from '@/context/AgencyContext';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
 });
 
 const agencySchema = z.object({
-  agencyName: z.string().optional(),
-  agencyLogoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
-  agencyPrimaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #1E3A8A).').optional(),
+  name: z.string().min(1, 'Numele agenției este obligatoriu.'),
+  logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #1E3A8A).').optional(),
 });
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { userProfile, agencyId, isAgencyLoading } = useAgency();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  const [isCreatingAgency, setIsCreatingAgency] = useState(false);
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+  const agencyDocRef = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return doc(firestore, 'agencies', agencyId);
+  }, [firestore, agencyId]);
+
+  const { data: agencyData, isLoading: isAgencyDataLoading } = useDoc<Agency>(agencyDocRef);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -45,117 +49,148 @@ export default function SettingsPage() {
 
   const agencyForm = useForm<z.infer<typeof agencySchema>>({
     resolver: zodResolver(agencySchema),
-    defaultValues: { agencyName: '', agencyLogoUrl: '', agencyPrimaryColor: '#1E3A8A' },
+    defaultValues: { name: '', logoUrl: '', primaryColor: '#1E3A8A' },
   });
 
   useEffect(() => {
     if (userProfile) {
       profileForm.reset({ name: userProfile.name });
-      agencyForm.reset({
-        agencyName: userProfile.agencyName || '',
-        agencyLogoUrl: userProfile.agencyLogoUrl || '',
-        agencyPrimaryColor: userProfile.agencyPrimaryColor || '#1E3A8A',
-      });
-    } else if (user && !isProfileLoading) {
-      // If profile doesn't exist, pre-fill with auth data
+    } else if (user) {
       profileForm.reset({ name: user.displayName || '' });
     }
-  }, [userProfile, user, isProfileLoading, profileForm, agencyForm]);
+  }, [userProfile, user, profileForm]);
+
+  useEffect(() => {
+    if (agencyData) {
+        agencyForm.reset({
+            name: agencyData.name,
+            logoUrl: agencyData.logoUrl || '',
+            primaryColor: agencyData.primaryColor || '#1E3A8A'
+        });
+    }
+  }, [agencyData, agencyForm]);
   
   const handleProfileSave = (values: z.infer<typeof profileSchema>) => {
-    if (!userDocRef || !user) return;
-
+    if (!user) return;
+    const userDocRef = doc(firestore, 'users', user.uid);
     const dataToSave = {
       ...values,
-      email: user.email, // ensure email is always present
+      email: user.email,
     };
-    
-    // Use set with merge to create if not exists, or update if it does.
     setDocumentNonBlocking(userDocRef, dataToSave, { merge: true });
-    
-    toast({
-      title: 'Profil salvat!',
-      description: 'Informațiile profilului tău au fost actualizate.',
-    });
+    toast({ title: 'Profil salvat!', description: 'Informațiile profilului tău au fost actualizate.' });
   };
   
   const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
-    if (!userDocRef) return;
-    updateDocumentNonBlocking(userDocRef, values);
-    toast({
-      title: 'Setări salvate!',
-      description: 'Setările agenției tale au fost actualizate.',
-    });
+    if (!agencyDocRef) return;
+    
+    // Also update the mirrored properties on the user profile for the theme to work
+    if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        updateDocumentNonBlocking(userDocRef, {
+            agencyName: values.name,
+            agencyLogoUrl: values.logoUrl,
+            agencyPrimaryColor: values.primaryColor,
+        });
+    }
+
+    updateDocumentNonBlocking(agencyDocRef, values);
+    toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });
   };
 
-  const isLoading = isUserLoading || isProfileLoading;
+  const handleCreateAgency = async (values: z.infer<typeof agencySchema>) => {
+      if (!user) return;
+      setIsCreatingAgency(true);
+
+      const agenciesCollection = collection(firestore, 'agencies');
+      const userDocRef = doc(firestore, 'users', user.uid);
+
+      try {
+        // Create the new agency document
+        const newAgencyRef = doc(agenciesCollection);
+        
+        // Use a batch to update both documents atomically
+        const batch = writeBatch(firestore);
+
+        batch.set(newAgencyRef, {
+            name: values.name,
+            ownerId: user.uid,
+            logoUrl: values.logoUrl,
+            primaryColor: values.primaryColor,
+        });
+        
+        // Update user's profile with the new agencyId and make them an admin
+        batch.update(userDocRef, { 
+            agencyId: newAgencyRef.id, 
+            role: 'admin',
+            agencyName: values.name,
+            agencyLogoUrl: values.logoUrl,
+            agencyPrimaryColor: values.primaryColor,
+        });
+
+        await batch.commit();
+        
+        toast({ title: 'Agenție creată!', description: `Bun venit la ${values.name}!` });
+        // The context will automatically update and the layout will redirect to the dashboard.
+      } catch (error) {
+          console.error("Failed to create agency:", error);
+          toast({ variant: 'destructive', title: 'Creare eșuată', description: 'Nu am putut crea agenția.' });
+      } finally {
+          setIsCreatingAgency(false);
+      }
+  }
+
+  const isLoading = isUserLoading || isAgencyLoading || isAgencyDataLoading;
+  
+  // This screen handles the case where a user is authenticated but has no agency.
+  if (!isAgencyLoading && !agencyId) {
+      return (
+          <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
+              <Card className="w-full max-w-lg">
+                <Form {...agencyForm}>
+                    <form onSubmit={agencyForm.handleSubmit(handleCreateAgency)}>
+                        <CardHeader>
+                            <CardTitle>Bun venit la EstateFlow!</CardTitle>
+                            <CardDescription>Pentru a începe, creează-ți agenția. O poți personaliza mai târziu.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Agenție</FormLabel><FormControl><Input {...field} placeholder="Numele agenției tale" /></FormControl><FormMessage /></FormItem> )}/>
+                            <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel>Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isCreatingAgency} className="w-full">
+                                {isCreatingAgency && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Creează Agenția și Continuă
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Form>
+              </Card>
+          </div>
+      )
+  }
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <Card>
-          <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-          <CardContent className="space-y-4 max-w-md">
-            <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div>
-            <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div>
-            <Skeleton className="h-10 w-32" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48 mb-2" />
-            <Skeleton className="h-4 w-80" />
-          </CardHeader>
-          <CardContent className="space-y-4 max-w-md">
-            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
-            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
-            <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-24" /></div>
-            <Skeleton className="h-10 w-40" />
-          </CardContent>
-        </Card>
+        <div><Skeleton className="h-8 w-48 mb-2" /><Skeleton className="h-4 w-72" /></div>
+        <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent className="space-y-4 max-w-md"><div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div><div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div><Skeleton className="h-10 w-32" /></CardContent></Card>
+        <Card><CardHeader><Skeleton className="h-6 w-48 mb-2" /><Skeleton className="h-4 w-80" /></CardHeader><CardContent className="space-y-4 max-w-md"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-24" /></div><Skeleton className="h-10 w-40" /></CardContent></Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-headline font-bold">Setări</h1>
-        <p className="text-muted-foreground">
-          Configurează setările contului și ale agenției.
-        </p>
-      </div>
-
+      <div><h1 className="text-3xl font-headline font-bold">Setări</h1><p className="text-muted-foreground">Configurează setările contului și ale agenției.</p></div>
       <Card>
         <Form {...profileForm}>
           <form onSubmit={profileForm.handleSubmit(handleProfileSave)}>
-            <CardHeader>
-              <CardTitle>Profilul Tău</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Profilul Tău</CardTitle></CardHeader>
             <CardContent className="space-y-4 max-w-md">
-              <FormField
-                control={profileForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nume</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={user?.email || ''} disabled />
-              </div>
-              <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvează Profil
-              </Button>
+              <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled /></div>
+              <Button type="submit" disabled={profileForm.formState.isSubmitting}>{profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvează Profil</Button>
             </CardContent>
           </form>
         </Form>
@@ -164,48 +199,13 @@ export default function SettingsPage() {
       <Card>
         <Form {...agencyForm}>
           <form onSubmit={agencyForm.handleSubmit(handleAgencySave)}>
-            <CardHeader>
-              <CardTitle>Setări Agenție (White-Label)</CardTitle>
-              <CardDescription>Personalizează aspectul platformei pentru agenția ta.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Setări Agenție (White-Label)</CardTitle><CardDescription>Personalizează aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
             <CardContent className="space-y-4 max-w-md">
-              <FormField
-                control={agencyForm.control}
-                name="agencyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nume Agenție</FormLabel>
-                    <FormControl><Input {...field} placeholder="Numele agenției tale" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={agencyForm.control}
-                name="agencyLogoUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL Logo</FormLabel>
-                    <FormControl><Input {...field} placeholder="https://..." /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={agencyForm.control}
-                name="agencyPrimaryColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Culoare Primară</FormLabel>
-                    <FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={agencyForm.formState.isSubmitting}>
-                {agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvează Setări Agenție
-              </Button>
+              <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Agenție</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel>URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel>Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+              <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'}>{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
+              {userProfile?.role !== 'admin' && <p className="text-xs text-muted-foreground mt-2">Doar administratorii agenției pot modifica aceste setări.</p>}
             </CardContent>
           </form>
         </Form>
