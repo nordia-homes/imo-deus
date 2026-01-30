@@ -20,7 +20,6 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
   const q = query(
     propertiesRef, 
     where('status', '==', 'Activ'), 
-    where('visibility', '==', 'Colaborare'),
     where('featured', '==', true),
     orderBy('createdAt', 'desc'),
     limit(3)
@@ -74,3 +73,5 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
     </div>
   );
 }
+
+    

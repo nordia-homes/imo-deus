@@ -3,6 +3,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -51,7 +52,6 @@ export type Property = {
   };
   agentId?: string | null;
   agentName?: string | null;
-  visibility?: 'Internă' | 'Colaborare';
   status?: 'Activ' | 'Inactiv' | 'Vândut' | 'Închiriat';
   featured?: boolean;
 };
@@ -162,4 +162,6 @@ export type Invite = {
 };
 
 export type WithId<T> = T & { id: string };
+    
+
     

@@ -69,18 +69,11 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // An agency member can do anything with their own properties.
+      // Agency members can create, update, delete.
       allow write: if isUserInAgency(agencyId);
-
-      // Anyone can GET a document if they are an agency member OR if the document is public.
-      allow get: if isUserInAgency(agencyId) || 
-                  (resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ');
       
-      // Anyone can perform a LIST query. Firestore's query evaluation will ensure
-      // that the query only returns documents that the user has GET permission for.
-      // Since our client-side queries for the public site are correctly filtered
-      // to public/active properties, this is secure.
-      allow list: if true;
+      // Anyone can read any property.
+      allow get, list: if true;
     }
     
     // For all other private subcollections, only allow access to agency members.
@@ -89,3 +82,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

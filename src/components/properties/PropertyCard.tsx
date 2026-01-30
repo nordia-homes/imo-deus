@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BedDouble, Bath, Ruler, MapPin, Eye, Users } from "lucide-react";
+import { BedDouble, Bath, Ruler, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
 
 export function PropertyCard({ property }: { property: Property }) {
@@ -20,12 +20,6 @@ export function PropertyCard({ property }: { property: Property }) {
                 className="object-cover transition-transform group-hover:scale-105"
             />
             <div className="absolute top-2 right-2 flex gap-2">
-                {property.visibility && (
-                     <Badge variant={property.visibility === 'Colaborare' ? 'secondary' : 'outline'} className="backdrop-blur-sm">
-                        {property.visibility === 'Colaborare' ? <Users className="h-3 w-3 mr-1"/> : <Eye className="h-3 w-3 mr-1"/>}
-                        {property.visibility}
-                     </Badge>
-                )}
                  <Badge variant="default" className="">{property.transactionType}</Badge>
             </div>
         </div>
@@ -59,3 +53,5 @@ export function PropertyCard({ property }: { property: Property }) {
     </Link>
   );
 }
+
+    

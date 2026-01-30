@@ -24,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
+import { Loader2, PlusCircle, Sparkles, Upload } from 'lucide-react';
 import { generatePropertyDescription, PropertyDescriptionInput } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
@@ -61,7 +61,7 @@ const propertySchema = z.object({
   description: z.string().optional(),
   // `images` will hold File objects from the input, not string URLs
   images: z.any().optional(),
-  visibility: z.string().optional(),
+  status: z.string().optional(),
 });
 
 
@@ -97,7 +97,7 @@ export function AddPropertyDialog() {
       keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
       description: '',
       images: [],
-      visibility: 'Internă',
+      status: 'Activ',
     },
   });
 
@@ -215,7 +215,7 @@ export function AddPropertyDialog() {
         avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
       },
       amenities: values.keyFeatures.split(',').map((f) => f.trim()),
-      visibility: values.visibility,
+      status: values.status,
     };
     
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
@@ -273,9 +273,9 @@ export function AddPropertyDialog() {
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="visibility" render={({ field }) => ( <FormItem><FormLabel>Vizibilitate</FormLabel>
+                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Internă">Internă</SelectItem><SelectItem value="Colaborare">Colaborare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                            <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                     </div>
                   </div>
                 </section>
@@ -371,3 +371,5 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
+
+    

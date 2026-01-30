@@ -12,7 +12,6 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
   const q = query(
     propertiesRef,
     where('status', '==', 'Activ'),
-    where('visibility', '==', 'Colaborare'),
     orderBy('createdAt', 'desc')
   );
 
@@ -46,3 +45,5 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
     </div>
   );
 }
+
+    

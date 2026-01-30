@@ -197,11 +197,6 @@
           "type": "string",
           "description": "The type of property (e.g., house, apartment)."
         },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL of the property image.",
-          "format": "uri"
-        },
         "contactId": {
           "type": "string",
           "description": "Reference to Contact. (Relationship: Contact 1:N Property). Represents the agent or contact associated with the listing."
@@ -241,14 +236,6 @@
         "agentId": {
           "type": "string",
           "description": "The ID of the agent who created or is assigned to this property."
-        },
-        "visibility": {
-          "type": "string",
-          "enum": [
-            "Internă",
-            "Colaborare"
-          ],
-          "description": "The visibility of the property listing. 'Colaborare' means it is public on the agency website."
         },
         "status": {
           "type": "string",
@@ -619,3 +606,5 @@
     "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
   }
 }
+
+    

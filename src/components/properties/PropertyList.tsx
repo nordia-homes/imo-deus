@@ -17,7 +17,6 @@ export function PropertyList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [transactionFilter, setTransactionFilter] = useState('all');
-    const [visibilityFilter, setVisibilityFilter] = useState('all');
 
     const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -37,11 +36,9 @@ export function PropertyList() {
 
             const matchesTransaction = transactionFilter === 'all' || property.transactionType === transactionFilter;
             
-            const matchesVisibility = visibilityFilter === 'all' || property.visibility === visibilityFilter;
-
-            return matchesSearch && matchesType && matchesTransaction && matchesVisibility;
+            return matchesSearch && matchesType && matchesTransaction;
         });
-    }, [properties, searchTerm, typeFilter, transactionFilter, visibilityFilter]);
+    }, [properties, searchTerm, typeFilter, transactionFilter]);
 
     const renderPropertyList = () => {
         if (isLoading) {
@@ -112,16 +109,6 @@ export function PropertyList() {
                                 <SelectItem value="Închiriere">Închiriere</SelectItem>
                             </SelectContent>
                         </Select>
-                         <Select value={visibilityFilter} onValueChange={setVisibilityFilter}>
-                            <SelectTrigger className="w-full sm:w-auto">
-                                <SelectValue placeholder="Vizibilitate" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Toate Vizibilitățile</SelectItem>
-                                <SelectItem value="Internă">Internă</SelectItem>
-                                <SelectItem value="Colaborare">Colaborare</SelectItem>
-                            </SelectContent>
-                        </Select>
                     </div>
                 </CardContent>
             </Card>
@@ -129,3 +116,5 @@ export function PropertyList() {
         </div>
     )
 }
+
+    

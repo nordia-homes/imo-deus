@@ -39,7 +39,7 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
 
   const property = { id: propertySnap.id, ...propertySnap.data() } as Property;
 
-  if (property.status !== 'Activ' || property.visibility !== 'Colaborare') {
+  if (property.status !== 'Activ') {
       notFound();
   }
   
@@ -129,3 +129,5 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
     </div>
   );
 }
+
+    
