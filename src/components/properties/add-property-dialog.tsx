@@ -192,7 +192,7 @@ export function AddPropertyDialog() {
 
             const uploadPromises = files.map(file => {
                 const uniqueFileName = `${Date.now()}-${file.name}`;
-                const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
+                const storageRef = ref(storage, `properties/${agencyId}/${user.uid}/${newPropertyId}/${uniqueFileName}`);
                 const uploadTask = uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
                 
                 return new Promise((resolve, reject) => {
@@ -469,5 +469,3 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
-
-    
