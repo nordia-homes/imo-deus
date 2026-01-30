@@ -12,8 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@genkit-ai/google-genai": "^1.20.0",
-    "@genkit-ai/next": "^1.20.0",
+    "@genkit-ai/google-genai": "^1.0.0",
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -42,21 +41,20 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.9.1",
-    "genkit": "^1.20.0",
+    "genkit": "^1.0.0",
     "lucide-react": "^0.475.0",
-    "next": "15.5.9",
-    "react": "^19.2.1",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
     "react-day-picker": "^9.11.3",
-    "react-dom": "^19.2.1",
+    "react-dom": "^18.3.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^19.2.1",
-    "@types/react-dom": "^19.2.1",
-    "genkit-cli": "^1.20.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
