@@ -2,14 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isUserInAgency(agencyId) {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return request.auth != null &&
-             exists(userDocPath) &&
-             'agencyId' in get(userDocPath).data &&
-             get(userDocPath).data.agencyId == agencyId;
-    }
-
     function isUserAdmin() {
       let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return request.auth != null &&
@@ -19,7 +11,13 @@ service cloud.firestore {
     }
     
     function isUserAdminOfAgency(agencyId) {
-        return isUserInAgency(agencyId) && isUserAdmin();
+        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        return request.auth != null &&
+             exists(userDocPath) &&
+             'role' in get(userDocPath).data &&
+             get(userDocPath).data.role == 'admin' &&
+             'agencyId' in get(userDocPath).data &&
+             get(userDocPath).data.agencyId == agencyId;
     }
 
 
@@ -52,23 +50,8 @@ service cloud.firestore {
         allow read, delete: if request.auth != null;
     }
 
-    match /agencies/{agencyId}/contacts/{contactId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    match /agencies/{agencyId}/properties/{propertyId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    match /agencies/{agencyId}/tasks/{taskId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    match /agencies/{agencyId}/reports/{reportId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    match /agencies/{agencyId}/emails/{emailId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    match /agencies/{agencyId}/contracts/{contractId} {
-        allow read, write: if isUserInAgency(agencyId);
+    match /agencies/{agencyId}/{subcollection}/{docId} {
+        allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
     }
   }
 }
