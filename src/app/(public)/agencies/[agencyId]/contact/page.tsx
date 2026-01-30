@@ -1,6 +1,8 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home, Mail, Phone } from 'lucide-react';
+import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ContactForm = () => (
     <div className="text-center bg-muted p-8 rounded-lg">
@@ -10,12 +12,27 @@ const ContactForm = () => (
 
 
 export default function AgencyContactPage() {
-  const agency = {
-    name: 'Agenția Imobiliară Premium',
-    address: 'Str. Victoriei nr. 100, București, România',
-    phone: '+40 722 123 456',
-    email: 'contact@agentiepremium.ro',
-  };
+  const { agency, isAgencyLoading } = usePublicAgency();
+
+  if (isAgencyLoading || !agency) {
+      return (
+          <div className="container mx-auto py-12 px-4">
+                <div className="max-w-4xl mx-auto">
+                    <Skeleton className="h-10 w-64 mx-auto mb-4" />
+                    <Skeleton className="h-6 w-96 mx-auto mb-12" />
+                    <div className="grid md:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                            <Skeleton className="h-48 w-full" />
+                            <Skeleton className="h-48 w-full" />
+                        </div>
+                        <div>
+                             <Skeleton className="h-64 w-full" />
+                        </div>
+                    </div>
+                </div>
+          </div>
+      )
+  }
 
   return (
     <div className="container mx-auto py-12 px-4">
@@ -36,21 +53,21 @@ export default function AgencyContactPage() {
                   <Home className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Adresă Sediu</h3>
-                    <p className="text-muted-foreground">{agency.address}</p>
+                    <p className="text-muted-foreground">{agency.address || 'Nespecificată'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Phone className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Telefon</h3>
-                    <p className="text-muted-foreground">{agency.phone}</p>
+                    <p className="text-muted-foreground">{agency.phone || 'Nespecificat'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Mail className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Email</h3>
-                    <p className="text-muted-foreground">{agency.email}</p>
+                    <p className="text-muted-foreground">{agency.email || 'Nespecificat'}</p>
                   </div>
                 </div>
               </CardContent>

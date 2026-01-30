@@ -4,6 +4,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -128,6 +129,9 @@ export type Agency = {
   logoUrl?: string;
   primaryColor?: string;
   agentIds?: string[];
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 export type UserProfile = {

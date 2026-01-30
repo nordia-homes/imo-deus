@@ -18,6 +18,7 @@ import { Loader2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -25,6 +26,9 @@ const profileSchema = z.object({
 
 const agencySchema = z.object({
   name: z.string().min(1, 'Numele agenției este obligatoriu.'),
+  email: z.string().email('Adresă de email invalidă.').or(z.literal('')).optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #1E3A8A).').optional(),
 });
@@ -44,7 +48,7 @@ export default function SettingsPage() {
 
   const agencyForm = useForm<z.infer<typeof agencySchema>>({
     resolver: zodResolver(agencySchema),
-    defaultValues: { name: '', logoUrl: '', primaryColor: '#1E3A8A' },
+    defaultValues: { name: '', email: '', phone: '', address: '', logoUrl: '', primaryColor: '#1E3A8A' },
   });
 
   useEffect(() => {
@@ -59,6 +63,9 @@ export default function SettingsPage() {
     if (agency) {
         agencyForm.reset({
             name: agency.name,
+            email: agency.email || '',
+            phone: agency.phone || '',
+            address: agency.address || '',
             logoUrl: agency.logoUrl || '',
             primaryColor: agency.primaryColor || '#1E3A8A'
         });
@@ -95,10 +102,8 @@ export default function SettingsPage() {
         const batch = writeBatch(firestore);
 
         batch.set(newAgencyRef, {
-            name: values.name,
+            ...values,
             ownerId: user.uid,
-            logoUrl: values.logoUrl,
-            primaryColor: values.primaryColor,
             agentIds: [user.uid],
             id: newAgencyRef.id,
         });
@@ -187,11 +192,19 @@ export default function SettingsPage() {
       <Card>
         <Form {...agencyForm}>
           <form onSubmit={agencyForm.handleSubmit(handleAgencySave)}>
-            <CardHeader><CardTitle>Setări Agenție (White-Label)</CardTitle><CardDescription>Personalizează aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Setări Agenție</CardTitle><CardDescription>Personalizează informațiile și aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
             <CardContent className="space-y-4 max-w-md">
-              <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Agenție</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
-              <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel>URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem> )}/>
-              <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel>Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Agenție</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă Sediu</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Oraș" /></FormControl><FormMessage /></FormItem> )}/>
+                
+                <Separator className="my-6"/>
+
+                <h4 className="text-sm font-medium">White-Label</h4>
+                <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel>URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel>Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+              
               <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'}>{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
               {userProfile?.role !== 'admin' && <p className="text-xs text-muted-foreground mt-2">Doar administratorii agenției pot modifica aceste setări.</p>}
             </CardContent>

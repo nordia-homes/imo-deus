@@ -19,6 +19,19 @@
           "items": {
             "type": "string"
           }
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the agency."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The contact phone number for the agency."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The contact email address for the agency."
         }
       },
       "required": [
@@ -606,5 +619,3 @@
     "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
   }
 }
-
-    

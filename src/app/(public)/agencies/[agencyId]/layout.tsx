@@ -6,6 +6,9 @@ import { doc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
+import { PublicAgencyProvider } from '@/context/PublicAgencyContext';
+import { notFound } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function hexToHsl(hex: string): string | null {
     if (!hex || !hex.startsWith('#')) return null;
@@ -44,16 +47,25 @@ export default function AgencyPublicLayout({
   params: { agencyId: string };
 }) {
   const firestore = useFirestore();
+  const { agencyId } = params;
 
   const agencyDocRef = useMemoFirebase(() => {
-      if (!params.agencyId) return null;
-      return doc(firestore, 'agencies', params.agencyId);
-  }, [firestore, params.agencyId]);
+      if (!agencyId) return null;
+      return doc(firestore, 'agencies', agencyId);
+  }, [firestore, agencyId]);
 
-  const { data: agency, isLoading } = useDoc<Agency>(agencyDocRef);
+  const { data: agency, isLoading: isAgencyLoading, error } = useDoc<Agency>(agencyDocRef);
 
   useEffect(() => {
+    // If loading is finished and there's still no agency or an error occurred, show 404
+    if (!isAgencyLoading && (error || !agency)) {
+        notFound();
+    }
+  }, [isAgencyLoading, agency, error]);
+  
+  useEffect(() => {
     const root = document.documentElement;
+    const defaultPrimary = '250 65% 55%';
     if (agency?.primaryColor) {
       const hslColor = hexToHsl(agency.primaryColor);
       if (hslColor) {
@@ -61,20 +73,41 @@ export default function AgencyPublicLayout({
         root.style.setProperty('--ring', hslColor);
       }
     }
-    // Cleanup function to reset the color when the component unmounts or agency changes
     return () => {
-        const defaultPrimary = '250 65% 55%';
         root.style.setProperty('--primary', defaultPrimary);
         root.style.setProperty('--ring', defaultPrimary);
     }
   }, [agency]);
 
+  const providerValue = {
+    agency,
+    agencyId,
+    isAgencyLoading,
+  };
+
+  // Render a loading shell while fetching agency data
+  if (isAgencyLoading || !agency) {
+      return (
+          <>
+              <PublicHeader agency={null} isLoading={true} />
+               <main className="min-h-screen bg-background">
+                  <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
+                      <div className="relative z-10 p-4">
+                          <Skeleton className="h-16 w-96 mb-4" />
+                          <Skeleton className="h-8 w-80 mb-8" />
+                      </div>
+                  </section>
+              </main>
+              <PublicFooter agency={null} isLoading={true} />
+          </>
+      )
+  }
+
   return (
-    <div>
-      <PublicHeader agency={agency} isLoading={isLoading} />
+    <PublicAgencyProvider value={providerValue}>
+      <PublicHeader agency={agency} isLoading={isAgencyLoading} />
       <main className="min-h-screen bg-background">{children}</main>
-      <PublicFooter agency={agency} isLoading={isLoading} />
-    </div>
+      <PublicFooter agency={agency} isLoading={isAgencyLoading} />
+    </PublicAgencyProvider>
   );
 }
-

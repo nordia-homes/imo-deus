@@ -1,20 +1,17 @@
 'use client';
 
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { Agency } from '@/lib/types';
+import { usePublicAgency } from '@/context/PublicAgencyContext';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useParams, notFound } from 'next/navigation';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useEffect } from 'react';
 
-
-function AgencyHero({ agency, agencyId, isLoading }: { agency: Agency | null, agencyId: string, isLoading: boolean }) {
+function AgencyHero() {
+    const { agency, agencyId, isAgencyLoading } = usePublicAgency();
     
-    if (isLoading) {
+    // The loading state is handled by the layout, but this is a good safeguard.
+    if (isAgencyLoading) {
         return (
              <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
                 <div className="relative z-10 p-4">
@@ -29,27 +26,25 @@ function AgencyHero({ agency, agencyId, isLoading }: { agency: Agency | null, ag
         );
     }
     
-    // This case will be handled by notFound() in the parent, but it's good practice.
     if (!agency) {
         return null;
     }
     
-  const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
-  const tagline = agency?.name ? `Partenerul dumneavoastră de încredere în imobiliare.` : 'Găsiți proprietatea visurilor dumneavoastră.';
-
+  const heroImageUrl = agency.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
+  const tagline = agency.name ? `Partenerul dumneavoastră de încredere în imobiliare.` : 'Găsiți proprietatea visurilor dumneavoastră.';
 
     return (
         <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center text-white">
             <Image 
             src={heroImageUrl}
-            alt={`${agency?.name || 'Real Estate'} hero image`}
+            alt={`${agency.name || 'Real Estate'} hero image`}
             fill
             className="object-cover"
             priority
             />
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10 p-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{agency?.name || 'Agenție Imobiliară'}</h1>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{agency.name || 'Agenție Imobiliară'}</h1>
             <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
                 {tagline}
             </p>
@@ -67,37 +62,24 @@ function AgencyHero({ agency, agencyId, isLoading }: { agency: Agency | null, ag
 }
 
 export default function AgencyHomePage() {
-  const params = useParams();
-  const agencyId = params.agencyId as string;
-  const firestore = useFirestore();
+  const { agencyId } = usePublicAgency();
 
-  const agencyDocRef = useMemoFirebase(() => {
-      if (!agencyId) return null;
-      return doc(firestore, 'agencies', agencyId);
-  }, [firestore, agencyId]);
-
-  const { data: agency, isLoading, error } = useDoc<Agency>(agencyDocRef);
-
-  useEffect(() => {
-    // If loading is finished and there's still no agency, or there's an error, show 404
-    if (!isLoading && (!agency || error)) {
-      notFound();
-    }
-  }, [isLoading, agency, error]);
-  
-  // Render loading state until notFound() is called or data is available
-  if (isLoading || !agency) {
+  // agencyId from context can be null initially, handle this case.
+  if (!agencyId) {
       return (
         <div>
-          <AgencyHero agency={null} agencyId={agencyId} isLoading={true} />
-          {/* You can also add a skeleton for FeaturedProperties here if you want */}
+            <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
+                <div className="relative z-10 p-4">
+                    <Skeleton className="h-16 w-96 mb-4" />
+                </div>
+            </section>
         </div>
       )
   }
 
   return (
     <div>
-      <AgencyHero agency={agency} agencyId={agencyId} isLoading={isLoading} />
+      <AgencyHero />
       <FeaturedProperties agencyId={agencyId} />
     </div>
   );
