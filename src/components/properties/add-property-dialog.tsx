@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, ChangeEvent } from 'react';
@@ -35,7 +34,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 
 const propertySchema = z.object({
@@ -171,8 +169,7 @@ export function AddPropertyDialog() {
 
     const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
     
-    const randomPlaceholder = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
-    const shuffledPlaceholders = [...PlaceHolderImages].sort(() => 0.5 - Math.random());
+    const seed = Math.random().toString(36).substring(7);
 
     const newPropertyData = {
       title: values.title,
@@ -195,12 +192,14 @@ export function AddPropertyDialog() {
       keyFeatures: values.keyFeatures,
       description: values.description || '',
       address: values.location,
-      imageUrl: randomPlaceholder.imageUrl,
-      imageHint: randomPlaceholder.imageHint,
-      images: shuffledPlaceholders.map(p => ({
-        url: p.imageUrl,
-        alt: p.description,
-      })),
+      imageUrl: `https://picsum.photos/seed/${seed}/800/600`,
+      images: [
+        { url: `https://picsum.photos/seed/${seed}a/1200/800`, alt: 'Living room' },
+        { url: `https://picsum.photos/seed/${seed}b/1200/800`, alt: 'Kitchen' },
+        { url: `https://picsum.photos/seed/${seed}c/1200/800`, alt: 'Bedroom' },
+        { url: `https://picsum.photos/seed/${seed}d/1200/800`, alt: 'Bathroom' },
+        { url: `https://picsum.photos/seed/${seed}e/1200/800`, alt: 'Exterior' }
+      ],
       tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
       createdAt: new Date().toISOString(),
       agent: {
