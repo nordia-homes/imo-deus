@@ -1,13 +1,35 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
+import type { Contract, Contact, Property } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
-import { FileSignature } from 'lucide-react';
+import { FileSignature, UserPlus, Building2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
+import { useMemo } from 'react';
+
+type ActivityItem = {
+    id: string;
+    type: 'contract' | 'contact' | 'property';
+    date: string;
+    title: string;
+    href: string;
+};
+
+const ActivityIcon = ({ type }: { type: ActivityItem['type'] }) => {
+    switch (type) {
+        case 'contract':
+            return <FileSignature className="h-5 w-5 text-purple-500" />;
+        case 'contact':
+            return <UserPlus className="h-5 w-5 text-blue-500" />;
+        case 'property':
+            return <Building2 className="h-5 w-5 text-green-500" />;
+        default:
+            return null;
+    }
+};
 
 export function RecentActivity() {
     const { agencyId } = useAgency();
@@ -17,9 +39,54 @@ export function RecentActivity() {
         if (!agencyId) return null;
         return query(collection(firestore, 'agencies', agencyId, 'contracts'), orderBy('date', 'desc'), limit(5));
     }, [firestore, agencyId]);
+    const { data: contracts, isLoading: contractsLoading } = useCollection<Contract>(contractsQuery);
 
-    const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+    const newContactsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc'), limit(5));
+    }, [firestore, agencyId]);
+    const { data: newContacts, isLoading: contactsLoading } = useCollection<Contact>(newContactsQuery);
+
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'properties'), orderBy('createdAt', 'desc'), limit(5));
+    }, [firestore, agencyId]);
+    const { data: properties, isLoading: propertiesLoading } = useCollection<Property>(propertiesQuery);
     
+    const isLoading = contractsLoading || contactsLoading || propertiesLoading;
+
+    const combinedActivity = useMemo(() => {
+        const activity: ActivityItem[] = [];
+
+        contracts?.forEach(c => activity.push({
+            id: c.id,
+            type: 'contract',
+            date: c.date,
+            title: `Contract nou: ${c.contactName}`,
+            href: `/contracts`
+        }));
+        
+        newContacts?.forEach(c => activity.push({
+            id: c.id,
+            type: 'contact',
+            date: c.createdAt || new Date().toISOString(),
+            title: `Lead nou: ${c.name}`,
+            href: `/leads/${c.id}`
+        }));
+
+        properties?.forEach(p => activity.push({
+            id: p.id,
+            type: 'property',
+            date: p.createdAt || new Date().toISOString(),
+            title: `Proprietate nouă: ${p.title}`,
+            href: `/properties/${p.id}`
+        }));
+
+        return activity
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 7); // Show the 7 most recent activities overall
+    }, [contracts, newContacts, properties]);
+
     return (
         <Card>
             <CardHeader>
@@ -32,17 +99,17 @@ export function RecentActivity() {
                             <Skeleton key={i} className="h-12 w-full" />
                         ))}
                     </div>
-                ) : contracts && contracts.length > 0 ? (
+                ) : combinedActivity.length > 0 ? (
                     <div className="space-y-4">
-                        {contracts.map((contract) => (
-                           <Link href="/contracts" key={contract.id} className="flex items-center gap-4 group p-2 -m-2 rounded-md hover:bg-accent">
+                        {combinedActivity.map((item) => (
+                           <Link href={item.href} key={`${item.type}-${item.id}`} className="flex items-center gap-4 group p-2 -m-2 rounded-md hover:bg-accent">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                                    <FileSignature className="h-5 w-5 text-purple-500" />
+                                    <ActivityIcon type={item.type} />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-medium text-sm group-hover:text-primary transition-colors">Contract nou semnat pentru {contract.propertyTitle || 'proprietate'}</p>
+                                    <p className="font-medium text-sm group-hover:text-primary transition-colors">{item.title}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {new Date(contract.date).toLocaleString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        {new Date(item.date).toLocaleString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
                                     </p>
                                 </div>
                            </Link>
