@@ -28,7 +28,7 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
   
   const featuredProperties = allProperties
     .filter(property => property.status === 'Activ' && property.featured === true)
-    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0))
     .slice(0, 3);
 
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';

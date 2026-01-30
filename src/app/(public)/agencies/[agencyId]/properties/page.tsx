@@ -14,15 +14,11 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
 
   const properties = querySnapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() } as Property))
-    .filter(property => property.status === 'Activ');
-
-  // Sort by creation date descending, if available
-  properties.sort((a, b) => {
-    if (a.createdAt && b.createdAt) {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-    return 0;
-  });
+    .filter(property => property.status === 'Activ')
+    .sort((a, b) => {
+      // Sort by creation date descending, if available
+      return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+    });
 
   return (
     <div className="container mx-auto py-12 px-4">
