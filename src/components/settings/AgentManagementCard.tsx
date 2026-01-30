@@ -43,11 +43,16 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
     const { data: agents, isLoading } = useCollection<UserProfile>(agentsQuery);
 
     async function handleInviteAgent(values: z.infer<typeof inviteSchema>) {
-        if (!user || !adminProfile?.agencyName) return;
+        if (!user || !adminProfile?.agencyName) {
+            toast({ variant: 'destructive', title: 'Eroare', description: 'Numele agenției nu a putut fi găsit.' });
+            return;
+        }
 
         setIsInviting(true);
         try {
-            const inviteRef = doc(firestore, 'invites', btoa(values.email));
+            // Use btoa to create a filesystem-safe ID from the email
+            const inviteId = btoa(values.email);
+            const inviteRef = doc(firestore, 'invites', inviteId);
             
             await setDocumentNonBlocking(inviteRef, {
                 email: values.email,

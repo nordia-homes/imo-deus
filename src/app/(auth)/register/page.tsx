@@ -48,8 +48,9 @@ export default function RegisterPage() {
   }, [isLoggedIn, router]);
 
   const handlePostRegistration = async (newUser: User) => {
+    if (!newUser.email) return;
     try {
-        const inviteRef = doc(firestore, 'invites', btoa(newUser.email!));
+        const inviteRef = doc(firestore, 'invites', btoa(newUser.email));
         const inviteSnap = await getDoc(inviteRef);
 
         if (inviteSnap.exists()) {
@@ -64,7 +65,7 @@ export default function RegisterPage() {
             };
             
             const userDocRef = doc(firestore, 'users', newUser.uid);
-            await setDoc(userDocRef, userProfile, { merge: true });
+            await setDoc(userDocRef, userProfile, { merge: true }); // Use merge to be safe
             await deleteDoc(inviteRef); // Consume the invite
 
             toast({ title: `Bun venit la ${inviteData.agencyName}!` });
