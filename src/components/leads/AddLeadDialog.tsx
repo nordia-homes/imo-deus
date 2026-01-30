@@ -27,13 +27,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
+import type { UserProfile } from '@/lib/types';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -44,6 +45,8 @@ const leadSchema = z.object({
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
   notes: z.string().optional(),
   city: z.string().min(1, { message: "Orașul este obligatoriu." }),
+  priority: z.string().min(1, { message: "Prioritatea este obligatorie." }),
+  agentId: z.string().optional(),
 });
 
 const locations = {
@@ -63,6 +66,12 @@ export function AddLeadDialog() {
   const { agencyId } = useAgency();
   const firestore = useFirestore();
 
+  const agentsQuery = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return query(collection(firestore, 'users'), where('agencyId', '==', agencyId));
+  }, [firestore, agencyId]);
+  const { data: agents } = useCollection<UserProfile>(agentsQuery);
+
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
@@ -74,6 +83,8 @@ export function AddLeadDialog() {
       status: 'Nou',
       notes: '',
       city: '',
+      priority: 'Medie',
+      agentId: '',
     },
   });
 
@@ -95,6 +106,8 @@ export function AddLeadDialog() {
 
     const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
     
+    const selectedAgent = agents?.find(agent => agent.id === values.agentId);
+
     const newLeadData = {
         ...values,
         zones: selectedZones,
@@ -110,7 +123,8 @@ export function AddLeadDialog() {
             desiredSquareFootageMax: 0,
             desiredFeatures: '',
             locationPreferences: values.city || ''
-        }
+        },
+        agentName: selectedAgent?.name,
     };
 
     addDocumentNonBlocking(contactsCollection, newLeadData);
@@ -194,8 +208,8 @@ export function AddLeadDialog() {
                     <Separator />
                     
                     <section>
-                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii Tranzacție</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii Tranzacție și Prioritate</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             <FormField
                                 control={form.control}
@@ -218,9 +232,56 @@ export function AddLeadDialog() {
                                     </FormItem>
                                 )}
                                 />
+                             <FormField
+                                control={form.control}
+                                name="priority"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Prioritate</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="Scăzută">Scăzută</SelectItem>
+                                        <SelectItem value="Medie">Medie</SelectItem>
+                                        <SelectItem value="Ridicată">Ridicată</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
                          </div>
                     </section>
                     
+                    <Separator />
+
+                     <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Management Agent</h3>
+                        <FormField
+                            control={form.control}
+                            name="agentId"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Alocă Agent (Opțional)</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                    <SelectItem value="">Niciunul</SelectItem>
+                                    {agents?.map(agent => (
+                                        <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                     </section>
+
                     <Separator />
 
                     <section>

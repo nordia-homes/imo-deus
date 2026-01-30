@@ -55,8 +55,8 @@ export function LeadList() {
                 <TableHeader>
                 <TableRow>
                     <TableHead>Nume</TableHead>
-                    <TableHead>Telefon</TableHead>
-                    <TableHead>Sursă</TableHead>
+                    <TableHead>Prioritate</TableHead>
+                    <TableHead>Agent</TableHead>
                     <TableHead>Buget</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Scor AI</TableHead>

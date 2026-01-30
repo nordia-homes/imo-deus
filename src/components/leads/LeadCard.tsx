@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
-import { ArrowRight, Wand2 } from 'lucide-react';
+import { ArrowRight, Wand2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Contact } from '@/lib/types';
 
@@ -13,14 +13,36 @@ function getScoreBadgeVariant(score: number) {
     return 'destructive';
 }
 
+function getPriorityBadgeVariant(priority: Contact['priority']) {
+    switch (priority) {
+        case 'Ridicată': return 'destructive';
+        case 'Medie': return 'warning';
+        case 'Scăzută': return 'secondary';
+        default: return 'outline';
+    }
+}
+
 export function LeadCard({ lead }: { lead: Contact }) {
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell className="font-medium">
         <Link href={`/leads/${lead.id}`} className="hover:underline">{lead.name}</Link>
       </TableCell>
-      <TableCell>{lead.phone}</TableCell>
-      <TableCell>{lead.source}</TableCell>
+      <TableCell>
+          {lead.priority && <Badge variant={getPriorityBadgeVariant(lead.priority)}>{lead.priority}</Badge>}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {lead.agentName ? (
+            <>
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{lead.agentName}</span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">Nealocat</span>
+          )}
+        </div>
+      </TableCell>
       <TableCell>€{lead.budget?.toLocaleString() ?? 'N/A'}</TableCell>
       <TableCell><Badge variant="outline">{lead.status}</Badge></TableCell>
       <TableCell>

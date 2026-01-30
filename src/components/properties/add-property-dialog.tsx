@@ -60,6 +60,7 @@ const propertySchema = z.object({
 
   description: z.string().optional(),
   images: z.any().optional(),
+  visibility: z.string().optional(),
 });
 
 
@@ -95,6 +96,7 @@ export function AddPropertyDialog() {
       keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
       description: '',
       images: [],
+      visibility: 'Internă',
     },
   });
 
@@ -207,6 +209,7 @@ export function AddPropertyDialog() {
         avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
       },
       amenities: values.keyFeatures.split(',').map((f) => f.trim()),
+      visibility: values.visibility,
     };
     
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
@@ -262,7 +265,12 @@ export function AddPropertyDialog() {
                             <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                     <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="visibility" render={({ field }) => ( <FormItem><FormLabel>Vizibilitate</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent><SelectItem value="Internă">Internă</SelectItem><SelectItem value="Colaborare">Colaborare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                    </div>
                   </div>
                 </section>
                 

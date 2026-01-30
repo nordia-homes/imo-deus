@@ -6,7 +6,7 @@ import { doc, collection, query, where, arrayUnion } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Contact, Property, Task, Interaction } from '@/lib/types';
+import type { Contact, Property, Task, Interaction, UserProfile } from '@/lib/types';
 import { leadScoring } from '@/ai/flows/lead-scoring';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
@@ -28,7 +28,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 // Icons
-import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2 } from 'lucide-react';
+import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2, User as UserIcon } from 'lucide-react';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
 import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
@@ -56,6 +56,16 @@ const propertyMatchSchema = z.object({
 });
 
 type MatchedProperty = Property & { matchScore: number; reasoning: string };
+
+
+function getPriorityBadgeVariant(priority: Contact['priority']) {
+    switch (priority) {
+        case 'Ridicată': return 'destructive';
+        case 'Medie': return 'warning';
+        case 'Scăzută': return 'secondary';
+        default: return 'outline';
+    }
+}
 
 // Main Component
 export default function LeadDetailPage() {
@@ -87,8 +97,13 @@ export default function LeadDetailPage() {
         if (!agencyId) return null;
         return collection(firestore, 'agencies', agencyId, 'properties');
     }, [firestore, agencyId]);
-
     const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+    const agentsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return query(collection(firestore, 'users'), where('agencyId', '==', agencyId));
+    }, [firestore, agencyId]);
+    const { data: agents } = useCollection<UserProfile>(agentsQuery);
 
 
     // --- STATE MANAGEMENT ---
@@ -144,6 +159,22 @@ export default function LeadDetailPage() {
             description: "Modificările au fost salvate în baza de date.",
         });
     };
+
+    const handleAgentChange = (agentId: string) => {
+        if (!contactDocRef) return;
+        const selectedAgent = agents?.find(a => a.id === agentId);
+        updateDocumentNonBlocking(contactDocRef, { 
+            agentId: agentId,
+            agentName: selectedAgent?.name || null
+        });
+         toast({ title: 'Agent alocat!', description: `Lead-ul a fost alocat lui ${selectedAgent?.name}.` });
+    }
+
+    const handlePriorityChange = (priority: string) => {
+        if (!contactDocRef) return;
+        updateDocumentNonBlocking(contactDocRef, { priority });
+        toast({ title: 'Prioritate actualizată!' });
+    }
 
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
         if (!agencyId || !contact) return;
@@ -311,7 +342,10 @@ export default function LeadDetailPage() {
                     </Avatar>
                     <div>
                         <h1 className="text-3xl font-bold">{contact.name}</h1>
-                        <Badge variant="outline" className="mt-1">{contact.status}</Badge>
+                        <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="mt-1">{contact.status}</Badge>
+                            {contact.priority && <Badge variant={getPriorityBadgeVariant(contact.priority)}>{contact.priority}</Badge>}
+                        </div>
                     </div>
                 </div>
                 <AddTaskDialog onAddTask={handleAddTask} contacts={allContactsForDialog} />
@@ -413,6 +447,36 @@ export default function LeadDetailPage() {
 
                 {/* --- RIGHT COLUMN --- */}
                 <div className="lg:col-span-1 space-y-6">
+                     <Card>
+                        <CardHeader><CardTitle>Management Lead</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <Label>Prioritate</Label>
+                                <Select onValueChange={handlePriorityChange} defaultValue={contact.priority}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Scăzută">Scăzută</SelectItem>
+                                        <SelectItem value="Medie">Medie</SelectItem>
+                                        <SelectItem value="Ridicată">Ridicată</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div>
+                                <Label>Agent Alocat</Label>
+                                <Select onValueChange={handleAgentChange} defaultValue={contact.agentId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selectează un agent" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                         <SelectItem value="">Nealocat</SelectItem>
+                                         {agents?.map(agent => (
+                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader><CardTitle>Informații Contact</CardTitle></CardHeader>
                         <CardContent className="space-y-4 text-sm">

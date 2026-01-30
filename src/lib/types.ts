@@ -50,6 +50,7 @@ export type Property = {
   };
   agentId?: string;
   agentName?: string;
+  visibility?: 'Internă' | 'Colaborare';
 };
 
 
@@ -89,6 +90,7 @@ export type Contact = {
     createdAt?: string;
     agentId?: string;
     agentName?: string;
+    priority?: 'Scăzută' | 'Medie' | 'Ridicată';
 }
 
 export type SalesData = {

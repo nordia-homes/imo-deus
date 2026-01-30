@@ -149,8 +149,17 @@
           }
         },
         "agentId": {
-            "type": "string",
-            "description": "The ID of the agent who created or is assigned to this contact."
+          "type": "string",
+          "description": "The ID of the agent who created or is assigned to this contact."
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "Scăzută",
+            "Medie",
+            "Ridicată"
+          ],
+          "description": "The priority level of the lead."
         }
       },
       "required": [
@@ -223,8 +232,16 @@
           }
         },
         "agentId": {
-            "type": "string",
-            "description": "The ID of the agent who created or is assigned to this property."
+          "type": "string",
+          "description": "The ID of the agent who created or is assigned to this property."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "Internă",
+            "Colaborare"
+          ],
+          "description": "The visibility of the property listing."
         }
       },
       "required": [
@@ -257,8 +274,8 @@
           "description": "Reference to Contact. (Relationship: Contact 1:N Task). Represents contact associated with the task."
         },
         "agentId": {
-            "type": "string",
-            "description": "The ID of the agent who created or is assigned to this task."
+          "type": "string",
+          "description": "The ID of the agent who created or is assigned to this task."
         }
       },
       "required": [
@@ -581,5 +598,3 @@
     "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
   }
 }
-
-    
