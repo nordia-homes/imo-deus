@@ -23,7 +23,6 @@ service cloud.firestore {
 
     // Users can read and update their own profile.
     match /users/{userId} {
-      // Expand read permissions
       allow read: if request.auth != null && (
         // A user can always read their own profile
         request.auth.uid == userId ||
@@ -31,7 +30,7 @@ service cloud.firestore {
         (
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == resource.data.agencyId
         )
       );
 
