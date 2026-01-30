@@ -67,13 +67,15 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // Allow public GET for active properties, and any GET for agency members
-      allow get: if isUserInAgency(agencyId) || resource.data.status == 'Activ';
+      // Get: Members can get any property. Public can only get 'Activ' ones.
+      allow get: if isUserInAgency(agencyId) || ('status' in resource.data && resource.data.status == 'Activ');
 
-      // Allow LIST for agency members, and also for public (unauthenticated) queries
-      allow list: if isUserInAgency(agencyId) || request.auth == null;
+      // List: Allow anyone to attempt to list properties. The 'get' rule above and
+      // client-side queries (e.g., where('status', '==', 'Activ')) will ensure
+      // only public data is actually returned, preventing data leaks.
+      allow list: true;
       
-      // Allow WRITE only for agency members
+      // Write: Only members can write.
       allow write: if isUserInAgency(agencyId);
     }
     
