@@ -5,17 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
 import { SidebarTrigger } from '../ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { useAuth } from '@/context/AuthContext';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import React, { useState, useEffect } from 'react';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
+import { useRouter } from 'next/navigation';
 
 export function Topbar() {
-    const { logout } = useAuth();
+    const auth = useAuth();
+    const router = useRouter();
     const { user } = useUser();
     const { agencyId } = useAgency();
     const firestore = useFirestore();
@@ -94,6 +96,12 @@ export function Topbar() {
     const handleSelect = () => {
         setIsPopoverOpen(false);
         setQuery('');
+    }
+    
+    const handleLogout = () => {
+        signOut(auth).then(() => {
+            router.push('/login');
+        });
     }
 
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
@@ -188,7 +196,7 @@ export function Topbar() {
                         </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={logout}>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Deconectare</span>
                         </DropdownMenuItem>

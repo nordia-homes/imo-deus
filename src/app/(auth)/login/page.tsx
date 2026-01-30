@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, useUser } from "@/firebase";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import type { AuthError } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 
 const loginSchema = z.object({
@@ -23,7 +24,9 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, loginWithGoogle, isLoggedIn } = useAuth();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const isLoggedIn = !!user;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -44,7 +47,8 @@ export default function LoginPage() {
 
   const handleLogin = (values: z.infer<typeof loginSchema>) => {
     setIsSubmitting(true);
-    login(values.email, values.password, (error: AuthError) => {
+    signInWithEmailAndPassword(auth, values.email, values.password)
+      .catch((error: AuthError) => {
         console.error("Login failed:", error);
         toast({
             variant: "destructive",
@@ -57,7 +61,9 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     setIsSubmitting(true);
-    loginWithGoogle((error: AuthError) => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .catch((error: AuthError) => {
         console.error("Google Login failed:", error);
         toast({
             variant: "destructive",
@@ -68,7 +74,7 @@ export default function LoginPage() {
     });
   }
 
-  if (isLoggedIn) {
+  if (isUserLoading || isLoggedIn) {
     return null; // Or a loader while redirecting
   }
 

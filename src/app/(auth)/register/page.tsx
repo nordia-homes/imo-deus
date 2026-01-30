@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, useUser } from "@/firebase";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import type { AuthError } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -22,7 +23,9 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
-  const { signup, loginWithGoogle, isLoggedIn } = useAuth();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const isLoggedIn = !!user;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -43,7 +46,8 @@ export default function RegisterPage() {
 
   const handleRegister = (values: z.infer<typeof registerSchema>) => {
     setIsSubmitting(true);
-    signup(values.email, values.password, (error: AuthError) => {
+    createUserWithEmailAndPassword(auth, values.email, values.password)
+      .catch((error: AuthError) => {
         console.error("Registration failed:", error);
         
         let description = "A apărut o eroare. Vă rugăm să încercați din nou.";
@@ -62,7 +66,9 @@ export default function RegisterPage() {
 
   const handleGoogleLogin = () => {
     setIsSubmitting(true);
-    loginWithGoogle((error: AuthError) => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .catch((error: AuthError) => {
         console.error("Google Login failed:", error);
         toast({
             variant: "destructive",
@@ -73,7 +79,7 @@ export default function RegisterPage() {
     });
   }
 
-  if (isLoggedIn) {
+  if (isUserLoading || isLoggedIn) {
     return null; // Or a loader while redirecting
   }
 

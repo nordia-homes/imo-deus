@@ -5,21 +5,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/firebase";
 import React, { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import type { AuthError } from "firebase/auth";
+import { sendPasswordResetEmail, type AuthError } from "firebase/auth";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
 });
 
 export default function ForgotPasswordPage() {
-  const { resetPassword } = useAuth();
+  const auth = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
@@ -33,12 +33,12 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = (values: z.infer<typeof forgotPasswordSchema>) => {
     setIsSubmitting(true);
-    resetPassword(values.email, 
-    () => { // onSuccess
+    sendPasswordResetEmail(auth, values.email)
+    .then(() => {
         setIsSuccess(true);
         setIsSubmitting(false);
-    }, 
-    (error: AuthError) => { // onError
+    })
+    .catch((error: AuthError) => {
         console.error("Password reset failed:", error);
         toast({
             variant: "destructive",
