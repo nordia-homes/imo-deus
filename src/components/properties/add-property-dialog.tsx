@@ -32,10 +32,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, useStorage } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 
 const propertySchema = z.object({
@@ -61,7 +62,6 @@ const propertySchema = z.object({
   keyFeatures: z.string().min(1, { message: "Caracteristicile cheie sunt obligatorii pentru generarea AI." }),
 
   description: z.string().optional(),
-  // `images` will hold File objects from the input, not string URLs
   images: z.any().optional(),
   status: z.string().optional(),
   featured: z.boolean().default(false),
@@ -71,11 +71,13 @@ const propertySchema = z.object({
 export function AddPropertyDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
   const { agencyId } = useAgency();
   const firestore = useFirestore();
+  const storage = useStorage();
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -114,7 +116,6 @@ export function AddPropertyDialog() {
 
       form.setValue('images', allFiles);
 
-      // Clean up old previews before creating new ones
       imagePreviews.forEach(p => URL.revokeObjectURL(p));
       const newPreviews = allFiles.map(file => URL.createObjectURL(file));
       setImagePreviews(newPreviews);
@@ -126,7 +127,6 @@ export function AddPropertyDialog() {
     const newFiles = currentFiles.filter((_, i) => i !== index);
     form.setValue('images', newFiles);
 
-    // Clean up old previews before creating new ones
     imagePreviews.forEach(p => URL.revokeObjectURL(p));
     const previews = newFiles.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
@@ -167,35 +167,59 @@ export function AddPropertyDialog() {
     }
   }
 
-  function onSubmit(values: z.infer<typeof propertySchema>) {
+  async function onSubmit(values: z.infer<typeof propertySchema>) {
+    setIsSubmitting(true);
     if (!user || !agencyId) {
       toast({
         variant: 'destructive',
         title: 'Eroare',
         description: 'Nu am putut identifica agenția. Reîncearcă.',
       });
+      setIsSubmitting(false);
       return;
     }
 
-    const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
+    const files = values.images as File[] || [];
     
-    // Although we aren't uploading files yet, we'll prepare the data structure.
-    // For now, we'll use Picsum placeholders as before.
-    const seed = Math.random().toString(36).substring(7);
-    const placeholderImages = [
-        { url: `https://picsum.photos/seed/${seed}a/1200/800`, alt: 'Vedere de ansamblu' },
-        { url: `https://picsum.photos/seed/${seed}b/1200/800`, alt: 'Living' },
-        { url: `https://picsum.photos/seed/${seed}c/1200/800`, alt: 'Bucătărie' },
-        { url: `https://picsum.photos/seed/${seed}d/1200/800`, alt: 'Dormitor' },
-        { url: `https://picsum.photos/seed/${seed}e/1200/800`, alt: 'Baie' }
-      ];
+    // Create a new property doc ref to get an ID first
+    const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
+    const newPropertyRef = doc(propertiesCollection);
+    const newPropertyId = newPropertyRef.id;
+
+    let uploadedImageUrls: { url: string; alt: string; }[] = [];
+
+    // Upload images if any were selected
+    if (files.length > 0) {
+      try {
+        const uploadPromises = files.map(file => {
+          const uniqueFileName = `${Date.now()}-${file.name}`;
+          const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
+          return uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+        });
+        const downloadUrls = await Promise.all(uploadPromises);
+        uploadedImageUrls = downloadUrls.map((url, index) => ({
+          url,
+          alt: `${values.title} - imagine ${index + 1}`
+        }));
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Eroare la încărcarea imaginilor',
+          description: 'Nu am putut salva imaginile. Vă rugăm să încercați din nou.'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     const newPropertyData = {
+      id: newPropertyId,
       title: values.title,
       propertyType: values.propertyType,
       transactionType: values.transactionType,
       location: values.location,
-      address: values.location, // Use location as address for now
+      address: values.location,
       price: values.price,
       bedrooms: values.bedrooms,
       bathrooms: values.bathrooms,
@@ -211,7 +235,7 @@ export function AddPropertyDialog() {
       parking: values.parking || null,
       keyFeatures: values.keyFeatures,
       description: values.description || '',
-      images: placeholderImages, // Use the new structured placeholder images
+      images: uploadedImageUrls,
       tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
       createdAt: new Date().toISOString(),
       agent: {
@@ -223,17 +247,26 @@ export function AddPropertyDialog() {
       featured: values.featured,
     };
     
-    addDocumentNonBlocking(propertiesCollection, newPropertyData);
-
-    toast({
-      title: 'Proprietate adăugată!',
-      description: `${values.title} a fost adăugată în portofoliul tău.`,
-    });
-
-    setIsOpen(false);
-    form.reset();
-    imagePreviews.forEach((p) => URL.revokeObjectURL(p));
-    setImagePreviews([]);
+    try {
+      await setDoc(newPropertyRef, newPropertyData);
+      toast({
+        title: 'Proprietate adăugată!',
+        description: `${values.title} a fost adăugată cu succes în portofoliul tău.`,
+      });
+      setIsOpen(false);
+      form.reset();
+      imagePreviews.forEach((p) => URL.revokeObjectURL(p));
+      setImagePreviews([]);
+    } catch (error) {
+      console.error("Failed to save property to Firestore:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Salvare eșuată',
+        description: 'Nu am putut salva datele proprietății. Vă rugăm să încercați din nou.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -371,9 +404,6 @@ export function AddPropertyDialog() {
 
                   <FormItem className="mt-4">
                     <FormLabel>Fotografii (max 16)</FormLabel>
-                    <FormDescription>
-                        Puteți selecta imagini pentru a vedea o previzualizare. Notă: imaginile nu vor fi încărcate; se vor folosi imagini placeholder la crearea proprietății.
-                    </FormDescription>
                     <FormControl>
                       <div className="flex items-center justify-center w-full">
                         <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
@@ -409,8 +439,11 @@ export function AddPropertyDialog() {
               </div>
             </ScrollArea>
             <DialogFooter className="pt-4 border-t mt-4">
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
-              <Button type="submit">Salvează Proprietatea</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvează Proprietatea
+              </Button>
             </DialogFooter>
           </form>
         </Form>

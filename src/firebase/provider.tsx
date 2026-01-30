@@ -5,12 +5,14 @@ import type { FirebaseApp } from 'firebase/app';
 import type { Firestore } from 'firebase/firestore';
 import type { Auth, User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
+import type { FirebaseStorage } from 'firebase/storage';
 
 interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
+  storage: FirebaseStorage;
 }
 
 interface UserAuthState {
@@ -23,6 +25,7 @@ interface FirebaseContextState {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
+  storage: FirebaseStorage;
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -39,6 +42,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firebaseApp,
   firestore,
   auth,
+  storage,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
@@ -68,10 +72,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     firebaseApp,
     firestore,
     auth,
+    storage,
     user: userAuthState.user,
     isUserLoading: userAuthState.isUserLoading,
     userError: userAuthState.userError,
-  }), [firebaseApp, firestore, auth, userAuthState]);
+  }), [firebaseApp, firestore, auth, storage, userAuthState]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -100,3 +105,6 @@ export const useFirestore = (): Firestore => useFirebase().firestore;
 
 /** Hook to access the Firebase App instance directly. */
 export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp;
+
+/** Hook to access the Firebase Storage instance directly. */
+export const useStorage = (): FirebaseStorage => useFirebase().storage;
