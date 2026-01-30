@@ -1,15 +1,14 @@
-'use client';
 
-import { useMemo } from 'react';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase/server';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 import { Skeleton } from '@/components/ui/skeleton';
+
 
 function AgencyHero({ agency, agencyId }: { agency: Agency | null, agencyId: string }) {
     
@@ -60,27 +59,34 @@ function AgencyHero({ agency, agencyId }: { agency: Agency | null, agencyId: str
     );
 }
 
-export default function AgencyHomePage() {
-  const params = useParams();
-  const agencyId = params.agencyId as string;
-  const firestore = useFirestore();
+export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
+  const { agencyId } = params;
 
-  const agencyDocRef = useMemoFirebase(() => {
-      if (!agencyId) return null;
-      return doc(firestore, 'agencies', agencyId);
-  }, [firestore, agencyId]);
+  // Server-side data fetching
+  const { firestore } = initializeFirebase();
+  const agencyDocRef = doc(firestore, 'agencies', agencyId);
 
-  const { data: agency, isLoading, error } = useDoc<Agency>(agencyDocRef);
-  
-  if (error) {
-    console.error("Firebase error in AgencyHomePage:", error);
-    notFound();
+  let agency: Agency;
+  try {
+    const agencySnap = await getDoc(agencyDocRef);
+
+    // Defensive check to ensure the document exists.
+    if (!agencySnap.exists()) {
+      notFound();
+    }
+    
+    agency = { id: agencySnap.id, ...agencySnap.data() } as Agency;
+
+  } catch (error) {
+    console.error("Failed to fetch agency:", error);
+    // If there's a more fundamental error (e.g. permissions),
+    // throw a generic error to be caught by Next.js error boundary.
+    throw new Error("Could not fetch agency data. This may be a permission issue or a server error.");
   }
 
   return (
     <div>
-      <AgencyHero agency={isLoading ? null : agency} agencyId={agencyId} />
-      {/* FeaturedProperties is already a client component and will fetch its own data */}
+      <AgencyHero agency={agency} agencyId={agencyId} />
       <FeaturedProperties agencyId={agencyId} />
     </div>
   );
