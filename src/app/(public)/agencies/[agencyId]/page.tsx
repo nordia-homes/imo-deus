@@ -1,5 +1,5 @@
 
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Property, Agency } from '@/lib/types';
@@ -21,14 +21,14 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
   }
   const agency = agencySnap.data() as Agency;
 
-  // Fetch active properties
+  // Fetch ALL properties and filter in code to avoid complex queries needing indexes.
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  const q = query(propertiesRef, where('status', '==', 'Activ'));
-  const querySnapshot = await getDocs(q);
-  const allActiveProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+  const querySnapshot = await getDocs(propertiesRef);
+  const allProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
   
-  const featuredProperties = allActiveProperties
-    .filter(property => property.featured === true)
+  const featuredProperties = allProperties
+    .filter(property => property.status === 'Activ' && property.featured === true)
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     .slice(0, 3);
 
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';

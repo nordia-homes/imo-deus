@@ -1,5 +1,5 @@
 
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
@@ -10,10 +10,12 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
 
   const { firestore } = initializeFirebase();
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  const q = query(propertiesRef, where('status', '==', 'Activ'));
-  const querySnapshot = await getDocs(q);
+  const querySnapshot = await getDocs(propertiesRef);
 
-  const properties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+  const properties = querySnapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as Property))
+    .filter(property => property.status === 'Activ');
+
   // Sort by creation date descending, if available
   properties.sort((a, b) => {
     if (a.createdAt && b.createdAt) {
