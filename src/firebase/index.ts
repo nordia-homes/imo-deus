@@ -10,10 +10,12 @@ import { useMemo, type DependencyList } from 'react';
  * ensuring that `initializeApp` is called only once.
  */
 export function initializeFirebase() {
-  if (getApps().length === 0) {
-    return initializeApp(firebaseConfig);
-  }
-  return getApp();
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  return {
+    firebaseApp: app,
+    auth: getAuth(app),
+    firestore: getFirestore(app),
+  };
 }
 
 // Re-export core hooks and providers from their new locations
