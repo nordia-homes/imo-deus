@@ -28,12 +28,13 @@ import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, getDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
+import type { UserProfile } from '@/lib/types';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -62,8 +63,31 @@ export function AddLeadDialog() {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
-  const { agencyId, agents } = useAgency();
+  const { agency, isAgencyLoading } = useAgency();
   const firestore = useFirestore();
+  const [agents, setAgents] = useState<UserProfile[]>([]);
+
+  useEffect(() => {
+      if (!isOpen || !agency || !agency.agentIds) {
+          setAgents([]);
+          return;
+      }
+      
+      const fetchAgents = async () => {
+          try {
+              const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
+              const agentDocs = await Promise.all(agentPromises);
+              const agentProfiles = agentDocs
+                  .filter(docSnap => docSnap.exists())
+                  .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+              setAgents(agentProfiles);
+          } catch (error) {
+              console.error("Error fetching agent profiles for dialog:", error);
+          }
+      };
+
+      fetchAgents();
+  }, [isOpen, agency, firestore]);
 
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
@@ -77,7 +101,7 @@ export function AddLeadDialog() {
       notes: '',
       city: '',
       priority: 'Medie',
-      agentId: '',
+      agentId: 'unassigned',
     },
   });
 
@@ -88,7 +112,7 @@ export function AddLeadDialog() {
   }, [watchedCity]);
 
   function onSubmit(values: z.infer<typeof leadSchema>) {
-    if (!user || !agencyId) {
+    if (!user || !agency?.id) {
         toast({
             variant: "destructive",
             title: "Eroare",
@@ -97,7 +121,7 @@ export function AddLeadDialog() {
         return;
     }
 
-    const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
+    const contactsCollection = collection(firestore, 'agencies', agency.id, 'contacts');
     
     const isUnassigned = !values.agentId || values.agentId === 'unassigned';
     const finalAgentId = isUnassigned ? null : values.agentId;

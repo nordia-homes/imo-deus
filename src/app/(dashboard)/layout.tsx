@@ -56,7 +56,7 @@ function hexToHsl(hex: string): string | null {
 }
 
 function DashboardRoot({ children }: { children: React.ReactNode }) {
-    const { userProfile, agencyId, isAgencyLoading } = useAgency();
+    const { userProfile, agency, isAgencyLoading } = useAgency();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -64,8 +64,10 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
         const root = document.documentElement;
         const defaultPrimary = '250 65% 55%';
 
-        if (userProfile?.agencyPrimaryColor) {
-            const hslColor = hexToHsl(userProfile.agencyPrimaryColor);
+        const colorToSet = agency?.primaryColor || userProfile?.agencyPrimaryColor;
+
+        if (colorToSet) {
+            const hslColor = hexToHsl(colorToSet);
             if (hslColor) {
                  root.style.setProperty('--primary', hslColor);
                  root.style.setProperty('--ring', hslColor);
@@ -82,19 +84,19 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
             root.style.setProperty('--primary', defaultPrimary);
             root.style.setProperty('--ring', defaultPrimary);
         }
-    }, [userProfile]);
+    }, [userProfile, agency]);
 
     useEffect(() => {
         // Redirect to settings if loading is done, there's no agency, and we are not already on the settings page.
-        if (!isAgencyLoading && !agencyId && pathname !== '/settings') {
+        if (!isAgencyLoading && !agency?.id && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [isAgencyLoading, agencyId, router, pathname]);
+    }, [isAgencyLoading, agency, router, pathname]);
 
     // Show a loader if:
     // 1. We are loading the agency info.
     // 2. We are NOT on the settings page AND we are missing an agency ID (which implies a redirect is about to happen).
-    if (isAgencyLoading || (!agencyId && pathname !== '/settings')) {
+    if (isAgencyLoading || (!agency?.id && pathname !== '/settings')) {
         return <FullScreenLoader />;
     }
 

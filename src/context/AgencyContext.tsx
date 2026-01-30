@@ -1,15 +1,14 @@
 'use client';
-import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 
 type AgencyContextType = {
     userProfile: UserProfile | null;
     agencyId: string | null;
     agency: Agency | null;
-    agents: UserProfile[];
-    isAgencyLoading: boolean; // This will now cover loading agents as well
+    isAgencyLoading: boolean;
 };
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
@@ -32,53 +31,11 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         return doc(firestore, 'agencies', agencyId);
     }, [firestore, agencyId]);
     const { data: agencyData, isLoading: isAgencyDocLoading } = useDoc<Agency>(agencyDocRef);
-    
-    // 3. NEW LOGIC: Fetch agent profiles based on agentIds from the agency doc
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
 
-    useEffect(() => {
-        // This effect runs when agencyData is loaded or changes.
-        if (!agencyData) {
-            // If there's no agency data (e.g., user is new), and we are done checking, then there are no agents.
-            if (!isAgencyDocLoading) {
-                setAgents([]);
-                setAreAgentsLoading(false);
-            }
-            return;
-        }
+    // The overall loading state depends on all sequential async operations.
+    const isAgencyLoading = isUserLoading || isProfileLoading || isAgencyDocLoading;
 
-        if (!agencyData.agentIds || agencyData.agentIds.length === 0) {
-            setAgents([]);
-            setAreAgentsLoading(false);
-            return;
-        }
-
-        const fetchAgents = async () => {
-            setAreAgentsLoading(true);
-            try {
-                // Fetch each agent's profile using getDoc. This is a series of `get` requests, not a `list`.
-                const agentPromises = agencyData.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                const agentProfiles = agentDocs
-                    .filter(docSnap => docSnap.exists())
-                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                setAgents(agentProfiles);
-            } catch (error) {
-                console.error("Error fetching agent profiles in context:", error);
-                setAgents([]); // Clear agents on error
-            } finally {
-                setAreAgentsLoading(false);
-            }
-        };
-
-        fetchAgents();
-    }, [agencyData, isAgencyDocLoading, firestore]);
-
-    // The overall loading state depends on all async operations.
-    const isAgencyLoading = isUserLoading || isProfileLoading || isAgencyDocLoading || areAgentsLoading;
-
-    const value = { userProfile, agencyId, agency: agencyData, agents, isAgencyLoading };
+    const value = { userProfile, agencyId, agency: agencyData, isAgencyLoading };
 
     return (
         <AgencyContext.Provider value={value}>

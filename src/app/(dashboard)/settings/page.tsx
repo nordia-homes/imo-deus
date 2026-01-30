@@ -32,16 +32,9 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { userProfile, agencyId, isAgencyLoading: isContextLoading } = useAgency();
+  const { userProfile, agency, isAgencyLoading } = useAgency();
 
   const [isCreatingAgency, setIsCreatingAgency] = useState(false);
-
-  const agencyDocRef = useMemoFirebase(() => {
-    if (!agencyId) return null;
-    return doc(firestore, 'agencies', agencyId);
-  }, [firestore, agencyId]);
-
-  const { data: agencyData, isLoading: isAgencyDataLoading } = useDoc<Agency>(agencyDocRef);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -62,14 +55,14 @@ export default function SettingsPage() {
   }, [userProfile, user, profileForm]);
 
   useEffect(() => {
-    if (agencyData) {
+    if (agency) {
         agencyForm.reset({
-            name: agencyData.name,
-            logoUrl: agencyData.logoUrl || '',
-            primaryColor: agencyData.primaryColor || '#1E3A8A'
+            name: agency.name,
+            logoUrl: agency.logoUrl || '',
+            primaryColor: agency.primaryColor || '#1E3A8A'
         });
     }
-  }, [agencyData, agencyForm]);
+  }, [agency, agencyForm]);
   
   const handleProfileSave = (values: z.infer<typeof profileSchema>) => {
     if (!user) return;
@@ -83,7 +76,8 @@ export default function SettingsPage() {
   };
   
   const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
-    if (!agencyDocRef) return;
+    if (!agency?.id) return;
+    const agencyDocRef = doc(firestore, 'agencies', agency.id);
     
     if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -115,6 +109,7 @@ export default function SettingsPage() {
             logoUrl: values.logoUrl,
             primaryColor: values.primaryColor,
             agentIds: [user.uid],
+            id: newAgencyRef.id,
         });
         
         batch.set(userDocRef, { 
@@ -137,10 +132,8 @@ export default function SettingsPage() {
           setIsCreatingAgency(false);
       }
   }
-
-  const isLoading = isUserLoading || isContextLoading || isAgencyDataLoading;
   
-  if (!isContextLoading && !agencyId) {
+  if (!isAgencyLoading && !agency) {
       return (
           <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
               <Card className="w-full max-w-lg">
@@ -167,7 +160,7 @@ export default function SettingsPage() {
       )
   }
 
-  if (isLoading) {
+  if (isAgencyLoading) {
     return (
       <div className="space-y-6">
         <div><Skeleton className="h-8 w-48 mb-2" /><Skeleton className="h-4 w-72" /></div>
@@ -208,7 +201,7 @@ export default function SettingsPage() {
         </Form>
       </Card>
 
-      {userProfile?.role === 'admin' && agencyData && <AgentManagementCard agency={agencyData} />}
+      {userProfile?.role === 'admin' && agency && <AgentManagementCard agency={agency} />}
     </div>
   );
 }

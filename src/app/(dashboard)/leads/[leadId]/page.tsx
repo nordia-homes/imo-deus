@@ -2,7 +2,7 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, arrayUnion } from 'firebase/firestore';
+import { doc, collection, query, where, arrayUnion, getDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -74,31 +74,65 @@ export default function LeadDetailPage() {
     const leadId = params.leadId as string;
     
     const { user, isUserLoading } = useUser();
-    const { agencyId, agents } = useAgency();
+    const { agency, isAgencyLoading: isContextLoading } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    // --- AGENT PROFILES STATE ---
+    const [agents, setAgents] = useState<UserProfile[]>([]);
+    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
+
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
-        if (!agencyId || !leadId) return null;
-        return doc(firestore, 'agencies', agencyId, 'contacts', leadId);
-    }, [firestore, agencyId, leadId]);
+        if (!agency?.id || !leadId) return null;
+        return doc(firestore, 'agencies', agency.id, 'contacts', leadId);
+    }, [firestore, agency?.id, leadId]);
 
     const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!agencyId || !leadId) return null;
-        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
+        if (!agency?.id || !leadId) return null;
+        const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
         return query(tasksCollection, where('contactId', '==', leadId));
-    }, [firestore, agencyId, leadId]);
+    }, [firestore, agency?.id, leadId]);
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
     const propertiesQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'properties');
-    }, [firestore, agencyId]);
+        if (!agency?.id) return null;
+        return collection(firestore, 'agencies', agency.id, 'properties');
+    }, [firestore, agency?.id]);
     const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+    // --- AGENT PROFILES FETCHING ---
+    useEffect(() => {
+        if (!agency || !agency.agentIds) {
+            if (!isContextLoading) {
+                setAgents([]);
+                setAreAgentsLoading(false);
+            }
+            return;
+        };
+
+        const fetchAgents = async () => {
+            setAreAgentsLoading(true);
+            try {
+                const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
+                const agentDocs = await Promise.all(agentPromises);
+                const agentProfiles = agentDocs
+                    .filter(docSnap => docSnap.exists())
+                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                setAgents(agentProfiles);
+            } catch (error) {
+                console.error("Error fetching agent profiles:", error);
+                toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
+            } finally {
+                setAreAgentsLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, [agency, isContextLoading, firestore, toast]);
 
 
     // --- STATE MANAGEMENT ---
@@ -178,8 +212,8 @@ export default function LeadDetailPage() {
     }
 
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
-        if (!agencyId || !contact) return;
-        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
+        if (!agency?.id || !contact) return;
+        const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
         
         const taskToAdd = {
             ...newTask,
@@ -196,15 +230,15 @@ export default function LeadDetailPage() {
     };
     
     const handleToggleTask = (task: Task) => {
-        if (!agencyId) return;
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
+        if (!agency?.id) return;
+        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', task.id);
         const newStatus = task.status === 'completed' ? 'open' : 'completed';
         updateDocumentNonBlocking(taskRef, { status: newStatus });
     };
 
     const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
-        if (!agencyId || !editingTask) return;
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
+        if (!agency?.id || !editingTask) return;
+        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
         updateDocumentNonBlocking(taskRef, dataToUpdate);
         toast({
@@ -215,8 +249,8 @@ export default function LeadDetailPage() {
     };
 
     const handleDeleteTask = () => {
-        if (!agencyId || !deletingTask) return;
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
+        if (!agency?.id || !deletingTask) return;
+        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', deletingTask.id);
         deleteDocumentNonBlocking(taskRef);
         toast({
             variant: 'destructive',
@@ -306,7 +340,7 @@ export default function LeadDetailPage() {
         }
     }
 
-    const isLoading = isUserLoading || isContactLoading;
+    const isLoading = isUserLoading || isContactLoading || isContextLoading || areAgentsLoading;
 
     // --- RENDER LOGIC ---
     if (isLoading) {
