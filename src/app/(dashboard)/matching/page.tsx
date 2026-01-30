@@ -1,6 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
@@ -15,8 +19,21 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, Wand2, Star, Info } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
 import { useAgency } from '@/context/AgencyContext';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+const propertyMatchSchema = z.object({
+  desiredPriceRangeMin: z.coerce.number(),
+  desiredPriceRangeMax: z.coerce.number(),
+  desiredBedrooms: z.coerce.number(),
+  desiredBathrooms: z.coerce.number(),
+  desiredSquareFootageMin: z.coerce.number(),
+  desiredSquareFootageMax: z.coerce.number(),
+  desiredFeatures: z.string(),
+  locationPreferences: z.string(),
+});
 
 type MatchedProperty = Property & { matchScore: number; reasoning: string };
 
@@ -47,7 +64,30 @@ export default function MatchingPage() {
         return contacts.find(c => c.id === selectedContactId);
     }, [selectedContactId, contacts]);
 
-    const handleMatch = async () => {
+    const form = useForm<z.infer<typeof propertyMatchSchema>>({
+        resolver: zodResolver(propertyMatchSchema),
+    });
+
+    useEffect(() => {
+        if (selectedContact) {
+            const preferences = selectedContact.preferences || {
+                desiredPriceRangeMin: (selectedContact.budget || 0) * 0.8,
+                desiredPriceRangeMax: (selectedContact.budget || 0) * 1.2,
+                desiredBedrooms: 2,
+                desiredBathrooms: 1,
+                desiredSquareFootageMin: 50,
+                desiredSquareFootageMax: 100,
+                desiredFeatures: '',
+                locationPreferences: selectedContact.city || '',
+            };
+            form.reset(preferences);
+        } else {
+            form.reset({});
+        }
+    }, [selectedContact, form]);
+
+
+    const onMatchSubmit = async (values: z.infer<typeof propertyMatchSchema>) => {
         if (!selectedContact || !properties) {
             toast({ variant: "destructive", title: "Date lipsă", description: "Selectează un client și asigură-te că ai proprietăți în portofoliu."});
             return;
@@ -56,16 +96,7 @@ export default function MatchingPage() {
         setIsMatching(true);
         setMatchedProperties([]);
         
-        const clientPreferences = selectedContact.preferences || {
-            desiredPriceRangeMin: (selectedContact.budget || 0) * 0.8,
-            desiredPriceRangeMax: (selectedContact.budget || 0) * 1.2,
-            desiredBedrooms: 2,
-            desiredBathrooms: 1,
-            desiredSquareFootageMin: 50,
-            desiredSquareFootageMax: 100,
-            desiredFeatures: '',
-            locationPreferences: selectedContact.city || '',
-        };
+        const clientPreferences = values;
         
         const matcherProperties = properties.map(p => ({
             ...p,
@@ -133,26 +164,36 @@ export default function MatchingPage() {
             </Card>
 
             {selectedContact && (
-                <Card className="animate-in fade-in-0">
-                    <CardHeader>
-                        <CardTitle>2. Preferințele lui {selectedContact.name}</CardTitle>
-                        <CardDescription>Acestea sunt preferințele înregistrate. Analiza AI le va folosi ca bază.</CardDescription>
-                    </CardHeader>
-                     <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div className="font-semibold">Buget: <span className="font-normal text-muted-foreground">€{selectedContact.preferences?.desiredPriceRangeMin?.toLocaleString()} - €{selectedContact.preferences?.desiredPriceRangeMax?.toLocaleString()}</span></div>
-                        <div className="font-semibold">Dormitoare: <span className="font-normal text-muted-foreground">{selectedContact.preferences?.desiredBedrooms}</span></div>
-                        <div className="font-semibold">Băi: <span className="font-normal text-muted-foreground">{selectedContact.preferences?.desiredBathrooms}</span></div>
-                        <div className="font-semibold">Suprafață: <span className="font-normal text-muted-foreground">{selectedContact.preferences?.desiredSquareFootageMin} - {selectedContact.preferences?.desiredSquareFootageMax} mp</span></div>
-                        <div className="font-semibold col-span-2">Locație: <span className="font-normal text-muted-foreground">{selectedContact.preferences?.locationPreferences}</span></div>
-                        <div className="font-semibold col-span-2">Caracteristici: <span className="font-normal text-muted-foreground">{selectedContact.preferences?.desiredFeatures}</span></div>
-                    </CardContent>
-                    <CardFooter>
-                         <Button onClick={handleMatch} disabled={isMatching}>
-                            {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                            Găsește Potriviri
-                        </Button>
-                    </CardFooter>
-                </Card>
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onMatchSubmit)}>
+                        <Card className="animate-in fade-in-0">
+                            <CardHeader>
+                                <CardTitle>2. Preferințele lui {selectedContact.name}</CardTitle>
+                                <CardDescription>Ajustează criteriile de mai jos, apoi lansează analiza AI.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                     <FormField control={form.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredBedrooms" render={({ field }) => ( <FormItem><FormLabel>Dormitoare</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredBathrooms" render={({ field }) => ( <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață Min</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredSquareFootageMax" render={({ field }) => ( <FormItem><FormLabel>Suprafață Max</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )}/>
+                                    <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2}/></FormControl></FormItem> )}/>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button type="submit" disabled={isMatching}>
+                                    {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                    Găsește Potriviri
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </form>
+                 </Form>
             )}
 
             {isMatching && (
@@ -197,12 +238,12 @@ export default function MatchingPage() {
                 </div>
             )}
 
-             {!isMatching && matchedProperties.length === 0 && selectedContactId && !isMatching && (
+             {!isMatching && matchedProperties.length === 0 && selectedContactId && (
                  <Alert className="mt-6">
                      <Info className="h-4 w-4" />
                     <AlertTitle>Gata de analiză</AlertTitle>
                     <AlertDescription>
-                       Apăsați pe butonul "Găsește Potriviri" pentru a începe analiza AI.
+                       Apasă pe butonul "Găsește Potriviri" pentru a începe analiza AI folosind criteriile de mai sus.
                     </AlertDescription>
                 </Alert>
             )}
