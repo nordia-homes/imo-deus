@@ -16,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
+import { Checkbox } from '../ui/checkbox';
 
 
 const propertySchema = z.object({
@@ -62,6 +64,7 @@ const propertySchema = z.object({
   // `images` will hold File objects from the input, not string URLs
   images: z.any().optional(),
   status: z.string().optional(),
+  featured: z.boolean().default(false),
 });
 
 
@@ -98,6 +101,7 @@ export function AddPropertyDialog() {
       description: '',
       images: [],
       status: 'Activ',
+      featured: false,
     },
   });
 
@@ -216,6 +220,7 @@ export function AddPropertyDialog() {
       },
       amenities: values.keyFeatures.split(',').map((f) => f.trim()),
       status: values.status,
+      featured: values.featured,
     };
     
     addDocumentNonBlocking(propertiesCollection, newPropertyData);
@@ -273,9 +278,30 @@ export function AddPropertyDialog() {
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField
+                            control={form.control}
+                            name="featured"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col justify-end">
+                                <div className="flex items-center space-x-2 rounded-md border h-10 px-3">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      id="featured-checkbox"
+                                    />
+                                  </FormControl>
+                                  <FormLabel htmlFor="featured-checkbox" className="!mt-0">Recomandată</FormLabel>
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                     </div>
                   </div>
                 </section>
@@ -371,5 +397,3 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
-
-    

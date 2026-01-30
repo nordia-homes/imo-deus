@@ -3,14 +3,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     function isUserInAgency(agencyId) {
+      if (request.auth == null) {
+        return false;
+      }
       let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return request.auth != null &&
-             exists(userDocPath) &&
+      return exists(userDocPath) &&
              'agencyId' in get(userDocPath).data &&
              get(userDocPath).data.agencyId == agencyId;
     }
     
     function isUserAdmin(agencyId) {
+        if (request.auth == null) {
+          return false;
+        }
         let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
         return isUserInAgency(agencyId) &&
                'role' in get(userDocPath).data &&
@@ -18,25 +23,18 @@ service cloud.firestore {
     }
 
     function isAddingSelfToAgency(agencyId) {
-      // Ensure the user's profile already links them to this agency.
+      if (request.auth == null) {
+        return false;
+      }
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       if (userDoc.agencyId != agencyId) {
         return false;
       }
-      
-      // Ensure other fields are not being changed.
       let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
       if (!affectedKeys.hasOnly(['agentIds'])) {
         return false;
       }
-      
-      // Validate the change on the 'agentIds' array specifically.
       let agentIdsDiff = request.resource.data.agentIds.diff(resource.data.agentIds);
-      
-      // The change must be:
-      // 1. Adding exactly one element.
-      // 2. The added element must be the current user's UID.
-      // 3. No elements are removed.
       return agentIdsDiff.added().size() == 1 &&
              agentIdsDiff.added()[0] == request.auth.uid &&
              agentIdsDiff.removed().size() == 0;
@@ -57,30 +55,26 @@ service cloud.firestore {
 
     match /agencies/{agencyId} {
       allow get: if true;
-      allow list: if request.auth != null;
+      allow list: if true;
       allow create: if request.auth != null;
       allow delete: if false;
-      allow update: if isUserAdmin(agencyId) || isAddingSelfToAgency(agencyId);
+      allow update: if request.auth != null && (isUserAdmin(agencyId) || isAddingSelfToAgency(agencyId));
     }
     
     match /invites/{inviteId} {
-        allow create: if isUserAdmin(request.resource.data.agencyId);
+        allow create: if request.auth != null && isUserAdmin(request.resource.data.agencyId);
         allow read, delete: if request.auth != null;
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // Agency members can create, update, delete.
-      allow write: if isUserInAgency(agencyId);
-      
-      // Anyone can read any property.
-      allow get, list: if true;
+      allow get: if resource.data.status == 'Activ' || (request.auth != null && isUserInAgency(agencyId));
+      allow list: if true;
+      allow write: if request.auth != null && isUserInAgency(agencyId);
     }
     
     // For all other private subcollections, only allow access to agency members.
     match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
-      allow read, write: if isUserInAgency(agencyId);
+      allow read, write: if request.auth != null && isUserInAgency(agencyId);
     }
   }
 }
-
-    
