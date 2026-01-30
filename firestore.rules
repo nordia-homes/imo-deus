@@ -17,6 +17,23 @@ service cloud.firestore {
                get(userDocPath).data.role == 'admin';
     }
 
+    // A newly registered agent can add themselves to the agentIds array of their agency.
+    // This is secure because:
+    // 1. Their user document must already exist and have the correct agencyId (from the invite flow).
+    // 2. The only change allowed is appending their own UID to the agentIds array.
+    function isAddingSelfToAgency(agencyId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // Check that the only field being changed is 'agentIds'
+      let isUpdatingOnlyAgentIds = request.resource.data.diff(resource.data).affectedKeys().hasOnly(['agentIds']);
+      // Check that the new agentIds array is exactly the old one plus the new user's UID
+      let isAddingSelf = request.resource.data.agentIds == resource.data.agentIds.concat([request.auth.uid]);
+      
+      return request.auth.uid != null &&
+             userDoc.agencyId == agencyId &&
+             isUpdatingOnlyAgentIds &&
+             isAddingSelf;
+    }
+
     match /users/{userId} {
       allow get: if request.auth != null && (
         request.auth.uid == userId || (
@@ -31,20 +48,11 @@ service cloud.firestore {
     }
 
     match /agencies/{agencyId} {
-      // Allow public read for agency branding on the public website.
       allow get: if true;
-      
-      // Only authenticated users can list all agencies.
       allow list: if request.auth != null;
-      
-      // Only admins of the agency can update its details.
-      allow update: if isUserAdmin(agencyId);
-
-      // Any authenticated user can create an agency.
       allow create: if request.auth != null;
-
-      // Deleting agencies is not allowed from the client.
       allow delete: if false;
+      allow update: if isUserAdmin(agencyId) || isAddingSelfToAgency(agencyId);
     }
     
     match /invites/{inviteId} {
@@ -53,20 +61,18 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-        // --- Public Access Rules ---
-        // Allow anyone to read a single property if it's explicitly public.
-        allow get: if resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ';
-        
-        // Allow unauthenticated users to list properties. This query will then
-        // be filtered by the `get` rule on a per-document basis by Firestore.
-        allow list: if request.auth == null;
+        // --- Rules for Authenticated Agency Members ---
+        // Allow agency members to perform any read/write operation.
+        allow read, write: if isUserInAgency(agencyId);
 
-        // --- Agency Member Access Rules ---
-        // Allow agency members to perform any read operation (get, list) on their own properties.
-        allow read: if isUserInAgency(agencyId);
+        // --- Overriding Rules for Public Access ---
+        // Allow unauthenticated list queries. The results are then checked by the `get` rule.
+        allow list: if request.auth == null;
         
-        // Allow agency members to write to their own properties.
-        allow write: if isUserInAgency(agencyId);
+        // Allow unauthenticated get requests ONLY for public and active properties.
+        allow get: if request.auth == null 
+                     && resource.data.visibility == 'Colaborare' 
+                     && resource.data.status == 'Activ';
     }
     
     // For all other private subcollections, only allow access to agency members.
