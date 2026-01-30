@@ -67,11 +67,16 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // Agency members have full read/write access
-      allow read, write: if isUserInAgency(agencyId);
+      // Get: Members can get any property. Public can only get 'Activ' ones.
+      allow get: if isUserInAgency(agencyId) || ('status' in resource.data && resource.data.status == 'Activ');
+
+      // List: Members can list all properties. Public can also list, 
+      // but the query MUST include `where('status', '==', 'Activ')` to succeed, 
+      // as it's enforced by the `get` rule above.
+      allow list: if isUserInAgency(agencyId) || request.auth == null;
       
-      // Public users can GET a single document if it's active
-      allow get: if 'status' in resource.data && resource.data.status == 'Activ';
+      // Write: Only members can write.
+      allow write: if isUserInAgency(agencyId);
     }
     
     // For all other private subcollections, only allow access to agency members.

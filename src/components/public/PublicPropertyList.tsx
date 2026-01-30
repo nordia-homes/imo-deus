@@ -1,67 +1,84 @@
 'use client';
+
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
-import { PublicPropertyCard } from './PublicPropertyCard';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { PublicPropertyCard } from "./PublicPropertyCard";
+import { Skeleton } from '../ui/skeleton';
+import { Card, CardContent } from '../ui/card';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export function PublicPropertyList({ agencyId }: { agencyId: string }) {
     const firestore = useFirestore();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
-    const [transactionFilter, setTransactionFilter] = useState('all');
+    const [sortOrder, setSortOrder] = useState('price-desc');
 
     const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
-        return query(
-            collection(firestore, 'agencies', agencyId, 'properties'),
-            where('status', '==', 'Activ')
-        );
+        // Query only for active properties for public view
+        return query(collection(firestore, 'agencies', agencyId, 'properties'), where('status', '==', 'Activ'));
     }, [firestore, agencyId]);
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
-    const filteredProperties = useMemo(() => {
+    const filteredAndSortedProperties = useMemo(() => {
         if (!properties) return [];
-        return properties.filter(property => {
+        
+        let processed = properties.filter(property => {
             const matchesSearch = searchTerm === '' ||
-                (property.title && property.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (property.address && property.address.toLowerCase().includes(searchTerm.toLowerCase()));
+                property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                property.address.toLowerCase().includes(searchTerm.toLowerCase());
             
             const matchesType = typeFilter === 'all' || property.propertyType === typeFilter;
-            const matchesTransaction = transactionFilter === 'all' || property.transactionType === transactionFilter;
             
-            return matchesSearch && matchesType && matchesTransaction;
+            return matchesSearch && matchesType;
         });
-    }, [properties, searchTerm, typeFilter, transactionFilter]);
+
+        processed.sort((a, b) => {
+            switch(sortOrder) {
+                case 'price-asc': return a.price - b.price;
+                case 'price-desc': return b.price - a.price;
+                case 'date-desc': return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                default: return 0;
+            }
+        });
+
+        return processed;
+    }, [properties, searchTerm, typeFilter, sortOrder]);
 
     const renderPropertyList = () => {
         if (isLoading) {
             return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(6)].map((_, i) => (
-                        <Skeleton key={i} className="h-96" />
+                        <Card key={i}>
+                            <Skeleton className="aspect-video w-full" />
+                            <div className="p-4 space-y-2">
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                                <Skeleton className="h-8 w-1/3 mt-4" />
+                            </div>
+                        </Card>
                     ))}
                 </div>
             );
         }
 
         if (!properties || properties.length === 0) {
-            return <p className="text-center text-muted-foreground py-10">Momentan nu există proprietăți active de afișat.</p>;
+            return <p className="text-center text-muted-foreground py-10 col-span-full">Nu există proprietăți publice de afișat pentru această agenție.</p>;
         }
 
-        if (filteredProperties.length === 0) {
-            return <p className="text-center text-muted-foreground py-10">Nicio proprietate nu corespunde filtrelor selectate.</p>;
+        if (filteredAndSortedProperties.length === 0) {
+            return <p className="text-center text-muted-foreground py-10 col-span-full">Nicio proprietate nu corespunde filtrelor selectate.</p>;
         }
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProperties.map(property => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredAndSortedProperties.map(property => (
                     <PublicPropertyCard key={property.id} property={property} agencyId={agencyId} />
                 ))}
             </div>
@@ -78,9 +95,9 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="md:max-w-xs"
                     />
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <Select value={typeFilter} onValueChange={setTypeFilter}>
-                            <SelectTrigger className="w-full sm:w-auto">
+                            <SelectTrigger>
                                 <SelectValue placeholder="Tip proprietate" />
                             </SelectTrigger>
                             <SelectContent>
@@ -92,14 +109,14 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
                                 <SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem>
                             </SelectContent>
                         </Select>
-                         <Select value={transactionFilter} onValueChange={setTransactionFilter}>
-                            <SelectTrigger className="w-full sm:w-auto">
-                                <SelectValue placeholder="Tip tranzacție" />
+                         <Select value={sortOrder} onValueChange={setSortOrder}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Ordonează după" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Toate Tranzacțiile</SelectItem>
-                                <SelectItem value="Vânzare">Vânzare</SelectItem>
-                                <SelectItem value="Închiriere">Închiriere</SelectItem>
+                                <SelectItem value="price-desc">Preț (descrescător)</SelectItem>
+                                <SelectItem value="price-asc">Preț (crescător)</SelectItem>
+                                <SelectItem value="date-desc">Cele mai noi</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
