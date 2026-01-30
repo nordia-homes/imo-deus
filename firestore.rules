@@ -4,16 +4,16 @@ service cloud.firestore {
 
     function isUserInAgency(agencyId) {
       let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return request.auth != null && 
-             exists(userDocPath) && 
-             'agencyId' in get(userDocPath).data && 
+      return request.auth != null &&
+             exists(userDocPath) &&
+             'agencyId' in get(userDocPath).data &&
              get(userDocPath).data.agencyId == agencyId;
     }
 
     function isUserAdmin() {
       let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return request.auth != null && 
-             exists(userDocPath) && 
+      return request.auth != null &&
+             exists(userDocPath) &&
              'role' in get(userDocPath).data &&
              get(userDocPath).data.role == 'admin';
     }
@@ -24,7 +24,6 @@ service cloud.firestore {
 
 
     match /users/{userId} {
-      // GET: Allow reading own profile, or admin reading a user in their agency
       allow get: if request.auth != null && (
         request.auth.uid == userId ||
         (
@@ -33,39 +32,27 @@ service cloud.firestore {
         )
       );
 
-      // LIST: An admin can list users. The 'get' rule will be enforced by Firestore on the query results.
       allow list: if isUserAdmin();
 
-      // Keep write permissions the same: only for the user themselves
       allow update, create: if request.auth != null && request.auth.uid == userId;
       
-      // Deletion remains disallowed
       allow delete: if false;
     }
 
-    // Agencies can be read by anyone, but only modified by admins of that agency.
     match /agencies/{agencyId} {
       allow get: if true;
-      allow list: if request.auth != null; // Allow logged-in users to list agencies
-      // Only agency admins can update agency details.
+      allow list: if request.auth != null;
       allow update: if isUserAdminOfAgency(agencyId);
-      // Agency creation is handled by specific logic (e.g. in settings page)
       allow create: if request.auth != null;
-      allow delete: if false; // Disallow direct deletion
+      allow delete: if false;
     }
     
-    // Invitation documents for new agents
     match /invites/{inviteId} {
-        // An admin of an agency can create an invite
         allow create: if isUserAdminOfAgency(request.resource.data.agencyId);
-        // Any authenticated user can read an invite (to check if they were invited)
-        // and delete it after use. The client logic ensures they only access their own.
         allow read, delete: if request.auth != null;
     }
 
-    // Secure all sub-collections within an agency.
     match /agencies/{agencyId}/{allPaths=**} {
-      // Only users who are part of the agency can read and write its data.
       allow read, write: if request.auth != null && isUserInAgency(agencyId);
     }
   }
