@@ -1,12 +1,11 @@
 
-import { ReactNode } from 'react';
-import { getDoc, doc, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+'use client';
+import { ReactNode, useEffect } from 'react';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
-import { notFound } from 'next/navigation';
 
 function hexToHsl(hex: string): string | null {
     if (!hex || !hex.startsWith('#')) return null;
@@ -37,40 +36,45 @@ function hexToHsl(hex: string): string | null {
 }
 
 
-export default async function AgencyPublicLayout({
+export default function AgencyPublicLayout({
   children,
   params,
 }: {
   children: ReactNode;
   params: { agencyId: string };
 }) {
-  // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
-  // This avoids state conflicts with the client-side app.
-  const ssgApp = getApps().find(a => a.name === 'ssg-app') || initializeApp(firebaseConfig, 'ssg-app');
-  const firestore = getFirestore(ssgApp);
-  
-  const agencyRef = doc(firestore, 'agencies', params.agencyId);
-  const agencySnap = await getDoc(agencyRef);
-  
-  if (!agencySnap.exists()) {
-    notFound();
-  }
-  
-  const agency = agencySnap.data() as Agency;
-  
-  const primaryColorHsl = agency?.primaryColor ? hexToHsl(agency.primaryColor) : null;
+  const firestore = useFirestore();
+
+  const agencyDocRef = useMemoFirebase(() => {
+      if (!params.agencyId) return null;
+      return doc(firestore, 'agencies', params.agencyId);
+  }, [firestore, params.agencyId]);
+
+  const { data: agency, isLoading } = useDoc<Agency>(agencyDocRef);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (agency?.primaryColor) {
+      const hslColor = hexToHsl(agency.primaryColor);
+      if (hslColor) {
+        root.style.setProperty('--primary', hslColor);
+        root.style.setProperty('--ring', hslColor);
+      }
+    }
+    // Cleanup function to reset the color when the component unmounts or agency changes
+    return () => {
+        const defaultPrimary = '250 65% 55%';
+        root.style.setProperty('--primary', defaultPrimary);
+        root.style.setProperty('--ring', defaultPrimary);
+    }
+  }, [agency]);
 
   return (
-    <div
-      style={
-        primaryColorHsl
-          ? ({ '--primary': primaryColorHsl, '--ring': primaryColorHsl } as React.CSSProperties)
-          : {}
-      }
-    >
-      <PublicHeader agency={agency} />
+    <div>
+      <PublicHeader agency={agency} isLoading={isLoading} />
       <main className="min-h-screen bg-background">{children}</main>
-      <PublicFooter agency={agency} />
+      <PublicFooter agency={agency} isLoading={isLoading} />
     </div>
   );
 }
+
