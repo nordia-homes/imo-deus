@@ -48,8 +48,8 @@ export type Property = {
   promotions?: {
     [portalName: string]: PromotionStatus;
   };
-  agentId?: string;
-  agentName?: string;
+  agentId?: string | null;
+  agentName?: string | null;
   visibility?: 'Internă' | 'Colaborare';
 };
 
@@ -88,8 +88,8 @@ export type Contact = {
     zones?: string[];
     leadScore?: number;
     createdAt?: string;
-    agentId?: string;
-    agentName?: string;
+    agentId?: string | null;
+    agentName?: string | null;
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
 }
 
@@ -109,12 +109,12 @@ export type Task = {
   description: string;
   dueDate: string;
   status: 'open' | 'completed';
-  contactId?: string;
-  contactName?: string;
+  contactId?: string | null;
+  contactName?: string | null;
   startTime?: string;
   duration?: number;
-  agentId?: string;
-  agentName?: string;
+  agentId?: string | null;
+  agentName?: string | null;
 };
 
 export type Agency = {
@@ -123,6 +123,7 @@ export type Agency = {
   ownerId: string;
   logoUrl?: string;
   primaryColor?: string;
+  agentIds?: string[];
 }
 
 export type UserProfile = {
@@ -149,8 +150,8 @@ export type Contract = {
   date: string;
   price: number;
   content?: string;
-  agentId?: string;
-  agentName?: string;
+  agentId?: string | null;
+  agentName?: string | null;
 };
 
 export type Invite = {

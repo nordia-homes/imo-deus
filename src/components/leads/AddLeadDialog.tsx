@@ -99,10 +99,13 @@ export function AddLeadDialog() {
 
     const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
     
-    const selectedAgent = agents?.find(agent => agent.id === values.agentId);
+    const isUnassigned = !values.agentId || values.agentId === 'unassigned';
+    const finalAgentId = isUnassigned ? null : values.agentId;
+    const selectedAgent = agents?.find(agent => agent.id === finalAgentId);
 
     const newLeadData = {
         ...values,
+        agentId: finalAgentId,
         zones: selectedZones,
         contactType: 'Lead',
         createdAt: new Date().toISOString(),
@@ -117,7 +120,7 @@ export function AddLeadDialog() {
             desiredFeatures: '',
             locationPreferences: values.city || ''
         },
-        agentName: selectedAgent?.name,
+        agentName: selectedAgent?.name || null,
     };
 
     addDocumentNonBlocking(contactsCollection, newLeadData);
@@ -263,7 +266,7 @@ export function AddLeadDialog() {
                                     <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                    <SelectItem value="">Niciunul</SelectItem>
+                                    <SelectItem value="unassigned">Niciunul</SelectItem>
                                     {agents?.map(agent => (
                                         <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
                                     ))}

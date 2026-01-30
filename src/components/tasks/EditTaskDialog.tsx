@@ -50,7 +50,7 @@ export function EditTaskDialog({ task, isOpen, onOpenChange, onUpdateTask, conta
             dueDate: new Date(task.dueDate),
             startTime: task.startTime,
             duration: task.duration,
-            contactId: task.contactId,
+            contactId: task.contactId || undefined,
         });
     }
   }, [task, form]);
@@ -78,7 +78,9 @@ export function EditTaskDialog({ task, isOpen, onOpenChange, onUpdateTask, conta
   function onSubmit(values: z.infer<typeof taskSchema>) {
     if (!task) return;
     
-    const selectedContact = contacts.find(c => c.id === values.contactId);
+    const isUnassigned = !values.contactId || values.contactId === 'unassigned';
+    const finalContactId = isUnassigned ? null : values.contactId;
+    const selectedContact = contacts.find(c => c.id === finalContactId);
     
     onUpdateTask({
         id: task.id,
@@ -86,8 +88,8 @@ export function EditTaskDialog({ task, isOpen, onOpenChange, onUpdateTask, conta
         dueDate: format(values.dueDate, 'yyyy-MM-dd'),
         startTime: values.startTime,
         duration: values.duration,
-        contactId: values.contactId,
-        contactName: selectedContact?.name,
+        contactId: finalContactId,
+        contactName: selectedContact?.name || null,
     });
 
     onOpenChange(false);
@@ -204,7 +206,7 @@ export function EditTaskDialog({ task, isOpen, onOpenChange, onUpdateTask, conta
                           <SelectTrigger><SelectValue placeholder="Selectează un lead" /></SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                           <SelectItem value="">Niciunul</SelectItem>
+                           <SelectItem value="unassigned">Niciunul</SelectItem>
                           {contacts.map(contact => (
                             <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
                           ))}

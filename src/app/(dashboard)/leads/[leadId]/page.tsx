@@ -155,14 +155,20 @@ export default function LeadDetailPage() {
         });
     };
 
-    const handleAgentChange = (agentId: string) => {
+    const handleAgentChange = (value: string) => {
         if (!contactDocRef) return;
+        const isUnassigning = value === 'unassigned';
+        const agentId = isUnassigning ? null : value;
         const selectedAgent = agents?.find(a => a.id === agentId);
         updateDocumentNonBlocking(contactDocRef, { 
             agentId: agentId,
             agentName: selectedAgent?.name || null
         });
-         toast({ title: 'Agent alocat!', description: `Lead-ul a fost alocat lui ${selectedAgent?.name}.` });
+        if (isUnassigning) {
+             toast({ title: 'Agent dealocat!', description: `Lead-ul este acum nealocat.` });
+        } else {
+             toast({ title: 'Agent alocat!', description: `Lead-ul a fost alocat lui ${selectedAgent?.name}.` });
+        }
     }
 
     const handlePriorityChange = (priority: string) => {
@@ -458,12 +464,12 @@ export default function LeadDetailPage() {
                             </div>
                              <div>
                                 <Label>Agent Alocat</Label>
-                                <Select onValueChange={handleAgentChange} defaultValue={contact.agentId}>
+                                <Select onValueChange={handleAgentChange} defaultValue={contact.agentId || 'unassigned'}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selectează un agent" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                         <SelectItem value="">Nealocat</SelectItem>
+                                         <SelectItem value="unassigned">Nealocat</SelectItem>
                                          {agents?.map(agent => (
                                             <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
                                          ))}
