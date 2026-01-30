@@ -35,6 +35,9 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
+  },
 };
 
 module.exports = nextConfig;
