@@ -102,8 +102,8 @@ export default function DashboardPage() {
                 return {
                     name: date.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }),
                     'Actual': sales,
-                    // Keep AI projected as a mock for now
-                    'AI Projected': sales > 0 ? sales * (1 + (Math.random() - 0.4) * 0.3) : (Math.random() * 5000), 
+                    // Replaced Math.random() with a deterministic value to fix build errors
+                    'AI Projected': sales > 0 ? sales * 1.2 : 4000, 
                 };
             });
         
