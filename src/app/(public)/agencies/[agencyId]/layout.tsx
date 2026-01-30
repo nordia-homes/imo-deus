@@ -1,19 +1,11 @@
 
 import { ReactNode } from 'react';
-// import { getDoc, doc } from 'firebase/firestore';
-// import { initializeFirebase } from '@/firebase';
+import { getDoc, doc } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
-
-// Static agency data for diagnostics
-const staticAgency: Agency = {
-  id: 'static-agency',
-  name: 'EstateFlow Demo',
-  ownerId: 'static-owner',
-  primaryColor: '#2563EB', // A standard blue
-  logoUrl: '',
-};
+import { notFound } from 'next/navigation';
 
 function hexToHsl(hex: string): string | null {
     if (!hex || !hex.startsWith('#')) return null;
@@ -51,11 +43,15 @@ export default async function AgencyPublicLayout({
   children: ReactNode;
   params: { agencyId: string };
 }) {
-  // const { firestore } = initializeFirebase();
-  // const agencyRef = doc(firestore, 'agencies', params.agencyId);
-  // const agencySnap = await getDoc(agencyRef);
-  // const agency = agencySnap.exists() ? (agencySnap.data() as Agency) : null;
-  const agency = { ...staticAgency, id: params.agencyId }; // Use static data but keep the ID from params
+  const { firestore } = initializeFirebase();
+  const agencyRef = doc(firestore, 'agencies', params.agencyId);
+  const agencySnap = await getDoc(agencyRef);
+  
+  if (!agencySnap.exists()) {
+    notFound();
+  }
+  
+  const agency = agencySnap.data() as Agency;
   
   const primaryColorHsl = agency?.primaryColor ? hexToHsl(agency.primaryColor) : null;
 

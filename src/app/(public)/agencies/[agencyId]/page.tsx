@@ -1,34 +1,31 @@
 
-// import { collection, query, where, getDocs } from 'firebase/firestore';
-// import { initializeFirebase } from '@/firebase';
-// import { doc, getDoc } from 'firebase/firestore';
-import { properties as staticProperties } from '@/lib/data';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Property, Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
-
-// Static agency data for diagnostics
-const staticAgency: Agency = {
-  id: 'static-agency',
-  name: 'EstateFlow Demo',
-  ownerId: 'static-owner',
-  primaryColor: '#2563EB',
-  logoUrl: '',
-};
+import { notFound } from 'next/navigation';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
-  // const { firestore } = initializeFirebase();
+  const { firestore } = initializeFirebase();
   
   // Fetch agency details
-  // const agencyRef = doc(firestore, 'agencies', params.agencyId);
-  // const agencySnap = await getDoc(agencyRef);
-  // const agency = agencySnap.exists() ? (agencySnap.data() as Agency) : null;
-  const agency = { ...staticAgency, id: params.agencyId };
+  const agencyRef = doc(firestore, 'agencies', params.agencyId);
+  const agencySnap = await getDoc(agencyRef);
+  
+  if (!agencySnap.exists()) {
+      notFound();
+  }
+  const agency = agencySnap.data() as Agency;
 
-  // Use static data for now
-  const allActiveProperties = staticProperties;
+  // Fetch active properties
+  const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
+  const q = query(propertiesRef, where('status', '==', 'Activ'));
+  const querySnapshot = await getDocs(q);
+  const allActiveProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
   
   const featuredProperties = allActiveProperties
     .filter(property => property.featured === true)

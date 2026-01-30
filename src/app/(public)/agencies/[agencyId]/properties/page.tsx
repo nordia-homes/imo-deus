@@ -1,5 +1,6 @@
 
-import { properties as staticProperties } from '@/lib/data';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -7,7 +8,19 @@ import { FileQuestion } from 'lucide-react';
 
 export default async function AgencyPropertiesPage({ params }: { params: { agencyId: string } }) {
 
-  const properties = staticProperties;
+  const { firestore } = initializeFirebase();
+  const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
+  const q = query(propertiesRef, where('status', '==', 'Activ'));
+  const querySnapshot = await getDocs(q);
+
+  const properties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+  // Sort by creation date descending, if available
+  properties.sort((a, b) => {
+    if (a.createdAt && b.createdAt) {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    return 0;
+  });
 
   return (
     <div className="container mx-auto py-12 px-4">

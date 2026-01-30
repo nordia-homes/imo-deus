@@ -1,5 +1,6 @@
 
-import { properties as staticProperties } from '@/lib/data';
+import { doc, getDoc } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { PropertyGallery } from '@/components/properties/PropertyGallery';
@@ -29,11 +30,15 @@ const PropertyContactForm = () => (
 
 export default async function PublicPropertyDetailPage({ params }: { params: { agencyId: string, propertyId: string } }) {
 
-  const property = staticProperties.find(p => p.id === params.propertyId);
+  const { firestore } = initializeFirebase();
+  const propRef = doc(firestore, 'agencies', params.agencyId, 'properties', params.propertyId);
+  const propSnap = await getDoc(propRef);
 
-  if (!property) {
+  if (!propSnap.exists() || propSnap.data().status !== 'Activ') {
     notFound();
   }
+  
+  const property = propSnap.data() as Property;
   
   const allImages = (property.images || []).map(img => img.url).filter(Boolean);
   const defaultImages = ['https://placehold.co/1200x800'];
