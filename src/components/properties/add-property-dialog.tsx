@@ -32,11 +32,10 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useStorage } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 
 const propertySchema = z.object({
@@ -67,6 +66,54 @@ const propertySchema = z.object({
   featured: z.boolean().default(false),
 });
 
+/**
+ * Resizes an image file, compresses it, and converts it to a Base64 data-URL.
+ * This is done entirely on the client-side to prepare it for storage in Firestore.
+ */
+const resizeAndEncodeImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        const MAX_WIDTH = 1280;
+        const MAX_HEIGHT = 1280;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context'));
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Get the data-URL as a JPEG image with 80% quality.
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 
 export function AddPropertyDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,7 +124,6 @@ export function AddPropertyDialog() {
   const { user } = useUser();
   const { agencyId } = useAgency();
   const firestore = useFirestore();
-  const storage = useStorage();
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -185,34 +231,36 @@ export function AddPropertyDialog() {
         const newPropertyRef = doc(propertiesCollection);
         const newPropertyId = newPropertyRef.id;
 
-        let uploadedImageUrls: { url: string; alt: string; }[] = [];
+        let imageDataUrls: { url: string; alt: string; }[] = [];
 
         if (files.length > 0) {
-            const UPLOAD_TIMEOUT = 30000; // 30 seconds
-
-            const uploadPromises = files.map(file => {
-                const uniqueFileName = `${Date.now()}-${file.name}`;
-                const storageRef = ref(storage, `properties/${agencyId}/${user.uid}/${newPropertyId}/${uniqueFileName}`);
-                const uploadTask = uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
-                
-                return new Promise((resolve, reject) => {
-                    const timer = setTimeout(() => {
-                        reject(new Error(`Încărcarea imaginii a durat prea mult: ${file.name}`));
-                    }, UPLOAD_TIMEOUT);
-
-                    uploadTask.then(url => {
-                        clearTimeout(timer);
-                        resolve(url);
-                    }).catch(err => {
-                        clearTimeout(timer);
-                        reject(err);
-                    });
+            const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+            if (totalSize > 5 * 1024 * 1024) { // 5MB raw, as a safety limit
+                 toast({
+                    variant: 'destructive',
+                    title: 'Imagini prea mari',
+                    description: 'Dimensiunea totală a imaginilor depășește 5MB. Vă rugăm să selectați mai puține imagini sau imagini mai mici.',
                 });
-            });
+                setIsSubmitting(false);
+                return;
+            }
 
-            const downloadUrls = await Promise.all(uploadPromises);
-            uploadedImageUrls = downloadUrls.map((url, index) => ({
-              url: url as string,
+            const resizePromises = files.map(file => resizeAndEncodeImage(file));
+            const dataUrls = await Promise.all(resizePromises);
+            
+            const totalDataUrlSize = dataUrls.reduce((acc, url) => acc + url.length, 0);
+            if (totalDataUrlSize > 1000000) { // Firestore's 1 MiB document limit
+                 toast({
+                    variant: 'destructive',
+                    title: 'Imagini prea mari după procesare',
+                    description: 'Datele imaginilor depășesc limita de 1MB a bazei de date. Vă rugăm să selectați mai puține imagini.',
+                });
+                setIsSubmitting(false);
+                return;
+            }
+            
+            imageDataUrls = dataUrls.map((url, index) => ({
+              url: url,
               alt: `${values.title} - imagine ${index + 1}`
             }));
         }
@@ -239,7 +287,7 @@ export function AddPropertyDialog() {
           parking: values.parking || null,
           keyFeatures: values.keyFeatures,
           description: values.description || '',
-          images: uploadedImageUrls,
+          images: imageDataUrls,
           tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
           createdAt: new Date().toISOString(),
           agent: {
@@ -264,23 +312,10 @@ export function AddPropertyDialog() {
 
     } catch (error: any) {
         console.error("Failed to add property:", error);
-        
-        let description = error.message || 'A apărut o eroare neașteptată. Vă rugăm să încercați din nou.';
-        if (error.code) {
-            switch (error.code) {
-                case 'storage/unauthorized':
-                    description = 'Permisiuni insuficiente pentru a încărca imagini. Contactați administratorul.';
-                    break;
-                case 'permission-denied':
-                    description = 'Permisiuni insuficiente pentru a salva proprietatea. Contactați administratorul.';
-                    break;
-            }
-        }
-        
         toast({
           variant: 'destructive',
           title: 'Salvare eșuată',
-          description: description
+          description: error.message || 'A apărut o eroare neașteptată la procesarea imaginilor sau la salvarea datelor.'
         });
     } finally {
         setIsSubmitting(false);
