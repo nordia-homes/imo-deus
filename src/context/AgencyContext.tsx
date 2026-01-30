@@ -12,16 +12,6 @@ type AgencyContextType = {
 
 const AgencyContext = createContext<AgencyContextType | null>(null);
 
-function FullScreenLoader() {
-    return (
-        <div className="h-screen w-screen flex items-center justify-center bg-background">
-            <div className="animate-pulse flex space-x-4">
-                <div className="rounded-full bg-muted h-12 w-12"></div>
-            </div>
-        </div>
-    )
-}
-
 export function AgencyProvider({ children }: { children: ReactNode }) {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -37,12 +27,6 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     const agencyId = userProfile?.agencyId || null;
 
     const value = { userProfile, agencyId, isAgencyLoading };
-    
-    // While we determine the agency status, show a loader.
-    // This prevents components from trying to render without knowing the agency context.
-    if (isAgencyLoading && user) {
-        return <FullScreenLoader />;
-    }
 
     return (
         <AgencyContext.Provider value={value}>
