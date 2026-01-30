@@ -169,19 +169,18 @@ export function AddPropertyDialog() {
 
   async function onSubmit(values: z.infer<typeof propertySchema>) {
     setIsSubmitting(true);
-    try {
-        if (!user || !agencyId) {
-          toast({
+    if (!user || !agencyId) {
+        toast({
             variant: 'destructive',
-            title: 'Eroare',
-            description: 'Nu am putut identifica agenția. Reîncearcă.',
-          });
-          setIsSubmitting(false);
-          return;
-        }
+            title: 'Eroare de autentificare',
+            description: 'Nu am putut identifica agenția. Reîncărcați pagina și reîncercați.',
+        });
+        setIsSubmitting(false);
+        return;
+    }
 
+    try {
         const files = values.images as File[] || [];
-        
         const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
         const newPropertyRef = doc(propertiesCollection);
         const newPropertyId = newPropertyRef.id;
@@ -189,14 +188,31 @@ export function AddPropertyDialog() {
         let uploadedImageUrls: { url: string; alt: string; }[] = [];
 
         if (files.length > 0) {
+            const UPLOAD_TIMEOUT = 30000; // 30 seconds
+
             const uploadPromises = files.map(file => {
-              const uniqueFileName = `${Date.now()}-${file.name}`;
-              const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
-              return uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+                const uniqueFileName = `${Date.now()}-${file.name}`;
+                const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
+                const uploadTask = uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+                
+                return new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        reject(new Error(`Încărcarea imaginii a durat prea mult: ${file.name}`));
+                    }, UPLOAD_TIMEOUT);
+
+                    uploadTask.then(url => {
+                        clearTimeout(timer);
+                        resolve(url);
+                    }).catch(err => {
+                        clearTimeout(timer);
+                        reject(err);
+                    });
+                });
             });
+
             const downloadUrls = await Promise.all(uploadPromises);
             uploadedImageUrls = downloadUrls.map((url, index) => ({
-              url,
+              url: url as string,
               alt: `${values.title} - imagine ${index + 1}`
             }));
         }
@@ -249,7 +265,7 @@ export function AddPropertyDialog() {
     } catch (error: any) {
         console.error("Failed to add property:", error);
         
-        let description = 'A apărut o eroare neașteptată. Vă rugăm să încercați din nou.';
+        let description = error.message || 'A apărut o eroare neașteptată. Vă rugăm să încercați din nou.';
         if (error.code) {
             switch (error.code) {
                 case 'storage/unauthorized':
@@ -257,9 +273,6 @@ export function AddPropertyDialog() {
                     break;
                 case 'permission-denied':
                     description = 'Permisiuni insuficiente pentru a salva proprietatea. Contactați administratorul.';
-                    break;
-                default:
-                    description = `Eroare: ${error.message}`;
                     break;
             }
         }
@@ -456,3 +469,5 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
+
+    
