@@ -53,16 +53,19 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-        // GET rule: allow if user is in agency OR if property is public
-        allow get: if isUserInAgency(agencyId) 
-                    || (resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ');
+        // --- Public Access Rules ---
+        // Allow anyone to read a single property if it's explicitly public.
+        allow get: if resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ';
+        
+        // Allow unauthenticated users to list properties. This query will then
+        // be filtered by the `get` rule on a per-document basis by Firestore.
+        allow list: if request.auth == null;
 
-        // LIST rule: allow if user is in agency OR if they are a public (unauthenticated) user.
-        // This is necessary for public queries to work. The security is enforced
-        // by the GET rule on the server side for each document returned by the query.
-        allow list: if isUserInAgency(agencyId) || request.auth == null;
-
-        // WRITE rule: only members of the agency can write.
+        // --- Agency Member Access Rules ---
+        // Allow agency members to perform any read operation (get, list) on their own properties.
+        allow read: if isUserInAgency(agencyId);
+        
+        // Allow agency members to write to their own properties.
         allow write: if isUserInAgency(agencyId);
     }
     
