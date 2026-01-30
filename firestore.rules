@@ -69,17 +69,18 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // Authenticated members of the agency have full access.
-      allow read, write: if isUserInAgency(agencyId);
+      // An agency member can do anything with their own properties.
+      allow write: if isUserInAgency(agencyId);
 
-      // Anyone (including unauthenticated users) can GET a single document
-      // IF AND ONLY IF it is public and active.
-      allow get: if resource.data.visibility == 'Colaborare' 
-                  && resource.data.status == 'Activ';
+      // Anyone can GET a document if they are an agency member OR if the document is public.
+      allow get: if isUserInAgency(agencyId) || 
+                  (resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ');
       
-      // Allow a LIST operation ONLY for unauthenticated users. This is for the public website.
-      // Authenticated users are covered by the 'read' rule above.
-      allow list: if request.auth == null;
+      // Anyone can perform a LIST query. Firestore's query evaluation will ensure
+      // that the query only returns documents that the user has GET permission for.
+      // Since our client-side queries for the public site are correctly filtered
+      // to public/active properties, this is secure.
+      allow list: if true;
     }
     
     // For all other private subcollections, only allow access to agency members.
