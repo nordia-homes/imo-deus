@@ -176,6 +176,7 @@ export function AddPropertyDialog() {
             title: 'Eroare',
             description: 'Nu am putut identifica agenția. Reîncearcă.',
           });
+          setIsSubmitting(false);
           return;
         }
 
