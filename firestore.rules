@@ -8,20 +8,19 @@ service cloud.firestore {
     }
 
     function isUserAdmin() {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      // The get() call will return null if the document does not exist,
+      // and accessing .data.role will also result in a non-admin comparison.
+      // This is safe and simpler.
       return request.auth != null &&
-             exists(userDocPath) &&
-             'role' in get(userDocPath).data &&
-             get(userDocPath).data.role == 'admin';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     function isUserAdminOfAgency(agencyId) {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      if (request.auth == null || !exists(userDocPath)) {
-        return false;
-      }
-      let userData = get(userDocPath).data;
-      return userData.agencyId == agencyId && userData.role == 'admin';
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // This is safe because if the document or fields don't exist, the comparisons will fail.
+      return request.auth != null &&
+             userData.agencyId == agencyId &&
+             userData.role == 'admin';
     }
 
 
