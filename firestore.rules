@@ -64,7 +64,7 @@ service cloud.firestore {
     }
     
     match /invites/{inviteId} {
-        allow create: if get(/databases/$(database)/documents/agencies/$(request.resource.data.agencyId)).data.ownerId == request.auth.uid;
+        allow create: if isUserAdmin(request.resource.data.agencyId);
         allow read, delete: if request.auth != null;
     }
     
