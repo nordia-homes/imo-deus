@@ -1,39 +1,37 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+
+// import { collection, query, where, getDocs } from 'firebase/firestore';
+// import { initializeFirebase } from '@/firebase';
+// import { doc, getDoc } from 'firebase/firestore';
+import { properties as staticProperties } from '@/lib/data';
 import type { Property, Agency } from '@/lib/types';
-import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 
+// Static agency data for diagnostics
+const staticAgency: Agency = {
+  id: 'static-agency',
+  name: 'EstateFlow Demo',
+  ownerId: 'static-owner',
+  primaryColor: '#2563EB',
+  logoUrl: '',
+};
+
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
-  const { firestore } = initializeFirebase();
+  // const { firestore } = initializeFirebase();
   
   // Fetch agency details
-  const agencyRef = doc(firestore, 'agencies', params.agencyId);
-  const agencySnap = await getDoc(agencyRef);
-  const agency = agencySnap.exists() ? (agencySnap.data() as Agency) : null;
+  // const agencyRef = doc(firestore, 'agencies', params.agencyId);
+  // const agencySnap = await getDoc(agencyRef);
+  // const agency = agencySnap.exists() ? (agencySnap.data() as Agency) : null;
+  const agency = { ...staticAgency, id: params.agencyId };
 
-  // Fetch featured properties
-  const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  // Simplified query to be more robust and avoid complex index requirements.
-  const q = query(
-    propertiesRef, 
-    where('status', '==', 'Activ')
-  );
+  // Use static data for now
+  const allActiveProperties = staticProperties;
   
-  const querySnapshot = await getDocs(q);
-  const allActiveProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
-
-  // We now filter and sort in code to avoid complex queries that might fail on the server.
   const featuredProperties = allActiveProperties
     .filter(property => property.featured === true)
-    .sort((a, b) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-    })
     .slice(0, 3);
 
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';

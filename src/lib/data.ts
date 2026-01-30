@@ -36,8 +36,8 @@ export const properties: Property[] = [
     amenities: ['Aer condiționat', 'Lift', 'Interfon', 'Sistem de alarmă', 'Balcon', 'Terasă'],
     keyFeatures: 'finisaje de lux, vedere panoramică, parcare subterană',
     tagline: '3 dorm. | 2 băi | 85mp',
-    imageUrl: 'https://picsum.photos/seed/p1a/800/600',
-    imageHint: 'modern apartment',
+    status: 'Activ',
+    featured: true,
   },
   {
     id: 'p2',
@@ -73,8 +73,8 @@ export const properties: Property[] = [
     amenities: ['Grădină', 'Piscină', 'Garaj', 'Sistem de securitate', 'Terasă', 'Dressing'],
     keyFeatures: 'grădină mare, piscină, zonă liniștită',
     tagline: '5 dorm. | 4 băi | 220mp',
-    imageUrl: 'https://picsum.photos/seed/p2a/800/600',
-    imageHint: 'luxury villa',
+    status: 'Activ',
+    featured: true,
   },
   {
     id: 'p3',
@@ -108,8 +108,8 @@ export const properties: Property[] = [
     amenities: ['Aer condiționat', 'Lift', 'Balcon', 'Vedere panoramică'],
     keyFeatures: 'ultracentral, mobilat modern, costuri mici',
     tagline: 'Studio | 1 baie | 35mp',
-    imageUrl: 'https://picsum.photos/seed/p3a/800/600',
-    imageHint: 'studio apartment',
+    status: 'Activ',
+    featured: true,
   },
   {
     id: 'p4',
@@ -145,7 +145,7 @@ export const properties: Property[] = [
     amenities: ['Terasă', 'Vedere la lac', 'Sistem Smart Home', 'Pază 24/7', 'Sală de fitness în clădire'],
     keyFeatures: 'terasă imensă, vedere lac, finisaje premium',
     tagline: '4 dorm. | 3 băi | 180mp',
-    imageUrl: 'https://picsum.photos/seed/p4a/800/600',
-    imageHint: 'luxury penthouse',
+    status: 'Activ',
+    featured: false,
   }
 ];
