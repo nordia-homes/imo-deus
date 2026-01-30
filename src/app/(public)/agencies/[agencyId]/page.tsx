@@ -1,6 +1,7 @@
 
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { collection, getDocs, query, where, getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import type { Property, Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,9 @@ import { notFound } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
-  const { firestore } = initializeFirebase();
+  // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
+  const ssgApp = getApps().find(a => a.name === 'ssg-app') || initializeApp(firebaseConfig, 'ssg-app');
+  const firestore = getFirestore(ssgApp);
   
   // Fetch agency details
   const agencyRef = doc(firestore, 'agencies', params.agencyId);
@@ -21,10 +24,12 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
   }
   const agency = agencySnap.data() as Agency;
 
-  // Secure query that only fetches active properties, matching security rules.
+  // Secure query that only fetches active properties.
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
   const q = query(propertiesRef, where('status', '==', 'Activ'));
+  
   const querySnapshot = await getDocs(q);
+  
   const activeProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
   
   // Filter for featured properties in code after fetching.

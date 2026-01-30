@@ -1,6 +1,7 @@
 
-import { doc, getDoc } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import type { Property } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { PropertyGallery } from '@/components/properties/PropertyGallery';
@@ -30,7 +31,10 @@ const PropertyContactForm = () => (
 
 export default async function PublicPropertyDetailPage({ params }: { params: { agencyId: string, propertyId: string } }) {
 
-  const { firestore } = initializeFirebase();
+  // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
+  const ssgApp = getApps().find(a => a.name === 'ssg-app') || initializeApp(firebaseConfig, 'ssg-app');
+  const firestore = getFirestore(ssgApp);
+
   const propRef = doc(firestore, 'agencies', params.agencyId, 'properties', params.propertyId);
   const propSnap = await getDoc(propRef);
 

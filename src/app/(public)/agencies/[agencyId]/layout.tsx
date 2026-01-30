@@ -1,7 +1,8 @@
 
 import { ReactNode } from 'react';
-import { getDoc, doc } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getDoc, doc, getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
@@ -43,7 +44,11 @@ export default async function AgencyPublicLayout({
   children: ReactNode;
   params: { agencyId: string };
 }) {
-  const { firestore } = initializeFirebase();
+  // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
+  // This avoids state conflicts with the client-side app.
+  const ssgApp = getApps().find(a => a.name === 'ssg-app') || initializeApp(firebaseConfig, 'ssg-app');
+  const firestore = getFirestore(ssgApp);
+  
   const agencyRef = doc(firestore, 'agencies', params.agencyId);
   const agencySnap = await getDoc(agencyRef);
   

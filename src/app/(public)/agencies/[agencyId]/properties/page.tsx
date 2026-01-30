@@ -1,6 +1,7 @@
 
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { collection, getDocs, query, where, getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import type { Property } from '@/lib/types';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -8,7 +9,10 @@ import { FileQuestion } from 'lucide-react';
 
 export default async function AgencyPropertiesPage({ params }: { params: { agencyId: string } }) {
 
-  const { firestore } = initializeFirebase();
+  // Use a dedicated, temporary Firebase app instance for server-side rendering (SSR/SSG).
+  const ssgApp = getApps().find(a => a.name === 'ssg-app') || initializeApp(firebaseConfig, 'ssg-app');
+  const firestore = getFirestore(ssgApp);
+
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
   
   // Secure query that only fetches active properties, matching security rules.
