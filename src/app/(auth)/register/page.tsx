@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useAuth, useUser, useFirestore } from "@/firebase";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from 'react-hook-form';
@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { AuthError, User } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, deleteDoc, setDoc } from "firebase/firestore";
 import type { Invite } from "@/lib/types";
 
 const registerSchema = z.object({
@@ -64,7 +64,7 @@ export default function RegisterPage() {
             };
             
             const userDocRef = doc(firestore, 'users', newUser.uid);
-            await setDoc(userDocRef, userProfile);
+            await setDoc(userDocRef, userProfile, { merge: true });
             await deleteDoc(inviteRef); // Consume the invite
 
             toast({ title: `Bun venit la ${inviteData.agencyName}!` });
@@ -198,5 +198,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
