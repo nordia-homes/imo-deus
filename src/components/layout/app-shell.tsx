@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import {
@@ -14,6 +16,7 @@ import {
   FileText,
   UserCheck,
   Map,
+  Globe,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -27,8 +30,11 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Topbar } from './Topbar'; 
+import { useAgency } from '@/context/AgencyContext';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { agencyId } = useAgency();
+  
   return (
     <SidebarProvider>
       <Sidebar>
@@ -138,6 +144,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             {agencyId && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Website Public" asChild>
+                        <Link href={`/agencies/${agencyId}`} target="_blank" rel="noopener noreferrer">
+                            <Globe />
+                            <span>Website Public</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+             )}
              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Setări" asChild>
                     <Link href="/settings">
