@@ -1,7 +1,7 @@
 'use client';
-import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import { useUser, useFirestore, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 
 type AgencyContextType = {
@@ -44,15 +44,31 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
                 if (agency.agentIds && !agency.agentIds.includes(user.uid)) {
                     console.log(`Self-healing: Adding agent ${user.uid} to agency ${agency.id}`);
                     const currentAgencyDocRef = doc(firestore, 'agencies', agency.id);
-                    // Use updateDoc with arrayUnion to safely add the ID.
-                    // This will trigger the 'isAddingSelfToAgency' security rule for validation.
+                    // This update uses the native SDK's updateDoc because it's a specific arrayUnion operation
+                    // that needs to be validated by the isAddingSelfToAgency rule.
                     updateDoc(currentAgencyDocRef, {
                         agentIds: arrayUnion(user.uid)
                     }).catch(err => {
-                        // Log this for debugging, but don't crash the app.
-                        // This might happen if the rules are still not perfect, but it shouldn't.
-                        console.error("Self-healing update failed:", err);
+                        console.error("Self-healing agentIds update failed:", err);
                     });
+                }
+            }
+        }
+    }, [isAgencyLoading, user, agency, userProfile, firestore]);
+    
+    // Self-healing mechanism for the Agency Owner's admin role.
+    useEffect(() => {
+        if (!isAgencyLoading && user && agency && userProfile) {
+            // If the current user is the owner of the agency...
+            if (user.uid === agency.ownerId) {
+                // ...and their profile doesn't reflect that they are an admin...
+                if (userProfile.role !== 'admin') {
+                    console.log(`Self-healing: Granting admin role to owner ${user.uid} for agency ${agency.id}.`);
+                    // ...update their user profile to grant the role.
+                    // This is a safe operation as it only affects the user's own document,
+                    // and is allowed by the security rules.
+                    const currentUserDocRef = doc(firestore, 'users', user.uid);
+                    updateDocumentNonBlocking(currentUserDocRef, { role: 'admin' });
                 }
             }
         }
