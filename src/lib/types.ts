@@ -2,6 +2,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -135,11 +136,6 @@ export type UserProfile = {
   email: string;
   agencyId?: string;
   role?: 'admin' | 'agent';
-  // These were part of the old model, let's keep them on the user for now
-  // but they should be migrated to the Agency entity.
-  agencyName?: string;
-  agencyLogoUrl?: string;
-  agencyPrimaryColor?: string;
 };
 
 export type Contract = {
@@ -167,4 +163,3 @@ export type Invite = {
 
 export type WithId<T> = T & { id: string };
     
-

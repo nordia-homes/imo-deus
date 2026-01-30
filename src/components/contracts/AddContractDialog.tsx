@@ -41,7 +41,7 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
-  const { agencyId, userProfile } = useAgency();
+  const { agencyId, userProfile, agency } = useAgency();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof contractSchema>>({
@@ -67,7 +67,7 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
   };
 
   async function onSubmit(values: z.infer<typeof contractSchema>) {
-    if (!user || !agencyId) {
+    if (!user || !agencyId || !agency) {
         toast({
             variant: "destructive",
             title: "Eroare",
@@ -89,7 +89,7 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
 
     try {
         const agentName = userProfile?.name || user?.displayName || 'N/A';
-        const agencyName = userProfile?.agencyName || 'Agenție Imobiliară';
+        const agencyName = agency.name || 'Agenție Imobiliară';
 
         const contractResult = await generateContract({
             contactName: selectedContact.name,

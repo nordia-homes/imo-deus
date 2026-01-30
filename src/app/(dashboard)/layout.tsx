@@ -56,7 +56,7 @@ function hexToHsl(hex: string): string | null {
 }
 
 function DashboardRoot({ children }: { children: React.ReactNode }) {
-    const { userProfile, agency, isAgencyLoading } = useAgency();
+    const { agency, isAgencyLoading } = useAgency();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -64,7 +64,7 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
         const root = document.documentElement;
         const defaultPrimary = '250 65% 55%';
 
-        const colorToSet = agency?.primaryColor || userProfile?.agencyPrimaryColor;
+        const colorToSet = agency?.primaryColor;
 
         if (colorToSet) {
             const hslColor = hexToHsl(colorToSet);
@@ -84,7 +84,7 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
             root.style.setProperty('--primary', defaultPrimary);
             root.style.setProperty('--ring', defaultPrimary);
         }
-    }, [userProfile, agency]);
+    }, [agency]);
 
     useEffect(() => {
         // Redirect to settings if loading is done, there's no agency, and we are not already on the settings page.

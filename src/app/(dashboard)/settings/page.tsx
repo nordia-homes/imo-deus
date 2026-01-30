@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
+import { Badge } from '@/components/ui/badge';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -78,16 +79,6 @@ export default function SettingsPage() {
   const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
     if (!agency?.id) return;
     const agencyDocRef = doc(firestore, 'agencies', agency.id);
-    
-    if (user) {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        updateDocumentNonBlocking(userDocRef, {
-            agencyName: values.name,
-            agencyLogoUrl: values.logoUrl,
-            agencyPrimaryColor: values.primaryColor,
-        });
-    }
-
     updateDocumentNonBlocking(agencyDocRef, values);
     toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });
   };
@@ -117,9 +108,6 @@ export default function SettingsPage() {
             email: user.email,
             agencyId: newAgencyRef.id, 
             role: 'admin',
-            agencyName: values.name,
-            agencyLogoUrl: values.logoUrl,
-            agencyPrimaryColor: values.primaryColor,
         }, { merge: true });
 
         await batch.commit();
@@ -180,6 +168,16 @@ export default function SettingsPage() {
             <CardContent className="space-y-4 max-w-md">
               <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
               <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled /></div>
+              <div className="space-y-2">
+                <Label>Rol</Label>
+                <div>
+                  {userProfile?.role ? (
+                    <Badge variant={userProfile.role === 'admin' ? 'default' : 'secondary'}>{userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}</Badge>
+                  ) : (
+                    <Badge variant="outline">Indisponibil</Badge>
+                  )}
+                </div>
+              </div>
               <Button type="submit" disabled={profileForm.formState.isSubmitting}>{profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvează Profil</Button>
             </CardContent>
           </form>
