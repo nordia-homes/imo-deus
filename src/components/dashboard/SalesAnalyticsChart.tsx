@@ -25,28 +25,29 @@ export function SalesAnalyticsChart({ data, isLoading }: { data: ChartData[], is
 
     if (isLoading) {
         return (
-            <Card className="h-full flex flex-col">
+            <Card>
                 <CardHeader>
                     <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-32" />
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                    <Skeleton className="flex-1 h-[250px] w-full" />
+                <CardContent>
+                    <Skeleton className="h-[300px] w-full" />
                 </CardContent>
             </Card>
         )
     }
 
     return (
-        <Card className="h-full flex flex-col">
+        <Card>
             <CardHeader>
                  <div>
                     <CardTitle>Analiza Veniturilor</CardTitle>
                     <CardDescription>Ultimele 30 de zile</CardDescription>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1">
-                 <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height={250}>
+            <CardContent>
+                 <ChartContainer config={chartConfig} className="w-full">
+                    <ResponsiveContainer width="100%" height={300}>
                         <AreaChart
                         data={data}
                         margin={{
