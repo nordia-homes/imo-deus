@@ -169,103 +169,107 @@ export function AddPropertyDialog() {
 
   async function onSubmit(values: z.infer<typeof propertySchema>) {
     setIsSubmitting(true);
-    if (!user || !agencyId) {
-      toast({
-        variant: 'destructive',
-        title: 'Eroare',
-        description: 'Nu am putut identifica agenția. Reîncearcă.',
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    try {
+        if (!user || !agencyId) {
+          toast({
+            variant: 'destructive',
+            title: 'Eroare',
+            description: 'Nu am putut identifica agenția. Reîncearcă.',
+          });
+          return;
+        }
 
-    const files = values.images as File[] || [];
-    
-    // Create a new property doc ref to get an ID first
-    const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
-    const newPropertyRef = doc(propertiesCollection);
-    const newPropertyId = newPropertyRef.id;
+        const files = values.images as File[] || [];
+        
+        const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
+        const newPropertyRef = doc(propertiesCollection);
+        const newPropertyId = newPropertyRef.id;
 
-    let uploadedImageUrls: { url: string; alt: string; }[] = [];
+        let uploadedImageUrls: { url: string; alt: string; }[] = [];
 
-    // Upload images if any were selected
-    if (files.length > 0) {
-      try {
-        const uploadPromises = files.map(file => {
-          const uniqueFileName = `${Date.now()}-${file.name}`;
-          const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
-          return uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+        if (files.length > 0) {
+            const uploadPromises = files.map(file => {
+              const uniqueFileName = `${Date.now()}-${file.name}`;
+              const storageRef = ref(storage, `properties/${agencyId}/${newPropertyId}/${uniqueFileName}`);
+              return uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+            });
+            const downloadUrls = await Promise.all(uploadPromises);
+            uploadedImageUrls = downloadUrls.map((url, index) => ({
+              url,
+              alt: `${values.title} - imagine ${index + 1}`
+            }));
+        }
+
+        const newPropertyData = {
+          id: newPropertyId,
+          title: values.title,
+          propertyType: values.propertyType,
+          transactionType: values.transactionType,
+          location: values.location,
+          address: values.location,
+          price: values.price,
+          bedrooms: values.bedrooms,
+          bathrooms: values.bathrooms,
+          squareFootage: values.squareFootage,
+          totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
+          constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
+          floor: values.floor || null,
+          totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
+          comfort: values.comfort || null,
+          interiorState: values.interiorState || null,
+          furnishing: values.furnishing || null,
+          heatingSystem: values.heatingSystem || null,
+          parking: values.parking || null,
+          keyFeatures: values.keyFeatures,
+          description: values.description || '',
+          images: uploadedImageUrls,
+          tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
+          createdAt: new Date().toISOString(),
+          agent: {
+            name: user.displayName || user.email || 'Agent',
+            avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+          },
+          amenities: values.keyFeatures.split(',').map((f) => f.trim()),
+          status: values.status,
+          featured: values.featured,
+        };
+      
+        await setDoc(newPropertyRef, newPropertyData);
+        
+        toast({
+          title: 'Proprietate adăugată!',
+          description: `${values.title} a fost adăugată cu succes în portofoliul tău.`,
         });
-        const downloadUrls = await Promise.all(uploadPromises);
-        uploadedImageUrls = downloadUrls.map((url, index) => ({
-          url,
-          alt: `${values.title} - imagine ${index + 1}`
-        }));
-      } catch (error) {
-        console.error("Image upload failed:", error);
+        setIsOpen(false);
+        form.reset();
+        imagePreviews.forEach((p) => URL.revokeObjectURL(p));
+        setImagePreviews([]);
+
+    } catch (error: any) {
+        console.error("Failed to add property:", error);
+        
+        let description = 'A apărut o eroare neașteptată. Vă rugăm să încercați din nou.';
+        if (error.code) {
+            switch (error.code) {
+                case 'storage/unauthorized':
+                    description = 'Permisiuni insuficiente pentru a încărca imagini. Contactați administratorul.';
+                    break;
+                case 'permission-denied':
+                    description = 'Permisiuni insuficiente pentru a salva proprietatea. Contactați administratorul.';
+                    break;
+                default:
+                    description = `Eroare: ${error.message}`;
+                    break;
+            }
+        }
+        
         toast({
           variant: 'destructive',
-          title: 'Eroare la încărcarea imaginilor',
-          description: 'Nu am putut salva imaginile. Vă rugăm să încercați din nou.'
+          title: 'Salvare eșuată',
+          description: description
         });
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    const newPropertyData = {
-      id: newPropertyId,
-      title: values.title,
-      propertyType: values.propertyType,
-      transactionType: values.transactionType,
-      location: values.location,
-      address: values.location,
-      price: values.price,
-      bedrooms: values.bedrooms,
-      bathrooms: values.bathrooms,
-      squareFootage: values.squareFootage,
-      totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
-      constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
-      floor: values.floor || null,
-      totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
-      comfort: values.comfort || null,
-      interiorState: values.interiorState || null,
-      furnishing: values.furnishing || null,
-      heatingSystem: values.heatingSystem || null,
-      parking: values.parking || null,
-      keyFeatures: values.keyFeatures,
-      description: values.description || '',
-      images: uploadedImageUrls,
-      tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
-      createdAt: new Date().toISOString(),
-      agent: {
-        name: user.displayName || user.email || 'Agent',
-        avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-      },
-      amenities: values.keyFeatures.split(',').map((f) => f.trim()),
-      status: values.status,
-      featured: values.featured,
-    };
-    
-    try {
-      await setDoc(newPropertyRef, newPropertyData);
-      toast({
-        title: 'Proprietate adăugată!',
-        description: `${values.title} a fost adăugată cu succes în portofoliul tău.`,
-      });
-      setIsOpen(false);
-      form.reset();
-      imagePreviews.forEach((p) => URL.revokeObjectURL(p));
-      setImagePreviews([]);
-    } catch (error) {
-      console.error("Failed to save property to Firestore:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Salvare eșuată',
-        description: 'Nu am putut salva datele proprietății. Vă rugăm să încercați din nou.'
-      });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   }
 
