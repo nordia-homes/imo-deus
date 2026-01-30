@@ -1,3 +1,4 @@
+'use client';
 
 import Image from "next/image";
 import Link from "next/link";
@@ -11,41 +12,44 @@ export function PublicPropertyCard({ property, agencyId }: { property: Property,
   
   return (
     <Link href={`/agencies/${agencyId}/properties/${property.id}`} className="group">
-      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
-        <div className="relative aspect-[4/3]">
+      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg">
+        <div className="relative aspect-video">
             <Image
                 src={primaryImageUrl}
                 alt={property.title || 'Proprietate'}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-            <div className="absolute top-3 left-3 flex gap-2">
+            <div className="absolute top-2 right-2 flex gap-2">
                  <Badge variant="default" className="">{property.transactionType}</Badge>
             </div>
-             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                 <p className="font-bold text-2xl text-white">€{property.price.toLocaleString()}</p>
-             </div>
         </div>
         <CardHeader>
-          <CardTitle className="truncate text-lg group-hover:text-primary transition-colors">{property.title}</CardTitle>
+          <CardTitle className="truncate text-xl">{property.title}</CardTitle>
           <CardDescription className="flex items-center gap-1 text-sm">
             <MapPin className="h-4 w-4" />
             {property.address}
           </CardDescription>
         </CardHeader>
-        <CardFooter className="mt-auto flex justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-                <BedDouble className="h-4 w-4" />
-                <span>{property.bedrooms}</span>
+        <CardContent className="flex-1">
+            <div className="flex justify-around text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                    <BedDouble className="h-5 w-5 text-primary" />
+                    <span>{property.bedrooms} dorm.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Bath className="h-5 w-5 text-primary" />
+                    <span>{property.bathrooms} băi</span>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <Ruler className="h-5 w-5 text-primary" />
+                    <span>{property.squareFootage} mp</span>
+                </div>
             </div>
-            <div className="flex items-center gap-1">
-                <Bath className="h-4 w-4" />
-                <span>{property.bathrooms}</span>
-            </div>
-             <div className="flex items-center gap-1">
-                <Ruler className="h-4 w-4" />
-                <span>{property.squareFootage} mp</span>
-            </div>
+        </CardContent>
+        <CardFooter className="mt-auto">
+          <p className="font-bold text-2xl text-primary">€{property.price.toLocaleString()}</p>
         </CardFooter>
       </Card>
     </Link>

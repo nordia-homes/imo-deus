@@ -67,9 +67,14 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      allow get: if resource.data.status == 'Activ' || (request.auth != null && isUserInAgency(agencyId));
-      allow list: if true;
-      allow write: if request.auth != null && isUserInAgency(agencyId);
+      // Allow public GET for active properties, and any GET for agency members
+      allow get: if isUserInAgency(agencyId) || resource.data.status == 'Activ';
+
+      // Allow LIST for agency members, and also for public (unauthenticated) queries
+      allow list: if isUserInAgency(agencyId) || request.auth == null;
+      
+      // Allow WRITE only for agency members
+      allow write: if isUserInAgency(agencyId);
     }
     
     // For all other private subcollections, only allow access to agency members.
