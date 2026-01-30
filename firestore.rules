@@ -18,9 +18,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, create, update: if request.auth != null && request.auth.uid == userId;
-      allow list: if isUserInAgency(request.query.agencyId);
-      allow delete: if false;
+      // A user can get their own profile.
+      // An admin can get profiles of users in their own agency.
+      allow get: if request.auth != null && (
+        request.auth.uid == userId || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+          exists(/databases/$(database)/documents/users/$(userId)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
+        )
+      );
+        
+      // A user can create and update their own profile.
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      
+      // Nobody can list all users or delete users from the client.
+      allow list, delete: if false;
     }
 
     match /agencies/{agencyId} {

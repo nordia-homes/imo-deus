@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { AuthError, User } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, deleteDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, deleteDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import type { Invite } from "@/lib/types";
 
 const registerSchema = z.object({
@@ -66,6 +66,13 @@ export default function RegisterPage() {
             
             const userDocRef = doc(firestore, 'users', newUser.uid);
             await setDoc(userDocRef, userProfile, { merge: true }); // Use merge to be safe
+            
+            // Add the new user to the agency's list of agents
+            const agencyRef = doc(firestore, 'agencies', inviteData.agencyId);
+            await updateDoc(agencyRef, {
+                agentIds: arrayUnion(newUser.uid)
+            });
+
             await deleteDoc(inviteRef); // Consume the invite
 
             toast({ title: `Bun venit la ${inviteData.agencyName}!` });

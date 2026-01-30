@@ -119,6 +119,7 @@ export default function SettingsPage() {
             ownerId: user.uid,
             logoUrl: values.logoUrl,
             primaryColor: values.primaryColor,
+            agentIds: [user.uid],
         });
         
         // 2. Create or merge the user's profile document

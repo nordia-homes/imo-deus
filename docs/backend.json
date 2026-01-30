@@ -12,6 +12,13 @@
         "ownerId": {
           "type": "string",
           "description": "The user ID of the person who created and owns the agency."
+        },
+        "agentIds": {
+          "type": "array",
+          "description": "A list of user IDs for all agents belonging to this agency.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
