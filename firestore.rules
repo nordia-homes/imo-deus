@@ -18,8 +18,6 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // A user can get their own profile.
-      // An admin can get profiles of users in their own agency.
       allow get: if request.auth != null && (
         request.auth.uid == userId || (
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -28,19 +26,15 @@ service cloud.firestore {
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
         )
       );
-        
-      // A user can create and update their own profile.
       allow create, update: if request.auth != null && request.auth.uid == userId;
-      
-      // Nobody can list all users or delete users from the client.
       allow list, delete: if false;
     }
 
     match /agencies/{agencyId} {
-      // Allow public read for branding on the public website.
+      // Allow public read for agency branding on the public website.
       allow get: if true;
       
-      // Only authenticated users can list all agencies (e.g. in a search).
+      // Only authenticated users can list all agencies.
       allow list: if request.auth != null;
       
       // Only admins of the agency can update its details.
@@ -59,16 +53,15 @@ service cloud.firestore {
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-        // Anyone can read a specific property if it's public.
-        // Agency members can read any property in their agency.
-        allow get: if (resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ') || isUserInAgency(agencyId);
-        
-        // Anyone can list properties. This is required for the public website.
-        // The more specific 'get' rule above will still be enforced for each document.
-        allow list: if true;
-        
-        // Only agency members can write/edit/delete properties.
-        allow create, update, delete: if isUserInAgency(agencyId);
+        // Public access rules
+        // Allow public GET for a single document if it's visible.
+        allow get: if resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ';
+        // Allow public LIST operations. Firestore will then check the GET rule for each document.
+        allow list: if true; 
+
+        // Authenticated access rules (additive to public rules)
+        // Agency members can read (get + list) and write all their properties.
+        allow read, write: if isUserInAgency(agencyId);
     }
     
     // For all other private subcollections, only allow access to agency members.
