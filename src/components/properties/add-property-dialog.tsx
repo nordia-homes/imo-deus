@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, PlusCircle, Sparkles, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
 import { generatePropertyDescription, PropertyDescriptionInput } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
@@ -370,19 +370,40 @@ export function AddPropertyDialog() {
                   />
 
                   <FormItem className="mt-4">
-                    <FormLabel>Fotografii (max 16) - Funcționalitate în dezvoltare</FormLabel>
+                    <FormLabel>Fotografii (max 16)</FormLabel>
+                    <FormDescription>
+                        Puteți selecta imagini pentru a vedea o previzualizare. Notă: imaginile nu vor fi încărcate; se vor folosi imagini placeholder la crearea proprietății.
+                    </FormDescription>
                     <FormControl>
                       <div className="flex items-center justify-center w-full">
-                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-not-allowed bg-gray-50 opacity-50">
+                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Încărcarea de fișiere nu este implementată</span></p>
-                            <p className="text-xs text-gray-500">Imaginile vor fi adăugate ca placeholder.</p>
+                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click pentru a încărca</span> sau trageți fișierele aici</p>
+                            <p className="text-xs text-muted-foreground">PNG, JPG (max 16 fișiere)</p>
                           </div>
-                          <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} disabled />
+                          <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                         </label>
                       </div>
                     </FormControl>
+                    {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4">
+                            {imagePreviews.map((src, index) => (
+                                <div key={index} className="relative aspect-square group">
+                                    <Image src={src} alt={`Preview ${index}`} fill className="object-cover rounded-md" />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => removeImage(index)}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                   </FormItem>
                 </section>
               </div>
