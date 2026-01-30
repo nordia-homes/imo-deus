@@ -1,5 +1,5 @@
 
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
@@ -10,11 +10,13 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
 
   const { firestore } = initializeFirebase();
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  const querySnapshot = await getDocs(propertiesRef);
+  
+  // Secure query that only fetches active properties, matching security rules.
+  const q = query(propertiesRef, where('status', '==', 'Activ'));
+  const querySnapshot = await getDocs(q);
 
   const properties = querySnapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() } as Property))
-    .filter(property => property.status === 'Activ')
     .sort((a, b) => {
       // Sort by creation date descending, if available
       return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);

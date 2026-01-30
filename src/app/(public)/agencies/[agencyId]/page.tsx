@@ -1,13 +1,13 @@
 
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import type { Property, Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 import { notFound } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
   const { firestore } = initializeFirebase();
@@ -21,13 +21,15 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
   }
   const agency = agencySnap.data() as Agency;
 
-  // Fetch ALL properties and filter in code to avoid complex queries needing indexes.
+  // Secure query that only fetches active properties, matching security rules.
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
-  const querySnapshot = await getDocs(propertiesRef);
-  const allProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+  const q = query(propertiesRef, where('status', '==', 'Activ'));
+  const querySnapshot = await getDocs(q);
+  const activeProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
   
-  const featuredProperties = allProperties
-    .filter(property => property.status === 'Activ' && property.featured === true)
+  // Filter for featured properties in code after fetching.
+  const featuredProperties = activeProperties
+    .filter(property => property.featured === true)
     .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0))
     .slice(0, 3);
 
