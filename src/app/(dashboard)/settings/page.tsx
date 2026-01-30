@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { collection, doc, writeBatch, query, where } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
+import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -184,7 +185,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div><h1 className="text-3xl font-headline font-bold">Setări</h1><p className="text-muted-foreground">Configurează setările contului și ale agenției.</p></div>
       <Card>
         <Form {...profileForm}>
@@ -213,6 +214,10 @@ export default function SettingsPage() {
           </form>
         </Form>
       </Card>
+
+      {userProfile?.role === 'admin' && agencyId && <AgentManagementCard agencyId={agencyId} />}
     </div>
   );
 }
+
+    

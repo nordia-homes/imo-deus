@@ -52,6 +52,43 @@
         "email"
       ]
     },
+    "Invite": {
+      "title": "Invite",
+      "type": "object",
+      "description": "Represents an invitation for a new agent to join an agency.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email of the user being invited."
+        },
+        "agencyId": {
+          "type": "string",
+          "description": "The ID of the agency the user is invited to join."
+        },
+        "agencyName": {
+          "type": "string",
+          "description": "The name of the agency for display purposes in the invite."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "agent"
+          ],
+          "description": "The role assigned to the invited user."
+        },
+        "invitedBy": {
+          "type": "string",
+          "description": "The UID of the admin who sent the invitation."
+        }
+      },
+      "required": [
+        "email",
+        "agencyId",
+        "role",
+        "invitedBy"
+      ]
+    },
     "Contact": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contact",
@@ -405,6 +442,22 @@
         }
       },
       {
+        "path": "/invites/{inviteId}",
+        "definition": {
+          "entityName": "Invite",
+          "schema": {
+            "$ref": "#/backend/entities/Invite"
+          },
+          "description": "Stores invitations for new agents to join an agency. The document ID is the base64 encoded email of the invitee.",
+          "params": [
+            {
+              "name": "inviteId",
+              "description": "The base64 encoded email of the person being invited."
+            }
+          ]
+        }
+      },
+      {
         "path": "/agencies/{agencyId}/contacts/{contactId}",
         "definition": {
           "entityName": "Contact",
@@ -525,6 +578,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management."
+    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
   }
 }
+
+    

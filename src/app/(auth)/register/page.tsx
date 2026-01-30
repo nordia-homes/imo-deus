@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Home, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from 'react-hook-form';
@@ -13,9 +13,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import type { AuthError } from "firebase/auth";
+import type { AuthError, User } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, deleteDoc } from "firebase/firestore";
+import type { Invite } from "@/lib/types";
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -24,6 +26,7 @@ const registerSchema = z.object({
 
 export default function RegisterPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const isLoggedIn = !!user;
   const router = useRouter();
@@ -44,9 +47,46 @@ export default function RegisterPage() {
     }
   }, [isLoggedIn, router]);
 
+  const handlePostRegistration = async (newUser: User) => {
+    try {
+        const inviteRef = doc(firestore, 'invites', btoa(newUser.email!));
+        const inviteSnap = await getDoc(inviteRef);
+
+        if (inviteSnap.exists()) {
+            // Invited user flow
+            const inviteData = inviteSnap.data() as Invite;
+            const userProfile = {
+                name: newUser.displayName || newUser.email,
+                email: newUser.email,
+                agencyId: inviteData.agencyId,
+                role: inviteData.role,
+                agencyName: inviteData.agencyName,
+            };
+            
+            const userDocRef = doc(firestore, 'users', newUser.uid);
+            await setDoc(userDocRef, userProfile);
+            await deleteDoc(inviteRef); // Consume the invite
+
+            toast({ title: `Bun venit la ${inviteData.agencyName}!` });
+        }
+        // If no invite, the default flow (redirect to settings to create an agency) will happen automatically.
+    } catch (error) {
+        console.error("Post-registration process failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Eroare post-înregistrare",
+            description: "Nu am putut finaliza configurarea contului. Vă rugăm contactați administratorul.",
+        });
+    }
+  }
+
   const handleRegister = (values: z.infer<typeof registerSchema>) => {
     setIsSubmitting(true);
     createUserWithEmailAndPassword(auth, values.email, values.password)
+      .then(async (userCredential) => {
+            await handlePostRegistration(userCredential.user);
+            // The useUser hook will detect the new user and redirect to dashboard.
+      })
       .catch((error: AuthError) => {
         console.error("Registration failed:", error);
         
@@ -68,6 +108,9 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
+      .then(async (userCredential) => {
+          await handlePostRegistration(userCredential.user);
+      })
       .catch((error: AuthError) => {
         console.error("Google Login failed:", error);
         toast({
@@ -155,3 +198,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    

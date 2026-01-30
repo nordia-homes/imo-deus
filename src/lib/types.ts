@@ -1,4 +1,5 @@
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -149,3 +150,13 @@ export type Contract = {
   agentId?: string;
   agentName?: string;
 };
+
+export type Invite = {
+  email: string;
+  agencyId: string;
+  agencyName: string;
+  role: 'agent';
+  invitedBy: string;
+};
+
+    
