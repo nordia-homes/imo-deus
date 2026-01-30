@@ -1,7 +1,7 @@
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
-import { PublicPropertyCard } from '@/components/public/PropertyCard';
+import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FileQuestion } from 'lucide-react';
 
@@ -25,8 +25,6 @@ export default async function AgencyPropertiesPage({ params }: { params: { agenc
         <h1 className="text-4xl font-bold">Proprietățile Noastre</h1>
         <p className="text-muted-foreground mt-2">Explorați portofoliul nostru de proprietăți disponibile.</p>
       </div>
-
-      {/* TODO: Add filtering component here */}
 
       {properties.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

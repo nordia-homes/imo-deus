@@ -1,11 +1,11 @@
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Property, Agency } from '@/lib/types';
 import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PublicPropertyCard } from '@/components/public/PropertyCard';
+import { PublicPropertyCard } from '@/components/public/PublicPropertyCard';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
   const { firestore } = initializeFirebase();
@@ -22,17 +22,22 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
     where('status', '==', 'Activ'), 
     where('visibility', '==', 'Colaborare'),
     where('featured', '==', true),
+    orderBy('createdAt', 'desc'),
     limit(3)
   );
+  
   const querySnapshot = await getDocs(q);
   const featuredProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+
+  const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
+  const tagline = agency?.name ? `Partenerul dumneavoastră de încredere în imobiliare.` : 'Găsiți proprietatea visurilor dumneavoastră.';
 
   return (
     <div>
       {/* Hero Section */}
       <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center text-white">
         <Image 
-          src={agency?.heroImageUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop'}
+          src={heroImageUrl}
           alt={`${agency?.name || 'Real Estate'} hero image`}
           fill
           className="object-cover"
@@ -42,7 +47,7 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
         <div className="relative z-10 p-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{agency?.name || 'Agenție Imobiliară'}</h1>
           <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
-            {agency?.tagline || 'Partenerul dumneavoastră de încredere în imobiliare.'}
+            {tagline}
           </p>
           <div className="mt-8 flex gap-4 justify-center">
             <Button size="lg" asChild>

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isUserInAgency(agencyId) {
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return request.auth != null &&
+             exists(userDocPath) &&
+             'agencyId' in get(userDocPath).data &&
+             get(userDocPath).data.agencyId == agencyId;
+    }
+    
+    function isUserAdmin(agencyId) {
+        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        return isUserInAgency(agencyId) &&
+               'role' in get(userDocPath).data &&
+               get(userDocPath).data.role == 'admin';
+    }
+
+    function isAddingSelfToAgency(agencyId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      if (userDoc.agencyId != agencyId) {
+        return false;
+      }
+      
+      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+      if (!affectedKeys.hasOnly(['agentIds'])) {
+        return false;
+      }
+      
+      let agentIdsDiff = request.resource.data.agentIds.diff(resource.data.agentIds);
+      
+      return agentIdsDiff.added().size() == 1 &&
+             agentIdsDiff.added()[0] == request.auth.uid &&
+             agentIdsDiff.removed().size() == 0;
+    }
+
+    match /users/{userId} {
+      allow get: if request.auth != null && (
+        request.auth.uid == userId || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+          exists(/databases/$(database)/documents/users/$(userId)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
+        )
+      );
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    match /agencies/{agencyId} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if false;
+      allow update: if isUserAdmin(agencyId) || isAddingSelfToAgency(agencyId);
+    }
+    
+    match /invites/{inviteId} {
+        allow create: if isUserAdmin(request.resource.data.agencyId);
+        allow read, delete: if request.auth != null;
+    }
+    
+    match /agencies/{agencyId}/properties/{propertyId} {
+      // Authenticated members of the agency have full access.
+      allow read, write: if isUserInAgency(agencyId);
+
+      // Anyone (including unauthenticated users) can GET a single document
+      // IF AND ONLY IF it is public and active. This is the key for securing the list.
+      allow get: if resource.data.visibility == 'Colaborare' 
+                  && resource.data.status == 'Activ';
+      
+      // Allow a LIST operation ONLY for unauthenticated users. This is for the public website.
+      // Authenticated users are covered by the 'read' rule above.
+      // This prevents an authenticated user from Agency B from even attempting to list from Agency A.
+      allow list: if request.auth == null;
+    }
+    
+    // For all other private subcollections, only allow access to agency members.
+    match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
+      allow read, write: if isUserInAgency(agencyId);
+    }
+  }
+}

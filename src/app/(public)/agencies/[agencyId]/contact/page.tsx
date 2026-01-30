@@ -2,8 +2,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home, Mail, Phone } from 'lucide-react';
 
-// This is a placeholder component.
-// In a real application, you would create this.
 const ContactForm = () => (
     <div className="text-center bg-muted p-8 rounded-lg">
         <p>Placeholder for Contact Form</p>
@@ -12,7 +10,6 @@ const ContactForm = () => (
 
 
 export default function AgencyContactPage() {
-  // In a real app, this data would come from the layout's context or a new fetch
   const agency = {
     name: 'Agenția Imobiliară Premium',
     address: 'Str. Victoriei nr. 100, București, România',

@@ -2,8 +2,8 @@ import { ReactNode } from 'react';
 import { getDoc, doc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Agency } from '@/lib/types';
-import { PublicHeader } from '@/components/public/Header';
-import { PublicFooter } from '@/components/public/Footer';
+import { PublicHeader } from '@/components/public/PublicHeader';
+import { PublicFooter } from '@/components/public/PublicFooter';
 
 // Helper function to convert HEX to HSL, needed for shadcn theme variables
 function hexToHsl(hex: string): string | null {

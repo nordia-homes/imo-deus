@@ -4,7 +4,6 @@ import type { Property } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { PropertyGallery } from '@/components/properties/PropertyGallery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { BedDouble, Bath, Ruler, Building, CalendarDays, MapPin, HandCoins, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 
@@ -21,7 +20,6 @@ const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: str
     );
 };
 
-// This is a placeholder component.
 const PropertyContactForm = () => (
     <div className="text-center bg-muted p-8 rounded-lg">
         <p>Placeholder for Property Contact Form</p>
@@ -41,7 +39,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
 
   const property = { id: propertySnap.id, ...propertySnap.data() } as Property;
 
-  // Security check: only show public properties
   if (property.status !== 'Activ' || property.visibility !== 'Colaborare') {
       notFound();
   }
@@ -63,7 +60,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
 
         <div className="grid lg:grid-cols-3 gap-12 mt-12">
             <div className="lg:col-span-2 space-y-8">
-                {/* Details Section */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Detalii Esențiale</CardTitle>
@@ -78,7 +74,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
                     </CardContent>
                 </Card>
 
-                {/* Description Section */}
                 <Card>
                     <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                     <CardContent>
@@ -86,7 +81,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
                     </CardContent>
                 </Card>
                 
-                 {/* Amenities Section */}
                  {property.amenities && property.amenities.length > 0 && (
                     <Card>
                         <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
@@ -101,7 +95,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
                     </Card>
                   )}
 
-                {/* Map Section */}
                 <Card>
                     <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
                     <CardContent>
@@ -121,7 +114,6 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
                 </Card>
             </div>
             
-            {/* Sticky Sidebar */}
             <div className="lg:col-span-1">
                 <Card className="sticky top-24">
                     <CardHeader>
