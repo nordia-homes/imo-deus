@@ -248,7 +248,21 @@
             "Internă",
             "Colaborare"
           ],
-          "description": "The visibility of the property listing."
+          "description": "The visibility of the property listing. 'Colaborare' means it is public on the agency website."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Activ",
+            "Inactiv",
+            "Vândut",
+            "Închiriat"
+          ],
+          "description": "The current status of the property listing (e.g., active, sold)."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether the property should be featured on the agency's public homepage."
         }
       },
       "required": [

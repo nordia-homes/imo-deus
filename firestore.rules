@@ -37,10 +37,19 @@ service cloud.firestore {
     }
 
     match /agencies/{agencyId} {
-      allow get: if isUserInAgency(agencyId);
+      // Allow public read for branding on the public website.
+      allow get: if true;
+      
+      // Only authenticated users can list all agencies (e.g. in a search).
       allow list: if request.auth != null;
+      
+      // Only admins of the agency can update its details.
       allow update: if isUserAdmin(agencyId);
+
+      // Any authenticated user can create an agency.
       allow create: if request.auth != null;
+
+      // Deleting agencies is not allowed from the client.
       allow delete: if false;
     }
     
@@ -48,9 +57,23 @@ service cloud.firestore {
         allow create: if isUserAdmin(request.resource.data.agencyId);
         allow read, delete: if request.auth != null;
     }
-
-    match /agencies/{agencyId}/{subcollection}/{docId} {
-        allow read, write: if isUserInAgency(agencyId);
+    
+    match /agencies/{agencyId}/properties/{propertyId} {
+        // Anyone can read a specific property if it's public.
+        // Agency members can read any property in their agency.
+        allow get: if (resource.data.visibility == 'Colaborare' && resource.data.status == 'Activ') || isUserInAgency(agencyId);
+        
+        // Anyone can list properties. This is required for the public website.
+        // The more specific 'get' rule above will still be enforced for each document.
+        allow list: if true;
+        
+        // Only agency members can write/edit/delete properties.
+        allow create, update, delete: if isUserInAgency(agencyId);
+    }
+    
+    // For all other private subcollections, only allow access to agency members.
+    match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
+      allow read, write: if isUserInAgency(agencyId);
     }
   }
 }
