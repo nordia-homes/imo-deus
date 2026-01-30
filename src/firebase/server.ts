@@ -1,18 +1,7 @@
 
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+// This file is intentionally left empty.
+// Server-side data fetching for this page has been moved to the client
+// to resolve runtime errors with server components.
+// All Firebase interactions should use the client-side SDK via hooks.
 
-/**
- * Initializes Firebase for server-side usage, ensuring only one app instance exists.
- * This is safe to call in multiple Server Components.
- */
-export function initializeFirebase() {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  return {
-    firebaseApp: app,
-    firestore: getFirestore(app),
-    auth: getAuth(app),
-  };
-}
+export {};

@@ -1,18 +1,20 @@
+'use client';
 
-import { initializeFirebase } from '@/firebase/server';
-import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect } from 'react';
 
 
-function AgencyHero({ agency, agencyId }: { agency: Agency | null, agencyId: string }) {
+function AgencyHero({ agency, agencyId, isLoading }: { agency: Agency | null, agencyId: string, isLoading: boolean }) {
     
-    if (!agency) {
+    if (isLoading) {
         return (
              <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
                 <div className="relative z-10 p-4">
@@ -25,6 +27,11 @@ function AgencyHero({ agency, agencyId }: { agency: Agency | null, agencyId: str
                 </div>
             </section>
         );
+    }
+    
+    // This case will be handled by notFound() in the parent, but it's good practice.
+    if (!agency) {
+        return null;
     }
     
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
@@ -59,34 +66,38 @@ function AgencyHero({ agency, agencyId }: { agency: Agency | null, agencyId: str
     );
 }
 
-export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
-  const { agencyId } = params;
+export default function AgencyHomePage() {
+  const params = useParams();
+  const agencyId = params.agencyId as string;
+  const firestore = useFirestore();
 
-  // Server-side data fetching
-  const { firestore } = initializeFirebase();
-  const agencyDocRef = doc(firestore, 'agencies', agencyId);
+  const agencyDocRef = useMemoFirebase(() => {
+      if (!agencyId) return null;
+      return doc(firestore, 'agencies', agencyId);
+  }, [firestore, agencyId]);
 
-  let agency: Agency;
-  try {
-    const agencySnap = await getDoc(agencyDocRef);
+  const { data: agency, isLoading, error } = useDoc<Agency>(agencyDocRef);
 
-    // Defensive check to ensure the document exists.
-    if (!agencySnap.exists()) {
+  useEffect(() => {
+    // If loading is finished and there's still no agency, or there's an error, show 404
+    if (!isLoading && (!agency || error)) {
       notFound();
     }
-    
-    agency = { id: agencySnap.id, ...agencySnap.data() } as Agency;
-
-  } catch (error) {
-    console.error("Failed to fetch agency:", error);
-    // If there's a more fundamental error (e.g. permissions),
-    // throw a generic error to be caught by Next.js error boundary.
-    throw new Error("Could not fetch agency data. This may be a permission issue or a server error.");
+  }, [isLoading, agency, error]);
+  
+  // Render loading state until notFound() is called or data is available
+  if (isLoading || !agency) {
+      return (
+        <div>
+          <AgencyHero agency={null} agencyId={agencyId} isLoading={true} />
+          {/* You can also add a skeleton for FeaturedProperties here if you want */}
+        </div>
+      )
   }
 
   return (
     <div>
-      <AgencyHero agency={agency} agencyId={agencyId} />
+      <AgencyHero agency={agency} agencyId={agencyId} isLoading={isLoading} />
       <FeaturedProperties agencyId={agencyId} />
     </div>
   );
