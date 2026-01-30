@@ -7,16 +7,17 @@ import { BedDouble, Bath, Ruler, MapPin, Eye, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 
 export function PropertyCard({ property }: { property: Property }) {
+  const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
+  
   return (
     <Link href={`/properties/${property.id}`} className="group">
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg">
         <div className="relative aspect-video">
             <Image
-                src={property.imageUrl || 'https://placehold.co/800x600'}
+                src={primaryImageUrl}
                 alt={property.title || 'Proprietate'}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
-                data-ai-hint={property.imageHint}
             />
             <div className="absolute top-2 right-2 flex gap-2">
                 {property.visibility && (

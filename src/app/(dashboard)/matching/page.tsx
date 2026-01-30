@@ -106,7 +106,7 @@ export default function MatchingPage() {
             bathrooms: p.bathrooms || 0,
             squareFootage: p.squareFootage || 0,
             description: p.description || p.title || '',
-            image: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`,
+            image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
         }));
 
         try {
@@ -212,7 +212,7 @@ export default function MatchingPage() {
                             <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4">
                                 <Link href={`/properties/${prop.id}`} className="block w-full md:w-1/3 aspect-video md:aspect-auto relative shrink-0">
                                     <Image 
-                                        src={prop.imageUrl || `https://picsum.photos/seed/${prop.id}/400/300`}
+                                        src={prop.images?.[0]?.url || `https://picsum.photos/seed/${prop.id}/400/300`}
                                         alt={prop.title || 'Proprietate'}
                                         fill
                                         className="rounded-md object-cover"

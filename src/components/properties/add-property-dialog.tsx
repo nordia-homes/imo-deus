@@ -59,6 +59,7 @@ const propertySchema = z.object({
   keyFeatures: z.string().min(1, { message: "Caracteristicile cheie sunt obligatorii pentru generarea AI." }),
 
   description: z.string().optional(),
+  // `images` will hold File objects from the input, not string URLs
   images: z.any().optional(),
   visibility: z.string().optional(),
 });
@@ -109,6 +110,8 @@ export function AddPropertyDialog() {
 
       form.setValue('images', allFiles);
 
+      // Clean up old previews before creating new ones
+      imagePreviews.forEach(p => URL.revokeObjectURL(p));
       const newPreviews = allFiles.map(file => URL.createObjectURL(file));
       setImagePreviews(newPreviews);
     }
@@ -119,8 +122,9 @@ export function AddPropertyDialog() {
     const newFiles = currentFiles.filter((_, i) => i !== index);
     form.setValue('images', newFiles);
 
-    const previews = newFiles.map(file => URL.createObjectURL(file));
+    // Clean up old previews before creating new ones
     imagePreviews.forEach(p => URL.revokeObjectURL(p));
+    const previews = newFiles.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
   }
 
@@ -171,13 +175,23 @@ export function AddPropertyDialog() {
 
     const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
     
+    // Although we aren't uploading files yet, we'll prepare the data structure.
+    // For now, we'll use Picsum placeholders as before.
     const seed = Math.random().toString(36).substring(7);
+    const placeholderImages = [
+        { url: `https://picsum.photos/seed/${seed}a/1200/800`, alt: 'Vedere de ansamblu' },
+        { url: `https://picsum.photos/seed/${seed}b/1200/800`, alt: 'Living' },
+        { url: `https://picsum.photos/seed/${seed}c/1200/800`, alt: 'Bucătărie' },
+        { url: `https://picsum.photos/seed/${seed}d/1200/800`, alt: 'Dormitor' },
+        { url: `https://picsum.photos/seed/${seed}e/1200/800`, alt: 'Baie' }
+      ];
 
     const newPropertyData = {
       title: values.title,
       propertyType: values.propertyType,
       transactionType: values.transactionType,
       location: values.location,
+      address: values.location, // Use location as address for now
       price: values.price,
       bedrooms: values.bedrooms,
       bathrooms: values.bathrooms,
@@ -193,15 +207,7 @@ export function AddPropertyDialog() {
       parking: values.parking || null,
       keyFeatures: values.keyFeatures,
       description: values.description || '',
-      address: values.location,
-      imageUrl: `https://picsum.photos/seed/${seed}/800/600`,
-      images: [
-        { url: `https://picsum.photos/seed/${seed}a/1200/800`, alt: 'Living room' },
-        { url: `https://picsum.photos/seed/${seed}b/1200/800`, alt: 'Kitchen' },
-        { url: `https://picsum.photos/seed/${seed}c/1200/800`, alt: 'Bedroom' },
-        { url: `https://picsum.photos/seed/${seed}d/1200/800`, alt: 'Bathroom' },
-        { url: `https://picsum.photos/seed/${seed}e/1200/800`, alt: 'Exterior' }
-      ],
+      images: placeholderImages, // Use the new structured placeholder images
       tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
       createdAt: new Date().toISOString(),
       agent: {
@@ -338,32 +344,19 @@ export function AddPropertyDialog() {
                   />
 
                   <FormItem className="mt-4">
-                    <FormLabel>Fotografii (max 16)</FormLabel>
+                    <FormLabel>Fotografii (max 16) - Funcționalitate în dezvoltare</FormLabel>
                     <FormControl>
                       <div className="flex items-center justify-center w-full">
-                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-not-allowed bg-gray-50 opacity-50">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click pentru a încărca</span> sau trage fișierele aici</p>
-                            <p className="text-xs text-gray-500">PNG, JPG (max. 16 fișiere)</p>
+                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Încărcarea de fișiere nu este implementată</span></p>
+                            <p className="text-xs text-gray-500">Imaginile vor fi adăugate ca placeholder.</p>
                           </div>
-                          <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} disabled={(form.getValues('images')?.length || 0) >= 16} />
+                          <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} disabled />
                         </label>
                       </div>
                     </FormControl>
-                    {imagePreviews.length > 0 && (
-                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4 mt-4">
-                        {imagePreviews.map((src, index) => (
-                          <div key={src} className="relative aspect-square">
-                            <Image src={src} alt={`Preview ${index}`} fill className="object-cover rounded-md" />
-                            <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => removeImage(index)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <FormMessage />
                   </FormItem>
                 </section>
               </div>

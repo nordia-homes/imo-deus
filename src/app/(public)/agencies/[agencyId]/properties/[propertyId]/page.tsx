@@ -46,14 +46,7 @@ export default async function PublicPropertyDetailPage({ params }: { params: { a
       notFound();
   }
   
-  const allImages = (property.images || [])
-        .map(img => typeof img === 'string' ? img : img.url)
-        .filter(Boolean) as string[];
-
-  if (property.imageUrl && !allImages.includes(property.imageUrl)) {
-    allImages.unshift(property.imageUrl);
-  }
-
+  const allImages = (property.images || []).map(img => img.url).filter(Boolean);
   const defaultImages = ['https://placehold.co/1200x800'];
   
   return (

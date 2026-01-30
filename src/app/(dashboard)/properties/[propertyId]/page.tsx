@@ -128,21 +128,8 @@ export default function PropertyDetailPage() {
         return null;
     }
     
-    const propertyImages = (property.images || [])
-        .map(img => {
-            // Case 1: img is an object with a 'url' property
-            if (typeof img === 'object' && img !== null && 'url' in img && typeof (img as any).url === 'string') {
-                return (img as any).url;
-            }
-            // Case 2: img is already a string
-            if (typeof img === 'string') {
-                return img;
-            }
-            return null;
-        })
-        .filter(Boolean) as string[];
-
-    const allImages = propertyImages.length > 0 ? propertyImages : (property.imageUrl ? [property.imageUrl] : ['https://placehold.co/1200x800']);
+    const propertyImages = (property.images || []).map(img => img.url).filter(Boolean);
+    const allImages = propertyImages.length > 0 ? propertyImages : ['https://placehold.co/1200x800'];
     const agentEmail = user?.email;
 
     return (

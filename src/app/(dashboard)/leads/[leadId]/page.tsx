@@ -317,7 +317,7 @@ export default function LeadDetailPage() {
         
         const matcherProperties = userProperties.map(p => ({
             ...p,
-            image: p.imageUrl || 'https://placehold.co/400x300',
+            image: p.images?.[0]?.url || 'https://placehold.co/400x300',
             bedrooms: p.bedrooms || 0,
             bathrooms: p.bathrooms || 0,
             squareFootage: p.squareFootage || 0,
@@ -429,7 +429,7 @@ export default function LeadDetailPage() {
                                 {matchedProperties.map(prop => (
                                     <Card key={prop.id} className="p-2">
                                         <div className="flex gap-4 items-center">
-                                            <Image src={prop.imageUrl || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" data-ai-hint={prop.imageHint} />
+                                            <Image src={prop.images?.[0]?.url || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" />
                                             <div className="flex-1">
                                                 <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
                                                 <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
@@ -498,7 +498,7 @@ export default function LeadDetailPage() {
                             </div>
                              <div>
                                 <Label>Agent Alocat</Label>
-                                <Select onValueChange={handleAgentChange} defaultValue={contact.agentId || 'unassigned'}>
+                                <Select onValueChange={handleAgentChange} defaultValue={contact.agentId || 'unassigned'} disabled={areAgentsLoading}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selectează un agent" />
                                     </SelectTrigger>

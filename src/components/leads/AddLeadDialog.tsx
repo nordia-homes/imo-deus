@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -131,7 +131,7 @@ export function AddLeadDialog() {
         ...values,
         agentId: finalAgentId,
         zones: selectedZones,
-        contactType: 'Lead',
+        contactType: 'Lead' as const,
         createdAt: new Date().toISOString(),
         interactionHistory: [],
         preferences: {

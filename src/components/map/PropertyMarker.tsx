@@ -8,6 +8,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 export function PropertyMarker({ property, style }: { property: Property, style: React.CSSProperties }) {
+    const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
+
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -24,11 +26,10 @@ export function PropertyMarker({ property, style }: { property: Property, style:
                     <Card className="border-0 shadow-none">
                         <div className="relative aspect-video">
                             <Image
-                                src={property.imageUrl || 'https://placehold.co/800x600'}
+                                src={primaryImageUrl}
                                 alt={property.title || 'Proprietate'}
                                 fill
                                 className="object-cover rounded-t-lg"
-                                data-ai-hint={property.imageHint}
                             />
                         </div>
                         <CardHeader className="p-4">

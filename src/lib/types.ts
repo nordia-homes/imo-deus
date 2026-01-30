@@ -1,6 +1,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -19,7 +20,7 @@ export type Property = {
   squareFootage: number; // Suprafata Utila
   totalSurface?: number; // Suprafata Construita
   description?: string;
-  images?: { url: string; alt: string; }[];
+  images: { url: string; alt: string; }[];
   amenities?: string[];
   agent?: {
     name: string;
@@ -43,8 +44,6 @@ export type Property = {
   
   // For compatibility with existing components that might use these
   tagline?: string;
-  imageUrl?: string;
-  imageHint?: string;
   createdAt?: string;
   promotions?: {
     [portalName: string]: PromotionStatus;
@@ -85,6 +84,7 @@ export type Contact = {
     budget?: number;
     status: 'Nou' | 'Contactat' | 'Vizionare' | 'În negociere' | 'Câștigat' | 'Pierdut';
     notes: string;
+    contactType: 'Lead' | 'Client' | 'Partener';
     interactionHistory: Interaction[];
     preferences: ContactPreferences;
     city?: string;
@@ -165,4 +165,6 @@ export type Invite = {
   invitedBy: string;
 };
 
+export type WithId<T> = T & { id: string };
     
+
