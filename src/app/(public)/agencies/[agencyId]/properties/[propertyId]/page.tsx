@@ -1,5 +1,5 @@
 import { getDoc, doc } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { PropertyGallery } from '@/components/properties/PropertyGallery';
@@ -30,7 +30,7 @@ const PropertyContactForm = () => (
 
 
 export default async function PublicPropertyDetailPage({ params }: { params: { agencyId: string, propertyId: string } }) {
-  const { firestore } = getSdks();
+  const { firestore } = initializeFirebase();
   
   const propertyRef = doc(firestore, 'agencies', params.agencyId, 'properties', params.propertyId);
   const propertySnap = await getDoc(propertyRef);

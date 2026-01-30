@@ -1,5 +1,5 @@
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Property, Agency } from '@/lib/types';
 import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { PublicPropertyCard } from '@/components/public/PropertyCard';
 
 export default async function AgencyHomePage({ params }: { params: { agencyId: string } }) {
-  const { firestore } = getSdks();
+  const { firestore } = initializeFirebase();
   
   // Fetch agency details
   const agencyRef = doc(firestore, 'agencies', params.agencyId);

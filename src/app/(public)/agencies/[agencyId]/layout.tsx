@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { getDoc, doc } from 'firebase/firestore';
-import { getSdks } from '@/firebase'; // Assuming getSdks is exported and gives non-authed access
+import { initializeFirebase } from '@/firebase';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/Header';
 import { PublicFooter } from '@/components/public/Footer';
@@ -42,7 +42,7 @@ export default async function AgencyPublicLayout({
   children: ReactNode;
   params: { agencyId: string };
 }) {
-  const { firestore } = getSdks(); // This needs to work without auth
+  const { firestore } = initializeFirebase();
   const agencyRef = doc(firestore, 'agencies', params.agencyId);
   const agencySnap = await getDoc(agencyRef);
   const agency = agencySnap.exists() ? (agencySnap.data() as Agency) : null;

@@ -1,12 +1,12 @@
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { PublicPropertyCard } from '@/components/public/PropertyCard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FileQuestion } from 'lucide-react';
 
 export default async function AgencyPropertiesPage({ params }: { params: { agencyId: string } }) {
-  const { firestore } = getSdks();
+  const { firestore } = initializeFirebase();
   
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
   const q = query(
