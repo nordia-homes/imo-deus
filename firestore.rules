@@ -37,7 +37,7 @@ service cloud.firestore {
     }
 
     match /agencies/{agencyId} {
-      allow get: if true;
+      allow get: if isUserInAgency(agencyId);
       allow list: if request.auth != null;
       allow update: if isUserAdmin(agencyId);
       allow create: if request.auth != null;

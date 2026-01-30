@@ -1,11 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useMemoFirebase, setDocumentNonBlocking, useDoc } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import type { UserProfile, Agency } from '@/lib/types';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
@@ -27,7 +26,7 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
-    const { userProfile: adminProfile } = useAgency();
+    const { userProfile: adminProfile, agents, isAgencyLoading } = useAgency();
 
     const [isInviting, setIsInviting] = useState(false);
 
@@ -36,60 +35,7 @@ export function AgentManagementCard({ agencyId }: { agencyId: string }) {
         defaultValues: { email: '' },
     });
 
-    // --- NEW DATA FETCHING LOGIC ---
-    // 1. Get the agency document to find agentIds
-    const agencyDocRef = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return doc(firestore, 'agencies', agencyId);
-    }, [firestore, agencyId]);
-    const { data: agencyData, isLoading: isAgencyLoading } = useDoc<Agency>(agencyDocRef);
-
-    // 2. Fetch agent profiles based on agentIds from the agency doc
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
-
-    useEffect(() => {
-        // Don't do anything if we don't have the agency data yet
-        if (!agencyData) {
-            if (!isAgencyLoading) {
-                // If loading is finished and there's still no agency data
-                setAgents([]);
-                setAreAgentsLoading(false);
-            }
-            return;
-        };
-
-        // If agency has no agents, we're done
-        if (!agencyData.agentIds || agencyData.agentIds.length === 0) {
-            setAgents([]);
-            setAreAgentsLoading(false);
-            return;
-        }
-
-        const fetchAgents = async () => {
-            setAreAgentsLoading(true);
-            try {
-                const agentPromises = agencyData.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                const agentProfiles = agentDocs
-                    .filter(docSnap => docSnap.exists())
-                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                setAgents(agentProfiles);
-            } catch (error) {
-                console.error("Error fetching agent profiles:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Eroare la încărcarea agenților",
-                    description: "Nu am putut încărca lista de agenți. Vă rugăm să reîncărcați pagina.",
-                });
-            } finally {
-                setAreAgentsLoading(false);
-            }
-        };
-        fetchAgents();
-    }, [agencyData, isAgencyLoading, firestore, toast]);
-
-    const isLoading = isAgencyLoading || areAgentsLoading;
+    const isLoading = isAgencyLoading;
 
     async function handleInviteAgent(values: z.infer<typeof inviteSchema>) {
         if (!user || !adminProfile?.agencyName) {

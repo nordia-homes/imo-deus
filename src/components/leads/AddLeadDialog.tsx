@@ -27,14 +27,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
-import type { UserProfile } from '@/lib/types';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -63,14 +62,8 @@ export function AddLeadDialog() {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
-  const { agencyId } = useAgency();
+  const { agencyId, agents } = useAgency();
   const firestore = useFirestore();
-
-  const agentsQuery = useMemoFirebase(() => {
-    if (!agencyId) return null;
-    return query(collection(firestore, 'users'), where('agencyId', '==', agencyId));
-  }, [firestore, agencyId]);
-  const { data: agents } = useCollection<UserProfile>(agentsQuery);
 
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),

@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -73,7 +74,7 @@ export default function LeadDetailPage() {
     const leadId = params.leadId as string;
     
     const { user, isUserLoading } = useUser();
-    const { agencyId } = useAgency();
+    const { agencyId, agents } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -98,12 +99,6 @@ export default function LeadDetailPage() {
         return collection(firestore, 'agencies', agencyId, 'properties');
     }, [firestore, agencyId]);
     const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
-
-    const agentsQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return query(collection(firestore, 'users'), where('agencyId', '==', agencyId));
-    }, [firestore, agencyId]);
-    const { data: agents } = useCollection<UserProfile>(agentsQuery);
 
 
     // --- STATE MANAGEMENT ---
