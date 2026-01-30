@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 
 type AgencyContextType = {
@@ -32,8 +32,31 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     }, [firestore, agencyId]);
     const { data: agency, isLoading: isAgencyDocLoading } = useDoc<Agency>(agencyDocRef);
     
-    // The overall loading state is a chain: user must be loaded, then profile, then agency.
     const isAgencyLoading = isUserAuthLoading || isProfileLoading || isAgencyDocLoading;
+
+    // Self-healing mechanism for agents whose registration might have partially failed.
+    useEffect(() => {
+        // Run only when all data is loaded and valid
+        if (!isAgencyLoading && user && agency && userProfile) {
+            // Check if user is an agent and belongs to this agency according to their profile
+            if (userProfile.agencyId === agency.id) {
+                // Check if their ID is missing from the agency's official list
+                if (agency.agentIds && !agency.agentIds.includes(user.uid)) {
+                    console.log(`Self-healing: Adding agent ${user.uid} to agency ${agency.id}`);
+                    const currentAgencyDocRef = doc(firestore, 'agencies', agency.id);
+                    // Use updateDoc with arrayUnion to safely add the ID.
+                    // This will trigger the 'isAddingSelfToAgency' security rule for validation.
+                    updateDoc(currentAgencyDocRef, {
+                        agentIds: arrayUnion(user.uid)
+                    }).catch(err => {
+                        // Log this for debugging, but don't crash the app.
+                        // This might happen if the rules are still not perfect, but it shouldn't.
+                        console.error("Self-healing update failed:", err);
+                    });
+                }
+            }
+        }
+    }, [isAgencyLoading, user, agency, userProfile, firestore]);
 
     const value: AgencyContextType = { 
         userProfile, 
