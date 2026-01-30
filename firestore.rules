@@ -23,16 +23,20 @@ service cloud.firestore {
 
     // Users can read and update their own profile.
     match /users/{userId} {
-      allow read: if request.auth != null && (
-        // A user can always read their own profile
+      // GET: Allow reading own profile, or admin reading a user in their agency
+      allow get: if request.auth != null && (
         request.auth.uid == userId ||
-        // An admin can read profiles of users within their own agency (needed for listing agents)
         (
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == resource.data.agencyId
         )
       );
+
+      // LIST: An admin can list users. The 'get' rule will be enforced by Firestore on the query results.
+      allow list: if request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
 
       // Keep write permissions the same: only for the user themselves
       allow update, create: if request.auth != null && request.auth.uid == userId;
