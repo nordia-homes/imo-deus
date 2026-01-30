@@ -64,25 +64,22 @@ service cloud.firestore {
     }
     
     match /invites/{inviteId} {
-        allow create: if isUserAdmin(request.resource.data.agencyId);
+        allow create: if get(/databases/$(database)/documents/agencies/$(request.resource.data.agencyId)).data.ownerId == request.auth.uid;
         allow read, delete: if request.auth != null;
     }
     
     match /agencies/{agencyId}/properties/{propertyId} {
-      // --- Rule for Authenticated Agency Members ---
-      // Allow agency members to perform any read/write operation on properties within their own agency.
+      // Authenticated members of the agency have full access.
       allow read, write: if isUserInAgency(agencyId);
 
-      // --- Overriding Rules for Public Access ---
-      // Allow unauthenticated list queries. This is safe because the results are then
-      // checked by the `get` rule below.
-      allow list: if request.auth == null;
-      
-      // Allow unauthenticated get requests ONLY for public and active properties.
-      // This rule secures the `list` operation above.
-      allow get: if request.auth == null 
-                  && resource.data.visibility == 'Colaborare' 
+      // Anyone (including unauthenticated users) can GET a single document
+      // IF AND ONLY IF it is public and active.
+      allow get: if resource.data.visibility == 'Colaborare' 
                   && resource.data.status == 'Activ';
+      
+      // Allow a LIST operation ONLY for unauthenticated users. This is for the public website.
+      // Authenticated users are covered by the 'read' rule above.
+      allow list: if request.auth == null;
     }
     
     // For all other private subcollections, only allow access to agency members.
