@@ -1,11 +1,12 @@
 'use client';
 
 import PortalStatusCard from "@/components/portal/PortalStatusCard";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { collection } from 'firebase/firestore';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAgency } from "@/context/AgencyContext";
 
 const PORTALS = [
     { id: 'imobiliare', name: 'Imobiliare.ro' },
@@ -14,13 +15,13 @@ const PORTALS = [
 ];
 
 export default function PortalSyncPage() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 

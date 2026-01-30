@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useCollection, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import type { Task } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { TaskCard } from './TaskCard';
 import { isToday, isPast, isThisWeek, endOfWeek, startOfToday, addDays } from 'date-fns';
+import { useAgency } from '@/context/AgencyContext';
 
 const columns = [
     { id: 'overdue', title: 'Scadente' },
@@ -40,15 +41,15 @@ function TaskColumn({ id, title, tasks }: { id: ColumnId, title: string, tasks: 
 }
 
 export function TasksBoard() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
     const [tasks, setTasks] = useState<Task[]>([]);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'tasks');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'tasks');
+    }, [firestore, agencyId]);
 
     const { data: fetchedTasks, isLoading } = useCollection<Task>(tasksQuery);
 
@@ -93,7 +94,7 @@ export function TasksBoard() {
         const { active, over } = event;
 
         if (!over || active.id === over.id) return;
-        if (!user) return;
+        if (!agencyId) return;
         
         const overContainerId = over.data.current?.sortable.containerId || over.id as ColumnId;
 
@@ -112,7 +113,7 @@ export function TasksBoard() {
             else if (overContainerId === 'future') newDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
         }
 
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', task.id);
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const updateData: Partial<Task> = {};
         if (newStatus && task.status !== newStatus) updateData.status = newStatus;
         if (newDueDate) updateData.dueDate = newDueDate.toISOString().split('T')[0];

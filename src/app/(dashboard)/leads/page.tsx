@@ -5,19 +5,20 @@ import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Users, Target, BarChart } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contact } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAgency } from '@/context/AgencyContext';
 
 export default function LeadsPage() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
 
     const { data: contacts, isLoading } = useCollection<Contact>(contactsQuery);
 

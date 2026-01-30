@@ -6,10 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { FilePlus2, Download, Send, MessageSquare } from "lucide-react";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import Link from "next/link";
+import { useAgency } from "@/context/AgencyContext";
 
 
 function getStatusBadge(status: string) {
@@ -24,16 +25,16 @@ function getStatusBadge(status: string) {
 
 
 export function PropertyContractsTab({ propertyId }: { propertyId: string }) {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const contractsQuery = useMemoFirebase(() => {
-        if (!user || !propertyId) return null;
+        if (!agencyId || !propertyId) return null;
         return query(
-            collection(firestore, 'users', user.uid, 'contracts'),
+            collection(firestore, 'agencies', agencyId, 'contracts'),
             where('propertyId', '==', propertyId)
         );
-    }, [firestore, user, propertyId]);
+    }, [firestore, agencyId, propertyId]);
     
     const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

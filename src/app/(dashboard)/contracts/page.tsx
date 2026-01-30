@@ -24,6 +24,7 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAgency } from "@/context/AgencyContext";
 
 function getStatusBadge(status: string) {
     switch (status) {
@@ -37,32 +38,33 @@ function getStatusBadge(status: string) {
 
 export default function ContractsPage() {
     const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
 
     const contractsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contracts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contracts');
+    }, [firestore, agencyId]);
     const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
 
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
     const isLoading = areContractsLoading || arePropertiesLoading || areContactsLoading;
 
     const handleStatusChange = (contract: Contract, newStatus: Contract['status']) => {
-        if (!user) return;
-        const contractRef = doc(firestore, 'users', user.uid, 'contracts', contract.id);
+        if (!agencyId) return;
+        const contractRef = doc(firestore, 'agencies', agencyId, 'contracts', contract.id);
         updateDocumentNonBlocking(contractRef, { status: newStatus });
         toast({
             title: "Status actualizat!",

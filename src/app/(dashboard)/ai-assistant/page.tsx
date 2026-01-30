@@ -2,28 +2,29 @@
 
 import { useMemo, Suspense } from 'react';
 import { AiChat } from "@/components/ai/AiChat";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
+import { useAgency } from '@/context/AgencyContext';
 
 function AiAssistantContent() {
-  const { user } = useUser();
+  const { agencyId } = useAgency();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const initialPrompt = searchParams.get('prompt') || undefined;
 
   const contactsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'users', user.uid, 'contacts'), orderBy('createdAt', 'desc'));
-  }, [firestore, user]);
+    if (!agencyId) return null;
+    return query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc'));
+  }, [firestore, agencyId]);
   const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
   const propertiesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'users', user.uid, 'properties'), orderBy('createdAt', 'desc'));
-  }, [firestore, user]);
+    if (!agencyId) return null;
+    return query(collection(firestore, 'agencies', agencyId, 'properties'), orderBy('createdAt', 'desc'));
+  }, [firestore, agencyId]);
   const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
   const suggestedPrompts = useMemo(() => {

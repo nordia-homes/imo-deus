@@ -35,6 +35,7 @@ import {
     Tag,
     HandCoins
 } from "lucide-react";
+import { useAgency } from '@/context/AgencyContext';
 
 
 const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
@@ -56,15 +57,16 @@ export default function PropertyDetailPage() {
     const { toast } = useToast();
 
     const { user, isUserLoading } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
     const propertyDocRef = useMemoFirebase(() => {
-        if (!user || !propertyId) return null;
-        return doc(firestore, 'users', user.uid, 'properties', propertyId);
-    }, [firestore, user, propertyId]);
+        if (!agencyId || !propertyId) return null;
+        return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
+    }, [firestore, agencyId, propertyId]);
 
     const { data: property, isLoading: isDocLoading, error } = useDoc<Property>(propertyDocRef);
 

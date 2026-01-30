@@ -1,21 +1,22 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
 import { FileSignature } from 'lucide-react';
+import { useAgency } from '@/context/AgencyContext';
 
 export function RecentActivity() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const contractsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'contracts'), orderBy('date', 'desc'), limit(5));
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'contracts'), orderBy('date', 'desc'), limit(5));
+    }, [firestore, agencyId]);
 
     const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
     

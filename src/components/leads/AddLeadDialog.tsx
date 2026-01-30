@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAgency } from '@/context/AgencyContext';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -59,6 +60,7 @@ export function AddLeadDialog() {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
+  const { agencyId } = useAgency();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof leadSchema>>({
@@ -82,16 +84,16 @@ export function AddLeadDialog() {
   }, [watchedCity]);
 
   function onSubmit(values: z.infer<typeof leadSchema>) {
-    if (!user) {
+    if (!user || !agencyId) {
         toast({
             variant: "destructive",
-            title: "Autentificare necesară",
-            description: "Trebuie să fii autentificat pentru a adăuga un lead.",
+            title: "Eroare",
+            description: "Nu am putut identifica agenția. Reîncearcă.",
         });
         return;
     }
 
-    const contactsCollection = collection(firestore, 'users', user.uid, 'contacts');
+    const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
     
     const newLeadData = {
         ...values,

@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import type { Task, Contact } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,23 +20,24 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { EditTaskDialog } from "@/components/tasks/EditTaskDialog";
 import { DeleteTaskAlert } from "@/components/tasks/DeleteTaskAlert";
+import { useAgency } from '@/context/AgencyContext';
 
 export function TasksList() {
     const { toast } = useToast();
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'tasks');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'tasks');
+    }, [firestore, agencyId]);
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
 
     const { data: contacts } = useCollection<Contact>(contactsQuery);
     
@@ -44,15 +45,15 @@ export function TasksList() {
     const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
     const handleToggleTask = (task: Task) => {
-        if (!user) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', task.id);
+        if (!agencyId) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const newStatus = task.status === 'completed' ? 'open' : 'completed';
         updateDocumentNonBlocking(taskRef, { status: newStatus });
     };
     
     const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
-        if (!user || !editingTask) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', editingTask.id);
+        if (!agencyId || !editingTask) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
         updateDocumentNonBlocking(taskRef, dataToUpdate);
         toast({
@@ -63,8 +64,8 @@ export function TasksList() {
     };
 
     const handleDeleteTask = () => {
-        if (!user || !deletingTask) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', deletingTask.id);
+        if (!agencyId || !deletingTask) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
         deleteDocumentNonBlocking(taskRef);
         toast({
             variant: 'destructive',
@@ -99,12 +100,12 @@ export function TasksList() {
             <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className='flex items-center gap-4 flex-1'>
                     <Checkbox 
-                        id={`task-${task.id}`} 
+                        id={`task-list-${task.id}`} 
                         checked={task.status === 'completed'}
                         onCheckedChange={() => handleToggleTask(task)}
                     />
                     <div className="flex-1">
-                        <label htmlFor={`task-${task.id}`} className={cn("font-medium cursor-pointer", isCompletedList && "text-muted-foreground line-through")}>{task.description}</label>
+                        <label htmlFor={`task-list-${task.id}`} className={cn("font-medium cursor-pointer", isCompletedList && "text-muted-foreground line-through")}>{task.description}</label>
                         <p className={cn("text-sm text-muted-foreground", isCompletedList && "line-through")}>
                             Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             {task.startTime && ` la ${task.startTime}`}

@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Rocket, CheckCircle, Clock, XCircle, ExternalLink, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Property, PromotionStatus } from '@/lib/types';
 import Link from 'next/link';
+import { useAgency } from "@/context/AgencyContext";
 
 // Define the portals available for promotion
 const PORTALS = [
@@ -22,7 +23,7 @@ const PORTALS = [
 
 export function PropertyPromotionsTab({ property }: { property: Property }) {
     const { toast } = useToast();
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
     const [selectedPortals, setSelectedPortals] = useState<string[]>([]);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -54,12 +55,12 @@ export function PropertyPromotionsTab({ property }: { property: Property }) {
     };
 
     const handlePublish = async () => {
-        if (!user || selectedPortals.length === 0) return;
+        if (!agencyId || selectedPortals.length === 0) return;
 
         setIsPublishing(true);
         toast({ title: "Publicare în curs...", description: `Proprietatea se publică pe ${selectedPortals.length} portal(uri).` });
 
-        const propertyRef = doc(firestore, 'users', user.uid, 'properties', property.id);
+        const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
         
         const updatedPromotions = { ...property.promotions };
 

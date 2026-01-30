@@ -34,6 +34,7 @@ import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { useAgency } from '@/context/AgencyContext';
 
 
 const propertySchema = z.object({
@@ -69,6 +70,7 @@ export function AddPropertyDialog() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
+  const { agencyId } = useAgency();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof propertySchema>>({
@@ -157,21 +159,16 @@ export function AddPropertyDialog() {
   }
 
   function onSubmit(values: z.infer<typeof propertySchema>) {
-    if (!user) {
+    if (!user || !agencyId) {
       toast({
         variant: 'destructive',
-        title: 'Autentificare necesară',
-        description: 'Trebuie să fii autentificat pentru a adăuga o proprietate.',
+        title: 'Eroare',
+        description: 'Nu am putut identifica agenția. Reîncearcă.',
       });
       return;
     }
 
-    const propertiesCollection = collection(
-      firestore,
-      'users',
-      user.uid,
-      'properties'
-    );
+    const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
     
     const randomSeed = Math.floor(Math.random() * 1000);
 

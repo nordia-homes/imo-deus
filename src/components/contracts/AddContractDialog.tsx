@@ -18,9 +18,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Contract, Property, Contact as ContactType, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { generateContract } from '@/ai/flows/contract-generator';
+import { useAgency } from '@/context/AgencyContext';
 
 const contractSchema = z.object({
   contactId: z.string().min(1, { message: "Clientul este obligatoriu." }),
@@ -40,13 +41,8 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
+  const { agencyId, userProfile } = useAgency();
   const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   const form = useForm<z.infer<typeof contractSchema>>({
     resolver: zodResolver(contractSchema),
@@ -71,11 +67,11 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
   };
 
   async function onSubmit(values: z.infer<typeof contractSchema>) {
-    if (!user) {
+    if (!user || !agencyId) {
         toast({
             variant: "destructive",
-            title: "Autentificare necesară",
-            description: "Trebuie să fii autentificat pentru a adăuga un contract.",
+            title: "Eroare",
+            description: "Trebuie să fii autentificat și să faci parte dintr-o agenție.",
         });
         return;
     }
@@ -107,7 +103,7 @@ export function AddContractDialog({ properties, contacts }: AddContractDialogPro
             date: format(values.date, 'dd.MM.yyyy'),
         });
 
-        const contractsCollection = collection(firestore, 'users', user.uid, 'contracts');
+        const contractsCollection = collection(firestore, 'agencies', agencyId, 'contracts');
         
         const newContractData = {
             ...values,

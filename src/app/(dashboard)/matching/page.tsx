@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
@@ -16,11 +16,12 @@ import { Loader2, Wand2, Star, Info } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useAgency } from '@/context/AgencyContext';
 
 type MatchedProperty = Property & { matchScore: number; reasoning: string };
 
 export default function MatchingPage() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -30,15 +31,15 @@ export default function MatchingPage() {
     
     // --- Data Fetching ---
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
     
     const selectedContact = useMemo(() => {

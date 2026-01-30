@@ -12,10 +12,12 @@ import React, { useState, useEffect } from 'react';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
+import { useAgency } from '@/context/AgencyContext';
 
 export function Topbar() {
     const { logout } = useAuth();
     const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const [query, setQuery] = useState('');
@@ -25,13 +27,13 @@ export function Topbar() {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     // Fetch all data for client-side search
-    const contactsQuery = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'contacts') : null, [firestore, user]);
+    const contactsQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'contacts') : null, [firestore, agencyId]);
     const { data: contacts } = useCollection<Contact>(contactsQuery);
 
-    const propertiesQuery = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'properties') : null, [firestore, user]);
+    const propertiesQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'properties') : null, [firestore, agencyId]);
     const { data: properties } = useCollection<Property>(propertiesQuery);
 
-    const tasksQuery = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'tasks') : null, [firestore, user]);
+    const tasksQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'tasks') : null, [firestore, agencyId]);
     const { data: tasks } = useCollection<Task>(tasksQuery);
     
     // Debounce search query
@@ -82,7 +84,7 @@ export function Topbar() {
         });
         setIsSearching(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedQuery]);
+    }, [debouncedQuery, contacts, properties, tasks]);
 
     const getInitials = (email?: string | null) => {
         if (!email) return 'U';

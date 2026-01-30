@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import { PropertyCard } from "./PropertyCard";
@@ -8,9 +8,10 @@ import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useAgency } from '@/context/AgencyContext';
 
 export function PropertyList() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -18,9 +19,9 @@ export function PropertyList() {
     const [transactionFilter, setTransactionFilter] = useState('all');
 
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 

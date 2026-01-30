@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contact, SalesData, LeadSourceData } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,23 +10,24 @@ import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DollarSign, Target, TrendingUp } from 'lucide-react';
+import { useAgency } from '@/context/AgencyContext';
 
 export default function ReportsPage() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     // Fetch all contacts
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
     
     // Fetch only won contacts for sales volume
     const wonLeadsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'contacts'), where('status', '==', 'Câștigat'));
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'contacts'), where('status', '==', 'Câștigat'));
+    }, [firestore, agencyId]);
     const { data: wonLeads, isLoading: areWonLeadsLoading } = useCollection<Contact>(wonLeadsQuery);
 
     const isLoading = areContactsLoading || areWonLeadsLoading;

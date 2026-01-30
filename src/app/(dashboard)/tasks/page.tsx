@@ -3,25 +3,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksList } from "@/components/tasks/TasksList";
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Task, Contact } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
+import { useAgency } from "@/context/AgencyContext";
 
 export default function TasksPage() {
     const { toast } = useToast();
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const contactsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'contacts');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
     const { data: contacts } = useCollection<Contact>(contactsQuery);
 
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
-        if (!user) return;
-        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
+        if (!agencyId) return;
+        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
         const taskToAdd = { ...newTask, status: 'open' };
         addDocumentNonBlocking(tasksCollection, taskToAdd);
          toast({

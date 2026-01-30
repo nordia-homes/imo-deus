@@ -36,6 +36,7 @@ import { DeleteTaskAlert } from '@/components/tasks/DeleteTaskAlert';
 import { AiEmailGenerator } from '@/components/leads/AiEmailGenerator';
 import { InteractionList } from '@/components/leads/InteractionList';
 import { InteractionLogger } from '@/components/leads/InteractionLogger';
+import { useAgency } from '@/context/AgencyContext';
 
 // Schemas for AI forms
 const leadScoreSchema = z.object({
@@ -62,29 +63,30 @@ export default function LeadDetailPage() {
     const leadId = params.leadId as string;
     
     const { user, isUserLoading } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
-        if (!user || !leadId) return null;
-        return doc(firestore, 'users', user.uid, 'contacts', leadId);
-    }, [firestore, user, leadId]);
+        if (!agencyId || !leadId) return null;
+        return doc(firestore, 'agencies', agencyId, 'contacts', leadId);
+    }, [firestore, agencyId, leadId]);
 
     const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!user || !leadId) return null;
-        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
+        if (!agencyId || !leadId) return null;
+        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
         return query(tasksCollection, where('contactId', '==', leadId));
-    }, [firestore, user, leadId]);
+    }, [firestore, agencyId, leadId]);
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
 
     const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
@@ -144,8 +146,8 @@ export default function LeadDetailPage() {
     };
 
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
-        if (!user || !contact) return;
-        const tasksCollection = collection(firestore, 'users', user.uid, 'tasks');
+        if (!agencyId || !contact) return;
+        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
         
         const taskToAdd = {
             ...newTask,
@@ -162,15 +164,15 @@ export default function LeadDetailPage() {
     };
     
     const handleToggleTask = (task: Task) => {
-        if (!user) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', task.id);
+        if (!agencyId) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const newStatus = task.status === 'completed' ? 'open' : 'completed';
         updateDocumentNonBlocking(taskRef, { status: newStatus });
     };
 
     const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
-        if (!user || !editingTask) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', editingTask.id);
+        if (!agencyId || !editingTask) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
         updateDocumentNonBlocking(taskRef, dataToUpdate);
         toast({
@@ -181,8 +183,8 @@ export default function LeadDetailPage() {
     };
 
     const handleDeleteTask = () => {
-        if (!user || !deletingTask) return;
-        const taskRef = doc(firestore, 'users', user.uid, 'tasks', deletingTask.id);
+        if (!agencyId || !deletingTask) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
         deleteDocumentNonBlocking(taskRef);
         toast({
             variant: 'destructive',
@@ -272,7 +274,7 @@ export default function LeadDetailPage() {
         }
     }
 
-    const isLoading = isUserLoading || (user && isContactLoading);
+    const isLoading = isUserLoading || isContactLoading;
 
     // --- RENDER LOGIC ---
     if (isLoading) {

@@ -1,20 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import { PropertiesMap } from '@/components/map/PropertiesMap';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAgency } from '@/context/AgencyContext';
 
 export default function MapPage() {
-    const { user } = useUser();
+    const { agencyId } = useAgency();
     const firestore = useFirestore();
 
     const propertiesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'properties');
-    }, [firestore, user]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
