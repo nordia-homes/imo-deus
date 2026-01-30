@@ -50,7 +50,7 @@ export function EditTaskDialog({ task, isOpen, onOpenChange, onUpdateTask, conta
             dueDate: new Date(task.dueDate),
             startTime: task.startTime,
             duration: task.duration,
-            contactId: task.contactId || undefined,
+            contactId: task.contactId || 'unassigned',
         });
     }
   }, [task, form]);

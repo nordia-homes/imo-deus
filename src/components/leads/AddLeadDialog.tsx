@@ -63,7 +63,7 @@ export function AddLeadDialog() {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
-  const { agency, isAgencyLoading } = useAgency();
+  const { agency } = useAgency();
   const firestore = useFirestore();
   const [agents, setAgents] = useState<UserProfile[]>([]);
 
@@ -290,7 +290,7 @@ export function AddLeadDialog() {
                                     <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                    <SelectItem value="unassigned">Niciunul</SelectItem>
+                                    <SelectItem value="unassigned">Nealocat</SelectItem>
                                     {agents?.map(agent => (
                                         <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
                                     ))}

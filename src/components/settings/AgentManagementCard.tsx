@@ -34,7 +34,7 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
         resolver: zodResolver(inviteSchema),
         defaultValues: { email: '' },
     });
-
+    
     useEffect(() => {
         if (!agency.agentIds || agency.agentIds.length === 0) {
             setAgents([]);
@@ -45,6 +45,8 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
         const fetchAgents = async () => {
             setIsLoading(true);
             try {
+                // Perform individual 'get' requests for each agent ID.
+                // This is secure and works with Firestore security rules.
                 const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
                 const agentDocs = await Promise.all(agentPromises);
                 const agentProfiles = agentDocs
@@ -54,7 +56,6 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
             } catch (error) {
                 console.error("Error fetching agent profiles:", error);
                 toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
-                setAgents([]);
             } finally {
                 setIsLoading(false);
             }
@@ -80,7 +81,7 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                 agencyName: agency.name,
                 role: 'agent',
                 invitedBy: user.uid,
-            }, {});
+            });
 
             toast({
                 title: 'Invitație trimisă!',
@@ -143,7 +144,7 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                [...Array(3)].map((_, i) => (
+                                [...Array(agency?.agentIds?.length || 1)].map((_, i) => (
                                     <TableRow key={i}>
                                         <TableCell colSpan={3}><Skeleton className="h-10 w-full" /></TableCell>
                                     </TableRow>
