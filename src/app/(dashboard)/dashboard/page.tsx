@@ -12,7 +12,6 @@ import type { Contact, Property, Task } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
-import { startOfToday } from 'date-fns';
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -48,17 +47,27 @@ export default function DashboardPage() {
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
     // Priority Tasks
-    const priorityTasksQuery = useMemoFirebase(() => {
+    // Fetch all open tasks, ordered by due date.
+    // The date filtering will be done on the client to avoid a complex query
+    // that might be conflicting with security rules.
+    const openTasksQuery = useMemoFirebase(() => {
         if (!agencyCollectionPath) return null;
         return query(
-            collection(firestore, agencyCollectionPath, 'tasks'), 
+            collection(firestore, agencyCollectionPath, 'tasks'),
             where('status', '==', 'open'),
-            where('dueDate', '<=', new Date().toISOString().split('T')[0]),
-            orderBy('dueDate', 'asc'),
-            limit(5)
+            orderBy('dueDate', 'asc')
         );
     }, [firestore, agencyCollectionPath]);
-    const { data: priorityTasks, isLoading: areTasksLoading } = useCollection<Task>(priorityTasksQuery);
+    const { data: openTasks, isLoading: areTasksLoading } = useCollection<Task>(openTasksQuery);
+
+    // Filter for priority tasks on the client side.
+    const priorityTasks = useMemo(() => {
+        if (!openTasks) return null;
+        const todayStr = new Date().toISOString().split('T')[0];
+        return openTasks
+            .filter(task => task.dueDate <= todayStr)
+            .slice(0, 5);
+    }, [openTasks]);
 
 
     // --- DATA CALCULATION ---
