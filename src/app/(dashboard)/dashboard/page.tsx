@@ -47,27 +47,23 @@ export default function DashboardPage() {
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
     // Priority Tasks
-    // Fetch all open tasks, ordered by due date.
-    // The date filtering will be done on the client to avoid a complex query
-    // that might be conflicting with security rules.
-    const openTasksQuery = useMemoFirebase(() => {
+    // Simplified query: Fetch ALL tasks for the agency. Filtering happens client-side.
+    const allTasksQuery = useMemoFirebase(() => {
         if (!agencyCollectionPath) return null;
-        return query(
-            collection(firestore, agencyCollectionPath, 'tasks'),
-            where('status', '==', 'open'),
-            orderBy('dueDate', 'asc')
-        );
+        return collection(firestore, agencyCollectionPath, 'tasks');
     }, [firestore, agencyCollectionPath]);
-    const { data: openTasks, isLoading: areTasksLoading } = useCollection<Task>(openTasksQuery);
+    const { data: allTasks, isLoading: areTasksLoading } = useCollection<Task>(allTasksQuery);
 
     // Filter for priority tasks on the client side.
     const priorityTasks = useMemo(() => {
-        if (!openTasks) return null;
+        if (!allTasks) return null;
         const todayStr = new Date().toISOString().split('T')[0];
-        return openTasks
-            .filter(task => task.dueDate <= todayStr)
+        // Filter for open tasks that are overdue or due today, then sort and take the top 5
+        return allTasks
+            .filter(task => task.status === 'open' && task.dueDate <= todayStr)
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
             .slice(0, 5);
-    }, [openTasks]);
+    }, [allTasks]);
 
 
     // --- DATA CALCULATION ---
