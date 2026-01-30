@@ -46,7 +46,7 @@ export function SalesAnalyticsChart({ data, isLoading }: { data: ChartData[], is
             </CardHeader>
             <CardContent className="flex-1">
                  <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={250}>
                         <AreaChart
                         data={data}
                         margin={{
