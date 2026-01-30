@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Property, Agency } from '@/lib/types';
 import { doc, getDoc } from 'firebase/firestore';
@@ -17,16 +17,24 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
 
   // Fetch featured properties
   const propertiesRef = collection(firestore, 'agencies', params.agencyId, 'properties');
+  // Simplified query to be more robust and avoid complex index requirements.
   const q = query(
     propertiesRef, 
-    where('status', '==', 'Activ'), 
-    where('featured', '==', true),
-    orderBy('createdAt', 'desc'),
-    limit(3)
+    where('status', '==', 'Activ')
   );
   
   const querySnapshot = await getDocs(q);
-  const featuredProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+  const allActiveProperties = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+
+  // We now filter and sort in code to avoid complex queries that might fail on the server.
+  const featuredProperties = allActiveProperties
+    .filter(property => property.featured === true)
+    .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+    })
+    .slice(0, 3);
 
   const heroImageUrl = agency?.logoUrl || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=2070&auto=format&fit=crop';
   const tagline = agency?.name ? `Partenerul dumneavoastră de încredere în imobiliare.` : 'Găsiți proprietatea visurilor dumneavoastră.';
@@ -73,5 +81,3 @@ export default async function AgencyHomePage({ params }: { params: { agencyId: s
     </div>
   );
 }
-
-    
