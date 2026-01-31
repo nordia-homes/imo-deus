@@ -2,35 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
 import { AiPropertyInsights } from "./AiPropertyInsights";
-import {
-    BedDouble,
-    Bath,
-    Ruler,
-    Building,
-    CalendarDays,
-    Layers,
-    Thermometer,
-    Car,
-    Sparkles,
-    CheckCircle2,
-    Tag,
-    HandCoins
-} from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
-const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
-    if (!value && value !== 0) return null;
-    return (
-        <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-muted text-primary shrink-0">
-                {icon}
-            </div>
-            <div>
-                <p className="font-semibold text-card-foreground">{value}</p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-        </div>
-    );
-};
 
 interface InfoColumnProps {
     property: Property;
@@ -43,23 +16,6 @@ export function InfoColumn({ property, allProperties, agencyId }: InfoColumnProp
     return (
         <div className="space-y-6">
              <AiPropertyInsights property={property} />
-             <Card className="rounded-2xl">
-                <CardHeader><CardTitle>Caracteristici Esențiale</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                    <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
-                    <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
-                    <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
-                    {property.totalSurface && <FeatureItem icon={<Ruler />} label="Suprafață construită" value={`${property.totalSurface} mp`} />}
-                    <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
-                    <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
-                    <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />
-                    <FeatureItem icon={<Layers />} label="Etaj" value={property.floor} />
-                    <FeatureItem icon={<Sparkles />} label="Stare interior" value={property.interiorState} />
-                    <FeatureItem icon={<Tag />} label="Confort" value={property.comfort} />
-                    <FeatureItem icon={<Thermometer />} label="Sistem încălzire" value={property.heatingSystem} />
-                    <FeatureItem icon={<Car />} label="Parcare" value={property.parking} />
-                </CardContent>
-            </Card>
             <Card className="rounded-2xl">
                 <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                 <CardContent>
