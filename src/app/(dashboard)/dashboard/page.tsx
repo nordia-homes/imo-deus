@@ -6,7 +6,7 @@ import { collection, query, orderBy, where, limit } from 'firebase/firestore';
 import type { Property, Viewing, Task } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, isThisWeek, parseISO, format, isPast, isToday } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday } from 'date-fns';
 import { ro } from "date-fns/locale";
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
 import { CalendarCheck, Handshake, Bookmark } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function DashboardPage() {
     const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
 
-    // --- DATA FETCHING for new cards ---
+    // --- DATA FETCHING for cards ---
     const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
         return collection(firestore, 'agencies', agencyId, 'properties');
@@ -40,7 +40,7 @@ export default function DashboardPage() {
     }, [firestore, agencyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
-    // --- DATA FETCHING for old components ---
+    // --- DATA FETCHING for original components ---
     const tasksQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
         return query(
@@ -53,7 +53,8 @@ export default function DashboardPage() {
     
 
     // --- DATA CALCULATION ---
-    const { soldThisMonth, reservedThisMonth, viewingsThisWeek } = useMemo(() => {
+    const { soldThisMonth, reservedThisMonth, upcomingViewings } = useMemo(() => {
+        const now = new Date();
         const sold = properties?.filter(p => 
             p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
         ) || [];
@@ -62,14 +63,14 @@ export default function DashboardPage() {
             p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
         ) || [];
         
-        const weekViewings = viewings?.filter(v => 
-            v.status === 'scheduled' && isThisWeek(parseISO(v.viewingDate), { weekStartsOn: 1 })
+        const upcoming = viewings?.filter(v => 
+            v.status === 'scheduled' && parseISO(v.viewingDate) >= now
         ) || [];
 
         return {
             soldThisMonth: sold,
             reservedThisMonth: reserved,
-            viewingsThisWeek: weekViewings,
+            upcomingViewings: upcoming,
         };
     }, [properties, viewings]);
     
@@ -94,14 +95,12 @@ export default function DashboardPage() {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-10 w-48 mb-2" />
-                <div className="grid gap-6 md:grid-cols-3">
-                    <Skeleton className="h-48" />
-                    <Skeleton className="h-48" />
-                    <Skeleton className="h-48" />
-                </div>
                 <div className="grid gap-6 lg:grid-cols-3">
                     <Skeleton className="lg:col-span-2 h-96" />
                     <div className="space-y-6">
+                        <Skeleton className="h-48" />
+                        <Skeleton className="h-48" />
+                         <Skeleton className="h-48" />
                         <Skeleton className="h-48" />
                         <Skeleton className="h-48" />
                     </div>
@@ -114,66 +113,6 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
             
-            {/* New section requested by the user */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <DashboardSection
-                    title="Vizionări Săptămâna Aceasta"
-                    icon={<CalendarCheck className="h-6 w-6 text-primary" />}
-                    count={viewingsThisWeek.length}
-                >
-                    <DashboardInfoList
-                        items={viewingsThisWeek}
-                        emptyText="Nicio vizionare programată pentru această săptămână."
-                        renderItem={(viewing: Viewing) => (
-                             <Link href={`/viewings`} key={viewing.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                <p className="font-semibold truncate">{viewing.propertyTitle}</p>
-                                <p className="text-sm text-muted-foreground">{viewing.contactName}</p>
-                                <p className="text-sm font-medium text-primary mt-1">
-                                    {format(parseISO(viewing.viewingDate), 'eeee, d MMMM, HH:mm', { locale: ro })}
-                                </p>
-                            </Link>
-                        )}
-                    />
-                </DashboardSection>
-
-                <DashboardSection
-                    title="Proprietăți Vândute Luna Aceasta"
-                    icon={<Handshake className="h-6 w-6 text-green-600" />}
-                    count={soldThisMonth.length}
-                >
-                     <DashboardInfoList
-                        items={soldThisMonth}
-                        emptyText="Nicio proprietate vândută luna aceasta."
-                        renderItem={(prop: Property) => (
-                             <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                <p className="font-semibold truncate">{prop.title}</p>
-                                <p className="text-sm text-muted-foreground">{prop.address}</p>
-                                <p className="text-sm font-medium text-green-600 mt-1">€{prop.price.toLocaleString()}</p>
-                            </Link>
-                        )}
-                    />
-                </DashboardSection>
-
-                 <DashboardSection
-                    title="Proprietăți Rezervate Luna Aceasta"
-                    icon={<Bookmark className="h-6 w-6 text-yellow-600" />}
-                    count={reservedThisMonth.length}
-                >
-                     <DashboardInfoList
-                        items={reservedThisMonth}
-                        emptyText="Nicio proprietate rezervată luna aceasta."
-                        renderItem={(prop: Property) => (
-                            <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                <p className="font-semibold truncate">{prop.title}</p>
-                                <p className="text-sm text-muted-foreground">{prop.address}</p>
-                                <p className="text-sm font-medium text-yellow-600 mt-1">€{prop.price.toLocaleString()}</p>
-                           </Link>
-                        )}
-                    />
-                </DashboardSection>
-            </div>
-
-             {/* Previous dashboard content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2">
                     <RecentActivity />
@@ -181,6 +120,63 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     <AiHelperCard />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
+
+                    {/* New sections requested by the user, in the specified order */}
+                     <DashboardSection
+                        title="Proprietăți Rezervate Luna Aceasta"
+                        icon={<Bookmark className="h-6 w-6 text-yellow-600" />}
+                        count={reservedThisMonth.length}
+                    >
+                         <DashboardInfoList
+                            items={reservedThisMonth}
+                            emptyText="Nicio proprietate rezervată luna aceasta."
+                            renderItem={(prop: Property) => (
+                                <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                    <p className="font-semibold truncate">{prop.title}</p>
+                                    <p className="text-sm text-muted-foreground">{prop.address}</p>
+                                    <p className="text-sm font-medium text-yellow-600 mt-1">€{prop.price.toLocaleString()}</p>
+                               </Link>
+                            )}
+                        />
+                    </DashboardSection>
+
+                    <DashboardSection
+                        title="Proprietăți Vândute Luna Aceasta"
+                        icon={<Handshake className="h-6 w-6 text-green-600" />}
+                        count={soldThisMonth.length}
+                    >
+                         <DashboardInfoList
+                            items={soldThisMonth}
+                            emptyText="Nicio proprietate vândută luna aceasta."
+                            renderItem={(prop: Property) => (
+                                 <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                    <p className="font-semibold truncate">{prop.title}</p>
+                                    <p className="text-sm text-muted-foreground">{prop.address}</p>
+                                    <p className="text-sm font-medium text-green-600 mt-1">€{prop.price.toLocaleString()}</p>
+                                </Link>
+                            )}
+                        />
+                    </DashboardSection>
+
+                    <DashboardSection
+                        title="Vizionări Programate"
+                        icon={<CalendarCheck className="h-6 w-6 text-primary" />}
+                        count={upcomingViewings.length}
+                    >
+                        <DashboardInfoList
+                            items={upcomingViewings}
+                            emptyText="Nicio vizionare programată."
+                            renderItem={(viewing: Viewing) => (
+                                 <Link href={`/viewings`} key={viewing.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                    <p className="font-semibold truncate">{viewing.propertyTitle}</p>
+                                    <p className="text-sm text-muted-foreground">{viewing.contactName}</p>
+                                    <p className="text-sm font-medium text-primary mt-1">
+                                        {format(parseISO(viewing.viewingDate), 'eeee, d MMMM, HH:mm', { locale: ro })}
+                                    </p>
+                                </Link>
+                            )}
+                        />
+                    </DashboardSection>
                 </div>
             </div>
 
