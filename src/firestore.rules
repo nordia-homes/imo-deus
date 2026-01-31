@@ -94,14 +94,13 @@ service cloud.firestore {
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Use the new robust function for all checks involving authenticated users.
-      allow list, get: if 
-          (request.auth != null && userIsInPortalAgency(portalId))
-          || (request.auth == null);
+      // Allow read access to anyone who has the unguessable portalId.
+      allow list, get: if true;
 
-      allow create, delete: if 
-          request.auth != null && userIsInPortalAgency(portalId);
+      // Only allow agents of the agency to create or delete recommendations.
+      allow create, delete: if request.auth != null && userIsInPortalAgency(portalId);
       
+      // Allow agents to update anything, and clients (unauthenticated) to update only feedback.
       allow update: if 
           (request.auth != null && userIsInPortalAgency(portalId))
           || (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
