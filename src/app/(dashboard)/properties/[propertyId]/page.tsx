@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyGallery } from "@/components/properties/PropertyGallery";
 import { PropertyContractsTab } from "@/components/properties/PropertyContractsTab";
 import { PropertyPromotionsTab } from "@/components/properties/PropertyPromotionsTab";
@@ -166,92 +165,73 @@ export default function PropertyDetailPage() {
                 <PropertyGallery images={allImages} title={property.title || 'Proprietate'} />
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                     <Tabs defaultValue="details">
-                        <TabsList className="mb-4">
-                            <TabsTrigger value="details">Detalii Proprietate</TabsTrigger>
-                            <TabsTrigger value="promotions">Promovare</TabsTrigger>
-                            <TabsTrigger value="cma">Analiză Piață (CMA)</TabsTrigger>
-                            <TabsTrigger value="contracts">Contracte</TabsTrigger>
-                            <TabsTrigger value="presentations">Prezentări</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="details">
-                           <div className="space-y-6">
-                             <Card>
-                                 <CardHeader>
-                                     <CardTitle>Descriere</CardTitle>
-                                 </CardHeader>
-                                 <CardContent>
-                                     <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
-                                 </CardContent>
-                             </Card>
-                             <Card>
-                                 <CardHeader><CardTitle>Caracteristici Esențiale</CardTitle></CardHeader>
-                                 <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                     <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
-                                     <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
-                                     <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
-                                     {property.totalSurface && <FeatureItem icon={<Ruler />} label="Suprafață construită" value={`${property.totalSurface} mp`} />}
-                                     <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
-                                     <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
-                                     <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />
-                                     <FeatureItem icon={<Layers />} label="Etaj" value={property.floor} />
-                                     <FeatureItem icon={<Sparkles />} label="Stare interior" value={property.interiorState} />
-                                     <FeatureItem icon={<Tag />} label="Confort" value={property.comfort} />
-                                     <FeatureItem icon={<Thermometer />} label="Sistem încălzire" value={property.heatingSystem} />
-                                     <FeatureItem icon={<Car />} label="Parcare" value={property.parking} />
-                                 </CardContent>
-                             </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Descriere</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle>Caracteristici Esențiale</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
+                            <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
+                            <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
+                            {property.totalSurface && <FeatureItem icon={<Ruler />} label="Suprafață construită" value={`${property.totalSurface} mp`} />}
+                            <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
+                            <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
+                            <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />
+                            <FeatureItem icon={<Layers />} label="Etaj" value={property.floor} />
+                            <FeatureItem icon={<Sparkles />} label="Stare interior" value={property.interiorState} />
+                            <FeatureItem icon={<Tag />} label="Confort" value={property.comfort} />
+                            <FeatureItem icon={<Thermometer />} label="Sistem încălzire" value={property.heatingSystem} />
+                            <FeatureItem icon={<Car />} label="Parcare" value={property.parking} />
+                        </CardContent>
+                    </Card>
 
-                              {property.amenities && property.amenities.length > 0 && (
-                                <Card>
-                                    <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-2">
-                                            {property.amenities.map(amenity => (
-                                                <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
-                                                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                                                    <span className="text-sm">{amenity}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                              )}
+                    {property.amenities && property.amenities.length > 0 && (
+                    <Card>
+                        <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-2">
+                                {property.amenities.map(amenity => (
+                                    <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
+                                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                                        <span className="text-sm">{amenity}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    )}
 
-
-                             <Card>
-                                <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
-                                <CardContent>
-                                    {(property.latitude && property.longitude) ? (
-                                        <iframe
-                                            className="w-full aspect-video rounded-md"
-                                            loading="lazy"
-                                            allowFullScreen
-                                            src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
-                                        >
-                                        </iframe>
-                                    ) : (
-                                        <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
-                                            <p className="text-muted-foreground">
-                                                Coordonatele GPS nu sunt disponibile pentru această proprietate.
-                                            </p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                           </div>
-                        </TabsContent>
-                         <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
-                         <TabsContent value="cma"><CmaAnalysisTab subjectProperty={property} allProperties={allProperties || []} agencyId={agencyId!} /></TabsContent>
-                         <TabsContent value="contracts"><PropertyContractsTab propertyId={property.id} /></TabsContent>
-                         <TabsContent value="presentations"><PropertyPresentationsTab property={property} /></TabsContent>
-                     </Tabs>
-
+                    <Card>
+                        <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
+                        <CardContent>
+                            {(property.latitude && property.longitude) ? (
+                                <iframe
+                                    className="w-full aspect-video rounded-md"
+                                    loading="lazy"
+                                    allowFullScreen
+                                    src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
+                                >
+                                </iframe>
+                            ) : (
+                                <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
+                                    <p className="text-muted-foreground">
+                                        Coordonatele GPS nu sunt disponibile pentru această proprietate.
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
-                <div className="lg:col-span-1 space-y-6">
-                    <Card className="sticky top-20">
+                <div className="lg:col-span-1 space-y-6 sticky top-20">
+                    <Card>
                          <CardHeader>
                              <CardTitle className="text-3xl font-bold">€{property.price.toLocaleString()}</CardTitle>
                              <CardDescription>{property.transactionType === 'Închiriere' ? 'pe lună' : 'preț de vânzare'}</CardDescription>
@@ -296,6 +276,11 @@ export default function PropertyDetailPage() {
                         isGenerating={isGenerating}
                         onGenerate={handleGenerateInsights}
                     />
+
+                    <PropertyPromotionsTab property={property} />
+                    <CmaAnalysisTab subjectProperty={property} allProperties={allProperties || []} agencyId={agencyId!} />
+                    <PropertyPresentationsTab property={property} />
+                    <PropertyContractsTab propertyId={property.id} />
                 </div>
             </div>
         </div>
