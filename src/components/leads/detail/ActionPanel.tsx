@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Contact, Task, UserProfile, Agency } from '@/lib/types';
-import { Mail, MoreHorizontal, Phone, Plus, CheckCircle, ChevronDown, User } from 'lucide-react';
+import { Mail, MoreHorizontal, Phone, Plus, CheckCircle, ChevronDown, User, MapPin } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { Label } from '@/components/ui/label';
 import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
@@ -97,6 +97,22 @@ export function LeadActionPanel({ contact, tasks, agents, agency, onUpdateContac
             </div>
         </CardContent>
       </Card>
+      
+      {contact.zones && contact.zones.length > 0 && (
+          <Card className="rounded-2xl shadow-sm">
+              <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Zone de Interes</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                  {contact.zones.map(zone => (
+                      <Button key={zone} variant="outline" size="sm" className="pointer-events-none cursor-default">
+                          <MapPin className="mr-2 h-3.5 w-3.5" />
+                          {zone}
+                      </Button>
+                  ))}
+              </CardContent>
+          </Card>
+      )}
 
        <Card className="rounded-2xl shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
