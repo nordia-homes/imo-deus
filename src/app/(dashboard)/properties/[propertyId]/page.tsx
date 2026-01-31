@@ -10,19 +10,18 @@ import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { properties as allSampleProperties } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PropertyHeader } from '@/components/properties/detail/PropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PropertyActionPanel } from '@/components/properties/detail/PropertyActionPanel';
 import { EssentialFeatures } from '@/components/properties/detail/EssentialFeatures';
 import { PropertyTimeline } from '@/components/properties/detail/PropertyTimeline';
-import { AiPropertyInsights } from '@/components/properties/detail/AiPropertyInsights';
+import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 
 
 const PageSkeleton = () => (
@@ -37,21 +36,19 @@ const PageSkeleton = () => (
         </div>
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-             {/* Main Content Area */}
-            <div className="lg:col-span-8 space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
-                    <div className="lg:col-span-3">
-                            <Skeleton className="h-48" />
-                    </div>
-                    <div className="lg:col-span-5">
-                            <Skeleton className="h-[400px]" />
-                    </div>
-                </div>
+             {/* Left Column */}
+            <div className="lg:col-span-4 space-y-4">
+                <Skeleton className="h-20" />
+                <Skeleton className="h-64" />
+            </div>
+            {/* Main Content Area */}
+            <div className="lg:col-span-5 space-y-6">
+                <Skeleton className="h-[400px]" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-64" />
             </div>
             {/* Right Column */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -65,13 +62,15 @@ export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
     
-    const { agency, agencyId, isAgencyLoading: isContextLoading } = useAgency();
+    const { agency, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
     const { toast } = useToast();
     const firestore = useFirestore();
 
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
+
+    const agencyId = agency?.id;
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -185,90 +184,39 @@ export default function PropertyDetailPage() {
             <PropertyHeader property={property} owner={owner} />
 
              <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
+                {/* Left Column */}
+                <div className="col-span-12 lg:col-span-4 space-y-6">
+                    {creationDate && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
+                                <Calendar className="mr-2 h-3.5 w-3.5" />
+                                Creat: {format(creationDate, 'd MMM yyyy', { locale: ro })}
+                            </Badge>
+                            {ageInDays !== null && (
+                                <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
+                                    <Clock className="mr-2 h-3.5 w-3.5" />
+                                    Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
+                                </Badge>
+                            )}
+                        </div>
+                    )}
+                    <EssentialFeatures property={property} />
+                    <PropertyTimeline 
+                        property={property}
+                        viewings={viewings || []}
+                        tasks={tasks || []}
+                        onAddTask={onAddTask}
+                    />
+                </div>
+                 
                 {/* Main Content Column */}
-                <div className="col-span-12 lg:col-span-8 space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
-                        <div className="lg:col-span-3 space-y-6">
-                            {creationDate && (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
-                                        <Calendar className="mr-2 h-3.5 w-3.5" />
-                                        Creat: {format(creationDate, 'd MMM yyyy', { locale: ro })}
-                                    </Badge>
-                                    {ageInDays !== null && (
-                                        <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
-                                            <Clock className="mr-2 h-3.5 w-3.5" />
-                                            Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
-                                        </Badge>
-                                    )}
-                                </div>
-                            )}
-                            <EssentialFeatures property={property} />
-                        </div>
-                        <div className="lg:col-span-5">
-                            <MediaColumn property={property} />
-                        </div>
-                    </div>
-
-                    <Card className="rounded-2xl">
-                        <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
-                        </CardContent>
-                    </Card>
-
-                    <AiPropertyInsights property={property} />
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-8 gap-6 items-start">
-                         <div className="lg:col-span-3 space-y-6">
-                            <PropertyTimeline 
-                                property={property}
-                                viewings={viewings || []}
-                                tasks={tasks || []}
-                                onAddTask={onAddTask}
-                            />
-                         </div>
-                         <div className="lg:col-span-5 space-y-6">
-                            {property.amenities && property.amenities.length > 0 && (
-                                <Card className="rounded-2xl">
-                                    <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <div className="columns-2 md:columns-3 gap-4 space-y-2">
-                                            {property.amenities.map(amenity => (
-                                                <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
-                                                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                                                    <span className="text-sm">{amenity}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            <Card className="rounded-2xl">
-                                <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
-                                <CardContent>
-                                    {(property.latitude && property.longitude) ? (
-                                        <iframe
-                                            className="w-full aspect-video rounded-md border"
-                                            loading="lazy"
-                                            allowFullScreen
-                                            referrerPolicy="no-referrer-when-downgrade"
-                                            src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(property.address)}`}>
-                                        </iframe>
-                                    ) : (
-                                        <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                                            <p className="text-sm text-muted-foreground">Adresa sau coordonatele nu sunt disponibile.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                         </div>
-                    </div>
+                <div className="col-span-12 lg:col-span-5 space-y-6">
+                    <MediaColumn property={property} />
+                    <InfoColumn property={property} />
                 </div>
 
                 {/* Right Action Panel Column */}
-                <div className="col-span-12 lg:col-span-4">
+                <div className="col-span-12 lg:col-span-3">
                      <PropertyActionPanel 
                         property={property} 
                         viewings={viewings || []}
