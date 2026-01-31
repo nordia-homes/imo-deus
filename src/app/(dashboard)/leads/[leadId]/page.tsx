@@ -36,8 +36,8 @@ const PageSkeleton = () => (
                 <Skeleton className="h-64" />
             </div>
             <div className="xl:col-span-6 space-y-4">
-                <Skeleton className="h-56" />
                 <Skeleton className="h-96" />
+                <Skeleton className="h-56" />
             </div>
             <div className="xl:col-span-3 space-y-4">
                 <Skeleton className="h-40" />
@@ -201,8 +201,8 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="xl:col-span-6 space-y-6">
-                        <AiSummary summary={mockAiSummary} />
                         <MatchedProperties properties={matchedProperties} />
+                        <AiSummary summary={mockAiSummary} />
                     </div>
 
                     <div className="xl:col-span-3">
