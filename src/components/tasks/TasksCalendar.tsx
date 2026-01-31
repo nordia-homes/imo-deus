@@ -21,13 +21,11 @@ import { Button } from '../ui/button';
 import Link from 'next/link';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '../ui/button';
 
 export function TasksCalendar() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
 
-    // State for the selected day and popup visibility
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
 
@@ -38,12 +36,10 @@ export function TasksCalendar() {
 
     const { data: tasks, isLoading } = useCollection<Task>(tasksQuery);
 
-    // Memoize the list of days that have tasks to add a visual indicator
     const daysWithTasks = useMemo(() => {
         if (!tasks) return [];
         return tasks.reduce((acc: Date[], task) => {
             if (task.dueDate) {
-                // Adjust for timezone differences to ensure correct day matching
                 const taskDate = new Date(task.dueDate);
                 const utcDate = new Date(taskDate.valueOf() + taskDate.getTimezoneOffset() * 60000);
                 if (!acc.some(d => isSameDay(d, utcDate))) {
@@ -54,7 +50,6 @@ export function TasksCalendar() {
         }, []);
     }, [tasks]);
 
-    // Memoize the tasks for the currently selected day
     const tasksForSelectedDay = useMemo(() => {
         if (!selectedDay || !tasks) return [];
         return tasks.filter(task => {
@@ -65,12 +60,9 @@ export function TasksCalendar() {
         }).sort((a,b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99'));
     }, [selectedDay, tasks]);
 
-    const handleDayClick = (day: Date, modifiers: { hasTasks?: boolean }) => {
-        // We only open the popup if the day actually has tasks
-        if (modifiers.hasTasks) {
-            setSelectedDay(day);
-            setIsPopupOpen(true);
-        }
+    const handleDayClick = (day: Date) => {
+        setSelectedDay(day);
+        setIsPopupOpen(true);
     };
     
     const modifiers = {
@@ -78,11 +70,11 @@ export function TasksCalendar() {
     };
 
     const modifiersClassNames = {
-        hasTasks: 'has-tasks-indicator', // Custom class for styling
+        hasTasks: 'has-tasks-indicator',
     };
 
     if (isLoading) {
-        return <Skeleton className="h-[500px] w-full rounded-md border" />;
+        return <Skeleton className="h-[400px] w-full rounded-md border" />;
     }
 
     return (
@@ -91,7 +83,7 @@ export function TasksCalendar() {
                 .has-tasks-indicator:not([aria-selected="true"]) .rdp-button:after {
                     content: '';
                     position: absolute;
-                    bottom: 8px;
+                    bottom: 4px;
                     left: 50%;
                     transform: translateX(-50%);
                     width: 5px;
@@ -100,45 +92,17 @@ export function TasksCalendar() {
                     background-color: hsl(var(--primary));
                 }
             `}</style>
-            <Calendar
-                mode="single"
-                locale={ro}
-                onDayClick={handleDayClick}
-                className="rounded-md border"
-                 classNames={{
-                    months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 p-3",
-                    month: "space-y-4",
-                    caption: "flex justify-center pt-1 relative items-center",
-                    caption_label: "text-lg font-bold",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: cn(
-                      buttonVariants({ variant: "outline" }),
-                      "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                    ),
-                    nav_button_previous: 'absolute left-1',
-                    nav_button_next: 'absolute right-1',
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex",
-                    head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
-                    row: "flex w-full mt-2",
-                    cell: "h-14 w-full text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                    day: cn(
-                      buttonVariants({ variant: "ghost" }),
-                      "h-14 w-full p-0 font-normal aria-selected:opacity-100"
-                    ),
-                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                    day_today: "bg-accent text-accent-foreground",
-                    day_outside: "text-muted-foreground opacity-50",
-                    day_disabled: "text-muted-foreground opacity-50",
-                    day_range_middle:
-                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                    day_hidden: "invisible",
-                }}
-                modifiers={modifiers}
-                modifiersClassNames={modifiersClassNames}
-                showOutsideDays
-                fixedWeeks
-            />
+            <Card className="p-0">
+                <Calendar
+                    mode="single"
+                    locale={ro}
+                    onDayClick={handleDayClick}
+                    className="p-3"
+                    modifiers={modifiers}
+                    modifiersClassNames={modifiersClassNames}
+                    showOutsideDays
+                />
+            </Card>
 
             <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
                 <DialogContent>
@@ -150,7 +114,7 @@ export function TasksCalendar() {
                             Lista activităților programate pentru această zi.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4 py-4">
+                    <div className="max-h-[60vh] overflow-y-auto -mx-6 px-6 py-4 space-y-4">
                         {tasksForSelectedDay.length > 0 ? (
                             tasksForSelectedDay.map(task => (
                                 <div key={task.id} className={cn("p-3 rounded-md", task.status === 'completed' ? 'bg-muted text-muted-foreground' : 'bg-muted/50')}>
@@ -158,9 +122,9 @@ export function TasksCalendar() {
                                         {task.description}
                                     </p>
                                     <div className="flex items-center justify-between text-xs mt-1">
-                                        {task.startTime && <Badge variant="outline">{task.startTime}</Badge>}
+                                        {task.startTime ? <Badge variant="outline">{task.startTime}</Badge> : <span />}
                                         {task.contactName && task.contactId ? (
-                                            <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline truncate">
+                                            <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline truncate" onClick={() => setIsPopupOpen(false)}>
                                                 {task.contactName}
                                             </Link>
                                         ) : <span />}
@@ -168,13 +132,13 @@ export function TasksCalendar() {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-center text-muted-foreground pt-10">
-                                Niciun task pentru această zi.
-                            </p>
+                            <div className="text-center text-muted-foreground py-10">
+                                Niciun task programat pentru această zi.
+                            </div>
                         )}
                     </div>
                     <DialogFooter>
-                        <Button onClick={() => setIsPopupOpen(false)}>Închide</Button>
+                        <Button variant="outline" onClick={() => setIsPopupOpen(false)}>Închide</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
