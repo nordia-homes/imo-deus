@@ -18,6 +18,7 @@ import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
 
 
 export default function DashboardPage() {
@@ -59,8 +60,8 @@ export default function DashboardPage() {
 
     // --- DATA CALCULATION ---
     const { 
-        soldThisMonthCount, 
-        reservedThisMonthCount, 
+        soldThisMonth, 
+        reservedThisMonth, 
         viewingsNext7DaysCount,
         activePropertiesCount,
         totalSalesCount,
@@ -139,8 +140,8 @@ export default function DashboardPage() {
 
 
         return {
-            soldThisMonthCount: sold.length,
-            reservedThisMonthCount: reserved.length,
+            soldThisMonth: sold,
+            reservedThisMonth: reserved,
             viewingsNext7DaysCount: next7DaysViewings.length,
             activePropertiesCount,
             totalSalesCount,
@@ -220,8 +221,8 @@ export default function DashboardPage() {
 
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonthCount.toString()} period="în luna curentă" icon={<Bookmark />} />
-                <StatCard title="Proprietăți Vândute" value={soldThisMonthCount.toString()} period="în luna curentă" icon={<Handshake />} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="în luna curentă" icon={<Bookmark />} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="în luna curentă" icon={<Handshake />} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -251,6 +252,8 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     <AiHelperCard />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
+                    <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} />
+                    <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} />
                 </div>
             </div>
 
