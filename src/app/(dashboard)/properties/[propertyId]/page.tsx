@@ -22,6 +22,7 @@ import { PropertyActionPanel } from '@/components/properties/detail/PropertyActi
 import { EssentialFeatures } from '@/components/properties/detail/EssentialFeatures';
 import { PropertyTimeline } from '@/components/properties/detail/PropertyTimeline';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
+import { PublishCard } from '@/components/properties/detail/actions/PublishCard';
 
 
 const PageSkeleton = () => (
@@ -37,7 +38,7 @@ const PageSkeleton = () => (
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
              {/* Left Column */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
             </div>
@@ -48,7 +49,7 @@ const PageSkeleton = () => (
                 <Skeleton className="h-64" />
             </div>
             {/* Right Column */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="lg:col-span-4 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -185,7 +186,7 @@ export default function PropertyDetailPage() {
 
              <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
-                <div className="col-span-12 lg:col-span-4 space-y-6">
+                <div className="col-span-12 lg:col-span-3 space-y-6">
                     {creationDate && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
@@ -201,6 +202,7 @@ export default function PropertyDetailPage() {
                         </div>
                     )}
                     <EssentialFeatures property={property} />
+                    <PublishCard property={property} />
                     <PropertyTimeline 
                         property={property}
                         viewings={viewings || []}
@@ -216,7 +218,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 {/* Right Action Panel Column */}
-                <div className="col-span-12 lg:col-span-3">
+                <div className="col-span-12 lg:col-span-4">
                      <PropertyActionPanel 
                         property={property} 
                         viewings={viewings || []}
