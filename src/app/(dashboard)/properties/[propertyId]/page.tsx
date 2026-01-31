@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useUser, updateDocumentNonBlocking, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import React from 'react';
 
@@ -19,6 +19,7 @@ import AiInsightCard from "@/components/ai/AiInsightCard";
 import { generatePropertyInsights, type PropertyInsightsOutput } from '@/ai/flows/property-insights-generator';
 import { useToast } from '@/hooks/use-toast';
 import { CmaAnalysisTab } from '@/components/properties/CmaAnalysisTab';
+import { properties as allSampleProperties } from '@/lib/data';
 
 import {
     BedDouble,
@@ -65,31 +66,29 @@ export default function PropertyDetailPage() {
     const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const propertyDocRef = useMemoFirebase(() => {
-        if (!agencyId || !propertyId) return null;
-        return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
-    }, [firestore, agencyId, propertyId]);
+    // Temp fix: Use static data instead of Firestore
+    const { data: property, isLoading: isDocLoading, error } = useMemo(() => {
+        const prop = allSampleProperties.find(p => p.id === propertyId);
+        return { data: prop || null, isLoading: false, error: prop ? null : new Error('Property not found') };
+    }, [propertyId]);
 
-    const { data: property, isLoading: isDocLoading, error } = useDoc<Property>(propertyDocRef);
+    const allProperties = allSampleProperties;
+    const areAllPropertiesLoading = false;
     
-    // Fetch all other properties for CMA
-    const allPropertiesQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'properties');
-    }, [firestore, agencyId]);
-    const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
-
     const handleStatusChange = (newStatus: Property['status']) => {
-        if (!propertyDocRef || !newStatus) return;
-
+        if (!agencyId || !property) return;
+        const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
+        
+        // This will only work if the property exists in Firestore.
+        // For the demo, we show a toast.
         updateDocumentNonBlocking(propertyDocRef, {
             status: newStatus,
             statusUpdatedAt: new Date().toISOString()
         });
 
         toast({
-            title: "Status actualizat!",
-            description: `Proprietatea este acum: ${newStatus}`,
+            title: "Status actualizat (Demo)!",
+            description: `Proprietatea este acum: ${newStatus}. Această modificare nu va persista.`,
         });
     };
 
