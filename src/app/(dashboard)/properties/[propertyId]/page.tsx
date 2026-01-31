@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
-import type { Property, Viewing, Contact, Task } from '@/lib/types';
+import { doc, collection, query, where, getDoc } from 'firebase/firestore';
+import type { Property, Viewing, Contact, Task, UserProfile } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { properties as allSampleProperties } from '@/lib/data'; // Correct import
+import { properties as allSampleProperties } from '@/lib/data';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -54,10 +54,13 @@ export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
     
-    const { agencyId, isAgencyLoading: isContextLoading } = useAgency();
+    const { agency, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
     const { toast } = useToast();
     const firestore = useFirestore();
+
+    const [agents, setAgents] = useState<UserProfile[]>([]);
+    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -87,8 +90,35 @@ export default function PropertyDetailPage() {
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
     const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
+
+     // --- AGENT PROFILES FETCHING ---
+    useEffect(() => {
+        if (!agency?.agentIds || agency.agentIds.length === 0) {
+            setAreAgentsLoading(false);
+            return;
+        }
+
+        const fetchAgents = async () => {
+            setAreAgentsLoading(true);
+            try {
+                const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
+                const agentDocs = await Promise.all(agentPromises);
+                const agentProfiles = agentDocs
+                    .filter(docSnap => docSnap.exists())
+                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                setAgents(agentProfiles);
+            } catch (error) {
+                console.error("Error fetching agent profiles:", error);
+                toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
+            } finally {
+                setAreAgentsLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, [agency, firestore, toast]);
     
-    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || isPropertyLoading || areTasksLoading;
+    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || isPropertyLoading || areTasksLoading || areAgentsLoading;
     
     const onUpdateProperty = (data: Partial<Omit<Property, 'id'>>) => {
         if (!propertyDocRef) return;
@@ -113,7 +143,7 @@ export default function PropertyDetailPage() {
         return <PageSkeleton />;
     }
 
-    if (propertyError || !property) {
+    if (propertyError || !property || !agencyId) {
         notFound();
         return null;
     }
@@ -130,35 +160,34 @@ export default function PropertyDetailPage() {
         <div className="h-full">
             <PropertyHeader property={property} owner={owner} />
 
-            <main className="p-4 md:p-6 lg:p-8 -mx-8">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* Left Column */}
-                    <div className="lg:col-span-4 space-y-6">
-                         <EssentialFeatures property={property} />
-                         <PropertyTimeline 
-                            property={property}
-                            viewings={viewings || []}
-                            tasks={tasks || []}
-                            onAddTask={onAddTask}
-                         />
-                    </div>
-                    
-                    {/* Center Column */}
-                    <div className="lg:col-span-5 space-y-6">
-                        <MediaColumn property={property} />
-                         <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
-                    </div>
+            <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
+                {/* Left Column */}
+                <div className="col-span-12 lg:col-span-4 space-y-6">
+                     <EssentialFeatures property={property} />
+                     <PropertyTimeline 
+                        property={property}
+                        viewings={viewings || []}
+                        tasks={tasks || []}
+                        onAddTask={onAddTask}
+                     />
+                </div>
+                
+                {/* Center Column */}
+                <div className="col-span-12 lg:col-span-5 space-y-6">
+                    <MediaColumn property={property} />
+                     <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
+                </div>
 
-                    {/* Right Column */}
-                    <div className="lg:col-span-3">
-                         <PropertyActionPanel 
-                            property={property} 
-                            viewings={viewings || []}
-                            matchedLeads={matchedLeads}
-                            tasks={tasks || []}
-                            onUpdateProperty={onUpdateProperty}
-                         />
-                    </div>
+                {/* Right Column */}
+                <div className="col-span-12 lg:col-span-3">
+                     <PropertyActionPanel 
+                        property={property} 
+                        viewings={viewings || []}
+                        matchedLeads={matchedLeads}
+                        tasks={tasks || []}
+                        agents={agents}
+                        onUpdateProperty={onUpdateProperty}
+                     />
                 </div>
             </main>
         </div>

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { Property, Viewing, Contact, Task } from '@/lib/types';
-import { User, MapPin, Calendar, UserCheck, MoreHorizontal } from 'lucide-react';
+import type { Property, Viewing, Contact, Task, UserProfile } from '@/lib/types';
+import { User, MapPin, Calendar, UserCheck, MoreHorizontal, TrendingUp } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
@@ -18,10 +18,11 @@ type PropertyActionPanelProps = {
   viewings: Viewing[];
   matchedLeads: Contact[];
   tasks: Task[];
+  agents: UserProfile[];
   onUpdateProperty: (data: Partial<Omit<Property, 'id'>>) => void;
 };
 
-export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, onUpdateProperty }: PropertyActionPanelProps) {
+export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, agents, onUpdateProperty }: PropertyActionPanelProps) {
   const [notes, setNotes] = useState(property.notes || '');
 
   const handleNotesBlur = () => {
@@ -30,6 +31,17 @@ export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, o
       }
   };
   
+  const handleAgentChange = (agentId: string) => {
+    if (agentId === 'unassigned') {
+        onUpdateProperty({ agentId: null, agentName: null });
+    } else {
+        const selectedAgent = agents.find(a => a.id === agentId);
+        if (selectedAgent) {
+            onUpdateProperty({ agentId: selectedAgent.id, agentName: selectedAgent.name });
+        }
+    }
+  }
+
   const todayTasks = tasks.filter(t => new Date(t.dueDate).toDateString() === new Date().toDateString() && t.status === 'open');
 
   return (
@@ -49,6 +61,39 @@ export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, o
                         <SelectItem value="Rezervat">Rezervat</SelectItem>
                         <SelectItem value="Vândut">Vândut</SelectItem>
                         <SelectItem value="Închiriat">Închiriat</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+             <div>
+                <Label className="text-xs text-muted-foreground">Agent Responsabil</Label>
+                 <Select defaultValue={property.agentId || 'unassigned'} onValueChange={handleAgentChange}>
+                    <SelectTrigger className="h-9">
+                        <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <SelectValue />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                         <SelectItem value="unassigned">Nealocat</SelectItem>
+                         {agents.map(agent => (
+                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                         ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <Label className="text-xs text-muted-foreground">Potențial Vânzare</Label>
+                <Select defaultValue={property.salesScore} onValueChange={(value: Property['salesScore']) => onUpdateProperty({ salesScore: value })}>
+                    <SelectTrigger className="h-9">
+                        <div className="flex items-center gap-2">
+                             <TrendingUp className="h-4 w-4" />
+                            <SelectValue placeholder="Selectează..." />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Scăzut">Scăzut</SelectItem>
+                        <SelectItem value="Mediu">Mediu</SelectItem>
+                        <SelectItem value="Ridicată">Ridicată</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

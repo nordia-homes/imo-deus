@@ -52,6 +52,7 @@ export type Property = {
   featured?: boolean;
   statusUpdatedAt?: string;
   notes?: string;
+  salesScore?: 'Scăzut' | 'Mediu' | 'Ridicată';
 };
 
 
