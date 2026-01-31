@@ -9,6 +9,7 @@ import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useAgency } from '@/context/AgencyContext';
+import { properties as sampleProperties } from '@/lib/data';
 
 export function PropertyList() {
     const { agencyId } = useAgency();
@@ -117,21 +118,12 @@ export function PropertyList() {
 
 
 export function PublicPropertyList({ agencyId }: { agencyId: string }) {
-    const firestore = useFirestore();
-
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('price-desc');
 
-    const propertiesQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return query(
-            collection(firestore, 'agencies', agencyId, 'properties'),
-            where('status', '==', 'Activ')
-        );
-    }, [firestore, agencyId]);
-
-    const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
+    const properties = useMemo(() => sampleProperties.filter(p => p.status === 'Activ'), []);
+    const isLoading = false;
 
     const filteredAndSortedProperties = useMemo(() => {
         if (!properties) return [];

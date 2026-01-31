@@ -1,29 +1,31 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import type { Property } from '@/lib/types';
 import { PropertyClientView } from '@/components/public/PropertyClientView';
 import { Skeleton } from '@/components/ui/skeleton';
+import { properties as sampleProperties } from '@/lib/data';
 
 export default function PublicPropertyDetailPage() {
   const params = useParams();
-  const agencyId = params.agencyId as string;
   const propertyId = params.propertyId as string;
-  const firestore = useFirestore();
+  
+  const [property, setProperty] = useState<Property | null | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const propertyDocRef = useMemoFirebase(() => {
-    if (!agencyId || !propertyId) return null;
-    return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
-  }, [firestore, agencyId, propertyId]);
-
-  // Use the hook to fetch data on the client
-  const { data: property, isLoading, error } = useDoc<Property>(propertyDocRef);
+  useEffect(() => {
+    setIsLoading(true);
+    // Simulate async fetch
+    const foundProperty = sampleProperties.find(p => p.id === propertyId);
+    setProperty(foundProperty || null);
+    setIsLoading(false);
+  }, [propertyId]);
+  
+  const error = !property && !isLoading;
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || property === undefined) {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <Skeleton className="h-[60vh] w-full rounded-xl" />
@@ -42,16 +44,12 @@ export default function PublicPropertyDetailPage() {
   }
 
   // Not found or error state
-  // This also handles the permission error, as `useDoc` will set the `error` state.
-  // It also handles if the property is not 'Activ' because the security rule will deny the read.
   if (error || !property) {
-    // We can use Next.js's notFound() to render the standard 404 page
     notFound();
     return null;
   }
   
-  // The property must be active to be visible, this is an extra client-side check,
-  // but the security rule is the primary enforcer.
+  // The property must be active to be visible.
   if (property.status !== 'Activ') {
       notFound();
       return null;
