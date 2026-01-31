@@ -7,8 +7,15 @@ service cloud.firestore {
         return false;
       }
       let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
-      return exists(agencyDocPath) &&
-             request.auth.uid in get(agencyDocPath).data.agentIds;
+      if (!exists(agencyDocPath)) {
+        return false;
+      }
+      let agencyData = get(agencyDocPath).data;
+      // An agent is part of the agency if they are the owner OR their ID is in the agentIds list.
+      return request.auth.uid == agencyData.ownerId || (
+             'agentIds' in agencyData && 
+             request.auth.uid in agencyData.agentIds
+      );
     }
     
     function isUserAdmin(agencyId) {
@@ -16,7 +23,9 @@ service cloud.firestore {
           return false;
         }
         let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        // An admin must first be part of the agency
         return isUserInAgency(agencyId) &&
+               exists(userDocPath) &&
                'role' in get(userDocPath).data &&
                get(userDocPath).data.role == 'admin';
     }
@@ -84,14 +93,8 @@ service cloud.firestore {
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Any user (client or agent) who has the portalId can read the recommendations.
-      // The portalId is an unguessable UUID, providing security.
-      allow get, list: if true;
-      
-      // Only authenticated agents belonging to the correct agency can modify recommendations.
+      allow read: if request.auth == null || userIsInPortalAgency(portalId);
       allow create, delete: if userIsInPortalAgency(portalId);
-      
-      // Agents can update anything. Unauthenticated clients can only update feedback fields.
       allow update: if userIsInPortalAgency(portalId) || 
           (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
     }
