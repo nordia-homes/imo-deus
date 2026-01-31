@@ -48,7 +48,7 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask }: LeadHeaderPr
           <Button size="lg" variant="outline" asChild>
             <a href={`tel:${contact.phone}`}>
               <Phone className="h-4 w-4" />
-              Sună
+              {contact.phone}
             </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
