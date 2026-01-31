@@ -168,4 +168,33 @@ export type PortalRecommendation = {
 
 
 export type WithId<T> = T & { id: string };
-    
+
+// Types for CMA
+export type ComparableProperty = {
+    id: string;
+    address: string;
+    status: 'Activ' | 'Vândut' | 'Închiriat' | 'Inactiv';
+    price: number;
+    squareFootage: number;
+    bedrooms: number;
+    bathrooms: number;
+    similarity: string;
+}
+
+export type PriceAdjustment = {
+    feature: string;
+    adjustment: string;
+    reason: string;
+}
+
+export type CMA = {
+    subjectPropertyId: string;
+    subjectPropertyAddress: string;
+    comparableProperties: ComparableProperty[];
+    priceAdjustments: PriceAdjustment[];
+    estimatedValueRange: {
+        min: number;
+        max: number;
+    };
+    notes: string;
+}

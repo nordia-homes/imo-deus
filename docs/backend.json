@@ -458,6 +458,62 @@
         "propertyId",
         "addedAt"
       ]
+    },
+    "CMA": {
+      "title": "Comparative Market Analysis",
+      "description": "Represents an AI-generated Comparative Market Analysis report for a property.",
+      "type": "object",
+      "properties": {
+        "subjectPropertyId": {
+          "type": "string"
+        },
+        "subjectPropertyAddress": {
+          "type": "string"
+        },
+        "comparableProperties": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "address": { "type": "string" },
+              "status": { "type": "string" },
+              "price": { "type": "number" },
+              "squareFootage": { "type": "number" },
+              "bedrooms": { "type": "number" },
+              "bathrooms": { "type": "number" },
+              "similarity": { "type": "string" }
+            }
+          }
+        },
+        "priceAdjustments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "feature": { "type": "string" },
+                    "adjustment": { "type": "string" },
+                    "reason": { "type": "string" }
+                }
+            }
+        },
+        "estimatedValueRange": {
+            "type": "object",
+            "properties": {
+                "min": { "type": "number" },
+                "max": { "type": "number" }
+            }
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "subjectPropertyId",
+        "comparableProperties",
+        "estimatedValueRange",
+        "notes"
+      ]
     }
   },
   "auth": {

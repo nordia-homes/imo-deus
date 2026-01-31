@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import React from 'react';
 
@@ -19,6 +19,7 @@ import { PropertyPresentationsTab } from "@/components/properties/PropertyPresen
 import AiInsightCard from "@/components/ai/AiInsightCard";
 import { generatePropertyInsights, type PropertyInsightsOutput } from '@/ai/flows/property-insights-generator';
 import { useToast } from '@/hooks/use-toast';
+import { CmaAnalysisTab } from '@/components/properties/CmaAnalysisTab';
 
 import {
     BedDouble,
@@ -69,6 +70,14 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId, propertyId]);
 
     const { data: property, isLoading: isDocLoading, error } = useDoc<Property>(propertyDocRef);
+    
+    // Fetch all other properties for CMA
+    const allPropertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+    const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
+
 
     const handleGenerateInsights = async () => {
         if (!property) return;
@@ -100,7 +109,7 @@ export default function PropertyDetailPage() {
         }
     };
 
-    const isLoading = isUserLoading || isDocLoading;
+    const isLoading = isUserLoading || isDocLoading || areAllPropertiesLoading;
 
     if (isLoading) {
         return (
@@ -148,6 +157,7 @@ export default function PropertyDetailPage() {
                         <TabsList className="mb-4">
                             <TabsTrigger value="details">Detalii Proprietate</TabsTrigger>
                             <TabsTrigger value="promotions">Promovare</TabsTrigger>
+                            <TabsTrigger value="cma">Analiză Piață (CMA)</TabsTrigger>
                             <TabsTrigger value="contracts">Contracte</TabsTrigger>
                             <TabsTrigger value="presentations">Prezentări</TabsTrigger>
                         </TabsList>
@@ -219,6 +229,7 @@ export default function PropertyDetailPage() {
                            </div>
                         </TabsContent>
                          <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
+                         <TabsContent value="cma"><CmaAnalysisTab subjectProperty={property} allProperties={allProperties || []} agencyId={agencyId!} /></TabsContent>
                          <TabsContent value="contracts"><PropertyContractsTab propertyId={property.id} /></TabsContent>
                          <TabsContent value="presentations"><PropertyPresentationsTab property={property} /></TabsContent>
                      </Tabs>
