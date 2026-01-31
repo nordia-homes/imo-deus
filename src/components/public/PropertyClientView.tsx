@@ -1,184 +1,154 @@
-
 'use client';
 
 import type { Property } from '@/lib/types';
+import { usePublicAgency } from '@/context/PublicAgencyContext';
 import React from 'react';
-import Image from 'next/image';
+import { PropertyGallery } from "@/components/properties/PropertyGallery";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import {
     BedDouble,
     Bath,
     Ruler,
+    Building,
     CalendarDays,
-    Share2,
-    Heart,
-    Mail,
-    Phone
+    Layers,
+    Thermometer,
+    Car,
+    Sparkles,
+    CheckCircle2,
+    MapPin,
+    Tag,
+    HandCoins
 } from "lucide-react";
-import { Separator } from '@/components/ui/separator';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
 
-const ContactCard = ({ property }: { property: Property }) => {
+const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
+    if (!value && value !== 0) return null;
     return (
-        <Card className="shadow-lg rounded-xl sticky top-24">
-            <CardHeader>
-                <p className="text-2xl font-bold">€{property.price.toLocaleString()}<span className="text-base font-normal text-muted-foreground"> / {property.transactionType === 'Închiriere' ? 'lună' : 'total'}</span></p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="public-contact-name">Nume</Label>
-                        <Input id="public-contact-name" placeholder="Numele tău" />
-                    </div>
-                    <div className="grid gap-2">
-                         <Label htmlFor="public-contact-email">Email</Label>
-                        <Input id="public-contact-email" type="email" placeholder="nume@email.com" />
-                    </div>
-                     <div className="grid gap-2">
-                         <Label htmlFor="public-contact-phone">Telefon</Label>
-                        <Input id="public-contact-phone" placeholder="Numărul de telefon" />
-                    </div>
-                    <div className="grid gap-2">
-                         <Label htmlFor="public-contact-message">Mesaj</Label>
-                        <Textarea id="public-contact-message" placeholder="Aș dori mai multe detalii despre această proprietate..." defaultValue={`Bună ziua, sunt interesat de proprietatea "${property.title}". Vă rog să mă contactați.`} />
-                    </div>
-                </div>
-                <Button className="w-full" size="lg">
-                    <Mail className="mr-2 h-4 w-4" /> Trimite Mesaj
-                </Button>
-                <Button className="w-full" variant="outline" size="lg">
-                    <Phone className="mr-2 h-4 w-4" /> Sună Acum
-                </Button>
-            </CardContent>
-        </Card>
-    )
-}
+        <div className="flex items-start gap-3 rounded-lg p-3 bg-muted/50">
+            <div className="text-primary pt-1">{icon}</div>
+            <div>
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="font-semibold text-card-foreground">{value}</p>
+            </div>
+        </div>
+    );
+};
+
 
 export function PropertyClientView({ property }: { property: Property }) {
+  const { agency } = usePublicAgency();
+  
+  const propertyImages = (property.images || []).map(img => img.url).filter(Boolean);
+  const allImages = propertyImages.length > 0 ? propertyImages : ['https://placehold.co/1200x800?text=Imagine+lipsa'];
+  const agentEmail = agency?.email;
 
-    const images = property.images && property.images.length > 0 ? property.images : [{ url: 'https://placehold.co/1200x800', alt: 'Placeholder image' }];
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <header className="space-y-2">
+            <div>
+                 <h1 className="text-3xl font-headline font-bold">{property.title}</h1>
+                 <p className="text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {property.address}</p>
+            </div>
+            <PropertyGallery images={allImages} title={property.title || 'Proprietate'} />
+        </header>
 
-    return (
-       <div className="bg-background">
-            <header className="relative h-[400px] md:h-[550px] w-full">
-                <Carousel className="w-full h-full">
-                    <CarouselContent>
-                        {images.map((image, index) => (
-                            <CarouselItem key={index}>
-                                <div className="h-[400px] md:h-[550px] w-full relative">
-                                    <Image
-                                        src={image.url}
-                                        alt={image.alt}
-                                        fill
-                                        className="object-cover"
-                                        priority={index === 0}
-                                    />
-                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                                </div>
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-                </Carousel>
-                <div className="absolute top-4 right-4 z-10 flex gap-2">
-                    <Button variant="secondary" size="icon"><Share2 className="h-5 w-5"/></Button>
-                     <Button variant="secondary" size="icon"><Heart className="h-5 w-5"/></Button>
-                </div>
-            </header>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                 <Card>
+                     <CardHeader>
+                         <CardTitle>Descriere</CardTitle>
+                     </CardHeader>
+                     <CardContent>
+                         <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
+                     </CardContent>
+                 </Card>
 
-            <main className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12">
-                   <div className="lg:col-span-2 space-y-8">
-                        <section>
-                            <h1 className="text-3xl font-bold">{property.title}</h1>
-                            <p className="text-muted-foreground text-lg mt-1">{property.address}</p>
-                            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
-                                <span className="flex items-center gap-2"><BedDouble className="h-5 w-5 text-primary" /> {property.bedrooms} dormitoare</span>
-                                <span className="flex items-center gap-2"><Bath className="h-5 w-5 text-primary" /> {property.bathrooms} băi</span>
-                                <span className="flex items-center gap-2"><Ruler className="h-5 w-5 text-primary" /> {property.squareFootage} mp</span>
-                                {property.constructionYear && <span className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary" /> {property.constructionYear}</span>}
+                 <Card>
+                     <CardHeader><CardTitle>Caracteristici Esențiale</CardTitle></CardHeader>
+                     <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                         <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
+                         <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
+                         <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
+                         {property.totalSurface && <FeatureItem icon={<Ruler />} label="Suprafață construită" value={`${property.totalSurface} mp`} />}
+                         <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
+                         <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
+                         <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />
+                         <FeatureItem icon={<Layers />} label="Etaj" value={property.floor} />
+                         <FeatureItem icon={<Sparkles />} label="Stare interior" value={property.interiorState} />
+                         <FeatureItem icon={<Tag />} label="Confort" value={property.comfort} />
+                         <FeatureItem icon={<Thermometer />} label="Sistem încălzire" value={property.heatingSystem} />
+                         <FeatureItem icon={<Car />} label="Parcare" value={property.parking} />
+                     </CardContent>
+                 </Card>
+
+                  {property.amenities && property.amenities.length > 0 && (
+                    <Card>
+                        <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-2">
+                                {property.amenities.map(amenity => (
+                                    <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
+                                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                                        <span className="text-sm">{amenity}</span>
+                                    </div>
+                                ))}
                             </div>
-                        </section>
+                        </CardContent>
+                    </Card>
+                  )}
 
-                        <Separator />
 
-                        {property.agent && (
-                             <section className="flex items-center justify-between">
+                 <Card>
+                    <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
+                    <CardContent>
+                        {(property.latitude && property.longitude) ? (
+                            <iframe
+                                className="w-full aspect-video rounded-md"
+                                loading="lazy"
+                                allowFullScreen
+                                src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
+                            >
+                            </iframe>
+                        ) : (
+                            <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
+                                <p className="text-muted-foreground">
+                                    Coordonatele GPS nu sunt disponibile pentru această proprietate.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-1">
+                 <Card className="sticky top-24">
+                     <CardHeader>
+                         <CardTitle className="text-3xl font-bold">€{property.price.toLocaleString()}</CardTitle>
+                         <CardDescription>{property.transactionType === 'Închiriere' ? 'pe lună' : 'preț de vânzare'}</CardDescription>
+                     </CardHeader>
+                    <CardContent className="space-y-4">
+                         {property.agent && (
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-14 w-14">
+                                    <AvatarFallback>{property.agent.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                </Avatar>
                                 <div>
-                                    <h2 className="text-xl font-semibold">Proprietate administrată de {property.agent.name}</h2>
-                                    <p className="text-muted-foreground">Agent imobiliar</p>
+                                    <p className="font-semibold">{property.agent.name}</p>
+                                    <p className="text-sm text-muted-foreground">Agent imobiliar</p>
                                 </div>
-                                <Image src={property.agent.avatarUrl} alt={property.agent.name} width={64} height={64} className="rounded-full" />
-                            </section>
-                        )}
-                       
-                        <Separator />
-                        
-                        <section>
-                            <h2 className="text-xl font-semibold mb-4">Descriere</h2>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
-                        </section>
-                        
-                        {property.amenities && property.amenities.length > 0 && (
-                            <>
-                                <Separator />
-                                <section>
-                                    <h2 className="text-xl font-semibold mb-4">Dotări și Facilități</h2>
-                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        {property.amenities.map(amenity => (
-                                             <div key={amenity} className="flex items-center gap-2">
-                                                <div className="text-primary">✓</div>
-                                                <span className="text-muted-foreground">{amenity}</span>
-                                            </div>
-                                        ))}
-                                     </div>
-                                </section>
-                            </>
-                        )}
-
-                        <Separator />
-
-                        <section>
-                            <h2 className="text-xl font-semibold mb-4">Locație pe Hartă</h2>
-                             {(property.latitude && property.longitude) ? (
-                                <div className="aspect-video w-full rounded-lg overflow-hidden">
-                                     <iframe
-                                        className="w-full h-full"
-                                        loading="lazy"
-                                        allowFullScreen
-                                        src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
-                                    >
-                                    </iframe>
-                                </div>
-                            ) : (
-                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                                    <p className="text-muted-foreground">Locația nu este disponibilă pe hartă.</p>
-                                </div>
-                            )}
-                        </section>
-                   </div>
-                   
-                   <div className="hidden lg:block">
-                        <ContactCard property={property} />
-                   </div>
-                </div>
-                 {/* Contact form for mobile */}
-                <div className="lg:hidden mt-8">
-                    <h2 className="text-xl font-semibold mb-4 text-center">Contactează agentul</h2>
-                    <ContactCard property={property} />
-                </div>
-            </main>
-       </div>
-    );
+                            </div>
+                         )}
+                         <Button size="lg" className="w-full" asChild disabled={!agentEmail}>
+                            <a href={`mailto:${agentEmail}?subject=Interes%20pentru%20proprietatea%20${encodeURIComponent(property.title || '')}`}>
+                                Contactează Agentul
+                            </a>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    </div>
+  )
 }

@@ -228,7 +228,7 @@ export default function PropertyDetailPage() {
                     <Card className="sticky top-20">
                          <CardHeader>
                              <CardTitle className="text-3xl font-bold">€{property.price.toLocaleString()}</CardTitle>
-                             <CardDescription>{property.transactionType}</CardDescription>
+                             <CardDescription>{property.transactionType === 'Închiriere' ? 'pe lună' : 'preț de vânzare'}</CardDescription>
                          </CardHeader>
                         <CardContent className="space-y-4">
                              {property.agent && (
