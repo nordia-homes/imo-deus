@@ -385,7 +385,7 @@ export function AddPropertyDialog() {
                 <Separator />
 
                 <section>
-                    <h3 className="text-lg font-semibold text-primary mb-4">Specificații & Detalii clădire</h3>
+                    <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (mp) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -494,3 +494,5 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
+
+    
