@@ -213,6 +213,12 @@ export default function LeadDetailPage() {
         toast({ title: 'Prioritate actualizată!' });
     }
 
+    const handleStatusChange = (status: string) => {
+        if (!contactDocRef) return;
+        updateDocumentNonBlocking(contactDocRef, { status });
+        toast({ title: 'Status actualizat!' });
+    }
+
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
         if (!agency?.id || !contact) return;
         const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
@@ -502,6 +508,20 @@ export default function LeadDetailPage() {
                      <Card>
                         <CardHeader><CardTitle>Management Lead</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
+                             <div>
+                                <Label>Status</Label>
+                                <Select onValueChange={handleStatusChange} defaultValue={contact.status}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Nou">Nou</SelectItem>
+                                        <SelectItem value="Contactat">Contactat</SelectItem>
+                                        <SelectItem value="Vizionare">Vizionare</SelectItem>
+                                        <SelectItem value="În negociere">În negociere</SelectItem>
+                                        <SelectItem value="Câștigat">Câștigat</SelectItem>
+                                        <SelectItem value="Pierdut">Pierdut</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div>
                                 <Label>Prioritate</Label>
                                 <Select onValueChange={handlePriorityChange} defaultValue={contact.priority}>
