@@ -6,10 +6,9 @@ service cloud.firestore {
       if (request.auth == null) {
         return false;
       }
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userDocPath) &&
-             'agencyId' in get(userDocPath).data &&
-             get(userDocPath).data.agencyId == agencyId;
+      let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
+      return exists(agencyDocPath) &&
+             request.auth.uid in get(agencyDocPath).data.agentIds;
     }
     
     function isUserAdmin(agencyId) {
