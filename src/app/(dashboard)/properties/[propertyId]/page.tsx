@@ -220,7 +220,7 @@ export default function PropertyDetailPage() {
                         </TabsContent>
                          <TabsContent value="promotions"><PropertyPromotionsTab property={property} /></TabsContent>
                          <TabsContent value="contracts"><PropertyContractsTab propertyId={property.id} /></TabsContent>
-                         <TabsContent value="presentations"><PropertyPresentationsTab propertyId={property.id} /></TabsContent>
+                         <TabsContent value="presentations"><PropertyPresentationsTab property={property} /></TabsContent>
                      </Tabs>
 
                 </div>
