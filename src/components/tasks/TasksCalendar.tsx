@@ -60,6 +60,11 @@ export function TasksCalendar() {
     };
 
     const CustomDay = ({ date, displayMonth }: { date: Date, displayMonth: Date }) => {
+        if (!date || isNaN(date.getTime())) {
+            // Guard against invalid date objects which can be passed by the calendar library.
+            return <div />;
+        }
+        
         const dayKey = format(date, 'yyyy-MM-dd');
         const dayTasks = tasksByDay[dayKey]?.tasks || [];
 
