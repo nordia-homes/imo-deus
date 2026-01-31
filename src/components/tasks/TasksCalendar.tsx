@@ -5,25 +5,21 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Task } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { buttonVariants } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
+import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-
-type DayWithTasks = {
-    date: Date;
-    tasks: Task[];
-};
 
 export function TasksCalendar() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
 
     const tasksQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -32,135 +28,133 @@ export function TasksCalendar() {
 
     const { data: tasks, isLoading } = useCollection<Task>(tasksQuery);
 
-    const tasksByDay = useMemo(() => {
-        const grouped: { [key: string]: DayWithTasks } = {};
-        if (!tasks) return grouped;
-
-        tasks.forEach(task => {
+    const daysWithTasks = useMemo(() => {
+        if (!tasks) return [];
+        return tasks.reduce((acc: Date[], task) => {
             if (task.dueDate) {
                 const taskDate = new Date(task.dueDate);
+                // Adjust for timezone issues by creating a date in UTC
                 const utcDate = new Date(taskDate.valueOf() + taskDate.getTimezoneOffset() * 60000);
-                const dayKey = format(utcDate, 'yyyy-MM-dd');
-                
-                if (!grouped[dayKey]) {
-                    grouped[dayKey] = {
-                        date: utcDate,
-                        tasks: [],
-                    };
+                if (!acc.some(d => isSameDay(d, utcDate))) {
+                    acc.push(utcDate);
                 }
-                grouped[dayKey].tasks.push(task);
             }
-        });
-        return grouped;
+            return acc;
+        }, []);
     }, [tasks]);
 
-    // This component renders the content INSIDE the day cell.
-    const CustomDay = ({ date }: { date?: Date }) => {
-        if (!date || isNaN(date.getTime())) {
-            return null;
-        }
-        
-        const dayKey = format(date, 'yyyy-MM-dd');
-        const dayTasks = tasksByDay[dayKey]?.tasks || [];
+    const selectedDayTasks = useMemo(() => {
+        if (!selectedDay || !tasks) return [];
+        return tasks.filter(task => {
+            if (!task.dueDate) return false;
+            const taskDate = new Date(task.dueDate);
+            const utcDate = new Date(taskDate.valueOf() + taskDate.getTimezoneOffset() * 60000);
+            return isSameDay(utcDate, selectedDay);
+        }).sort((a,b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99'));
+    }, [selectedDay, tasks]);
 
-        return (
-            <Popover>
-                <PopoverTrigger asChild>
-                    {/* The content of the day cell is a div, which acts as the trigger */}
-                    <div
-                        className={cn(
-                            "relative flex flex-col items-start h-full w-full p-1.5 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-ring focus:z-10",
-                            dayTasks.length > 0 && "cursor-pointer hover:bg-accent"
-                        )}
-                    >
-                        <span className="text-xs font-semibold text-foreground">{date.getDate()}</span>
-                        <div className="flex-1 mt-1 space-y-0.5 overflow-hidden w-full">
-                            {dayTasks.slice(0, 3).map(task => (
-                                <div key={task.id} className="text-[10px] leading-tight truncate px-1 py-0.5 rounded bg-primary/20 text-primary-foreground font-medium">
-                                    {task.startTime && <span className="font-bold">{task.startTime} </span>}
-                                    {task.description}
-                                </div>
-                            ))}
-                            {dayTasks.length > 3 && (
-                                <div className="text-[10px] text-muted-foreground">+ {dayTasks.length - 3} more</div>
-                            )}
-                        </div>
-                    </div>
-                </PopoverTrigger>
-                {dayTasks.length > 0 && (
-                    <PopoverContent className="w-80">
-                        <div className="space-y-4">
-                            <h4 className="font-semibold">{format(date, "PPPP", { locale: ro })}</h4>
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
-                                {dayTasks.map(task => (
-                                    <div key={task.id}>
-                                        <p className="font-medium text-sm">{task.description}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {task.startTime && `Ora: ${task.startTime}`}
-                                            {task.contactName && task.contactId && (
-                                                <>
-                                                    {' | Pentru: '}
-                                                    <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline">
-                                                        {task.contactName}
-                                                    </Link>
-                                                </>
-                                            )}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </PopoverContent>
-                )}
-            </Popover>
-        );
+    const modifiers = {
+        hasTasks: daysWithTasks,
+    };
+
+    const modifiersClassNames = {
+        hasTasks: 'has-tasks',
     };
 
     if (isLoading) {
-        return <Skeleton className="h-full w-full" />
+        return (
+             <div className="grid md:grid-cols-2 gap-6 h-full">
+                <Skeleton className="h-full w-full" />
+                <Skeleton className="h-full w-full" />
+            </div>
+        )
     }
-    
+
     return (
-        <Card className="h-full flex flex-col">
-            <CardContent className="p-2 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+            <Card className="lg:col-span-2">
+                 <style>{`
+                    .has-tasks button:after {
+                        content: '';
+                        position: absolute;
+                        bottom: 6px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 5px;
+                        height: 5px;
+                        border-radius: 50%;
+                        background-color: hsl(var(--primary));
+                    }
+                `}</style>
                 <Calendar
-                    locale={ro}
                     mode="single"
-                    month={currentMonth}
-                    onMonthChange={setCurrentMonth}
-                    className="w-full"
-                    captionLayout="buttons"
+                    selected={selectedDay}
+                    onSelect={setSelectedDay}
+                    locale={ro}
+                    className="p-4"
                     classNames={{
-                        // Use table layout, not flex, to avoid hydration errors
-                        months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                        month: 'space-y-4 w-full',
-                        caption: "flex justify-center pt-1 relative items-center",
+                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                        month: "space-y-4",
+                        caption: "flex justify-center pt-1 relative items-center mb-4",
                         caption_label: "text-lg font-bold",
                         nav: "space-x-1 flex items-center",
-                        nav_button: cn(
-                          buttonVariants({ variant: 'outline' }),
-                          'h-7 w-7 bg-transparent p-0'
-                        ),
                         nav_button_previous: 'absolute left-1',
                         nav_button_next: 'absolute right-1',
-                        table: 'w-full border-collapse', // Ensure it behaves like a table
-                        head_row: '', // NO FLEXBOX on table rows
-                        head_cell: 'text-muted-foreground rounded-md w-[14.28%] font-normal text-center text-[0.8rem] pb-1 border-b',
-                        row: 'w-full border-b', // NO FLEXBOX on table rows
-                        cell: 'h-28 text-center text-sm p-0 relative border-r last:border-r-0',
-                        day: 'h-full w-full p-0 font-normal',
-                        day_selected: 'bg-transparent', // Handled by CustomDay
-                        day_today: 'bg-accent/50 text-accent-foreground',
-                        day_outside: 'text-muted-foreground opacity-50',
-                        day_disabled: 'text-muted-foreground opacity-50',
-                        day_hidden: 'invisible',
+                        table: "w-full border-collapse space-y-1",
+                        head_row: "flex",
+                        head_cell:
+                          "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
+                        row: "flex w-full mt-2",
+                        cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                        day: cn(
+                          buttonVariants({ variant: "ghost" }),
+                          "h-12 w-full p-0 font-normal aria-selected:opacity-100 relative"
+                        ),
+                        day_selected:
+                          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                        day_today: "bg-accent text-accent-foreground",
+                        day_outside: "text-muted-foreground opacity-50",
                     }}
-                    components={{
-                        // Day component renders the CONTENT of the cell.
-                        Day: CustomDay,
-                    }}
+                    modifiers={modifiers}
+                    modifiersClassNames={modifiersClassNames}
+                    showOutsideDays
                 />
-            </CardContent>
-        </Card>
+            </Card>
+            
+            <Card className="lg:col-span-1 h-full flex flex-col">
+                <CardHeader>
+                    <CardTitle>
+                        Task-uri pentru {selectedDay ? format(selectedDay, 'd MMMM yyyy', { locale: ro }) : '...'}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full pr-4">
+                        <div className="space-y-4">
+                            {selectedDayTasks.length > 0 ? (
+                                selectedDayTasks.map(task => (
+                                    <div key={task.id} className={cn("p-3 rounded-md", task.status === 'completed' ? 'bg-muted text-muted-foreground' : 'bg-muted/50')}>
+                                        <p className={cn("font-semibold", task.status === 'completed' && 'line-through')}>
+                                            {task.description}
+                                        </p>
+                                        <div className="flex items-center justify-between text-xs mt-1">
+                                             {task.startTime && <Badge variant="outline">{task.startTime}</Badge>}
+                                             {task.contactName && task.contactId ? (
+                                                 <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline truncate">
+                                                    {task.contactName}
+                                                 </Link>
+                                             ) : <span />}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-muted-foreground pt-10">
+                                    Niciun task pentru această zi.
+                                </p>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
