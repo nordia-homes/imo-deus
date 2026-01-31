@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import type { FirestorePermissionError } from '@/firebase/errors';
 
@@ -10,13 +10,15 @@ import type { FirestorePermissionError } from '@/firebase/errors';
  * providing rich, contextual debugging information for security rule violations.
  */
 export function FirebaseErrorListener() {
-  const [error, setError] = useState<FirestorePermissionError | null>(null);
-
   useEffect(() => {
-    const handleError = (error: FirestorePermissionError) => {
-      // Set the error in state to trigger a re-render.
-      // During the re-render, the error will be thrown.
-      setError(error);
+    const handleError = (err: FirestorePermissionError) => {
+      // Throw the error asynchronously in a new task.
+      // This ensures it doesn't interfere with React's render cycle, which can
+      // cause warnings in development with hot-reloading. The Next.js development
+      // overlay will catch this unhandled exception and display it.
+      setTimeout(() => {
+        throw err;
+      }, 0);
     };
 
     errorEmitter.on('permission-error', handleError);
@@ -26,11 +28,6 @@ export function FirebaseErrorListener() {
     };
   }, []);
 
-  // If an error has been set, throw it. Next.js will catch it and display the overlay.
-  if (error) {
-    throw error;
-  }
-
-  // This component renders nothing to the DOM.
+  // This component now only sets up the listener and renders nothing.
   return null;
 }
