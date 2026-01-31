@@ -310,6 +310,14 @@
         "featured": {
           "type": "boolean",
           "description": "Whether the property should be featured on the agency's public homepage."
+        },
+        "ownerName": {
+          "type": "string",
+          "description": "The name of the property owner."
+        },
+        "ownerPhone": {
+          "type": "string",
+          "description": "The phone number of the property owner."
         }
       },
       "required": [

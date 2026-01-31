@@ -38,12 +38,12 @@ const PageSkeleton = () => (
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
              {/* Left Column */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
             </div>
             {/* Main Content Area */}
-            <div className="lg:col-span-6 space-y-6">
+            <div className="lg:col-span-7 space-y-6">
                 <Skeleton className="h-[400px]" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-64" />
@@ -159,12 +159,6 @@ export default function PropertyDetailPage() {
         return null;
     }
     
-    const owner = {
-        name: 'Proprietar Demo',
-        phone: '0722000000',
-        email: 'owner@demo.com'
-    };
-
     const matchedLeads = allContacts?.filter(c => c.budget && property && c.budget >= property.price * 0.8 && c.budget <= property.price * 1.2).slice(0, 3) || [];
 
     const creationDate = property.createdAt ? new Date(property.createdAt) : null;
@@ -182,11 +176,11 @@ export default function PropertyDetailPage() {
 
     return (
         <div className="h-full">
-            <PropertyHeader property={property} owner={owner} />
+            <PropertyHeader property={property} />
 
              <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
-                <div className="col-span-12 lg:col-span-4 space-y-6">
+                <div className="col-span-12 lg:col-span-3 space-y-6">
                     {creationDate && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
@@ -212,7 +206,7 @@ export default function PropertyDetailPage() {
                 </div>
                  
                 {/* Main Content Column */}
-                <div className="col-span-12 lg:col-span-6 space-y-6">
+                <div className="col-span-12 lg:col-span-7 space-y-6">
                     <MediaColumn property={property} />
                     <InfoColumn property={property} />
                 </div>

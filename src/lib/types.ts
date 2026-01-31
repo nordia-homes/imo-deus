@@ -53,6 +53,8 @@ export type Property = {
   statusUpdatedAt?: string;
   notes?: string;
   salesScore?: 'Scăzut' | 'Mediu' | 'Ridicată';
+  ownerName?: string;
+  ownerPhone?: string;
 };
 
 

@@ -4,18 +4,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { DollarSign, MapPin, Edit, FileText, Rocket, Send } from 'lucide-react';
+import { DollarSign, MapPin, Edit, FileText, Rocket, Send, User } from 'lucide-react';
 import { AddPropertyDialog } from '../add-property-dialog';
-
-type OwnerDetails = {
-    name: string;
-    phone: string;
-    email: string;
-};
 
 type PropertyHeaderProps = {
   property: Property;
-  owner: OwnerDetails;
 };
 
 function getStatusBadgeVariant(status?: Property['status']) {
@@ -28,23 +21,26 @@ function getStatusBadgeVariant(status?: Property['status']) {
 }
 
 
-export function PropertyHeader({ property, owner }: PropertyHeaderProps) {
+export function PropertyHeader({ property }: PropertyHeaderProps) {
   
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mx-8 px-8 py-4 border-b">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Avatar className="h-14 w-14 text-lg">
-            <AvatarFallback>{owner.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+            <AvatarFallback>{property.ownerName ? property.ownerName.split(' ').map(n => n[0]).join('') : 'P'}</AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{owner.name}</h1>
+              <h1 className="text-2xl font-bold">{property.title}</h1>
               <Badge variant={getStatusBadgeVariant(property.status)} className="capitalize shrink-0">{property.status}</Badge>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-sm mt-1">
                <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" />€{property.price.toLocaleString()}</span>
-               <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{property.title}</span>
+               <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{property.location}</span>
+               {property.ownerName && (
+                   <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5"/>{property.ownerName}</span>
+               )}
             </div>
           </div>
         </div>

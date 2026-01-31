@@ -33,11 +33,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
-import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import type { Property } from '@/lib/types';
+import type { Property, UserProfile } from '@/lib/types';
 
 
 const propertySchema = z.object({
@@ -65,6 +65,11 @@ const propertySchema = z.object({
   description: z.string().optional(),
   status: z.string().optional(),
   featured: z.boolean().default(false),
+  
+  ownerName: z.string().optional(),
+  ownerPhone: z.string().optional(),
+  salesScore: z.string().optional(),
+  agentId: z.string().optional(),
 });
 
 /**
@@ -134,9 +139,10 @@ export function AddPropertyDialog({
   const [imageSources, setImageSources] = useState<ImageSource[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
-  const { agencyId } = useAgency();
+  const { agency, agencyId } = useAgency();
   const firestore = useFirestore();
   const storage = useStorage();
+  const [agents, setAgents] = useState<UserProfile[]>([]);
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -162,9 +168,35 @@ export function AddPropertyDialog({
       description: '',
       status: 'Activ',
       featured: false,
+      ownerName: '',
+      ownerPhone: '',
+      salesScore: 'Mediu',
+      agentId: 'unassigned',
     },
   });
   
+  useEffect(() => {
+    if (!isOpen || !agency || !agency.agentIds) {
+        setAgents([]);
+        return;
+    }
+    
+    const fetchAgents = async () => {
+        try {
+            const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
+            const agentDocs = await Promise.all(agentPromises);
+            const agentProfiles = agentDocs
+                .filter(docSnap => docSnap.exists())
+                .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+            setAgents(agentProfiles);
+        } catch (error) {
+            console.error("Error fetching agent profiles for dialog:", error);
+        }
+    };
+
+    fetchAgents();
+  }, [isOpen, agency, firestore]);
+
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && property) {
@@ -190,15 +222,21 @@ export function AddPropertyDialog({
           description: property.description || '',
           status: property.status || 'Activ',
           featured: property.featured || false,
+          ownerName: property.ownerName || '',
+          ownerPhone: property.ownerPhone || '',
+          salesScore: property.salesScore || 'Mediu',
+          agentId: property.agentId || 'unassigned',
         });
         setImageSources(property.images || []);
       } else {
-        form.reset();
+        form.reset({
+          agentId: user?.uid || 'unassigned',
+        });
         setImageSources([]);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEditMode, property, form]);
+  }, [isOpen, isEditMode, property, form, user]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -283,6 +321,7 @@ export function AddPropertyDialog({
         }
 
         const finalImages = [...existingImages, ...uploadedImageUrls];
+        const selectedAgent = agents.find(agent => agent.id === values.agentId);
 
         const propertyData = {
           title: values.title,
@@ -310,6 +349,11 @@ export function AddPropertyDialog({
           amenities: values.keyFeatures.split(',').map((f) => f.trim()),
           status: values.status,
           featured: values.featured,
+          ownerName: values.ownerName,
+          ownerPhone: values.ownerPhone,
+          salesScore: values.salesScore as Property['salesScore'],
+          agentId: values.agentId === 'unassigned' ? null : values.agentId,
+          agentName: selectedAgent?.name || null,
         };
       
         if (isEditMode) {
@@ -325,10 +369,6 @@ export function AddPropertyDialog({
                 ...propertyData,
                 id: newPropertyRef.id,
                 createdAt: new Date().toISOString(),
-                agent: {
-                    name: user.displayName || user.email || 'Agent',
-                    avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-                },
             });
             toast({
               title: 'Proprietate adăugată!',
@@ -424,6 +464,39 @@ export function AddPropertyDialog({
                   </div>
                 </section>
                 
+                <Separator />
+                
+                <section>
+                  <h3 className="text-lg font-semibold text-primary mb-4">Detalii Proprietar</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numele proprietarului" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numărul de telefon" /></FormControl><FormMessage /></FormItem> )} />
+                  </div>
+                </section>
+
+                <Separator />
+
+                <section>
+                    <h3 className="text-lg font-semibold text-primary mb-4">Management Intern</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel>Agent Responsabil</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="unassigned">Nealocat</SelectItem>
+                                {agents.map(agent => (
+                                    <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                ))}
+                            </SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel>Potențial Vânzare</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Scăzut">Scăzut</SelectItem>
+                                <SelectItem value="Mediu">Mediu</SelectItem>
+                                <SelectItem value="Ridicată">Ridicată</SelectItem>
+                            </SelectContent></Select><FormMessage /></FormItem>)} />
+                    </div>
+                </section>
+
                 <Separator />
 
                 <section>
