@@ -40,21 +40,15 @@ service cloud.firestore {
              agentIdsDiff.removed().size() == 0;
     }
 
-    // Helper function to check if a user belongs to the agency that owns a specific portal.
-    // This is more robust as it checks for existence before trying to access data.
     function userIsInPortalAgency(portalId) {
       let portalPath = /databases/$(database)/documents/portals/$(portalId);
-      // 1. Check if the portal document actually exists.
       if (!exists(portalPath)) {
         return false;
       }
-      // 2. If it exists, get its data.
       let portalData = get(portalPath).data;
-      // 3. Check if the portal data has an agencyId field.
       if (!('agencyId' in portalData)) {
         return false;
       }
-      // 4. Finally, use the existing function to check user's agency membership.
       return isUserInAgency(portalData.agencyId);
     }
 
@@ -85,41 +79,24 @@ service cloud.firestore {
     }
 
     match /portals/{portalId} {
-      // Allow read access to anyone who has the unguessable portalId.
       allow get: if true;
-
-      // Only allow agents of the agency to create or delete the portal document.
       allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
       allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Allow read access to anyone who has the unguessable portalId.
-      allow list, get: if true;
-
-      // Only allow agents of the agency to create or delete recommendations.
-      allow create, delete: if request.auth != null && userIsInPortalAgency(portalId);
-      
-      // Allow agents to update anything, and clients (unauthenticated) to update only feedback.
-      allow update: if 
-          (request.auth != null && userIsInPortalAgency(portalId))
-          || (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
+      allow get, list: if userIsInPortalAgency(portalId) || request.auth == null;
+      allow create, delete: if userIsInPortalAgency(portalId);
+      allow update: if userIsInPortalAgency(portalId) || 
+          (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
     }
 
     match /agencies/{agencyId}/properties/{propertyId} {
-      // Get: Members can get any property. Public can only get 'Activ' ones.
       allow get: if isUserInAgency(agencyId) || ('status' in resource.data && resource.data.status == 'Activ');
-
-      // List: Members can list all properties. Public can also list, 
-      // but the query MUST include `where('status', '==', 'Activ')` to succeed, 
-      // as it's enforced by the `get` rule above.
       allow list: if isUserInAgency(agencyId) || request.auth == null;
-      
-      // Write: Only members can write.
       allow write: if isUserInAgency(agencyId);
     }
     
-    // For all other private subcollections, only allow access to agency members.
     match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
       allow read, write: if request.auth != null && isUserInAgency(agencyId);
     }
