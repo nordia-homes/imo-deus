@@ -6,7 +6,7 @@ import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { Property, Viewing, Task, Contact, SalesData, LeadSourceData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday, isThisWeek, subDays } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
 
 // Components
@@ -69,30 +69,33 @@ export default function DashboardPage() {
 
     // --- DATA CALCULATION ---
     const { 
-        soldThisMonth, 
-        reservedThisMonth, 
-        viewingsThisWeek,
+        soldThisMonthCount, 
+        reservedThisMonthCount, 
+        viewingsNext7DaysCount,
         activePropertiesCount,
         totalSalesCount,
         newLeadsCount,
         salesData,
         leadSourceData
     } = useMemo(() => {
-        // Calculations for new sections
         const sold = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reserved = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
-        const weeklyViewings = viewings?.filter(v => v.status === 'scheduled' && isThisWeek(parseISO(v.viewingDate), { weekStartsOn: 1 })) || [];
+        
+        const now = new Date();
+        const sevenDaysFromNow = addDays(now, 7);
+        const next7DaysViewings = viewings?.filter(v => {
+            if (v.status !== 'scheduled') return false;
+            const viewingDate = parseISO(v.viewingDate);
+            return isWithinInterval(viewingDate, { start: now, end: sevenDaysFromNow });
+        }) || [];
 
-        // Calculations for restored components
         const activePropertiesCount = properties?.filter(p => p.status === 'Activ').length || 0;
         const totalSalesCount = contacts?.filter(c => c.status === 'Câștigat').length || 0;
         
-        const oneWeekAgo = subDays(new Date(), 7);
+        const oneWeekAgo = addDays(new Date(), -7);
         const newLeadsCount = contacts?.filter(c => c.createdAt && new Date(c.createdAt) > oneWeekAgo).length || 0;
 
-        // Calculations for charts
         const wonLeads = contacts?.filter(c => c.status === 'Câștigat') || [];
-
         const monthlySales: { [key: string]: { sales: number, date: Date } } = {};
         wonLeads.forEach(lead => {
             if (lead.createdAt) {
@@ -125,9 +128,9 @@ export default function DashboardPage() {
         }));
 
         return {
-            soldThisMonth: sold,
-            reservedThisMonth: reserved,
-            viewingsThisWeek: weeklyViewings,
+            soldThisMonthCount: sold.length,
+            reservedThisMonthCount: reserved.length,
+            viewingsNext7DaysCount: next7DaysViewings.length,
             activePropertiesCount,
             totalSalesCount,
             newLeadsCount,
@@ -156,6 +159,11 @@ export default function DashboardPage() {
             <div className="space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+                    <Skeleton className="h-[108px]"/>
+                    <Skeleton className="h-[108px]"/>
+                    <Skeleton className="h-[108px]"/>
+                </div>
+                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
                     <Skeleton className="h-[108px]"/>
                     <Skeleton className="h-[108px]"/>
                     <Skeleton className="h-[108px]"/>
@@ -199,6 +207,12 @@ export default function DashboardPage() {
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} />
             </div>
 
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonthCount.toString()} period="în luna curentă" icon={<Bookmark />} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonthCount.toString()} period="în luna curentă" icon={<Handshake />} />
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                     <CardHeader>
@@ -225,62 +239,6 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     <AiHelperCard />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
-
-                    <DashboardSection
-                        title="Proprietăți Rezervate Luna Aceasta"
-                        icon={<Bookmark className="h-6 w-6 text-yellow-600" />}
-                        count={reservedThisMonth.length}
-                    >
-                         <DashboardInfoList
-                            items={reservedThisMonth}
-                            emptyText="Nicio proprietate rezervată luna aceasta."
-                            renderItem={(prop: Property) => (
-                                <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                    <p className="font-semibold truncate">{prop.title}</p>
-                                    <p className="text-sm text-muted-foreground">{prop.address}</p>
-                                    <p className="text-sm font-medium text-yellow-600 mt-1">€{prop.price.toLocaleString()}</p>
-                               </Link>
-                            )}
-                        />
-                    </DashboardSection>
-
-                    <DashboardSection
-                        title="Proprietăți Vândute Luna Aceasta"
-                        icon={<Handshake className="h-6 w-6 text-green-600" />}
-                        count={soldThisMonth.length}
-                    >
-                         <DashboardInfoList
-                            items={soldThisMonth}
-                            emptyText="Nicio proprietate vândută luna aceasta."
-                            renderItem={(prop: Property) => (
-                                 <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                    <p className="font-semibold truncate">{prop.title}</p>
-                                    <p className="text-sm text-muted-foreground">{prop.address}</p>
-                                    <p className="text-sm font-medium text-green-600 mt-1">€{prop.price.toLocaleString()}</p>
-                                </Link>
-                            )}
-                        />
-                    </DashboardSection>
-
-                    <DashboardSection
-                        title="Vizionări Săptămâna Aceasta"
-                        icon={<CalendarCheck className="h-6 w-6 text-primary" />}
-                        count={viewingsThisWeek.length}
-                    >
-                        <DashboardInfoList
-                            items={viewingsThisWeek}
-                            emptyText="Nicio vizionare programată săptămâna aceasta."
-                            renderItem={(viewing: Viewing) => (
-                                 <Link href={`/viewings`} key={viewing.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
-                                    <p className="font-semibold truncate">{viewing.propertyTitle}</p>
-                                    <p className="text-sm text-muted-foreground">{viewing.contactName}</p>
-                                    <p className="text-sm font-medium text-primary mt-1">
-                                        {format(parseISO(viewing.viewingDate), 'eeee, d MMMM, HH:mm', { locale: ro })}
-                                    </p>
-                                </Link>
-                            )}
-                        />
-                    </DashboardSection>
                 </div>
             </div>
 
