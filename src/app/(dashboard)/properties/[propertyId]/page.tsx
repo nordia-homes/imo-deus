@@ -39,15 +39,13 @@ const PageSkeleton = () => (
         {/* Body Skeleton */}
         <main className="pt-28 -mx-4">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
-                <div className="lg:col-span-5 space-y-6">
+                <div className="lg:col-span-8 space-y-6">
                     <Skeleton className="h-[550px] w-full rounded-2xl" />
-                </div>
-                <div className="lg:col-span-4 space-y-6">
                     <Skeleton className="h-64 w-full rounded-2xl" />
                     <Skeleton className="h-48 w-full rounded-2xl" />
                     <Skeleton className="h-96 w-full rounded-2xl" />
                 </div>
-                <div className="lg:col-span-3 space-y-6">
+                <div className="lg:col-span-4 space-y-6">
                     <Skeleton className="h-24 w-full rounded-2xl" />
                     <Skeleton className="h-32 w-full rounded-2xl" />
                     <Skeleton className="h-40 w-full rounded-2xl" />
@@ -89,18 +87,14 @@ export default function PropertyDetailPage() {
 
             <main className="pt-28 -mx-4">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
-                    {/* --- Left Column --- */}
-                    <div className="lg:col-span-5">
+                    {/* --- Main Content Column --- */}
+                    <div className="lg:col-span-8 space-y-6">
                         <MediaColumn property={property} />
-                    </div>
-
-                    {/* --- Center Column --- */}
-                    <div className="lg:col-span-4">
                         <InfoColumn property={property} allProperties={allProperties} agencyId={agencyId} />
                     </div>
 
-                    {/* --- Right Column --- */}
-                    <div className="lg:col-span-3">
+                    {/* --- Actions Column --- */}
+                    <div className="lg:col-span-4">
                         <ActionsColumn property={property} />
                     </div>
                 </div>
