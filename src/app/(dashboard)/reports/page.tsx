@@ -1,20 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contact, SalesData, LeadSourceData } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { DollarSign, Target, TrendingUp } from 'lucide-react';
+import { DollarSign, Target, TrendingUp, Sparkles, Loader2, Lightbulb } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
+import { summarizeReport } from '@/ai/flows/report-summarizer';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 export default function ReportsPage() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
+    const { toast } = useToast();
+
+    // AI State
+    const [aiReport, setAiReport] = useState<{ summary: string; recommendations: string } | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
 
     // Fetch all contacts
     const contactsQuery = useMemoFirebase(() => {
@@ -89,6 +100,36 @@ export default function ReportsPage() {
 
     }, [contacts, wonLeads]);
     
+    const handleGenerateReport = async () => {
+        setIsGenerating(true);
+        setAiReport(null);
+        try {
+            const result = await summarizeReport({
+                salesData,
+                leadSourceData,
+                kpis: {
+                    totalWonLeads,
+                    conversionRate,
+                    averageDealSize
+                }
+            });
+            setAiReport(result);
+            toast({
+                title: 'Analiză completă!',
+                description: 'Rezumatul performanței agenției este gata.'
+            });
+        } catch (e) {
+            console.error(e);
+            toast({
+                variant: 'destructive',
+                title: 'A apărut o eroare',
+                description: 'Nu am putut genera analiza AI. Vă rugăm să reîncercați.'
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -98,6 +139,59 @@ export default function ReportsPage() {
                 </p>
             </div>
             
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="text-primary"/>
+                        Analiză și Recomandări AI
+                    </CardTitle>
+                    <CardDescription>
+                        Obține o sinteză a datelor de performanță și recomandări personalizate generate de AI.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isGenerating && (
+                        <div className="flex items-center justify-center p-8 text-muted-foreground">
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            <span>AI-ul analizează datele...</span>
+                        </div>
+                    )}
+                    {!isGenerating && aiReport && (
+                        <div className="space-y-4">
+                            <Alert>
+                                <AlertTitle className="font-semibold">Sinteză Performanță</AlertTitle>
+                                <AlertDescription>
+                                    {aiReport.summary}
+                                </AlertDescription>
+                            </Alert>
+                            <Alert variant="default" className="bg-accent/50">
+                                <AlertTitle className="font-semibold">Recomandări</AlertTitle>
+                                <AlertDescription>
+                                    <ul className="list-disc pl-5 space-y-1 mt-2">
+                                        {aiReport.recommendations.split('\n').map((rec, i) => rec.trim() && <li key={i}>{rec.replace('-', '').trim()}</li>)}
+                                    </ul>
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    )}
+                    {!isGenerating && !aiReport && (
+                         <div className="flex flex-col items-center justify-center text-center p-8 space-y-2">
+                            <p className="text-sm text-muted-foreground">Apasă pe buton pentru a începe analiza AI.</p>
+                        </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleGenerateReport} disabled={isLoading || isGenerating}>
+                        {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        {aiReport ? 'Regenerează Analiza' : 'Generează Analiza AI'}
+                    </Button>
+                </CardFooter>
+            </Card>
+
             {/* Stat Cards */}
             <div className="grid gap-6 md:grid-cols-3">
                 {isLoading ? (
