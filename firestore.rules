@@ -79,8 +79,14 @@ service cloud.firestore {
       allow write: if isUserInAgency(agencyId);
     }
     
+    // Allow public creation of contacts (from the website form)
+    match /agencies/{agencyId}/contacts/{contactId} {
+      allow create: if true;
+      allow read, update, delete, list: if isUserInAgency(agencyId);
+    }
+    
     // For all other private subcollections, only allow access to agency members.
-    match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
+    match /agencies/{agencyId}/(tasks|reports|emails|contracts)/{docId} {
       allow read, write: if request.auth != null && isUserInAgency(agencyId);
     }
   }

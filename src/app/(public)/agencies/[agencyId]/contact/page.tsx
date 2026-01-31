@@ -3,18 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home, Mail, Phone } from 'lucide-react';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const ContactForm = () => (
-    <div className="text-center bg-muted p-8 rounded-lg">
-        <p>Placeholder for Contact Form</p>
-    </div>
-);
+import { PublicContactForm } from '@/components/public/PublicContactForm';
 
 
 export default function AgencyContactPage() {
-  const { agency, isAgencyLoading } = usePublicAgency();
+  const { agency, agencyId, isAgencyLoading } = usePublicAgency();
 
-  if (isAgencyLoading || !agency) {
+  if (isAgencyLoading || !agency || !agencyId) {
       return (
           <div className="container mx-auto py-12 px-4">
                 <div className="max-w-4xl mx-auto">
@@ -26,7 +21,7 @@ export default function AgencyContactPage() {
                             <Skeleton className="h-48 w-full" />
                         </div>
                         <div>
-                             <Skeleton className="h-64 w-full" />
+                             <Skeleton className="h-96 w-full" />
                         </div>
                     </div>
                 </div>
@@ -90,7 +85,7 @@ export default function AgencyContactPage() {
                     <CardTitle>Trimite-ne un Mesaj</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ContactForm />
+                    <PublicContactForm agencyId={agencyId} />
                 </CardContent>
             </Card>
           </div>
