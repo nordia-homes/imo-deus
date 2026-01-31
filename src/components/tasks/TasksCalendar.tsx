@@ -70,7 +70,7 @@ export function TasksCalendar() {
 
         if (dayTasks.length === 0) {
             return (
-                <div className="h-full w-full p-1 text-sm text-muted-foreground">{date.getDate()}</div>
+                <div className="h-full w-full p-1 text-sm">{date.getDate()}</div>
             );
         }
 
@@ -127,6 +127,7 @@ export function TasksCalendar() {
         <Card className="h-full flex flex-col">
             <CardContent className="p-2 flex-1">
                 <Calendar
+                    locale={ro}
                     mode="single"
                     selected={new Date()} // Doesn't do much here, but required
                     month={currentMonth}
@@ -135,9 +136,10 @@ export function TasksCalendar() {
                     classNames={{
                         months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 h-full',
                         month: 'space-y-4 flex flex-col flex-1',
+                        caption_label: "text-lg font-bold",
                         table: 'w-full border-collapse space-y-1 flex-1',
                         head_row: 'flex border-b',
-                        head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem] p-2 text-center',
+                        head_cell: 'text-muted-foreground rounded-md w-full font-normal text-sm p-2 text-center',
                         row: 'flex w-full mt-2 h-[calc((100%-2.5rem)/5)]', // Distribute height
                         cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 border',
                         day: 'h-full w-full p-0 font-normal aria-selected:opacity-100',
