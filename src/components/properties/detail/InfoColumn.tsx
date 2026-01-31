@@ -20,11 +20,13 @@ import {
 const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
     if (!value && value !== 0) return null;
     return (
-        <div className="flex items-start gap-3 rounded-lg p-3 bg-muted/50">
-            <div className="text-primary pt-1">{icon}</div>
+        <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-muted text-primary shrink-0">
+                {icon}
+            </div>
             <div>
-                <p className="text-sm text-muted-foreground">{label}</p>
                 <p className="font-semibold text-card-foreground">{value}</p>
+                <p className="text-xs text-muted-foreground">{label}</p>
             </div>
         </div>
     );
@@ -43,7 +45,7 @@ export function InfoColumn({ property, allProperties, agencyId }: InfoColumnProp
              <AiPropertyInsights property={property} />
              <Card className="rounded-2xl">
                 <CardHeader><CardTitle>Caracteristici Esențiale</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
                     <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
                     <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
