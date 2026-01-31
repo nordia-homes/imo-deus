@@ -57,9 +57,12 @@ export function useDoc<T = DocumentData>(
     setIsLoading(true);
     setError(null);
 
+    let isSubscribed = true;
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
+        if (!isSubscribed) return;
+
         const docExists = snapshot.exists();
         
         setData(currentData => {
@@ -77,6 +80,8 @@ export function useDoc<T = DocumentData>(
         setIsLoading(false);
       },
       (err: FirestoreError) => {
+        if (!isSubscribed) return;
+
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
@@ -89,7 +94,10 @@ export function useDoc<T = DocumentData>(
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
   }, [memoizedDocRef]);
 
   return { data, isLoading, error };

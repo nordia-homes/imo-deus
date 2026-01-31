@@ -68,9 +68,11 @@ export function useCollection<T = DocumentData>(
     setIsLoading(true);
     setError(null);
 
+    let isSubscribed = true;
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
+        if (!isSubscribed) return;
         const newResults = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
         
         setData(currentData => {
@@ -85,6 +87,7 @@ export function useCollection<T = DocumentData>(
         setIsLoading(false);
       },
       (err: FirestoreError) => {
+        if (!isSubscribed) return;
         const path = memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
             : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
@@ -101,7 +104,10 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
   }, [memoizedTargetRefOrQuery]);
 
   return { data, isLoading, error };
