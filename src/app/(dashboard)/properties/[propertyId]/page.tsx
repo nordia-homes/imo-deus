@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
@@ -31,16 +31,16 @@ const PageSkeleton = () => (
             </div>
         </div>
         {/* Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-            <div className="lg:col-span-1 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-4 space-y-6">
                 <Skeleton className="h-24" />
                 <Skeleton className="h-96" />
             </div>
-             <div className="lg:col-span-2 space-y-6">
+             <div className="lg:col-span-5 space-y-6">
                 <Skeleton className="h-[500px]" />
                 <Skeleton className="h-96" />
             </div>
-            <div className="lg:col-span-1 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -131,9 +131,9 @@ export default function PropertyDetailPage() {
             <PropertyHeader property={property} owner={owner} />
 
             <main className="p-4 md:p-6 lg:p-8 -mx-8">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* Left Column */}
-                    <div className="lg:col-span-1 space-y-6">
+                    <div className="lg:col-span-4 space-y-6">
                          <EssentialFeatures property={property} />
                          <PropertyTimeline 
                             property={property}
@@ -144,13 +144,13 @@ export default function PropertyDetailPage() {
                     </div>
                     
                     {/* Center Column */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-5 space-y-6">
                         <MediaColumn property={property} />
                          <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
                     </div>
 
                     {/* Right Column */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-3">
                          <PropertyActionPanel 
                             property={property} 
                             viewings={viewings || []}
