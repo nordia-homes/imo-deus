@@ -3,16 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import type { Contract, Contact, Property } from '@/lib/types';
+import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
-import { FileSignature, UserPlus, Building2 } from 'lucide-react';
+import { UserPlus, Building2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useMemo } from 'react';
 
 type ActivityItem = {
     id: string;
-    type: 'contract' | 'contact' | 'property';
+    type: 'contact' | 'property';
     date: string;
     title: string;
     href: string;
@@ -20,8 +20,6 @@ type ActivityItem = {
 
 const ActivityIcon = ({ type }: { type: ActivityItem['type'] }) => {
     switch (type) {
-        case 'contract':
-            return <FileSignature className="h-5 w-5 text-purple-500" />;
         case 'contact':
             return <UserPlus className="h-5 w-5 text-blue-500" />;
         case 'property':
@@ -35,12 +33,6 @@ export function RecentActivity() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
 
-    const contractsQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return query(collection(firestore, 'agencies', agencyId, 'contracts'), orderBy('date', 'desc'), limit(5));
-    }, [firestore, agencyId]);
-    const { data: contracts, isLoading: contractsLoading } = useCollection<Contract>(contractsQuery);
-
     const newContactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
         return query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc'), limit(5));
@@ -53,18 +45,10 @@ export function RecentActivity() {
     }, [firestore, agencyId]);
     const { data: properties, isLoading: propertiesLoading } = useCollection<Property>(propertiesQuery);
     
-    const isLoading = contractsLoading || contactsLoading || propertiesLoading;
+    const isLoading = contactsLoading || propertiesLoading;
 
     const combinedActivity = useMemo(() => {
         const activity: ActivityItem[] = [];
-
-        contracts?.forEach(c => activity.push({
-            id: c.id,
-            type: 'contract',
-            date: c.date,
-            title: `Contract nou: ${c.contactName}`,
-            href: `/contracts`
-        }));
         
         newContacts?.forEach(c => activity.push({
             id: c.id,
@@ -85,7 +69,7 @@ export function RecentActivity() {
         return activity
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .slice(0, 7); // Show the 7 most recent activities overall
-    }, [contracts, newContacts, properties]);
+    }, [newContacts, properties]);
 
     return (
         <Card>
