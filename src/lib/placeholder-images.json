@@ -23,6 +23,12 @@
       "description": "Bright and airy top-floor apartment.",
       "imageUrl": "https://images.unsplash.com/photo-1579632151052-92f741fb9b79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxicmlnaHQlMjBhcGFydG1lbnR8ZW58MHx8fHwxNzY5NzAxODgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "bright apartment"
+    },
+    {
+      "id": "hero",
+      "description": "Modern house exterior for hero section",
+      "imageUrl": "https://images.unsplash.com/photo-1568605114967-8130f3a36994?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBob3VzZSUyMGV4dGVyaW9yfGVufDB8fHx8MTc3MDA2Nzc5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern house"
     }
   ]
 }
