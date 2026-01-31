@@ -62,6 +62,7 @@ export default function RegisterPage() {
                 agencyId: inviteData.agencyId,
                 role: inviteData.role,
                 agencyName: inviteData.agencyName,
+                photoUrl: newUser.photoURL,
             };
             
             const userDocRef = doc(firestore, 'users', newUser.uid);

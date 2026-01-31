@@ -9,6 +9,10 @@
           "type": "string",
           "description": "The official name of the agency."
         },
+        "agencyDescription": {
+          "type": "string",
+          "description": "A public-facing description or 'About Us' text for the agency."
+        },
         "ownerId": {
           "type": "string",
           "description": "The user ID of the person who created and owns the agency."
@@ -77,6 +81,15 @@
           "type": "string",
           "description": "The user's email address.",
           "format": "email"
+        },
+        "photoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for the user's profile picture."
+        },
+        "agentBio": {
+          "type": "string",
+          "description": "A short biography for the agent, to be displayed on the public website."
         },
         "agencyId": {
           "type": "string",

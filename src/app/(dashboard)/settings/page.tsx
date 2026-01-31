@@ -12,20 +12,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
+  agentBio: z.string().optional(),
 });
 
 const agencySchema = z.object({
   name: z.string().min(1, 'Numele agenției este obligatoriu.'),
+  agencyDescription: z.string().optional(),
   email: z.string().email('Adresă de email invalidă.').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -46,13 +49,14 @@ export default function SettingsPage() {
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', agentBio: '' },
   });
 
   const agencyForm = useForm<z.infer<typeof agencySchema>>({
     resolver: zodResolver(agencySchema),
     defaultValues: { 
         name: '', 
+        agencyDescription: '',
         email: '', 
         phone: '', 
         address: '', 
@@ -66,7 +70,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (userProfile) {
-      profileForm.reset({ name: userProfile.name });
+      profileForm.reset({ 
+        name: userProfile.name,
+        agentBio: userProfile.agentBio || '',
+      });
     } else if (user) {
       profileForm.reset({ name: user.displayName || '' });
     }
@@ -76,6 +83,7 @@ export default function SettingsPage() {
     if (agency) {
         agencyForm.reset({
             name: agency.name,
+            agencyDescription: agency.agencyDescription || '',
             email: agency.email || '',
             phone: agency.phone || '',
             address: agency.address || '',
@@ -129,6 +137,7 @@ export default function SettingsPage() {
             email: user.email,
             agencyId: newAgencyRef.id, 
             role: 'admin',
+            photoUrl: user.photoURL,
         }, { merge: true });
 
         await batch.commit();
@@ -189,6 +198,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4 max-w-md">
               <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
               <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled /></div>
+              <FormField control={profileForm.control} name="agentBio" render={({ field }) => ( <FormItem><FormLabel>Scurtă Biografie</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Descrie-te pe scurt ca agent imobiliar..."/></FormControl><FormDescription>Biografia ta va fi afișată pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
               <div className="space-y-2">
                 <Label>Rol</Label>
                 <div>
@@ -211,6 +221,7 @@ export default function SettingsPage() {
             <CardHeader><CardTitle>Setări Agenție</CardTitle><CardDescription>Personalizează informațiile și aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
             <CardContent className="space-y-4 max-w-md">
                 <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Agenție</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="agencyDescription" render={({ field }) => ( <FormItem><FormLabel>Descriere Agenție (Despre Noi)</FormLabel><FormControl><Textarea rows={5} {...field} placeholder="Povestea, misiunea și valorile agenției tale..."/></FormControl><FormDescription>Acest text va apărea pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
                 <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" /></FormControl><FormMessage /></FormItem> )}/>
                 <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" /></FormControl><FormMessage /></FormItem> )}/>
                 <FormField control={agencyForm.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă Sediu</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Oraș" /></FormControl><FormMessage /></FormItem> )}/>

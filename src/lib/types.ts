@@ -122,6 +122,7 @@ export type Agency = {
   id: string;
   name: string;
   ownerId: string;
+  agencyDescription?: string;
   logoUrl?: string;
   primaryColor?: string;
   agentIds?: string[];
@@ -137,6 +138,8 @@ export type UserProfile = {
   id: string;
   name: string;
   email: string;
+  photoUrl?: string;
+  agentBio?: string;
   agencyId?: string;
   role?: 'admin' | 'agent';
 };

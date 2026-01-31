@@ -72,6 +72,9 @@ export default function AgencyPublicLayout({
         root.style.setProperty('--primary', hslColor);
         root.style.setProperty('--ring', hslColor);
       }
+    } else {
+        root.style.setProperty('--primary', defaultPrimary);
+        root.style.setProperty('--ring', defaultPrimary);
     }
     return () => {
         root.style.setProperty('--primary', defaultPrimary);
