@@ -1,5 +1,5 @@
 'use client';
-import { Bell, LogOut, Search, Users, Building2, CheckSquare, Loader2 } from 'lucide-react';
+import { LogOut, Search, Users, Building2, CheckSquare, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -14,6 +14,7 @@ import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { useRouter } from 'next/navigation';
+import { NotificationBell } from './NotificationBell';
 
 export function Topbar() {
     const auth = useAuth();
@@ -184,10 +185,7 @@ export function Topbar() {
                 </Popover>
             </div>
             <div className='flex items-center gap-4'>
-                <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
+                <NotificationBell />
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Avatar className="cursor-pointer">

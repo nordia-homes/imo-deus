@@ -1,5 +1,41 @@
 {
   "entities": {
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification for a user.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who should receive the notification."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the notification."
+        },
+        "link": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URL to navigate to when the notification is clicked."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Whether the user has read the notification."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the notification was created."
+        }
+      },
+      "required": [
+        "userId",
+        "message",
+        "link",
+        "isRead",
+        "createdAt"
+      ]
+    },
     "Agency": {
       "title": "Agency",
       "type": "object",
@@ -555,8 +591,28 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores notifications for a specific user. Users can only access their own notifications.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique ID of the notification."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
+    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations. A 'notifications' sub-collection is added to each user document to store user-specific notifications."
   }
 }

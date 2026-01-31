@@ -147,5 +147,14 @@ export type Invite = {
   invitedBy: string;
 };
 
+export type Notification = {
+  id: string;
+  userId: string;
+  message: string;
+  link: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
 export type WithId<T> = T & { id: string };
     
