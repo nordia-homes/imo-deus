@@ -84,8 +84,14 @@ service cloud.firestore {
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      allow get, list: if userIsInPortalAgency(portalId) || request.auth == null;
+      // Any user (client or agent) who has the portalId can read the recommendations.
+      // The portalId is an unguessable UUID, providing security.
+      allow get, list: if true;
+      
+      // Only authenticated agents belonging to the correct agency can modify recommendations.
       allow create, delete: if userIsInPortalAgency(portalId);
+      
+      // Agents can update anything. Unauthenticated clients can only update feedback fields.
       allow update: if userIsInPortalAgency(portalId) || 
           (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
     }
