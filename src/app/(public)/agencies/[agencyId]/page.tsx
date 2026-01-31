@@ -44,11 +44,8 @@ export default function AgencyHomePage() {
     <div className="container mx-auto py-8 px-4 space-y-12">
       <FeaturedProperties agencyId={agencyId} />
       <div id="properties">
-         <h2 className="text-3xl font-bold tracking-tight mb-8">Toate Proprietățile</h2>
          <PublicPropertyList agencyId={agencyId} />
       </div>
     </div>
   );
 }
-
-    

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { Star, BedDouble, Bath, Ruler } from "lucide-react";
 import type { Property } from "@/lib/types";
 import {
   Carousel,
@@ -77,8 +77,19 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
              <h3 className="font-semibold text-base text-foreground truncate pr-2">{property.title}</h3>
           </div>
           <p className="text-sm text-muted-foreground">{property.location}</p>
-           <div className="text-sm text-muted-foreground mt-1">
-                {property.bedrooms} dorm. &middot; {property.bathrooms} băi &middot; {property.squareFootage} mp
+           <div className="text-sm text-muted-foreground mt-1 flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                    <BedDouble className="h-4 w-4"/>
+                    <span>{property.bedrooms}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Bath className="h-4 w-4"/>
+                    <span>{property.bathrooms}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Ruler className="h-4 w-4"/>
+                    <span>{property.squareFootage} mp</span>
+                </div>
             </div>
           <p className="font-semibold text-base mt-2">
             €{property.price.toLocaleString()}
@@ -88,5 +99,3 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
     </div>
   );
 }
-
-    
