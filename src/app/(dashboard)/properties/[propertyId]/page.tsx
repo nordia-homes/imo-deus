@@ -8,12 +8,12 @@ import type { Property, Viewing, Contact, Task } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { properties as allSampleProperties } from '@/lib/data'; // Correct import
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHeader } from '@/components/properties/detail/PropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
-import { properties as allSampleProperties } from '@/lib/data';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { PropertyActionPanel } from '@/components/properties/detail/PropertyActionPanel';
 import { EssentialFeatures } from '@/components/properties/detail/EssentialFeatures';
@@ -31,12 +31,12 @@ const PageSkeleton = () => (
             </div>
         </div>
         {/* Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             <div className="lg:col-span-1 space-y-6">
                 <Skeleton className="h-24" />
                 <Skeleton className="h-96" />
             </div>
-             <div className="lg:col-span-1 space-y-6">
+             <div className="lg:col-span-2 space-y-6">
                 <Skeleton className="h-[500px]" />
                 <Skeleton className="h-96" />
             </div>
@@ -131,7 +131,7 @@ export default function PropertyDetailPage() {
             <PropertyHeader property={property} owner={owner} />
 
             <main className="p-4 md:p-6 lg:p-8 -mx-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-1 space-y-6">
                          <EssentialFeatures property={property} />
@@ -144,7 +144,7 @@ export default function PropertyDetailPage() {
                     </div>
                     
                     {/* Center Column */}
-                    <div className="lg:col-span-1 space-y-6">
+                    <div className="lg:col-span-2 space-y-6">
                         <MediaColumn property={property} />
                          <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
                     </div>
