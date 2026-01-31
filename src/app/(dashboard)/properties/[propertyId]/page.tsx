@@ -14,7 +14,7 @@ import { PropertyTimeline } from '@/components/properties/detail/PropertyTimelin
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { AiPropertyInsights } from '@/components/properties/detail/AiPropertyInsights';
 import { PropertyActionPanel } from '@/components/properties/detail/PropertyActionPanel';
-import { allSampleProperties } from '@/lib/data';
+import { properties as allSampleProperties } from '@/lib/data';
 
 
 const PageSkeleton = () => (
