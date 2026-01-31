@@ -16,13 +16,12 @@ const FeatureButton = ({ icon, value, label }: { icon: React.ReactNode, value?: 
     if (!value && value !== 0) return null;
     return (
         <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-background text-primary shrink-0">
+             <div className="flex items-center justify-center h-8 w-8 rounded-md bg-background text-primary shrink-0">
                 {icon}
             </div>
-            <div>
-                <p className="font-bold text-card-foreground">{value}</p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+                {label}: <span className="font-bold text-card-foreground">{value}</span>
+            </p>
         </div>
     )
 }
