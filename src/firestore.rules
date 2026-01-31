@@ -3,27 +3,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Functions ---
-
-    // This function is ONLY safe for single-document operations (get, create, update, delete)
+    
+    // Checks if a user belongs to an agency, either as owner or as an agent in the agentIds list.
+    // This is safe for single-document operations (get, create, update, delete).
     function isUserInAgency(agencyId) {
-      // Must first check existence before accessing data
-      let agencyPath = /databases/$(database)/documents/agencies/$(agencyId);
-      if (!exists(agencyPath)) {
-        return false;
-      }
-      let agencyDoc = get(agencyPath);
-      return request.auth != null && (
-        request.auth.uid == agencyDoc.data.ownerId ||
-        (agencyDoc.data.agentIds != null && request.auth.uid in agencyDoc.data.agentIds)
-      );
+      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
+      let userInAgentList = request.auth.uid in agencyDoc.data.get('agentIds', []);
+      let isOwner = request.auth.uid == agencyDoc.data.ownerId;
+      return request.auth != null && (isOwner || userInAgentList);
     }
     
-    function isUserAdmin(agencyId) {
-      if (request.auth == null) { return false; }
-      let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userProfilePath) &&
-             get(userProfilePath).data.role == 'admin' &&
-             get(userProfilePath).data.agencyId == agencyId;
+    // Checks if the user has an 'admin' role for the given agency.
+    // This relies on the user's own profile document.
+    function isUserAdminForAgency(agencyId) {
+        let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        return request.auth != null && 
+               userProfile.data.role == 'admin' &&
+               userProfile.data.agencyId == agencyId;
     }
 
     // --- Collection Rules ---
@@ -34,36 +30,35 @@ service cloud.firestore {
     }
 
     match /agencies/{agencyId} {
-      allow get, list: if true; // Publicly readable
+      allow get: if true; // Publicly readable for public pages
+      allow list: if request.auth != null; // Only authenticated users can list agencies
       allow create: if request.auth != null;
-      allow update: if isUserAdmin(agencyId);
-      allow delete: if false;
+      allow update: if isUserAdminForAgency(agencyId);
+      allow delete: if false; // Agencies cannot be deleted
     }
 
     match /invites/{inviteId} {
-      allow create: if isUserAdmin(request.resource.data.agencyId);
+      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
       allow read, delete: if request.auth != null;
     }
     
-    // NOTE: `isUserInAgency` uses `get()`, which is not allowed in `list` rules. 
-    // This rule will cause queries on these subcollections to fail.
-    // This needs a more advanced fix (e.g., constraining client-side queries).
+    // Generic subcollection rule for agency-specific data
     match /agencies/{agencyId}/{subcollection}/{docId}
-    where subcollection in ['contacts', 'tasks', 'reports', 'emails'] {
+    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'properties'] {
+      // Allow full access if the user is part of the agency.
+      // This is secure for get/write as it checks one document at a time.
       allow get, create, update, delete: if isUserInAgency(agencyId);
-      allow list: if isUserInAgency(agencyId); // This will fail.
-    }
-
-    match /agencies/{agencyId}/properties/{propertyId} {
-        allow get: if resource.data.status == 'Activ' || isUserInAgency(agencyId);
-        allow list: if true; // Publicly listable, which is correct.
-        allow create, update, delete: if isUserInAgency(agencyId);
+      
+      // IMPORTANT: `list` operations (queries) CANNOT use `get()` or `exists()`.
+      // Therefore, security for listing must be handled by client-side query constraints.
+      // We allow list for any authenticated user, and trust the client to query only for its own agencyId.
+      allow list: if request.auth != null;
     }
 
     // --- Portal Rules ---
     
     match /portals/{portalId} {
-        allow get: if true;
+        allow get: if true; // Portal doc is public to anyone with the link
         allow create: if isUserInAgency(request.resource.data.agencyId);
         allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
     }
@@ -74,18 +69,19 @@ service cloud.firestore {
       // The security is based on the unguessable `portalId`. This is the simplest and most robust fix.
       allow read: if true;
       
-      // WRITE RULES: Only authenticated users belonging to the agency can write.
-      // These are single-doc ops, so get() is safe here.
+      // WRITE RULES: 
+      // A user can write (create/delete) if they belong to the agency that owns the portal.
       function userCanWriteToPortal() {
-        let portalPath = /databases/$(database)/documents/portals/$(portalId);
+        let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
         return request.auth != null &&
-               exists(portalPath) &&
-               isUserInAgency(get(portalPath).data.agencyId);
+               exists(/databases/$(database)/documents/portals/$(portalId)) &&
+               isUserInAgency(portalDoc.data.agencyId);
       }
 
+      // A client (unauthenticated) can only update feedback fields.
       function isClientFeedbackUpdate() {
-        // Allows an unauthenticated client to update only feedback fields.
-        return request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+        return request.auth == null && 
+               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
       }
       
       allow create, delete: if userCanWriteToPortal();

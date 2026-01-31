@@ -13,7 +13,7 @@ type AgencyContextType = {
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
 
-export function AgencyProvider({ children }: { children: ReactNode }) {
+export function AgencyProvider({ children }: { children: React.Node }) {
     const { user, isUserLoading: isUserAuthLoading } = useUser();
     const firestore = useFirestore();
 
@@ -34,48 +34,49 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     
     const isAgencyLoading = isUserAuthLoading || isProfileLoading || isAgencyDocLoading;
 
-    // Self-healing: Ensure agency owner has correct agencyId and admin role in their user profile.
+    // Self-healing mechanisms
     useEffect(() => {
-        if (!isAgencyLoading && user && agency && userProfile) {
-            if (user.uid === agency.ownerId) {
-                const needsUpdate = userProfile.role !== 'admin' || userProfile.agencyId !== agency.id;
-                
-                if (needsUpdate) {
-                    console.log(`Self-healing: Syncing owner profile for user ${user.uid}.`);
-                    const currentUserDocRef = doc(firestore, 'users', user.uid);
-                    const dataToUpdate: Partial<UserProfile> = {};
-                    if (userProfile.role !== 'admin') {
-                        dataToUpdate.role = 'admin';
-                    }
-                    if (userProfile.agencyId !== agency.id) {
-                        dataToUpdate.agencyId = agency.id;
-                    }
-                    updateDocumentNonBlocking(currentUserDocRef, dataToUpdate);
-                }
+        // Wait until all data is loaded to prevent premature actions
+        if (isAgencyLoading || !user || !agency || !userProfile) {
+            return;
+        }
+
+        const agencyDocRefForUpdate = doc(firestore, 'agencies', agency.id);
+
+        // --- SELF-HEAL #1: Ensure agency owner is always in the agentIds list ---
+        if (user.uid === agency.ownerId) {
+            // Check if agentIds exists and if the owner is included
+            if (!agency.agentIds || !agency.agentIds.includes(user.uid)) {
+                console.warn(`Self-healing: Owner ${user.uid} is missing from agentIds list for agency ${agency.id}. Adding now.`);
+                updateDoc(agencyDocRefForUpdate, {
+                    agentIds: arrayUnion(user.uid)
+                }).catch(err => console.error("Self-healing (owner) failed:", err));
+            }
+
+            // Also ensure owner's profile has correct role and agencyId
+            const needsProfileUpdate = userProfile.role !== 'admin' || userProfile.agencyId !== agency.id;
+            if (needsProfileUpdate) {
+                console.warn(`Self-healing: Owner profile for ${user.uid} is out of sync. Correcting role and agencyId.`);
+                const currentUserDocRef = doc(firestore, 'users', user.uid);
+                updateDocumentNonBlocking(currentUserDocRef, {
+                    role: 'admin',
+                    agencyId: agency.id,
+                });
             }
         }
-    }, [isAgencyLoading, user, agency, userProfile, firestore]);
-
-
-    // Self-healing mechanism for agents whose registration might have partially failed.
-    useEffect(() => {
-        // Run only when all data is loaded and valid
-        if (!isAgencyLoading && user && agency && userProfile) {
-            // Check if user is an agent and belongs to this agency according to their profile
-            if (userProfile.agencyId === agency.id) {
-                // Check if their ID is missing from the agency's official list
-                if (!agency.agentIds?.includes(user.uid)) {
-                    console.log(`Self-healing: Adding agent ${user.uid} to agency ${agency.id}`);
-                    const currentAgencyDocRef = doc(firestore, 'agencies', agency.id);
-                    updateDoc(currentAgencyDocRef, {
-                        agentIds: arrayUnion(user.uid)
-                    }).catch(err => {
-                        console.error("Self-healing agentIds update failed:", err);
-                    });
-                }
+        
+        // --- SELF-HEAL #2: Ensure any user who thinks they're in an agency are in its agentIds list ---
+        if (userProfile.agencyId === agency.id) {
+            if (!agency.agentIds || !agency.agentIds.includes(user.uid)) {
+                 console.warn(`Self-healing: User ${user.uid} believes they are in agency ${agency.id}, but are not in agentIds. Adding now.`);
+                 updateDoc(agencyDocRefForUpdate, {
+                    agentIds: arrayUnion(user.uid)
+                 }).catch(err => console.error("Self-healing (agent) failed:", err));
             }
         }
+
     }, [isAgencyLoading, user, agency, userProfile, firestore]);
+
 
     const value: AgencyContextType = { 
         userProfile, 
