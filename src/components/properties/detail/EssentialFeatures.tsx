@@ -18,7 +18,7 @@ const FeatureButton = ({ icon, value, label }: { icon: React.ReactNode, value?: 
     return (
         <Button variant="outline" className="pointer-events-none w-full justify-start h-auto px-3 py-2">
             {icon}
-            <span className="text-muted-foreground">{label}: <span className="font-semibold text-foreground">{value}</span></span>
+            <span className="text-muted-foreground">{label}: <span className="font-semibold">{value}</span></span>
         </Button>
     );
 };
