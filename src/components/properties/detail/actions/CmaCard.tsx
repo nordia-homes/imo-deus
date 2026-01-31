@@ -9,6 +9,6 @@ export function CmaCard({ property }: { property: Property }) {
 
     if (!agencyId) return null;
     
-    // Using CmaAnalysisTab directly as a self-contained card
+    // CmaAnalysisTab component already looks like a card, so we can use it directly.
     return <CmaAnalysisTab subjectProperty={property} allProperties={allSampleProperties} agencyId={agencyId} />;
 }

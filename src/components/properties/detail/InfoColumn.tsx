@@ -86,17 +86,15 @@ export function InfoColumn({ property, allProperties, agencyId }: InfoColumnProp
                 <CardContent>
                     {(property.latitude && property.longitude) ? (
                         <iframe
-                            className="w-full aspect-video rounded-md"
+                            className="w-full aspect-video rounded-md border"
                             loading="lazy"
                             allowFullScreen
-                            src={`https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=ro&z=15&output=embed`}
-                        >
+                            referrerPolicy="no-referrer-when-downgrade"
+                            src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(property.address)}`}>
                         </iframe>
                     ) : (
-                        <div className="aspect-video bg-gray-200 rounded-md flex items-center justify-center">
-                            <p className="text-muted-foreground">
-                                Coordonatele GPS nu sunt disponibile pentru această proprietate.
-                            </p>
+                        <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">Adresa sau coordonatele nu sunt disponibile.</p>
                         </div>
                     )}
                 </CardContent>

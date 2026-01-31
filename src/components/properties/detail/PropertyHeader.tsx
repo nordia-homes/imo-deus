@@ -38,11 +38,11 @@ export function PropertyHeader({ property }: { property: Property }) {
                 </div>
 
                 <div className="items-center gap-2 hidden md:flex">
-                    <Button variant="outline"><Send /> Trimite Clientului</Button>
-                    <Button variant="outline"><Rocket /> Publică</Button>
-                    <Button variant="outline"><FileText /> Generează PDF</Button>
+                    <Button variant="outline"><Send className="mr-2 h-4 w-4"/> Trimite Clientului</Button>
+                    <Button variant="outline"><Rocket className="mr-2 h-4 w-4"/> Publică</Button>
+                    <Button variant="outline"><FileText className="mr-2 h-4 w-4"/> Generează PDF</Button>
                     {/* Placeholder for Edit Dialog */}
-                    <AddPropertyDialog><Button><Edit /> Editează</Button></AddPropertyDialog>
+                    <AddPropertyDialog><Button><Edit className="mr-2 h-4 w-4"/> Editează</Button></AddPropertyDialog>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon"><MoreHorizontal /></Button>

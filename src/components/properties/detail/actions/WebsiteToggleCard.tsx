@@ -1,5 +1,5 @@
 'use client';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
@@ -23,15 +23,23 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
 
     return (
         <Card className="rounded-2xl">
-            <CardContent className="p-4 flex items-center justify-between">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Website Public</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
                 <Label htmlFor="website-public-toggle" className="font-semibold text-sm">
-                    Website Public
+                    Recomandată
                 </Label>
                 <Switch
                     id="website-public-toggle"
                     checked={property.featured}
                     onCheckedChange={handleToggle}
                 />
+            </CardContent>
+             <CardContent className="pt-0">
+                <CardDescription className="text-xs">
+                   Dacă este activ, proprietatea va apărea în secțiunea "Recomandate" de pe website-ul public.
+                </CardDescription>
             </CardContent>
         </Card>
     );

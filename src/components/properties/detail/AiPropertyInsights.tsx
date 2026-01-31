@@ -80,45 +80,32 @@ export function AiPropertyInsights({ property }: { property: Property }) {
     return (
         <Card className="rounded-2xl shadow-md border-primary/20">
             <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>AI Property Insights</CardTitle>
-                <Button variant="ghost" size="sm" onClick={handleGenerateInsights}>Sui il acti</Button>
+                <CardTitle>Property Insights</CardTitle>
+                <Button variant="ghost" size="sm" onClick={handleGenerateInsights}>Regenerează</Button>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex items-center gap-6">
                     <div className="flex flex-col items-center">
-                        <div className="h-20 w-20 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-3xl font-bold">
+                        <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary text-3xl font-bold">
                             {insights.marketScore}
                         </div>
-                        <p className="text-sm font-semibold mt-1">Scor</p>
+                        <p className="text-sm font-semibold mt-1">Scor Piață</p>
                     </div>
-                    <div className="flex-1 space-y-1">
-                        <p className="text-sm text-muted-foreground">Potențial</p>
-                        <p className="font-semibold">5.2/10</p>
-                         <div className="flex gap-2">
-                             <Badge variant="outline">Restale eonssavlica</Badge>
-                             <Badge variant="outline">Restnaleitiva</Badge>
-                         </div>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                         <div className="p-2 bg-yellow-100 rounded-full">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
                             <TrendingUp className="h-5 w-5 text-yellow-600" />
+                            <p className="font-medium text-sm">
+                                <span className="text-muted-foreground">Preț: </span>
+                                {insights.pricingFeedback}
+                            </p>
                         </div>
-                        <p className="font-medium text-sm">
-                            <span className="text-muted-foreground">Preț estimat: </span>
-                            {insights.pricingFeedback}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                         <div className="p-2 bg-green-100 rounded-full">
+                        <div className="flex items-center gap-3">
                             <ThumbsUp className="h-5 w-5 text-green-600" />
+                            <p className="font-medium text-sm">
+                                <span className="text-muted-foreground">Profil Cumpărător: </span>
+                                {insights.buyerProfile}
+                            </p>
                         </div>
-                        <p className="font-medium text-sm">
-                            <span className="text-muted-foreground">Recomandare: </span>
-                            Publică pe Imobiliare.ro și OLX
-                        </p>
                     </div>
                 </div>
             </CardContent>

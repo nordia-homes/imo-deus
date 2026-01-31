@@ -33,20 +33,16 @@ export function PriceStatusCard({ property }: { property: Property }) {
 
     return (
         <Card className="rounded-2xl">
-            <CardHeader>
-                <CardTitle className="text-base font-semibold">Acțiuni Rapide</CardTitle>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Preț & Status</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
                 <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Preț & Status</p>
                     <div className="flex items-center justify-between">
-                         <p className="text-xl font-bold">€{property.price.toLocaleString()}</p>
+                         <p className="text-2xl font-bold">€{property.price.toLocaleString()}</p>
                          <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                            <SelectTrigger className="w-auto h-8 text-xs font-semibold">
-                                <div className="flex items-center gap-2">
-                                    <HandCoins className="h-4 w-4" />
-                                    <SelectValue />
-                                </div>
+                            <SelectTrigger className="w-[120px] h-9 text-xs font-semibold">
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Activ">Activ</SelectItem>
