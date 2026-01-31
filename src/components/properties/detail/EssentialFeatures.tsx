@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
 import {
     BedDouble,
@@ -15,20 +16,16 @@ import {
 const FeatureButton = ({ icon, value, label }: { icon: React.ReactNode, value?: string | number | null, label: string }) => {
     if (!value && value !== 0) return null;
     return (
-        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-             <div className="flex items-center justify-center h-8 w-8 rounded-md bg-background text-primary shrink-0">
-                {icon}
-            </div>
-            <p className="text-sm text-muted-foreground">
-                {label}: <span className="font-bold text-card-foreground">{value}</span>
-            </p>
-        </div>
-    )
-}
+        <Button variant="outline" size="sm" className="pointer-events-none w-full justify-start h-auto">
+            {icon}
+            <span className="text-muted-foreground">{label}: <span className="font-semibold text-foreground">{value}</span></span>
+        </Button>
+    );
+};
 
 export function EssentialFeatures({ property }: { property: Property }) {
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2">
             <FeatureButton icon={<HandCoins />} value={property.transactionType} label="Tranzacție" />
             <FeatureButton icon={<Building />} value={property.propertyType} label="Tip" />
             <FeatureButton icon={<Ruler />} value={`${property.squareFootage} mp`} label="Suprafață" />
@@ -38,5 +35,5 @@ export function EssentialFeatures({ property }: { property: Property }) {
             <FeatureButton icon={<Layers />} value={property.floor} label="Etaj" />
             <FeatureButton icon={<Car />} value={property.parking} label="Parcare" />
         </div>
-    )
+    );
 }
