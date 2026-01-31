@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Home className="text-primary" />
