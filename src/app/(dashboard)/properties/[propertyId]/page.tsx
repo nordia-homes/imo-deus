@@ -54,7 +54,7 @@ export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
     
-    const { agency, isAgencyLoading: isContextLoading } = useAgency();
+    const { agency, agencyId, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
     const { toast } = useToast();
     const firestore = useFirestore();
