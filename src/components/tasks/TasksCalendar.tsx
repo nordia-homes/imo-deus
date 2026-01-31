@@ -39,7 +39,6 @@ export function TasksCalendar() {
         tasks.forEach(task => {
             if (task.dueDate) {
                 const taskDate = new Date(task.dueDate);
-                // Adjust for timezone offset to prevent date shifting
                 const utcDate = new Date(taskDate.valueOf() + taskDate.getTimezoneOffset() * 60000);
                 const dayKey = format(utcDate, 'yyyy-MM-dd');
                 
@@ -55,63 +54,64 @@ export function TasksCalendar() {
         return grouped;
     }, [tasks]);
 
-    const CustomDay = ({ date }: { date: Date }) => {
+    // This component renders the content INSIDE the day cell.
+    const CustomDay = ({ date }: { date?: Date }) => {
         if (!date || isNaN(date.getTime())) {
-            return <div className="h-full w-full" />;
+            return null;
         }
         
         const dayKey = format(date, 'yyyy-MM-dd');
         const dayTasks = tasksByDay[dayKey]?.tasks || [];
 
-        if (dayTasks.length === 0) {
-            return (
-                 <div className="h-full w-full p-1.5 text-left">
-                    <span className="text-xs text-muted-foreground">{date.getDate()}</span>
-                </div>
-            );
-        }
-
         return (
             <Popover>
                 <PopoverTrigger asChild>
-                    <button className="relative flex flex-col items-start h-full w-full p-1.5 rounded-sm text-left hover:bg-accent transition-colors focus:outline-none focus:ring-1 focus:ring-ring focus:z-10">
+                    {/* The content of the day cell is a div, which acts as the trigger */}
+                    <div
+                        className={cn(
+                            "relative flex flex-col items-start h-full w-full p-1.5 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-ring focus:z-10",
+                            dayTasks.length > 0 && "cursor-pointer hover:bg-accent"
+                        )}
+                    >
                         <span className="text-xs font-semibold text-foreground">{date.getDate()}</span>
                         <div className="flex-1 mt-1 space-y-0.5 overflow-hidden w-full">
                             {dayTasks.slice(0, 3).map(task => (
-                                <div key={task.id} className="text-xs truncate px-1 py-0.5 rounded bg-primary/20 text-primary-foreground">
+                                <div key={task.id} className="text-[10px] leading-tight truncate px-1 py-0.5 rounded bg-primary/20 text-primary-foreground font-medium">
                                     {task.startTime && <span className="font-bold">{task.startTime} </span>}
                                     {task.description}
                                 </div>
                             ))}
                             {dayTasks.length > 3 && (
-                                <div className="text-xs text-muted-foreground">+ {dayTasks.length - 3} more</div>
+                                <div className="text-[10px] text-muted-foreground">+ {dayTasks.length - 3} more</div>
                             )}
                         </div>
-                    </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                    <div className="space-y-4">
-                        <h4 className="font-semibold">{format(date, "PPPP", { locale: ro })}</h4>
-                        <div className="space-y-3 max-h-64 overflow-y-auto">
-                            {dayTasks.map(task => (
-                                <div key={task.id}>
-                                    <p className="font-medium text-sm">{task.description}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {task.startTime && `Ora: ${task.startTime}`}
-                                        {task.contactName && task.contactId && (
-                                            <>
-                                                {' | Pentru: '}
-                                                <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline">
-                                                    {task.contactName}
-                                                </Link>
-                                            </>
-                                        )}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
                     </div>
-                </PopoverContent>
+                </PopoverTrigger>
+                {dayTasks.length > 0 && (
+                    <PopoverContent className="w-80">
+                        <div className="space-y-4">
+                            <h4 className="font-semibold">{format(date, "PPPP", { locale: ro })}</h4>
+                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                                {dayTasks.map(task => (
+                                    <div key={task.id}>
+                                        <p className="font-medium text-sm">{task.description}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {task.startTime && `Ora: ${task.startTime}`}
+                                            {task.contactName && task.contactId && (
+                                                <>
+                                                    {' | Pentru: '}
+                                                    <Link href={`/leads/${task.contactId}`} className="text-primary hover:underline">
+                                                        {task.contactName}
+                                                    </Link>
+                                                </>
+                                            )}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </PopoverContent>
+                )}
             </Popover>
         );
     };
@@ -131,30 +131,32 @@ export function TasksCalendar() {
                     className="w-full"
                     captionLayout="buttons"
                     classNames={{
+                        // Use table layout, not flex, to avoid hydration errors
                         months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
                         month: 'space-y-4 w-full',
                         caption: "flex justify-center pt-1 relative items-center",
                         caption_label: "text-lg font-bold",
-                        nav: 'space-x-1 flex items-center',
+                        nav: "space-x-1 flex items-center",
                         nav_button: cn(
                           buttonVariants({ variant: 'outline' }),
                           'h-7 w-7 bg-transparent p-0'
                         ),
-                        nav_button_previous: 'absolute left-1 top-1/2 -translate-y-1/2',
-                        nav_button_next: 'absolute right-1 top-1/2 -translate-y-1/2',
-                        table: 'w-full border-collapse',
-                        head_row: 'flex',
-                        head_cell: 'w-[14.28%] text-muted-foreground rounded-md font-normal text-[0.8rem] text-center border-b pb-1',
-                        row: 'flex w-full border-b',
-                        cell: 'h-28 w-[14.28%] p-0 text-center text-sm relative border-r last:border-r-0',
-                        day: 'h-full w-full p-0 font-normal focus:relative focus:z-20',
-                        day_selected: 'bg-transparent text-foreground',
-                        day_today: 'bg-accent text-accent-foreground',
+                        nav_button_previous: 'absolute left-1',
+                        nav_button_next: 'absolute right-1',
+                        table: 'w-full border-collapse', // Ensure it behaves like a table
+                        head_row: '', // NO FLEXBOX on table rows
+                        head_cell: 'text-muted-foreground rounded-md w-[14.28%] font-normal text-center text-[0.8rem] pb-1 border-b',
+                        row: 'w-full border-b', // NO FLEXBOX on table rows
+                        cell: 'h-28 text-center text-sm p-0 relative border-r last:border-r-0',
+                        day: 'h-full w-full p-0 font-normal',
+                        day_selected: 'bg-transparent', // Handled by CustomDay
+                        day_today: 'bg-accent/50 text-accent-foreground',
                         day_outside: 'text-muted-foreground opacity-50',
                         day_disabled: 'text-muted-foreground opacity-50',
                         day_hidden: 'invisible',
                     }}
                     components={{
+                        // Day component renders the CONTENT of the cell.
                         Day: CustomDay,
                     }}
                 />
