@@ -71,8 +71,16 @@ export function useCollection<T = DocumentData>(
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
-        setData(results);
+        const newResults = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
+        
+        setData(currentData => {
+            // Simple stringify comparison to prevent re-renders on identical data.
+            if (JSON.stringify(currentData) === JSON.stringify(newResults)) {
+                return currentData;
+            }
+            return newResults;
+        });
+
         setError(null);
         setIsLoading(false);
       },

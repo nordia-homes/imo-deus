@@ -60,11 +60,19 @@ export function useDoc<T = DocumentData>(
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
-        if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
-        } else {
-          setData(null);
-        }
+        const docExists = snapshot.exists();
+        
+        setData(currentData => {
+            if (!docExists) {
+                return null;
+            }
+            const newData = { ...(snapshot.data() as T), id: snapshot.id };
+            if (JSON.stringify(currentData) === JSON.stringify(newData)) {
+                return currentData;
+            }
+            return newData;
+        });
+
         setError(null);
         setIsLoading(false);
       },
