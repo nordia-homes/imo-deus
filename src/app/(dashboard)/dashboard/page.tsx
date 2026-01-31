@@ -246,12 +246,12 @@ export default function DashboardPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-6">
+                    <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     <RecentActivity />
                 </div>
-                <div className="space-y-6">
+                <div className="lg:col-span-1 space-y-6">
                     <AiHelperCard />
-                    <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} />
                     <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} />
                 </div>
