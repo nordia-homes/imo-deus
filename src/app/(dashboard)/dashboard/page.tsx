@@ -6,7 +6,7 @@ import { collection, query, orderBy, where, limit } from 'firebase/firestore';
 import type { Property, Viewing, Task } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, isThisWeek } from 'date-fns';
 import { ro } from "date-fns/locale";
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
 import { CalendarCheck, Handshake, Bookmark } from 'lucide-react';
@@ -53,8 +53,7 @@ export default function DashboardPage() {
     
 
     // --- DATA CALCULATION ---
-    const { soldThisMonth, reservedThisMonth, upcomingViewings } = useMemo(() => {
-        const now = new Date();
+    const { soldThisMonth, reservedThisMonth, viewingsThisWeek } = useMemo(() => {
         const sold = properties?.filter(p => 
             p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
         ) || [];
@@ -63,14 +62,19 @@ export default function DashboardPage() {
             p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
         ) || [];
         
-        const upcoming = viewings?.filter(v => 
-            v.status === 'scheduled' && parseISO(v.viewingDate) >= now
-        ) || [];
+        const weeklyViewings = viewings?.filter(v => {
+            try {
+                // Filter for scheduled viewings within the current week (Mon-Sun)
+                return v.status === 'scheduled' && isThisWeek(parseISO(v.viewingDate), { weekStartsOn: 1 });
+            } catch (e) {
+                return false;
+            }
+        }) || [];
 
         return {
             soldThisMonth: sold,
             reservedThisMonth: reserved,
-            upcomingViewings: upcoming,
+            viewingsThisWeek: weeklyViewings,
         };
     }, [properties, viewings]);
     
@@ -159,13 +163,13 @@ export default function DashboardPage() {
                     </DashboardSection>
 
                     <DashboardSection
-                        title="Vizionări Programate"
+                        title="Vizionări Săptămâna Aceasta"
                         icon={<CalendarCheck className="h-6 w-6 text-primary" />}
-                        count={upcomingViewings.length}
+                        count={viewingsThisWeek.length}
                     >
                         <DashboardInfoList
-                            items={upcomingViewings}
-                            emptyText="Nicio vizionare programată."
+                            items={viewingsThisWeek}
+                            emptyText="Nicio vizionare programată săptămâna aceasta."
                             renderItem={(viewing: Viewing) => (
                                  <Link href={`/viewings`} key={viewing.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
                                     <p className="font-semibold truncate">{viewing.propertyTitle}</p>
