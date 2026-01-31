@@ -9,23 +9,24 @@ service cloud.firestore {
     }
 
     // Checks if the user's profile document exists and they are associated with the given agencyId.
-    // This is the primary function for authorizing access to agency-specific data.
+    // This function can only be used in rules for single-document access (get, write).
+    // It cannot be used for collection queries (list).
     function isUserInAgency(agencyId) {
-      // Check if the agency document exists before trying to read from it.
       let agencyPath = /databases/$(database)/documents/agencies/$(agencyId);
       if (!exists(agencyPath)) {
         return false;
       }
-      let agencyDoc = get(agencyPath).data;
+      let agencyDoc = get(agencyPath);
       
       // A user is in the agency if they are the owner OR their UID is in the agentIds list.
       return isAuthenticated() && (
-        request.auth.uid == agencyDoc.ownerId || 
-        (agencyDoc.agentIds != null && request.auth.uid in agencyDoc.agentIds)
+        request.auth.uid == agencyDoc.data.ownerId || 
+        (agencyDoc.data.agentIds != null && request.auth.uid in agencyDoc.data.agentIds)
       );
     }
     
     // Checks if the user is an administrator of the given agency.
+    // This can also only be used for single-document access.
     function isUserAdmin(agencyId) {
       let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isUserInAgency(agencyId) &&
@@ -64,7 +65,7 @@ service cloud.firestore {
 
     // PROPERTIES: Publicly readable if active, otherwise restricted to agency members.
     match /agencies/{agencyId}/properties/{propertyId} {
-        allow get: if (resource.data.status == 'Activ') || isUserInAgency(agencyId);
+        allow get: if resource.data.status == 'Activ' || isUserInAgency(agencyId);
         allow list: if true;
         allow create, update, delete: if isUserInAgency(agencyId);
     }
@@ -78,26 +79,27 @@ service cloud.firestore {
         allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
     }
     
-    // RECOMMENDATIONS SUBCOLLECTION:
+    // RECOMMENDATIONS SUBCOLLECTION
     match /portals/{portalId}/recommendations/{recommendationId} {
-        // READ: Publicly readable. Security is through the unguessable portalId.
-        // This allows both unauthenticated clients and authenticated agents to read.
+        // READ operations:
+        // `list` is for collection queries. Its rule cannot use `get()` on other documents.
+        // We rely on the unguessable portalId for read security.
+        // `get` is for single-doc reads. It is also made public for simplicity.
         allow read: if true;
-
-        // WRITE: For write operations, we verify the user is part of the correct agency.
+        
+        // WRITE operations:
+        // These operate on a single document, so we CAN use get() to check permissions.
         function userIsInPortalAgency() {
           let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
           return exists(/databases/$(database)/documents/portals/$(portalId)) &&
                  isUserInAgency(portalDoc.data.agencyId);
         }
-
-        // CREATE/DELETE: Only agents of the portal's agency can add/remove recommendations.
-        allow create, delete: if userIsInPortalAgency();
-
-        // UPDATE: Agents can update anything. Unauthenticated clients can only update feedback fields.
+        
         function isClientFeedbackUpdate() {
             return request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
         }
+
+        allow create, delete: if userIsInPortalAgency();
         allow update: if userIsInPortalAgency() || isClientFeedbackUpdate();
     }
   }
