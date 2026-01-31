@@ -8,6 +8,7 @@ import { collection } from 'firebase/firestore';
 import type { Task, Contact } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { useAgency } from "@/context/AgencyContext";
+import { TasksCalendar } from "@/components/tasks/TasksCalendar";
 
 export default function TasksPage() {
     const { toast } = useToast();
@@ -46,12 +47,16 @@ export default function TasksPage() {
                 <TabsList className="mb-4 self-start">
                     <TabsTrigger value="board">Panou</TabsTrigger>
                     <TabsTrigger value="list">Listă</TabsTrigger>
+                    <TabsTrigger value="calendar">Calendar</TabsTrigger>
                 </TabsList>
                 <TabsContent value="board" className="flex-1 -m-1">
                     <TasksBoard />
                 </TabsContent>
                 <TabsContent value="list" className="mt-0">
                     <TasksList />
+                </TabsContent>
+                <TabsContent value="calendar" className="mt-0 flex-1">
+                    <TasksCalendar />
                 </TabsContent>
             </Tabs>
         </div>
