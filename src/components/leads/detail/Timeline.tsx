@@ -3,11 +3,13 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Interaction, Task } from '@/lib/types';
+import type { Interaction, Task, Contact } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, MessageSquare, Plus, MoreHorizontal, Check, Calendar, Mail } from 'lucide-react';
+import { Phone, MessageSquare, Plus, MoreHorizontal, Check, Calendar, Mail, FileText } from 'lucide-react';
 import React, { useMemo } from 'react';
+import { AddInteractionPopover } from './AddInteractionPopover';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
 type TimelineItemData = (
   | ({ type: 'interaction' } & Interaction)
@@ -19,6 +21,7 @@ const getInteractionIcon = (type: Interaction['type']) => {
         case 'Apel telefonic': return <Phone className="h-4 w-4" />;
         case 'WhatsApp': return <MessageSquare className="h-4 w-4" />;
         case 'Email': return <Mail className="h-4 w-4" />;
+        case 'Ofertă': return <FileText className="h-4 w-4" />;
         default: return <Calendar className="h-4 w-4" />;
     }
 };
@@ -32,9 +35,8 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
                         {item.type === 'interaction' ? getInteractionIcon(item.type as Interaction['type']) : <Check className="h-4 w-4" />}
                         <span>{item.type === 'interaction' ? item.type : item.description}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="h-4 w-4" /></Button>
                 </div>
-                 <CardDescription className="text-xs pt-1">
+                 <CardDescription className="text-xs pt-1 whitespace-pre-wrap">
                     {item.type === 'interaction' ? item.notes : `Scadent: ${new Date(item.dueDate).toLocaleDateString('ro-RO')}`}
                 </CardDescription>
             </CardHeader>
@@ -50,9 +52,12 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
 type LeadTimelineProps = {
   interactions: Interaction[];
   tasks: Task[];
+  contact: Contact;
+  onAddInteraction: (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => Promise<void>;
+  onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => void;
 };
 
-export function LeadTimeline({ interactions, tasks }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, tasks, contact, onAddInteraction, onAddTask }: LeadTimelineProps) {
     const timelineItems = useMemo(() => {
         const combined: TimelineItemData[] = [];
         interactions.forEach(i => combined.push({ ...i, type: 'interaction', sortDate: new Date(i.date) }));
@@ -75,14 +80,26 @@ export function LeadTimeline({ interactions, tasks }: LeadTimelineProps) {
         return acc;
     }, {} as Record<string, TimelineItemData[]>);
 
+    const handleSaveInteraction = (type: Interaction['type']) => async (notes: string) => {
+        await onAddInteraction({ type, notes });
+    };
+
   return (
     <div className="space-y-4">
       <Card className="rounded-2xl">
-        <CardContent className="p-2 flex justify-around">
-            <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Apel</Button>
-            <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />WhatsApp</Button>
-            <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Notiță</Button>
-            <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Task</Button>
+        <CardContent className="p-2 grid grid-cols-2 lg:grid-cols-4 gap-1">
+            <AddInteractionPopover type="Apel telefonic" onSave={handleSaveInteraction('Apel telefonic')}>
+                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Apel</Button>
+            </AddInteractionPopover>
+            <AddInteractionPopover type="WhatsApp" onSave={handleSaveInteraction('WhatsApp')}>
+                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />WhatsApp</Button>
+            </AddInteractionPopover>
+             <AddInteractionPopover type="Notiță" onSave={handleSaveInteraction('Notiță')}>
+                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Notiță</Button>
+            </AddInteractionPopover>
+            <AddTaskDialog onAddTask={onAddTask} contacts={[contact]}>
+                 <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Task</Button>
+            </AddTaskDialog>
         </CardContent>
       </Card>
       
@@ -96,7 +113,7 @@ export function LeadTimeline({ interactions, tasks }: LeadTimelineProps) {
                         {group} ({items.length})
                     </AccordionTrigger>
                     <AccordionContent className="space-y-3 pt-2">
-                       {items.map((item, index) => <TimelineItem key={`${item.type}-${item.id}-${index}`} item={item} />)}
+                       {items.map((item, index) => <TimelineItem key={`${item.type}-${item.id || index}`} item={item} />)}
                     </AccordionContent>
                 </AccordionItem>
             ))}

@@ -30,17 +30,19 @@ const taskSchema = z.object({
 type ContactStub = { id: string; name: string; };
 
 type AddTaskDialogProps = {
-    onAddTask: (task: Omit<Task, 'id' | 'status'>) => void;
+    onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: ContactStub[];
+    children?: React.ReactNode;
 }
 
-export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
+export function AddTaskDialog({ onAddTask, contacts, children }: AddTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       description: '',
       duration: 30,
+      contactId: contacts.length === 1 ? contacts[0].id : undefined,
     },
   });
 
@@ -77,16 +79,17 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
     });
 
     setIsOpen(false);
-    form.reset();
+    form.reset({
+        description: '',
+        duration: 30,
+        contactId: contacts.length === 1 ? contacts[0].id : undefined,
+    });
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adaugă Task
-        </Button>
+        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Task</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -195,6 +198,7 @@ export function AddTaskDialog({ onAddTask, contacts }: AddTaskDialogProps) {
                           <SelectTrigger><SelectValue placeholder="Selectează un lead" /></SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="unassigned">Niciunul</SelectItem>
                           {contacts.map(contact => (
                             <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
                           ))}

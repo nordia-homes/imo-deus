@@ -4,22 +4,17 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import type { Contact } from '@/lib/types';
+import type { Contact, Task } from '@/lib/types';
 import { Phone, Mail, Plus, MapPin, Building, DollarSign } from 'lucide-react';
 import { AddTaskDialog } from '../../tasks/AddTaskDialog';
 
 type LeadHeaderProps = {
   contact: Contact;
+  onUpdateContact: (data: Partial<Omit<Contact, 'id'>>) => void;
+  onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => void;
 };
 
-export function LeadHeader({ contact }: LeadHeaderProps) {
-  const allContactsForDialog = [{ id: contact.id, name: contact.name }];
-
-  const handleAddTask = () => {
-    // Logic to open AddTaskDialog or a similar modal
-    // For now, we'll just log it. A full implementation would use a Dialog context or state.
-    console.log('Open Add Task dialog');
-  };
+export function LeadHeader({ contact, onUpdateContact, onAddTask }: LeadHeaderProps) {
   
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mx-8 px-8 py-4 border-b">
@@ -57,7 +52,7 @@ export function LeadHeader({ contact }: LeadHeaderProps) {
             </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href={`https://wa.me/${contact.phone}`} target="_blank">
+            <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank">
                 <WhatsappIcon className="h-4 w-4" />
                 WhatsApp
             </a>
@@ -68,8 +63,15 @@ export function LeadHeader({ contact }: LeadHeaderProps) {
                 Trimite Email
              </a>
           </Button>
-           <AddTaskDialog onAddTask={()=>{}} contacts={allContactsForDialog} />
-          <Button size="lg">Marchează Vândut</Button>
+          <AddTaskDialog onAddTask={onAddTask} contacts={[contact]}>
+             <Button size="lg" variant="outline">
+                <Plus className="h-4 w-4" />
+                Creează Task
+             </Button>
+           </AddTaskDialog>
+          <Button size="lg" onClick={() => onUpdateContact({ status: 'Câștigat' })}>
+            Marchează Vândut
+          </Button>
         </div>
       </div>
     </header>
