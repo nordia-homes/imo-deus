@@ -1,7 +1,12 @@
+// src/firebase/server.ts
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 
-// This file is intentionally left empty.
-// Server-side data fetching for this page has been moved to the client
-// to resolve runtime errors with server components.
-// All Firebase interactions should use the client-side SDK via hooks.
-
-export {};
+// Initialize Firebase for server-side usage
+export function initializeServerFirebase() {
+  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  return {
+    firestore: getFirestore(app),
+  };
+}

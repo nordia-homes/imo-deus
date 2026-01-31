@@ -9,7 +9,6 @@ import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useAgency } from '@/context/AgencyContext';
-import { properties as sampleProperties } from '@/lib/data';
 
 export function PropertyList() {
     const { agencyId } = useAgency();
@@ -117,13 +116,10 @@ export function PropertyList() {
 }
 
 
-export function PublicPropertyList({ agencyId }: { agencyId: string }) {
+export function PublicPropertyList({ properties, agencyId }: { properties: Property[], agencyId: string }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('price-desc');
-
-    const properties = useMemo(() => sampleProperties.filter(p => p.status === 'Activ'), []);
-    const isLoading = false;
 
     const filteredAndSortedProperties = useMemo(() => {
         if (!properties) return [];
@@ -145,7 +141,8 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
             if (sortOrder === 'price-asc') {
                 return a.price - b.price;
             }
-            return 0;
+            // Add a sort by creation date as a fallback/default
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
         });
 
     }, [properties, searchTerm, typeFilter, sortOrder]);
@@ -157,25 +154,6 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
     }, [properties]);
 
     const renderPropertyList = () => {
-        if (isLoading) {
-            return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
-                    {[...Array(8)].map((_, i) => (
-                        <div key={i} className="space-y-3">
-                            <Skeleton className="aspect-square w-full rounded-xl" />
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                            <Skeleton className="h-5 w-1/3" />
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-
-        if (!properties) {
-             return <p className="text-center text-muted-foreground py-10">A apărut o eroare la încărcarea proprietăților.</p>;
-        }
-
         if (filteredAndSortedProperties.length === 0) {
             return <p className="text-center text-muted-foreground py-10">Nicio proprietate nu corespunde căutării.</p>;
         }
