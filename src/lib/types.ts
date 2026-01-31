@@ -81,8 +81,8 @@ export type Contact = {
     status: 'Nou' | 'Contactat' | 'Vizionare' | 'În negociere' | 'Câștigat' | 'Pierdut';
     notes: string;
     contactType: 'Lead' | 'Client' | 'Partener';
-    interactionHistory: Interaction[];
-    preferences: ContactPreferences;
+    interactionHistory?: Interaction[];
+    preferences?: Partial<ContactPreferences>;
     city?: string;
     zones?: string[];
     leadScore?: number;

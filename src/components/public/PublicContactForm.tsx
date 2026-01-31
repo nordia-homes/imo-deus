@@ -7,83 +7,141 @@ import { z } from 'zod';
 import { useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Send, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
-const contactSchema = z.object({
-  name: z.string().min(2, { message: 'Numele este obligatoriu.' }),
-  email: z.string().email({ message: 'Adresa de email este invalidă.' }),
-  phone: z.string().min(1, { message: 'Telefonul este obligatoriu.' }),
-  message: z.string().min(10, { message: 'Mesajul trebuie să aibă cel puțin 10 caractere.' }),
+const contactFormSchema = z.object({
+  name: z.string().min(2, 'Numele este obligatoriu.'),
+  email: z.string().email('Adresa de email este invalidă.'),
+  phone: z.string().min(10, 'Numărul de telefon este invalid.'),
+  message: z.string().min(10, 'Mesajul trebuie să aibă cel puțin 10 caractere.'),
 });
 
-export function PublicContactForm({ agencyId }: { agencyId: string }) {
-  const { toast } = useToast();
-  const firestore = useFirestore();
+type PublicContactFormProps = {
+  agencyId: string;
+};
+
+export function PublicContactForm({ agencyId }: PublicContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof contactSchema>>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: { name: '', email: '', phone: '', message: '' },
+  const form = useForm<z.infer<typeof contactFormSchema>>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      message: '',
+    },
   });
 
-  async function onSubmit(values: z.infer<typeof contactSchema>) {
+  async function onSubmit(values: z.infer<typeof contactFormSchema>) {
     setIsSubmitting(true);
+    const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
 
     try {
-      const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
-      
       const newLeadData = {
         name: values.name,
         email: values.email,
         phone: values.phone,
-        notes: `Mesaj de pe site-ul public:\n---\n${values.message}`,
+        notes: values.message,
         source: 'Website',
-        status: 'Nou',
-        priority: 'Medie',
-        contactType: 'Lead',
+        status: 'Nou' as const,
+        contactType: 'Lead' as const,
         createdAt: new Date().toISOString(),
+        interactionHistory: [],
       };
-
-      await addDocumentNonBlocking(contactsCollection, newLeadData);
       
-      setIsSuccess(true);
+      await addDocumentNonBlocking(contactsCollection, newLeadData);
 
+      toast({
+        title: 'Mesaj trimis!',
+        description: 'Vă mulțumim! Un reprezentant vă va contacta în cel mai scurt timp.',
+      });
+      setIsSuccess(true);
     } catch (error) {
-      console.error("Failed to submit contact form:", error);
+      console.error('Failed to submit contact form:', error);
       toast({
         variant: 'destructive',
-        title: 'Eroare la trimitere',
-        description: 'A apărut o problemă. Vă rugăm să încercați din nou mai târziu.',
+        title: 'Eroare',
+        description: 'A apărut o problemă la trimiterea mesajului. Vă rugăm să încercați din nou.',
       });
       setIsSubmitting(false);
     }
   }
-
+  
   if (isSuccess) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center p-8 bg-green-50 rounded-lg border border-green-200">
-        <CheckCircle className="h-12 w-12 text-green-600 mb-4" />
-        <h3 className="text-xl font-semibold">Mesaj Trimis!</h3>
-        <p className="text-muted-foreground mt-2">Vă mulțumim. Unul dintre agenții noștri vă va contacta în cel mai scurt timp.</p>
-      </div>
-    );
+      return (
+          <div className="flex flex-col items-center justify-center text-center p-8 border rounded-lg bg-background">
+                <h3 className="text-xl font-semibold mb-2">Vă mulțumim!</h3>
+                <p className="text-muted-foreground">Mesajul dumneavoastră a fost trimis cu succes. Un consultant vă va contacta în cel mai scurt timp posibil.</p>
+          </div>
+      )
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume Complet</FormLabel><FormControl><Input {...field} placeholder="Numele dvs." /></FormControl><FormMessage /></FormItem> )} />
-        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Adresă Email</FormLabel><FormControl><Input {...field} placeholder="email@exemplu.ro" /></FormControl><FormMessage /></FormItem> )} />
-        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Număr Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" /></FormControl><FormMessage /></FormItem> )} />
-        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel>Mesajul Dvs.</FormLabel><FormControl><Textarea {...field} placeholder="Scrieți aici mesajul dvs..." rows={5} /></FormControl><FormMessage /></FormItem> )} />
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-          Trimite Mesajul
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nume și Prenume</FormLabel>
+              <FormControl>
+                <Input placeholder="Numele dumneavoastră" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="email@exemplu.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telefon</FormLabel>
+              <FormControl>
+                <Input placeholder="0712 345 678" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mesajul dumneavoastră</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Scrieți aici mesajul..." {...field} rows={4} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Trimite Mesaj
         </Button>
       </form>
     </Form>
