@@ -52,7 +52,12 @@ export function PropertyHeader({ property, owner }: PropertyHeaderProps) {
              <Button variant="outline" size="sm"><Send className="mr-2 h-4 w-4"/> Trimite clientului</Button>
              <Button variant="outline" size="sm"><Rocket className="mr-2 h-4 w-4"/> Publică</Button>
              <Button variant="outline" size="sm"><FileText className="mr-2 h-4 w-4"/> Generează PDF</Button>
-             <AddPropertyDialog><Button size="sm"><Edit className="mr-2 h-4 w-4"/> Editează</Button></AddPropertyDialog>
+             <AddPropertyDialog property={property}>
+                <Button size="sm">
+                    <Edit className="mr-2 h-4 w-4"/> 
+                    Editează
+                </Button>
+            </AddPropertyDialog>
          </div>
       </div>
     </header>

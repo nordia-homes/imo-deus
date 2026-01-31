@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,10 +33,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
+import type { Property } from '@/lib/types';
 
 
 const propertySchema = z.object({
@@ -62,7 +63,6 @@ const propertySchema = z.object({
   keyFeatures: z.string().min(1, { message: "Caracteristicile cheie sunt obligatorii pentru generarea AI." }),
 
   description: z.string().optional(),
-  images: z.any().optional(),
   status: z.string().optional(),
   featured: z.boolean().default(false),
 });
@@ -118,12 +118,20 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
   });
 };
 
+type ImageSource = File | { url: string; alt: string };
 
-export function AddPropertyDialog() {
+export function AddPropertyDialog({
+  children,
+  property,
+}: {
+  children?: React.ReactNode;
+  property?: Property | null;
+}) {
+  const isEditMode = !!property;
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageSources, setImageSources] = useState<ImageSource[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
   const { agencyId } = useAgency();
@@ -152,36 +160,57 @@ export function AddPropertyDialog() {
       parking: '',
       keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
       description: '',
-      images: [],
       status: 'Activ',
       featured: false,
     },
   });
+  
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditMode && property) {
+        form.reset({
+          title: property.title || '',
+          propertyType: property.propertyType || '',
+          transactionType: property.transactionType || 'Vânzare',
+          location: property.location || '',
+          price: property.price || 0,
+          bedrooms: property.bedrooms || 0,
+          bathrooms: property.bathrooms || 0,
+          squareFootage: property.squareFootage || 0,
+          totalSurface: property.totalSurface || '',
+          constructionYear: property.constructionYear || '',
+          floor: property.floor || '',
+          totalFloors: property.totalFloors || '',
+          comfort: property.comfort || '',
+          interiorState: property.interiorState || '',
+          furnishing: property.furnishing || '',
+          heatingSystem: property.heatingSystem || '',
+          parking: property.parking || '',
+          keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
+          description: property.description || '',
+          status: property.status || 'Activ',
+          featured: property.featured || false,
+        });
+        setImageSources(property.images || []);
+      } else {
+        form.reset();
+        setImageSources([]);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isEditMode, property, form]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-      const currentFiles = form.getValues('images') || [];
-      const allFiles = [...currentFiles, ...newFiles].slice(0, 16);
-
-      form.setValue('images', allFiles);
-
-      imagePreviews.forEach(p => URL.revokeObjectURL(p));
-      const newPreviews = allFiles.map(file => URL.createObjectURL(file));
-      setImagePreviews(newPreviews);
+      setImageSources((prevSources) => [...prevSources, ...newFiles].slice(0, 16));
     }
   };
 
   const removeImage = (index: number) => {
-    const currentFiles = form.getValues('images') || [];
-    const newFiles = currentFiles.filter((_, i) => i !== index);
-    form.setValue('images', newFiles);
-
-    imagePreviews.forEach(p => URL.revokeObjectURL(p));
-    const previews = newFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(previews);
-  }
+    setImageSources((prev) => prev.filter((_, i) => i !== index));
+  };
 
   async function handleGenerateDescription() {
     setIsGenerating(true);
@@ -231,19 +260,18 @@ export function AddPropertyDialog() {
     }
 
     try {
-        const files = values.images as File[] || [];
-        const propertiesCollection = collection(firestore, 'agencies', agencyId, 'properties');
-        const newPropertyRef = doc(propertiesCollection);
-        const newPropertyId = newPropertyRef.id;
+        const newImageFiles = imageSources.filter((s): s is File => s instanceof File);
+        const existingImages = imageSources.filter((s): s is { url: string; alt: string; } => !(s instanceof File));
+        
+        let uploadedImageUrls: { url: string; alt: string; }[] = [];
+        const propertyId = isEditMode ? property.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;
 
-        let imageDownloadUrls: { url: string; alt: string; }[] = [];
-
-        if (files.length > 0) {
-             toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
+        if (newImageFiles.length > 0) {
+            toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
             
-            const uploadPromises = files.map(async (file, index) => {
+            const uploadPromises = newImageFiles.map(async (file, index) => {
                 const resizedBlob = await resizeAndGetBlob(file);
-                const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${newPropertyId}/${newPropertyId}-${index}.jpg`);
+                const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${propertyId}-${Date.now()}-${index}.jpg`);
                 await uploadBytes(imageRef, resizedBlob);
                 const downloadURL = await getDownloadURL(imageRef);
                 return {
@@ -251,12 +279,12 @@ export function AddPropertyDialog() {
                     alt: `${values.title} - imagine ${index + 1}`
                 };
             });
-
-            imageDownloadUrls = await Promise.all(uploadPromises);
+            uploadedImageUrls = await Promise.all(uploadPromises);
         }
 
-        const newPropertyData = {
-          id: newPropertyId,
+        const finalImages = [...existingImages, ...uploadedImageUrls];
+
+        const propertyData = {
           title: values.title,
           propertyType: values.propertyType,
           transactionType: values.transactionType,
@@ -277,61 +305,75 @@ export function AddPropertyDialog() {
           parking: values.parking || null,
           keyFeatures: values.keyFeatures,
           description: values.description || '',
-          images: imageDownloadUrls,
+          images: finalImages,
           tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
-          createdAt: new Date().toISOString(),
-          agent: {
-            name: user.displayName || user.email || 'Agent',
-            avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-          },
           amenities: values.keyFeatures.split(',').map((f) => f.trim()),
           status: values.status,
           featured: values.featured,
         };
       
-        await setDoc(newPropertyRef, newPropertyData);
+        if (isEditMode) {
+            const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
+            await updateDoc(propertyRef, propertyData);
+            toast({
+              title: 'Proprietate actualizată!',
+              description: `${values.title} a fost actualizată cu succes.`,
+            });
+        } else {
+            const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
+            await setDoc(newPropertyRef, {
+                ...propertyData,
+                id: newPropertyRef.id,
+                createdAt: new Date().toISOString(),
+                agent: {
+                    name: user.displayName || user.email || 'Agent',
+                    avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+                },
+            });
+            toast({
+              title: 'Proprietate adăugată!',
+              description: `${values.title} a fost adăugată cu succes.`,
+            });
+        }
         
-        toast({
-          title: 'Proprietate adăugată!',
-          description: `${values.title} a fost adăugată cu succes în portofoliul tău.`,
-        });
         setIsOpen(false);
-        form.reset();
-        imagePreviews.forEach((p) => URL.revokeObjectURL(p));
-        setImagePreviews([]);
 
     } catch (error: any) {
-        console.error("Failed to add property:", error);
+        console.error("Failed to save property:", error);
         toast({
           variant: 'destructive',
           title: 'Salvare eșuată',
-          description: error.message || 'A apărut o eroare neașteptată la procesarea imaginilor sau la salvarea datelor.'
+          description: error.message || 'A apărut o eroare neașteptată.'
         });
     } finally {
         setIsSubmitting(false);
     }
   }
+  
+  const imagePreviews = imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url);
+  
+  // Cleanup object URLs
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => {
+        if (preview.startsWith('blob:')) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imagePreviews]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      setIsOpen(open);
-      if (!open) {
-        form.reset();
-        imagePreviews.forEach(p => URL.revokeObjectURL(p));
-        setImagePreviews([]);
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adaugă Proprietate
-        </Button>
+        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Adaugă Proprietate Nouă</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
           <DialogDescription>
-            Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.
+            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -345,10 +387,10 @@ export function AddPropertyDialog() {
                     <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Apartament 3 camere decomandat, Tineretului" /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -356,8 +398,8 @@ export function AddPropertyDialog() {
                         <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
                         <div className="grid grid-cols-2 gap-4">
                           <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField
                             control={form.control}
                             name="featured"
@@ -403,19 +445,19 @@ export function AddPropertyDialog() {
                     <h3 className="text-lg font-semibold text-primary mb-4">Dotări și Caracteristici</h3>
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel>Confort</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel>Stare Interior</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel>Mobilier</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel>Sistem Încălzire</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Sobă/Șemineu">Sobă/Șemineu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel>Parcare</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                             <SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                     </div>
                      <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
@@ -485,7 +527,7 @@ export function AddPropertyDialog() {
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvează Proprietatea
+                {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
               </Button>
             </DialogFooter>
           </form>
@@ -494,5 +536,3 @@ export function AddPropertyDialog() {
     </Dialog>
   );
 }
-
-    
