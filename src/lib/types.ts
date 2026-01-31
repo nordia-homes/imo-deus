@@ -5,6 +5,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -132,6 +133,9 @@ export type Agency = {
   address?: string;
   phone?: string;
   email?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
 }
 
 export type UserProfile = {
@@ -166,6 +170,8 @@ export type Invite = {
 };
 
 export type WithId<T> = T & { id: string };
+    
+
     
 
     

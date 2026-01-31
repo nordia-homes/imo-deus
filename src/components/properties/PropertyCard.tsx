@@ -19,6 +19,9 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
   const hasImages = property.images && property.images.length > 0;
   const primaryImageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
 
+  // Check if property was created in the last 7 days
+  const isNew = property.createdAt && new Date(property.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   return (
     <div className="group">
         <Carousel
@@ -60,16 +63,18 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
                 <CarouselNext className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white" />
             </>
            )}
-           <Badge variant="default" className="absolute top-3 right-3">{property.transactionType}</Badge>
+           <div className="absolute top-3 left-3 right-3 flex justify-between z-10">
+              <div>
+                {property.featured && <Badge>Recomandată</Badge>}
+                {isNew && !property.featured && <Badge variant="secondary">Nou</Badge>}
+              </div>
+              <Badge variant="secondary" className="bg-black/50 text-white border-transparent">{property.transactionType}</Badge>
+           </div>
         </Carousel>
 
         <Link href={href} className="block py-3">
           <div className="flex justify-between items-start">
              <h3 className="font-semibold text-base text-foreground truncate pr-2">{property.title}</h3>
-             <div className="flex items-center gap-1 shrink-0">
-                <Star className="h-4 w-4 fill-current text-yellow-500" />
-                <span className="text-sm font-medium">Nou</span>
-             </div>
           </div>
           <p className="text-sm text-muted-foreground">{property.location}</p>
            <div className="text-sm text-muted-foreground mt-1">
@@ -83,3 +88,5 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
     </div>
   );
 }
+
+    

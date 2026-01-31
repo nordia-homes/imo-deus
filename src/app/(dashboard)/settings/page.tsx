@@ -31,6 +31,9 @@ const agencySchema = z.object({
   address: z.string().optional(),
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #1E3A8A).').optional(),
+  facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
+  instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
+  linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
 });
 
 export default function SettingsPage() {
@@ -48,7 +51,17 @@ export default function SettingsPage() {
 
   const agencyForm = useForm<z.infer<typeof agencySchema>>({
     resolver: zodResolver(agencySchema),
-    defaultValues: { name: '', email: '', phone: '', address: '', logoUrl: '', primaryColor: '#1E3A8A' },
+    defaultValues: { 
+        name: '', 
+        email: '', 
+        phone: '', 
+        address: '', 
+        logoUrl: '', 
+        primaryColor: '#1E3A8A',
+        facebookUrl: '',
+        instagramUrl: '',
+        linkedinUrl: '',
+    },
   });
 
   useEffect(() => {
@@ -67,7 +80,10 @@ export default function SettingsPage() {
             phone: agency.phone || '',
             address: agency.address || '',
             logoUrl: agency.logoUrl || '',
-            primaryColor: agency.primaryColor || '#1E3A8A'
+            primaryColor: agency.primaryColor || '#1E3A8A',
+            facebookUrl: agency.facebookUrl || '',
+            instagramUrl: agency.instagramUrl || '',
+            linkedinUrl: agency.linkedinUrl || '',
         });
     }
   }, [agency, agencyForm]);
@@ -201,9 +217,12 @@ export default function SettingsPage() {
                 
                 <Separator className="my-6"/>
 
-                <h4 className="text-sm font-medium">White-Label</h4>
+                <h4 className="text-sm font-medium">Branding & Social Media</h4>
                 <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel>URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem> )}/>
                 <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel>Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="facebookUrl" render={({ field }) => ( <FormItem><FormLabel>Facebook URL</FormLabel><FormControl><Input {...field} placeholder="https://facebook.com/agentie" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="instagramUrl" render={({ field }) => ( <FormItem><FormLabel>Instagram URL</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/agentie" /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={agencyForm.control} name="linkedinUrl" render={({ field }) => ( <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input {...field} placeholder="https://linkedin.com/company/agentie" /></FormControl><FormMessage /></FormItem> )}/>
               
               <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'}>{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
               {userProfile?.role !== 'admin' && <p className="text-xs text-muted-foreground mt-2">Doar administratorii agenției pot modifica aceste setări.</p>}
@@ -216,3 +235,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
