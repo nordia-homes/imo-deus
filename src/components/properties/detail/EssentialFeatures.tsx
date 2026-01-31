@@ -16,7 +16,7 @@ import {
 const FeatureButton = ({ icon, value, label }: { icon: React.ReactNode, value?: string | number | null, label: string }) => {
     if (!value && value !== 0) return null;
     return (
-        <Button variant="outline" size="sm" className="pointer-events-none w-full justify-start h-auto">
+        <Button variant="outline" className="pointer-events-none w-full justify-start h-auto px-3 py-2">
             {icon}
             <span className="text-muted-foreground">{label}: <span className="font-semibold text-foreground">{value}</span></span>
         </Button>
