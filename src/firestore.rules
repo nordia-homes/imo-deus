@@ -40,6 +40,24 @@ service cloud.firestore {
              agentIdsDiff.removed().size() == 0;
     }
 
+    // Helper function to check if a user belongs to the agency that owns a specific portal.
+    // This is more robust as it checks for existence before trying to access data.
+    function userIsInPortalAgency(portalId) {
+      let portalPath = /databases/$(database)/documents/portals/$(portalId);
+      // 1. Check if the portal document actually exists.
+      if (!exists(portalPath)) {
+        return false;
+      }
+      // 2. If it exists, get its data.
+      let portalData = get(portalPath).data;
+      // 3. Check if the portal data has an agencyId field.
+      if (!('agencyId' in portalData)) {
+        return false;
+      }
+      // 4. Finally, use the existing function to check user's agency membership.
+      return isUserInAgency(portalData.agencyId);
+    }
+
     match /users/{userId} {
       allow get: if request.auth != null && (
         request.auth.uid == userId || (
@@ -71,22 +89,21 @@ service cloud.firestore {
       allow get: if true;
 
       // Only allow agents of the agency to create or delete the portal document.
-      allow create, delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
+      allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
+      allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Allow LIST and GET for authenticated agency members OR for unauthenticated visitors.
+      // Use the new robust function for all checks involving authenticated users.
       allow list, get: if 
-          (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId))
+          (request.auth != null && userIsInPortalAgency(portalId))
           || (request.auth == null);
 
-      // Allow CREATE and DELETE only for authenticated agency members.
       allow create, delete: if 
-          request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+          request.auth != null && userIsInPortalAgency(portalId);
       
-      // Allow UPDATE for authenticated agency members (full update) OR for unauthenticated visitors (feedback only).
       allow update: if 
-          (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId))
+          (request.auth != null && userIsInPortalAgency(portalId))
           || (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
     }
 
