@@ -3,36 +3,24 @@ import { PublicPropertyList } from '@/components/properties/PropertyList';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
-import { Separator } from '@/components/ui/separator';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { properties as allProperties } from '@/lib/data';
 import type { Property } from '@/lib/types';
 import { useMemo } from 'react';
 
 export default function AgencyHomePage() {
-  const { agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
-  const firestore = useFirestore();
+  const { agencyId, isAgencyLoading } = usePublicAgency();
 
-  // Fetch active properties for the main list
-  const activePropertiesQuery = useMemoFirebase(() => {
-    if (!agencyId) return null;
-    return query(collection(firestore, 'agencies', agencyId, 'properties'), where('status', '==', 'Activ'));
-  }, [firestore, agencyId]);
-  const { data: activeProperties, isLoading: isActiveLoading } = useCollection<Property>(activePropertiesQuery);
+  // Filter properties from the static data
+  const featuredProperties = useMemo(() => {
+    return allProperties.filter(p => p.featured && p.status === 'Activ').slice(0, 4);
+  }, []);
 
-  // Fetch featured properties
-  const featuredPropertiesQuery = useMemoFirebase(() => {
-    if (!agencyId) return null;
-    return query(
-      collection(firestore, 'agencies', agencyId, 'properties'),
-      where('status', '==', 'Activ'),
-      where('featured', '==', true),
-      limit(4)
-    );
-  }, [firestore, agencyId]);
-  const { data: featuredProperties, isLoading: isFeaturedLoading } = useCollection<Property>(featuredPropertiesQuery);
+  const activeProperties = useMemo(() => {
+    return allProperties.filter(p => p.status === 'Activ');
+  }, []);
 
-  const isLoading = isAgencyContextLoading || isActiveLoading || isFeaturedLoading;
+
+  const isLoading = isAgencyLoading;
 
   if (isLoading) {
     return (
@@ -68,9 +56,9 @@ export default function AgencyHomePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-12">
-      <FeaturedProperties properties={featuredProperties || []} agencyId={agencyId!} />
+      <FeaturedProperties properties={featuredProperties} agencyId={agencyId!} />
       <div id="properties">
-         <PublicPropertyList properties={activeProperties || []} agencyId={agencyId!} />
+         <PublicPropertyList properties={activeProperties} agencyId={agencyId!} />
       </div>
     </div>
   );
