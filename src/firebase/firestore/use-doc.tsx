@@ -96,7 +96,11 @@ export function useDoc<T = DocumentData>(
 
     return () => {
       isSubscribed = false;
-      unsubscribe();
+      try {
+        unsubscribe();
+      } catch (e) {
+        console.warn("Caught an error during Firestore unsubscribe:", e);
+      }
     };
   }, [memoizedDocRef]);
 

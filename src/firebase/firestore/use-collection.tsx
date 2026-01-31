@@ -106,7 +106,11 @@ export function useCollection<T = DocumentData>(
 
     return () => {
       isSubscribed = false;
-      unsubscribe();
+      try {
+        unsubscribe();
+      } catch (e) {
+        console.warn("Caught an error during Firestore unsubscribe:", e);
+      }
     };
   }, [memoizedTargetRefOrQuery]);
 
