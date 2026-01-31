@@ -1,112 +1,94 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // --- Helper Functions ---
+
+    // Checks if the user is authenticated.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Checks if the user's profile document exists and they are associated with the given agencyId.
+    // This is the primary function for authorizing access to agency-specific data.
     function isUserInAgency(agencyId) {
-      if (request.auth == null) {
-        return false;
-      }
-      let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
-      if (!exists(agencyDocPath)) {
-        return false;
-      }
-      let agencyData = get(agencyDocPath).data;
-      // An agent is part of the agency if they are the owner OR their ID is in the agentIds list.
-      return request.auth.uid == agencyData.ownerId || (
-             'agentIds' in agencyData && 
-             request.auth.uid in agencyData.agentIds
-      );
+      let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated() &&
+             exists(userProfilePath) &&
+             get(userProfilePath).data.agencyId == agencyId;
     }
     
+    // Checks if the user is an administrator of the given agency.
+    // An admin must be a user in the agency and have the 'admin' role.
     function isUserAdmin(agencyId) {
-        if (request.auth == null) {
-          return false;
-        }
-        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-        // An admin must first be part of the agency
-        return isUserInAgency(agencyId) &&
-               exists(userDocPath) &&
-               'role' in get(userDocPath).data &&
-               get(userDocPath).data.role == 'admin';
+      let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isUserInAgency(agencyId) &&
+             get(userProfilePath).data.role == 'admin';
     }
 
-    function isAddingSelfToAgency(agencyId) {
-      if (request.auth == null) {
-        return false;
-      }
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      if (userDoc.agencyId != agencyId) {
-        return false;
-      }
-      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
-      if (!affectedKeys.hasOnly(['agentIds'])) {
-        return false;
-      }
-      let agentIdsDiff = request.resource.data.agentIds.diff(resource.data.agentIds);
-      return agentIdsDiff.added().size() == 1 &&
-             agentIdsDiff.added()[0] == request.auth.uid &&
-             agentIdsDiff.removed().size() == 0;
-    }
+    // --- Collection Rules ---
 
-    function userIsInPortalAgency(portalId) {
-      let portalPath = /databases/$(database)/documents/portals/$(portalId);
-      if (!exists(portalPath)) {
-        return false;
-      }
-      let portalData = get(portalPath).data;
-      if (!('agencyId' in portalData)) {
-        return false;
-      }
-      return isUserInAgency(portalData.agencyId);
-    }
-
+    // USER PROFILES: Users can read and update their own profile.
     match /users/{userId} {
-      allow get: if request.auth != null && (
-        request.auth.uid == userId || (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-          exists(/databases/$(database)/documents/users/$(userId)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
-        )
-      );
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated(); // Allow creation upon registration.
     }
 
+    // AGENCIES: Any authenticated user can create an agency. Only admins can update it. Publicly readable.
     match /agencies/{agencyId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if request.auth != null;
-      allow delete: if false;
-      allow update: if request.auth != null && (isUserAdmin(agencyId) || isAddingSelfToAgency(agencyId));
+      allow get: if true; // Publicly readable for public pages.
+      allow list: if true; // Publicly listable for public pages.
+      allow create: if isAuthenticated();
+      allow update: if isUserAdmin(agencyId);
+      allow delete: if false; // Disallow deleting agencies.
     }
-    
+
+    // INVITES: Admins can create invites. Any authenticated user can read them (to check if they've been invited).
     match /invites/{inviteId} {
-        allow create: if request.auth != null && isUserAdmin(request.resource.data.agencyId);
-        allow read, delete: if request.auth != null;
-    }
-
-    match /portals/{portalId} {
-      allow get: if true;
-      allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
-      allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
-    }
-
-    match /portals/{portalId}/recommendations/{recommendationId} {
-      allow read: if request.auth == null || userIsInPortalAgency(portalId);
-      allow create, delete: if userIsInPortalAgency(portalId);
-      allow update: if userIsInPortalAgency(portalId) || 
-          (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
-    }
-
-    match /agencies/{agencyId}/properties/{propertyId} {
-      allow get: if isUserInAgency(agencyId) || ('status' in resource.data && resource.data.status == 'Activ');
-      allow list: if isUserInAgency(agencyId) || request.auth == null;
-      allow write: if isUserInAgency(agencyId);
+      allow create: if isAuthenticated() && isUserAdmin(request.resource.data.agencyId);
+      allow read, delete: if isAuthenticated(); // Read to check for invite, delete upon registration.
     }
     
-    match /agencies/{agencyId}/(contacts|tasks|reports|emails|contracts)/{docId} {
-      allow read, write: if request.auth != null && isUserInAgency(agencyId);
+    // AGENCY SUBCOLLECTIONS: Any user within the agency can perform all operations on these resources.
+    match /agencies/{agencyId}/{subcollection}/{docId}
+    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'contracts'] {
+      allow read, write: if isUserInAgency(agencyId);
+    }
+
+    // PROPERTIES: Publicly readable if active, otherwise restricted to agency members.
+    match /agencies/{agencyId}/properties/{propertyId} {
+        allow get: if (resource.data.status == 'Activ') || isUserInAgency(agencyId);
+        allow list: if true; // Allow listing for public property pages.
+        allow create, update, delete: if isUserInAgency(agencyId);
+    }
+
+    // --- Portal Rules ---
+    
+    // PORTALS: Only agency members can create/delete portals. Publicly readable via unguessable ID.
+    match /portals/{portalId} {
+        allow get: if true;
+        allow create: if isAuthenticated() && isUserInAgency(request.resource.data.agencyId);
+        allow delete: if isAuthenticated() && isUserInAgency(resource.data.agencyId);
+    }
+
+    // RECOMMENDATIONS: 
+    // Read: Anyone (clients with link, agents) can read. Security is the unguessable portal ID.
+    // Create/Delete: Only agency members can add/remove properties.
+    // Update: Agency members can update everything. Clients (unauthenticated) can only update feedback fields.
+    match /portals/{portalId}/recommendations/{recommendationId} {
+        function isClientFeedbackUpdate() {
+            return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+        }
+        
+        function getPortalAgencyId() {
+          return get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId;
+        }
+
+        allow read: if true;
+        allow create, delete: if exists(/databases/$(database)/documents/portals/$(portalId)) && 
+                                isUserInAgency(getPortalAgencyId());
+        allow update: if (exists(/databases/$(database)/documents/portals/$(portalId)) && 
+                         isUserInAgency(getPortalAgencyId())) || isClientFeedbackUpdate();
     }
   }
 }
