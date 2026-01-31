@@ -15,10 +15,7 @@ export function initializeFirebase() {
   return {
     firebaseApp: app,
     auth: getAuth(app),
-    firestore: getFirestore(app, {
-        experimentalForceLongPolling: false,
-        experimentalAutoDetectLongPolling: false,
-    }),
+    firestore: getFirestore(app),
     storage: getStorage(app),
   };
 }
