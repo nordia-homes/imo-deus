@@ -34,41 +34,44 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     
     const isAgencyLoading = isUserAuthLoading || isProfileLoading || isAgencyDocLoading;
 
+    // Self-healing: Ensure agency owner has correct agencyId and admin role in their user profile.
+    useEffect(() => {
+        if (!isAgencyLoading && user && agency && userProfile) {
+            if (user.uid === agency.ownerId) {
+                const needsUpdate = userProfile.role !== 'admin' || userProfile.agencyId !== agency.id;
+                
+                if (needsUpdate) {
+                    console.log(`Self-healing: Syncing owner profile for user ${user.uid}.`);
+                    const currentUserDocRef = doc(firestore, 'users', user.uid);
+                    const dataToUpdate: Partial<UserProfile> = {};
+                    if (userProfile.role !== 'admin') {
+                        dataToUpdate.role = 'admin';
+                    }
+                    if (userProfile.agencyId !== agency.id) {
+                        dataToUpdate.agencyId = agency.id;
+                    }
+                    updateDocumentNonBlocking(currentUserDocRef, dataToUpdate);
+                }
+            }
+        }
+    }, [isAgencyLoading, user, agency, userProfile, firestore]);
+
+
     // Self-healing mechanism for agents whose registration might have partially failed.
     useEffect(() => {
         // Run only when all data is loaded and valid
         if (!isAgencyLoading && user && agency && userProfile) {
             // Check if user is an agent and belongs to this agency according to their profile
             if (userProfile.agencyId === agency.id) {
-                // Check if their ID is missing from the agency's official list (or if the list doesn't exist)
-                if (!agency.agentIds || !agency.agentIds.includes(user.uid)) {
+                // Check if their ID is missing from the agency's official list
+                if (!agency.agentIds?.includes(user.uid)) {
                     console.log(`Self-healing: Adding agent ${user.uid} to agency ${agency.id}`);
                     const currentAgencyDocRef = doc(firestore, 'agencies', agency.id);
-                    // This update uses the native SDK's updateDoc because it's a specific arrayUnion operation
-                    // that needs to be validated by the isAddingSelfToAgency rule.
                     updateDoc(currentAgencyDocRef, {
                         agentIds: arrayUnion(user.uid)
                     }).catch(err => {
                         console.error("Self-healing agentIds update failed:", err);
                     });
-                }
-            }
-        }
-    }, [isAgencyLoading, user, agency, userProfile, firestore]);
-    
-    // Self-healing mechanism for the Agency Owner's admin role.
-    useEffect(() => {
-        if (!isAgencyLoading && user && agency && userProfile) {
-            // If the current user is the owner of the agency...
-            if (user.uid === agency.ownerId) {
-                // ...and their profile doesn't reflect that they are an admin...
-                if (userProfile.role !== 'admin') {
-                    console.log(`Self-healing: Granting admin role to owner ${user.uid} for agency ${agency.id}.`);
-                    // ...update their user profile to grant the role.
-                    // This is a safe operation as it only affects the user's own document,
-                    // and is allowed by the security rules.
-                    const currentUserDocRef = doc(firestore, 'users', user.uid);
-                    updateDocumentNonBlocking(currentUserDocRef, { role: 'admin' });
                 }
             }
         }
