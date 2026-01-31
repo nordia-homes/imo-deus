@@ -27,6 +27,8 @@ import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 // Icons
 import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2, User as UserIcon } from 'lucide-react';
@@ -391,93 +393,108 @@ export default function LeadDetailPage() {
                 
                 {/* --- LEFT COLUMN --- */}
                 <div className="lg:col-span-2 space-y-6">
-                    <Card>
-                        <CardHeader><CardTitle>Istoric Interacțiuni</CardTitle></CardHeader>
-                        <CardContent>
-                            <InteractionList interactions={contact.interactionHistory || []} />
-                        </CardContent>
-                        <CardFooter className="flex-col items-start gap-4 border-t pt-6">
-                            <h3 className="font-semibold">Adaugă Interacțiune Nouă</h3>
-                            <InteractionLogger onLogInteraction={handleLogInteraction} isLogging={isLogging} />
-                        </CardFooter>
-                    </Card>
-                    
-                    <AiEmailGenerator contact={contact} agent={user} />
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Potrivire Proprietăți (AI)</CardTitle>
-                            <CardDescription>Găsește proprietățile ideale pe baza preferințelor clientului.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                            <Form {...propertyMatchForm}>
-                                <form onSubmit={propertyMatchForm.handleSubmit(onPropertyMatchSubmit)} className="space-y-4">
-                                     <div className="flex gap-4">
-                                        <FormField control={propertyMatchForm.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                        <FormField control={propertyMatchForm.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                    </div>
-                                    <FormField control={propertyMatchForm.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )}/>
-                                    <FormField control={propertyMatchForm.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2}/></FormControl></FormItem> )}/>
-                                    <Button type="submit" className="w-full" disabled={isMatching}>
-                                        {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                        Găsește Potriviri
-                                    </Button>
-                                </form>
-                            </Form>
-                            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                               {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Caut cele mai bune potriviri...</p>}
-                               {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground text-center pt-10">Nicio proprietate găsită. Rulează căutarea pentru a vedea rezultatele.</p>}
-                                {matchedProperties.map(prop => (
-                                    <Card key={prop.id} className="p-2">
-                                        <div className="flex gap-4 items-center">
-                                            <Image src={prop.images?.[0]?.url || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" />
-                                            <div className="flex-1">
-                                                <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
-                                                <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
-                                                 <Card className="mt-2 bg-accent/50 text-xs">
-                                                     <CardHeader className="p-2"><p className="font-semibold text-primary">Scor: {prop.matchScore}/100</p></CardHeader>
-                                                     <CardContent className="p-2 pt-0"><p>{prop.reasoning}</p></CardContent>
-                                                 </Card>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                     <Tabs defaultValue="interactions">
+                        <TabsList>
+                            <TabsTrigger value="interactions">Interacțiuni & Task-uri</TabsTrigger>
+                            <TabsTrigger value="matching">Potrivire Proprietăți (AI)</TabsTrigger>
+                            <TabsTrigger value="email">Asistent Email (AI)</TabsTrigger>
+                        </TabsList>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Task-uri Asociate</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {areTasksLoading ? ( <p>Se încarcă task-urile...</p> ) :
-                             tasks && tasks.length > 0 ? (
-                                <ul className="space-y-3">
-                                    {tasks.map(task => (
-                                        <li key={task.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50 transition-colors hover:bg-muted">
-                                             <div className="flex items-center gap-3">
-                                                <Checkbox id={`task-${task.id}`} checked={task.status === 'completed'} onCheckedChange={() => handleToggleTask(task)} />
-                                                 <div>
-                                                     <label htmlFor={`task-${task.id}`} className="font-medium cursor-pointer">{task.description}</label>
-                                                     <p className="text-sm text-muted-foreground">Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}</p>
-                                                 </div>
-                                             </div>
-                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeletingTask(task)}>
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                             </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-muted-foreground text-center py-4">Niciun task asociat cu acest lead.</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                        <TabsContent value="interactions" className="space-y-6">
+                            <Card>
+                                <CardHeader><CardTitle>Istoric Interacțiuni</CardTitle></CardHeader>
+                                <CardContent>
+                                    <InteractionList interactions={contact.interactionHistory || []} />
+                                </CardContent>
+                                <CardFooter className="flex-col items-start gap-4 border-t pt-6">
+                                    <h3 className="font-semibold">Adaugă Interacțiune Nouă</h3>
+                                    <InteractionLogger onLogInteraction={handleLogInteraction} isLogging={isLogging} />
+                                </CardFooter>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Task-uri Asociate</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {areTasksLoading ? ( <p>Se încarcă task-urile...</p> ) :
+                                    tasks && tasks.length > 0 ? (
+                                        <ul className="space-y-3">
+                                            {tasks.map(task => (
+                                                <li key={task.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50 transition-colors hover:bg-muted">
+                                                    <div className="flex items-center gap-3">
+                                                        <Checkbox id={`task-${task.id}`} checked={task.status === 'completed'} onCheckedChange={() => handleToggleTask(task)} />
+                                                        <div>
+                                                            <label htmlFor={`task-${task.id}`} className="font-medium cursor-pointer">{task.description}</label>
+                                                            <p className="text-sm text-muted-foreground">Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeletingTask(task)}>
+                                                            <Trash2 className="h-4 w-4"/>
+                                                        </Button>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-muted-foreground text-center py-4">Niciun task asociat cu acest lead.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        
+                        <TabsContent value="matching">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Potrivire Proprietăți (AI)</CardTitle>
+                                    <CardDescription>Găsește proprietățile ideale pe baza preferințelor clientului.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                    <Form {...propertyMatchForm}>
+                                        <form onSubmit={propertyMatchForm.handleSubmit(onPropertyMatchSubmit)} className="space-y-4">
+                                            <div className="flex gap-4">
+                                                <FormField control={propertyMatchForm.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                                <FormField control={propertyMatchForm.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                            </div>
+                                            <FormField control={propertyMatchForm.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )}/>
+                                            <FormField control={propertyMatchForm.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2}/></FormControl></FormItem> )}/>
+                                            <Button type="submit" className="w-full" disabled={isMatching}>
+                                                {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                                Găsește Potriviri
+                                            </Button>
+                                        </form>
+                                    </Form>
+                                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                                    {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Caut cele mai bune potriviri...</p>}
+                                    {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground text-center pt-10">Nicio proprietate găsită. Rulează căutarea pentru a vedea rezultatele.</p>}
+                                        {matchedProperties.map(prop => (
+                                            <Card key={prop.id} className="p-2">
+                                                <div className="flex gap-4 items-center">
+                                                    <Image src={prop.images?.[0]?.url || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" />
+                                                    <div className="flex-1">
+                                                        <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
+                                                        <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
+                                                        <Card className="mt-2 bg-accent/50 text-xs">
+                                                            <CardHeader className="p-2"><p className="font-semibold text-primary">Scor: {prop.matchScore}/100</p></CardHeader>
+                                                            <CardContent className="p-2 pt-0"><p>{prop.reasoning}</p></CardContent>
+                                                        </Card>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="email">
+                           <AiEmailGenerator contact={contact} agent={user} />
+                        </TabsContent>
+                    </Tabs>
                 </div>
 
                 {/* --- RIGHT COLUMN --- */}
