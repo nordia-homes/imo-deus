@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react"
 import type { LeadSourceData } from '@/lib/types';
-import { Pie, PieChart, ResponsiveContainer } from "recharts"
+import { Label, Pie, PieChart, ResponsiveContainer } from "recharts"
 
 import {
   ChartContainer,
@@ -28,6 +28,10 @@ export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
     return config;
   }, [data]);
 
+  const totalLeads = React.useMemo(() => {
+    return data.reduce((acc, curr) => acc + curr.count, 0);
+  }, [data]);
+
   return (
     <ChartContainer
       config={chartConfig}
@@ -45,7 +49,38 @@ export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
             nameKey="source"
             innerRadius={60}
             strokeWidth={5}
-          />
+            paddingAngle={2}
+          >
+             <Label
+                content={({ viewBox }) => {
+                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                    <text
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                    >
+                        <tspan
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        className="fill-foreground text-3xl font-bold"
+                        >
+                        {totalLeads.toLocaleString()}
+                        </tspan>
+                        <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy || 0) + 20}
+                        className="fill-muted-foreground text-sm"
+                        >
+                        Lead-uri
+                        </tspan>
+                    </text>
+                    )
+                }
+                }}
+            />
+          </Pie>
           <ChartLegend
             content={<ChartLegendContent nameKey="source" />}
             className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
