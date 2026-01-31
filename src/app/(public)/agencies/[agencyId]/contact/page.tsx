@@ -73,9 +73,19 @@ export default function AgencyContactPage() {
                 <CardTitle>Locație pe Hartă</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground">Google Maps IFrame Placeholder</p>
-                </div>
+                {agency.address ? (
+                    <iframe
+                        className="w-full aspect-video rounded-md border"
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(agency.address)}`}>
+                    </iframe>
+                ) : (
+                    <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">Adresa agenției nu este specificată.</p>
+                    </div>
+                )}
               </CardContent>
             </Card>
           </div>
