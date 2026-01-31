@@ -4,7 +4,6 @@ service cloud.firestore {
 
     // --- Helper Functions ---
 
-    // Checks if the user is authenticated.
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -12,17 +11,25 @@ service cloud.firestore {
     // Checks if the user's profile document exists and they are associated with the given agencyId.
     // This is the primary function for authorizing access to agency-specific data.
     function isUserInAgency(agencyId) {
-      let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return isAuthenticated() &&
-             exists(userProfilePath) &&
-             get(userProfilePath).data.agencyId == agencyId;
+      // Check if the agency document exists before trying to read from it.
+      let agencyPath = /databases/$(database)/documents/agencies/$(agencyId);
+      if (!exists(agencyPath)) {
+        return false;
+      }
+      let agencyDoc = get(agencyPath).data;
+      
+      // A user is in the agency if they are the owner OR their UID is in the agentIds list.
+      return isAuthenticated() && (
+        request.auth.uid == agencyDoc.ownerId || 
+        (agencyDoc.agentIds != null && request.auth.uid in agencyDoc.agentIds)
+      );
     }
     
     // Checks if the user is an administrator of the given agency.
-    // An admin must be a user in the agency and have the 'admin' role.
     function isUserAdmin(agencyId) {
       let userProfilePath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isUserInAgency(agencyId) &&
+             exists(userProfilePath) &&
              get(userProfilePath).data.role == 'admin';
     }
 
@@ -34,61 +41,64 @@ service cloud.firestore {
       allow create: if isAuthenticated(); // Allow creation upon registration.
     }
 
-    // AGENCIES: Any authenticated user can create an agency. Only admins can update it. Publicly readable.
+    // AGENCIES: Publicly readable. Only admins can update.
     match /agencies/{agencyId} {
-      allow get: if true; // Publicly readable for public pages.
-      allow list: if true; // Publicly listable for public pages.
+      allow get: if true;
+      allow list: if true;
       allow create: if isAuthenticated();
       allow update: if isUserAdmin(agencyId);
       allow delete: if false; // Disallow deleting agencies.
     }
 
-    // INVITES: Admins can create invites. Any authenticated user can read them (to check if they've been invited).
+    // INVITES: Admins create invites. Any authenticated user can read/delete (to accept).
     match /invites/{inviteId} {
       allow create: if isAuthenticated() && isUserAdmin(request.resource.data.agencyId);
-      allow read, delete: if isAuthenticated(); // Read to check for invite, delete upon registration.
+      allow read, delete: if isAuthenticated();
     }
     
-    // AGENCY SUBCOLLECTIONS: Any user within the agency can perform all operations on these resources.
+    // AGENCY SUBCOLLECTIONS: Only agency members can access.
     match /agencies/{agencyId}/{subcollection}/{docId}
-    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'contracts'] {
+    where subcollection in ['contacts', 'tasks', 'reports', 'emails'] {
       allow read, write: if isUserInAgency(agencyId);
     }
 
     // PROPERTIES: Publicly readable if active, otherwise restricted to agency members.
     match /agencies/{agencyId}/properties/{propertyId} {
         allow get: if (resource.data.status == 'Activ') || isUserInAgency(agencyId);
-        allow list: if true; // Allow listing for public property pages.
+        allow list: if true;
         allow create, update, delete: if isUserInAgency(agencyId);
     }
 
     // --- Portal Rules ---
     
-    // PORTALS: Only agency members can create/delete portals. Publicly readable via unguessable ID.
+    // PORTAL DOCUMENT: Publicly gettable (for clients), but only agents can create/delete.
     match /portals/{portalId} {
         allow get: if true;
-        allow create: if isAuthenticated() && isUserInAgency(request.resource.data.agencyId);
-        allow delete: if isAuthenticated() && isUserInAgency(resource.data.agencyId);
+        allow create: if isUserInAgency(request.resource.data.agencyId);
+        allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
     }
-
-    // RECOMMENDATIONS: 
-    // Read: Anyone (clients with link, agents) can read. Security is the unguessable portal ID.
-    // Create/Delete: Only agency members can add/remove properties.
-    // Update: Agency members can update everything. Clients (unauthenticated) can only update feedback fields.
+    
+    // RECOMMENDATIONS SUBCOLLECTION:
     match /portals/{portalId}/recommendations/{recommendationId} {
-        function isClientFeedbackUpdate() {
-            return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
-        }
-        
-        function getPortalAgencyId() {
-          return get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId;
+        // READ: Publicly readable. Security is through the unguessable portalId.
+        // This allows both unauthenticated clients and authenticated agents to read.
+        allow read: if true;
+
+        // WRITE: For write operations, we verify the user is part of the correct agency.
+        function userIsInPortalAgency() {
+          let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
+          return exists(/databases/$(database)/documents/portals/$(portalId)) &&
+                 isUserInAgency(portalDoc.data.agencyId);
         }
 
-        allow read: if true;
-        allow create, delete: if exists(/databases/$(database)/documents/portals/$(portalId)) && 
-                                isUserInAgency(getPortalAgencyId());
-        allow update: if (exists(/databases/$(database)/documents/portals/$(portalId)) && 
-                         isUserInAgency(getPortalAgencyId())) || isClientFeedbackUpdate();
+        // CREATE/DELETE: Only agents of the portal's agency can add/remove recommendations.
+        allow create, delete: if userIsInPortalAgency();
+
+        // UPDATE: Agents can update anything. Unauthenticated clients can only update feedback fields.
+        function isClientFeedbackUpdate() {
+            return request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+        }
+        allow update: if userIsInPortalAgency() || isClientFeedbackUpdate();
     }
   }
 }
