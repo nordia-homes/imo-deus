@@ -8,8 +8,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
@@ -58,7 +57,8 @@ export function TasksCalendar() {
 
     const CustomDay = ({ date }: { date: Date }) => {
         if (!date || isNaN(date.getTime())) {
-            return <div />;
+            // Render a blank div for invalid dates to avoid crashing the calendar
+            return <div className="h-full w-full" />;
         }
         
         const dayKey = format(date, 'yyyy-MM-dd');
@@ -66,7 +66,7 @@ export function TasksCalendar() {
 
         if (dayTasks.length === 0) {
             return (
-                <div className="h-full w-full p-1 text-sm">{date.getDate()}</div>
+                <div className="h-full w-full p-1 text-sm text-left">{date.getDate()}</div>
             );
         }
 
@@ -74,7 +74,7 @@ export function TasksCalendar() {
             <Popover>
                 <PopoverTrigger asChild>
                     <button className="relative flex flex-col h-full w-full p-1 rounded-sm text-left hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:z-10">
-                        <span className="font-semibold">{date.getDate()}</span>
+                        <span className="font-semibold text-foreground">{date.getDate()}</span>
                         <div className="flex-1 mt-1 space-y-1 overflow-hidden">
                             {dayTasks.slice(0, 2).map(task => (
                                 <div key={task.id} className="text-xs truncate px-1 py-0.5 rounded bg-primary/20 text-primary-foreground">
@@ -127,13 +127,13 @@ export function TasksCalendar() {
                     mode="single"
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    className="w-full h-full"
+                    className="w-full"
                     captionLayout="buttons"
                     classNames={{
-                        months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 h-full',
-                        month: 'space-y-4 flex flex-col flex-1',
-                        caption: 'flex justify-center items-center relative px-8 py-2',
-                        caption_label: 'text-lg font-bold',
+                        months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+                        month: 'space-y-4',
+                        caption: "flex justify-center pt-1 relative items-center",
+                        caption_label: "text-lg font-bold",
                         nav: 'space-x-1 flex items-center',
                         nav_button: cn(
                           buttonVariants({ variant: 'outline' }),
@@ -141,13 +141,20 @@ export function TasksCalendar() {
                         ),
                         nav_button_previous: 'absolute left-1',
                         nav_button_next: 'absolute right-1',
-                        table: 'w-full border-collapse space-y-1 flex-1',
-                        head_row: 'flex border-b',
-                        head_cell: 'text-muted-foreground font-normal text-sm p-2 text-center flex-1',
-                        row: 'flex w-full mt-2 h-[calc((100%-4rem)/5)]',
-                        cell: 'h-full w-full text-center text-sm p-0 relative border',
-                        day: 'h-full w-full p-0 font-normal',
-                        day_outside: 'text-muted-foreground/50',
+                        table: 'w-full border-collapse space-y-1',
+                        head_row: 'flex',
+                        head_cell:
+                          'text-muted-foreground rounded-md w-[14.28%] font-normal text-[0.8rem]',
+                        row: 'flex w-full mt-2',
+                        cell: 'h-24 w-[14.28%] text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md border',
+                        day: 'h-full w-full p-0 font-normal focus:relative focus:z-20',
+                        day_outside:
+                          'day-outside text-muted-foreground opacity-50',
+                        day_disabled: 'text-muted-foreground opacity-50',
+                        day_selected:
+                          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+                        day_today: 'bg-accent text-accent-foreground',
+                        day_hidden: 'invisible',
                     }}
                     components={{
                         Day: CustomDay,
