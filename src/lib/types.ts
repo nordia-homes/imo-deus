@@ -67,11 +67,20 @@ export type ContactPreferences = {
 
 export type Interaction = {
     id: string;
-    type: 'Apel telefonic' | 'Email' | 'Întâlnire' | 'Vizionare' | 'Ofertă';
+    type: 'Apel telefonic' | 'Email' | 'Întâlnire' | 'Vizionare' | 'Ofertă' | 'WhatsApp' | 'Notiță';
     date: string;
     notes: string;
+    agent?: {
+      name: string;
+    }
 }
 
+export type AiLeadSummary = {
+    score: number;
+    probability: number;
+    tags: string[];
+    nextBestAction: string;
+};
 
 export type Contact = {
     id: string;
@@ -93,6 +102,8 @@ export type Contact = {
     agentName?: string | null;
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
     portalId?: string;
+    aiSummary?: AiLeadSummary;
+    tags?: string[];
 }
 
 export type SalesData = {
