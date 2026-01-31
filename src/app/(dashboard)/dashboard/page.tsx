@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where, limit } from 'firebase/firestore';
 import type { Property, Viewing, Task } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
+import { SalesAnalyticsChart } from '@/components/dashboard/SalesAnalyticsChart';
 
 // Component to display a list of items on the dashboard
 function DashboardInfoList({ items, emptyText, renderItem }: { items: any[], emptyText: string, renderItem: (item: any) => React.ReactNode }) {
@@ -24,6 +25,9 @@ function DashboardInfoList({ items, emptyText, renderItem }: { items: any[], emp
 }
 
 export default function DashboardPage() {
+    const { user } = useUser();
+    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
+    
     const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
 
@@ -51,7 +55,6 @@ export default function DashboardPage() {
     }, [firestore, agencyId]);
     const { data: openTasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
-
     // --- DATA CALCULATION ---
     const { soldThisMonth, reservedThisMonth, viewingsThisWeek } = useMemo(() => {
         const sold = properties?.filter(p => 
@@ -64,7 +67,6 @@ export default function DashboardPage() {
         
         const weeklyViewings = viewings?.filter(v => {
             try {
-                // Filter for scheduled viewings within the current week (Mon-Sun)
                 return v.status === 'scheduled' && isThisWeek(parseISO(v.viewingDate), { weekStartsOn: 1 });
             } catch (e) {
                 return false;
@@ -80,7 +82,6 @@ export default function DashboardPage() {
     
     const priorityTasks = useMemo(() => {
         if (!openTasks) return [];
-        // Filter for overdue tasks and show top 5
         return openTasks.filter(task => {
             try {
                 const dueDate = new Date(task.dueDate);
@@ -91,6 +92,13 @@ export default function DashboardPage() {
         }).slice(0, 5);
     }, [openTasks]);
 
+    // Placeholder data for SalesAnalyticsChart
+    const salesData = [
+        { name: "Week 1", "Actual": 4000, "AI Projected": 2400 },
+        { name: "Week 2", "Actual": 3000, "AI Projected": 1398 },
+        { name: "Week 3", "Actual": 9800, "AI Projected": 2000 },
+        { name: "Week 4", "Actual": 2780, "AI Projected": 3908 },
+    ];
     
     const isLoading = isAgencyLoading || arePropertiesLoading || areViewingsLoading || areTasksLoading;
     
@@ -98,13 +106,12 @@ export default function DashboardPage() {
     if (isLoading) {
         return (
             <div className="space-y-6">
-                <Skeleton className="h-10 w-48 mb-2" />
+                 <Skeleton className="h-10 w-64 mb-2" />
+                 <Skeleton className="h-80 w-full mb-6" />
                 <div className="grid gap-6 lg:grid-cols-3">
                     <Skeleton className="lg:col-span-2 h-96" />
                     <div className="space-y-6">
                         <Skeleton className="h-48" />
-                        <Skeleton className="h-48" />
-                         <Skeleton className="h-48" />
                         <Skeleton className="h-48" />
                         <Skeleton className="h-48" />
                     </div>
@@ -115,7 +122,9 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
+            <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
+            
+            <SalesAnalyticsChart data={salesData} isLoading={isLoading} />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2">
@@ -125,8 +134,7 @@ export default function DashboardPage() {
                     <AiHelperCard />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
 
-                    {/* New sections requested by the user, in the specified order */}
-                     <DashboardSection
+                    <DashboardSection
                         title="Proprietăți Rezervate Luna Aceasta"
                         icon={<Bookmark className="h-6 w-6 text-yellow-600" />}
                         count={reservedThisMonth.length}
