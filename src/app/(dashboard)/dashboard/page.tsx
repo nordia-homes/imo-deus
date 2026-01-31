@@ -3,21 +3,21 @@
 import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import type { Property, Viewing, Task, Contact, SalesData, LeadSourceData } from '@/lib/types';
+import type { Property, Viewing, Task, Contact, LeadSourceData, ConversionData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
 
 // Components
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
-import { SalesChart } from '@/components/dashboard/sales-chart';
+import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
 export default function DashboardPage() {
@@ -65,8 +65,8 @@ export default function DashboardPage() {
         activePropertiesCount,
         totalSalesCount,
         newLeadsCount,
-        salesData,
-        leadSourceData
+        leadSourceData,
+        conversionData,
     } = useMemo(() => {
         const sold = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reserved = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
@@ -85,26 +85,7 @@ export default function DashboardPage() {
         const oneWeekAgo = addDays(new Date(), -7);
         const newLeadsCount = contacts?.filter(c => c.createdAt && new Date(c.createdAt) > oneWeekAgo).length || 0;
 
-        const wonLeads = contacts?.filter(c => c.status === 'Câștigat') || [];
-        const monthlySales: { [key: string]: { sales: number, date: Date } } = {};
-        wonLeads.forEach(lead => {
-            if (lead.createdAt) {
-                const date = new Date(lead.createdAt);
-                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-                if (!monthlySales[monthKey]) {
-                    monthlySales[monthKey] = { sales: 0, date: new Date(date.getFullYear(), date.getMonth(), 1) };
-                }
-                monthlySales[monthKey].sales += (lead.budget || 0);
-            }
-        });
-
-        const salesDataResult: SalesData[] = Object.values(monthlySales)
-            .sort((a,b) => a.date.getTime() - b.date.getTime())
-            .map(data => ({
-                month: data.date.toLocaleString('ro-RO', { month: 'short' }),
-                sales: data.sales,
-            }));
-
+        // Lead Source Data
         const sourceCounts: { [key: string]: number } = {};
         contacts?.forEach(contact => {
             const source = contact.source || 'Necunoscută';
@@ -116,6 +97,46 @@ export default function DashboardPage() {
             count: sourceCounts[source],
             fill: chartColors[index % chartColors.length],
         }));
+        
+        // Conversion Data (last 30 days)
+        const thirtyDaysAgo = subDays(new Date(), 30);
+        const today = new Date();
+        const dateArray = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
+
+        const conversionMap: Map<string, { vizionari: number; tranzactii: number }> = new Map();
+        dateArray.forEach(date => {
+            conversionMap.set(format(date, 'd MMM', { locale: ro }), { vizionari: 0, tranzactii: 0 });
+        });
+
+        viewings?.forEach(viewing => {
+            const viewingDate = parseISO(viewing.viewingDate);
+            if (isWithinInterval(viewingDate, { start: thirtyDaysAgo, end: today })) {
+                const dayKey = format(viewingDate, 'd MMM', { locale: ro });
+                const dayData = conversionMap.get(dayKey);
+                if (dayData) {
+                    dayData.vizionari++;
+                }
+            }
+        });
+
+        properties?.forEach(property => {
+            if ((property.status === 'Vândut' || property.status === 'Rezervat') && property.statusUpdatedAt) {
+                const updatedDate = parseISO(property.statusUpdatedAt);
+                if (isWithinInterval(updatedDate, { start: thirtyDaysAgo, end: today })) {
+                    const dayKey = format(updatedDate, 'd MMM', { locale: ro });
+                    const dayData = conversionMap.get(dayKey);
+                    if (dayData) {
+                        dayData.tranzactii++;
+                    }
+                }
+            }
+        });
+
+        const conversionDataResult: ConversionData[] = Array.from(conversionMap.entries()).map(([date, data]) => ({
+          date,
+          ...data,
+        }));
+
 
         return {
             soldThisMonthCount: sold.length,
@@ -124,8 +145,8 @@ export default function DashboardPage() {
             activePropertiesCount,
             totalSalesCount,
             newLeadsCount,
-            salesData: salesDataResult,
-            leadSourceData: leadSourceDataResult
+            leadSourceData: leadSourceDataResult,
+            conversionData: conversionDataResult,
         };
     }, [properties, viewings, contacts]);
     
@@ -206,10 +227,11 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Volum Vânzări Lunare</CardTitle>
+                        <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
+                        <CardDescription>Ultimele 30 de zile</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <SalesChart data={salesData} />
+                        <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
                 <Card className="col-span-3">

@@ -106,6 +106,12 @@ export type LeadSourceData = {
   fill: string;
 };
 
+export type ConversionData = {
+  date: string;
+  vizionari: number;
+  tranzactii: number;
+};
+
 export type Task = {
   id: string;
   description: string;
