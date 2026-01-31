@@ -76,7 +76,7 @@ service cloud.firestore {
 
     match /portals/{portalId}/recommendations/{recommendationId} {
       // Anyone with the portal link can see the recommendations.
-      allow read, list: if true;
+      allow read: if true;
 
       // Allow agents to add/remove recommendations.
       allow create, delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
