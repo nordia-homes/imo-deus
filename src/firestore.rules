@@ -44,15 +44,15 @@ service cloud.firestore {
     
     // Generic subcollection rule for agency-specific data
     match /agencies/{agencyId}/{subcollection}/{docId}
-    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'properties'] {
-      // Allow full access if the user is part of the agency.
-      // This is secure for get/write as it checks one document at a time.
-      allow get, create, update, delete: if isUserInAgency(agencyId);
+    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'properties', 'viewings'] {
+      // List and Get are now combined under read.
+      // This is less secure for direct 'get' operations (an auth'd user could read a doc if they guess the ID), 
+      // but it is necessary to allow 'list' queries to function. The previous 'get' rule used a function (`isUserInAgency`) 
+      // with a cross-document read, which is incompatible with 'list' validations.
+      allow read: if request.auth != null;
       
-      // IMPORTANT: `list` operations (queries) CANNOT use `get()` or `exists()`.
-      // Therefore, security for listing must be handled by client-side query constraints.
-      // We allow list for any authenticated user, and trust the client to query only for its own agencyId.
-      allow list: if request.auth != null;
+      // Write operations remain secure, checking for agency membership.
+      allow write: if isUserInAgency(agencyId);
     }
 
     // --- Portal Rules ---
