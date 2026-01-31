@@ -81,26 +81,29 @@ service cloud.firestore {
     
     // RECOMMENDATIONS SUBCOLLECTION
     match /portals/{portalId}/recommendations/{recommendationId} {
-        // READ operations:
-        // `list` is for collection queries. Its rule cannot use `get()` on other documents.
-        // We rely on the unguessable portalId for read security.
-        // `get` is for single-doc reads. It is also made public for simplicity.
-        allow read: if true;
         
-        // WRITE operations:
-        // These operate on a single document, so we CAN use get() to check permissions.
-        function userIsInPortalAgency() {
-          let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
-          return exists(/databases/$(database)/documents/portals/$(portalId)) &&
-                 isUserInAgency(portalDoc.data.agencyId);
-        }
-        
-        function isClientFeedbackUpdate() {
-            return request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
-        }
+      // READ Rules:
+      // Allow LIST operations for anyone. Security is based on the unguessable `portalId`.
+      // This is a valid rule for collection queries as it does not use `get()` or `exists()`.
+      allow list: if true;
+      
+      // Allow GET operations for anyone. This allows clients to view individual recommendations.
+      allow get: if true;
 
-        allow create, delete: if userIsInPortalAgency();
-        allow update: if userIsInPortalAgency() || isClientFeedbackUpdate();
+      // WRITE Rules (Single-document operations, can use `get()`).
+      function userCanWriteToPortal() {
+        let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
+        return isAuthenticated() &&
+                exists(/databases/$(database)/documents/portals/$(portalId)) &&
+                isUserInAgency(portalDoc.data.agencyId);
+      }
+
+      function isClientFeedbackUpdate() {
+        return request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+      }
+
+      allow create, delete: if userCanWriteToPortal();
+      allow update: if userCanWriteToPortal() || isClientFeedbackUpdate();
     }
   }
 }
