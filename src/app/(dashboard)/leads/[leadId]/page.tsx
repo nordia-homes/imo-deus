@@ -205,17 +205,6 @@ export default function LeadDetailPage() {
              toast({ title: 'Agent dealocat!', description: `Lead-ul este acum nealocat.` });
         } else {
              toast({ title: 'Agent alocat!', description: `Lead-ul a fost alocat lui ${selectedAgent?.name}.` });
-             // Send notification if assigning to another user
-             if (agentId && agentId !== user?.uid) {
-                const notificationsCol = collection(firestore, 'users', agentId, 'notifications');
-                addDocumentNonBlocking(notificationsCol, {
-                    userId: agentId,
-                    message: `Ți-a fost alocat un nou lead: ${contact.name}`,
-                    link: `/leads/${contact.id}`,
-                    isRead: false,
-                    createdAt: new Date().toISOString(),
-                });
-             }
         }
     }
 

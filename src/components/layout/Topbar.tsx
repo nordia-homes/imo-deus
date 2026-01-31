@@ -14,7 +14,6 @@ import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { useRouter } from 'next/navigation';
-import { NotificationBell } from './NotificationBell';
 
 export function Topbar() {
     const auth = useAuth();
@@ -185,7 +184,6 @@ export function Topbar() {
                 </Popover>
             </div>
             <div className='flex items-center gap-4'>
-                <NotificationBell />
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Avatar className="cursor-pointer">
