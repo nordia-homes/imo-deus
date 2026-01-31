@@ -57,7 +57,6 @@ export function TasksCalendar() {
 
     const CustomDay = ({ date }: { date: Date }) => {
         if (!date || isNaN(date.getTime())) {
-            // Render a blank div for invalid dates to avoid crashing the calendar
             return <div className="h-full w-full" />;
         }
         
@@ -66,24 +65,26 @@ export function TasksCalendar() {
 
         if (dayTasks.length === 0) {
             return (
-                <div className="h-full w-full p-1 text-sm text-left">{date.getDate()}</div>
+                 <div className="h-full w-full p-1.5 text-left">
+                    <span className="text-xs text-muted-foreground">{date.getDate()}</span>
+                </div>
             );
         }
 
         return (
             <Popover>
                 <PopoverTrigger asChild>
-                    <button className="relative flex flex-col h-full w-full p-1 rounded-sm text-left hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:z-10">
-                        <span className="font-semibold text-foreground">{date.getDate()}</span>
-                        <div className="flex-1 mt-1 space-y-1 overflow-hidden">
-                            {dayTasks.slice(0, 2).map(task => (
+                    <button className="relative flex flex-col items-start h-full w-full p-1.5 rounded-sm text-left hover:bg-accent transition-colors focus:outline-none focus:ring-1 focus:ring-ring focus:z-10">
+                        <span className="text-xs font-semibold text-foreground">{date.getDate()}</span>
+                        <div className="flex-1 mt-1 space-y-0.5 overflow-hidden w-full">
+                            {dayTasks.slice(0, 3).map(task => (
                                 <div key={task.id} className="text-xs truncate px-1 py-0.5 rounded bg-primary/20 text-primary-foreground">
                                     {task.startTime && <span className="font-bold">{task.startTime} </span>}
                                     {task.description}
                                 </div>
                             ))}
-                            {dayTasks.length > 2 && (
-                                <div className="text-xs text-muted-foreground">+ {dayTasks.length - 2} more</div>
+                            {dayTasks.length > 3 && (
+                                <div className="text-xs text-muted-foreground">+ {dayTasks.length - 3} more</div>
                             )}
                         </div>
                     </button>
@@ -131,7 +132,7 @@ export function TasksCalendar() {
                     captionLayout="buttons"
                     classNames={{
                         months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                        month: 'space-y-4',
+                        month: 'space-y-4 w-full',
                         caption: "flex justify-center pt-1 relative items-center",
                         caption_label: "text-lg font-bold",
                         nav: 'space-x-1 flex items-center',
@@ -139,21 +140,18 @@ export function TasksCalendar() {
                           buttonVariants({ variant: 'outline' }),
                           'h-7 w-7 bg-transparent p-0'
                         ),
-                        nav_button_previous: 'absolute left-1',
-                        nav_button_next: 'absolute right-1',
-                        table: 'w-full border-collapse space-y-1',
+                        nav_button_previous: 'absolute left-1 top-1/2 -translate-y-1/2',
+                        nav_button_next: 'absolute right-1 top-1/2 -translate-y-1/2',
+                        table: 'w-full border-collapse',
                         head_row: 'flex',
-                        head_cell:
-                          'text-muted-foreground rounded-md w-[14.28%] font-normal text-[0.8rem]',
-                        row: 'flex w-full mt-2',
-                        cell: 'h-24 w-[14.28%] text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md border',
+                        head_cell: 'w-[14.28%] text-muted-foreground rounded-md font-normal text-[0.8rem] text-center border-b pb-1',
+                        row: 'flex w-full border-b',
+                        cell: 'h-28 w-[14.28%] p-0 text-center text-sm relative border-r last:border-r-0',
                         day: 'h-full w-full p-0 font-normal focus:relative focus:z-20',
-                        day_outside:
-                          'day-outside text-muted-foreground opacity-50',
-                        day_disabled: 'text-muted-foreground opacity-50',
-                        day_selected:
-                          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+                        day_selected: 'bg-transparent text-foreground',
                         day_today: 'bg-accent text-accent-foreground',
+                        day_outside: 'text-muted-foreground opacity-50',
+                        day_disabled: 'text-muted-foreground opacity-50',
                         day_hidden: 'invisible',
                     }}
                     components={{
