@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/lib/types';
+import type { Task, Property } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 
 const taskSchema = z.object({
@@ -32,19 +32,38 @@ type ContactStub = { id: string; name: string; };
 type AddTaskDialogProps = {
     onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: ContactStub[];
+    property?: Property | null; // Make property optional
     children?: React.ReactNode;
 }
 
-export function AddTaskDialog({ onAddTask, contacts, children }: AddTaskDialogProps) {
+export function AddTaskDialog({ onAddTask, contacts, property = null, children }: AddTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  const defaultContactId = useMemo(() => {
+    if (contacts.length === 1) return contacts[0].id;
+    return undefined;
+  }, [contacts]);
+
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       description: '',
       duration: 30,
-      contactId: contacts.length === 1 ? contacts[0].id : undefined,
+      contactId: defaultContactId,
     },
   });
+
+  // Reset form when dialog opens/closes or defaults change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        description: '',
+        duration: 30,
+        contactId: defaultContactId,
+      });
+    }
+  }, [isOpen, defaultContactId, form]);
 
   const timeSlots = useMemo(() => {
       const slots = [];
@@ -76,14 +95,12 @@ export function AddTaskDialog({ onAddTask, contacts, children }: AddTaskDialogPr
         duration: values.duration,
         contactId: values.contactId,
         contactName: selectedContact?.name,
+        propertyId: property?.id,
+        propertyTitle: property?.title,
     });
 
     setIsOpen(false);
-    form.reset({
-        description: '',
-        duration: 30,
-        contactId: contacts.length === 1 ? contacts[0].id : undefined,
-    });
+    form.reset();
   }
 
   return (
@@ -95,7 +112,7 @@ export function AddTaskDialog({ onAddTask, contacts, children }: AddTaskDialogPr
         <DialogHeader>
           <DialogTitle>Adaugă Task Nou</DialogTitle>
           <DialogDescription>
-            Completează detaliile pentru noua sarcină.
+            {property ? `Adaugă un task pentru proprietatea "${property.title}"` : 'Completează detaliile pentru noua sarcină.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -187,27 +204,29 @@ export function AddTaskDialog({ onAddTask, contacts, children }: AddTaskDialogPr
                 />
               </div>
 
-              <FormField
-                  control={form.control}
-                  name="contactId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Asociază cu un Lead (Opțional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Selectează un lead" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Niciunul</SelectItem>
-                          {contacts.map(contact => (
-                            <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {contacts.length > 0 && (
+                 <FormField
+                    control={form.control}
+                    name="contactId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Asociază cu un Lead (Opțional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Selectează un lead" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="unassigned">Niciunul</SelectItem>
+                            {contacts.map(contact => (
+                              <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              )}
             
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>

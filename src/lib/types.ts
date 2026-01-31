@@ -51,6 +51,7 @@ export type Property = {
   status?: 'Activ' | 'Inactiv' | 'Vândut' | 'Închiriat' | 'Rezervat';
   featured?: boolean;
   statusUpdatedAt?: string;
+  notes?: string;
 };
 
 
@@ -130,6 +131,8 @@ export type Task = {
   status: 'open' | 'completed';
   contactId?: string | null;
   contactName?: string | null;
+  propertyId?: string | null;
+  propertyTitle?: string | null;
   startTime?: string;
   duration?: number;
   agentId?: string | null;

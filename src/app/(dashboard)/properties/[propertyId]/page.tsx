@@ -2,10 +2,12 @@
 
 import { useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { Property, Viewing, Contact, Task } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,9 +53,15 @@ export default function PropertyDetailPage() {
     const propertyId = params.propertyId as string;
     
     const { agencyId, isAgencyLoading: isContextLoading } = useAgency();
+    const { user } = useUser();
+    const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Data fetching - using static data as a fallback for now
+    const propertyDocRef = useMemoFirebase(() => {
+        if (!agencyId || !propertyId) return null;
+        return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
+    }, [firestore, agencyId, propertyId]);
+
     const { data: property, isLoading: isPropertyLoading, error: propertyError } = useMemo(() => {
         const prop = allSampleProperties.find(p => p.id === propertyId);
         return { data: prop || null, isLoading: false, error: prop ? null : new Error('Property not found') };
@@ -64,6 +72,12 @@ export default function PropertyDetailPage() {
         return query(collection(firestore, 'agencies', agencyId, 'viewings'), where('propertyId', '==', propertyId));
     }, [firestore, agencyId, propertyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+
+    const tasksQuery = useMemoFirebase(() => {
+        if (!agencyId || !propertyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'tasks'), where('propertyId', '==', propertyId));
+    }, [firestore, agencyId, propertyId]);
+    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
     const allContactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -71,8 +85,27 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId]);
     const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
     
-    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || isPropertyLoading;
+    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || isPropertyLoading || areTasksLoading;
     
+    const onUpdateProperty = (data: Partial<Omit<Property, 'id'>>) => {
+        if (!propertyDocRef) return;
+        updateDocumentNonBlocking(propertyDocRef, data);
+        toast({ title: 'Proprietate actualizată', description: 'Modificările au fost salvate.' });
+    };
+    
+    const onAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => {
+        if (!agencyId || !user) return;
+        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
+        const taskToAdd: Omit<Task, 'id'> = {
+            ...taskData,
+            status: 'open',
+            agentId: user.uid,
+            agentName: user.displayName || user.email,
+        };
+        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        toast({ title: "Task adăugat!" });
+    };
+
     if (isLoading) {
         return <PageSkeleton />;
     }
@@ -88,7 +121,6 @@ export default function PropertyDetailPage() {
         email: 'proprietar@email.com', // Placeholder
     };
 
-    // Find some matched leads for the panel
     const matchedLeads = allContacts?.filter(c => c.budget && property && c.budget >= property.price * 0.8 && c.budget <= property.price * 1.2).slice(0, 3) || [];
 
     return (
@@ -98,7 +130,7 @@ export default function PropertyDetailPage() {
             <main className="p-4 md:p-6 lg:p-8 -mx-8">
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
                     <div className="xl:col-span-3">
-                        <PropertyTimeline property={property} />
+                        <PropertyTimeline property={property} viewings={viewings || []} tasks={tasks || []} onAddTask={onAddTask} />
                     </div>
 
                     <div className="xl:col-span-6 space-y-6">
@@ -111,6 +143,8 @@ export default function PropertyDetailPage() {
                             property={property} 
                             viewings={viewings || []}
                             matchedLeads={matchedLeads}
+                            tasks={tasks || []}
+                            onUpdateProperty={onUpdateProperty}
                          />
                     </div>
                 </div>
