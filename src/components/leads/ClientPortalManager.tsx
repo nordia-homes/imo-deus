@@ -77,36 +77,36 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="rounded-2xl shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
             <Star className="text-yellow-500" />
             <span>Portalul Clientului</span>
         </CardTitle>
-        <CardDescription>
-          Oferă-i clientului un link personalizat unde poate vedea proprietățile recomandate și oferi feedback.
-        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
+        </p>
         {contact.portalId ? (
           <>
             <div>
-              <Label htmlFor="portal-link">Link Unic Portal</Label>
+              <Label htmlFor="portal-link" className="text-xs text-muted-foreground">Link Unic Portal</Label>
               <div className="flex gap-2 mt-1">
-                <Input id="portal-link" readOnly value={portalLink} className="bg-muted" />
-                <Button variant="outline" size="icon" onClick={handleCopy}>
+                <Input id="portal-link" readOnly value={portalLink} className="bg-muted h-9" />
+                <Button variant="outline" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading}>
-                <LinkIcon className="mr-2 h-4 w-4" /> Deschide Portal
+              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading}>
+                <LinkIcon className="mr-2 h-4 w-4" /> Deschide
               </Button>
-              <Button variant="outline" onClick={() => handlePortalAction('regenerate')} disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} Regenerează Link
+              <Button size="sm" variant="outline" onClick={() => handlePortalAction('regenerate')} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} Regenerează
               </Button>
-              <Button variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading}>
+              <Button size="sm" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading}>
                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Dezactivează
               </Button>
             </div>
@@ -114,7 +114,7 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
         ) : (
           <Button onClick={() => handlePortalAction('activate')} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
-            Activează Portalul pentru Client
+            Activează Portalul
           </Button>
         )}
       </CardContent>

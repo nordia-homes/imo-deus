@@ -101,7 +101,7 @@ export type Contact = {
     agentId?: string | null;
     agentName?: string | null;
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
-    portalId?: string;
+    portalId?: string | null;
     aiSummary?: AiLeadSummary;
     tags?: string[];
 }

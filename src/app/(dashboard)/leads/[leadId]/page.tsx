@@ -6,7 +6,7 @@ import { doc, collection, query, where, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-import type { Contact, Property, Task, UserProfile, Interaction } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency } from '@/lib/types';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -116,7 +116,7 @@ export default function LeadDetailPage() {
         return <PageSkeleton />;
     }
 
-    if (contactError || !contact) {
+    if (contactError || !contact || !agency) {
         notFound();
         return null;
     }
@@ -152,7 +152,7 @@ export default function LeadDetailPage() {
 
                     {/* Right Column - Action Panel */}
                     <div className="xl:col-span-3">
-                         <LeadActionPanel contact={contact} tasks={tasks || []} agents={agents} />
+                         <LeadActionPanel contact={contact} tasks={tasks || []} agents={agents} agency={agency} />
                     </div>
                 </div>
             </main>

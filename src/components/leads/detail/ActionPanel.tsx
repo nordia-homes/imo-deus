@@ -5,18 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { Contact, Task, UserProfile } from '@/lib/types';
+import type { Contact, Task, UserProfile, Agency } from '@/lib/types';
 import { Mail, MoreHorizontal, Phone, Plus, CheckCircle, ChevronDown, User } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { Label } from '@/components/ui/label';
+import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 
 type LeadActionPanelProps = {
   contact: Contact;
   tasks: Task[];
   agents: UserProfile[];
+  agency: Agency;
 };
 
-export function LeadActionPanel({ contact, tasks, agents }: LeadActionPanelProps) {
+export function LeadActionPanel({ contact, tasks, agents, agency }: LeadActionPanelProps) {
     const todayTasks = tasks.filter(t => new Date(t.dueDate).toDateString() === new Date().toDateString() && t.status === 'open');
 
   return (
@@ -91,6 +93,8 @@ export function LeadActionPanel({ contact, tasks, agents }: LeadActionPanelProps
             </div>
         </CardContent>
       </Card>
+      
+      <ClientPortalManager contact={contact} agency={agency} />
 
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-2">
