@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import React from 'react';
@@ -37,6 +37,8 @@ import {
     HandCoins
 } from "lucide-react";
 import { useAgency } from '@/context/AgencyContext';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value?: string | number | null }) => {
@@ -78,6 +80,19 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId]);
     const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
 
+    const handleStatusChange = (newStatus: Property['status']) => {
+        if (!propertyDocRef || !newStatus) return;
+
+        updateDocumentNonBlocking(propertyDocRef, {
+            status: newStatus,
+            statusUpdatedAt: new Date().toISOString()
+        });
+
+        toast({
+            title: "Status actualizat!",
+            description: `Proprietatea este acum: ${newStatus}`,
+        });
+    };
 
     const handleGenerateInsights = async () => {
         if (!property) return;
@@ -242,6 +257,21 @@ export default function PropertyDetailPage() {
                              <CardDescription>{property.transactionType === 'Închiriere' ? 'pe lună' : 'preț de vânzare'}</CardDescription>
                          </CardHeader>
                         <CardContent className="space-y-4">
+                            <div>
+                                <Label>Status Proprietate</Label>
+                                <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Activ">Activ</SelectItem>
+                                        <SelectItem value="Rezervat">Rezervat</SelectItem>
+                                        <SelectItem value="Vândut">Vândut</SelectItem>
+                                        <SelectItem value="Închiriat">Închiriat</SelectItem>
+                                        <SelectItem value="Inactiv">Inactiv</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                              {property.agent && (
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-14 w-14">

@@ -17,6 +17,7 @@ import {
   UserCheck,
   Map,
   Globe,
+  CalendarCheck,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -85,6 +86,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/pipeline">
                         <Waypoints />
                         <span>Pipeline</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Vizionări" asChild>
+                    <Link href="/viewings">
+                        <CalendarCheck />
+                        <span>Vizionări</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

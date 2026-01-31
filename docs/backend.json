@@ -297,9 +297,15 @@
             "Activ",
             "Inactiv",
             "Vândut",
-            "Închiriat"
+            "Închiriat",
+            "Rezervat"
           ],
           "description": "The current status of the property listing (e.g., active, sold)."
+        },
+        "statusUpdatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the property status was last updated."
         },
         "featured": {
           "type": "boolean",
@@ -527,6 +533,56 @@
         "estimatedValueRange",
         "notes"
       ]
+    },
+    "Viewing": {
+      "title": "Viewing",
+      "type": "object",
+      "description": "Represents a scheduled property viewing.",
+      "properties": {
+        "propertyId": {
+          "type": "string"
+        },
+        "propertyTitle": {
+          "type": "string"
+        },
+        "propertyAddress": {
+          "type": "string"
+        },
+        "contactId": {
+          "type": "string"
+        },
+        "contactName": {
+          "type": "string"
+        },
+        "agentId": {
+          "type": "string"
+        },
+        "agentName": {
+          "type": "string"
+        },
+        "viewingDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "completed",
+            "cancelled"
+          ]
+        }
+      },
+      "required": [
+        "propertyId",
+        "contactId",
+        "agentId",
+        "viewingDate",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -682,6 +738,26 @@
             {
               "name": "emailId",
               "description": "The unique ID of the email."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/agencies/{agencyId}/viewings/{viewingId}",
+        "definition": {
+          "entityName": "Viewing",
+          "schema": {
+            "$ref": "#/backend/entities/Viewing"
+          },
+          "description": "Stores scheduled viewings for a specific agency.",
+          "params": [
+            {
+              "name": "agencyId",
+              "description": "The ID of the agency."
+            },
+            {
+              "name": "viewingId",
+              "description": "The unique ID of the viewing."
             }
           ]
         }

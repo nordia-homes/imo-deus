@@ -48,8 +48,9 @@ export type Property = {
   };
   agentId?: string | null;
   agentName?: string | null;
-  status?: 'Activ' | 'Inactiv' | 'Vândut' | 'Închiriat';
+  status?: 'Activ' | 'Inactiv' | 'Vândut' | 'Închiriat' | 'Rezervat';
   featured?: boolean;
+  statusUpdatedAt?: string;
 };
 
 
@@ -167,6 +168,21 @@ export type PortalRecommendation = {
   addedAt: string;
   clientFeedback: 'liked' | 'disliked' | 'none';
   clientComment?: string;
+};
+
+export type Viewing = {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyAddress: string;
+  contactId: string;
+  contactName: string;
+  agentId: string;
+  agentName?: string;
+  viewingDate: string; // ISO string
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  createdAt: string;
 };
 
 

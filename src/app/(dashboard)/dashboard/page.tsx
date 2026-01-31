@@ -1,146 +1,142 @@
 'use client';
 
 import { useMemo } from 'react';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
-import { RecentActivity } from '@/components/dashboard/RecentActivity';
-import { SalesAnalyticsChart } from '@/components/dashboard/SalesAnalyticsChart';
-import { Building, TrendingUp, Users } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import type { Contact, Property, Task } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Property, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
+import { isThisMonth, isThisWeek, parseISO, format } from 'date-fns';
+import { ro } from "date-fns/locale";
+import { DashboardSection } from '@/components/dashboard/DashboardSection';
+import { CalendarCheck, Handshake, Bookmark } from 'lucide-react';
+import Link from 'next/link';
+
+// Component to display a list of items on the dashboard
+function DashboardInfoList({ items, emptyText, renderItem }: { items: any[], emptyText: string, renderItem: (item: any) => React.ReactNode }) {
+    if (!items || items.length === 0) {
+        return <p className="text-sm text-muted-foreground text-center p-4">{emptyText}</p>;
+    }
+    return <div className="space-y-3">{items.map(renderItem)}</div>;
+}
 
 export default function DashboardPage() {
-    const { user } = useUser();
     const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
 
     // --- DATA FETCHING ---
-
-    const agencyCollectionPath = useMemo(() => {
-        if (!agencyId) return null;
-        return `agencies/${agencyId}`;
-    }, [agencyId]);
-
-    // Leads
-    const contactsQuery = useMemoFirebase(() => {
-        if (!agencyCollectionPath) return null;
-        return collection(firestore, agencyCollectionPath, 'contacts');
-    }, [firestore, agencyCollectionPath]);
-    const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
-    
-    // Won Leads for Sales Volume
-    const wonLeadsQuery = useMemoFirebase(() => {
-        if (!agencyCollectionPath) return null;
-        return query(collection(firestore, agencyCollectionPath, 'contacts'), where('status', '==', 'Câștigat'));
-    }, [firestore, agencyCollectionPath]);
-    const { data: wonLeads, isLoading: areWonLeadsLoading } = useCollection<Contact>(wonLeadsQuery);
-
-    // Properties
     const propertiesQuery = useMemoFirebase(() => {
-        if (!agencyCollectionPath) return null;
-        return collection(firestore, agencyCollectionPath, 'properties');
-    }, [firestore, agencyCollectionPath]);
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
-
-    // Priority Tasks
-    // Simplified query: Fetch ALL tasks for the agency. Filtering happens client-side.
-    const allTasksQuery = useMemoFirebase(() => {
-        if (!agencyCollectionPath) return null;
-        return collection(firestore, agencyCollectionPath, 'tasks');
-    }, [firestore, agencyCollectionPath]);
-    const { data: allTasks, isLoading: areTasksLoading } = useCollection<Task>(allTasksQuery);
-
-    // Filter for priority tasks on the client side.
-    const priorityTasks = useMemo(() => {
-        if (!allTasks) return null;
-        const todayStr = new Date().toISOString().split('T')[0];
-        // Filter for open tasks that are overdue or due today, then sort and take the top 5
-        return allTasks
-            .filter(task => task.status === 'open' && task.dueDate <= todayStr)
-            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-            .slice(0, 5);
-    }, [allTasks]);
-
+    
+    const viewingsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'asc'));
+    }, [firestore, agencyId]);
+    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
     // --- DATA CALCULATION ---
-    const totalLeads = useMemo(() => contacts?.length ?? 0, [contacts]);
-    const salesVolume = useMemo(() => wonLeads?.reduce((sum, lead) => sum + (lead.budget || 0), 0) ?? 0, [wonLeads]);
-    const activeProperties = useMemo(() => properties?.length ?? 0, [properties]);
-    
-    const isLoading = isAgencyLoading || areContactsLoading || areWonLeadsLoading || arePropertiesLoading || areTasksLoading;
-
-    const salesAnalyticsData = useMemo(() => {
-        if (!wonLeads) return [];
-
-        const last30Days = new Map<string, number>();
-        const today = new Date();
-        for (let i = 0; i < 30; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const key = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
-            last30Days.set(key, 0);
-        }
-
-        wonLeads.forEach(lead => {
-            if (lead.createdAt) {
-                const leadDate = new Date(lead.createdAt);
-                const key = leadDate.toLocaleDateString('en-CA');
-                if (last30Days.has(key)) {
-                    last30Days.set(key, (last30Days.get(key) || 0) + (lead.budget || 0));
-                }
-            }
-        });
-
-        const sortedData = Array.from(last30Days.entries())
-            .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-            .map(([dateStr, sales]) => {
-                const date = new Date(dateStr);
-                return {
-                    name: date.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' }),
-                    'Actual': sales,
-                    // Replaced Math.random() with a deterministic value to fix build errors
-                    'AI Projected': sales > 0 ? sales * 1.2 : 4000, 
-                };
-            });
+    const { soldThisMonth, reservedThisMonth, viewingsThisWeek } = useMemo(() => {
         
-        return sortedData;
-    }, [wonLeads]);
+        const sold = properties?.filter(p => 
+            p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
+        ) || [];
 
+        const reserved = properties?.filter(p => 
+            p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))
+        ) || [];
+        
+        const weekViewings = viewings?.filter(v => 
+            v.status === 'scheduled' && isThisWeek(parseISO(v.viewingDate), { weekStartsOn: 1 })
+        ) || [];
+
+        return {
+            soldThisMonth: sold,
+            reservedThisMonth: reserved,
+            viewingsThisWeek: weekViewings,
+        };
+    }, [properties, viewings]);
+    
+    const isLoading = isAgencyLoading || arePropertiesLoading || areViewingsLoading;
+    
     // --- RENDER ---
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <Skeleton className="h-10 w-48 mb-2" />
+                <div className="grid gap-6 md:grid-cols-3">
+                    <Skeleton className="h-48" />
+                    <Skeleton className="h-48" />
+                    <Skeleton className="h-48" />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {isLoading ? (
-                    <>
-                        <Skeleton className="h-[126px]" />
-                        <Skeleton className="h-[126px]" />
-                        <Skeleton className="h-[126px]" />
-                    </>
-                ) : (
-                    <>
-                        <StatCard title="Total Lead-uri" value={totalLeads.toString()} icon={<Users />} period={`${totalLeads} lead-uri în total`} />
-                        <StatCard title="Volum Vânzări" value={`€${salesVolume.toLocaleString()}`} icon={<TrendingUp />} period="Total din tranzacții câștigate" />
-                        <StatCard title="Proprietăți Active" value={activeProperties.toString()} icon={<Building />} period={`${activeProperties} proprietăți în portofoliu`} />
-                    </>
-                )}
-            </div>
+             <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                
+                <DashboardSection
+                    title="Vizionări Săptămâna Aceasta"
+                    icon={<CalendarCheck className="h-6 w-6 text-primary" />}
+                    count={viewingsThisWeek.length}
+                >
+                    <DashboardInfoList
+                        items={viewingsThisWeek}
+                        emptyText="Nicio vizionare programată pentru această săptămână."
+                        renderItem={(viewing: Viewing) => (
+                             <Link href={`/viewings`} key={viewing.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                <p className="font-semibold truncate">{viewing.propertyTitle}</p>
+                                <p className="text-sm text-muted-foreground">{viewing.contactName}</p>
+                                <p className="text-sm font-medium text-primary mt-1">
+                                    {format(parseISO(viewing.viewingDate), 'eeee, d MMMM, HH:mm', { locale: ro })}
+                                </p>
+                            </Link>
+                        )}
+                    />
+                </DashboardSection>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <SalesAnalyticsChart data={salesAnalyticsData} isLoading={isLoading} />
-                </div>
-                <div className="space-y-6">
-                    <AiHelperCard />
-                    <PriorityTasks tasks={priorityTasks} isLoading={isLoading} />
-                </div>
+                <DashboardSection
+                    title="Proprietăți Vândute Luna Aceasta"
+                    icon={<Handshake className="h-6 w-6 text-green-600" />}
+                    count={soldThisMonth.length}
+                >
+                     <DashboardInfoList
+                        items={soldThisMonth}
+                        emptyText="Nicio proprietate vândută luna aceasta."
+                        renderItem={(prop: Property) => (
+                             <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                <p className="font-semibold truncate">{prop.title}</p>
+                                <p className="text-sm text-muted-foreground">{prop.address}</p>
+                                <p className="text-sm font-medium text-green-600 mt-1">€{prop.price.toLocaleString()}</p>
+                            </Link>
+                        )}
+                    />
+                </DashboardSection>
+
+                 <DashboardSection
+                    title="Proprietăți Rezervate Luna Aceasta"
+                    icon={<Bookmark className="h-6 w-6 text-yellow-600" />}
+                    count={reservedThisMonth.length}
+                >
+                     <DashboardInfoList
+                        items={reservedThisMonth}
+                        emptyText="Nicio proprietate rezervată luna aceasta."
+                        renderItem={(prop: Property) => (
+                            <Link href={`/properties/${prop.id}`} key={prop.id} className="block p-3 rounded-md hover:bg-muted transition-colors">
+                                <p className="font-semibold truncate">{prop.title}</p>
+                                <p className="text-sm text-muted-foreground">{prop.address}</p>
+                                <p className="text-sm font-medium text-yellow-600 mt-1">€{prop.price.toLocaleString()}</p>
+                           </Link>
+                        )}
+                    />
+                </DashboardSection>
+                
             </div>
-            
-            <RecentActivity />
         </div>
     );
 }
