@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { Interaction, Task, Contact } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, MessageSquare, Plus, MoreHorizontal, Check, Calendar, Mail, FileText } from 'lucide-react';
+import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 type TimelineItemData = (
   | ({ type: 'interaction' } & Interaction)
@@ -19,7 +20,7 @@ type TimelineItemData = (
 const getInteractionIcon = (type: Interaction['type']) => {
     switch (type) {
         case 'Apel telefonic': return <Phone className="h-4 w-4" />;
-        case 'WhatsApp': return <MessageSquare className="h-4 w-4" />;
+        case 'WhatsApp': return <WhatsappIcon className="h-4 w-4" />;
         case 'Email': return <Mail className="h-4 w-4" />;
         case 'Ofertă': return <FileText className="h-4 w-4" />;
         default: return <Calendar className="h-4 w-4" />;
@@ -87,18 +88,18 @@ export function LeadTimeline({ interactions, tasks, contact, onAddInteraction, o
   return (
     <div className="space-y-4">
       <Card className="rounded-2xl">
-        <CardContent className="p-2 grid grid-cols-2 lg:grid-cols-4 gap-1">
+        <CardContent className="p-2 grid grid-cols-2 gap-2">
             <AddInteractionPopover type="Apel telefonic" onSave={handleSaveInteraction('Apel telefonic')}>
-                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Apel</Button>
+                <Button variant="outline" className="w-full"><Phone className="h-4 w-4 mr-2" />Apel</Button>
             </AddInteractionPopover>
             <AddInteractionPopover type="WhatsApp" onSave={handleSaveInteraction('WhatsApp')}>
-                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />WhatsApp</Button>
+                <Button variant="outline" className="w-full"><WhatsappIcon className="h-4 w-4 mr-2" />WhatsApp</Button>
             </AddInteractionPopover>
              <AddInteractionPopover type="Notiță" onSave={handleSaveInteraction('Notiță')}>
-                <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Notiță</Button>
+                <Button variant="outline" className="w-full"><FileText className="h-4 w-4 mr-2" />Notiță</Button>
             </AddInteractionPopover>
             <AddTaskDialog onAddTask={onAddTask} contacts={[contact]}>
-                 <Button variant="ghost" className="flex-1"><Plus className="h-4 w-4 mr-1" />Task</Button>
+                 <Button variant="outline" className="w-full"><CheckSquare className="h-4 w-4 mr-2" />Task</Button>
             </AddTaskDialog>
         </CardContent>
       </Card>
