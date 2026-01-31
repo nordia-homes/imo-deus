@@ -43,13 +43,13 @@ const PageSkeleton = () => (
                 <Skeleton className="h-64" />
             </div>
             {/* Main Content Area */}
-            <div className="lg:col-span-5 space-y-6">
+            <div className="lg:col-span-6 space-y-6">
                 <Skeleton className="h-[400px]" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-64" />
             </div>
             {/* Right Column */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -212,13 +212,13 @@ export default function PropertyDetailPage() {
                 </div>
                  
                 {/* Main Content Column */}
-                <div className="col-span-12 lg:col-span-5 space-y-6">
+                <div className="col-span-12 lg:col-span-6 space-y-6">
                     <MediaColumn property={property} />
                     <InfoColumn property={property} />
                 </div>
 
                 {/* Right Action Panel Column */}
-                <div className="col-span-12 lg:col-span-4">
+                <div className="col-span-12 lg:col-span-3">
                      <PropertyActionPanel 
                         property={property} 
                         viewings={viewings || []}
