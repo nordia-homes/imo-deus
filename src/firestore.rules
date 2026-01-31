@@ -75,14 +75,19 @@ service cloud.firestore {
     }
 
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Allow agents of the parent agency to do anything.
-      allow read, write: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+      // Allow LIST and GET for authenticated agency members OR for unauthenticated visitors.
+      allow list, get: if 
+          (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId))
+          || (request.auth == null);
+
+      // Allow CREATE and DELETE only for authenticated agency members.
+      allow create, delete: if 
+          request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       
-      // Allow unauthenticated visitors to ONLY read recommendations.
-      allow get, list: if request.auth == null;
-      
-      // Allow unauthenticated visitors to ONLY update their own feedback.
-      allow update: if request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+      // Allow UPDATE for authenticated agency members (full update) OR for unauthenticated visitors (feedback only).
+      allow update: if 
+          (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId))
+          || (request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']));
     }
 
     match /agencies/{agencyId}/properties/{propertyId} {
