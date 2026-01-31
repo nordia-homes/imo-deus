@@ -17,6 +17,7 @@ import { properties as allSampleProperties } from '@/lib/data';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { PropertyActionPanel } from '@/components/properties/detail/PropertyActionPanel';
 import { EssentialFeatures } from '@/components/properties/detail/EssentialFeatures';
+import { PropertyTimeline } from '@/components/properties/detail/PropertyTimeline';
 
 
 const PageSkeleton = () => (
@@ -31,7 +32,11 @@ const PageSkeleton = () => (
         </div>
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-1 space-y-6">
+                <Skeleton className="h-24" />
+                <Skeleton className="h-96" />
+            </div>
+             <div className="lg:col-span-1 space-y-6">
                 <Skeleton className="h-[500px]" />
                 <Skeleton className="h-96" />
             </div>
@@ -112,21 +117,39 @@ export default function PropertyDetailPage() {
         notFound();
         return null;
     }
+    
+    const owner = {
+        name: 'Proprietar Demo',
+        phone: '0722000000',
+        email: 'owner@demo.com'
+    };
 
     const matchedLeads = allContacts?.filter(c => c.budget && property && c.budget >= property.price * 0.8 && c.budget <= property.price * 1.2).slice(0, 3) || [];
 
     return (
         <div className="h-full">
-            <PropertyHeader property={property} />
+            <PropertyHeader property={property} owner={owner} />
 
             <main className="p-4 md:p-6 lg:p-8 -mx-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    <div className="lg:col-span-2 space-y-6">
+                    {/* Left Column */}
+                    <div className="lg:col-span-1 space-y-6">
+                         <EssentialFeatures property={property} />
+                         <PropertyTimeline 
+                            property={property}
+                            viewings={viewings || []}
+                            tasks={tasks || []}
+                            onAddTask={onAddTask}
+                         />
+                    </div>
+                    
+                    {/* Center Column */}
+                    <div className="lg:col-span-1 space-y-6">
                         <MediaColumn property={property} />
-                        <EssentialFeatures property={property} />
-                        <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
+                         <InfoColumn property={property} allProperties={allSampleProperties || []} agencyId={agencyId!} />
                     </div>
 
+                    {/* Right Column */}
                     <div className="lg:col-span-1">
                          <PropertyActionPanel 
                             property={property} 
