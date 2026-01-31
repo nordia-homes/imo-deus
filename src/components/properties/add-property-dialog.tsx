@@ -32,8 +32,9 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useStorage } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
 
@@ -67,10 +68,10 @@ const propertySchema = z.object({
 });
 
 /**
- * Resizes an image file, compresses it, and converts it to a Base64 data-URL.
- * This is done entirely on the client-side to prepare it for storage in Firestore.
+ * Resizes an image file, compresses it, and returns it as a Blob.
+ * This is done entirely on the client-side to prepare it for upload to Firebase Storage.
  */
-const resizeAndEncodeImage = (file: File): Promise<string> => {
+const resizeAndGetBlob = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -102,9 +103,12 @@ const resizeAndEncodeImage = (file: File): Promise<string> => {
         }
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Get the data-URL as a JPEG image with 80% quality.
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(dataUrl);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            return reject(new Error('Canvas to Blob conversion failed'));
+          }
+          resolve(blob);
+        }, 'image/jpeg', 0.8);
       };
       img.onerror = reject;
       img.src = event.target?.result as string;
@@ -124,6 +128,7 @@ export function AddPropertyDialog() {
   const { user } = useUser();
   const { agencyId } = useAgency();
   const firestore = useFirestore();
+  const storage = useStorage();
 
   const form = useForm<z.infer<typeof propertySchema>>({
     resolver: zodResolver(propertySchema),
@@ -231,38 +236,23 @@ export function AddPropertyDialog() {
         const newPropertyRef = doc(propertiesCollection);
         const newPropertyId = newPropertyRef.id;
 
-        let imageDataUrls: { url: string; alt: string; }[] = [];
+        let imageDownloadUrls: { url: string; alt: string; }[] = [];
 
         if (files.length > 0) {
-            const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-            if (totalSize > 5 * 1024 * 1024) { // 5MB raw, as a safety limit
-                 toast({
-                    variant: 'destructive',
-                    title: 'Imagini prea mari',
-                    description: 'Dimensiunea totală a imaginilor depășește 5MB. Vă rugăm să selectați mai puține imagini sau imagini mai mici.',
-                });
-                setIsSubmitting(false);
-                return;
-            }
+             toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
+            
+            const uploadPromises = files.map(async (file, index) => {
+                const resizedBlob = await resizeAndGetBlob(file);
+                const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${newPropertyId}/${newPropertyId}-${index}.jpg`);
+                await uploadBytes(imageRef, resizedBlob);
+                const downloadURL = await getDownloadURL(imageRef);
+                return {
+                    url: downloadURL,
+                    alt: `${values.title} - imagine ${index + 1}`
+                };
+            });
 
-            const resizePromises = files.map(file => resizeAndEncodeImage(file));
-            const dataUrls = await Promise.all(resizePromises);
-            
-            const totalDataUrlSize = dataUrls.reduce((acc, url) => acc + url.length, 0);
-            if (totalDataUrlSize > 1000000) { // Firestore's 1 MiB document limit
-                 toast({
-                    variant: 'destructive',
-                    title: 'Imagini prea mari după procesare',
-                    description: 'Datele imaginilor depășesc limita de 1MB a bazei de date. Vă rugăm să selectați mai puține imagini.',
-                });
-                setIsSubmitting(false);
-                return;
-            }
-            
-            imageDataUrls = dataUrls.map((url, index) => ({
-              url: url,
-              alt: `${values.title} - imagine ${index + 1}`
-            }));
+            imageDownloadUrls = await Promise.all(uploadPromises);
         }
 
         const newPropertyData = {
@@ -287,7 +277,7 @@ export function AddPropertyDialog() {
           parking: values.parking || null,
           keyFeatures: values.keyFeatures,
           description: values.description || '',
-          images: imageDataUrls,
+          images: imageDownloadUrls,
           tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
           createdAt: new Date().toISOString(),
           agent: {
