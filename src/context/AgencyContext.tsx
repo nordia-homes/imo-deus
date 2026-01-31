@@ -40,8 +40,8 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         if (!isAgencyLoading && user && agency && userProfile) {
             // Check if user is an agent and belongs to this agency according to their profile
             if (userProfile.agencyId === agency.id) {
-                // Check if their ID is missing from the agency's official list
-                if (agency.agentIds && !agency.agentIds.includes(user.uid)) {
+                // Check if their ID is missing from the agency's official list (or if the list doesn't exist)
+                if (!agency.agentIds || !agency.agentIds.includes(user.uid)) {
                     console.log(`Self-healing: Adding agent ${user.uid} to agency ${agency.id}`);
                     const currentAgencyDocRef = doc(firestore, 'agencies', agency.id);
                     // This update uses the native SDK's updateDoc because it's a specific arrayUnion operation
