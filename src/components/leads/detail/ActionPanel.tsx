@@ -49,26 +49,6 @@ export function LeadActionPanel({ contact, tasks, agents, agency, onUpdateContac
   return (
     <div className="space-y-4">
       <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Contact</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-            <a href={`tel:${contact.phone}`} className="flex items-center gap-3 group">
-                <Phone className="h-4 w-4 text-muted-foreground"/>
-                <span className="group-hover:underline">{contact.phone}</span>
-            </a>
-             <a href={`mailto:${contact.email}`} className="flex items-center gap-3 group">
-                <Mail className="h-4 w-4 text-muted-foreground"/>
-                <span className="group-hover:underline">{contact.email}</span>
-            </a>
-            <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" className="flex items-center gap-3 group">
-                <WhatsappIcon className="h-4 w-4 text-muted-foreground"/>
-                <span className="group-hover:underline">Trimite mesaj WhatsApp</span>
-            </a>
-        </CardContent>
-      </Card>
-      
-      <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-2">
             <CardTitle className="text-base">Setări Lead</CardTitle>
         </CardHeader>
@@ -115,6 +95,26 @@ export function LeadActionPanel({ contact, tasks, agents, agency, onUpdateContac
                     </SelectContent>
                 </Select>
             </div>
+        </CardContent>
+      </Card>
+
+       <Card className="rounded-2xl shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base">Contact</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+            <a href={`tel:${contact.phone}`} className="flex items-center gap-3 group">
+                <Phone className="h-4 w-4 text-muted-foreground"/>
+                <span className="group-hover:underline">{contact.phone}</span>
+            </a>
+             <a href={`mailto:${contact.email}`} className="flex items-center gap-3 group">
+                <Mail className="h-4 w-4 text-muted-foreground"/>
+                <span className="group-hover:underline">{contact.email}</span>
+            </a>
+            <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" className="flex items-center gap-3 group">
+                <WhatsappIcon className="h-4 w-4 text-muted-foreground"/>
+                <span className="group-hover:underline">Trimite mesaj WhatsApp</span>
+            </a>
         </CardContent>
       </Card>
       
