@@ -1,4 +1,5 @@
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -90,6 +91,7 @@ export type Contact = {
     agentId?: string | null;
     agentName?: string | null;
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
+    portalId?: string;
 }
 
 export type SalesData = {
@@ -146,6 +148,24 @@ export type Invite = {
   role: 'agent';
   invitedBy: string;
 };
+
+export type ClientPortal = {
+  id: string;
+  contactId: string;
+  agencyId: string;
+  contactName: string;
+  agentName: string;
+  createdAt: string;
+};
+
+export type PortalRecommendation = {
+  id: string;
+  propertyId: string;
+  addedAt: string;
+  clientFeedback: 'liked' | 'disliked' | 'none';
+  clientComment?: string;
+};
+
 
 export type WithId<T> = T & { id: string };
     

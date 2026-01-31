@@ -66,6 +66,25 @@ service cloud.firestore {
         allow read, delete: if request.auth != null;
     }
 
+    match /portals/{portalId} {
+      // Allow read access to anyone who has the unguessable portalId.
+      allow get: if true;
+
+      // Only allow agents of the agency to create or delete the portal document.
+      allow create, delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
+    }
+
+    match /portals/{portalId}/recommendations/{recommendationId} {
+      // Anyone with the portal link can see the recommendations.
+      allow read, list: if true;
+
+      // Allow agents to add/remove recommendations.
+      allow create, delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+
+      // Allow anyone with the link to update feedback, but only specific fields.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
+    }
+
     match /agencies/{agencyId}/properties/{propertyId} {
       // Get: Members can get any property. Public can only get 'Activ' ones.
       allow get: if isUserInAgency(agencyId) || ('status' in resource.data && resource.data.status == 'Activ');

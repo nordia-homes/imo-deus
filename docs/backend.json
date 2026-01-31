@@ -204,6 +204,10 @@
             "Ridicată"
           ],
           "description": "The priority level of the lead."
+        },
+        "portalId": {
+          "type": "string",
+          "description": "The ID (secure token) of the client portal associated with this contact."
         }
       },
       "required": [
@@ -397,6 +401,63 @@
         "subject",
         "sentDate"
       ]
+    },
+    "ClientPortal": {
+      "title": "Client Portal",
+      "description": "Represents a client's dedicated portal. The document ID is a secure, unique token.",
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "string"
+        },
+        "agencyId": {
+          "type": "string"
+        },
+        "contactName": {
+          "type": "string"
+        },
+        "agentName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "contactId",
+        "agencyId",
+        "createdAt"
+      ]
+    },
+    "PortalRecommendation": {
+      "title": "Portal Recommendation",
+      "description": "Represents a property recommendation within a client's portal.",
+      "type": "object",
+      "properties": {
+        "propertyId": {
+          "type": "string"
+        },
+        "addedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clientFeedback": {
+          "type": "string",
+          "enum": [
+            "liked",
+            "disliked",
+            "none"
+          ]
+        },
+        "clientComment": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "propertyId",
+        "addedAt"
+      ]
     }
   },
   "auth": {
@@ -555,8 +616,44 @@
             }
           ]
         }
+      },
+      {
+        "path": "/portals/{portalId}",
+        "definition": {
+          "entityName": "ClientPortal",
+          "schema": {
+            "$ref": "#/backend/entities/ClientPortal"
+          },
+          "description": "Top-level collection for client portals. The document ID is a secure access token.",
+          "params": [
+            {
+              "name": "portalId",
+              "description": "The secure access token for the portal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/portals/{portalId}/recommendations/{recommendationId}",
+        "definition": {
+          "entityName": "PortalRecommendation",
+          "schema": {
+            "$ref": "#/backend/entities/PortalRecommendation"
+          },
+          "description": "Stores property recommendations for a client portal. The document ID is the property ID.",
+          "params": [
+            {
+              "name": "portalId",
+              "description": "The secure access token for the portal."
+            },
+            {
+              "name": "recommendationId",
+              "description": "The ID of the recommended property."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations. A 'notifications' sub-collection is added to each user document to store user-specific notifications."
+    "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations. A new 'portals' collection is added to manage client portals; security is based on unguessable document IDs (tokens)."
   }
 }

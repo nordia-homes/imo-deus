@@ -31,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 // Icons
-import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2, User as UserIcon } from 'lucide-react';
+import { Phone, Mail, Euro, Info, MapPin, Sparkles, Wand2, Loader2, PlusCircle, CheckCircle, Edit, Trash2, User as UserIcon, Plus } from 'lucide-react';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
 import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
@@ -40,6 +40,7 @@ import { AiEmailGenerator } from '@/components/leads/AiEmailGenerator';
 import { InteractionList } from '@/components/leads/InteractionList';
 import { InteractionLogger } from '@/components/leads/InteractionLogger';
 import { useAgency } from '@/context/AgencyContext';
+import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 
 // Schemas for AI forms
 const leadScoreSchema = z.object({
@@ -105,6 +106,15 @@ export default function LeadDetailPage() {
         return collection(firestore, 'agencies', agency.id, 'properties');
     }, [firestore, agency?.id]);
     const { data: userProperties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+    const portalRecommendationsQuery = useMemoFirebase(() => {
+      if (!contact?.portalId) return null;
+      return collection(firestore, 'portals', contact.portalId, 'recommendations');
+    }, [firestore, contact?.portalId]);
+
+    const { data: recommendations } = useCollection(portalRecommendationsQuery);
+    const recommendedPropertyIds = useMemo(() => recommendations?.map(r => r.id) || [], [recommendations]);
+
 
     // --- AGENT PROFILES FETCHING ---
     useEffect(() => {
@@ -288,6 +298,21 @@ export default function LeadDetailPage() {
         setIsLogging(false);
     };
 
+    const handleAddRecommendation = (propertyId: string) => {
+      if (!contact?.portalId) {
+        toast({ variant: 'destructive', title: 'Portal inactiv', description: 'Activează portalul clientului înainte de a adăuga proprietăți.' });
+        return;
+      }
+      const recommendationRef = doc(firestore, 'portals', contact.portalId, 'recommendations', propertyId);
+      addDocumentNonBlocking(recommendationRef, {
+        propertyId,
+        addedAt: new Date().toISOString(),
+        clientFeedback: 'none',
+        clientComment: '',
+      });
+      toast({ title: 'Proprietate adăugată în portal!' });
+    };
+
     const allContactsForDialog = useMemo(() => {
         if (!contact) return [];
         return [{ id: contact.id, name: contact.name }];
@@ -371,7 +396,7 @@ export default function LeadDetailPage() {
         return <div className="text-center text-red-500">A apărut o eroare la încărcarea lead-ului. Este posibil să nu aveți permisiunea de a-l vizualiza.</div>;
     }
 
-    if (!user || !contact) {
+    if (!user || !contact || !agency) {
         notFound();
         return null;
     }
@@ -458,7 +483,7 @@ export default function LeadDetailPage() {
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Potrivire Proprietăți (AI)</CardTitle>
-                                    <CardDescription>Găsește proprietățile ideale pe baza preferințelor clientului.</CardDescription>
+                                    <CardDescription>Găsește proprietățile ideale și adaugă-le în portalul clientului.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                                     <Form {...propertyMatchForm}>
@@ -478,21 +503,27 @@ export default function LeadDetailPage() {
                                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                                     {isMatching && <p className="flex items-center text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Caut cele mai bune potriviri...</p>}
                                     {!isMatching && matchedProperties.length === 0 && <p className="text-muted-foreground text-center pt-10">Nicio proprietate găsită. Rulează căutarea pentru a vedea rezultatele.</p>}
-                                        {matchedProperties.map(prop => (
-                                            <Card key={prop.id} className="p-2">
-                                                <div className="flex gap-4 items-center">
-                                                    <Image src={prop.images?.[0]?.url || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" />
-                                                    <div className="flex-1">
-                                                        <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.address}</Link>
-                                                        <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
-                                                        <Card className="mt-2 bg-accent/50 text-xs">
-                                                            <CardHeader className="p-2"><p className="font-semibold text-primary">Scor: {prop.matchScore}/100</p></CardHeader>
-                                                            <CardContent className="p-2 pt-0"><p>{prop.reasoning}</p></CardContent>
-                                                        </Card>
+                                        {matchedProperties.map(prop => {
+                                            const isRecommended = recommendedPropertyIds.includes(prop.id);
+                                            return (
+                                                <Card key={prop.id} className="p-2">
+                                                    <div className="flex gap-4 items-center">
+                                                        <Image src={prop.images?.[0]?.url || 'https://placehold.co/400x300'} alt={prop.address || 'Proprietate'} width={120} height={80} className="rounded-md object-cover aspect-video" />
+                                                        <div className="flex-1">
+                                                            <Link href={`/properties/${prop.id}`} className="font-bold hover:underline text-sm">{prop.title}</Link>
+                                                            <p className="text-xs text-primary font-semibold">€{prop.price.toLocaleString()}</p>
+                                                            <Card className="mt-2 bg-accent/50 text-xs">
+                                                                <CardHeader className="p-2"><p className="font-semibold text-primary">Scor: {prop.matchScore}/100</p></CardHeader>
+                                                                <CardContent className="p-2 pt-0"><p>{prop.reasoning}</p></CardContent>
+                                                            </Card>
+                                                        </div>
+                                                        <Button size="sm" variant={isRecommended ? 'secondary' : 'outline'} onClick={() => handleAddRecommendation(prop.id)} disabled={!contact.portalId || isRecommended}>
+                                                          {isRecommended ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                        </Button>
                                                     </div>
-                                                </div>
-                                            </Card>
-                                        ))}
+                                                </Card>
+                                            )
+                                        })}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -506,6 +537,7 @@ export default function LeadDetailPage() {
 
                 {/* --- RIGHT COLUMN --- */}
                 <div className="lg:col-span-1 space-y-6">
+                     <ClientPortalManager contact={contact} agency={agency} />
                      <Card>
                         <CardHeader><CardTitle>Management Lead</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
