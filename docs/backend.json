@@ -397,69 +397,6 @@
         "subject",
         "sentDate"
       ]
-    },
-    "Contract": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Contract",
-      "type": "object",
-      "description": "Represents a real estate contract between a client and an agent for a property.",
-      "properties": {
-        "propertyId": {
-          "type": "string",
-          "description": "Reference to the Property involved in the contract."
-        },
-        "propertyTitle": {
-          "type": "string",
-          "description": "Denormalized title of the property for easy display."
-        },
-        "contactId": {
-          "type": "string",
-          "description": "Reference to the Contact (client) involved in the contract."
-        },
-        "contactName": {
-          "type": "string",
-          "description": "Denormalized name of the contact for easy display."
-        },
-        "contractType": {
-          "type": "string",
-          "enum": [
-            "Vânzare-Cumpărare",
-            "Închiriere"
-          ],
-          "description": "The type of contract."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Draft",
-            "Trimis",
-            "Semnat",
-            "Anulat"
-          ],
-          "description": "The current status of the contract."
-        },
-        "date": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The date the contract was generated or signed."
-        },
-        "price": {
-          "type": "number",
-          "description": "The final agreed price for the transaction."
-        },
-        "content": {
-          "type": "string",
-          "description": "The full, AI-generated legal text of the contract."
-        }
-      },
-      "required": [
-        "propertyId",
-        "contactId",
-        "contractType",
-        "status",
-        "date",
-        "price"
-      ]
     }
   },
   "auth": {
@@ -618,30 +555,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/agencies/{agencyId}/contracts/{contractId}",
-        "definition": {
-          "entityName": "Contract",
-          "schema": {
-            "$ref": "#/backend/entities/Contract"
-          },
-          "description": "Stores contracts for a specific agency. Authorization is based on the user's membership in the agency.",
-          "params": [
-            {
-              "name": "agencyId",
-              "description": "The ID of the agency that owns the contract."
-            },
-            {
-              "name": "contractId",
-              "description": "The unique ID of the contract."
-            }
-          ]
-        }
       }
     ],
     "reasoning": "The Firestore structure is refactored for a multi-agency architecture. A top-level 'agencies' collection now serves as the root for all agency-specific data (contacts, properties, etc.), ensuring data isolation. The 'users' collection stores user profiles, each containing an 'agencyId' to link them to their respective agency. This model simplifies security rules by allowing checks against the user's 'agencyId' for all sub-collection access, preventing data leakage between agencies and enabling secure, scalable per-agency data management. A new top-level 'invites' collection is added to manage agent invitations."
   }
 }
-
-    

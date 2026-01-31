@@ -10,4 +10,3 @@ import '@/ai/flows/property-insights-generator.ts';
 import '@/ai/flows/email-generator.ts';
 import '@/ai/flows/report-summarizer.ts';
 import '@/ai/flows/property-presentation-generator.ts';
-import '@/ai/flows/contract-generator.ts';

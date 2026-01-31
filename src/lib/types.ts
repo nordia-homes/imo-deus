@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -147,21 +139,6 @@ export type UserProfile = {
   role?: 'admin' | 'agent';
 };
 
-export type Contract = {
-  id: string;
-  propertyId: string;
-  propertyTitle?: string;
-  contactId: string;
-  contactName?: string;
-  contractType: 'Vânzare-Cumpărare' | 'Închiriere';
-  status: 'Draft' | 'Trimis' | 'Semnat' | 'Anulat';
-  date: string;
-  price: number;
-  content?: string;
-  agentId?: string | null;
-  agentName?: string | null;
-};
-
 export type Invite = {
   email: string;
   agencyId: string;
@@ -171,8 +148,4 @@ export type Invite = {
 };
 
 export type WithId<T> = T & { id: string };
-    
-
-    
-
     
