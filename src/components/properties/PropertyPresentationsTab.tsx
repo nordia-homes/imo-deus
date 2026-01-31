@@ -51,7 +51,7 @@ export function PropertyPresentationsTab({ property }: { property: Property }) {
                 agencyLogoUrl: agency.logoUrl,
                 agencyPrimaryColor: agency.primaryColor || '#1E3A8A',
                 language: language,
-                imageCount: property.images?.length || 0,
+                imageCount: Math.max(1, property.images?.length || 0),
             });
 
             // Replace image placeholders with actual URLs
