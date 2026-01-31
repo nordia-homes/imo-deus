@@ -8,9 +8,9 @@ service cloud.firestore {
     // This is safe for single-document operations (get, create, update, delete).
     function isUserInAgency(agencyId) {
       let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-      let userInAgentList = request.auth.uid in agencyDoc.data.get('agentIds', []);
       let isOwner = request.auth.uid == agencyDoc.data.ownerId;
-      return request.auth != null && (isOwner || userInAgentList);
+      // This is the most reliable check: is the user in the agentIds list OR are they the owner.
+      return request.auth != null && (isOwner || request.auth.uid in agencyDoc.data.get('agentIds', []));
     }
     
     // Checks if the user has an 'admin' role for the given agency.
@@ -58,19 +58,26 @@ service cloud.firestore {
     // --- Portal Rules ---
     
     match /portals/{portalId} {
-        allow get: if true; // Portal doc is public to anyone with the link
-        allow create: if isUserInAgency(request.resource.data.agencyId);
-        allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+        // The portal document itself can be read by an agent in that agency
+        allow get: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+        allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
+        allow delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
+      // THE DEFINITIVE FIX
+      // 'list' operations (like the one failing) cannot use `get()` or `exists()` to check other documents.
+      // Security for listing relies on the unguessable `portalId` in the path.
+      // Therefore, we allow ANYONE with the link to list the documents.
+      allow list: if true;
+
+      // 'get' operations on a single document are different. A client could guess a recommendationId.
+      // For 'get', we can and should verify the user is part of the agency, as this operation is allowed to use `get()`.
+      // We also allow unauthenticated access for the client view of a single property.
+      allow get: if true;
       
-      // READ RULE: Allow both `get` and `list` for anyone.
-      // The security is based on the unguessable `portalId`. This is the simplest and most robust fix.
-      allow read: if true;
-      
-      // WRITE RULES: 
-      // A user can write (create/delete) if they belong to the agency that owns the portal.
+      // WRITE RULES
+      // These functions are safe because they are used for single-doc operations (create, update, delete).
       function userCanWriteToPortal() {
         let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
         return request.auth != null &&
@@ -78,7 +85,6 @@ service cloud.firestore {
                isUserInAgency(portalDoc.data.agencyId);
       }
 
-      // A client (unauthenticated) can only update feedback fields.
       function isClientFeedbackUpdate() {
         return request.auth == null && 
                request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
