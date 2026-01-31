@@ -8,12 +8,13 @@ import { useAgency } from '@/context/AgencyContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 type DayWithTasks = {
     date: Date;
@@ -55,13 +56,8 @@ export function TasksCalendar() {
         return grouped;
     }, [tasks]);
 
-    const handleMonthChange = (date: Date) => {
-        setCurrentMonth(date);
-    };
-
-    const CustomDay = ({ date, displayMonth }: { date: Date, displayMonth: Date }) => {
+    const CustomDay = ({ date }: { date: Date }) => {
         if (!date || isNaN(date.getTime())) {
-            // Guard against invalid date objects which can be passed by the calendar library.
             return <div />;
         }
         
@@ -129,26 +125,32 @@ export function TasksCalendar() {
                 <Calendar
                     locale={ro}
                     mode="single"
-                    selected={new Date()} // Doesn't do much here, but required
                     month={currentMonth}
-                    onMonthChange={handleMonthChange}
+                    onMonthChange={setCurrentMonth}
                     className="w-full h-full"
+                    captionLayout="buttons"
                     classNames={{
                         months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 h-full',
                         month: 'space-y-4 flex flex-col flex-1',
-                        caption_label: "text-lg font-bold",
+                        caption: 'flex justify-center items-center relative px-8 py-2',
+                        caption_label: 'text-lg font-bold',
+                        nav: 'space-x-1 flex items-center',
+                        nav_button: cn(
+                          buttonVariants({ variant: 'outline' }),
+                          'h-7 w-7 bg-transparent p-0'
+                        ),
+                        nav_button_previous: 'absolute left-1',
+                        nav_button_next: 'absolute right-1',
                         table: 'w-full border-collapse space-y-1 flex-1',
                         head_row: 'flex border-b',
-                        head_cell: 'text-muted-foreground rounded-md w-full font-normal text-sm p-2 text-center',
-                        row: 'flex w-full mt-2 h-[calc((100%-2.5rem)/5)]', // Distribute height
-                        cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 border',
-                        day: 'h-full w-full p-0 font-normal aria-selected:opacity-100',
+                        head_cell: 'text-muted-foreground font-normal text-sm p-2 text-center flex-1',
+                        row: 'flex w-full mt-2 h-[calc((100%-4rem)/5)]',
+                        cell: 'h-full w-full text-center text-sm p-0 relative border',
+                        day: 'h-full w-full p-0 font-normal',
                         day_outside: 'text-muted-foreground/50',
                     }}
                     components={{
                         Day: CustomDay,
-                        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-                        IconRight: () => <ChevronRight className="h-4 w-4" />,
                     }}
                 />
             </CardContent>
