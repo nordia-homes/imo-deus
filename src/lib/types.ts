@@ -6,6 +6,7 @@
 
 
 
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;

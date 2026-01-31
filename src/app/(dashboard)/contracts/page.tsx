@@ -1,73 +1,56 @@
 'use client';
-
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, ArrowUpRight } from "lucide-react";
-import Link from "next/link";
-
-const contracts = [
-    {
-        title: "Contract de Rezervare",
-        description: "Formular online pentru rezervarea unei proprietăți.",
-        href: "https://docs.google.com/forms/d/e/1FAIpQLSdZSgZhCcfJVneX6cRL3I5LiUlFZVD9BNUPV9CQhGWBnezTsg/viewform",
-        external: true,
-    },
-    {
-        title: "Contract de Colaborare",
-        description: "Model de contract pentru colaborarea între agenții.",
-        href: "#",
-        external: true,
-        disabled: true,
-    },
-    {
-        title: "Contract de Exclusivitate",
-        description: "Model de contract pentru reprezentare exclusivă.",
-        href: "#",
-        external: true,
-        disabled: true,
-    }
-];
-
+import { ContractsList } from '@/components/contracts/ContractsList';
+import { GenerateContractDialog } from '@/components/contracts/GenerateContractDialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Property, Contact } from '@/lib/types';
+import { useAgency } from '@/context/AgencyContext';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ContractsPage() {
+    const { agencyId } = useAgency();
+    const firestore = useFirestore();
+    
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+    const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
+    const contactsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
+    const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
+
+    const isLoading = arePropertiesLoading || areContactsLoading;
+    
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-headline font-bold">Documente și Contracte</h1>
-                <p className="text-muted-foreground">
-                    Accesează modelele de contracte și documentele standard ale agenției.
-                </p>
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-headline font-bold">Management Contracte</h1>
+                    <p className="text-muted-foreground">
+                        Generează, vizualizează și gestionează toate contractele agenției.
+                    </p>
+                </div>
+                {isLoading ? (
+                    <Skeleton className="h-10 w-48" />
+                ) : (
+                    <GenerateContractDialog properties={properties || []} contacts={contacts || []} />
+                )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {contracts.map((contract) => (
-                     <Card key={contract.title}>
-                        <CardHeader>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-muted p-3 rounded-lg">
-                                    <FileText className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle>{contract.title}</CardTitle>
-                                    <CardDescription>{contract.description}</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                             <Button asChild className="w-full" disabled={contract.disabled}>
-                                <Link href={contract.href} target="_blank" rel="noopener noreferrer">
-                                    Deschide Documentul
-                                    <ArrowUpRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-             <p className="text-sm text-muted-foreground pt-4">
-                Notă: Link-urile pentru "Contract de Colaborare" și "Contract de Exclusivitate" vor fi adăugate ulterior, conform solicitării dumneavoastră.
-            </p>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Toate Contractele</CardTitle>
+                    <CardDescription>O listă a tuturor contractelor de vânzare sau închiriere generate.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ContractsList />
+                </CardContent>
+            </Card>
         </div>
     );
 }
