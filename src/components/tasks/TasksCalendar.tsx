@@ -21,6 +21,7 @@ import { Button } from '../ui/button';
 import Link from 'next/link';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import { Card } from "@/components/ui/card";
 
 export function TasksCalendar() {
     const { agencyId } = useAgency();
@@ -40,6 +41,7 @@ export function TasksCalendar() {
         if (!tasks) return [];
         return tasks.reduce((acc: Date[], task) => {
             if (task.dueDate) {
+                // Correctly handle timezone offset for date comparison
                 const taskDate = new Date(task.dueDate);
                 const utcDate = new Date(taskDate.valueOf() + taskDate.getTimezoneOffset() * 60000);
                 if (!acc.some(d => isSameDay(d, utcDate))) {
