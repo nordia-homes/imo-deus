@@ -9,6 +9,11 @@ import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { properties as allSampleProperties } from '@/lib/data';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { ro } from 'date-fns/locale';
+
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,7 +37,7 @@ const PageSkeleton = () => (
         </div>
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
                 <Skeleton className="h-24" />
                 <Skeleton className="h-96" />
             </div>
@@ -40,7 +45,7 @@ const PageSkeleton = () => (
                 <Skeleton className="h-[500px]" />
                 <Skeleton className="h-96" />
             </div>
-            <div className="lg:col-span-3 space-y-4">
+            <div className="lg:col-span-4 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -156,6 +161,19 @@ export default function PropertyDetailPage() {
 
     const matchedLeads = allContacts?.filter(c => c.budget && property && c.budget >= property.price * 0.8 && c.budget <= property.price * 1.2).slice(0, 3) || [];
 
+    const creationDate = property.createdAt ? new Date(property.createdAt) : null;
+    const ageInDays = creationDate ? differenceInDays(new Date(), creationDate) : null;
+
+    let ageBadgeVariant: 'success' | 'warning' | 'destructive' = 'success';
+    if (ageInDays !== null) {
+        if (ageInDays > 30) {
+            ageBadgeVariant = 'destructive';
+        } else if (ageInDays >= 14) {
+            ageBadgeVariant = 'warning';
+        }
+    }
+
+
     return (
         <div className="h-full">
             <PropertyHeader property={property} owner={owner} />
@@ -163,6 +181,20 @@ export default function PropertyDetailPage() {
             <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
                 <div className="col-span-12 lg:col-span-4 space-y-6">
+                     {creationDate && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
+                                <Calendar className="mr-2 h-3.5 w-3.5" />
+                                Creat: {format(creationDate, 'd MMM yyyy', { locale: ro })}
+                            </Badge>
+                            {ageInDays !== null && (
+                                <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
+                                    <Clock className="mr-2 h-3.5 w-3.5" />
+                                    Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
+                                </Badge>
+                            )}
+                        </div>
+                    )}
                      <EssentialFeatures property={property} />
                      <PropertyTimeline 
                         property={property}

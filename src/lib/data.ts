@@ -41,6 +41,7 @@ export const properties: Property[] = [
     tagline: '3 dorm. | 3 băi | 150mp',
     status: 'Activ',
     featured: true,
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p2',
@@ -81,6 +82,7 @@ export const properties: Property[] = [
     tagline: '5 dorm. | 4 băi | 320mp',
     status: 'Activ',
     featured: true,
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p3',
@@ -121,6 +123,7 @@ export const properties: Property[] = [
     tagline: '1 dorm. | 1 baie | 55mp',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString(),
   },
    {
     id: 'p4',
@@ -161,6 +164,7 @@ export const properties: Property[] = [
     tagline: '3 dorm. | 3 băi | 180mp',
     status: 'Activ',
     featured: true,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p5',
@@ -201,6 +205,7 @@ export const properties: Property[] = [
     tagline: '4 dorm. | 3 băi | 200mp',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p6',
@@ -241,6 +246,7 @@ export const properties: Property[] = [
     tagline: '2 dorm. | 2 băi | 78mp',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p7',
@@ -281,6 +287,7 @@ export const properties: Property[] = [
     tagline: '1200mp | Deschidere lac',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p8',
@@ -321,6 +328,7 @@ export const properties: Property[] = [
     tagline: '150mp | Stradal',
     status: 'Activ',
     featured: true,
+    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p9',
@@ -361,6 +369,7 @@ export const properties: Property[] = [
     tagline: 'Studio | 1 baie | 32mp',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'p10',
@@ -401,5 +410,6 @@ export const properties: Property[] = [
     tagline: 'Teren 1500mp | Oportunitate',
     status: 'Activ',
     featured: false,
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
