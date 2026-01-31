@@ -10,24 +10,14 @@ import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterv
 import { ro } from "date-fns/locale";
 
 // Components
-import { DashboardSection } from '@/components/dashboard/DashboardSection';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import Link from 'next/link';
 import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-
-function DashboardInfoList({ items, emptyText, renderItem }: { items: any[], emptyText: string, renderItem: (item: any) => React.ReactNode }) {
-    if (!items || items.length === 0) {
-        return <p className="text-sm text-muted-foreground text-center p-4">{emptyText}</p>;
-    }
-    return <div className="space-y-3">{items.map(renderItem)}</div>;
-}
 
 
 export default function DashboardPage() {
