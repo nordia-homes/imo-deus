@@ -4,13 +4,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Interaction, Task, Contact } from '@/lib/types';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare } from 'lucide-react';
+import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare, Clock } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { Badge } from '@/components/ui/badge';
 
 type TimelineItemData = (
   | ({ itemKind: 'interaction' } & Interaction)
@@ -66,27 +67,80 @@ export function LeadTimeline({ interactions, tasks, contact, onAddInteraction, o
         return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
     }, [interactions, tasks]);
 
-    const today = new Date();
-    const groupedItems = timelineItems.reduce((acc, item) => {
-        const itemDate = item.sortDate;
-        const diffDays = (today.setHours(0,0,0,0) - itemDate.setHours(0,0,0,0)) / (1000 * 3600 * 24);
+    const groupedItems = useMemo(() => {
+        const today = new Date();
+        const groups: Record<string, TimelineItemData[]> = {};
 
-        let groupKey = 'Mai vechi';
-        if (diffDays < 1) groupKey = 'Azi';
-        else if (diffDays < 2) groupKey = 'Ieri';
-        else if (diffDays < 7) groupKey = 'Săptămâna aceasta';
+        for (const item of timelineItems) {
+            const itemDate = item.sortDate;
+            const diff = differenceInDays(today, itemDate);
+
+            let groupKey: string;
+
+            if (diff < 0) {
+                groupKey = 'Viitor';
+            } else if (diff === 0) {
+                groupKey = 'Azi';
+            } else if (diff === 1) {
+                groupKey = 'Ieri';
+            } else if (diff < 7) {
+                groupKey = 'Săptămâna aceasta';
+            } else {
+                groupKey = 'Mai vechi';
+            }
+
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(item);
+        }
         
-        if (!acc[groupKey]) acc[groupKey] = [];
-        acc[groupKey].push(item);
-        return acc;
-    }, {} as Record<string, TimelineItemData[]>);
+        const groupOrder = ['Azi', 'Ieri', 'Săptămâna aceasta', 'Viitor', 'Mai vechi'];
+        const sortedGroupedItems = Object.entries(groups).sort(([a], [b]) => {
+            const indexA = groupOrder.indexOf(a);
+            const indexB = groupOrder.indexOf(b);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+
+        return Object.fromEntries(sortedGroupedItems);
+    }, [timelineItems]);
+
 
     const handleSaveInteraction = (type: Interaction['type']) => async (notes: string) => {
         await onAddInteraction({ type, notes });
     };
 
+    const creationDate = contact.createdAt ? new Date(contact.createdAt) : null;
+    const ageInDays = creationDate ? differenceInDays(new Date(), creationDate) : null;
+
+    let ageBadgeVariant: 'success' | 'warning' | 'destructive' = 'success';
+    if (ageInDays !== null) {
+        if (ageInDays > 30) {
+            ageBadgeVariant = 'destructive';
+        } else if (ageInDays >= 14) {
+            ageBadgeVariant = 'warning';
+        }
+    }
+
   return (
     <div className="space-y-4">
+        {creationDate && (
+            <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
+                    <Calendar className="mr-2 h-3.5 w-3.5" />
+                    Creat: {format(creationDate, 'd MMM yyyy', { locale: ro })}
+                </Badge>
+                {ageInDays !== null && (
+                     <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
+                        <Clock className="mr-2 h-3.5 w-3.5" />
+                        Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
+                    </Badge>
+                )}
+            </div>
+        )}
+
       <Card className="rounded-2xl">
         <CardContent className="p-2 grid grid-cols-2 gap-2">
             <AddInteractionPopover type="Apel telefonic" onSave={handleSaveInteraction('Apel telefonic')}>
