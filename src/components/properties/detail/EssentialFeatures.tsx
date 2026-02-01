@@ -25,7 +25,7 @@ const FeatureButton = ({ icon, value, label }: { icon: React.ReactNode, value?: 
 
 export function EssentialFeatures({ property }: { property: Property }) {
     return (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
             <FeatureButton icon={<HandCoins />} value={property.transactionType} label="Tranzacție" />
             <FeatureButton icon={<Building />} value={property.propertyType} label="Tip" />
             <FeatureButton icon={<Ruler />} value={`${property.squareFootage} mp`} label="Suprafață" />
