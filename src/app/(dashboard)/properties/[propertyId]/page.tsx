@@ -180,7 +180,7 @@ export default function PropertyDetailPage() {
 
              <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
-                <div className="col-span-12 lg:col-span-3 space-y-6">
+                <div className="col-span-12 lg:col-span-4 space-y-6">
                     {creationDate && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
@@ -206,7 +206,7 @@ export default function PropertyDetailPage() {
                 </div>
                  
                 {/* Main Content Column */}
-                <div className="col-span-12 lg:col-span-7 space-y-6">
+                <div className="col-span-12 lg:col-span-6 space-y-6">
                     <MediaColumn property={property} />
                     <InfoColumn property={property} />
                 </div>
