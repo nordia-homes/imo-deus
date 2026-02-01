@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import type { Viewing, Task, Property } from '@/lib/types';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
