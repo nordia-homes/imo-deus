@@ -115,23 +115,6 @@ export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, a
               )}
           </CardContent>
       </Card>
-      
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2">
-            <CardTitle className="text-base">Task-uri Azi</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-            {todayTasks.length > 0 ? todayTasks.map(task => (
-                <div key={task.id} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-2">
-                        <Checkbox id={`task-${task.id}`}/>
-                        <label htmlFor={`task-${task.id}`} className="text-sm">{task.description}</label>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"><MoreHorizontal className="h-4 w-4" /></Button>
-                </div>
-            )) : <p className="text-sm text-muted-foreground text-center py-2">Niciun task pentru azi.</p>}
-        </CardContent>
-      </Card>
 
       <Card className="rounded-2xl shadow-sm">
          <CardHeader className="pb-2">
@@ -151,6 +134,23 @@ export function PropertyActionPanel({ property, viewings, matchedLeads, tasks, a
              )}
          </CardContent>
      </Card>
+      
+      <Card className="rounded-2xl shadow-sm">
+        <CardHeader className="pb-2">
+            <CardTitle className="text-base">Task-uri Azi</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+            {todayTasks.length > 0 ? todayTasks.map(task => (
+                <div key={task.id} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-2">
+                        <Checkbox id={`task-${task.id}`}/>
+                        <label htmlFor={`task-${task.id}`} className="text-sm">{task.description}</label>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"><MoreHorizontal className="h-4 w-4" /></Button>
+                </div>
+            )) : <p className="text-sm text-muted-foreground text-center py-2">Niciun task pentru azi.</p>}
+        </CardContent>
+      </Card>
 
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
