@@ -195,8 +195,8 @@ export default function PropertyDetailPage() {
                             )}
                         </div>
                     )}
-                    <EssentialFeatures property={property} />
                     <PublishCard property={property} />
+                    <EssentialFeatures property={property} />
                     <PropertyTimeline 
                         property={property}
                         viewings={viewings || []}
