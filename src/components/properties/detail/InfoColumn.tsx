@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { AiPropertyInsights } from '@/components/properties/detail/AiPropertyInsights';
+import { Button } from "@/components/ui/button";
 
 
 export function InfoColumn({ property }: { property: Property }) {
@@ -19,12 +20,12 @@ export function InfoColumn({ property }: { property: Property }) {
                 <Card className="rounded-2xl">
                     <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
                     <CardContent>
-                        <div className="columns-2 md:columns-3 gap-4 space-y-2">
+                        <div className="flex flex-wrap gap-2">
                             {property.amenities.map(amenity => (
-                                <div key={amenity} className="flex items-center gap-2 break-inside-avoid">
-                                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                                    <span className="text-sm">{amenity}</span>
-                                </div>
+                                <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default">
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    {amenity}
+                                </Button>
                             ))}
                         </div>
                     </CardContent>
