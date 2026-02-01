@@ -15,8 +15,6 @@ export function InfoColumn({ property }: { property: Property }) {
                 </CardContent>
             </Card>
 
-            <AiPropertyInsights property={property} />
-
             {property.amenities && property.amenities.length > 0 && (
                 <Card className="rounded-2xl">
                     <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
@@ -32,6 +30,8 @@ export function InfoColumn({ property }: { property: Property }) {
                     </CardContent>
                 </Card>
             )}
+
+            <AiPropertyInsights property={property} />
 
             <Card className="rounded-2xl">
                 <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
