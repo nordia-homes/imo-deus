@@ -10,10 +10,33 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+// Logo components
+const ImobiliareLogo = () => (
+    <svg viewBox="0 0 130 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
+        <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#0078d4">imobiliare</text>
+        <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#333">.ro</text>
+    </svg>
+);
+
+const StoriaLogo = () => (
+    <svg viewBox="0 0 100 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
+        <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#ff5a00">storia.ro</text>
+    </svg>
+);
+
+const OlxLogo = () => (
+    <svg viewBox="0 0 45 20" className="h-5 w-auto" preserveAspectRatio="xMinYMid meet">
+        <text x="0" y="16" fontFamily="Verdana, Arial, sans-serif" fontSize="20" fontWeight="bold">
+            <tspan fill="#002f34">ol</tspan><tspan fill="#23e5db">x</tspan>
+        </text>
+    </svg>
+);
+
+
 const PORTALS = [
-    { id: 'imobiliare', name: 'Imobiliare.ro' },
-    { id: 'storia', name: 'Storia.ro' },
-    { id: 'olx', name: 'OLX.ro' },
+    { id: 'imobiliare', name: 'Imobiliare.ro', logo: <ImobiliareLogo /> },
+    { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
+    { id: 'olx', name: 'OLX.ro', logo: <OlxLogo /> },
 ];
 
 export function PublishCard({ property }: { property: Property }) {
@@ -67,7 +90,9 @@ export function PublishCard({ property }: { property: Property }) {
                     
                     return (
                         <div key={portal.id} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50">
-                             <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer">{portal.name}</Label>
+                             <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-3">
+                                {portal.logo}
+                             </Label>
                             <div className="flex items-center gap-2">
                                {isPublished && <span className="text-xs text-green-600 font-semibold">Publicat</span>}
                                {isPending && <span className="text-xs text-yellow-600 font-semibold">În curs...</span>}
