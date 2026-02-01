@@ -43,13 +43,13 @@ const PageSkeleton = () => (
                 <Skeleton className="h-64" />
             </div>
             {/* Main Content Area */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-6 space-y-6">
                 <Skeleton className="h-[400px]" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-64" />
             </div>
             {/* Right Column */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-20" />
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
@@ -180,7 +180,7 @@ export default function PropertyDetailPage() {
 
              <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
-                <div className="col-span-12 lg:col-span-4 space-y-6">
+                <div className="col-span-12 lg:col-span-3 space-y-6">
                     {creationDate && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
@@ -212,7 +212,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 {/* Right Action Panel Column */}
-                <div className="col-span-12 lg:col-span-2">
+                <div className="col-span-12 lg:col-span-3">
                      <PropertyActionPanel 
                         property={property} 
                         viewings={viewings || []}
