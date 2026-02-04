@@ -43,7 +43,7 @@ const leadSchema = z.object({
   source: z.string().min(1, { message: "Sursa este obligatorie." }),
   budget: z.coerce.number().positive({ message: "Bugetul trebuie să fie un număr pozitiv." }),
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
-  notes: z.string().optional(),
+  description: z.string().optional(),
   city: z.string().min(1, { message: "Orașul este obligatoriu." }),
   priority: z.string().min(1, { message: "Prioritatea este obligatorie." }),
   agentId: z.string().optional(),
@@ -98,7 +98,7 @@ export function AddLeadDialog() {
       source: '',
       budget: 0,
       status: 'Nou',
-      notes: '',
+      description: '',
       city: '',
       priority: 'Medie',
       agentId: 'unassigned',
@@ -360,8 +360,8 @@ export function AddLeadDialog() {
                     <Separator />
 
                     <section>
-                         <h3 className="text-lg font-semibold text-primary mb-4">Notițe</h3>
-                          <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormControl><Textarea rows={3} {...field} placeholder="Adaugă notițe despre client, preferințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                         <h3 className="text-lg font-semibold text-primary mb-4">Descriere Lead</h3>
+                          <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a lead-ului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                     </section>
                 </div>
             </ScrollArea>

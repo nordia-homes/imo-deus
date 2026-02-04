@@ -79,13 +79,6 @@ export type Interaction = {
     }
 }
 
-export type AiLeadSummary = {
-    score: number;
-    probability: number;
-    tags: string[];
-    nextBestAction: string;
-};
-
 export type Contact = {
     id: string;
     name: string;
@@ -94,7 +87,7 @@ export type Contact = {
     source: string;
     budget?: number;
     status: 'Nou' | 'Contactat' | 'Vizionare' | 'În negociere' | 'Câștigat' | 'Pierdut';
-    notes: string;
+    description?: string;
     contactType: 'Lead' | 'Client' | 'Partener';
     interactionHistory?: Interaction[];
     preferences?: Partial<ContactPreferences>;
@@ -106,7 +99,6 @@ export type Contact = {
     agentName?: string | null;
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
     portalId?: string | null;
-    aiSummary?: AiLeadSummary;
     tags?: string[];
 }
 

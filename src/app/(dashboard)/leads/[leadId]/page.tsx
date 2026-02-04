@@ -14,12 +14,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { LeadHeader } from '@/components/leads/detail/Header';
 import { LeadTimeline } from '@/components/leads/detail/Timeline';
-import { AiSummary } from '@/components/leads/detail/AiSummary';
 import { MatchedProperties } from '@/components/leads/detail/MatchedProperties';
 import { LeadInfoCard } from '@/components/leads/detail/LeadInfoCard';
 import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
 import { LeadZonesCard } from '@/components/leads/detail/LeadZonesCard';
 import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
+import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
 
 
 const PageSkeleton = () => (
@@ -163,13 +163,6 @@ export default function LeadDetailPage() {
         return null;
     }
 
-    const mockAiSummary = contact.aiSummary || {
-        score: contact.leadScore || 0,
-        probability: 72,
-        tags: [],
-        nextBestAction: ''
-    };
-
     const matchedProperties = properties?.slice(0,2) || [];
 
 
@@ -192,7 +185,7 @@ export default function LeadDetailPage() {
                     {/* Center Column */}
                     <div className="lg:col-span-6 space-y-6">
                         <MatchedProperties properties={matchedProperties} />
-                        <AiSummary summary={mockAiSummary} />
+                        <LeadDescriptionCard contact={contact} />
                     </div>
 
                     {/* Right Column */}

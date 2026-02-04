@@ -185,9 +185,9 @@
           "type": "number",
           "description": "The lead score of the contact."
         },
-        "notes": {
+        "description": {
           "type": "string",
-          "description": "Notes about the contact."
+          "description": "A full, detailed description of the lead including their specific needs, preferences, and any other relevant information."
         },
         "createdAt": {
           "type": "string",
