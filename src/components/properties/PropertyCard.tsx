@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Star, BedDouble, Bath, Ruler } from "lucide-react";
+import { Star, BedDouble, Bath, Ruler, Edit } from "lucide-react";
 import type { Property } from "@/lib/types";
 import {
   Carousel,
@@ -11,6 +11,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card } from "../ui/card";
+import { AddPropertyDialog } from "./add-property-dialog";
+import { Button } from "../ui/button";
 
 export function PropertyCard({ property, agencyId }: { property: Property; agencyId?: string }) {
   const href = agencyId
@@ -73,11 +75,26 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
            </div>
         </Carousel>
 
-        <Link href={href} className="block p-4">
-          <div className="flex justify-between items-start">
-             <h3 className="font-semibold text-base text-foreground truncate pr-2">{property.title}</h3>
+        <div className="p-4">
+          <div className="flex justify-between items-start gap-2">
+            <Link href={href} className="flex-1 truncate">
+              <h3 className="font-semibold text-base text-foreground truncate pr-2 group-hover:underline">{property.title}</h3>
+            </Link>
+            {!agencyId && (
+              <AddPropertyDialog property={property}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  aria-label="Editează proprietatea"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </AddPropertyDialog>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">{property.location}</p>
+          <Link href={href} className="block mt-1">
+            <p className="text-sm text-muted-foreground">{property.location}</p>
            <div className="text-sm text-muted-foreground mt-1 flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
@@ -96,7 +113,8 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
             €{property.price.toLocaleString()}
             {property.transactionType === 'Închiriere' && <span className="font-normal text-muted-foreground"> / lună</span>}
           </p>
-        </Link>
+          </Link>
+        </div>
     </Card>
   );
 }
