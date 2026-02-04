@@ -208,7 +208,7 @@ export default function LeadDetailPage() {
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
-                onAddTask={onAddTask}
+                onAddTask={handleAddTask}
                 onAddViewing={handleAddViewing}
                 properties={properties || []}
             />
@@ -217,7 +217,7 @@ export default function LeadDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={onAddTask} />
+                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
                         <LeadZonesCard contact={contact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
