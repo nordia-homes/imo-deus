@@ -10,16 +10,18 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
 
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-base">Vizionări Programate:</span>
-                    <span className="font-bold text-xl">{scheduledCount}</span>
+            <CardContent className="p-3">
+                <div className="flex items-center justify-between h-10">
+                    <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-base">Vizionări Programate:</span>
+                        <span className="font-bold text-lg">{scheduledCount}</span>
+                    </div>
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href="/viewings" aria-label="Vezi calendarul de vizionări">
+                            <CalendarCheck className="h-5 w-5 text-primary" />
+                        </Link>
+                    </Button>
                 </div>
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/viewings" aria-label="Vezi calendarul de vizionări">
-                        <CalendarCheck className="h-5 w-5 text-primary" />
-                    </Link>
-                </Button>
             </CardContent>
         </Card>
     );
