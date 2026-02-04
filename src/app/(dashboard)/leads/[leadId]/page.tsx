@@ -3,7 +3,7 @@
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDoc, arrayUnion } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
@@ -22,6 +22,7 @@ import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
 import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
+import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
 
 
 const PageSkeleton = () => (
@@ -100,6 +101,14 @@ export default function LeadDetailPage() {
         return doc(firestore, 'agencies', agency.id, 'properties', contact.sourcePropertyId);
     }, [firestore, agency?.id, contact?.sourcePropertyId]);
     const { data: sourceProperty, isLoading: isSourcePropertyLoading } = useDoc<Property>(sourcePropertyDocRef);
+
+    // Fetch all contacts to find similar ones
+    const allContactsQuery = useMemoFirebase(() => {
+        if (!agency?.id) return null;
+        return collection(firestore, 'agencies', agency.id, 'contacts');
+    }, [firestore, agency?.id]);
+    const { data: allContacts, isLoading: areAllContactsLoading } = useCollection<Contact>(allContactsQuery);
+
 
     // --- AGENT PROFILES FETCHING ---
     useEffect(() => {
@@ -188,8 +197,43 @@ export default function LeadDetailPage() {
         return Promise.resolve();
     };
 
+    const similarLeads = useMemo(() => {
+        if (!contact || !allContacts || allContacts.length <= 1) return [];
 
-    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading;
+        const budgetFlexibility = 0.20; // 20% flexibility
+        const minBudget = contact.budget ? contact.budget * (1 - budgetFlexibility) : 0;
+        const maxBudget = contact.budget ? contact.budget * (1 + budgetFlexibility) : Infinity;
+        const contactZones = new Set(contact.zones || []);
+
+        if (contactZones.size === 0 && !contact.budget) return [];
+
+        return allContacts.filter(otherLead => {
+            if (otherLead.id === contact.id) return false;
+
+            const budgetMatch = otherLead.budget ? (otherLead.budget >= minBudget && otherLead.budget <= maxBudget) : false;
+            
+            const otherZones = new Set(otherLead.zones || []);
+            const zoneMatch = contactZones.size > 0 && otherZones.size > 0 
+                ? new Set([...contactZones].filter(z => otherZones.has(z))).size > 0
+                : false;
+
+            if (contact.budget && contact.zones && contact.zones.length > 0) {
+                return budgetMatch && zoneMatch;
+            }
+            if (contact.budget) {
+                return budgetMatch;
+            }
+            if (contact.zones && contact.zones.length > 0) {
+                return zoneMatch;
+            }
+
+            return false;
+        }).slice(0, 5);
+
+    }, [contact, allContacts]);
+
+
+    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading;
 
     if (isLoading) {
         return <PageSkeleton />;
@@ -230,6 +274,7 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-6 space-y-6">
                         <MatchedProperties properties={matchedProperties} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <SimilarLeadsCard leads={similarLeads} />
                     </div>
 
                     {/* Right Column */}
