@@ -5,21 +5,22 @@ service cloud.firestore {
     // --- Helper Functions ---
     
     // Checks if a user belongs to an agency, either as owner or as an agent in the agentIds list.
-    // This is safe for single-document operations (get, create, update, delete).
     function isUserInAgency(agencyId) {
-      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-      let isOwner = request.auth.uid == agencyDoc.data.ownerId;
-      // This is the most reliable check: is the user in the agentIds list OR are they the owner.
-      return request.auth != null && (isOwner || request.auth.uid in agencyDoc.data.get('agentIds', []));
+      let agencyDocData = get(/databases/$(database)/documents/agencies/$(agencyId)).data;
+      let isOwner = request.auth.uid == agencyDocData.ownerId;
+      // Check if agentIds exists and is a list before checking membership
+      let isAgent = 'agentIds' in agencyDocData &&
+                    agencyDocData.agentIds is list &&
+                    request.auth.uid in agencyDocData.agentIds;
+      return request.auth != null && (isOwner || isAgent);
     }
     
     // Checks if the user has an 'admin' role for the given agency.
-    // This relies on the user's own profile document.
     function isUserAdminForAgency(agencyId) {
-        let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        let userProfileData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
         return request.auth != null && 
-               userProfile.data.role == 'admin' &&
-               userProfile.data.agencyId == agencyId;
+               userProfileData.get('role', '') == 'admin' &&
+               userProfileData.get('agencyId', '') == agencyId;
     }
 
     // --- Collection Rules ---
@@ -46,8 +47,6 @@ service cloud.firestore {
     match /agencies/{agencyId}/{privateCollection}/{docId}
     where privateCollection in ['contacts', 'tasks', 'reports', 'emails'] {
       // These collections are private to agency members.
-      // `list` is restricted to authenticated users. The app's client-side logic should ensure
-      // users only query for data belonging to their agency.
       allow read: if request.auth != null;
       // Write operations are secured to agency members.
       allow write: if isUserInAgency(agencyId);
@@ -73,19 +72,10 @@ service cloud.firestore {
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // THE DEFINITIVE FIX
-      // 'list' operations (like the one failing) cannot use `get()` or `exists()` to check other documents.
-      // Security for listing relies on the unguessable `portalId` in the path.
-      // Therefore, we allow ANYONE with the link to list the documents.
-      allow list: if true;
-
-      // 'get' operations on a single document are different. A client could guess a recommendationId.
-      // For 'get', we can and should verify the user is part of the agency, as this operation is allowed to use `get()`.
-      // We also allow unauthenticated access for the client view of a single property.
-      allow get: if true;
+      // Public read access is safe due to unguessable portalId in the path.
+      allow read: if true;
       
       // WRITE RULES
-      // These functions are safe because they are used for single-doc operations (create, update, delete).
       function userCanWriteToPortal() {
         let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
         return request.auth != null &&
