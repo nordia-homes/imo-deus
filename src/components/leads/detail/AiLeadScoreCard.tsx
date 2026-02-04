@@ -139,7 +139,9 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
     <Card className="rounded-2xl shadow-sm border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Scor AI</CardTitle>
+            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">
+                Calitate Lead
+            </Button>
           <CircularProgress score={contact.leadScore} />
         </div>
       </CardHeader>
