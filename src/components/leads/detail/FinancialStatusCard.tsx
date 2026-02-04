@@ -2,22 +2,55 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Contact, Offer, FinancialStatus } from '@/lib/types';
-import { Banknote, FileText } from 'lucide-react';
+import type { Contact, Offer, FinancialStatus, PortalRecommendation, Property } from '@/lib/types';
+import { Banknote, FileText, Heart, ThumbsDown, HelpCircle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+
+interface OfferItem extends Property {
+    feedback: PortalRecommendation['clientFeedback'];
+    recId: string;
+}
 
 interface FinancialStatusCardProps {
   contact: Contact;
-  onUpdateContact: (data: Partial<Pick<Contact, 'financialStatus' | 'offers'>>) => void;
+  onUpdateContact: (data: Partial<Pick<Contact, 'financialStatus'>>) => void;
+  recommendations: PortalRecommendation[] | null;
+  properties: Property[] | null;
+  portalId: string | null;
+  onUpdateRecommendation: (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => void;
 }
 
-export function FinancialStatusCard({ contact, onUpdateContact }: FinancialStatusCardProps) {
+export function FinancialStatusCard({ contact, onUpdateContact, recommendations, properties, portalId, onUpdateRecommendation }: FinancialStatusCardProps) {
 
   const handleStatusChange = (status: FinancialStatus) => {
     onUpdateContact({ financialStatus: status });
   };
   
-  const offers = contact.offers || [];
+  const offers: OfferItem[] = useMemo(() => {
+    if (!recommendations || !properties) return [];
+    
+    const propertiesById = new Map(properties.map(p => [p.id, p]));
+    
+    return recommendations
+      .map(rec => {
+        const property = propertiesById.get(rec.propertyId);
+        if (!property) return null;
+        return {
+          ...property,
+          feedback: rec.clientFeedback,
+          recId: rec.id, // which is the propertyId
+        };
+      })
+      .filter((item): item is OfferItem => item !== null);
+  }, [recommendations, properties]);
+
+  const handleFeedbackChange = (recId: string, feedback: PortalRecommendation['clientFeedback']) => {
+      if (!portalId) return;
+      onUpdateRecommendation(recId, { clientFeedback: feedback });
+  };
 
   return (
     <Card className="rounded-2xl shadow-2xl">
@@ -44,22 +77,42 @@ export function FinancialStatusCard({ contact, onUpdateContact }: FinancialStatu
         </div>
 
         <div>
-          <Label className="text-xs text-muted-foreground">Istoric Oferte</Label>
+          <Label className="text-xs text-muted-foreground">Istoric Oferte Portal</Label>
           <div className="mt-2 space-y-2">
             {offers.length > 0 ? (
               offers.map(offer => (
-                <div key={offer.id} className="text-sm p-2 rounded-md border">
-                  <p className="font-semibold">{offer.propertyTitle}</p>
-                  <div className="flex justify-between items-center">
+                <div key={offer.recId} className="text-sm p-2 rounded-md border">
+                    <Link href={`/properties/${offer.id}`} className="hover:underline">
+                        <p className="font-semibold truncate">{offer.title}</p>
+                    </Link>
+                  <div className="flex justify-between items-center mt-1">
                     <span className="text-primary font-bold">€{offer.price.toLocaleString()}</span>
-                    <span className="text-xs font-medium">{offer.status}</span>
+                     <Select defaultValue={offer.feedback} onValueChange={(value: PortalRecommendation['clientFeedback']) => handleFeedbackChange(offer.recId, value)}>
+                        <SelectTrigger className={cn("h-8 w-[150px] text-xs",
+                            offer.feedback === 'liked' && 'text-green-600 border-green-500',
+                            offer.feedback === 'disliked' && 'text-red-600 border-red-500',
+                            offer.feedback === 'none' && 'text-yellow-600 border-yellow-500',
+                        )}>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="none">
+                                <span className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-yellow-500" /> Niciun răspuns</span>
+                             </SelectItem>
+                             <SelectItem value="liked">
+                                <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-green-500" /> I-a plăcut</span>
+                            </SelectItem>
+                            <SelectItem value="disliked">
+                                <span className="flex items-center gap-2"><ThumbsDown className="h-4 w-4 text-red-500" /> Nu i-a plăcut</span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Nicio ofertă înregistrată.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Nicio ofertă în portal.</p>
             )}
-            {/* TODO: Add a popover/dialog to add a new offer */}
           </div>
         </div>
       </CardContent>

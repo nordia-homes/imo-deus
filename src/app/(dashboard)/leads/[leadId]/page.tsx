@@ -1,14 +1,14 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDoc, arrayUnion } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation } from '@/lib/types';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -114,6 +114,12 @@ export default function LeadDetailPage() {
     }, [firestore, agency?.id]);
     const { data: allContacts, isLoading: areAllContactsLoading } = useCollection<Contact>(allContactsQuery);
 
+    const recommendationsQuery = useMemoFirebase(() => {
+        if (!contact?.portalId) return null;
+        return collection(firestore, 'portals', contact.portalId, 'recommendations');
+    }, [firestore, contact?.portalId]);
+    const { data: recommendations, isLoading: areRecsLoading } = useCollection<PortalRecommendation>(recommendationsQuery);
+
 
     // --- Side Effects & Memoization ---
     useEffect(() => {
@@ -161,6 +167,12 @@ export default function LeadDetailPage() {
         updateDocumentNonBlocking(contactDocRef, finalData);
         
         toast({ title: 'Lead actualizat', description: 'Modificările au fost salvate.' });
+    };
+    
+    const handleUpdateRecommendation = (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
+        if (!contact?.portalId) return;
+        const recRef = doc(firestore, 'portals', contact.portalId, 'recommendations', recommendationId);
+        updateDocumentNonBlocking(recRef, data);
     };
 
     const handleRematch = async (preferences: ContactPreferences) => {
@@ -280,7 +292,7 @@ export default function LeadDetailPage() {
     }, [contact, allContacts]);
 
 
-    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading;
+    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading || areRecsLoading;
 
     if (isLoading) {
         return <PageSkeleton />;
@@ -307,7 +319,14 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
-                        <FinancialStatusCard contact={contact} onUpdateContact={handleUpdateContact} />
+                         <FinancialStatusCard 
+                            contact={contact} 
+                            onUpdateContact={handleUpdateContact}
+                            recommendations={recommendations}
+                            properties={properties}
+                            portalId={contact.portalId || null}
+                            onUpdateRecommendation={handleUpdateRecommendation}
+                        />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
