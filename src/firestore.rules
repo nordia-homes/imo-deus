@@ -47,9 +47,7 @@ service cloud.firestore {
     match /agencies/{agencyId}/{privateCollection}/{docId}
     where privateCollection in ['contacts', 'tasks', 'reports', 'emails'] {
       // These collections are private to agency members.
-      allow read: if request.auth != null;
-      // Write operations are secured to agency members.
-      allow write: if isUserInAgency(agencyId);
+      allow read, write: if isUserInAgency(agencyId);
     }
 
     // Rule for public-facing agency data
@@ -67,7 +65,9 @@ service cloud.firestore {
         // The portal document is public to anyone with the link (unguessable ID).
         allow read: if true;
         
-        allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
+        // Allow creating a portal if the agencyId in the portal data matches the agencyId in the user's own profile.
+        allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == request.resource.data.agencyId;
+        
         allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
     
