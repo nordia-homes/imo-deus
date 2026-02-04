@@ -301,7 +301,7 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="p-4 md:p-6 -mt-8 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8">
+            <main className="pt-6 px-4 md:px-6 lg:px-8 -mx-4 md:-mx-6 lg:-mx-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">

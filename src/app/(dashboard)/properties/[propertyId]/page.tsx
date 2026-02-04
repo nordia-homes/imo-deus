@@ -173,7 +173,7 @@ export default function PropertyDetailPage() {
         <div className="h-full">
             <PropertyHeader property={property} />
 
-             <main className="p-4 md:p-6 lg:p-8 -mx-8 grid grid-cols-12 gap-8 items-start">
+             <main className="pt-6 px-4 md:px-6 lg:px-8 -mx-4 md:-mx-6 lg:-mx-8 grid grid-cols-12 gap-8 items-start">
                 {/* Left Column */}
                 <div className="col-span-12 lg:col-span-3 space-y-6">
                     {creationDate && (
