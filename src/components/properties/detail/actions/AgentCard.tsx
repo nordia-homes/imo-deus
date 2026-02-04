@@ -25,7 +25,7 @@ export function AgentCard({ agent }: { agent: AgentInfo }) {
             <CardContent className="p-3">
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-9 w-9">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
                             <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>

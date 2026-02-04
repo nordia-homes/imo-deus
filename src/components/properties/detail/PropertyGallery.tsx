@@ -83,7 +83,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
       <div className="relative">
         
         {/* --- Desktop Grid Layout --- */}
-        <div className="hidden md:grid md:grid-cols-3 md:grid-rows-2 md:gap-2 h-[450px]">
+        <div className="hidden md:grid md:grid-cols-3 md:grid-rows-2 md:gap-2 h-[405px]">
           {/* Main image */}
           <ImageItem index={0} className="col-span-2 row-span-2" />
           

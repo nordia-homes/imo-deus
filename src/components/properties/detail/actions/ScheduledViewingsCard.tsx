@@ -11,7 +11,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
     return (
         <Card className="rounded-2xl shadow-2xl">
             <CardContent className="p-3">
-                <div className="flex items-center justify-between h-10">
+                <div className="flex items-center justify-between h-9">
                     <div className="flex items-center gap-2">
                         <Eye className="h-5 w-5 text-muted-foreground" />
                         <span className="font-semibold text-base">Vizionări Programate:</span>
