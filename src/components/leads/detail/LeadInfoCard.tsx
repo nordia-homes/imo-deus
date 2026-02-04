@@ -62,7 +62,9 @@ export function LeadInfoCard({ contact, onAddInteraction, onAddTask }: LeadInfoC
                     </Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" asChild><a href={`tel:${contact.phone}`}><Phone className="mr-2 h-4 w-4"/>Apel</a></Button>
+                    <AddInteractionPopover type="Apel telefonic" onSave={handleSaveInteraction('Apel telefonic')}>
+                        <Button variant="outline"><Phone className="mr-2 h-4 w-4"/>Apel</Button>
+                    </AddInteractionPopover>
                     <AddInteractionPopover type="WhatsApp" onSave={handleSaveInteraction('WhatsApp')}>
                         <Button variant="outline"><WhatsappIcon className="mr-2 h-4 w-4"/>WhatsApp</Button>
                     </AddInteractionPopover>
