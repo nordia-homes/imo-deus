@@ -19,7 +19,7 @@ type LeadHeaderProps = {
 export function LeadHeader({ contact, onUpdateContact, onAddTask, onAddViewing, properties }: LeadHeaderProps) {
   
   return (
-    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mx-8 px-8 py-3 border-b">
+    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 border-b">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">

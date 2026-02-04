@@ -17,7 +17,7 @@ import { LeadTimeline } from '@/components/leads/detail/LeadTimeline';
 import { MatchedProperties } from '@/components/leads/detail/MatchedProperties';
 import { LeadInfoCard } from '@/components/leads/detail/LeadInfoCard';
 import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
-import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
+import { ClientPortalManager } from '@/components/leads/detail/ClientPortalManager';
 import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
 import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
@@ -237,7 +237,7 @@ export default function LeadDetailPage() {
 
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col -mt-4 md:-mt-6 lg:-mt-8">
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
@@ -246,7 +246,7 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="flex-1 p-4 md:p-6 -mx-8 overflow-y-auto">
+            <main className="flex-1 p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8 overflow-y-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">

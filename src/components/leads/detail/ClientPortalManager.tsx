@@ -5,11 +5,11 @@ import { useFirestore, useUser, setDocumentNonBlocking, updateDocumentNonBlockin
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact, Agency } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Check, Copy, Link as LinkIcon, Loader2, RefreshCw, Star, Trash2 } from 'lucide-react';
-import { Label } from '../ui/label';
+import { Label } from '@/components/ui/label';
 
 interface ClientPortalManagerProps {
   contact: Contact;
