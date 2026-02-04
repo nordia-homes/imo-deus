@@ -6,6 +6,7 @@ import type { Contact, Property, Task, Viewing } from '@/lib/types';
 import { Phone, Mail, Plus, CalendarCheck } from 'lucide-react';
 import { AddTaskDialog } from '../../tasks/AddTaskDialog';
 import { AddViewingDialog } from '../../viewings/AddViewingDialog';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 type LeadHeaderProps = {
   contact: Contact;
@@ -32,6 +33,12 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onAddViewing, 
               <Phone className="mr-2 h-4 w-4" />
               {contact.phone}
             </a>
+          </Button>
+           <Button size="sm" variant="outline" asChild>
+             <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                <WhatsappIcon className="mr-2 h-4 w-4" />
+                WhatsApp
+             </a>
           </Button>
           <Button size="sm" variant="outline" asChild>
              <a href={`mailto:${contact.email}`}>

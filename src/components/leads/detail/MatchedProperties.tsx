@@ -2,14 +2,36 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Property } from '@/lib/types';
+import type { Property, Contact } from '@/lib/types';
 import Image from 'next/image';
-import { ArrowRight, BedDouble, Bath, Ruler } from 'lucide-react';
+import { ArrowRight, BedDouble, Bath, Ruler, Star } from 'lucide-react';
 import Link from 'next/link';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-const MatchedPropertyCard = ({ property }: { property: Property }) => {
+const MatchedPropertyCard = ({ property, contact }: { property: Property, contact: Contact }) => {
   const hasImages = property.images && property.images.length > 0;
   const imageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const handleAddToPortal = () => {
+    if (!contact.portalId) {
+        toast({ variant: 'destructive', title: 'Portal inactiv', description: 'Activați portalul pentru acest client întâi.' });
+        return;
+    }
+    const recommendationRef = doc(firestore, 'portals', contact.portalId, 'recommendations', property.id);
+    
+    setDocumentNonBlocking(recommendationRef, {
+        propertyId: property.id,
+        addedAt: new Date().toISOString(),
+        clientFeedback: 'none'
+    }, { merge: true });
+
+    toast({ title: 'Proprietate adăugată!', description: `${property.title} a fost adăugată în portalul clientului.` });
+  };
+
 
   return (
     <Card className="rounded-2xl overflow-hidden shadow-sm w-full group">
@@ -33,9 +55,13 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
             <span className="flex items-center gap-1"><Ruler className="h-3 w-3" /> {property.squareFootage} m²</span>
         </div>
       </div>
-       <div className="p-4 pt-0">
+       <div className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
          <Button asChild className="w-full">
             <Link href={`/properties/${property.id}`}>Vezi proprietatea</Link>
+         </Button>
+         <Button variant="outline" className="w-full" onClick={handleAddToPortal} disabled={!contact.portalId}>
+            <Star className="mr-2 h-4 w-4" />
+            Adaugă în Portal
          </Button>
        </div>
     </Card>
@@ -43,7 +69,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
 };
 
 
-export function MatchedProperties({ properties }: { properties: Property[] }) {
+export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
       <Card className="rounded-2xl shadow-sm">
@@ -69,7 +95,7 @@ export function MatchedProperties({ properties }: { properties: Property[] }) {
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {properties.slice(0, 2).map((prop) => (
-          <MatchedPropertyCard key={prop.id} property={prop} />
+          <MatchedPropertyCard key={prop.id} property={prop} contact={contact} />
         ))}
       </CardContent>
     </Card>
