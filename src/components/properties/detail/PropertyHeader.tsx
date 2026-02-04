@@ -1,10 +1,8 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { DollarSign, MapPin, Edit, FileText, Rocket, Send, MoreVertical, ChevronLeft, Menu } from 'lucide-react';
-import Link from 'next/link';
+import { Edit, FileText, Rocket, Send, MoreVertical, MapPin, BedDouble, Bath, Ruler, CalendarDays, Layers } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,21 +14,20 @@ import { AddPropertyDialog } from '../add-property-dialog';
 export function PropertyHeader({ property }: { property: Property }) {
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
-        <div className="flex items-center justify-between gap-4 mb-4">
-             <Button variant="ghost" asChild>
-                <Link href="/properties">
-                    <ChevronLeft className="h-4 w-4" />
-                    Înapoi la proprietăți
-                </Link>
-            </Button>
-        </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h1 className="text-2xl font-bold">{property.title}</h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-1">
                     <span className="font-semibold text-foreground">€{property.price.toLocaleString()}</span>
                     <span className="text-gray-400">•</span>
-                    <span className="flex items-center gap-1.5">{property.location}</span>
+                    <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{property.location}</span>
+                </div>
+                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-sm mt-2">
+                    <span className="flex items-center gap-1.5"><BedDouble className="h-4 w-4"/> {property.bedrooms} dorm.</span>
+                    <span className="flex items-center gap-1.5"><Bath className="h-4 w-4"/> {property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
+                    <span className="flex items-center gap-1.5"><Ruler className="h-4 w-4"/> {property.squareFootage} mp</span>
+                    {property.constructionYear && <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4"/> {property.constructionYear}</span>}
+                    {property.floor && <span className="flex items-center gap-1.5"><Layers className="h-4 w-4"/> Et. {property.floor}</span>}
                 </div>
             </div>
             <div className="flex items-center gap-2">
