@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Edit, FileText, Rocket, Send, MoreVertical, Calendar, Clock } from 'lucide-react';
+import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 export function PropertyHeader({ property }: { property: Property }) {
     const { agencyId } = useAgency();
@@ -93,9 +94,11 @@ export function PropertyHeader({ property }: { property: Property }) {
                             <SelectItem value="Inactiv">Inactiv</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button>
-                        <Send className="mr-2 h-4 w-4"/> 
-                        Trimite clientului
+                    <Button asChild>
+                      <Link href={`/agencies/${agencyId}/properties/${property.id}`} target="_blank">
+                        <Globe className="mr-2 h-4 w-4"/> 
+                        Vezi website
+                      </Link>
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
