@@ -246,7 +246,7 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="flex-1 p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8 overflow-y-auto">
+            <main className="flex-1 p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
