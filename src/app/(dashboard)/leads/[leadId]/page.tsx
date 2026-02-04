@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -26,6 +27,7 @@ import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
 import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
 import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCard';
 import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
+import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
 
 
 const PageSkeleton = () => (
@@ -70,6 +72,7 @@ export default function LeadDetailPage() {
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
+    const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
@@ -276,6 +279,17 @@ export default function LeadDetailPage() {
         });
     };
 
+     const handleToggleTask = (task: Task) => {
+        if (!agency?.id) return;
+        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', task.id);
+        const newStatus = task.status === 'completed' ? 'open' : 'completed';
+        updateDocumentNonBlocking(taskRef, { status: newStatus });
+        toast({
+            title: `Task ${newStatus === 'completed' ? 'completat' : 'redeschis'}!`,
+            description: `"${task.description}" a fost actualizat.`,
+        });
+    };
+
     const similarLeads = useMemo(() => {
         if (!contact || !allContacts || allContacts.length <= 1) return [];
 
@@ -329,7 +343,7 @@ export default function LeadDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} />
+                        <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
                         <ScheduledViewingsCard viewings={viewings || []} />
                          <FinancialStatusCard 
                             contact={contact} 
@@ -345,14 +359,15 @@ export default function LeadDetailPage() {
                             onAddInteraction={handleAddInteraction}
                             onAddTask={handleAddTask}
                             contacts={[contact]}
+                            onToggleTask={handleToggleTask}
                         />
                     </div>
 
                     {/* Center Column */}
                     <div className="lg:col-span-6 space-y-6">
+                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
                         <MatchedProperties properties={matchedProperties} contact={contact} />
-                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <SimilarLeadsCard leads={similarLeads} />
                     </div>
 
@@ -370,6 +385,13 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
             </main>
+
+             <EditLeadInfoDialog 
+                contact={contact}
+                isOpen={isEditInfoOpen}
+                onOpenChange={setIsEditInfoOpen}
+                onUpdateContact={handleUpdateContact}
+            />
         </div>
     );
 }

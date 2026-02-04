@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -5,11 +6,13 @@ import type { Interaction, Task } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Phone, Mail, FileText, CheckSquare, Activity, Users, Eye } from 'lucide-react';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { Button } from '@/components/ui/button';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type TimelineItemData = (
@@ -38,8 +41,30 @@ const getTimelineIcon = (item: TimelineItemData) => {
 };
 
 
-const TimelineItem = ({ item }: { item: TimelineItemData }) => {
-    const isCompleted = item.itemKind === 'task' && item.status === 'completed';
+type LeadTimelineProps = {
+  interactions: Interaction[];
+  tasks: Task[];
+  onAddInteraction: (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => Promise<void>;
+  onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
+  contacts: { id: string; name: string; }[];
+  onToggleTask: (task: Task) => void;
+};
+
+export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask, contacts, onToggleTask }: LeadTimelineProps) {
+  const timelineItems = React.useMemo(() => {
+    const combined: TimelineItemData[] = [];
+    interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
+    tasks.forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
+    return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+  }, [interactions, tasks]);
+
+  const handleInteractionSave = async (type: Interaction['type'], notes: string) => {
+    await onAddInteraction({ type, notes });
+  };
+  
+  const TimelineItem = ({ item }: { item: TimelineItemData }) => {
+    const isTask = item.itemKind === 'task';
+    const isCompleted = isTask && item.status === 'completed';
     
     let title: string;
     let details: string | React.ReactNode;
@@ -61,12 +86,21 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
 
     return (
         <div className="flex gap-3">
-             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                {getTimelineIcon(item)}
+             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                {isTask ? (
+                    <Checkbox
+                        checked={isCompleted}
+                        onCheckedChange={() => onToggleTask(item as Task)}
+                        aria-label="Toggle task"
+                        className="size-5"
+                    />
+                ) : (
+                    getTimelineIcon(item)
+                )}
             </div>
             <div className="flex-1">
                 <div className="flex items-baseline justify-between text-sm">
-                    <p className="font-semibold">{title}</p>
+                    <p className={cn("font-semibold", isCompleted && "line-through text-muted-foreground")}>{title}</p>
                     <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(dateToShow, { addSuffix: true, locale: ro })}
                     </p>
@@ -74,28 +108,8 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{details}</p>
             </div>
         </div>
-    )
-}
-
-type LeadTimelineProps = {
-  interactions: Interaction[];
-  tasks: Task[];
-  onAddInteraction: (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => Promise<void>;
-  onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
-  contacts: { id: string; name: string; }[];
+    );
 };
-
-export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask, contacts }: LeadTimelineProps) {
-  const timelineItems = React.useMemo(() => {
-    const combined: TimelineItemData[] = [];
-    interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
-    tasks.forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
-    return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
-  }, [interactions, tasks]);
-
-  const handleInteractionSave = async (type: Interaction['type'], notes: string) => {
-    await onAddInteraction({ type, notes });
-  };
 
   return (
     <Card className="rounded-2xl shadow-2xl flex flex-col">
