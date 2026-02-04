@@ -93,11 +93,11 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
                             offer.feedback === 'disliked' && 'text-red-600 border-red-500',
                             offer.feedback === 'none' && 'text-yellow-600 border-yellow-500',
                         )}>
-                            <span className="flex items-center gap-2 w-full">
+                            <div className="flex items-center gap-2">
                                 {offer.feedback === 'liked' && <><Heart className="h-4 w-4" /> I-a plăcut</>}
                                 {offer.feedback === 'disliked' && <><ThumbsDown className="h-4 w-4" /> Nu i-a plăcut</>}
                                 {offer.feedback === 'none' && <><HelpCircle className="h-4 w-4" /> Niciun răspuns</>}
-                            </span>
+                            </div>
                         </SelectTrigger>
                         <SelectContent>
                              <SelectItem value="none">
