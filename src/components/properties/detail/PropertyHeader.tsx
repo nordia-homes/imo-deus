@@ -10,8 +10,36 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AddPropertyDialog } from '../add-property-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAgency } from '@/context/AgencyContext';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { doc } from 'firebase/firestore';
 
 export function PropertyHeader({ property }: { property: Property }) {
+    const { agencyId } = useAgency();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleStatusChange = (newStatus: Property['status']) => {
+        if (!agencyId || !property) return;
+        
+        // This will only work if the property exists in Firestore.
+        // For the demo with static data, this updates will not persist.
+        if (agencyId && firestore) {
+            const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
+            updateDocumentNonBlocking(propertyDocRef, {
+                status: newStatus,
+                statusUpdatedAt: new Date().toISOString()
+            });
+        }
+
+        toast({
+            title: "Status actualizat!",
+            description: `Proprietatea este acum: ${newStatus}.`,
+        });
+    };
+
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -42,6 +70,18 @@ export function PropertyHeader({ property }: { property: Property }) {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                 <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
+                    <SelectTrigger className="w-[120px] h-10 text-sm font-semibold">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Activ">Activ</SelectItem>
+                        <SelectItem value="Rezervat">Rezervat</SelectItem>
+                        <SelectItem value="Vândut">Vândut</SelectItem>
+                        <SelectItem value="Închiriat">Închiriat</SelectItem>
+                        <SelectItem value="Inactiv">Inactiv</SelectItem>
+                    </SelectContent>
+                </Select>
                  <Button>
                     <Send className="mr-2 h-4 w-4"/> 
                     Trimite clientului

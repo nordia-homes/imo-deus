@@ -1,58 +1,18 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Property } from "@/lib/types";
-import { updateDocumentNonBlocking, useFirestore } from "@/firebase";
-import { doc } from 'firebase/firestore';
-import { useAgency } from "@/context/AgencyContext";
-import { useToast } from "@/hooks/use-toast";
-import { HandCoins } from "lucide-react";
 
 export function PriceStatusCard({ property }: { property: Property }) {
-    const { agencyId } = useAgency();
-    const firestore = useFirestore();
-    const { toast } = useToast();
-
-    const handleStatusChange = (newStatus: Property['status']) => {
-        if (!agencyId || !property) return;
-        const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-        
-        // This will only work if the property exists in Firestore.
-        // For the demo, we show a toast and assume the change is persisted in local state.
-        updateDocumentNonBlocking(propertyDocRef, {
-            status: newStatus,
-            statusUpdatedAt: new Date().toISOString()
-        });
-
-        toast({
-            title: "Status actualizat!",
-            description: `Proprietatea este acum: ${newStatus}.`,
-        });
-    };
 
     return (
         <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Preț & Status</CardTitle>
+                <CardTitle className="text-base font-semibold">Preț</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                         <p className="text-2xl font-bold">€{property.price.toLocaleString()}</p>
-                         <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                            <SelectTrigger className="w-[120px] h-9 text-xs font-semibold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Activ">Activ</SelectItem>
-                                <SelectItem value="Rezervat">Rezervat</SelectItem>
-                                <SelectItem value="Vândut">Vândut</SelectItem>
-                                <SelectItem value="Închiriat">Închiriat</SelectItem>
-                                <SelectItem value="Inactiv">Inactiv</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <p className="text-2xl font-bold">€{property.price.toLocaleString()}</p>
                 </div>
             </CardContent>
         </Card>
