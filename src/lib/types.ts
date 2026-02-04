@@ -57,6 +57,7 @@ export type Property = {
   ownerPhone?: string;
 };
 
+export type MatchedProperty = Property & { matchScore: number; reasoning: string };
 
 export type ContactPreferences = {
     desiredPriceRangeMin: number;
@@ -78,6 +79,18 @@ export type Interaction = {
       name: string;
     }
 }
+
+export type Offer = {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  price: number;
+  status: 'În așteptare' | 'Acceptată' | 'Refuzată';
+  date: string;
+}
+
+export type FinancialStatus = 'Neprecalificat' | 'Credit Pre-aprobat' | 'Credit Aprobat' | 'Cash';
+
 
 export type Contact = {
     id: string;
@@ -102,6 +115,8 @@ export type Contact = {
     portalId?: string | null;
     tags?: string[];
     sourcePropertyId?: string;
+    offers?: Offer[];
+    financialStatus?: FinancialStatus;
 }
 
 export type SalesData = {

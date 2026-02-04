@@ -6,8 +6,9 @@ import { doc, collection, query, where, getDoc, arrayUnion } from 'firebase/fire
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
+import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences } from '@/lib/types';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +24,8 @@ import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewin
 import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
 import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
 import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
+import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCard';
+import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 
 
 const PageSkeleton = () => (
@@ -62,9 +65,11 @@ export default function LeadDetailPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // --- AGENT PROFILES STATE ---
+    // --- Component State ---
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
+    const [isMatching, setIsMatching] = useState(false);
+    const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
@@ -110,7 +115,7 @@ export default function LeadDetailPage() {
     const { data: allContacts, isLoading: areAllContactsLoading } = useCollection<Contact>(allContactsQuery);
 
 
-    // --- AGENT PROFILES FETCHING ---
+    // --- Side Effects & Memoization ---
     useEffect(() => {
         if (!agency?.agentIds || agency.agentIds.length === 0) {
             setAreAgentsLoading(false);
@@ -136,13 +141,66 @@ export default function LeadDetailPage() {
 
         fetchAgents();
     }, [agency, firestore, toast]);
+
+    useEffect(() => {
+        if (properties) {
+            const initialMatched = properties.slice(0, 2).map(p => ({...p, matchScore: 0, reasoning: ''}));
+            setMatchedProperties(initialMatched);
+        }
+    }, [properties]);
     
     // --- MUTATION HANDLERS ---
     const handleUpdateContact = (data: Partial<Omit<Contact, 'id'>>) => {
         if (!contactDocRef) return;
-        updateDocumentNonBlocking(contactDocRef, data);
+        
+        let finalData = { ...data };
+        if (data.preferences && contact?.preferences) {
+            finalData.preferences = { ...contact.preferences, ...data.preferences };
+        }
+        
+        updateDocumentNonBlocking(contactDocRef, finalData);
+        
         toast({ title: 'Lead actualizat', description: 'Modificările au fost salvate.' });
     };
+
+    const handleRematch = async (preferences: ContactPreferences) => {
+        if (!contact || !properties) {
+            toast({ variant: "destructive", title: "Date lipsă", description: "Nu s-au putut încărca proprietățile."});
+            return;
+        }
+
+        setIsMatching(true);
+        
+        const matcherProperties = properties.map(p => ({
+            ...p,
+            address: p.address || p.location || '',
+            price: p.price || 0,
+            bedrooms: p.bedrooms || 0,
+            bathrooms: p.bathrooms || 0,
+            squareFootage: p.squareFootage || 0,
+            description: p.description || p.title || '',
+            image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
+        }));
+
+        try {
+            const result = await propertyMatcher({
+                clientPreferences: preferences,
+                properties: matcherProperties,
+            });
+            setMatchedProperties(result.matchedProperties as MatchedProperty[]);
+            if (result.matchedProperties.length === 0) {
+                toast({
+                    title: 'Nicio potrivire perfectă găsită',
+                    description: 'AI-ul nu a găsit nicio proprietate care să corespundă noilor criterii.',
+                });
+            }
+        } catch (error) {
+            console.error('Property matching failed:', error);
+            toast({ variant: "destructive", title: "A apărut o eroare", description: "Nu am putut găsi proprietăți potrivite."});
+        } finally {
+            setIsMatching(false);
+        }
+    }
 
     const handleAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => {
         if (!agency?.id || !user) return;
@@ -233,11 +291,8 @@ export default function LeadDetailPage() {
         return null;
     }
 
-    const matchedProperties = properties?.slice(0,2) || [];
-
-
     return (
-        <div className="h-full flex flex-col -mt-4 md:-mt-6 lg:-mt-8">
+        <div className="h-full flex flex-col">
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
@@ -246,7 +301,7 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8">
+            <main className="p-4 md:p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
@@ -263,7 +318,9 @@ export default function LeadDetailPage() {
 
                     {/* Center Column */}
                     <div className="lg:col-span-6 space-y-6">
+                        <PreferencesCard contact={contact} onUpdatePreferences={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
                         <MatchedProperties properties={matchedProperties} contact={contact} />
+                        <FinancialStatusCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <SimilarLeadsCard leads={similarLeads} />
                     </div>

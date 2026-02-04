@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import type { Contact, Property } from '@/lib/types';
+import type { Contact, Property, MatchedProperty } from '@/lib/types';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,8 +34,6 @@ const propertyMatchSchema = z.object({
   desiredFeatures: z.string(),
   locationPreferences: z.string(),
 });
-
-type MatchedProperty = Property & { matchScore: number; reasoning: string };
 
 export default function MatchingPage() {
     const { agencyId } = useAgency();
