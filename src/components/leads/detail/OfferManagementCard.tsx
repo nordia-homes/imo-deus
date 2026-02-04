@@ -47,11 +47,8 @@ export function OfferManagementCard({ contact, properties, onAddOffer, onUpdateO
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <FileText className="h-5 w-5 text-primary" />
-          <span>Management Oferte</span>
+          <span>Administrare oferte</span>
         </CardTitle>
-        <CardDescription>
-            Înregistrează și urmărește ofertele formale.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {contact.offers && contact.offers.length > 0 ? (
