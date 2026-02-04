@@ -17,12 +17,12 @@ import { LeadTimeline } from '@/components/leads/detail/Timeline';
 import { MatchedProperties } from '@/components/leads/detail/MatchedProperties';
 import { LeadInfoCard } from '@/components/leads/detail/LeadInfoCard';
 import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
-import { LeadZonesCard } from '@/components/leads/detail/LeadZonesCard';
 import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
 import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
 import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
+import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
 
 
 const PageSkeleton = () => (
@@ -177,10 +177,10 @@ export default function LeadDetailPage() {
         toast({ title: "Vizionare programată!" });
     };
 
-    const handleAddInteraction = (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
+    const handleAddInteraction = async (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
         if (!contactDocRef || !user) return Promise.reject("User or contact not available");
         
-        const newInteraction = {
+        const newInteraction: Interaction = {
             ...interactionData,
             id: crypto.randomUUID(),
             date: new Date().toISOString(),
@@ -189,12 +189,9 @@ export default function LeadDetailPage() {
             }
         };
         
-        updateDocumentNonBlocking(contactDocRef, {
+        await updateDocumentNonBlocking(contactDocRef, {
             interactionHistory: arrayUnion(newInteraction)
         });
-
-        toast({ title: 'Interacțiune adăugată.' });
-        return Promise.resolve();
     };
 
     const similarLeads = useMemo(() => {
@@ -253,12 +250,11 @@ export default function LeadDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
-                        <LeadZonesCard contact={contact} />
+                        <LeadInfoCard contact={contact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
-                            viewings={viewings || []}
+                            onAddInteraction={handleAddInteraction}
                         />
                     </div>
 
@@ -271,6 +267,7 @@ export default function LeadDetailPage() {
 
                     {/* Right Column */}
                     <div className="lg:col-span-3 space-y-6">
+                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
                         <ClientPortalManager contact={contact} agency={agency} />

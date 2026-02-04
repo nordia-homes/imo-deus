@@ -94,6 +94,7 @@ export type Contact = {
     city?: string;
     zones?: string[];
     leadScore?: number;
+    leadScoreReason?: string;
     createdAt?: string;
     agentId?: string | null;
     agentName?: string | null;

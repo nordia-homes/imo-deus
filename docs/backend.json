@@ -185,6 +185,10 @@
           "type": "number",
           "description": "The lead score of the contact."
         },
+        "leadScoreReason": {
+          "type": "string",
+          "description": "The reasoning behind the AI-generated lead score."
+        },
         "description": {
           "type": "string",
           "description": "A full, detailed description of the lead including their specific needs, preferences, and any other relevant information."
