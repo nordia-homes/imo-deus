@@ -81,7 +81,16 @@ function PortalContent({ portalId }: { portalId: string }) {
         {recommendations?.map(rec => {
           const property = propertiesById.get(rec.propertyId);
           if (!property) return null;
-          return <RecommendedPropertyCard key={rec.id} property={property} recommendation={rec} portalId={portalId} />;
+          return (
+            <RecommendedPropertyCard 
+                key={rec.id} 
+                property={property} 
+                recommendation={rec} 
+                portalId={portalId}
+                agencyId={portal.agencyId}
+                contactId={portal.contactId}
+            />
+          );
         })}
       </div>
     </div>

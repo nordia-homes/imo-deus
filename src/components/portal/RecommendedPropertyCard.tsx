@@ -24,25 +24,41 @@ interface RecommendedPropertyCardProps {
   property: Property;
   recommendation: PortalRecommendation;
   portalId: string;
+  agencyId: string;
+  contactId: string;
 }
 
-export function RecommendedPropertyCard({ property, recommendation, portalId }: RecommendedPropertyCardProps) {
+export function RecommendedPropertyCard({ property, recommendation, portalId, agencyId, contactId }: RecommendedPropertyCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [comment, setComment] = useState(recommendation.clientComment || '');
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | 'none'>(recommendation.clientFeedback);
 
   const recommendationRef = doc(firestore, 'portals', portalId, 'recommendations', recommendation.id);
+  const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
 
   const handleFeedback = (newFeedback: 'liked' | 'disliked') => {
     const finalFeedback = feedback === newFeedback ? 'none' : newFeedback;
     setFeedback(finalFeedback);
+    
+    // Update live portal
     updateDocumentNonBlocking(recommendationRef, { clientFeedback: finalFeedback });
+    // Update permanent history on contact
+    updateDocumentNonBlocking(contactRef, {
+      [`recommendationHistory.${recommendation.id}.clientFeedback`]: finalFeedback,
+    });
+
     toast({ title: 'Feedback trimis!', description: 'Mulțumim pentru părerea ta.' });
   };
 
   const handleSaveComment = () => {
+    // Update live portal
     updateDocumentNonBlocking(recommendationRef, { clientComment: comment });
+    // Update permanent history on contact
+    updateDocumentNonBlocking(contactRef, {
+      [`recommendationHistory.${recommendation.id}.clientComment`]: comment,
+    });
+    
     toast({ title: 'Comentariu salvat!', description: 'Agentul tău a fost notificat.' });
   };
   
