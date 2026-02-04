@@ -8,7 +8,6 @@ import type { Property, Viewing, Contact, Task, UserProfile } from '@/lib/types'
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { properties as allSampleProperties } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
@@ -78,11 +77,7 @@ export default function PropertyDetailPage() {
         return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
     }, [firestore, agencyId, propertyId]);
 
-    // Data fetching - using static data as a fallback for now
-    const { data: property, isLoading: isPropertyLoading, error: propertyError } = useMemo(() => {
-        const prop = allSampleProperties.find(p => p.id === propertyId);
-        return { data: prop || null, isLoading: false, error: prop ? null : new Error('Property not found') };
-    }, [propertyId]);
+    const { data: property, isLoading: isPropertyLoading, error: propertyError } = useDoc<Property>(propertyDocRef);
 
     const viewingsQuery = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -185,7 +180,7 @@ export default function PropertyDetailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
                                 <Calendar className="mr-2 h-3.5 w-3.5" />
-                                Creat: {format(creationDate, 'd MMM yyyy', { locale: ro })}
+                                {format(creationDate, 'd MMM yyyy', { locale: ro })}
                             </Badge>
                             {ageInDays !== null && (
                                 <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">

@@ -51,10 +51,10 @@ export function LeadInfoCard({ contact, onAddInteraction, onAddTask }: LeadInfoC
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
                         <Calendar className="mr-2 h-3.5 w-3.5" />
-                        Creat: {new Date(creationDate).toLocaleDateString('ro-RO')}
+                        {new Date(creationDate).toLocaleDateString('ro-RO')}
                     </Badge>
                     <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
                         <Clock className="mr-2 h-3.5 w-3.5" />
