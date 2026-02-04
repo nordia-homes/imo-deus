@@ -356,7 +356,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                                         <Label>Zone de interes</Label>
                                         <div className="max-h-60 overflow-y-auto rounded-md border p-4">
                                             <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                {locations[watchedCity].map((zone) => (
+                                                {locations[watchedCity].sort().map((zone) => (
                                                     <div key={zone} className="flex items-center gap-2">
                                                         <Checkbox
                                                             id={`zone-${zone}`}
