@@ -3,9 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Functions ---
-    
     function isUserInAgency(agencyId) {
       let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
+      // Ensure the agency document exists and the user's UID is in the agentIds list.
       return request.auth != null &&
              exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
              'agentIds' in agencyDoc.data &&
@@ -14,91 +14,76 @@ service cloud.firestore {
     }
     
     function isUserAdminForAgency(agencyId) {
-        let userProfileData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-        return request.auth != null && 
-               userProfileData.get('role', '') == 'admin' &&
-               userProfileData.get('agencyId', '') == agencyId;
-    }
-
-    function userAgencyId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+        let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        // Ensure user profile exists and they have the 'admin' role for the given agency.
+        return request.auth != null &&
+               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               userProfile.data.role == 'admin' &&
+               userProfile.data.agencyId == agencyId;
     }
 
     // --- Collection Rules ---
 
+    // Users can only read/update their own profile. They can create it upon signup.
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
     }
 
+    // Agency details are public for branding on portals/websites.
+    // Listing all agencies is restricted to authenticated users.
+    // Only admins of that agency can update it.
     match /agencies/{agencyId} {
       allow get: if true; 
       allow list: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if isUserAdminForAgency(agencyId);
-      allow delete: if false; 
+      allow delete: if false; // Agencies should not be deleted.
     }
 
+    // Invites can only be created by an agency admin.
+    // Any authenticated user can read/delete them (e.g., to accept an invite).
     match /invites/{inviteId} {
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
       allow read, delete: if request.auth != null;
     }
     
+    // Private agency data (contacts, tasks, etc.) is only accessible to members of that agency.
     match /agencies/{agencyId}/{privateCollection}/{docId}
-    where privateCollection in ['contacts', 'tasks', 'reports', 'emails'] {
+    where privateCollection in ['contacts', 'tasks', 'reports', 'emails', 'viewings'] {
       allow read, write: if isUserInAgency(agencyId);
     }
 
-    match /agencies/{agencyId}/{publicCollection}/{docId}
-    where publicCollection in ['properties', 'viewings'] {
+    // Publicly readable property listings. Only agency members can write.
+    match /agencies/{agencyId}/properties/{propertyId} {
       allow read: if true;
       allow write: if isUserInAgency(agencyId);
     }
 
-    // --- Portal Rules (Corrected for public read and secure writes) ---
+    // --- Portal Rules ---
     
+    // Portal documents are publicly readable by the unguessable portalId.
     match /portals/{portalId} {
-        // Anyone with the unguessable link can read the portal data. This is intended.
-        allow read: if true;
+        allow get: if true;
 
-        // To CREATE, user must be authenticated and creating for their own agency.
-        allow create: if request.auth != null
-                      && request.resource.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
-
-        // To DELETE, user must be authenticated and deleting from their own agency.
-        allow delete: if request.auth != null
-                      && get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+        // Only an agent of the agency can create or delete the portal.
+        allow create: if isUserInAgency(request.resource.data.agencyId);
+        allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
         
-        // We don't allow general updates to the portal document itself.
-        allow update: if false;
+        allow update: if false; // The main portal doc is immutable by clients.
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
-      // Public read access is safe due to unguessable portalId in the path.
+      // Recommendations are publicly readable via the portal link.
       allow read: if true;
       
-      // Helper function to check if the acting user is a member of the agency that owns this portal.
-      function isAgencyMemberForPortal() {
-        let portal = get(/databases/$(database)/documents/portals/$(portalId));
-        // Check if user is authenticated and their agency ID matches the portal's agency ID
-        return request.auth != null
-               && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-               && portal.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
-      }
+      // An agent of the portal's agency can add/remove recommendations.
+      allow create, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       
-      // Helper function to check if the only fields being updated are for client feedback.
-      function isClientFeedbackUpdate() {
-        // Client is not authenticated, but can only update feedback fields.
-        return request.auth == null && 
-               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
-      }
-      
-      // An agency member can create or delete recommendations.
-      allow create, delete: if isAgencyMemberForPortal();
-      
-      // An agency member can update anything.
-      // A client (unauthenticated) can ONLY update feedback fields.
-      allow update: if isAgencyMemberForPortal() || isClientFeedbackUpdate();
+      // The client (unauthenticated) can only update their own feedback.
+      // An agent can update anything.
+      allow update: if (isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
+                      (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
     }
   }
 }
