@@ -190,7 +190,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-[60vh] p-1">
                 <div className="space-y-4 px-4">
-                    <Card>
+                    <Card className="shadow-xl">
                         <CardContent className="pt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -222,7 +222,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                         </CardContent>
                     </Card>
                     
-                    <Card>
+                    <Card className="shadow-xl">
                         <CardContent className="pt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -271,7 +271,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                         </CardContent>
                     </Card>
                     
-                    <Card>
+                    <Card className="shadow-xl">
                         <CardContent className="pt-6">
                             <div className="space-y-4">
                                 <FormField
@@ -327,7 +327,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                         </CardContent>
                      </Card>
 
-                    <Card>
+                    <Card className="shadow-xl">
                         <CardContent className="pt-6">
                             <div className="space-y-4">
                                 <FormField
@@ -381,7 +381,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="shadow-xl">
                         <CardContent className="pt-6">
                             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Lead</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a lead-ului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
@@ -398,5 +398,3 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
     </Dialog>
   );
 }
-
-    
