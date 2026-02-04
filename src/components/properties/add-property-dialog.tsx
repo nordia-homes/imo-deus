@@ -142,77 +142,86 @@ function PropertyForm({
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
 
+    const defaultValues = useMemo(() => {
+        const baseDefaults = {
+            title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+            rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+            floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+            parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+            description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+            agentId: user?.uid || 'unassigned',
+        };
+
+        if (isEditMode && property) {
+             return {
+                title: property.title || baseDefaults.title,
+                propertyType: property.propertyType || baseDefaults.propertyType,
+                transactionType: property.transactionType || baseDefaults.transactionType,
+                location: property.location || baseDefaults.location,
+                price: property.price || baseDefaults.price,
+                rooms: property.rooms || baseDefaults.rooms,
+                bathrooms: property.bathrooms || baseDefaults.bathrooms,
+                squareFootage: property.squareFootage || baseDefaults.squareFootage,
+                totalSurface: property.totalSurface || baseDefaults.totalSurface,
+                constructionYear: property.constructionYear || baseDefaults.constructionYear,
+                floor: property.floor || baseDefaults.floor,
+                totalFloors: property.totalFloors || baseDefaults.totalFloors,
+                comfort: property.comfort || baseDefaults.comfort,
+                interiorState: property.interiorState || baseDefaults.interiorState,
+                furnishing: property.furnishing || baseDefaults.furnishing,
+                heatingSystem: property.heatingSystem || baseDefaults.heatingSystem,
+                parking: property.parking || baseDefaults.parking,
+                keyFeatures: property.keyFeatures || property.amenities?.join(', ') || baseDefaults.keyFeatures,
+                description: property.description || baseDefaults.description,
+                status: property.status || baseDefaults.status,
+                featured: property.featured || baseDefaults.featured,
+                ownerName: property.ownerName || baseDefaults.ownerName,
+                ownerPhone: property.ownerPhone || baseDefaults.ownerPhone,
+                salesScore: property.salesScore || baseDefaults.salesScore,
+                agentId: property.agentId || baseDefaults.agentId,
+            };
+        }
+        return baseDefaults;
+    }, [isEditMode, property, user]);
+
     const form = useForm<z.infer<typeof propertySchema>>({
         resolver: zodResolver(propertySchema),
+        defaultValues,
     });
-
+    
     useEffect(() => {
-        const loadDataAndInitializeForm = async () => {
+        let isMounted = true;
+        const loadInitialData = async () => {
             setIsLoadingData(true);
-            
             try {
                 if (agency?.agentIds) {
                     const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
                     const agentDocs = await Promise.all(agentPromises);
-                    const agentProfiles = agentDocs
-                        .filter(docSnap => docSnap.exists())
-                        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                    setAgents(agentProfiles);
+                    if (isMounted) {
+                        const agentProfiles = agentDocs
+                            .filter(docSnap => docSnap.exists())
+                            .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                        setAgents(agentProfiles);
+                    }
                 }
-
-                const defaultValues = {
-                    title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
-                    rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-                    floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
-                    parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-                    description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
-                    agentId: user?.uid || 'unassigned',
-                };
-
-                if (isEditMode && property) {
-                    form.reset({
-                        title: property.title || defaultValues.title,
-                        propertyType: property.propertyType || defaultValues.propertyType,
-                        transactionType: property.transactionType || defaultValues.transactionType,
-                        location: property.location || defaultValues.location,
-                        price: property.price || defaultValues.price,
-                        rooms: property.rooms || defaultValues.rooms,
-                        bathrooms: property.bathrooms || defaultValues.bathrooms,
-                        squareFootage: property.squareFootage || defaultValues.squareFootage,
-                        totalSurface: property.totalSurface || defaultValues.totalSurface,
-                        constructionYear: property.constructionYear || defaultValues.constructionYear,
-                        floor: property.floor || defaultValues.floor,
-                        totalFloors: property.totalFloors || defaultValues.totalFloors,
-                        comfort: property.comfort || defaultValues.comfort,
-                        interiorState: property.interiorState || defaultValues.interiorState,
-                        furnishing: property.furnishing || defaultValues.furnishing,
-                        heatingSystem: property.heatingSystem || defaultValues.heatingSystem,
-                        parking: property.parking || defaultValues.parking,
-                        keyFeatures: property.keyFeatures || property.amenities?.join(', ') || defaultValues.keyFeatures,
-                        description: property.description || defaultValues.description,
-                        status: property.status || defaultValues.status,
-                        featured: property.featured || defaultValues.featured,
-                        ownerName: property.ownerName || defaultValues.ownerName,
-                        ownerPhone: property.ownerPhone || defaultValues.ownerPhone,
-                        salesScore: property.salesScore || defaultValues.salesScore,
-                        agentId: property.agentId || defaultValues.agentId,
-                    });
+                if (isEditMode && property && isMounted) {
                     setImageSources(property.images || []);
-                } else {
-                    form.reset(defaultValues);
-                    setImageSources([]);
                 }
             } catch (error) {
-                 console.error("Error initializing form:", error);
-                 toast({ variant: 'destructive', title: 'Eroare la initializarea formularului.' });
+                 console.error("Error loading form data:", error);
             } finally {
-                setIsLoadingData(false);
+                if (isMounted) {
+                    setIsLoadingData(false);
+                }
             }
         };
 
-        loadDataAndInitializeForm();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        loadInitialData();
+        
+        return () => {
+            isMounted = false;
+        }
+    }, [agency, firestore, isEditMode, property]);
 
     const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -567,13 +576,15 @@ export function AddPropertyDialog({
 }) {
   const isEditMode = !!property;
   const [isOpen, setIsOpen] = useState(false);
-  
-  // Snapshot the property data when the dialog opens
+  const [formKey, setFormKey] = useState(0);
   const [propertySnapshot, setPropertySnapshot] = useState<Property | null | undefined>(undefined);
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
+      // Create a snapshot of the property when the dialog opens
       setPropertySnapshot(property);
+      // Increment the key to force a re-mount of the form component
+      setFormKey(prev => prev + 1);
     }
     setIsOpen(open);
   };
@@ -592,6 +603,7 @@ export function AddPropertyDialog({
         </DialogHeader>
         {isOpen && (
             <PropertyForm
+              key={formKey}
               isEditMode={isEditMode}
               property={propertySnapshot}
               onClose={() => setIsOpen(false)}
