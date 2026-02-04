@@ -7,7 +7,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { Users, Target, BarChart } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import type { Contact } from '@/lib/types';
+import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 
@@ -20,7 +20,14 @@ export default function LeadsPage() {
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
 
-    const { data: contacts, isLoading } = useCollection<Contact>(contactsQuery);
+    const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
+
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+
+    const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
     const { newLeadsCount, totalBudget, averageAiScore } = useMemo(() => {
         if (!contacts) {
@@ -58,6 +65,8 @@ export default function LeadsPage() {
         return `€${num}`;
     }
 
+    const isLoading = areContactsLoading || arePropertiesLoading;
+
   return (
     <div className="space-y-6">
        <div className="flex items-start justify-between">
@@ -67,7 +76,7 @@ export default function LeadsPage() {
                     Gestionează și prioritizează potențialii clienți.
                 </p>
             </div>
-            <AddLeadDialog />
+            <AddLeadDialog properties={properties || []} />
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

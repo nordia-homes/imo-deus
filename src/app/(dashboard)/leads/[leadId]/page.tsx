@@ -237,7 +237,12 @@ export default function LeadDetailPage() {
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
                         <ClientPortalManager contact={contact} agency={agency} />
-                        <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} />
+                        <SourcePropertyCard 
+                            property={sourceProperty} 
+                            isLoading={isSourcePropertyLoading}
+                            allProperties={properties || []}
+                            onUpdateContact={handleUpdateContact}
+                        />
                     </div>
                 </div>
             </main>

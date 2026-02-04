@@ -20,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, Property } from '@/lib/types';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -47,6 +48,7 @@ const leadSchema = z.object({
   city: z.string().min(1, { message: "Orașul este obligatoriu." }),
   priority: z.string().min(1, { message: "Prioritatea este obligatorie." }),
   agentId: z.string().optional(),
+  sourcePropertyId: z.string().optional(),
 });
 
 const locations = {
@@ -58,7 +60,7 @@ const locations = {
 };
 type City = keyof typeof locations;
 
-export function AddLeadDialog() {
+export function AddLeadDialog({ properties }: { properties: Property[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
@@ -102,6 +104,7 @@ export function AddLeadDialog() {
       city: '',
       priority: 'Medie',
       agentId: 'unassigned',
+      sourcePropertyId: 'none',
     },
   });
 
@@ -145,6 +148,7 @@ export function AddLeadDialog() {
             locationPreferences: values.city || ''
         },
         agentName: selectedAgent?.name || null,
+        sourcePropertyId: values.sourcePropertyId === 'none' ? null : values.sourcePropertyId,
     };
 
     addDocumentNonBlocking(contactsCollection, newLeadData);
@@ -273,6 +277,40 @@ export function AddLeadDialog() {
                                 )}
                                 />
                          </div>
+                    </section>
+
+                    <Separator />
+                    
+                    <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Sursă Inițială</h3>
+                        <FormField
+                            control={form.control}
+                            name="sourcePropertyId"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                    <SelectItem value="none">Niciuna</SelectItem>
+                                    {properties?.map(prop => (
+                                        <SelectItem key={prop.id} value={prop.id}>
+                                        {prop.title}
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                    Asociază lead-ul cu anunțul de pe care a venit.
+                                </FormDescription>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </section>
                     
                     <Separator />
