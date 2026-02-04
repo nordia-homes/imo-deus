@@ -7,7 +7,7 @@ service cloud.firestore {
     // Checks if a user belongs to an agency, either as owner or as an agent in the agentIds list.
     function isUserInAgency(agencyId) {
       let agencyDocData = get(/databases/$(database)/documents/agencies/$(agencyId)).data;
-      let isOwner = request.auth.uid == agencyDocData.ownerId;
+      let isOwner = 'ownerId' in agencyDocData && request.auth.uid == agencyDocData.ownerId;
       // Check if agentIds exists and is a list before checking membership
       let isAgent = 'agentIds' in agencyDocData &&
                     agencyDocData.agentIds is list &&
@@ -67,14 +67,13 @@ service cloud.firestore {
     // --- Portal Rules ---
     
     match /portals/{portalId} {
-        // The portal document is public to anyone with the link (unguessable ID).
         allow read: if true;
         
         // Allow creating/updating only if the user is a member of the agency specified in the portal document.
         allow create, update: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
         
-        // Allow deleting only if the user is a member of the agency in the existing portal document.
-        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
+        // Allow deleting only if the portal's agency matches the user's agency profile.
+        allow delete: if request.auth != null && resource.data.agencyId == userAgencyId();
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
