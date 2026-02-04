@@ -9,59 +9,95 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Wand2 } from 'lucide-react';
+import { Loader2, Wand2, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import type { Contact, ContactPreferences } from '@/lib/types';
-import { SlidersHorizontal } from 'lucide-react';
+import { locations, type City } from '@/lib/locations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 const preferencesSchema = z.object({
-  desiredPriceRangeMin: z.coerce.number(),
-  desiredPriceRangeMax: z.coerce.number(),
-  desiredBedrooms: z.coerce.number(),
-  desiredBathrooms: z.coerce.number(),
-  desiredSquareFootageMin: z.coerce.number(),
-  desiredSquareFootageMax: z.coerce.number(),
+  desiredBedrooms: z.coerce.number().optional(),
+  desiredPriceRangeMax: z.coerce.number().optional(),
+  desiredSquareFootageMin: z.coerce.number().optional(),
+  city: z.string().optional(),
+  zones: z.array(z.string()).optional(),
   desiredFeatures: z.string().optional(),
-  locationPreferences: z.string().optional(),
 });
 
 interface PreferencesCardProps {
   contact: Contact;
-  onUpdatePreferences: (data: { preferences: Partial<ContactPreferences> }) => void;
+  onUpdateContact: (data: Partial<Omit<Contact, 'id'>>) => void;
   onRematch: (preferences: ContactPreferences) => void;
   isMatching: boolean;
 }
 
-export function PreferencesCard({ contact, onUpdatePreferences, onRematch, isMatching }: PreferencesCardProps) {
+export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatching }: PreferencesCardProps) {
   const form = useForm<z.infer<typeof preferencesSchema>>({
     resolver: zodResolver(preferencesSchema),
-    defaultValues: contact.preferences || {},
   });
 
   useEffect(() => {
-    const defaultPreferences = {
-        desiredPriceRangeMin: 0,
-        desiredPriceRangeMax: 0,
-        desiredBedrooms: 0,
-        desiredBathrooms: 0,
-        desiredSquareFootageMin: 0,
-        desiredSquareFootageMax: 0,
-        desiredFeatures: '',
-        locationPreferences: '',
-        ...contact.preferences,
-    };
-    form.reset(defaultPreferences);
+    form.reset({
+      desiredBedrooms: contact.preferences?.desiredBedrooms || 0,
+      desiredPriceRangeMax: contact.preferences?.desiredPriceRangeMax || contact.budget,
+      desiredSquareFootageMin: contact.preferences?.desiredSquareFootageMin || 0,
+      city: contact.city,
+      zones: contact.zones || [],
+      desiredFeatures: contact.preferences?.desiredFeatures || '',
+    });
   }, [contact, form]);
   
-  const handleBlur = (fieldName: keyof ContactPreferences) => {
+  const watchedCity = form.watch('city') as City;
+
+  useEffect(() => {
+    if (watchedCity !== contact.city) {
+      form.setValue('zones', []);
+      onUpdateContact({ zones: [] });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedCity]);
+  
+  const handleBlur = (fieldName: keyof z.infer<typeof preferencesSchema>) => {
     const value = form.getValues(fieldName);
-    if (value !== (contact.preferences?.[fieldName] || '')) {
-      onUpdatePreferences({ preferences: { [fieldName]: value }});
+    
+    if (fieldName === 'city') {
+        if (value !== contact.city) {
+            onUpdateContact({ city: value });
+        }
+    } else { // Fields that belong in `preferences`
+        if (value !== (contact.preferences?.[fieldName as keyof ContactPreferences] || '')) {
+            onUpdateContact({ preferences: { [fieldName as keyof ContactPreferences]: value }});
+        }
     }
   };
+  
+  const handleZonesChange = (zone: string, checked: boolean) => {
+    const currentZones = form.getValues('zones') || [];
+    const newZones = checked
+      ? [...currentZones, zone]
+      : currentZones.filter((z) => z !== zone);
+    form.setValue('zones', newZones);
+    onUpdateContact({ zones: newZones });
+  }
 
   const onSubmit = (values: z.infer<typeof preferencesSchema>) => {
-    onRematch(values as ContactPreferences);
+    const fullPreferences: ContactPreferences = {
+      desiredPriceRangeMin: 0,
+      desiredPriceRangeMax: values.desiredPriceRangeMax || 9999999,
+      desiredBedrooms: values.desiredBedrooms || 0,
+      desiredBathrooms: 0, 
+      desiredSquareFootageMin: values.desiredSquareFootageMin || 0,
+      desiredSquareFootageMax: 99999,
+      desiredFeatures: values.desiredFeatures || '',
+      locationPreferences: values.city || '',
+    };
+    onRematch(fullPreferences);
   };
+  
+  const currentZones = form.watch('zones') || [];
+  const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
 
   return (
     <Card className="rounded-2xl shadow-2xl">
@@ -75,19 +111,60 @@ export function PreferencesCard({ contact, onUpdatePreferences, onRematch, isMat
             <CardDescription>Ajustează criteriile pentru a recalcula potrivirile AI.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMin')} /></FormControl></FormItem> )}/>
-              <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
-              <FormField control={form.control} name="desiredBedrooms" render={({ field }) => ( <FormItem><FormLabel>Dormitoare</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredBedrooms')} /></FormControl></FormItem> )}/>
-              <FormField control={form.control} name="desiredBathrooms" render={({ field }) => ( <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredBathrooms')} /></FormControl></FormItem> )}/>
-              <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață Min</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
-              <FormField control={form.control} name="desiredSquareFootageMax" render={({ field }) => ( <FormItem><FormLabel>Suprafață Max</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMax')} /></FormControl></FormItem> )}/>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField control={form.control} name="desiredBedrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredBedrooms')} /></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
             </div>
-            <div>
-              <FormField control={form.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație</FormLabel><FormControl><Input {...field} onBlur={() => handleBlur('locationPreferences')} /></FormControl></FormItem> )}/>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Localitate</FormLabel>
+                        <Select onValueChange={(value) => {field.onChange(value); handleBlur('city');}} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                            {Object.keys(locations).map(city => (
+                                <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        </FormItem>
+                    )}
+                    />
+                
+                 <FormItem>
+                    <FormLabel>Zone</FormLabel>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between" disabled={!watchedCity}>
+                                <span className="truncate pr-2">
+                                    {currentZones.length === 0 ? 'Selectează zone' : currentZones.length === 1 ? currentZones[0] : `${currentZones.length} zone selectate`}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                            <ScrollArea className="h-72">
+                                {availableZones.map(zone => (
+                                    <DropdownMenuCheckboxItem
+                                        key={zone}
+                                        checked={currentZones.includes(zone)}
+                                        onCheckedChange={(checked) => handleZonesChange(zone, !!checked)}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        {zone}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </ScrollArea>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                 </FormItem>
             </div>
              <div>
-              <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
             </div>
           </CardContent>
           <CardFooter>
