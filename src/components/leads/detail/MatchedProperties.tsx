@@ -61,9 +61,9 @@ export function MatchedProperties({ properties }: { properties: Property[] }) {
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Proprietăți Potrivite</CardTitle>
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="link" size="sm" asChild>
           <Link href="/matching">
-            Vezi tot <ArrowRight className="h-4 w-4 ml-1" />
+            Vezi apel <ArrowRight className="h-4 w-4 ml-1" />
           </Link>
         </Button>
       </CardHeader>

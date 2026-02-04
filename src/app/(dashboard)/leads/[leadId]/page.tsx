@@ -16,33 +16,32 @@ import { LeadHeader } from '@/components/leads/detail/Header';
 import { LeadTimeline } from '@/components/leads/detail/Timeline';
 import { AiSummary } from '@/components/leads/detail/AiSummary';
 import { MatchedProperties } from '@/components/leads/detail/MatchedProperties';
-import { LeadActionPanel } from '@/components/leads/detail/ActionPanel';
+import { LeadInfoCard } from '@/components/leads/detail/LeadInfoCard';
+import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
+import { LeadZonesCard } from '@/components/leads/detail/LeadZonesCard';
+import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 
 
 const PageSkeleton = () => (
     <div className="p-4">
         {/* Header Skeleton */}
         <div className="flex items-center gap-4 mb-6">
-            <Skeleton className="h-14 w-14 rounded-full" />
-            <div className="space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-5 w-64" />
-            </div>
+            <Skeleton className="h-10 w-48" />
         </div>
         {/* Grid Skeleton */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-            <div className="xl:col-span-3 space-y-4">
-                <Skeleton className="h-20" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-3 space-y-4">
+                <Skeleton className="h-48" />
                 <Skeleton className="h-64" />
             </div>
-            <div className="xl:col-span-6 space-y-4">
+            <div className="lg:col-span-6 space-y-4">
                 <Skeleton className="h-96" />
                 <Skeleton className="h-56" />
             </div>
-            <div className="xl:col-span-3 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
+                <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-48" />
-                <Skeleton className="h-40" />
             </div>
         </div>
     </div>
@@ -131,12 +130,6 @@ export default function LeadDetailPage() {
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({ title: "Task adăugat!" });
     };
-    
-    const handleUpdateTask = (taskId: string, data: Partial<Task>) => {
-        if (!agency?.id) return;
-        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', taskId);
-        updateDocumentNonBlocking(taskRef, data);
-    };
 
     const handleAddInteraction = (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
         if (!contactDocRef || !user) return Promise.reject("User or contact not available");
@@ -171,49 +164,42 @@ export default function LeadDetailPage() {
     }
 
     const mockAiSummary = contact.aiSummary || {
-        score: contact.leadScore || 87,
+        score: contact.leadScore || 0,
         probability: 72,
-        tags: ['Buget realist', 'Răspuns rapid'],
-        nextBestAction: 'Sună în următoarele 30 min'
+        tags: [],
+        nextBestAction: ''
     };
 
     const matchedProperties = properties?.slice(0,2) || [];
 
 
     return (
-        <div className="h-full">
+        <div className="h-full flex flex-col">
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
                 onAddTask={handleAddTask}
             />
 
-            <main className="p-4 md:p-6 lg:p-8 -mx-8">
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-                    <div className="xl:col-span-3">
-                        <LeadTimeline 
-                            interactions={contact.interactionHistory || []} 
-                            tasks={tasks || []} 
-                            contact={contact}
-                            onAddInteraction={handleAddInteraction}
-                            onAddTask={handleAddTask}
-                        />
+            <main className="flex-1 p-4 md:p-6 -mx-8 overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left Column */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
+                        <LeadTimeline interactions={contact.interactionHistory || []} tasks={tasks || []} />
                     </div>
 
-                    <div className="xl:col-span-6 space-y-6">
+                    {/* Center Column */}
+                    <div className="lg:col-span-6 space-y-6">
                         <MatchedProperties properties={matchedProperties} />
                         <AiSummary summary={mockAiSummary} />
                     </div>
 
-                    <div className="xl:col-span-3">
-                         <LeadActionPanel 
-                            contact={contact} 
-                            tasks={tasks || []} 
-                            agents={agents} 
-                            agency={agency}
-                            onUpdateContact={handleUpdateContact}
-                            onUpdateTask={handleUpdateTask}
-                        />
+                    {/* Right Column */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                        <LeadZonesCard contact={contact} />
+                        <ClientPortalManager contact={contact} agency={agency} />
                     </div>
                 </div>
             </main>
