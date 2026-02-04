@@ -34,7 +34,7 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
 
 
   return (
-    <Card className="rounded-2xl overflow-hidden shadow-lg w-full group">
+    <Card className="rounded-2xl overflow-hidden shadow-2xl w-full group">
       <Link href={`/properties/${property.id}`} className="block aspect-[4/3] relative">
         <Image 
           src={imageUrl} 
@@ -71,7 +71,7 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
 export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
-      <Card className="rounded-2xl shadow-lg">
+      <Card className="rounded-2xl shadow-2xl">
         <CardHeader>
           <CardTitle>Proprietăți Potrivite</CardTitle>
         </CardHeader>
@@ -83,7 +83,7 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
   }
 
   return (
-    <Card className="rounded-2xl shadow-lg">
+    <Card className="rounded-2xl shadow-2xl">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Proprietăți Potrivite</CardTitle>
         <Button variant="link" size="sm" asChild>

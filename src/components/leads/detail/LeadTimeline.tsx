@@ -98,7 +98,7 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
   };
 
   return (
-    <Card className="rounded-2xl shadow-lg flex flex-col">
+    <Card className="rounded-2xl shadow-2xl flex flex-col">
       <CardHeader className="p-4 space-y-3">
         <CardTitle className="text-base">Cronologie</CardTitle>
         <div className="grid grid-cols-2 gap-2">

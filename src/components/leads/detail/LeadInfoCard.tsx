@@ -23,7 +23,7 @@ export function LeadInfoCard({ contact }: LeadInfoCardProps) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-lg">
+        <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="flex flex-row items-center gap-4">
                 <Avatar className="h-14 w-14 text-lg">
                     <AvatarFallback>{contact.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>

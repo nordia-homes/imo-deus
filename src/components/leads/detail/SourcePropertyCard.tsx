@@ -27,7 +27,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
 
     if (isLoading) {
         return (
-            <Card className="rounded-2xl shadow-lg">
+            <Card className="rounded-2xl shadow-2xl">
                 <CardHeader>
                     <Skeleton className="h-5 w-32" />
                 </CardHeader>
@@ -42,7 +42,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     
     if (isEditing) {
          return (
-             <Card className="rounded-2xl shadow-lg">
+             <Card className="rounded-2xl shadow-2xl">
                 <CardHeader>
                 <CardTitle className="text-base">Selectează Proprietate Sursă</CardTitle>
                 </CardHeader>
@@ -64,7 +64,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     }
     
     return (
-        <Card className="rounded-2xl shadow-lg">
+        <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="flex flex-row items-start justify-between">
                 <CardTitle className="text-base">Proprietate Inițială</CardTitle>
                  {property && (

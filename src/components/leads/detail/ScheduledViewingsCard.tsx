@@ -14,7 +14,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
         .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
 
     return (
-        <Card className="rounded-2xl shadow-lg">
+        <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="pb-4">
                 <CardTitle className="text-base">Vizionări Programate</CardTitle>
             </CardHeader>
