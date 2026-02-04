@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2 } from "lucide-react";
+import { LayoutList, Users, CheckSquare, FileText, Settings } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
@@ -9,12 +9,27 @@ export function InfoColumn({ property }: { property: Property }) {
     return (
         <div className="space-y-6">
             <Tabs defaultValue="overview">
-                <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
-                    <TabsTrigger value="leads">Lead-uri</TabsTrigger>
-                    <TabsTrigger value="tasks">Task-uri</TabsTrigger>
-                    <TabsTrigger value="documents">Documente</TabsTrigger>
-                    <TabsTrigger value="settings">Setări</TabsTrigger>
+                <TabsList>
+                    <TabsTrigger value="overview">
+                        <LayoutList className="mr-2 h-4 w-4" />
+                        Prezentare generală
+                    </TabsTrigger>
+                    <TabsTrigger value="leads">
+                        <Users className="mr-2 h-4 w-4" />
+                        Lead-uri
+                    </TabsTrigger>
+                    <TabsTrigger value="tasks">
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Task-uri
+                    </TabsTrigger>
+                    <TabsTrigger value="documents">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Documente
+                    </TabsTrigger>
+                    <TabsTrigger value="settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Setări
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="overview" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl">
