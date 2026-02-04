@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, writeBatch } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact, Agency } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -25,48 +25,42 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
 
   const portalLink = contact.portalId ? `${window.location.origin}/portal/${contact.portalId}` : '';
 
-  const handlePortalAction = async (action: 'activate' | 'regenerate' | 'deactivate') => {
+  const handlePortalAction = (action: 'activate' | 'regenerate' | 'deactivate') => {
     if (!user) return;
     setIsLoading(true);
 
     const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', contact.id);
-    const batch = writeBatch(firestore);
 
-    try {
-      if (action === 'activate' || action === 'regenerate') {
-        if (action === 'regenerate' && contact.portalId) {
-          const oldPortalRef = doc(firestore, 'portals', contact.portalId);
-          batch.delete(oldPortalRef);
-        }
-
-        const newPortalToken = crypto.randomUUID();
-        const newPortalRef = doc(firestore, 'portals', newPortalToken);
-        
-        batch.set(newPortalRef, {
-          contactId: contact.id,
-          agencyId: agency.id,
-          contactName: contact.name,
-          agentName: user.displayName || user.email,
-          createdAt: new Date().toISOString(),
-        });
-        batch.update(contactRef, { portalId: newPortalToken });
-        toast({ title: 'Portal activat!', description: 'Linkul unic pentru client a fost generat.' });
-
-      } else if (action === 'deactivate' && contact.portalId) {
-        const portalRef = doc(firestore, 'portals', contact.portalId);
-        batch.delete(portalRef);
-        batch.update(contactRef, { portalId: null });
-        toast({ title: 'Portal dezactivat!', variant: 'destructive' });
+    if (action === 'activate' || action === 'regenerate') {
+      if (action === 'regenerate' && contact.portalId) {
+        const oldPortalRef = doc(firestore, 'portals', contact.portalId);
+        deleteDocumentNonBlocking(oldPortalRef);
       }
 
-      await batch.commit();
+      const newPortalToken = crypto.randomUUID();
+      const newPortalRef = doc(firestore, 'portals', newPortalToken);
+      
+      const portalData = {
+        contactId: contact.id,
+        agencyId: agency.id,
+        contactName: contact.name,
+        agentName: user.displayName || user.email,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setDocumentNonBlocking(newPortalRef, portalData, {}); 
+      updateDocumentNonBlocking(contactRef, { portalId: newPortalToken });
+      
+      toast({ title: 'Portal activat!', description: 'Linkul unic pentru client a fost generat.' });
 
-    } catch (error) {
-      console.error('Portal action failed:', error);
-      toast({ variant: 'destructive', title: 'A apărut o eroare', description: 'Nu am putut finaliza acțiunea.' });
-    } finally {
-      setIsLoading(false);
+    } else if (action === 'deactivate' && contact.portalId) {
+      const portalRef = doc(firestore, 'portals', contact.portalId);
+      deleteDocumentNonBlocking(portalRef);
+      updateDocumentNonBlocking(contactRef, { portalId: null });
+      toast({ title: 'Portal dezactivat!', variant: 'destructive' });
     }
+    
+    setIsLoading(false);
   };
 
   const handleCopy = () => {
