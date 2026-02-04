@@ -88,17 +88,16 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
 type LeadTimelineProps = {
   interactions: Interaction[];
   tasks: Task[];
-  viewings: Viewing[];
+  viewings?: Viewing[];
 };
 
 export function LeadTimeline({ interactions, tasks, viewings }: LeadTimelineProps) {
   const timelineItems = React.useMemo(() => {
     const combined: TimelineItemData[] = [];
-    interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
-    tasks.forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
-    viewings.forEach(v => combined.push({ ...v, itemKind: 'viewing', sortDate: new Date(v.viewingDate) }));
+    (interactions || []).forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
+    (tasks || []).forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
     return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
-  }, [interactions, tasks, viewings]);
+  }, [interactions, tasks]);
 
   return (
     <Card className="rounded-2xl shadow-sm">
