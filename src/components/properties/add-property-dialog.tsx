@@ -136,6 +136,7 @@ export function AddPropertyDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDialogLoading, setIsDialogLoading] = useState(false);
   const [imageSources, setImageSources] = useState<ImageSource[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
@@ -176,90 +177,77 @@ export function AddPropertyDialog({
   });
   
   useEffect(() => {
-    if (!isOpen || !agency || !agency.agentIds) {
-        setAgents([]);
-        return;
-    }
-    
-    const fetchAgents = async () => {
-        try {
-            const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
-            const agentDocs = await Promise.all(agentPromises);
-            const agentProfiles = agentDocs
-                .filter(docSnap => docSnap.exists())
-                .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-            setAgents(agentProfiles);
-        } catch (error) {
-            console.error("Error fetching agent profiles for dialog:", error);
-        }
-    };
+    if (isOpen) {
+        setIsDialogLoading(true);
+        const loadDialogData = async () => {
+            // 1. Reset form fields and images
+            if (isEditMode && property) {
+                form.reset({
+                    title: property.title || '',
+                    propertyType: property.propertyType || '',
+                    transactionType: property.transactionType || 'Vânzare',
+                    location: property.location || '',
+                    price: property.price || 0,
+                    rooms: property.rooms || 0,
+                    bathrooms: property.bathrooms || 0,
+                    squareFootage: property.squareFootage || 0,
+                    totalSurface: property.totalSurface || '',
+                    constructionYear: property.constructionYear || '',
+                    floor: property.floor || '',
+                    totalFloors: property.totalFloors || '',
+                    comfort: property.comfort || '',
+                    interiorState: property.interiorState || '',
+                    furnishing: property.furnishing || '',
+                    heatingSystem: property.heatingSystem || '',
+                    parking: property.parking || '',
+                    keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
+                    description: property.description || '',
+                    status: property.status || 'Activ',
+                    featured: property.featured || false,
+                    ownerName: property.ownerName || '',
+                    ownerPhone: property.ownerPhone || '',
+                    salesScore: property.salesScore || 'Mediu',
+                    agentId: property.agentId || 'unassigned',
+                });
+                setImageSources(property.images || []);
+            } else {
+                form.reset({
+                    title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+                    rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+                    floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+                    parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+                    description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+                    agentId: user?.uid || 'unassigned',
+                });
+                setImageSources([]);
+            }
 
-    fetchAgents();
-  }, [isOpen, agency, firestore]);
+            // 2. Fetch agents
+            if (agency && agency.agentIds) {
+                try {
+                    const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
+                    const agentDocs = await Promise.all(agentPromises);
+                    const agentProfiles = agentDocs
+                        .filter(docSnap => docSnap.exists())
+                        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                    setAgents(agentProfiles);
+                } catch (error) {
+                    console.error("Error fetching agent profiles for dialog:", error);
+                    toast({ variant: 'destructive', title: 'Eroare la încărcarea agenților' });
+                }
+            } else {
+                setAgents([]);
+            }
+
+            setIsDialogLoading(false);
+        };
+        loadDialogData();
+    }
+  }, [isOpen, isEditMode, property, form, agency, firestore, toast, user?.uid]);
+
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open) {
-      if (isEditMode && property) {
-        form.reset({
-          title: property.title || '',
-          propertyType: property.propertyType || '',
-          transactionType: property.transactionType || 'Vânzare',
-          location: property.location || '',
-          price: property.price || 0,
-          rooms: property.rooms || 0,
-          bathrooms: property.bathrooms || 0,
-          squareFootage: property.squareFootage || 0,
-          totalSurface: property.totalSurface || '',
-          constructionYear: property.constructionYear || '',
-          floor: property.floor || '',
-          totalFloors: property.totalFloors || '',
-          comfort: property.comfort || '',
-          interiorState: property.interiorState || '',
-          furnishing: property.furnishing || '',
-          heatingSystem: property.heatingSystem || '',
-          parking: property.parking || '',
-          keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
-          description: property.description || '',
-          status: property.status || 'Activ',
-          featured: property.featured || false,
-          ownerName: property.ownerName || '',
-          ownerPhone: property.ownerPhone || '',
-          salesScore: property.salesScore || 'Mediu',
-          agentId: property.agentId || 'unassigned',
-        });
-        setImageSources(property.images || []);
-      } else {
-        form.reset({
-          title: '',
-          propertyType: '',
-          transactionType: 'Vânzare',
-          location: 'București',
-          price: 0,
-          rooms: 2,
-          bathrooms: 1,
-          squareFootage: 55,
-          totalSurface: '',
-          constructionYear: '',
-          floor: '',
-          totalFloors: '',
-          comfort: '',
-          interiorState: '',
-          furnishing: '',
-          heatingSystem: '',
-          parking: '',
-          keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-          description: '',
-          status: 'Activ',
-          featured: false,
-          ownerName: '',
-          ownerPhone: '',
-          salesScore: 'Mediu',
-          agentId: user?.uid || 'unassigned',
-        });
-        setImageSources([]);
-      }
-    }
   };
   
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -443,187 +431,192 @@ export function AddPropertyDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-[70vh] p-4 -mx-4">
-              <div className="space-y-6 px-4">
-
-                <section>
-                  <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
-                  <div className="space-y-4">
-                    <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Apartament 3 camere decomandat, Tineretului" /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                {isDialogLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                          <FormField
+                ) : (
+                    <div className="space-y-6 px-4">
+                        <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
+                        <div className="space-y-4">
+                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Apartament 3 camere decomandat, Tineretului" /></FormControl><FormMessage /></FormItem> )} />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
+                                <div className="grid grid-cols-2 gap-4">
+                                <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField
+                                    control={form.control}
+                                    name="featured"
+                                    render={({ field }) => (
+                                    <FormItem className="flex flex-col justify-end">
+                                        <div className="flex items-center space-x-2 rounded-md border h-10 px-3">
+                                        <FormControl>
+                                            <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            id="featured-checkbox"
+                                            />
+                                        </FormControl>
+                                        <FormLabel htmlFor="featured-checkbox" className="!mt-0">Recomandată</FormLabel>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                </div>
+                            </div>
+                        </div>
+                        </section>
+                        
+                        <Separator />
+                        
+                        <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Detalii Proprietar</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numele proprietarului" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numărul de telefon" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        </section>
+
+                        <Separator />
+
+                        <section>
+                            <h3 className="text-lg font-semibold text-primary mb-4">Management Intern</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel>Agent Responsabil</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Nealocat</SelectItem>
+                                        {agents.map(agent => (
+                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                        ))}
+                                    </SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel>Potențial Vânzare</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Scăzut">Scăzut</SelectItem>
+                                        <SelectItem value="Mediu">Mediu</SelectItem>
+                                        <SelectItem value="Ridicată">Ridicată</SelectItem>
+                                    </SelectContent></Select><FormMessage /></FormItem>)} />
+                            </div>
+                        </section>
+
+                        <Separator />
+
+                        <section>
+                            <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (mp) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
+                        </section>
+
+                        <Separator />
+                        
+                        <section>
+                            <h3 className="text-lg font-semibold text-primary mb-4">Dotări și Caracteristici</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel>Confort</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel>Stare Interior</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel>Mobilier</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel>Sistem Încălzire</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Sobă/Șemineu">Sobă/Șemineu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel>Parcare</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                            </div>
+                            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
+                        </section>
+                        
+                        <Separator />
+
+                        <section>
+                        <h3 className="text-lg font-semibold text-primary mb-4">Descriere și Media</h3>
+                        <FormField
                             control={form.control}
-                            name="featured"
+                            name="description"
                             render={({ field }) => (
-                              <FormItem className="flex flex-col justify-end">
-                                <div className="flex items-center space-x-2 rounded-md border h-10 px-3">
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                      id="featured-checkbox"
-                                    />
-                                  </FormControl>
-                                  <FormLabel htmlFor="featured-checkbox" className="!mt-0">Recomandată</FormLabel>
-                                </div>
+                            <FormItem>
+                                <FormLabel className="flex items-center justify-between">
+                                <span>Descriere Anunț</span>
+                                <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
+                                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                    Generează cu AI
+                                </Button>
+                                </FormLabel>
+                                <FormControl>
+                                <Textarea rows={6} {...field} />
+                                </FormControl>
                                 <FormMessage />
-                              </FormItem>
+                            </FormItem>
                             )}
-                          />
-                        </div>
-                    </div>
-                  </div>
-                </section>
-                
-                <Separator />
-                
-                <section>
-                  <h3 className="text-lg font-semibold text-primary mb-4">Detalii Proprietar</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numele proprietarului" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numărul de telefon" /></FormControl><FormMessage /></FormItem> )} />
-                  </div>
-                </section>
+                        />
 
-                <Separator />
-
-                <section>
-                    <h3 className="text-lg font-semibold text-primary mb-4">Management Intern</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel>Agent Responsabil</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="unassigned">Nealocat</SelectItem>
-                                {agents.map(agent => (
-                                    <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                                ))}
-                            </SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel>Potențial Vânzare</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="Scăzut">Scăzut</SelectItem>
-                                <SelectItem value="Mediu">Mediu</SelectItem>
-                                <SelectItem value="Ridicată">Ridicată</SelectItem>
-                            </SelectContent></Select><FormMessage /></FormItem>)} />
-                    </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                    <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (mp) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    </div>
-                </section>
-
-                <Separator />
-                
-                <section>
-                    <h3 className="text-lg font-semibold text-primary mb-4">Dotări și Caracteristici</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel>Confort</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel>Stare Interior</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel>Mobilier</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel>Sistem Încălzire</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Sobă/Șemineu">Sobă/Șemineu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel>Parcare</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                    </div>
-                     <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
-                </section>
-                
-                <Separator />
-
-                <section>
-                  <h3 className="text-lg font-semibold text-primary mb-4">Descriere și Media</h3>
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center justify-between">
-                          <span>Descriere Anunț</span>
-                          <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
-                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            Generează cu AI
-                          </Button>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea rows={6} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormItem className="mt-4">
-                    <FormLabel>Fotografii (max 16)</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center justify-center w-full">
-                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click pentru a încărca</span> sau trageți fișierele aici</p>
-                            <p className="text-xs text-muted-foreground">PNG, JPG (max 16 fișiere)</p>
-                          </div>
-                          <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                        </label>
-                      </div>
-                    </FormControl>
-                    {imagePreviews.length > 0 && (
-                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4">
-                            {imagePreviews.map((src, index) => (
-                                <div key={index} className="relative aspect-square group">
-                                    <Image src={src} alt={`Preview ${index}`} fill className="object-cover rounded-md" />
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => removeImage(index)}
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </Button>
+                        <FormItem className="mt-4">
+                            <FormLabel>Fotografii (max 16)</FormLabel>
+                            <FormControl>
+                            <div className="flex items-center justify-center w-full">
+                                <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click pentru a încărca</span> sau trageți fișierele aici</p>
+                                    <p className="text-xs text-muted-foreground">PNG, JPG (max 16 fișiere)</p>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                  </FormItem>
-                </section>
-              </div>
+                                <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                </label>
+                            </div>
+                            </FormControl>
+                            {imagePreviews.length > 0 && (
+                                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4">
+                                    {imagePreviews.map((src, index) => (
+                                        <div key={index} className="relative aspect-square group">
+                                            <Image src={src} alt={`Preview ${index}`} fill className="object-cover rounded-md" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => removeImage(index)}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </FormItem>
+                        </section>
+                    </div>
+                )}
             </ScrollArea>
             <DialogFooter className="pt-4 border-t mt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || isDialogLoading}>
+                {(isSubmitting || isDialogLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
               </Button>
             </DialogFooter>
