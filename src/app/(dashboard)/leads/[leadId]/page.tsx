@@ -2,13 +2,13 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDoc, arrayUnion } from 'firebase/firestore';
+import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation, Offer } from '@/lib/types';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +27,7 @@ import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
 import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCard';
 import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
+import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
 
 
 const PageSkeleton = () => (
@@ -316,6 +317,46 @@ export default function LeadDetailPage() {
         }).slice(0, 5);
     }, [contact, allContacts]);
 
+    const handleAddOffer = (offerData: Omit<Offer, 'id' | 'date' | 'status'>) => {
+        if (!contactDocRef) return;
+        const newOffer: Offer = {
+            ...offerData,
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            status: 'În așteptare',
+        };
+        updateDocumentNonBlocking(contactDocRef, {
+            offers: arrayUnion(newOffer)
+        });
+        toast({ title: 'Ofertă adăugată!' });
+    };
+
+    const handleUpdateOffer = (offerId: string, data: Partial<Omit<Offer, 'id'>>) => {
+        if (!contactDocRef || !contact || !contact.offers) return;
+
+        const updatedOffers = contact.offers.map(offer => {
+            if (offer.id === offerId) {
+                return { ...offer, ...data };
+            }
+            return offer;
+        });
+
+        updateDocumentNonBlocking(contactDocRef, { offers: updatedOffers });
+        toast({ title: 'Status ofertă actualizat!' });
+    };
+
+    const handleDeleteOffer = (offerId: string) => {
+        if (!contactDocRef || !contact || !contact.offers) return;
+
+        const offerToDelete = contact.offers.find(offer => offer.id === offerId);
+        if (offerToDelete) {
+             updateDocumentNonBlocking(contactDocRef, {
+                offers: arrayRemove(offerToDelete)
+            });
+            toast({ title: 'Ofertă ștearsă!', variant: 'destructive' });
+        }
+    };
+
 
     const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading || areRecsLoading;
 
@@ -379,6 +420,13 @@ export default function LeadDetailPage() {
                             properties={properties}
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
+                        />
+                        <OfferManagementCard
+                            contact={contact}
+                            properties={properties || []}
+                            onAddOffer={handleAddOffer}
+                            onUpdateOffer={handleUpdateOffer}
+                            onDeleteOffer={handleDeleteOffer}
                         />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                     </div>
