@@ -60,8 +60,7 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
             <Link href={`/properties/${property.id}`}>Vezi proprietatea</Link>
          </Button>
          <Button variant="outline" className="w-full" onClick={handleAddToPortal} disabled={!contact.portalId}>
-            <Star className="mr-2 h-4 w-4" />
-            Adaugă în Portal
+            + Portal
          </Button>
        </div>
     </Card>
