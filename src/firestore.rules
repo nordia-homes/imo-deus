@@ -3,93 +3,110 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Functions ---
+
+    // Checks if a user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks if the requesting user's UID is in the agentIds list of a specific agency.
+    // This is the primary function for checking membership.
+    // It requires that the /agencies/{agencyId} documents are readable via `get`.
     function isUserInAgency(agencyId) {
-      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-      // Ensure the agency document exists and the user's UID is in the agentIds list.
-      return request.auth != null &&
-             exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
-             'agentIds' in agencyDoc.data &&
-             agencyDoc.data.agentIds is list &&
-             request.auth.uid in agencyDoc.data.agentIds;
+      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId)).data;
+      return isSignedIn() &&
+             'agentIds' in agencyDoc &&
+             agencyDoc.agentIds is list &&
+             request.auth.uid in agencyDoc.agentIds;
     }
-    
+
+    // Checks if the user is specifically an admin for the agency.
     function isUserAdminForAgency(agencyId) {
-        let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        // Ensure user profile exists and they have the 'admin' role for the given agency.
-        return request.auth != null &&
-               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-               userProfile.data.role == 'admin' &&
-               userProfile.data.agencyId == agencyId;
+        let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return isSignedIn() &&
+               'role' in userProfile &&
+               userProfile.role == 'admin' &&
+               'agencyId' in userProfile &&
+               userProfile.agencyId == agencyId;
     }
 
-    // --- Collection Rules ---
-
-    // Users can only read/update their own profile. They can create it upon signup.
+    // --- User Profiles ---
+    // Users can create their profile on signup.
+    // They can only read and update their own profile.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Agency details are public for branding on portals/websites.
-    // Listing all agencies is restricted to authenticated users.
-    // Only admins of that agency can update it.
-    match /agencies/{agencyId} {
-      allow get: if true; 
-      allow list: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
-      allow update: if isUserAdminForAgency(agencyId);
-      allow delete: if false; // Agencies should not be deleted.
-    }
-
-    // Invites can only be created by an agency admin.
-    // Any authenticated user can read/delete them (e.g., to accept an invite).
+    // --- Invites ---
+    // Can be read/deleted by any authenticated user (e.g., to accept it).
+    // Can only be created by an admin of the target agency.
     match /invites/{inviteId} {
+      allow read, delete: if isSignedIn();
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
-      allow read, delete: if request.auth != null;
-    }
-    
-    // Private agency data (contacts, tasks, etc.) is only accessible to members of that agency.
-    match /agencies/{agencyId}/contacts/{contactId} {
-        allow read, write: if isUserInAgency(agencyId);
-    }
-    
-    match /agencies/{agencyId}/tasks/{taskId} {
-        allow read, write: if isUserInAgency(agencyId);
     }
 
-    // Publicly readable property listings. Only agency members can write.
-    match /agencies/{agencyId}/properties/{propertyId} {
+    // --- Agencies ---
+    match /agencies/{agencyId} {
+      // Any user (even unauthenticated) can get a specific agency document.
+      // This is needed for public pages and for helper functions in rules to work.
       allow get: if true;
-      allow list, create, update, delete: if isUserInAgency(agencyId);
-    }
-    
-    match /agencies/{agencyId}/viewings/{viewingId} {
+
+      // Only authenticated users can list all agencies (though the app doesn't do this).
+      allow list: if isSignedIn();
+
+      // An authenticated user can create an agency, but they must be the owner.
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+
+      // Only an admin of that agency can update its details.
+      allow update: if isUserAdminForAgency(agencyId);
+
+      // Deleting agencies is disabled for safety.
+      allow delete: if false;
+
+      // --- Agency Sub-collections ---
+
+      // Contacts, Tasks are private to agency members.
+      match /contacts/{contactId} {
         allow read, write: if isUserInAgency(agencyId);
+      }
+      match /tasks/{taskId} {
+        allow read, write: if isUserInAgency(agencyId);
+      }
+      match /viewings/{viewingId} {
+        allow read, write: if isUserInAgency(agencyId);
+      }
+
+      // Property listings can be read by anyone, but only written by agency members.
+      match /properties/{propertyId} {
+        allow get, list: if true;
+        allow create, update, delete: if isUserInAgency(agencyId);
+      }
     }
 
-    // --- Portal Rules ---
+    // --- Client Portals ---
     match /portals/{portalId} {
-        // Anyone with the (unguessable) link can read the portal.
+      // Anyone with the link can read the portal data.
+      allow get, list: if true;
+
+      // Only a member of the agency can create, update, or delete a portal record.
+      // For create, we check the incoming data. For update/delete, the existing data.
+      allow create: if isUserInAgency(request.resource.data.agencyId);
+      allow update, delete: if isUserInAgency(resource.data.agencyId);
+
+      // --- Portal Recommendations Sub-collection ---
+      match /recommendations/{recommendationId} {
+        // Recommendations are also public to anyone with the portal link.
         allow get, list: if true;
 
-        // Only an agent belonging to the correct agency can create or update a portal.
-        allow write: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
+        // Only an agent of the agency that owns the portal can add/remove recommendations.
+        allow create, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
 
-        // Only an agent belonging to the correct agency can delete a portal.
-        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
-    }
-    
-    match /portals/{portalId}/recommendations/{recommendationId} {
-      // Recommendations are publicly readable via the portal link.
-      allow get, list: if true;
-      
-      // An agent of the portal's agency can add/remove recommendations.
-      allow create, delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
-      
-      // The client (unauthenticated) can only update their own feedback.
-      // An agent can update anything.
-      allow update: if (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
-                      (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
+        // An agent can update anything.
+        // A public user (client) can ONLY update the feedback/comment fields.
+        allow update: if (isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
+                        (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
+      }
     }
   }
 }
