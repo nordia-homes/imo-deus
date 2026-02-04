@@ -52,12 +52,14 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
   const watchedCity = form.watch('city') as City;
 
   useEffect(() => {
-    if (watchedCity !== contact.city) {
+    // If the city in the form changes and differs from the contact's original city,
+    // we should only reset the form's local state for zones, not the parent contact object.
+    if (watchedCity && watchedCity !== contact.city) {
       form.setValue('zones', []);
-      onUpdateContact({ zones: [] });
     }
+  // The parent's state will be updated when the user selects new zones via `handleZonesChange`.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedCity]);
+  }, [watchedCity, contact.city]);
   
   const handleBlur = (fieldName: keyof z.infer<typeof preferencesSchema>) => {
     const value = form.getValues(fieldName);
