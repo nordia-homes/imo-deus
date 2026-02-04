@@ -117,6 +117,7 @@ export type Contact = {
     sourcePropertyId?: string;
     offers?: Offer[];
     financialStatus?: FinancialStatus;
+    recommendationHistory?: { [propertyId: string]: PortalRecommendation };
 }
 
 export type SalesData = {

@@ -114,11 +114,12 @@ export default function LeadDetailPage() {
     }, [firestore, agency?.id]);
     const { data: allContacts, isLoading: areAllContactsLoading } = useCollection<Contact>(allContactsQuery);
 
-    const recommendationsQuery = useMemoFirebase(() => {
-        if (!contact?.portalId) return null;
-        return collection(firestore, 'portals', contact.portalId, 'recommendations');
-    }, [firestore, contact?.portalId]);
-    const { data: recommendations, isLoading: areRecsLoading } = useCollection<PortalRecommendation>(recommendationsQuery);
+    const recommendations = useMemo(() => {
+        if (!contact?.recommendationHistory) return [];
+        // Convert the recommendationHistory map to an array for the component
+        return Object.values(contact.recommendationHistory);
+    }, [contact?.recommendationHistory]);
+    const areRecsLoading = isContactLoading; // Loading is now tied to the contact loading
 
 
     // --- Side Effects & Memoization ---
@@ -170,9 +171,20 @@ export default function LeadDetailPage() {
     };
     
     const handleUpdateRecommendation = (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
-        if (!contact?.portalId) return;
+        if (!contact?.portalId || !contactDocRef) return;
+
+        // Also update the live portal for the client
         const recRef = doc(firestore, 'portals', contact.portalId, 'recommendations', recommendationId);
         updateDocumentNonBlocking(recRef, data);
+        
+        // Update the historical record on the contact
+        const existingRec = contact.recommendationHistory?.[recommendationId];
+        if (existingRec) {
+            const updatedRec = { ...existingRec, ...data };
+            updateDocumentNonBlocking(contactDocRef, {
+                [`recommendationHistory.${recommendationId}`]: updatedRec
+            });
+        }
     };
 
     const handleRematch = async (preferences: ContactPreferences) => {

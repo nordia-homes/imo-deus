@@ -6,30 +6,47 @@ import type { Property, Contact } from '@/lib/types';
 import Image from 'next/image';
 import { ArrowRight, BedDouble, Bath, Ruler, Star } from 'lucide-react';
 import Link from 'next/link';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAgency } from '@/context/AgencyContext';
 
 const MatchedPropertyCard = ({ property, contact }: { property: Property, contact: Contact }) => {
   const hasImages = property.images && property.images.length > 0;
   const imageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { agencyId } = useAgency();
 
   const handleAddToPortal = () => {
     if (!contact.portalId) {
         toast({ variant: 'destructive', title: 'Portal inactiv', description: 'Activați portalul pentru acest client întâi.' });
         return;
     }
+     if (!agencyId) {
+        toast({ variant: 'destructive', title: 'Eroare agenție', description: 'ID-ul agenției nu a putut fi determinat.' });
+        return;
+    }
     const recommendationRef = doc(firestore, 'portals', contact.portalId, 'recommendations', property.id);
     
-    setDocumentNonBlocking(recommendationRef, {
+    const recommendationData = {
+        id: property.id,
         propertyId: property.id,
         addedAt: new Date().toISOString(),
-        clientFeedback: 'none'
-    }, { merge: true });
+        clientFeedback: 'none' as const,
+    };
 
-    toast({ title: 'Proprietate adăugată!', description: `${property.title} a fost adăugată în portalul clientului.` });
+    // Add to live portal for client
+    setDocumentNonBlocking(recommendationRef, recommendationData, { merge: true });
+
+    // Add to permanent history on contact
+    const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contact.id);
+    updateDocumentNonBlocking(contactRef, {
+        [`recommendationHistory.${property.id}`]: recommendationData
+    });
+
+
+    toast({ title: 'Proprietate adăugată!', description: `${property.title} a fost adăugată în portalul clientului și în istoric.` });
   };
 
 
