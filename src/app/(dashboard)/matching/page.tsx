@@ -27,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 const propertyMatchSchema = z.object({
   desiredPriceRangeMin: z.coerce.number(),
   desiredPriceRangeMax: z.coerce.number(),
-  desiredBedrooms: z.coerce.number(),
+  desiredRooms: z.coerce.number(),
   desiredBathrooms: z.coerce.number(),
   desiredSquareFootageMin: z.coerce.number(),
   desiredSquareFootageMax: z.coerce.number(),
@@ -71,7 +71,7 @@ export default function MatchingPage() {
             const preferences = selectedContact.preferences || {
                 desiredPriceRangeMin: (selectedContact.budget || 0) * 0.8,
                 desiredPriceRangeMax: (selectedContact.budget || 0) * 1.2,
-                desiredBedrooms: 2,
+                desiredRooms: 2,
                 desiredBathrooms: 1,
                 desiredSquareFootageMin: 50,
                 desiredSquareFootageMax: 100,
@@ -100,7 +100,7 @@ export default function MatchingPage() {
             ...p,
             address: p.address || p.location || '',
             price: p.price || 0,
-            bedrooms: p.bedrooms || 0,
+            rooms: p.rooms || 0,
             bathrooms: p.bathrooms || 0,
             squareFootage: p.squareFootage || 0,
             description: p.description || p.title || '',
@@ -173,7 +173,7 @@ export default function MatchingPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                      <FormField control={form.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
                                      <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredBedrooms" render={({ field }) => ( <FormItem><FormLabel>Dormitoare</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Camere</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
                                      <FormField control={form.control} name="desiredBathrooms" render={({ field }) => ( <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
                                      <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață Min</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
                                      <FormField control={form.control} name="desiredSquareFootageMax" render={({ field }) => ( <FormItem><FormLabel>Suprafață Max</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>

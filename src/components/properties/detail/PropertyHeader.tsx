@@ -22,7 +22,7 @@ export function PropertyHeader({ property }: { property: Property }) {
                     <span className="text-gray-400">•</span>
                     <span>{property.location}</span>
                     <span className="text-gray-400">•</span>
-                    <span>{property.bedrooms} dorm.</span>
+                    <span>{property.rooms} camere</span>
                     <span className="text-gray-400">•</span>
                     <span>{property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
                     <span className="text-gray-400">•</span>

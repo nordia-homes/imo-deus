@@ -46,7 +46,7 @@ const propertySchema = z.object({
   transactionType: z.string().min(1, { message: "Tipul tranzacției este obligatoriu." }),
   location: z.string().min(1, { message: "Locația este obligatorie." }),
   price: z.coerce.number().positive({ message: "Prețul trebuie să fie pozitiv." }),
-  bedrooms: z.coerce.number().int().min(0, { message: "Numărul de dormitoare nu poate fi negativ." }),
+  rooms: z.coerce.number().int().min(0, { message: "Numărul de camere nu poate fi negativ." }),
   bathrooms: z.coerce.number().min(0, { message: "Numărul de băi nu poate fi negativ." }),
   squareFootage: z.coerce.number().positive({ message: "Suprafața utilă trebuie să fie pozitivă." }),
   totalSurface: z.coerce.number().positive({ message: "Suprafața totală trebuie să fie pozitivă." }).optional().or(z.literal('')),
@@ -152,7 +152,7 @@ export function AddPropertyDialog({
       transactionType: 'Vânzare',
       location: 'București',
       price: 0,
-      bedrooms: 2,
+      rooms: 2,
       bathrooms: 1,
       squareFootage: 55,
       totalSurface: '',
@@ -206,7 +206,7 @@ export function AddPropertyDialog({
           transactionType: property.transactionType || 'Vânzare',
           location: property.location || '',
           price: property.price || 0,
-          bedrooms: property.bedrooms || 0,
+          rooms: property.rooms || 0,
           bathrooms: property.bathrooms || 0,
           squareFootage: property.squareFootage || 0,
           totalSurface: property.totalSurface || '',
@@ -253,7 +253,7 @@ export function AddPropertyDialog({
   async function handleGenerateDescription() {
     setIsGenerating(true);
     const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
-      'propertyType', 'location', 'bedrooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
+      'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
     ];
     const isValid = await form.trigger(fieldsToValidate);
 
@@ -267,10 +267,10 @@ export function AddPropertyDialog({
       return;
     }
     
-    const { propertyType, location, bedrooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
+    const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
     try {
       const result = await generatePropertyDescription({
-          propertyType, location, bedrooms, bathrooms, squareFootage, keyFeatures, price
+          propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
       });
       form.setValue('description', result.description);
     } catch (error) {
@@ -330,7 +330,7 @@ export function AddPropertyDialog({
           location: values.location,
           address: values.location,
           price: values.price,
-          bedrooms: values.bedrooms,
+          rooms: values.rooms,
           bathrooms: values.bathrooms,
           squareFootage: values.squareFootage,
           totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
@@ -345,7 +345,7 @@ export function AddPropertyDialog({
           keyFeatures: values.keyFeatures,
           description: values.description || '',
           images: finalImages,
-          tagline: `${values.bedrooms} dorm. | ${values.bathrooms} băi | ${values.squareFootage}mp`,
+          tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
           amenities: values.keyFeatures.split(',').map((f) => f.trim()),
           status: values.status,
           featured: values.featured,
@@ -504,7 +504,7 @@ export function AddPropertyDialog({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (mp) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="bedrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Dormitoare *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />

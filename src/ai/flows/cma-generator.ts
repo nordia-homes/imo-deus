@@ -28,7 +28,7 @@ const ComparablePropertySchema = z.object({
     status: z.enum(['Activ', 'Vândut', 'Închiriat', 'Inactiv']),
     price: z.number(),
     squareFootage: z.number(),
-    bedrooms: z.number(),
+    rooms: z.number(),
     bathrooms: z.number(),
     similarity: z.string().describe("A brief explanation of why this property is a good comparable (e.g., 'Same neighborhood, similar size')."),
 });
@@ -102,7 +102,7 @@ You must use the 'getComparableProperties' tool to find a list of suitable compa
 
 Your analysis must be in Romanian and follow these steps:
 1.  **Analyze the Subject Property:** Briefly describe the key characteristics of the property: {{{JSON.stringify(subjectProperty, null, 2)}}}.
-2.  **Select and Analyze Comparables:** For each of the 3-5 comparable properties you select, explain why it's a good comparison (similarity). Include its address, status, price, size, bedrooms, and bathrooms.
+2.  **Select and Analyze Comparables:** For each of the 3-5 comparable properties you select, explain why it's a good comparison (similarity). Include its address, status, price, size, camere, and bathrooms.
 3.  **Perform Price Adjustments:** Compare the subject property to the comps. Create a list of adjustments. For features where the subject property is superior, add a positive adjustment (e.g., '+€5,000' for an extra bathroom). Where it's inferior, use a negative adjustment (e.g., '-€10,000' for needing renovation). Justify each adjustment.
 4.  **Determine Estimated Value:** Based on the adjusted prices of the comparables, determine a final estimated market value range (min and max) for the subject property.
 5.  **Write Summary Notes:** Provide a concluding paragraph that summarizes your findings, comments on current local market conditions (e.g., "Piața este în creștere, cu cerere mare pentru proprietăți renovate."), and justifies the final valuation.

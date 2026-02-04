@@ -13,7 +13,7 @@ export type Property = {
   address: string;
   location: string;
   price: number;
-  bedrooms: number;
+  rooms: number;
   bathrooms: number;
   squareFootage: number; // Suprafata Utila
   totalSurface?: number; // Suprafata Construita
@@ -62,7 +62,7 @@ export type MatchedProperty = Property & { matchScore: number; reasoning: string
 export type ContactPreferences = {
     desiredPriceRangeMin: number;
     desiredPriceRangeMax: number;
-    desiredBedrooms: number;
+    desiredRooms: number;
     desiredBathrooms: number;
     desiredSquareFootageMin: number;
     desiredSquareFootageMax: number;
@@ -228,7 +228,7 @@ export type ComparableProperty = {
     status: 'Activ' | 'Vândut' | 'Închiriat' | 'Inactiv';
     price: number;
     squareFootage: number;
-    bedrooms: number;
+    rooms: number;
     bathrooms: number;
     similarity: string;
 }

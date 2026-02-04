@@ -81,7 +81,7 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
            <div className="text-sm text-muted-foreground mt-1 flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
-                    <span>{property.bedrooms}</span>
+                    <span>{property.rooms}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <Bath className="h-4 w-4"/>

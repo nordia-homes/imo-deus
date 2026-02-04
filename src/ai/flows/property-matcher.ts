@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const PropertySchema = z.object({
   address: z.string().describe('The address of the property.'),
   price: z.number().describe('The price of the property in USD.'),
-  bedrooms: z.number().describe('The number of bedrooms in the property.'),
+  rooms: z.number().describe('The number of rooms in the property.'),
   bathrooms: z.number().describe('The number of bathrooms in the property.'),
   squareFootage: z.number().describe('The square footage of the property.'),
   description: z.string().describe('A detailed description of the property.'),
@@ -25,7 +25,7 @@ const PropertySchema = z.object({
 const ClientPreferencesSchema = z.object({
   desiredPriceRangeMin: z.number().describe('The minimum desired price.'),
   desiredPriceRangeMax: z.number().describe('The maximum desired price.'),
-  desiredBedrooms: z.number().describe('The desired number of bedrooms.'),
+  desiredRooms: z.number().describe('The desired number of rooms.'),
   desiredBathrooms: z.number().describe('The desired number of bathrooms.'),
   desiredSquareFootageMin: z.number().describe('The minimum desired square footage.'),
   desiredSquareFootageMax: z.number().describe('The maximum desired square footage.'),
@@ -62,7 +62,7 @@ const propertyMatcherPrompt = ai.definePrompt({
 Given the following client preferences:
 
 Desired Price Range: {{clientPreferences.desiredPriceRangeMin}} - {{clientPreferences.desiredPriceRangeMax}}
-Desired Bedrooms: {{clientPreferences.desiredBedrooms}}
+Desired Rooms: {{clientPreferences.desiredRooms}}
 Desired Bathrooms: {{clientPreferences.desiredBathrooms}}
 Desired Square Footage: {{clientPreferences.desiredSquareFootageMin}} - {{clientPreferences.desiredSquareFootageMax}}
 Desired Features: {{clientPreferences.desiredFeatures}}
@@ -73,7 +73,7 @@ And the following list of available properties:
 {{#each properties}}
 Address: {{this.address}}
 Price: {{this.price}}
-Bedrooms: {{this.bedrooms}}
+Rooms: {{this.rooms}}
 Bathrooms: {{this.bathrooms}}
 Square Footage: {{this.squareFootage}}
 Description: {{this.description}}

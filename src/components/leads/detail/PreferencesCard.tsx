@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const preferencesSchema = z.object({
-  desiredBedrooms: z.coerce.number().optional(),
+  desiredRooms: z.coerce.number().optional(),
   desiredPriceRangeMax: z.coerce.number().optional(),
   desiredSquareFootageMin: z.coerce.number().optional(),
   city: z.string().optional(),
@@ -40,7 +40,7 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
 
   useEffect(() => {
     form.reset({
-      desiredBedrooms: contact.preferences?.desiredBedrooms || 0,
+      desiredRooms: contact.preferences?.desiredRooms || 0,
       desiredPriceRangeMax: contact.preferences?.desiredPriceRangeMax || contact.budget,
       desiredSquareFootageMin: contact.preferences?.desiredSquareFootageMin || 0,
       city: contact.city,
@@ -88,7 +88,7 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
     const fullPreferences: ContactPreferences = {
       desiredPriceRangeMin: 0,
       desiredPriceRangeMax: values.desiredPriceRangeMax || 9999999,
-      desiredBedrooms: values.desiredBedrooms || 0,
+      desiredRooms: values.desiredRooms || 0,
       desiredBathrooms: 0, 
       desiredSquareFootageMin: values.desiredSquareFootageMin || 0,
       desiredSquareFootageMax: 99999,
@@ -114,7 +114,7 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField control={form.control} name="desiredBedrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredBedrooms')} /></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredRooms')} /></FormControl></FormItem> )}/>
               <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
               <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
             </div>

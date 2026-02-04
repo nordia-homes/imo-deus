@@ -14,7 +14,7 @@ const PropertyInsightsInputSchema = z.object({
   propertyType: z.string().describe('The type of property (e.g., house, apartment).'),
   location: z.string().describe('The location of the property (city, neighborhood).'),
   price: z.number().describe('The asking price of the property in EUR.'),
-  bedrooms: z.number().describe('The number of bedrooms.'),
+  rooms: z.number().describe('The number of rooms.'),
   squareFootage: z.number().describe('The square footage of the property.'),
   constructionYear: z.number().optional().describe('The year the property was built.'),
   keyFeatures: z.string().describe('A comma-separated list of key features.'),
@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
   - Type: {{{propertyType}}}
   - Location: {{{location}}}
   - Price: €{{{price}}}
-  - Bedrooms: {{{bedrooms}}}
+  - Camere: {{{rooms}}}
   - Square Footage: {{{squareFootage}}} mp
   - Year Built: {{{constructionYear}}}
   - Key Features: {{{keyFeatures}}}
