@@ -16,7 +16,7 @@ export function SimilarLeadsCard({ leads }: SimilarLeadsCardProps) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl shadow-lg">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />

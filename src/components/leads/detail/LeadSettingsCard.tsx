@@ -24,7 +24,7 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
     }
 
     return (
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl shadow-lg">
             <CardHeader className="pb-4">
                 <CardTitle className="text-base">Setări Lead</CardTitle>
             </CardHeader>

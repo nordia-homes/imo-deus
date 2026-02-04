@@ -103,7 +103,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
   
   if (isGenerating) {
     return (
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl shadow-lg">
              <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-3">
                 <Loader2 className="h-10 w-10 text-primary animate-spin" />
                 <h3 className="font-semibold">AI-ul analizează lead-ul...</h3>
@@ -117,7 +117,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
 
   if (typeof contact.leadScore !== 'number') {
     return (
-        <Card className="rounded-2xl bg-muted/50 border-dashed shadow-sm">
+        <Card className="rounded-2xl bg-muted/50 border-dashed shadow-lg">
             <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
                 <div className="p-3 bg-primary/10 rounded-full">
                     <Lightbulb className="h-8 w-8 text-primary" />
@@ -136,7 +136,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
   }
 
   return (
-    <Card className="rounded-2xl shadow-md border-primary/20">
+    <Card className="rounded-2xl shadow-lg border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between">
             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">

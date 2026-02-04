@@ -71,7 +71,7 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   };
 
   return (
-    <Card className="rounded-2xl shadow-md">
+    <Card className="rounded-2xl shadow-lg">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
             <Star className="text-yellow-500" />

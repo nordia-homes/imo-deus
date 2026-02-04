@@ -34,7 +34,7 @@ export function LeadDescriptionCard({ contact, onUpdateContact }: LeadDescriptio
 
 
     return (
-        <Card className="rounded-2xl shadow-md">
+        <Card className="rounded-2xl shadow-lg">
             <CardContent className="p-6">
                 <Textarea
                     ref={textareaRef}
