@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, Loader2, Sparkles, TrendingUp, UserCheck } from 'lucide-react';
+import { Lightbulb, Loader2, Sparkles, TrendingUp, UserCheck, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact } from '@/lib/types';
 import { leadScoring } from '@/ai/flows/lead-scoring';
@@ -25,6 +25,47 @@ function getPotentialValue(budget?: number): string {
     if (budget > 50000) return 'medium';
     return 'low';
 }
+
+// Helper component for circular progress
+const CircularProgress = ({ score }: { score: number }) => {
+    const size = 60;
+    const strokeWidth = 5;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+        <div className="relative" style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="-rotate-90">
+                <circle
+                    className="text-muted"
+                    stroke="currentColor"
+                    strokeWidth={strokeWidth}
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                />
+                <circle
+                    className="text-primary"
+                    stroke="currentColor"
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                    style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-primary">
+                {score}
+            </span>
+        </div>
+    );
+};
 
 export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardProps) {
   const { toast } = useToast();
@@ -97,23 +138,29 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
   return (
     <Card className="rounded-2xl shadow-sm border-primary/20">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between text-base">
-            <div className="flex items-baseline gap-3">
-                <span>Scor AI</span>
-                <span className="text-2xl font-bold text-primary">{contact.leadScore}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleGenerateScore} disabled={isGenerating}>
-              Regenerează
-            </Button>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Scor AI</CardTitle>
+          <CircularProgress score={contact.leadScore} />
+        </div>
       </CardHeader>
       <CardContent>
-         <Alert>
+         <Alert className="relative">
             <UserCheck className="h-4 w-4" />
             <AlertTitle className="font-bold">Analiză AI</AlertTitle>
-            <AlertDescription className="text-xs">
+            <AlertDescription className="text-xs pr-8">
                 {contact.leadScoreReason || 'Nicio justificare disponibilă.'}
             </AlertDescription>
+             <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleGenerateScore} 
+                disabled={isGenerating}
+                className="absolute bottom-1 right-1 h-7 w-7"
+                title="Regenerează scorul"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="sr-only">Regenerează</span>
+            </Button>
         </Alert>
       </CardContent>
     </Card>
