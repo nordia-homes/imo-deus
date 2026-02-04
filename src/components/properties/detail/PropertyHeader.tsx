@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
 import { Edit, FileText, Rocket, Send, MoreVertical, Calendar, Clock } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export function PropertyHeader({ property }: { property: Property }) {
     const { agencyId } = useAgency();
@@ -49,7 +50,9 @@ export function PropertyHeader({ property }: { property: Property }) {
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 className="text-2xl font-bold">{property.title}</h1>
+                 <div className={cn(buttonVariants({ variant: 'default', size: 'lg' }), "h-auto text-xl font-bold whitespace-normal text-left justify-start mb-2 pointer-events-none")}>
+                    {property.title}
+                </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
                     <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
                     <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
