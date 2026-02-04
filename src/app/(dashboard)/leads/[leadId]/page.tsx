@@ -246,7 +246,7 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="flex-1 p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8">
+            <main className="p-4 md:p-6 -mx-4 md:-mx-6 lg:-mx-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
@@ -271,8 +271,8 @@ export default function LeadDetailPage() {
                     {/* Right Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ClientPortalManager contact={contact} agency={agency} />
+                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <SourcePropertyCard 
                             property={sourceProperty} 
                             isLoading={isSourcePropertyLoading}
@@ -285,3 +285,5 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
