@@ -65,7 +65,7 @@ export default function AgencyPublicLayout({
   
   useEffect(() => {
     const root = document.documentElement;
-    const defaultPrimary = '250 65% 55%';
+    const defaultPrimary = '145 63% 45%';
     if (agency?.primaryColor) {
       const hslColor = hexToHsl(agency.primaryColor);
       if (hslColor) {

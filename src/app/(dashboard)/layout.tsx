@@ -62,7 +62,7 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const root = document.documentElement;
-        const defaultPrimary = '250 65% 55%';
+        const defaultPrimary = '145 63% 45%';
 
         const colorToSet = agency?.primaryColor;
 

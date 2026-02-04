@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 250 65% 55%; /* A vibrant purple-blue */
+    --primary: 145 63% 45%; /* A vibrant green */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 5% 96%;
@@ -30,7 +30,7 @@
 
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 250 65% 55%;
+    --ring: 145 63% 45%;
 
     --radius: 0.8rem;
   }
@@ -43,7 +43,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 250 65% 55%;
+    --primary: 145 63% 45%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -55,7 +55,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 250 65% 55%;
+    --ring: 145 63% 45%;
   }
 }
 

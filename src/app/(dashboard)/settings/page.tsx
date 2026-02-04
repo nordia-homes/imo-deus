@@ -33,7 +33,7 @@ const agencySchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #1E3A8A).').optional(),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #22c55e).').optional(),
   facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
@@ -61,7 +61,7 @@ export default function SettingsPage() {
         phone: '', 
         address: '', 
         logoUrl: '', 
-        primaryColor: '#1E3A8A',
+        primaryColor: '#22c55e',
         facebookUrl: '',
         instagramUrl: '',
         linkedinUrl: '',
@@ -88,7 +88,7 @@ export default function SettingsPage() {
             phone: agency.phone || '',
             address: agency.address || '',
             logoUrl: agency.logoUrl || '',
-            primaryColor: agency.primaryColor || '#1E3A8A',
+            primaryColor: agency.primaryColor || '#22c55e',
             facebookUrl: agency.facebookUrl || '',
             instagramUrl: agency.instagramUrl || '',
             linkedinUrl: agency.linkedinUrl || '',
@@ -247,4 +247,3 @@ export default function SettingsPage() {
   );
 }
 
-    

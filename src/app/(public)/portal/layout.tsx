@@ -70,7 +70,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     // Apply agency theme
     useEffect(() => {
         const root = document.documentElement;
-        const defaultPrimary = '250 65% 55%'; // A fallback color
+        const defaultPrimary = '145 63% 45%'; // A fallback color
         if (agency?.primaryColor) {
           const hslColor = hexToHsl(agency.primaryColor);
           if (hslColor) {
