@@ -57,7 +57,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index];
     // If an image doesn't exist for a given index, render a placeholder.
-    // This makes the grid layout robust even with fewer than 5 images.
+    // This makes the grid layout robust even with fewer than 3 images.
     if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>;
 
     return (
@@ -82,17 +82,14 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
       {/* The main gallery container */}
       <div className="relative">
         
-        {/* --- Desktop Grid Layout (Airbnb Style) --- */}
-        <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 md:gap-2 h-[550px]">
+        {/* --- Desktop Grid Layout --- */}
+        <div className="hidden md:grid md:grid-cols-3 md:grid-rows-2 md:gap-2 h-[550px]">
           {/* Main image */}
-          <div className="col-span-2 row-span-2">
-            <ImageItem index={0} className="w-full h-full" />
-          </div>
-          {/* The other 4 images */}
-          <ImageItem index={1} />
-          <ImageItem index={2} />
-          <ImageItem index={3} />
-          <ImageItem index={4} />
+          <ImageItem index={0} className="col-span-2 row-span-2" />
+          
+          {/* Side images */}
+          <ImageItem index={1} className="col-span-1" />
+          <ImageItem index={2} className="col-span-1" />
         </div>
 
         {/* --- Mobile View (Single Image) --- */}
