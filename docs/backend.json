@@ -221,6 +221,10 @@
         "portalId": {
           "type": "string",
           "description": "The ID (secure token) of the client portal associated with this contact."
+        },
+        "sourcePropertyId": {
+          "type": "string",
+          "description": "The ID of the property this lead was initially interested in."
         }
       },
       "required": [

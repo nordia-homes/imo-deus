@@ -100,6 +100,7 @@ export type Contact = {
     priority?: 'Scăzută' | 'Medie' | 'Ridicată';
     portalId?: string | null;
     tags?: string[];
+    sourcePropertyId?: string;
 }
 
 export type SalesData = {

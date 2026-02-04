@@ -21,6 +21,7 @@ import { LeadZonesCard } from '@/components/leads/detail/LeadZonesCard';
 import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
 import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
+import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
 
 
 const PageSkeleton = () => (
@@ -43,6 +44,7 @@ const PageSkeleton = () => (
                 <Skeleton className="h-64" />
                 <Skeleton className="h-40" />
                 <Skeleton className="h-48" />
+                <Skeleton className="h-72" />
             </div>
         </div>
     </div>
@@ -92,6 +94,12 @@ export default function LeadDetailPage() {
         return collection(firestore, 'agencies', agency.id, 'properties');
     }, [firestore, agency?.id]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+    const sourcePropertyDocRef = useMemoFirebase(() => {
+        if (!agency?.id || !contact?.sourcePropertyId) return null;
+        return doc(firestore, 'agencies', agency.id, 'properties', contact.sourcePropertyId);
+    }, [firestore, agency?.id, contact?.sourcePropertyId]);
+    const { data: sourceProperty, isLoading: isSourcePropertyLoading } = useDoc<Property>(sourcePropertyDocRef);
 
     // --- AGENT PROFILES FETCHING ---
     useEffect(() => {
@@ -181,7 +189,7 @@ export default function LeadDetailPage() {
     };
 
 
-    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading;
+    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading;
 
     if (isLoading) {
         return <PageSkeleton />;
@@ -200,7 +208,7 @@ export default function LeadDetailPage() {
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
-                onAddTask={handleAddTask}
+                onAddTask={onAddTask}
                 onAddViewing={handleAddViewing}
                 properties={properties || []}
             />
@@ -209,7 +217,7 @@ export default function LeadDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
+                        <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={onAddTask} />
                         <LeadZonesCard contact={contact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
@@ -229,6 +237,7 @@ export default function LeadDetailPage() {
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
                         <ClientPortalManager contact={contact} agency={agency} />
+                        <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} />
                     </div>
                 </div>
             </main>
