@@ -55,24 +55,21 @@ service cloud.firestore {
       allow write: if isUserInAgency(agencyId);
     }
 
-    // --- Portal Rules (Corrected) ---
+    // --- Portal Rules (Corrected for public read and secure writes) ---
     
     match /portals/{portalId} {
-        // Anyone with the unguessable link can read the portal data.
+        // Anyone with the unguessable link can read the portal data. This is intended.
         allow read: if true;
 
-        // To CREATE a portal, the user must be authenticated and
-        // the agencyId in the new portal document must match the user's agencyId from their profile.
+        // To CREATE, user must be authenticated and creating for their own agency.
         allow create: if request.auth != null
                       && request.resource.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
 
-        // To DELETE a portal, the user must be authenticated and
-        // the agencyId in the portal document being deleted must match the user's agencyId from their profile.
+        // To DELETE, user must be authenticated and deleting from their own agency.
         allow delete: if request.auth != null
-                      && resource.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+                      && get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
         
-        // We don't allow general updates to the portal document itself,
-        // only to its subcollections (recommendations).
+        // We don't allow general updates to the portal document itself.
         allow update: if false;
     }
     
@@ -80,7 +77,8 @@ service cloud.firestore {
       // Public read access is safe due to unguessable portalId in the path.
       allow read: if true;
       
-      function isAgencyMember() {
+      // Helper function to check if the acting user is a member of the agency that owns this portal.
+      function isAgencyMemberForPortal() {
         let portal = get(/databases/$(database)/documents/portals/$(portalId));
         // Check if user is authenticated and their agency ID matches the portal's agency ID
         return request.auth != null
@@ -88,6 +86,7 @@ service cloud.firestore {
                && portal.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
       }
       
+      // Helper function to check if the only fields being updated are for client feedback.
       function isClientFeedbackUpdate() {
         // Client is not authenticated, but can only update feedback fields.
         return request.auth == null && 
@@ -95,11 +94,11 @@ service cloud.firestore {
       }
       
       // An agency member can create or delete recommendations.
-      allow create, delete: if isAgencyMember();
+      allow create, delete: if isAgencyMemberForPortal();
       
       // An agency member can update anything.
       // A client (unauthenticated) can ONLY update feedback fields.
-      allow update: if isAgencyMember() || isClientFeedbackUpdate();
+      allow update: if isAgencyMemberForPortal() || isClientFeedbackUpdate();
     }
   }
 }
