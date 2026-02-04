@@ -63,7 +63,7 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
       <CardContent className="space-y-4">
         <div>
           <Label className="text-xs text-muted-foreground">Status Financiar</Label>
-          <Select defaultValue={contact.financialStatus || 'Neprecalificat'} onValueChange={handleStatusChange}>
+          <Select value={contact.financialStatus || 'Neprecalificat'} onValueChange={handleStatusChange}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
@@ -87,7 +87,7 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
                     </Link>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-primary font-bold">€{offer.price.toLocaleString()}</span>
-                     <Select defaultValue={offer.feedback} onValueChange={(value: PortalRecommendation['clientFeedback']) => handleFeedbackChange(offer.recId, value)}>
+                     <Select value={offer.feedback} onValueChange={(value: PortalRecommendation['clientFeedback']) => handleFeedbackChange(offer.recId, value)}>
                         <SelectTrigger className={cn("h-8 w-[150px] text-xs",
                             offer.feedback === 'liked' && 'text-green-600 border-green-500',
                             offer.feedback === 'disliked' && 'text-red-600 border-red-500',
@@ -101,13 +101,13 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
                         </SelectTrigger>
                         <SelectContent>
                              <SelectItem value="none">
-                                <span className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-yellow-500" /> Niciun răspuns</span>
+                                <div className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-yellow-500" /> Niciun răspuns</div>
                              </SelectItem>
                              <SelectItem value="liked">
-                                <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-green-500" /> I-a plăcut</span>
+                                <div className="flex items-center gap-2"><Heart className="h-4 w-4 text-green-500" /> I-a plăcut</div>
                             </SelectItem>
                             <SelectItem value="disliked">
-                                <span className="flex items-center gap-2"><ThumbsDown className="h-4 w-4 text-red-500" /> Nu i-a plăcut</span>
+                                <div className="flex items-center gap-2"><ThumbsDown className="h-4 w-4 text-red-500" /> Nu i-a plăcut</div>
                             </SelectItem>
                         </SelectContent>
                     </Select>
