@@ -200,36 +200,28 @@ export default function LeadDetailPage() {
     const similarLeads = useMemo(() => {
         if (!contact || !allContacts || allContacts.length <= 1) return [];
 
+        const hasFilterCriteria = (contact.zones && contact.zones.length > 0) || contact.budget;
+        if (!hasFilterCriteria) {
+            return [];
+        }
+
         const budgetFlexibility = 0.20; // 20% flexibility
         const minBudget = contact.budget ? contact.budget * (1 - budgetFlexibility) : 0;
         const maxBudget = contact.budget ? contact.budget * (1 + budgetFlexibility) : Infinity;
-        const contactZones = new Set(contact.zones || []);
-
-        if (contactZones.size === 0 && !contact.budget) return [];
 
         return allContacts.filter(otherLead => {
             if (otherLead.id === contact.id) return false;
 
-            const budgetMatch = otherLead.budget ? (otherLead.budget >= minBudget && otherLead.budget <= maxBudget) : false;
-            
-            const otherZones = new Set(otherLead.zones || []);
-            const zoneMatch = contactZones.size > 0 && otherZones.size > 0 
-                ? new Set([...contactZones].filter(z => otherZones.has(z))).size > 0
+            const budgetMatch = contact.budget && otherLead.budget 
+                ? (otherLead.budget >= minBudget && otherLead.budget <= maxBudget)
                 : false;
-
-            if (contact.budget && contact.zones && contact.zones.length > 0) {
-                return budgetMatch && zoneMatch;
-            }
-            if (contact.budget) {
-                return budgetMatch;
-            }
-            if (contact.zones && contact.zones.length > 0) {
-                return zoneMatch;
-            }
-
-            return false;
+            
+            const zoneMatch = contact.zones && contact.zones.length > 0 && otherLead.zones && otherLead.zones.length > 0
+                ? contact.zones.some(zone => otherLead.zones!.includes(zone))
+                : false;
+            
+            return budgetMatch || zoneMatch;
         }).slice(0, 5);
-
     }, [contact, allContacts]);
 
 
