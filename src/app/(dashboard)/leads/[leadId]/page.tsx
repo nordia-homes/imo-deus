@@ -301,12 +301,13 @@ export default function LeadDetailPage() {
                 properties={properties || []}
             />
 
-            <main className="pt-6 px-4 md:px-6 lg:px-8 -mx-4 md:-mx-6 lg:-mx-8">
+            <main className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
+                        <FinancialStatusCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -321,7 +322,6 @@ export default function LeadDetailPage() {
                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
                         <MatchedProperties properties={matchedProperties} contact={contact} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <FinancialStatusCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <SimilarLeadsCard leads={similarLeads} />
                     </div>
 
@@ -342,5 +342,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
