@@ -9,24 +9,24 @@ export function InfoColumn({ property }: { property: Property }) {
     return (
         <div className="space-y-6">
             <Tabs defaultValue="overview">
-                <TabsList>
-                    <TabsTrigger value="overview">
+                <TabsList className="grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
+                    <TabsTrigger value="overview" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <LayoutList className="mr-2 h-4 w-4" />
                         Prezentare generală
                     </TabsTrigger>
-                    <TabsTrigger value="leads">
+                    <TabsTrigger value="leads" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <Users className="mr-2 h-4 w-4" />
                         Lead-uri
                     </TabsTrigger>
-                    <TabsTrigger value="tasks">
+                    <TabsTrigger value="tasks" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <CheckSquare className="mr-2 h-4 w-4" />
                         Task-uri
                     </TabsTrigger>
-                    <TabsTrigger value="documents">
+                    <TabsTrigger value="documents" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <FileText className="mr-2 h-4 w-4" />
                         Documente
                     </TabsTrigger>
-                    <TabsTrigger value="settings">
+                    <TabsTrigger value="settings" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <Settings className="mr-2 h-4 w-4" />
                         Setări
                     </TabsTrigger>
