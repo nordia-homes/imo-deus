@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, ChangeEvent, useEffect } from 'react';
@@ -236,7 +237,7 @@ export function AddPropertyDialog({
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEditMode, property, form, user]);
+  }, [isOpen, isEditMode, property, user]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
