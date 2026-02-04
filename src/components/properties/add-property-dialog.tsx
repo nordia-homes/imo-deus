@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, ChangeEvent, useEffect } from 'react';
@@ -198,8 +197,9 @@ export function AddPropertyDialog({
     fetchAgents();
   }, [isOpen, agency, firestore]);
 
-  useEffect(() => {
-    if (isOpen) {
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
       if (isEditMode && property) {
         form.reset({
           title: property.title || '',
@@ -231,14 +231,37 @@ export function AddPropertyDialog({
         setImageSources(property.images || []);
       } else {
         form.reset({
+          title: '',
+          propertyType: '',
+          transactionType: 'Vânzare',
+          location: 'București',
+          price: 0,
+          rooms: 2,
+          bathrooms: 1,
+          squareFootage: 55,
+          totalSurface: '',
+          constructionYear: '',
+          floor: '',
+          totalFloors: '',
+          comfort: '',
+          interiorState: '',
+          furnishing: '',
+          heatingSystem: '',
+          parking: '',
+          keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+          description: '',
+          status: 'Activ',
+          featured: false,
+          ownerName: '',
+          ownerPhone: '',
+          salesScore: 'Mediu',
           agentId: user?.uid || 'unassigned',
         });
         setImageSources([]);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEditMode, property, user]);
-
+  };
+  
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -406,7 +429,7 @@ export function AddPropertyDialog({
   }, [imagePreviews]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
       </DialogTrigger>
