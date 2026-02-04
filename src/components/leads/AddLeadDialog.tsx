@@ -270,66 +270,62 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                                 />
                          </div>
                     </section>
-
+                    
                     <Separator />
                     
                     <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Sursă Inițială</h3>
-                        <FormField
-                            control={form.control}
-                            name="sourcePropertyId"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="none">Niciuna</SelectItem>
-                                    {properties?.map(prop => (
-                                        <SelectItem key={prop.id} value={prop.id}>
-                                        {prop.title}
-                                        </SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormDescription>
-                                    Asociază lead-ul cu anunțul de pe care a venit.
-                                </FormDescription>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </section>
-                    
-                    <Separator />
-
-                     <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Management Agent</h3>
-                        <FormField
-                            control={form.control}
-                            name="agentId"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Alocă Agent (Opțional)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    <SelectItem value="unassigned">Nealocat</SelectItem>
-                                    {agents?.map(agent => (
-                                        <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <h3 className="text-lg font-semibold text-primary mb-4">Sursă Inițială și Management</h3>
+                        <div className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="sourcePropertyId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="none">Niciuna</SelectItem>
+                                        {properties?.map(prop => (
+                                            <SelectItem key={prop.id} value={prop.id}>
+                                            {prop.title}
+                                            </SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Asociază lead-ul cu anunțul de pe care a venit.
+                                    </FormDescription>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="agentId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Alocă Agent (Opțional)</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="unassigned">Nealocat</SelectItem>
+                                        {agents?.map(agent => (
+                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                      </section>
 
                     <Separator />
