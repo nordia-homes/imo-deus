@@ -3,7 +3,7 @@
 import type { Property } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Edit } from 'lucide-react';
+import { BedDouble, Bath, Ruler, Edit } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,10 +32,9 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                     <Skeleton className="h-5 w-32" />
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    <Skeleton className="aspect-video w-full" />
+                    <Skeleton className="aspect-[4/3] w-full" />
                     <Skeleton className="h-4 w-4/5" />
                     <Skeleton className="h-5 w-1/3" />
-                    <Skeleton className="h-9 w-full" />
                 </CardContent>
             </Card>
         );
@@ -64,47 +63,46 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
         )
     }
     
-    if (!property) {
-        return (
-             <Card className="rounded-2xl shadow-sm border-dashed">
-                <CardHeader>
-                    <CardTitle className="text-base">Proprietate Inițială</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center text-muted-foreground py-6">
-                     <p className="text-sm mb-2">Nicio proprietate sursă asociată.</p>
-                     <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>Asociază o proprietate</Button>
-                </CardContent>
-            </Card>
-        );
-    }
-
     return (
         <Card className="rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-start justify-between">
                 <CardTitle className="text-base">Proprietate Inițială</CardTitle>
-                 <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-2" onClick={() => setIsEditing(true)}>
-                    <Edit className="h-4 w-4" />
-                </Button>
+                 {property && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-2" onClick={() => setIsEditing(true)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                 )}
             </CardHeader>
-            <CardContent className="space-y-3">
-                <div className="relative aspect-video rounded-md overflow-hidden group">
-                    <Link href={`/properties/${property.id}`}>
-                        <Image
-                            src={property.images?.[0]?.url || 'https://placehold.co/400x300'}
-                            alt={property.title || 'Imagine proprietate'}
-                            fill
-                            className="object-cover transition-transform group-hover:scale-105"
-                        />
+            <CardContent>
+                {!property ? (
+                    <div className="text-center text-muted-foreground py-6">
+                         <p className="text-sm mb-2">Nicio proprietate sursă asociată.</p>
+                         <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>Asociază o proprietate</Button>
+                    </div>
+                ) : (
+                    <Link href={`/properties/${property.id}`} className="block group">
+                        <div className="overflow-hidden rounded-lg">
+                            <div className="aspect-[4/3] relative">
+                                <Image
+                                    src={property.images?.[0]?.url || 'https://placehold.co/800x600'}
+                                    alt={property.title || 'Proprietate'}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                            </div>
+                            <div className="pt-3">
+                                <p className="font-bold text-lg text-primary">€{property.price.toLocaleString()}</p>
+                                <p className="font-semibold truncate group-hover:underline">{property.title}</p>
+                                <p className="text-xs text-muted-foreground">{property.location}</p>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                                    <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> {property.bedrooms}</span>
+                                    <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {property.bathrooms}</span>
+                                    <span className="flex items-center gap-1"><Ruler className="h-3 w-3" /> {property.squareFootage} m²</span>
+                                </div>
+                            </div>
+                        </div>
                     </Link>
-                </div>
-                <h4 className="font-semibold text-sm truncate">{property.title}</h4>
-                 <p className="text-sm font-bold text-primary">€{property.price.toLocaleString()}</p>
-                 <Button asChild size="sm" className="w-full">
-                    <Link href={`/properties/${property.id}`}>
-                        Vezi Proprietatea
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
+                )}
             </CardContent>
         </Card>
     );
