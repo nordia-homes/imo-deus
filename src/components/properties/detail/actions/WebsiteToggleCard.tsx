@@ -23,21 +23,21 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
 
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Website Public</CardTitle>
+            <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm font-semibold">Website Public</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-center justify-between">
-                <Label htmlFor="website-public-toggle" className="font-semibold text-sm">
-                    Recomandată
-                </Label>
-                <Switch
-                    id="website-public-toggle"
-                    checked={property.featured}
-                    onCheckedChange={handleToggle}
-                />
-            </CardContent>
-             <CardContent className="pt-0">
-                <CardDescription className="text-xs">
+            <CardContent className="p-3 pt-0 space-y-2">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="website-public-toggle" className="font-semibold text-sm">
+                        Recomandată
+                    </Label>
+                    <Switch
+                        id="website-public-toggle"
+                        checked={property.featured}
+                        onCheckedChange={handleToggle}
+                    />
+                </div>
+                <CardDescription className="text-xs !mt-1">
                    Dacă este activ, proprietatea va apărea în secțiunea "Recomandate" de pe website-ul public.
                 </CardDescription>
             </CardContent>

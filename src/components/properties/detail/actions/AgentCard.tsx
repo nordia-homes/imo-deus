@@ -22,35 +22,35 @@ export function AgentCard({ agent }: { agent: AgentInfo }) {
 
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-3">
+            <CardContent className="p-2">
                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
                             <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
-                        <p className="font-semibold">{agent.name}</p>
+                        <p className="font-semibold text-sm">{agent.name}</p>
                     </div>
 
                     <div className="flex items-center">
                         {agent.phone && (
-                            <Button variant="ghost" size="icon" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                                 <a href={`tel:${agent.phone}`} aria-label="Call agent">
-                                    <Phone />
+                                    <Phone className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                          {sanitizedPhone && (
-                            <Button variant="ghost" size="icon" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
-                                    <WhatsappIcon />
+                                    <WhatsappIcon className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                         {agent.email && (
-                            <Button variant="ghost" size="icon" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                                 <a href={`mailto:${agent.email}`} aria-label="Email agent">
-                                    <Mail />
+                                    <Mail className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}

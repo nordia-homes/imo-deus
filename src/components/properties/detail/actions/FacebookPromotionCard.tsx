@@ -23,16 +23,14 @@ export function FacebookPromotionCard() {
 
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-3">
-                <div className="flex items-center justify-between h-9">
-                    <div className="flex items-center gap-2">
-                        <Facebook className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-base">Promovare Facebook</span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={handlePromote} aria-label="Promovează pe Facebook">
-                        <Rocket className="h-5 w-5 text-primary" />
-                    </Button>
+            <CardContent className="p-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Facebook className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-sm">Promovare Facebook</span>
                 </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePromote} aria-label="Promovează pe Facebook">
+                    <Rocket className="h-4 w-4 text-primary" />
+                </Button>
             </CardContent>
         </Card>
     );

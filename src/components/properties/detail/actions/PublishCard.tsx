@@ -79,21 +79,21 @@ export function PublishCard({ property }: { property: Property }) {
 
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Promovare One-Click</CardTitle>
+            <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm font-semibold">Promovare One-Click</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-3 pt-0">
                 {PORTALS.map(portal => {
                     const promotion = property.promotions?.[portal.id];
                     const isPublished = promotion?.status === 'published';
                     const isPending = promotion?.status === 'pending';
                     
                     return (
-                        <div key={portal.id} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50">
-                             <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-3">
+                        <div key={portal.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted/50">
+                             <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-2">
                                 {portal.logo}
                              </Label>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                                {isPublished && <span className="text-xs text-green-600 font-semibold">Publicat</span>}
                                {isPending && <span className="text-xs text-yellow-600 font-semibold">În curs...</span>}
                                 <Checkbox
