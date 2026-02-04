@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Edit, FileText, Rocket, Send, MoreVertical } from 'lucide-react';
+import { Edit, FileText, Rocket, Send, MoreVertical, Calendar, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,8 @@ import { useAgency } from '@/context/AgencyContext';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { doc } from 'firebase/firestore';
+import { differenceInDays } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 export function PropertyHeader({ property }: { property: Property }) {
     const { agencyId } = useAgency();
@@ -40,13 +42,17 @@ export function PropertyHeader({ property }: { property: Property }) {
         });
     };
 
+    const creationDate = property.createdAt ? new Date(property.createdAt) : new Date();
+    const ageInDays = differenceInDays(new Date(), creationDate);
+
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h1 className="text-2xl font-bold">{property.title}</h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
-                    <span className="font-semibold text-foreground">€{property.price.toLocaleString()}</span>
+                    <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
+                    <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
                     <span className="text-gray-400">•</span>
                     <span>{property.location}</span>
                     <span className="text-gray-400">•</span>
