@@ -1,4 +1,3 @@
-
 'use client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +32,10 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
                     </Avatar>
                     <div>
                         <h2 className="text-xl font-bold">{contact.name}</h2>
-                        <p className="text-sm text-muted-foreground">€{contact.budget?.toLocaleString() || 'N/A'} &bull; {contact.city || 'N/A'}</p>
+                        <p className="text-sm text-muted-foreground">
+                            €{contact.budget?.toLocaleString() || 'N/A'}
+                            {contact.city && ` • ${contact.city}`}
+                        </p>
                     </div>
                 </div>
                  <Button variant="ghost" size="icon" onClick={onEdit} className="shrink-0">
