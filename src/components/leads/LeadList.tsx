@@ -30,7 +30,7 @@ export function LeadList() {
 
     if (isLoading) {
         return (
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardHeader>
                     <CardTitle>Listă Lead-uri</CardTitle>
                 </CardHeader>
@@ -46,7 +46,7 @@ export function LeadList() {
     }
   
   return (
-    <Card>
+    <Card className="shadow-2xl rounded-2xl">
         <CardHeader>
             <CardTitle>Listă Lead-uri</CardTitle>
         </CardHeader>

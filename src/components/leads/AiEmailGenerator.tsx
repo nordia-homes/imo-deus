@@ -73,7 +73,7 @@ export function AiEmailGenerator({ contact, agent }: AiEmailGeneratorProps) {
   };
 
   return (
-    <Card>
+    <Card className="shadow-2xl rounded-2xl">
       <CardHeader>
         <CardTitle>Asistent Email AI</CardTitle>
         <CardDescription>Generează email-uri profesionale pentru clienții tăi în câteva secunde.</CardDescription>

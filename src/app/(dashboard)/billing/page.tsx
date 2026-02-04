@@ -28,7 +28,7 @@ export default function BillingPage() {
         </p>
       </div>
 
-       <Card>
+       <Card className="shadow-2xl rounded-2xl">
            <CardHeader>
                <CardTitle>Abonamentul Tău: Starter</CardTitle>
            </CardHeader>

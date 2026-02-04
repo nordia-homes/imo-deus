@@ -139,7 +139,7 @@ export default function RegisterPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleRegister)} className="w-full max-w-sm">
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
                         <Home className="text-primary h-8 w-8" />

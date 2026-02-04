@@ -39,7 +39,7 @@ export default function AgencyContactPage() {
 
         <div className="grid md:grid-cols-2 gap-12">
           <div className="space-y-6">
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
               <CardHeader>
                 <CardTitle>Date de Contact</CardTitle>
               </CardHeader>
@@ -68,7 +68,7 @@ export default function AgencyContactPage() {
               </CardContent>
             </Card>
 
-             <Card>
+             <Card className="shadow-2xl rounded-2xl">
               <CardHeader>
                 <CardTitle>Locație pe Hartă</CardTitle>
               </CardHeader>
@@ -90,7 +90,7 @@ export default function AgencyContactPage() {
             </Card>
           </div>
           <div>
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardHeader>
                     <CardTitle>Trimite-ne un Mesaj</CardTitle>
                 </CardHeader>

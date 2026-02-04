@@ -30,7 +30,7 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
     const details = item.itemKind === 'viewing' ? `Agent: ${item.agentName}` : `Asociat cu: ${item.contactName || 'Nespecificat'}`;
 
     return (
-        <Card className="bg-background">
+        <Card className="bg-background shadow-lg">
             <CardHeader className="p-3">
                 <div className="flex justify-between items-center">
                      <div className="flex items-center gap-2 text-sm font-semibold">
@@ -99,7 +99,7 @@ export function PropertyTimeline({ property, viewings, tasks, onAddTask }: Prope
 
   return (
     <div className="space-y-4">
-      <Card className="rounded-2xl">
+      <Card className="rounded-2xl shadow-2xl">
         <CardContent className="p-2 grid grid-cols-2 gap-2">
             <Button variant="outline" className="w-full"><Eye className="h-4 w-4" />Adaugă Vizionare</Button>
             <AddTaskDialog onAddTask={onAddTask} contacts={[]} property={property}>

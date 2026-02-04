@@ -15,7 +15,7 @@ interface PortalStatusCardProps {
 }
 export default function PortalStatusCard({ name, connected, lastSync, listings, leads, errors }: PortalStatusCardProps) {
     return (
-        <Card>
+        <Card className="shadow-2xl rounded-2xl">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle>{name}</CardTitle>

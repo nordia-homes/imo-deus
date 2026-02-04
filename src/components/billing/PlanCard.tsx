@@ -17,7 +17,7 @@ export default function PlanCard({ name, price, features, recommended, onChooseP
     const isCustom = price.toLowerCase() === 'custom';
     
     return (
-        <Card className={cn("flex flex-col", recommended && "border-primary")}>
+        <Card className={cn("flex flex-col shadow-2xl rounded-2xl", recommended && "border-primary")}>
             <CardHeader>
                 {recommended && <p className="text-sm font-semibold text-primary mb-2">Recomandat</p>}
                 <CardTitle>{name}</CardTitle>

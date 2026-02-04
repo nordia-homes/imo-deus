@@ -40,8 +40,8 @@ export function PipelineCard({ contact }: { contact: Contact }) {
       {...attributes}
       {...listeners}
       className={cn(
-        'cursor-grab touch-none hover:shadow-md transition-shadow',
-        isDragging && 'opacity-50 z-50 shadow-2xl ring-2 ring-primary',
+        'cursor-grab touch-none shadow-xl rounded-xl transition-shadow',
+        isDragging && 'opacity-50 z-50 ring-2 ring-primary',
       )}
     >
       <CardContent className="p-3">

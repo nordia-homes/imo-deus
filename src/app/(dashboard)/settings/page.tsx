@@ -154,7 +154,7 @@ export default function SettingsPage() {
   if (!isAgencyLoading && !agency) {
       return (
           <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
-              <Card className="w-full max-w-lg">
+              <Card className="w-full max-w-lg shadow-2xl rounded-2xl">
                 <Form {...agencyForm}>
                     <form onSubmit={agencyForm.handleSubmit(handleCreateAgency)}>
                         <CardHeader>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       <div><h1 className="text-3xl font-headline font-bold">Setări</h1><p className="text-muted-foreground">Configurează setările contului și ale agenției.</p></div>
-      <Card>
+      <Card className="shadow-2xl rounded-2xl">
         <Form {...profileForm}>
           <form onSubmit={profileForm.handleSubmit(handleProfileSave)}>
             <CardHeader><CardTitle>Profilul Tău</CardTitle></CardHeader>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
         </Form>
       </Card>
 
-      <Card>
+      <Card className="shadow-2xl rounded-2xl">
         <Form {...agencyForm}>
           <form onSubmit={agencyForm.handleSubmit(handleAgencySave)}>
             <CardHeader><CardTitle>Setări Agenție</CardTitle><CardDescription>Personalizează informațiile și aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
@@ -246,4 +246,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

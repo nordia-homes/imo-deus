@@ -65,7 +65,7 @@ export function RecommendedPropertyCard({ property, recommendation, portalId, ag
   const hasImages = property.images && property.images.length > 0;
   
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden shadow-2xl rounded-2xl">
       <Carousel opts={{ loop: hasImages }} className="relative group">
         <CarouselContent>
           {hasImages ? property.images.map((image, index) => (

@@ -45,7 +45,7 @@ export function AiPropertyInsights({ property }: { property: Property }) {
     
     if (isGenerating) {
         return (
-            <Card className="rounded-2xl">
+            <Card className="rounded-2xl shadow-2xl">
                 <CardContent className="flex flex-col items-center justify-center text-center p-12 space-y-3">
                     <Loader2 className="h-12 w-12 text-primary animate-spin" />
                     <h3 className="text-lg font-semibold">AI-ul analizează piața...</h3>
@@ -59,7 +59,7 @@ export function AiPropertyInsights({ property }: { property: Property }) {
 
     if (!insights) {
          return (
-            <Card className="rounded-2xl bg-muted/50 border-dashed">
+            <Card className="rounded-2xl shadow-2xl bg-muted/50 border-dashed">
                 <CardContent className="flex flex-col items-center justify-center text-center p-12 space-y-4">
                     <div className="p-3 bg-primary/10 rounded-full">
                         <Lightbulb className="h-8 w-8 text-primary" />
@@ -78,7 +78,7 @@ export function AiPropertyInsights({ property }: { property: Property }) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-md border-primary/20">
+        <Card className="rounded-2xl shadow-2xl border-primary/20">
             <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>Property Insights</CardTitle>
                 <Button variant="ghost" size="sm" onClick={handleGenerateInsights}>Regenerează</Button>

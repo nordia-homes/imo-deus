@@ -96,7 +96,7 @@ export function TasksCalendar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-card border rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full bg-card border rounded-2xl overflow-hidden shadow-2xl">
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">

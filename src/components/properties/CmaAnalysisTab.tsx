@@ -46,7 +46,7 @@ export function CmaAnalysisTab({ subjectProperty, allProperties, agencyId }: Cma
     };
     
     return (
-        <Card className="rounded-2xl">
+        <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold">Analiză Comparativă de Piață</CardTitle>
             </CardHeader>

@@ -59,7 +59,7 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
 
     if (properties.length === 0) {
         return (
-             <Card className="flex-1">
+             <Card className="flex-1 shadow-2xl rounded-2xl">
                 <CardContent className="p-0 h-full">
                     <div className="h-full bg-gray-200 rounded-lg flex items-center justify-center">
                         <p className="text-muted-foreground">
@@ -72,7 +72,7 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
     }
 
     return (
-        <Card className="flex-1">
+        <Card className="flex-1 shadow-2xl rounded-2xl">
             <CardContent className="p-0 h-full">
                 <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
                     {/* Placeholder map background */}

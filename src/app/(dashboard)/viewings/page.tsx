@@ -135,7 +135,7 @@ export default function ViewingsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-1 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Programează o Vizionare</CardTitle>
                     </CardHeader>
@@ -158,7 +158,7 @@ export default function ViewingsPage() {
                 </Card>
 
                  <div className="lg:col-span-2 space-y-6">
-                    <Card>
+                    <Card className="shadow-2xl rounded-2xl">
                         <CardHeader><CardTitle>Vizionări Programate</CardTitle></CardHeader>
                         <CardContent>
                             {isLoading ? <Skeleton className="h-48"/> : (
@@ -180,7 +180,7 @@ export default function ViewingsPage() {
                             )}
                         </CardContent>
                     </Card>
-                     <Card>
+                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader><CardTitle>Istoric Vizionări</CardTitle></CardHeader>
                         <CardContent>
                             {isLoading ? <Skeleton className="h-48"/> : (

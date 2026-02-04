@@ -69,7 +69,7 @@ export function PropertyList() {
 
     return (
         <div className="space-y-6">
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardContent className="p-4 flex flex-col md:flex-row gap-4">
                     <Input 
                         placeholder="Caută după titlu sau adresă..."
@@ -163,7 +163,7 @@ export function PublicPropertyList({ properties, agencyId }: { properties: Prope
 
     return (
         <div className="space-y-6">
-            <Card className="shadow-md rounded-xl sticky top-[80px] z-20">
+            <Card className="shadow-2xl rounded-2xl sticky top-[80px] z-20">
                 <CardContent className="p-3 flex flex-col md:flex-row gap-2">
                     <Input 
                         placeholder="Caută după titlu sau adresă..."

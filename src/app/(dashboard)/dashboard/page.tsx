@@ -226,7 +226,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
+                <Card className="col-span-4 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
                         <CardDescription>Ultimele 30 de zile</CardDescription>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                         <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
+                <Card className="col-span-3 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Distribuție Surse Lead-uri</CardTitle>
                     </CardHeader>

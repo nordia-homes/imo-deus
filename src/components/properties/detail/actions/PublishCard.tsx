@@ -78,7 +78,7 @@ export function PublishCard({ property }: { property: Property }) {
     };
 
     return (
-        <Card className="rounded-2xl">
+        <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold">Promovare One-Click</CardTitle>
             </CardHeader>

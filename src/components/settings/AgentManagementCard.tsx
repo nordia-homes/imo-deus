@@ -102,7 +102,7 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
     }
 
     return (
-        <Card>
+        <Card className="shadow-2xl rounded-2xl">
             <CardHeader>
                 <CardTitle>Management Agenți</CardTitle>
                 <CardDescription>Invită și gestionează agenții din cadrul agenției tale.</CardDescription>

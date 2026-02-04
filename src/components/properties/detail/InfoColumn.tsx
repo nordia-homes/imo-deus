@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export function InfoColumn({ property }: { property: Property }) {
     return (
         <div className="space-y-6">
-            <Card className="rounded-2xl">
+            <Card className="rounded-2xl shadow-2xl">
                 <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
@@ -17,7 +17,7 @@ export function InfoColumn({ property }: { property: Property }) {
             </Card>
 
             {property.amenities && property.amenities.length > 0 && (
-                <Card className="rounded-2xl">
+                <Card className="rounded-2xl shadow-2xl">
                     <CardHeader><CardTitle>Dotări și Facilități</CardTitle></CardHeader>
                     <CardContent>
                         <div className="flex flex-wrap gap-2">
@@ -34,7 +34,7 @@ export function InfoColumn({ property }: { property: Property }) {
 
             <AiPropertyInsights property={property} />
 
-            <Card className="rounded-2xl">
+            <Card className="rounded-2xl shadow-2xl">
                 <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
                 <CardContent>
                     {(property.latitude && property.longitude) ? (

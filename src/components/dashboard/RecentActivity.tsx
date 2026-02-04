@@ -72,7 +72,7 @@ export function RecentActivity() {
     }, [newContacts, properties]);
 
     return (
-        <Card>
+        <Card className="shadow-2xl rounded-2xl">
             <CardHeader>
                 <CardTitle>Activitate Recentă</CardTitle>
             </CardHeader>

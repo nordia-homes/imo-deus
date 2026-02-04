@@ -10,6 +10,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Card } from "../ui/card";
 
 export function PropertyCard({ property, agencyId }: { property: Property; agencyId?: string }) {
   const href = agencyId
@@ -23,13 +24,13 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
   const isNew = property.createdAt && new Date(property.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   return (
-    <div className="group">
+    <Card className="group overflow-hidden rounded-2xl shadow-2xl">
         <Carousel
           opts={{
             align: "start",
             loop: hasImages,
           }}
-          className="w-full relative rounded-xl overflow-hidden"
+          className="w-full relative"
         >
           <CarouselContent>
             {hasImages ? property.images.map((image, index) => (
@@ -72,7 +73,7 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
            </div>
         </Carousel>
 
-        <Link href={href} className="block py-3">
+        <Link href={href} className="block p-4">
           <div className="flex justify-between items-start">
              <h3 className="font-semibold text-base text-foreground truncate pr-2">{property.title}</h3>
           </div>
@@ -96,6 +97,6 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
             {property.transactionType === 'Închiriere' && <span className="font-normal text-muted-foreground"> / lună</span>}
           </p>
         </Link>
-    </div>
+    </Card>
   );
 }

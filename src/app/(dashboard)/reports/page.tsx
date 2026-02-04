@@ -139,7 +139,7 @@ export default function ReportsPage() {
                 </p>
             </div>
             
-             <Card>
+             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Lightbulb className="text-primary"/>
@@ -211,7 +211,7 @@ export default function ReportsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                  {/* Sales Chart */}
-                <Card className="lg:col-span-3">
+                <Card className="lg:col-span-3 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Volum Vânzări Lunare</CardTitle>
                     </CardHeader>
@@ -221,7 +221,7 @@ export default function ReportsPage() {
                 </Card>
 
                  {/* Lead Source Chart */}
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Distribuție Surse Lead-uri</CardTitle>
                     </CardHeader>

@@ -138,7 +138,7 @@ export default function MatchingPage() {
                 </p>
             </div>
             
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardHeader>
                     <CardTitle>1. Selectează un client</CardTitle>
                     <CardDescription>Alege un lead din lista ta pentru a-i vedea preferințele și a rula analiza.</CardDescription>
@@ -164,7 +164,7 @@ export default function MatchingPage() {
             {selectedContact && (
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onMatchSubmit)}>
-                        <Card className="animate-in fade-in-0">
+                        <Card className="animate-in fade-in-0 shadow-2xl rounded-2xl">
                             <CardHeader>
                                 <CardTitle>2. Preferințele lui {selectedContact.name}</CardTitle>
                                 <CardDescription>Ajustează criteriile de mai jos, apoi lansează analiza AI.</CardDescription>
@@ -207,7 +207,7 @@ export default function MatchingPage() {
                      <h2 className="text-2xl font-headline font-bold">3. Rezultate Analiză AI</h2>
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {matchedProperties.map(prop => (
-                            <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4">
+                            <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4 shadow-2xl rounded-2xl">
                                 <Link href={`/properties/${prop.id}`} className="block w-full md:w-1/3 aspect-video md:aspect-auto relative shrink-0">
                                     <Image 
                                         src={prop.images?.[0]?.url || `https://picsum.photos/seed/${prop.id}/400/300`}

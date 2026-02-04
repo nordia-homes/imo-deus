@@ -82,7 +82,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleLogin)} className="w-full max-w-sm">
-            <Card>
+            <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
                         <Home className="text-primary h-8 w-8" />

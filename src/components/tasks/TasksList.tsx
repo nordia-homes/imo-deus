@@ -96,7 +96,7 @@ export function TasksList() {
         return <p className="text-muted-foreground">{isCompletedList ? 'Niciun task completat.' : 'Niciun task. Ești la zi!'}</p>;
       }
       return taskList.map(task => (
-        <Card key={task.id} className={cn(isCompletedList && "bg-muted")}>
+        <Card key={task.id} className={cn("shadow-xl rounded-xl", isCompletedList && "bg-muted")}>
             <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className='flex items-center gap-4 flex-1'>
                     <Checkbox 

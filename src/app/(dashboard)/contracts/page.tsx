@@ -40,7 +40,7 @@ export default function ContractsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {contracts.map((contract) => (
-                    <Card key={contract.title} className="flex flex-col">
+                    <Card key={contract.title} className="flex flex-col shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle>{contract.title}</CardTitle>
                             <CardDescription>{contract.description}</CardDescription>

@@ -44,7 +44,7 @@ export function DashboardPropertyList({ title, properties }: DashboardPropertyLi
     }
     
     return (
-        <Card>
+        <Card className="shadow-2xl rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold">{title}</CardTitle>
                 <Link href="/properties" className="text-sm text-primary hover:underline">Vezi tot</Link>
