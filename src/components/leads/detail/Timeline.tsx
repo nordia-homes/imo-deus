@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { Interaction, Task, Contact, Viewing } from '@/lib/types';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare, Clock, Activity, Eye, Users } from 'lucide-react';
+import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare, Clock, Activity, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 type TimelineItemData = (
   | ({ itemKind: 'interaction' } & Interaction)
   | ({ itemKind: 'task' } & Task)
-  | ({ itemKind: 'viewing' } & Viewing)
 ) & { sortDate: Date };
 
 const getInteractionIcon = (type: Interaction['type']) => {
@@ -35,7 +34,6 @@ const getTimelineIcon = (item: TimelineItemData) => {
     switch (item.itemKind) {
         case 'interaction': return getInteractionIcon(item.type);
         case 'task': return <CheckSquare className="h-4 w-4 text-muted-foreground" />;
-        case 'viewing': return <Eye className="h-4 w-4 text-muted-foreground" />;
         default: return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
 };
@@ -55,10 +53,6 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
         case 'task':
             title = item.description;
             details = `Agent: ${item.agentName || 'Nealocat'}`;
-            break;
-        case 'viewing':
-            title = `Vizionare: ${item.propertyTitle}`;
-            details = `cu ${item.contactName}`;
             break;
         default:
             title = 'Eveniment';
@@ -86,17 +80,15 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
 type LeadTimelineProps = {
   interactions: Interaction[];
   tasks: Task[];
-  viewings: Viewing[];
 };
 
-export function LeadTimeline({ interactions, tasks, viewings }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, tasks }: LeadTimelineProps) {
   const timelineItems = React.useMemo(() => {
     const combined: TimelineItemData[] = [];
     interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
     tasks.forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
-    viewings.forEach(v => combined.push({ ...v, itemKind: 'viewing', sortDate: new Date(v.viewingDate) }));
     return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
-  }, [interactions, tasks, viewings]);
+  }, [interactions, tasks]);
 
   return (
     <Card className="rounded-2xl shadow-sm">

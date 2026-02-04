@@ -20,6 +20,7 @@ import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
 import { LeadZonesCard } from '@/components/leads/detail/LeadZonesCard';
 import { ClientPortalManager } from '@/components/leads/ClientPortalManager';
 import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCard';
+import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 
 
 const PageSkeleton = () => (
@@ -212,7 +213,6 @@ export default function LeadDetailPage() {
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
-                            viewings={viewings || []}
                         />
                     </div>
 
@@ -225,6 +225,7 @@ export default function LeadDetailPage() {
                     {/* Right Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                        <ScheduledViewingsCard viewings={viewings || []} />
                         <LeadZonesCard contact={contact} />
                         <ClientPortalManager contact={contact} agency={agency} />
                     </div>
