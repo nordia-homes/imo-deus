@@ -31,12 +31,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
-import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
 import type { UserProfile, Property } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
+import { Card, CardContent } from '../ui/card';
 
 const leadSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -189,206 +189,203 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-[60vh] p-1">
-                <div className="space-y-8 px-4">
-                    <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Detalii de Bază</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                             <FormField
-                                control={form.control}
-                                name="source"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Sursă</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="Website">Website</SelectItem>
-                                        <SelectItem value="Recomandare">Recomandare</SelectItem>
-                                        <SelectItem value="Portal Imobiliar">Portal Imobiliar</SelectItem>
-                                        <SelectItem value="Telefon">Telefon</SelectItem>
-                                        <SelectItem value="Altul">Altul</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                        </div>
-                    </section>
+                <div className="space-y-4 px-4">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField
+                                    control={form.control}
+                                    name="source"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Sursă</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="Website">Website</SelectItem>
+                                            <SelectItem value="Recomandare">Recomandare</SelectItem>
+                                            <SelectItem value="Portal Imobiliar">Portal Imobiliar</SelectItem>
+                                            <SelectItem value="Telefon">Telefon</SelectItem>
+                                            <SelectItem value="Altul">Altul</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                            </div>
+                        </CardContent>
+                    </Card>
                     
-                    <Separator />
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField
+                                    control={form.control}
+                                    name="status"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Status</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="Nou">Nou</SelectItem>
+                                            <SelectItem value="Contactat">Contactat</SelectItem>
+                                            <SelectItem value="Vizionare">Vizionare</SelectItem>
+                                            <SelectItem value="În negociere">În negociere</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={form.control}
+                                    name="priority"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Prioritate</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="Scăzută">Scăzută</SelectItem>
+                                            <SelectItem value="Medie">Medie</SelectItem>
+                                            <SelectItem value="Ridicată">Ridicată</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                            </div>
+                        </CardContent>
+                    </Card>
                     
-                    <section>
-                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii Tranzacție și Prioritate</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="Nou">Nou</SelectItem>
-                                        <SelectItem value="Contactat">Contactat</SelectItem>
-                                        <SelectItem value="Vizionare">Vizionare</SelectItem>
-                                        <SelectItem value="În negociere">În negociere</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                             <FormField
-                                control={form.control}
-                                name="priority"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Prioritate</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="Scăzută">Scăzută</SelectItem>
-                                        <SelectItem value="Medie">Medie</SelectItem>
-                                        <SelectItem value="Ridicată">Ridicată</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                         </div>
-                    </section>
-                    
-                    <Separator />
-                    
-                    <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Sursă Inițială și Management</h3>
-                        <div className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="sourcePropertyId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="none">Niciuna</SelectItem>
-                                        {properties?.map(prop => (
-                                            <SelectItem key={prop.id} value={prop.id}>
-                                            {prop.title}
-                                            </SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Asociază lead-ul cu anunțul de pe care a venit.
-                                    </FormDescription>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="agentId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Alocă Agent (Opțional)</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="unassigned">Nealocat</SelectItem>
-                                        {agents?.map(agent => (
-                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                     </section>
-
-                    <Separator />
-
-                    <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Preferințe Locație</h3>
-                        <div className="space-y-4">
-                            <FormField
-                            control={form.control}
-                            name="city"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Oraș de interes</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    {Object.keys(locations).map(city => (
-                                        <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                            
-                            {watchedCity && locations[watchedCity] && (
-                               <div className="space-y-2">
-                                    <Label>Zone de interes</Label>
-                                    <div className="max-h-60 overflow-y-auto rounded-md border p-4">
-                                        <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                            {locations[watchedCity].map((zone) => (
-                                                <div key={zone} className="flex items-center gap-2">
-                                                    <Checkbox
-                                                        id={`zone-${zone}`}
-                                                        checked={selectedZones.includes(zone)}
-                                                        onCheckedChange={(checked) => {
-                                                            handleZoneToggle(zone, !!checked);
-                                                        }}
-                                                    />
-                                                    <Label
-                                                        htmlFor={`zone-${zone}`}
-                                                        className="font-normal cursor-pointer"
-                                                    >
-                                                        {zone}
-                                                    </Label>
-                                                </div>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="sourcePropertyId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
+                                            </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="none">Niciuna</SelectItem>
+                                            {properties?.map(prop => (
+                                                <SelectItem key={prop.id} value={prop.id}>
+                                                {prop.title}
+                                                </SelectItem>
                                             ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                            Asociază lead-ul cu anunțul de pe care a venit.
+                                        </FormDescription>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="agentId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Alocă Agent (Opțional)</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="unassigned">Nealocat</SelectItem>
+                                            {agents?.map(agent => (
+                                                <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                            ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </CardContent>
+                     </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="space-y-4">
+                                <FormField
+                                control={form.control}
+                                name="city"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Oraș de interes</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        {Object.keys(locations).map(city => (
+                                            <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                                
+                                {watchedCity && locations[watchedCity] && (
+                                <div className="space-y-2">
+                                        <Label>Zone de interes</Label>
+                                        <div className="max-h-60 overflow-y-auto rounded-md border p-4">
+                                            <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                {locations[watchedCity].map((zone) => (
+                                                    <div key={zone} className="flex items-center gap-2">
+                                                        <Checkbox
+                                                            id={`zone-${zone}`}
+                                                            checked={selectedZones.includes(zone)}
+                                                            onCheckedChange={(checked) => {
+                                                                handleZoneToggle(zone, !!checked);
+                                                            }}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`zone-${zone}`}
+                                                            className="font-normal cursor-pointer"
+                                                        >
+                                                            {zone}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                    <Separator />
-
-                    <section>
-                         <h3 className="text-lg font-semibold text-primary mb-4">Descriere Lead</h3>
-                          <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a lead-ului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
-                    </section>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Lead</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a lead-ului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                        </CardContent>
+                    </Card>
                 </div>
             </ScrollArea>
             <DialogFooter className="pt-4 border-t mt-4">
@@ -401,3 +398,5 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
     </Dialog>
   );
 }
+
+    
