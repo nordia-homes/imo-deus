@@ -82,6 +82,10 @@
           "description": "The user's email address.",
           "format": "email"
         },
+        "phone": {
+          "type": "string",
+          "description": "The user's phone number."
+        },
         "photoUrl": {
           "type": "string",
           "format": "uri",

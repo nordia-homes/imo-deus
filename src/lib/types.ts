@@ -172,6 +172,7 @@ export type UserProfile = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   photoUrl?: string;
   agentBio?: string;
   agencyId?: string;

@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing } from '@/lib/types';
+import type { Property, Viewing, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 // UI Components
@@ -15,7 +15,7 @@ import { ActionsColumn } from '@/components/properties/detail/ActionsColumn';
 // Firebase & Context
 import { useAgency } from '@/context/AgencyContext';
 import { useDoc, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, getDoc } from 'firebase/firestore';
 
 
 const PageSkeleton = () => (
@@ -37,6 +37,9 @@ export default function PropertyDetailPage() {
     const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
 
+    const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
+    const [isAgentLoading, setIsAgentLoading] = useState(true);
+
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
         return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
@@ -55,7 +58,34 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId, propertyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
-    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading;
+    useEffect(() => {
+        if (!property?.agentId || !firestore) {
+            setIsAgentLoading(false);
+            return;
+        }
+
+        const fetchAgent = async () => {
+            setIsAgentLoading(true);
+            try {
+                const agentDocRef = doc(firestore, 'users', property.agentId!);
+                const agentSnap = await getDoc(agentDocRef);
+                if (agentSnap.exists()) {
+                    setAgentProfile({ id: agentSnap.id, ...agentSnap.data() } as UserProfile);
+                } else {
+                    setAgentProfile(null);
+                }
+            } catch (error) {
+                console.error("Error fetching agent profile:", error);
+                setAgentProfile(null);
+            } finally {
+                setIsAgentLoading(false);
+            }
+        };
+
+        fetchAgent();
+    }, [property, firestore]);
+
+    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || isAgentLoading;
     
     if (isLoading) {
         return <PageSkeleton />;
@@ -77,7 +107,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">
-                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} />
+                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} />
                 </div>
             </main>
         </div>

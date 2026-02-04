@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
   agentBio: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 const agencySchema = z.object({
@@ -49,7 +50,7 @@ export default function SettingsPage() {
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { name: '', agentBio: '' },
+    defaultValues: { name: '', agentBio: '', phone: '' },
   });
 
   const agencyForm = useForm<z.infer<typeof agencySchema>>({
@@ -73,9 +74,10 @@ export default function SettingsPage() {
       profileForm.reset({ 
         name: userProfile.name,
         agentBio: userProfile.agentBio || '',
+        phone: userProfile.phone || '',
       });
     } else if (user) {
-      profileForm.reset({ name: user.displayName || '' });
+      profileForm.reset({ name: user.displayName || '', phone: user.phoneNumber || '' });
     }
   }, [userProfile, user, profileForm]);
 
@@ -198,6 +200,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4 max-w-md">
               <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
               <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled /></div>
+              <FormField control={profileForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" /></FormControl><FormMessage /></FormItem> )}/>
               <FormField control={profileForm.control} name="agentBio" render={({ field }) => ( <FormItem><FormLabel>Scurtă Biografie</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Descrie-te pe scurt ca agent imobiliar..."/></FormControl><FormDescription>Biografia ta va fi afișată pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
               <div className="space-y-2">
                 <Label>Rol</Label>
