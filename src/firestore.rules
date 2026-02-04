@@ -58,10 +58,14 @@ service cloud.firestore {
     // --- Portal Rules ---
     
     match /portals/{portalId} {
-        // The portal document itself can be read by an agent in that agency
-        allow get: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+        // The portal document is public to anyone with the link (unguessable ID).
+        // This is necessary for unauthenticated clients to view their portal.
+        allow get: if true;
+        
+        // Create and delete are restricted to agents of the agency.
         allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
-        allow delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+        // Use `resource.data` for delete, not `get()`.
+        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
