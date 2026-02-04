@@ -121,155 +121,129 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 
 type ImageSource = File | { url: string; alt: string };
 
-export function AddPropertyDialog({
-  children,
-  property,
-}: {
-  children?: React.ReactNode;
-  property?: Property | null;
-}) {
-  const isEditMode = !!property;
-  const [isOpen, setIsOpen] = useState(false);
-  const { toast } = useToast();
-  const { user } = useUser();
-  const { agency, agencyId } = useAgency();
-  const firestore = useFirestore();
-  const storage = useStorage();
-  
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [agents, setAgents] = useState<UserProfile[]>([]);
-  const [imageSources, setImageSources] = useState<ImageSource[]>([]);
-
-  const form = useForm<z.infer<typeof propertySchema>>({
-    resolver: zodResolver(propertySchema),
-  });
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadDataAndResetForm = async () => {
-        if (!isOpen) return;
-
-        // Fetch agents
-        if (agency?.agentIds) {
-            try {
-                const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                if (isMounted) {
-                    const agentProfiles = agentDocs
-                        .filter(docSnap => docSnap.exists())
-                        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                    setAgents(agentProfiles);
-                }
-            } catch (error) {
-                console.error("Error loading agents:", error);
-            }
-        }
-        
-        // Set form values and images
-        if (isEditMode && property) {
-            form.reset({
-                title: property.title || '',
-                propertyType: property.propertyType || '',
-                transactionType: property.transactionType || 'Vânzare',
-                location: property.location || 'București',
-                price: property.price || 0,
-                rooms: property.rooms || 0,
-                bathrooms: property.bathrooms || 0,
-                squareFootage: property.squareFootage || 0,
-                totalSurface: property.totalSurface || '',
-                constructionYear: property.constructionYear || '',
-                floor: property.floor || '',
-                totalFloors: property.totalFloors || '',
-                comfort: property.comfort || '',
-                interiorState: property.interiorState || '',
-                furnishing: property.furnishing || '',
-                heatingSystem: property.heatingSystem || '',
-                parking: property.parking || '',
-                keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
-                description: property.description || '',
-                status: property.status || 'Activ',
-                featured: property.featured || false,
-                ownerName: property.ownerName || '',
-                ownerPhone: property.ownerPhone || '',
-                salesScore: property.salesScore || 'Mediu',
-                agentId: property.agentId || user?.uid || 'unassigned',
-            });
-            if (isMounted) {
-                setImageSources(property.images || []);
-            }
-        } else {
-            form.reset({
-                title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
-                rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-                floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
-                parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
-                agentId: user?.uid || 'unassigned',
-            });
-            if (isMounted) {
-                setImageSources([]);
-            }
-        }
-    };
+function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; property?: Property | null; onClose: () => void }) {
+    const { toast } = useToast();
+    const { user } = useUser();
+    const { agency, agencyId } = useAgency();
+    const firestore = useFirestore();
+    const storage = useStorage();
     
-    loadDataAndResetForm();
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [agents, setAgents] = useState<UserProfile[]>([]);
+    const [imageSources, setImageSources] = useState<ImageSource[]>([]);
 
-    return () => {
-        isMounted = false;
-    }
+    const form = useForm<z.infer<typeof propertySchema>>({
+        resolver: zodResolver(propertySchema),
+        defaultValues: isEditMode && property ? {
+            title: property.title || '',
+            propertyType: property.propertyType || '',
+            transactionType: property.transactionType || 'Vânzare',
+            location: property.location || 'București',
+            price: property.price || 0,
+            rooms: property.rooms || 0,
+            bathrooms: property.bathrooms || 0,
+            squareFootage: property.squareFootage || 0,
+            totalSurface: property.totalSurface || '',
+            constructionYear: property.constructionYear || '',
+            floor: property.floor || '',
+            totalFloors: property.totalFloors || '',
+            comfort: property.comfort || '',
+            interiorState: property.interiorState || '',
+            furnishing: property.furnishing || '',
+            heatingSystem: property.heatingSystem || '',
+            parking: property.parking || '',
+            keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
+            description: property.description || '',
+            status: property.status || 'Activ',
+            featured: property.featured || false,
+            ownerName: property.ownerName || '',
+            ownerPhone: property.ownerPhone || '',
+            salesScore: property.salesScore || 'Mediu',
+            agentId: property.agentId || user?.uid || 'unassigned',
+        } : {
+            title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+            rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+            floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+            parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+            description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+            agentId: user?.uid || 'unassigned',
+        }
+    });
 
-  }, [isOpen, isEditMode, property, agency, firestore, user, form]);
+    useEffect(() => {
+        let isMounted = true;
+        if (agency?.agentIds) {
+            const fetchAgents = async () => {
+                try {
+                    const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
+                    const agentDocs = await Promise.all(agentPromises);
+                    if (isMounted) {
+                        const agentProfiles = agentDocs
+                            .filter(docSnap => docSnap.exists())
+                            .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                        setAgents(agentProfiles);
+                    }
+                } catch (error) {
+                    console.error("Error loading agents:", error);
+                }
+            };
+            fetchAgents();
+        }
+        if (isEditMode && property) {
+            setImageSources(property.images || []);
+        }
+        return () => { isMounted = false; };
+    }, [agency, firestore, isEditMode, property]);
 
-
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files;
       if (files) {
           const newFiles = Array.from(files);
           setImageSources((prevSources) => [...prevSources, ...newFiles].slice(0, 16));
       }
-  };
+    };
 
-  const removeImage = (index: number) => {
-      setImageSources((prev) => prev.filter((_, i) => i !== index));
-  };
+    const removeImage = (index: number) => {
+        setImageSources((prev) => prev.filter((_, i) => i !== index));
+    };
 
-  async function handleGenerateDescription() {
-      setIsGenerating(true);
-      const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
-          'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
-      ];
-      const isValid = await form.trigger(fieldsToValidate);
+    async function handleGenerateDescription() {
+        setIsGenerating(true);
+        const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
+            'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
+        ];
+        const isValid = await form.trigger(fieldsToValidate);
 
-      if (!isValid) {
-          toast({
-              variant: "destructive",
-              title: "Completați câmpurile obligatorii",
-              description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
-          });
-          setIsGenerating(false);
-          return;
-      }
-      
-      const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
-      try {
-          const result = await generatePropertyDescription({
-              propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
-          });
-          form.setValue('description', result.description);
-      } catch (error) {
-          console.error("Failed to generate description:", error);
-          toast({
-              variant: "destructive",
-              title: "A apărut o eroare",
-              description: "Nu am putut genera descrierea. Încercați din nou.",
-          });
-      } finally {
-          setIsGenerating(false);
-      }
-  }
+        if (!isValid) {
+            toast({
+                variant: "destructive",
+                title: "Completați câmpurile obligatorii",
+                description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
+            });
+            setIsGenerating(false);
+            return;
+        }
+        
+        const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
+        try {
+            const result = await generatePropertyDescription({
+                propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
+            });
+            form.setValue('description', result.description);
+        } catch (error) {
+            console.error("Failed to generate description:", error);
+            toast({
+                variant: "destructive",
+                title: "A apărut o eroare",
+                description: "Nu am putut genera descrierea. Încercați din nou.",
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    }
 
-  async function onSubmit(values: z.infer<typeof propertySchema>) {
+    async function onSubmit(values: z.infer<typeof propertySchema>) {
       setIsSubmitting(true);
       if (!user || !agencyId) {
           toast({ variant: 'destructive', title: 'Eroare de autentificare', description: 'Nu am putut identifica agenția. Reîncărcați pagina și reîncercați.' });
@@ -343,7 +317,7 @@ export function AddPropertyDialog({
               toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
           }
           
-          setIsOpen(false);
+          onClose();
 
       } catch (error: any) {
           console.error("Failed to save property:", error);
@@ -351,32 +325,21 @@ export function AddPropertyDialog({
       } finally {
           setIsSubmitting(false);
       }
-  }
+    }
   
-  const imagePreviews = useMemo(() => imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url), [imageSources]);
+    const imagePreviews = useMemo(() => imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url), [imageSources]);
   
-  useEffect(() => {
-      return () => {
-          imagePreviews.forEach(preview => {
-              if (preview.startsWith('blob:')) {
-                  URL.revokeObjectURL(preview);
-              }
-          });
-      };
-  }, [imagePreviews]);
+    useEffect(() => {
+        return () => {
+            imagePreviews.forEach(preview => {
+                if (preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(preview);
+                }
+            });
+        };
+    }, [imagePreviews]);
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
-          </DialogDescription>
-        </DialogHeader>
+    return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <ScrollArea className="h-[70vh] p-1 -mx-4">
@@ -557,7 +520,7 @@ export function AddPropertyDialog({
                     </div>
                 </ScrollArea>
                 <DialogFooter className="pt-4 border-t mt-4">
-                    <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
+                    <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
@@ -565,6 +528,33 @@ export function AddPropertyDialog({
                 </DialogFooter>
             </form>
         </Form>
+    );
+}
+
+
+export function AddPropertyDialog({
+  children,
+  property,
+}: {
+  children?: React.ReactNode;
+  property?: Property | null;
+}) {
+  const isEditMode = !!property;
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
+          </DialogDescription>
+        </DialogHeader>
+        {isOpen && <PropertyForm isEditMode={isEditMode} property={property} onClose={() => setIsOpen(false)} />}
       </DialogContent>
     </Dialog>
   );
