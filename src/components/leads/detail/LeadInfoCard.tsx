@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { Contact } from '@/lib/types';
-import { Calendar, Clock, MapPin, Edit } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, DollarSign } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
@@ -32,10 +32,6 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
                     </Avatar>
                     <div>
                         <h2 className="text-xl font-bold">{contact.name}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            €{contact.budget?.toLocaleString() || 'N/A'}
-                            {contact.city && ` • ${contact.city}`}
-                        </p>
                     </div>
                 </div>
                  <Button variant="ghost" size="icon" onClick={onEdit} className="shrink-0">
@@ -43,6 +39,20 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
                 </Button>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    {contact.budget ? (
+                        <Button variant="outline" className="w-full justify-start border-primary pointer-events-none">
+                            <DollarSign className="mr-2 h-4 w-4" />
+                            Buget: €{contact.budget.toLocaleString()}
+                        </Button>
+                    ) : null}
+                    {contact.city ? (
+                        <p className="text-sm text-muted-foreground pt-1 pl-1 flex items-center">
+                            <MapPin className="mr-2 h-4 w-4" />
+                            {contact.city}
+                        </p>
+                    ) : null}
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="px-3 py-1 text-xs font-normal">
                         <Calendar className="mr-2 h-3.5 w-3.5" />
@@ -62,7 +72,7 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
                                     key={zone} 
                                     variant="outline" 
                                     size="sm"
-                                    className="pointer-events-none cursor-default border-primary"
+                                    className="pointer-events-none cursor-default"
                                 >
                                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                                     {zone}
