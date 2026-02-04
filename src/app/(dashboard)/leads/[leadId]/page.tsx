@@ -251,6 +251,7 @@ export default function LeadDetailPage() {
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} />
+                        <ScheduledViewingsCard viewings={viewings || []} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -271,7 +272,6 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                        <ScheduledViewingsCard viewings={viewings || []} />
                         <ClientPortalManager contact={contact} agency={agency} />
                         <SourcePropertyCard 
                             property={sourceProperty} 
