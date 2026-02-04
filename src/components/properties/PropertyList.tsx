@@ -7,17 +7,24 @@ import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useAgency } from '@/context/AgencyContext';
-import { properties as sampleProperties } from '@/lib/data'; // Import static data
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 export function PropertyList() {
     const { agencyId } = useAgency();
-    
+    const firestore = useFirestore();
+
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [transactionFilter, setTransactionFilter] = useState('all');
 
-    const properties = sampleProperties;
-    const isLoading = false;
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+
+    const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
     const filteredProperties = useMemo(() => {
         if (!properties) return [];

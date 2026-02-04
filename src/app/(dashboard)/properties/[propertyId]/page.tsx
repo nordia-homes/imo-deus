@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property } from '@/lib/types';
+import type { Property, Viewing } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 // UI Components
@@ -12,7 +12,11 @@ import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { ActionsColumn } from '@/components/properties/detail/ActionsColumn';
 
-import { properties as allProperties } from '@/lib/data'; // Using static data
+// Firebase & Context
+import { useAgency } from '@/context/AgencyContext';
+import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+
 
 const PageSkeleton = () => (
     <div className="p-4">
@@ -30,15 +34,34 @@ const PageSkeleton = () => (
 export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
-    
-    const property = useMemo(() => allProperties.find(p => p.id === propertyId), [propertyId]);
-    const isLoading = false; 
+    const { agencyId, isAgencyLoading } = useAgency();
+    const firestore = useDoc().firestore;
+
+    const propertyDocRef = useMemoFirebase(() => {
+        if (!agencyId || !propertyId) return null;
+        return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
+    }, [firestore, agencyId, propertyId]);
+    const { data: property, isLoading: isPropertyLoading, error: propertyError } = useDoc<Property>(propertyDocRef);
+
+    const allPropertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+    const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
+
+    const viewingsQuery = useMemoFirebase(() => {
+        if (!agencyId || !propertyId) return null;
+        return query(collection(firestore, 'agencies', agencyId, 'viewings'), where('propertyId', '==', propertyId));
+    }, [firestore, agencyId, propertyId]);
+    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+
+    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading;
     
     if (isLoading) {
         return <PageSkeleton />;
     }
 
-    if (!property) {
+    if (!property || propertyError) {
         notFound();
         return null;
     }
@@ -54,7 +77,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">
-                     <ActionsColumn property={property} />
+                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} />
                 </div>
             </main>
         </div>
