@@ -1,9 +1,8 @@
 'use client';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Contact } from '@/lib/types';
-import { Calendar, Clock, MapPin, Edit, DollarSign } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, DollarSign, User } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
@@ -24,22 +23,16 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
-            <CardHeader className="flex flex-row items-start gap-4">
-                <div className="flex-1 flex items-start gap-4">
-                    <Avatar className="h-14 w-14 text-lg">
-                        <AvatarFallback>{contact.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h2 className="text-xl font-bold">{contact.name}</h2>
-                    </div>
-                </div>
-                 <Button variant="ghost" size="icon" onClick={onEdit} className="shrink-0">
-                    <Edit className="h-4 w-4" />
-                </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="space-y-2">
+        <Card className="rounded-2xl shadow-2xl relative">
+             <Button variant="ghost" size="icon" onClick={onEdit} className="absolute top-3 right-3 z-10 h-8 w-8">
+                <Edit className="h-4 w-4" />
+            </Button>
+            <CardContent className="space-y-4 pt-6">
+                 <div className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start pointer-events-none text-base font-semibold h-auto py-2">
+                        <User className="mr-3 h-4 w-4 text-muted-foreground" />
+                        {contact.name}
+                    </Button>
                     {contact.budget ? (
                         <Button variant="outline" className="w-full justify-start border-primary pointer-events-none">
                             <DollarSign className="mr-2 h-4 w-4" />
