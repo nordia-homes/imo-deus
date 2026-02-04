@@ -78,6 +78,14 @@ export default function LeadDetailPage() {
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
+    const viewingsQuery = useMemoFirebase(() => {
+        if (!agency?.id || !leadId) return null;
+        const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
+        return query(viewingsCollection, where('contactId', '==', leadId));
+    }, [firestore, agency?.id, leadId]);
+
+    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+
     const propertiesQuery = useMemoFirebase(() => {
         if (!agency?.id) return null;
         return collection(firestore, 'agencies', agency.id, 'properties');
@@ -172,7 +180,7 @@ export default function LeadDetailPage() {
     };
 
 
-    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading;
+    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading;
 
     if (isLoading) {
         return <PageSkeleton />;
@@ -201,7 +209,11 @@ export default function LeadDetailPage() {
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
-                        <LeadTimeline interactions={contact.interactionHistory || []} tasks={tasks || []} />
+                        <LeadTimeline 
+                            interactions={contact.interactionHistory || []} 
+                            tasks={tasks || []}
+                            viewings={viewings || []}
+                        />
                     </div>
 
                     {/* Center Column */}
