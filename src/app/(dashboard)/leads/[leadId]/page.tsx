@@ -362,9 +362,9 @@ export default function LeadDetailPage() {
 
                     {/* Center Column */}
                     <div className="lg:col-span-6 space-y-6">
+                        <MatchedProperties properties={matchedProperties} contact={contact} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                        <MatchedProperties properties={matchedProperties} contact={contact} />
                         <SimilarLeadsCard leads={similarLeads} />
                     </div>
 
