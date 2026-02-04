@@ -334,7 +334,7 @@ export default function LeadDetailPage() {
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
-                onAddTask={onAddTask}
+                onAddTask={handleAddTask}
                 onAddViewing={handleAddViewing}
                 properties={properties || []}
             />
@@ -349,14 +349,6 @@ export default function LeadDetailPage() {
                             isLoading={isSourcePropertyLoading}
                             allProperties={properties || []}
                             onUpdateContact={handleUpdateContact}
-                        />
-                         <FinancialStatusCard 
-                            contact={contact} 
-                            onUpdateContact={handleUpdateContact}
-                            recommendations={recommendations}
-                            properties={properties}
-                            portalId={contact.portalId || null}
-                            onUpdateRecommendation={handleUpdateRecommendation}
                         />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
@@ -380,6 +372,14 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
+                         <FinancialStatusCard 
+                            contact={contact} 
+                            onUpdateContact={handleUpdateContact}
+                            recommendations={recommendations}
+                            properties={properties}
+                            portalId={contact.portalId || null}
+                            onUpdateRecommendation={handleUpdateRecommendation}
+                        />
                         <ClientPortalManager contact={contact} agency={agency} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                     </div>
