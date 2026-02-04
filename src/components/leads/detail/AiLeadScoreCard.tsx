@@ -98,30 +98,23 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
     <Card className="rounded-2xl shadow-sm border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base">
-            <span>Scor & Prioritate AI</span>
+            <div className="flex items-baseline gap-3">
+                <span>Scor AI</span>
+                <span className="text-2xl font-bold text-primary">{contact.leadScore}</span>
+            </div>
             <Button variant="ghost" size="sm" onClick={handleGenerateScore} disabled={isGenerating}>
               Regenerează
             </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-            <div className="flex flex-col items-center">
-                <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary text-2xl font-bold">
-                    {contact.leadScore}
-                </div>
-                <p className="text-xs font-semibold mt-1">Scor</p>
-            </div>
-            <div className="flex-1">
-                 <Alert>
-                    <UserCheck className="h-4 w-4" />
-                    <AlertTitle className="font-bold">Analiză AI</AlertTitle>
-                    <AlertDescription className="text-xs">
-                        {contact.leadScoreReason || 'Nicio justificare disponibilă.'}
-                    </AlertDescription>
-                </Alert>
-            </div>
-        </div>
+      <CardContent>
+         <Alert>
+            <UserCheck className="h-4 w-4" />
+            <AlertTitle className="font-bold">Analiză AI</AlertTitle>
+            <AlertDescription className="text-xs">
+                {contact.leadScoreReason || 'Nicio justificare disponibilă.'}
+            </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );
