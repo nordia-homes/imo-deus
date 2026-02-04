@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDoc } from 'firebase/firestore';
 import type { Property, Viewing, Contact, Task, UserProfile } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
@@ -22,6 +22,7 @@ import { EssentialFeatures } from '@/components/properties/detail/EssentialFeatu
 import { PropertyTimeline } from '@/components/properties/detail/PropertyTimeline';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { PublishCard } from '@/components/properties/detail/actions/PublishCard';
+import { properties as allProperties } from '@/lib/data';
 
 
 const PageSkeleton = () => (
@@ -62,6 +63,8 @@ export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
     
+    const property = useMemo(() => allProperties.find(p => p.id === propertyId), [propertyId]);
+    
     const { agency, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
     const { toast } = useToast();
@@ -71,13 +74,6 @@ export default function PropertyDetailPage() {
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
 
     const agencyId = agency?.id;
-
-    const propertyDocRef = useMemoFirebase(() => {
-        if (!agencyId || !propertyId) return null;
-        return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
-    }, [firestore, agencyId, propertyId]);
-
-    const { data: property, isLoading: isPropertyLoading, error: propertyError } = useDoc<Property>(propertyDocRef);
 
     const viewingsQuery = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -124,10 +120,11 @@ export default function PropertyDetailPage() {
         fetchAgents();
     }, [agency, firestore, toast]);
     
-    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || isPropertyLoading || areTasksLoading || areAgentsLoading;
+    const isLoading = isContextLoading || areViewingsLoading || areContactsLoading || areTasksLoading || areAgentsLoading;
     
     const onUpdateProperty = (data: Partial<Omit<Property, 'id'>>) => {
-        if (!propertyDocRef) return;
+        if (!agencyId || !propertyId) return;
+        const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', propertyId);
         updateDocumentNonBlocking(propertyDocRef, data);
         toast({ title: 'Proprietate actualizată', description: 'Modificările au fost salvate.' });
     };
@@ -149,7 +146,7 @@ export default function PropertyDetailPage() {
         return <PageSkeleton />;
     }
 
-    if (propertyError || !property) {
+    if (!property) {
         notFound();
         return null;
     }
