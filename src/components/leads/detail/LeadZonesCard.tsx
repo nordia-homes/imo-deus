@@ -12,7 +12,7 @@ export function LeadZonesCard({ contact }: { contact: Contact }) {
     return (
         <Card className="rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
-                <CardTitle className="text-base">Setări Lead</CardTitle>
+                <CardTitle className="text-base">Zone dorite</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
                 {contact.zones.map(zone => (
