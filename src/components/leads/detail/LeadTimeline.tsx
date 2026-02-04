@@ -1,14 +1,16 @@
 'use client';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Interaction, Task } from '@/lib/types';
-import { formatDistanceToNow, differenceInDays } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Phone, Mail, FileText, CheckSquare, Activity, Users, Eye } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import { InteractionLogger } from './InteractionLogger';
+import { AddInteractionPopover } from './AddInteractionPopover';
+import { Button } from '@/components/ui/button';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+
 
 type TimelineItemData = (
   | ({ itemKind: 'interaction' } & Interaction)
@@ -79,9 +81,11 @@ type LeadTimelineProps = {
   interactions: Interaction[];
   tasks: Task[];
   onAddInteraction: (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => Promise<void>;
+  onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
+  contacts: { id: string; name: string; }[];
 };
 
-export function LeadTimeline({ interactions, tasks, onAddInteraction }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask, contacts }: LeadTimelineProps) {
   const timelineItems = React.useMemo(() => {
     const combined: TimelineItemData[] = [];
     interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
@@ -89,16 +93,16 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction }: LeadTime
     return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
   }, [interactions, tasks]);
 
+  const handleInteractionSave = async (type: Interaction['type'], notes: string) => {
+    await onAddInteraction({ type, notes });
+  };
+
   return (
-    <Card className="rounded-2xl shadow-sm">
+    <Card className="rounded-2xl shadow-sm flex flex-col">
       <CardHeader>
-        <CardTitle className="text-base">Cronologie & Notițe</CardTitle>
-        <CardDescription className="text-xs">Adaugă o notiță sau înregistrează un apel/email.</CardDescription>
-        <div className="pt-2">
-            <InteractionLogger onAddInteraction={onAddInteraction} />
-        </div>
+        <CardTitle className="text-base">Cronologie</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
+      <CardContent className="space-y-4 max-h-[500px] overflow-y-auto flex-1">
         {timelineItems.length > 0 ? (
           timelineItems.map((item, index) => <TimelineItem key={`${item.itemKind}-${item.id || index}`} item={item} />)
         ) : (
@@ -108,6 +112,20 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction }: LeadTime
           </div>
         )}
       </CardContent>
+      <CardFooter className="p-2 border-t grid grid-cols-2 gap-2">
+        <AddInteractionPopover type="Apel telefonic" onSave={(notes) => handleInteractionSave('Apel telefonic', notes)}>
+            <Button variant="outline" size="sm" className="w-full"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
+        </AddInteractionPopover>
+        <AddInteractionPopover type="WhatsApp" onSave={(notes) => handleInteractionSave('WhatsApp', notes)}>
+            <Button variant="outline" size="sm" className="w-full"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+        </AddInteractionPopover>
+        <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
+            <Button variant="outline" size="sm" className="w-full"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
+        </AddInteractionPopover>
+        <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
+             <Button variant="outline" size="sm" className="w-full"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
+        </AddTaskDialog>
+      </CardFooter>
     </Card>
   );
 }

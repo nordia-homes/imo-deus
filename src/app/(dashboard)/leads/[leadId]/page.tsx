@@ -13,7 +13,7 @@ import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { LeadHeader } from '@/components/leads/detail/Header';
-import { LeadTimeline } from '@/components/leads/detail/Timeline';
+import { LeadTimeline } from '@/components/leads/detail/LeadTimeline';
 import { MatchedProperties } from '@/components/leads/detail/MatchedProperties';
 import { LeadInfoCard } from '@/components/leads/detail/LeadInfoCard';
 import { LeadSettingsCard } from '@/components/leads/detail/LeadSettingsCard';
@@ -255,6 +255,8 @@ export default function LeadDetailPage() {
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
                             onAddInteraction={handleAddInteraction}
+                            onAddTask={handleAddTask}
+                            contacts={[contact]}
                         />
                     </div>
 
