@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Edit, FileText, Rocket, Send, MoreVertical, MapPin, BedDouble, Bath, Ruler, CalendarDays, Layers } from 'lucide-react';
+import { Edit, FileText, Rocket, Send, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,17 +17,28 @@ export function PropertyHeader({ property }: { property: Property }) {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h1 className="text-2xl font-bold">{property.title}</h1>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
                     <span className="font-semibold text-foreground">€{property.price.toLocaleString()}</span>
                     <span className="text-gray-400">•</span>
-                    <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{property.location}</span>
-                </div>
-                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-sm mt-2">
-                    <span className="flex items-center gap-1.5"><BedDouble className="h-4 w-4"/> {property.bedrooms} dorm.</span>
-                    <span className="flex items-center gap-1.5"><Bath className="h-4 w-4"/> {property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
-                    <span className="flex items-center gap-1.5"><Ruler className="h-4 w-4"/> {property.squareFootage} mp</span>
-                    {property.constructionYear && <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4"/> {property.constructionYear}</span>}
-                    {property.floor && <span className="flex items-center gap-1.5"><Layers className="h-4 w-4"/> Et. {property.floor}</span>}
+                    <span>{property.location}</span>
+                    <span className="text-gray-400">•</span>
+                    <span>{property.bedrooms} dorm.</span>
+                    <span className="text-gray-400">•</span>
+                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
+                    <span className="text-gray-400">•</span>
+                    <span>{property.squareFootage} mp</span>
+                    {property.constructionYear && (
+                        <>
+                            <span className="text-gray-400">•</span>
+                            <span>{property.constructionYear}</span>
+                        </>
+                    )}
+                    {property.floor && (
+                        <>
+                            <span className="text-gray-400">•</span>
+                            <span>Et. {property.floor}</span>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-2">
