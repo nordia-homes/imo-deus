@@ -130,87 +130,92 @@ function PropertyForm({
   property?: Property | null;
   onClose: () => void;
 }) {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isFormLoading, setIsFormLoading] = useState(true);
-    const [imageSources, setImageSources] = useState<ImageSource[]>([]);
     const { toast } = useToast();
     const { user } = useUser();
     const { agency, agencyId } = useAgency();
     const firestore = useFirestore();
     const storage = useStorage();
+    
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
     const [agents, setAgents] = useState<UserProfile[]>([]);
+    const [imageSources, setImageSources] = useState<ImageSource[]>([]);
 
     const form = useForm<z.infer<typeof propertySchema>>({
         resolver: zodResolver(propertySchema),
     });
 
     useEffect(() => {
-        const loadFormAndData = async () => {
-            setIsFormLoading(true);
-
-            if (agency && agency.agentIds) {
-                try {
+        const loadDataAndInitializeForm = async () => {
+            setIsLoadingData(true);
+            
+            try {
+                // 1. Fetch agents if agency info is available
+                if (agency?.agentIds) {
                     const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
                     const agentDocs = await Promise.all(agentPromises);
                     const agentProfiles = agentDocs
                         .filter(docSnap => docSnap.exists())
                         .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
                     setAgents(agentProfiles);
-                } catch (error) {
-                    console.error("Error fetching agent profiles for dialog:", error);
-                    toast({ variant: 'destructive', title: 'Eroare la încărcarea agenților' });
                 }
-            }
 
-            const defaultValues = {
-                title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
-                rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-                floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
-                parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
-                agentId: user?.uid || 'unassigned',
-            };
+                // 2. Set form values
+                const defaultValues = {
+                    title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+                    rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+                    floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+                    parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+                    description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+                    agentId: user?.uid || 'unassigned',
+                };
 
-            if (isEditMode && property) {
-                form.reset({
-                    title: property.title || defaultValues.title,
-                    propertyType: property.propertyType || defaultValues.propertyType,
-                    transactionType: property.transactionType || defaultValues.transactionType,
-                    location: property.location || defaultValues.location,
-                    price: property.price || defaultValues.price,
-                    rooms: property.rooms || defaultValues.rooms,
-                    bathrooms: property.bathrooms || defaultValues.bathrooms,
-                    squareFootage: property.squareFootage || defaultValues.squareFootage,
-                    totalSurface: property.totalSurface || defaultValues.totalSurface,
-                    constructionYear: property.constructionYear || defaultValues.constructionYear,
-                    floor: property.floor || defaultValues.floor,
-                    totalFloors: property.totalFloors || defaultValues.totalFloors,
-                    comfort: property.comfort || defaultValues.comfort,
-                    interiorState: property.interiorState || defaultValues.interiorState,
-                    furnishing: property.furnishing || defaultValues.furnishing,
-                    heatingSystem: property.heatingSystem || defaultValues.heatingSystem,
-                    parking: property.parking || defaultValues.parking,
-                    keyFeatures: property.keyFeatures || property.amenities?.join(', ') || defaultValues.keyFeatures,
-                    description: property.description || defaultValues.description,
-                    status: property.status || defaultValues.status,
-                    featured: property.featured || defaultValues.featured,
-                    ownerName: property.ownerName || defaultValues.ownerName,
-                    ownerPhone: property.ownerPhone || defaultValues.ownerPhone,
-                    salesScore: property.salesScore || defaultValues.salesScore,
-                    agentId: property.agentId || defaultValues.agentId,
-                });
-                setImageSources(property.images || []);
-            } else {
-                form.reset(defaultValues);
-                setImageSources([]);
+                if (isEditMode && property) {
+                    form.reset({
+                        title: property.title || defaultValues.title,
+                        propertyType: property.propertyType || defaultValues.propertyType,
+                        transactionType: property.transactionType || defaultValues.transactionType,
+                        location: property.location || defaultValues.location,
+                        price: property.price || defaultValues.price,
+                        rooms: property.rooms || defaultValues.rooms,
+                        bathrooms: property.bathrooms || defaultValues.bathrooms,
+                        squareFootage: property.squareFootage || defaultValues.squareFootage,
+                        totalSurface: property.totalSurface || defaultValues.totalSurface,
+                        constructionYear: property.constructionYear || defaultValues.constructionYear,
+                        floor: property.floor || defaultValues.floor,
+                        totalFloors: property.totalFloors || defaultValues.totalFloors,
+                        comfort: property.comfort || defaultValues.comfort,
+                        interiorState: property.interiorState || defaultValues.interiorState,
+                        furnishing: property.furnishing || defaultValues.furnishing,
+                        heatingSystem: property.heatingSystem || defaultValues.heatingSystem,
+                        parking: property.parking || defaultValues.parking,
+                        keyFeatures: property.keyFeatures || property.amenities?.join(', ') || defaultValues.keyFeatures,
+                        description: property.description || defaultValues.description,
+                        status: property.status || defaultValues.status,
+                        featured: property.featured || defaultValues.featured,
+                        ownerName: property.ownerName || defaultValues.ownerName,
+                        ownerPhone: property.ownerPhone || defaultValues.ownerPhone,
+                        salesScore: property.salesScore || defaultValues.salesScore,
+                        agentId: property.agentId || defaultValues.agentId,
+                    });
+                    setImageSources(property.images || []);
+                } else {
+                    form.reset(defaultValues);
+                    setImageSources([]);
+                }
+            } catch (error) {
+                 console.error("Error initializing form:", error);
+                 toast({ variant: 'destructive', title: 'Eroare la initializarea formularului.' });
+            } finally {
+                setIsLoadingData(false);
             }
-            setIsFormLoading(false);
         };
 
-        loadFormAndData();
+        loadDataAndInitializeForm();
+    // IMPORTANT: Empty dependency array ensures this runs ONLY ONCE when the form is mounted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [property, isEditMode, agency, firestore, user]);
+    }, []);
 
     const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -354,15 +359,15 @@ function PropertyForm({
             });
         };
     }, [imagePreviews]);
-    
-    if (isFormLoading) {
+
+    if (isLoadingData) {
         return (
             <div className="flex items-center justify-center h-[70vh]">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         );
     }
-
+    
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -545,8 +550,8 @@ function PropertyForm({
                 </ScrollArea>
                 <DialogFooter className="pt-4 border-t mt-4">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
-                    <Button type="submit" disabled={isSubmitting || isFormLoading}>
-                        {(isSubmitting || isFormLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" disabled={isSubmitting || isLoadingData}>
+                        {(isSubmitting || isLoadingData) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
                     </Button>
                 </DialogFooter>
@@ -554,6 +559,7 @@ function PropertyForm({
         </Form>
     )
 }
+
 
 export function AddPropertyDialog({
   children,
@@ -577,12 +583,13 @@ export function AddPropertyDialog({
             {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
         </DialogHeader>
-        {/* We use the isOpen prop to ensure the form gets the latest `property` data when it opens, but it's not unmounted on every re-render of the parent. */}
-        <PropertyForm
-          isEditMode={isEditMode}
-          property={property}
-          onClose={() => setIsOpen(false)}
-        />
+        {isOpen && (
+            <PropertyForm
+              isEditMode={isEditMode}
+              property={property}
+              onClose={() => setIsOpen(false)}
+            />
+        )}
       </DialogContent>
     </Dialog>
   );
