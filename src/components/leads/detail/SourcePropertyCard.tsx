@@ -65,13 +65,15 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardHeader className="flex flex-row items-start justify-between pb-2 pt-2">
-                <CardTitle className="text-base">Proprietate Inițială</CardTitle>
-                 {property && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-2" onClick={() => setIsEditing(true)}>
+            <CardHeader className="flex flex-row items-center justify-between p-3">
+                <Button variant="default" size="sm" className="pointer-events-none">
+                    Proprietate Inițială
+                </Button>
+                {property && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                 )}
+                )}
             </CardHeader>
             <CardContent>
                 {!property ? (
