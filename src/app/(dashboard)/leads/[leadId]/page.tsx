@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -334,7 +333,7 @@ export default function LeadDetailPage() {
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
-                onAddTask={handleAddTask}
+                handleAddTask={handleAddTask}
                 onAddViewing={handleAddViewing}
                 properties={properties || []}
             />
@@ -372,6 +371,7 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
+                        <ClientPortalManager contact={contact} agency={agency} />
                          <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
@@ -380,7 +380,6 @@ export default function LeadDetailPage() {
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
                         />
-                        <ClientPortalManager contact={contact} agency={agency} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                     </div>
                 </div>
