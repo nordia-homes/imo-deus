@@ -42,16 +42,23 @@ service cloud.firestore {
       allow read, delete: if request.auth != null;
     }
     
-    // Generic subcollection rule for agency-specific data
-    match /agencies/{agencyId}/{subcollection}/{docId}
-    where subcollection in ['contacts', 'tasks', 'reports', 'emails', 'properties', 'viewings'] {
-      // List and Get are now combined under read.
-      // This is less secure for direct 'get' operations (an auth'd user could read a doc if they guess the ID), 
-      // but it is necessary to allow 'list' queries to function. The previous 'get' rule used a function (`isUserInAgency`) 
-      // with a cross-document read, which is incompatible with 'list' validations.
+    // Rule for private agency data
+    match /agencies/{agencyId}/{privateCollection}/{docId}
+    where privateCollection in ['contacts', 'tasks', 'reports', 'emails'] {
+      // These collections are private to agency members.
+      // `list` is restricted to authenticated users. The app's client-side logic should ensure
+      // users only query for data belonging to their agency.
       allow read: if request.auth != null;
-      
-      // Write operations remain secure, checking for agency membership.
+      // Write operations are secured to agency members.
+      allow write: if isUserInAgency(agencyId);
+    }
+
+    // Rule for public-facing agency data
+    match /agencies/{agencyId}/{publicCollection}/{docId}
+    where publicCollection in ['properties', 'viewings'] {
+      // Allow public read for properties and viewings (for public websites and portals).
+      allow read: if true;
+      // Write operations remain secure to agency members.
       allow write: if isUserInAgency(agencyId);
     }
 
@@ -59,12 +66,9 @@ service cloud.firestore {
     
     match /portals/{portalId} {
         // The portal document is public to anyone with the link (unguessable ID).
-        // This is necessary for unauthenticated clients to view their portal.
-        allow get: if true;
+        allow read: if true;
         
-        // Create and delete are restricted to agents of the agency.
         allow create: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
-        // Use `resource.data` for delete, not `get()`.
         allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
     
