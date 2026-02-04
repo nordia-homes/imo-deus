@@ -344,6 +344,12 @@ export default function LeadDetailPage() {
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
+                        <SourcePropertyCard 
+                            property={sourceProperty} 
+                            isLoading={isSourcePropertyLoading}
+                            allProperties={properties || []}
+                            onUpdateContact={handleUpdateContact}
+                        />
                         <ScheduledViewingsCard viewings={viewings || []} />
                          <FinancialStatusCard 
                             contact={contact} 
@@ -376,12 +382,6 @@ export default function LeadDetailPage() {
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <ClientPortalManager contact={contact} agency={agency} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                        <SourcePropertyCard 
-                            property={sourceProperty} 
-                            isLoading={isSourcePropertyLoading}
-                            allProperties={properties || []}
-                            onUpdateContact={handleUpdateContact}
-                        />
                     </div>
                 </div>
             </main>
