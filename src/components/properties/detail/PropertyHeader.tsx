@@ -1,6 +1,7 @@
 'use client';
 
-import { Button, buttonVariants } from '@/components/ui/button';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
 import { Edit, FileText, Rocket, Send, MoreVertical, Calendar, Clock } from 'lucide-react';
 import {
@@ -17,12 +18,12 @@ import { useToast } from '@/hooks/use-toast';
 import { doc } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 export function PropertyHeader({ property }: { property: Property }) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const handleStatusChange = (newStatus: Property['status']) => {
         if (!agencyId || !property) return;
@@ -47,73 +48,78 @@ export function PropertyHeader({ property }: { property: Property }) {
     const ageInDays = differenceInDays(new Date(), creationDate);
 
   return (
-    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                 <div className="h-auto p-3 rounded-lg border bg-card text-card-foreground shadow-lg text-xl font-bold mb-2">
-                    {property.title}
+    <>
+        <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <div className="h-auto p-3 rounded-lg border bg-card text-card-foreground shadow-lg text-xl font-bold mb-2">
+                        {property.title}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
+                        <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
+                        <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
+                        <span className="text-gray-400">•</span>
+                        <span>{property.location}</span>
+                        <span className="text-gray-400">•</span>
+                        <span>{property.rooms} camere</span>
+                        <span className="text-gray-400">•</span>
+                        <span>{property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
+                        <span className="text-gray-400">•</span>
+                        <span>{property.squareFootage} mp</span>
+                        {property.constructionYear && (
+                            <>
+                                <span className="text-gray-400">•</span>
+                                <span>{property.constructionYear}</span>
+                            </>
+                        )}
+                        {property.floor && (
+                            <>
+                                <span className="text-gray-400">•</span>
+                                <span>Et. {property.floor}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
-                    <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
-                    <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
-                    <span className="text-gray-400">•</span>
-                    <span>{property.location}</span>
-                    <span className="text-gray-400">•</span>
-                    <span>{property.rooms} camere</span>
-                    <span className="text-gray-400">•</span>
-                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
-                    <span className="text-gray-400">•</span>
-                    <span>{property.squareFootage} mp</span>
-                    {property.constructionYear && (
-                        <>
-                            <span className="text-gray-400">•</span>
-                            <span>{property.constructionYear}</span>
-                        </>
-                    )}
-                    {property.floor && (
-                        <>
-                            <span className="text-gray-400">•</span>
-                            <span>Et. {property.floor}</span>
-                        </>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-center gap-2">
-                 <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                    <SelectTrigger className="w-[120px] h-10 text-sm font-semibold">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Activ">Activ</SelectItem>
-                        <SelectItem value="Rezervat">Rezervat</SelectItem>
-                        <SelectItem value="Vândut">Vândut</SelectItem>
-                        <SelectItem value="Închiriat">Închiriat</SelectItem>
-                        <SelectItem value="Inactiv">Inactiv</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Button>
-                    <Send className="mr-2 h-4 w-4"/> 
-                    Trimite clientului
-                </Button>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <MoreVertical className="h-4 w-4"/>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <AddPropertyDialog property={property}>
-                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <div className="flex items-center gap-2">
+                    <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
+                        <SelectTrigger className="w-[120px] h-10 text-sm font-semibold">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Activ">Activ</SelectItem>
+                            <SelectItem value="Rezervat">Rezervat</SelectItem>
+                            <SelectItem value="Vândut">Vândut</SelectItem>
+                            <SelectItem value="Închiriat">Închiriat</SelectItem>
+                            <SelectItem value="Inactiv">Inactiv</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button>
+                        <Send className="mr-2 h-4 w-4"/> 
+                        Trimite clientului
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <MoreVertical className="h-4 w-4"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
                                 <Edit className="mr-2 h-4 w-4"/> 
                                 Editează
-                           </DropdownMenuItem>
-                        </AddPropertyDialog>
-                        <DropdownMenuItem><FileText className="mr-2 h-4 w-4"/> Generează PDF</DropdownMenuItem>
-                        <DropdownMenuItem><Rocket className="mr-2 h-4 w-4"/> Promovează</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem><FileText className="mr-2 h-4 w-4"/> Generează PDF</DropdownMenuItem>
+                            <DropdownMenuItem><Rocket className="mr-2 h-4 w-4"/> Promovează</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
+        <AddPropertyDialog 
+            property={property}
+            isOpen={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+        />
+    </>
   );
 }

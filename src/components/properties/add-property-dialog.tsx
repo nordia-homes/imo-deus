@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -28,7 +27,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
 import { generatePropertyDescription, PropertyDescriptionInput } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
-import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -121,7 +119,7 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 
 type ImageSource = File | { url: string; alt: string };
 
-function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; property?: Property | null; onClose: () => void }) {
+function PropertyForm({ propertyData, onClose }: { propertyData: Property | null; onClose: () => void }) {
     const { toast } = useToast();
     const { user } = useUser();
     const { agency, agencyId } = useAgency();
@@ -133,43 +131,55 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
 
+    const isEditMode = !!propertyData;
+
     const form = useForm<z.infer<typeof propertySchema>>({
         resolver: zodResolver(propertySchema),
-        defaultValues: isEditMode && property ? {
-            title: property.title || '',
-            propertyType: property.propertyType || '',
-            transactionType: property.transactionType || 'Vânzare',
-            location: property.location || 'București',
-            price: property.price || 0,
-            rooms: property.rooms || 0,
-            bathrooms: property.bathrooms || 0,
-            squareFootage: property.squareFootage || 0,
-            totalSurface: property.totalSurface || '',
-            constructionYear: property.constructionYear || '',
-            floor: property.floor || '',
-            totalFloors: property.totalFloors || '',
-            comfort: property.comfort || '',
-            interiorState: property.interiorState || '',
-            furnishing: property.furnishing || '',
-            heatingSystem: property.heatingSystem || '',
-            parking: property.parking || '',
-            keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
-            description: property.description || '',
-            status: property.status || 'Activ',
-            featured: property.featured || false,
-            ownerName: property.ownerName || '',
-            ownerPhone: property.ownerPhone || '',
-            salesScore: property.salesScore || 'Mediu',
-            agentId: property.agentId || user?.uid || 'unassigned',
-        } : {
-            title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
-            rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-            floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
-            parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-            description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
-            agentId: user?.uid || 'unassigned',
-        }
+        defaultValues: {},
     });
+
+    useEffect(() => {
+        if (isEditMode && propertyData) {
+            form.reset({
+                title: propertyData.title || '',
+                propertyType: propertyData.propertyType || '',
+                transactionType: propertyData.transactionType || 'Vânzare',
+                location: propertyData.location || 'București',
+                price: propertyData.price || 0,
+                rooms: propertyData.rooms || 0,
+                bathrooms: propertyData.bathrooms || 0,
+                squareFootage: propertyData.squareFootage || 0,
+                totalSurface: propertyData.totalSurface || '',
+                constructionYear: propertyData.constructionYear || '',
+                floor: propertyData.floor || '',
+                totalFloors: propertyData.totalFloors || '',
+                comfort: propertyData.comfort || '',
+                interiorState: propertyData.interiorState || '',
+                furnishing: propertyData.furnishing || '',
+                heatingSystem: propertyData.heatingSystem || '',
+                parking: propertyData.parking || '',
+                keyFeatures: propertyData.keyFeatures || propertyData.amenities?.join(', ') || '',
+                description: propertyData.description || '',
+                status: propertyData.status || 'Activ',
+                featured: propertyData.featured || false,
+                ownerName: propertyData.ownerName || '',
+                ownerPhone: propertyData.ownerPhone || '',
+                salesScore: propertyData.salesScore || 'Mediu',
+                agentId: propertyData.agentId || user?.uid || 'unassigned',
+            });
+            setImageSources(propertyData.images || []);
+        } else {
+             form.reset({
+                title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+                rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+                floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+                parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+                agentId: user?.uid || 'unassigned',
+            });
+            setImageSources([]);
+        }
+    }, [isEditMode, propertyData, form, user?.uid]);
 
     useEffect(() => {
         let isMounted = true;
@@ -190,11 +200,8 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
             };
             fetchAgents();
         }
-        if (isEditMode && property) {
-            setImageSources(property.images || []);
-        }
         return () => { isMounted = false; };
-    }, [agency, firestore, isEditMode, property]);
+    }, [agency, firestore]);
 
     const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files;
@@ -256,7 +263,7 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
           const existingImages = imageSources.filter((s): s is { url: string; alt: string; } => !(s instanceof File));
           
           let uploadedImageUrls: { url: string; alt: string; }[] = [];
-          const propertyId = isEditMode ? property!.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;
+          const propertyId = isEditMode ? propertyData!.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;
 
           if (newImageFiles.length > 0) {
               toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
@@ -274,7 +281,7 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
           const finalImages = [...existingImages, ...uploadedImageUrls];
           const selectedAgent = agents.find(agent => agent.id === values.agentId);
 
-          const propertyData = {
+          const propertyDataToSave = {
               title: values.title,
               propertyType: values.propertyType,
               transactionType: values.transactionType,
@@ -308,12 +315,12 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
           };
       
           if (isEditMode) {
-              const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property!.id);
-              await updateDoc(propertyRef, propertyData);
+              const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', propertyData!.id);
+              await updateDoc(propertyRef, propertyDataToSave);
               toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
           } else {
               const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
-              await setDoc(newPropertyRef, { ...propertyData, id: newPropertyRef.id, createdAt: new Date().toISOString() });
+              await setDoc(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt: new Date().toISOString() });
               toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
           }
           
@@ -341,8 +348,8 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-                <ScrollArea className="h-[70vh] p-1 -mx-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
+                <div className='overflow-y-auto p-1 -mx-4'>
                     <div className="space-y-6 px-4">
                         <section>
                             <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
@@ -518,8 +525,8 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
                         </FormItem>
                         </section>
                     </div>
-                </ScrollArea>
-                <DialogFooter className="pt-4 border-t mt-4">
+                </div>
+                <DialogFooter className="pt-4 border-t px-6">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -531,30 +538,29 @@ function PropertyForm({ isEditMode, property, onClose }: { isEditMode: boolean; 
     );
 }
 
-
 export function AddPropertyDialog({
   children,
   property,
+  isOpen,
+  onOpenChange,
 }: {
   children?: React.ReactNode;
   property?: Property | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const isEditMode = !!property;
-  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
           <DialogDescription>
             {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
         </DialogHeader>
-        {isOpen && <PropertyForm isEditMode={isEditMode} property={property} onClose={() => setIsOpen(false)} />}
+        {isOpen && <PropertyForm propertyData={property || null} onClose={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   );
