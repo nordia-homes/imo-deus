@@ -99,10 +99,24 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
 
   return (
     <Card className="rounded-2xl shadow-sm flex flex-col">
-      <CardHeader>
+      <CardHeader className="p-4 space-y-3">
         <CardTitle className="text-base">Cronologie</CardTitle>
+        <div className="grid grid-cols-2 gap-2">
+            <AddInteractionPopover type="Apel telefonic" onSave={(notes) => handleInteractionSave('Apel telefonic', notes)}>
+                <Button variant="outline" size="sm" className="w-full"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
+            </AddInteractionPopover>
+            <AddInteractionPopover type="WhatsApp" onSave={(notes) => handleInteractionSave('WhatsApp', notes)}>
+                <Button variant="outline" size="sm" className="w-full"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+            </AddInteractionPopover>
+            <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
+                <Button variant="outline" size="sm" className="w-full"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
+            </AddInteractionPopover>
+            <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
+                 <Button variant="outline" size="sm" className="w-full"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
+            </AddTaskDialog>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-[500px] overflow-y-auto flex-1">
+      <CardContent className="space-y-4 max-h-[500px] overflow-y-auto flex-1 p-4 pt-0">
         {timelineItems.length > 0 ? (
           timelineItems.map((item, index) => <TimelineItem key={`${item.itemKind}-${item.id || index}`} item={item} />)
         ) : (
@@ -112,20 +126,6 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
           </div>
         )}
       </CardContent>
-      <CardFooter className="p-2 border-t grid grid-cols-2 gap-2">
-        <AddInteractionPopover type="Apel telefonic" onSave={(notes) => handleInteractionSave('Apel telefonic', notes)}>
-            <Button variant="outline" size="sm" className="w-full"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
-        </AddInteractionPopover>
-        <AddInteractionPopover type="WhatsApp" onSave={(notes) => handleInteractionSave('WhatsApp', notes)}>
-            <Button variant="outline" size="sm" className="w-full"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
-        </AddInteractionPopover>
-        <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
-            <Button variant="outline" size="sm" className="w-full"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
-        </AddInteractionPopover>
-        <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
-             <Button variant="outline" size="sm" className="w-full"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
-        </AddTaskDialog>
-      </CardFooter>
     </Card>
   );
 }
