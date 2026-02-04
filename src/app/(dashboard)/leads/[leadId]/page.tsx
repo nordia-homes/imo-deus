@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing } from '@/lib/types';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -130,6 +130,26 @@ export default function LeadDetailPage() {
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({ title: "Task adăugat!" });
     };
+    
+    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+        if (!agency?.id || !user) return;
+
+        const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
+        if (!selectedProperty) return;
+        
+        const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
+        const viewingToAdd: Omit<Viewing, 'id'> = {
+            ...viewingData,
+            propertyTitle: selectedProperty.title,
+            propertyAddress: selectedProperty.address,
+            status: 'scheduled',
+            agentId: user.uid,
+            agentName: user.displayName || user.email,
+            createdAt: new Date().toISOString(),
+        };
+        addDocumentNonBlocking(viewingsCollection, viewingToAdd);
+        toast({ title: "Vizionare programată!" });
+    };
 
     const handleAddInteraction = (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
         if (!contactDocRef || !user) return Promise.reject("User or contact not available");
@@ -172,6 +192,8 @@ export default function LeadDetailPage() {
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
                 onAddTask={handleAddTask}
+                onAddViewing={handleAddViewing}
+                properties={properties || []}
             />
 
             <main className="flex-1 p-4 md:p-6 -mx-8 overflow-y-auto">

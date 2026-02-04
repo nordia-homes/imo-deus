@@ -2,17 +2,20 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Contact, Task } from '@/lib/types';
-import { Phone, Mail, Plus } from 'lucide-react';
+import type { Contact, Property, Task, Viewing } from '@/lib/types';
+import { Phone, Mail, Plus, CalendarCheck } from 'lucide-react';
 import { AddTaskDialog } from '../../tasks/AddTaskDialog';
+import { AddViewingDialog } from '../../viewings/AddViewingDialog';
 
 type LeadHeaderProps = {
   contact: Contact;
   onUpdateContact: (data: Partial<Omit<Contact, 'id'>>) => void;
   onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => void;
+  onAddViewing: (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => void;
+  properties: Property[];
 };
 
-export function LeadHeader({ contact, onUpdateContact, onAddTask }: LeadHeaderProps) {
+export function LeadHeader({ contact, onUpdateContact, onAddTask, onAddViewing, properties }: LeadHeaderProps) {
   
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mx-8 px-8 py-3 border-b">
@@ -42,6 +45,12 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask }: LeadHeaderPr
                 Creează Task
              </Button>
            </AddTaskDialog>
+          <AddViewingDialog onAddViewing={onAddViewing} contacts={[contact]} properties={properties}>
+            <Button size="sm" variant="outline">
+                <CalendarCheck className="mr-2 h-4 w-4" />
+                Adaugă Vizionare
+            </Button>
+          </AddViewingDialog>
           <Button size="sm" onClick={() => onUpdateContact({ status: 'Câștigat' })}>
             Marchează Vândut
           </Button>
