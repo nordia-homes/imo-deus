@@ -8,24 +8,28 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Securely checks if an agency document lists the user as a member.
+    // Checks if the requesting user's profile document says they belong to the specified agency.
+    // This is more robust as a user can always read their own document.
     function isUserInAgency(agencyId) {
-      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId)).data;
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() &&
-             'agentIds' in agencyDoc &&
-             agencyDoc.agentIds is list &&
-             request.auth.uid in agencyDoc.agentIds;
+             exists(userDocPath) &&
+             get(userDocPath).data.agencyId == agencyId;
     }
 
+    // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
+        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
         return isUserInAgency(agencyId) &&
-               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+               exists(userDocPath) &&
+               'role' in get(userDocPath).data &&
+               get(userDocPath).data.role == 'admin';
     }
 
     // --- User Profiles ---
     match /users/{userId} {
       // Users can create, read, and update their own profile.
-      allow create, read, update: if isSignedIn() && request.auth.uid == userId;
+      allow read, update, create: if isSignedIn() && request.auth.uid == userId;
       // No one can list all users or delete them from the client.
       allow list, delete: if false;
     }
@@ -41,9 +45,8 @@ service cloud.firestore {
 
     // --- Agencies ---
     match /agencies/{agencyId} {
-      // Agency data is public for the website and for rules helpers to work.
+      // Public read access is needed for the public website and for some rules to work.
       allow get: if true;
-      // Only signed-in users can list agencies.
       allow list: if isSignedIn();
       // Only an admin can update their own agency's details.
       allow update: if isUserAdminForAgency(agencyId);
@@ -53,8 +56,6 @@ service cloud.firestore {
       allow delete: if false;
 
       // --- Agency Sub-collections ---
-
-      // Private data, accessible only by agency members.
       match /contacts/{contactId} { allow read, write: if isUserInAgency(agencyId); }
       match /tasks/{taskId} { allow read, write: if isUserInAgency(agencyId); }
       match /reports/{reportId} { allow read, write: if isUserInAgency(agencyId); }
@@ -70,9 +71,9 @@ service cloud.firestore {
 
     // --- Client Portals ---
     match /portals/{portalId} {
-      // Anyone with the link can read the portal data. This is secure because portalId is unguessable.
+      // Anyone with the link can read the portal data.
       allow get, list: if true;
-
+      
       // Only a verified member of the agency can create a portal.
       allow create: if isUserInAgency(request.resource.data.agencyId);
       
@@ -83,12 +84,11 @@ service cloud.firestore {
       match /recommendations/{recommendationId} {
         // Publicly readable for the client.
         allow get, list: if true;
-
+        
         // Only agency members can add/remove recommendations.
         allow create, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
 
-        // An agent can update anything.
-        // A public user (client) can ONLY update the feedback/comment fields.
+        // An agent can update anything. A client (public) can only update feedback.
         allow update: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId) ||
                         (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
       }
