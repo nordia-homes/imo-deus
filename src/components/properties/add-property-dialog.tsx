@@ -151,7 +151,6 @@ function PropertyForm({
             setIsLoadingData(true);
             
             try {
-                // 1. Fetch agents if agency info is available
                 if (agency?.agentIds) {
                     const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
                     const agentDocs = await Promise.all(agentPromises);
@@ -161,7 +160,6 @@ function PropertyForm({
                     setAgents(agentProfiles);
                 }
 
-                // 2. Set form values
                 const defaultValues = {
                     title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
                     rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
@@ -213,7 +211,6 @@ function PropertyForm({
         };
 
         loadDataAndInitializeForm();
-    // IMPORTANT: Empty dependency array ensures this runs ONLY ONCE when the form is mounted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -570,9 +567,19 @@ export function AddPropertyDialog({
 }) {
   const isEditMode = !!property;
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Snapshot the property data when the dialog opens
+  const [propertySnapshot, setPropertySnapshot] = useState<Property | null | undefined>(undefined);
+
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      setPropertySnapshot(property);
+    }
+    setIsOpen(open);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
       </DialogTrigger>
@@ -586,7 +593,7 @@ export function AddPropertyDialog({
         {isOpen && (
             <PropertyForm
               isEditMode={isEditMode}
-              property={property}
+              property={propertySnapshot}
               onClose={() => setIsOpen(false)}
             />
         )}
