@@ -23,6 +23,11 @@ service cloud.firestore {
                userProfileData.get('agencyId', '') == agencyId;
     }
 
+    // Gets the current user's agency ID from their profile.
+    function userAgencyId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+    }
+
     // --- Collection Rules ---
 
     match /users/{userId} {
@@ -65,10 +70,13 @@ service cloud.firestore {
         // The portal document is public to anyone with the link (unguessable ID).
         allow read: if true;
         
-        // Allow creating a portal if the agencyId in the portal data matches the agencyId in the user's own profile.
-        allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == request.resource.data.agencyId;
+        // Allow creating/updating if the user is authenticated and the portal's agencyId
+        // matches the agencyId in the user's own profile.
+        allow write: if request.auth != null && request.resource.data.agencyId == userAgencyId();
         
-        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
+        // Allow deleting if the user is authenticated and the portal's agencyId
+        // (from the existing document) matches the agencyId in the user's profile.
+        allow delete: if request.auth != null && resource.data.agencyId == userAgencyId();
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
