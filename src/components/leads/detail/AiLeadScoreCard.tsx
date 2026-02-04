@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, Loader2, Sparkles, TrendingUp, UserCheck, RefreshCw } from 'lucide-react';
+import { Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact } from '@/lib/types';
 import { leadScoring } from '@/ai/flows/lead-scoring';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type AiLeadScoreCardProps = {
   contact: Contact;
@@ -139,32 +139,33 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
     <Card className="rounded-2xl shadow-2xl border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">
-                Calitate Lead
-            </Button>
-          <CircularProgress score={contact.leadScore} />
+            <div className="flex flex-col items-start gap-2">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">
+                                Calitate Lead
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p className="max-w-xs text-xs">{contact.leadScoreReason || 'Nicio justificare disponibilă.'}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleGenerateScore} 
+                    disabled={isGenerating}
+                    className="text-xs h-auto p-0 text-muted-foreground"
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  Regenerează
+                </Button>
+            </div>
+            <CircularProgress score={contact.leadScore} />
         </div>
       </CardHeader>
-      <CardContent>
-         <Alert className="relative">
-            <UserCheck className="h-4 w-4" />
-            <AlertTitle className="font-bold">Analiză AI</AlertTitle>
-            <AlertDescription className="text-xs pr-8">
-                {contact.leadScoreReason || 'Nicio justificare disponibilă.'}
-            </AlertDescription>
-             <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleGenerateScore} 
-                disabled={isGenerating}
-                className="absolute bottom-1 right-1 h-7 w-7"
-                title="Regenerează scorul"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span className="sr-only">Regenerează</span>
-            </Button>
-        </Alert>
-      </CardContent>
     </Card>
   );
 }
