@@ -4,14 +4,10 @@ service cloud.firestore {
 
     // --- Helper Functions ---
 
-    // Checks if a user is authenticated.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Checks if the requesting user's UID is in the agentIds list of a specific agency.
-    // This is the primary function for checking membership.
-    // It requires that the /agencies/{agencyId} documents are readable via `get`.
     function isUserInAgency(agencyId) {
       let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId)).data;
       return isSignedIn() &&
@@ -20,7 +16,6 @@ service cloud.firestore {
              request.auth.uid in agencyDoc.agentIds;
     }
 
-    // Checks if the user is specifically an admin for the agency.
     function isUserAdminForAgency(agencyId) {
         let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
         return isSignedIn() &&
@@ -31,16 +26,12 @@ service cloud.firestore {
     }
 
     // --- User Profiles ---
-    // Users can create their profile on signup.
-    // They can only read and update their own profile.
     match /users/{userId} {
       allow create: if isSignedIn();
       allow read, update: if isSignedIn() && request.auth.uid == userId;
     }
 
     // --- Invites ---
-    // Can be read/deleted by any authenticated user (e.g., to accept it).
-    // Can only be created by an admin of the target agency.
     match /invites/{inviteId} {
       allow read, delete: if isSignedIn();
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
@@ -48,36 +39,21 @@ service cloud.firestore {
 
     // --- Agencies ---
     match /agencies/{agencyId} {
-      // Any user (even unauthenticated) can get a specific agency document.
-      // This is needed for public pages and for helper functions in rules to work.
+      // Publicly readable for public sites and for rules helpers to work.
       allow get: if true;
-
-      // Only authenticated users can list all agencies (though the app doesn't do this).
       allow list: if isSignedIn();
-
-      // An authenticated user can create an agency, but they must be the owner.
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-
-      // Only an admin of that agency can update its details.
       allow update: if isUserAdminForAgency(agencyId);
-
-      // Deleting agencies is disabled for safety.
-      allow delete: if false;
+      allow delete: if false; // Safety
 
       // --- Agency Sub-collections ---
 
-      // Contacts, Tasks are private to agency members.
-      match /contacts/{contactId} {
-        allow read, write: if isUserInAgency(agencyId);
-      }
-      match /tasks/{taskId} {
-        allow read, write: if isUserInAgency(agencyId);
-      }
-      match /viewings/{viewingId} {
+      // Private data, accessible only by agency members
+      match /contacts/{contactId}, /tasks/{taskId}, /reports/{reportId}, /emails/{emailId}, /viewings/{viewingId} {
         allow read, write: if isUserInAgency(agencyId);
       }
 
-      // Property listings can be read by anyone, but only written by agency members.
+      // Publicly readable properties
       match /properties/{propertyId} {
         allow get, list: if true;
         allow create, update, delete: if isUserInAgency(agencyId);
@@ -86,20 +62,19 @@ service cloud.firestore {
 
     // --- Client Portals ---
     match /portals/{portalId} {
-      // Anyone with the link can read the portal data.
+      // Anyone with the link can read the portal data. This is secure because portalId is unguessable.
       allow get, list: if true;
 
-      // Only a member of the agency can create, update, or delete a portal record.
-      // For create, we check the incoming data. For update/delete, the existing data.
+      // Only an agent of the agency can create/update/delete a portal record.
       allow create: if isUserInAgency(request.resource.data.agencyId);
-      allow update, delete: if isUserInAgency(resource.data.agencyId);
+      allow update, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
 
       // --- Portal Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
-        // Recommendations are also public to anyone with the portal link.
+        // Publicly readable
         allow get, list: if true;
 
-        // Only an agent of the agency that owns the portal can add/remove recommendations.
+        // Only an agent can add/remove recommendations.
         allow create, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
 
         // An agent can update anything.
