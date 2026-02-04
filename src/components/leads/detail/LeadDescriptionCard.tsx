@@ -1,5 +1,5 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { Contact } from "@/lib/types";
 import { useState, useEffect } from "react";
@@ -24,10 +24,7 @@ export function LeadDescriptionCard({ contact, onUpdateContact }: LeadDescriptio
 
     return (
         <Card className="rounded-2xl shadow-sm">
-            <CardHeader>
-                <CardTitle>Descriere Lead</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
                 <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
