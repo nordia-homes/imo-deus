@@ -4,10 +4,8 @@ service cloud.firestore {
 
     // --- Helper Functions ---
     
-    // Checks if a user belongs to an agency, either as owner or as an agent in the agentIds list.
     function isUserInAgency(agencyId) {
       let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-      // Robust check for existence and type before accessing .data or .agentIds
       return request.auth != null &&
              exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
              'agentIds' in agencyDoc.data &&
@@ -15,7 +13,6 @@ service cloud.firestore {
              request.auth.uid in agencyDoc.data.agentIds;
     }
     
-    // Checks if the user has an 'admin' role for the given agency.
     function isUserAdminForAgency(agencyId) {
         let userProfileData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
         return request.auth != null && 
@@ -23,7 +20,6 @@ service cloud.firestore {
                userProfileData.get('agencyId', '') == agencyId;
     }
 
-    // Gets the current user's agency ID from their profile.
     function userAgencyId() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
     }
@@ -36,11 +32,11 @@ service cloud.firestore {
     }
 
     match /agencies/{agencyId} {
-      allow get: if true; // Publicly readable for public pages
-      allow list: if request.auth != null; // Only authenticated users can list agencies
+      allow get: if true; 
+      allow list: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if isUserAdminForAgency(agencyId);
-      allow delete: if false; // Agencies cannot be deleted
+      allow delete: if false; 
     }
 
     match /invites/{inviteId} {
@@ -48,49 +44,62 @@ service cloud.firestore {
       allow read, delete: if request.auth != null;
     }
     
-    // Rule for private agency data
     match /agencies/{agencyId}/{privateCollection}/{docId}
     where privateCollection in ['contacts', 'tasks', 'reports', 'emails'] {
-      // These collections are private to agency members.
       allow read, write: if isUserInAgency(agencyId);
     }
 
-    // Rule for public-facing agency data
     match /agencies/{agencyId}/{publicCollection}/{docId}
     where publicCollection in ['properties', 'viewings'] {
-      // Allow public read for properties and viewings (for public websites and portals).
       allow read: if true;
-      // Write operations remain secure to agency members.
       allow write: if isUserInAgency(agencyId);
     }
 
-    // --- Portal Rules ---
+    // --- Portal Rules (Corrected) ---
     
     match /portals/{portalId} {
+        // Anyone with the unguessable link can read the portal data.
         allow read: if true;
-        allow write: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
-        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
+
+        // To CREATE a portal, the user must be authenticated and
+        // the agencyId in the new portal document must match the user's agencyId from their profile.
+        allow create: if request.auth != null
+                      && request.resource.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+
+        // To DELETE a portal, the user must be authenticated and
+        // the agencyId in the portal document being deleted must match the user's agencyId from their profile.
+        allow delete: if request.auth != null
+                      && resource.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
+        
+        // We don't allow general updates to the portal document itself,
+        // only to its subcollections (recommendations).
+        allow update: if false;
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
       // Public read access is safe due to unguessable portalId in the path.
       allow read: if true;
       
-      // WRITE RULES
-      function userCanWriteToPortal() {
-        let portalDoc = get(/databases/$(database)/documents/portals/$(portalId));
-        return request.auth != null &&
-               exists(/databases/$(database)/documents/portals/$(portalId)) &&
-               isUserInAgency(portalDoc.data.agencyId);
+      function isAgencyMember() {
+        let portal = get(/databases/$(database)/documents/portals/$(portalId));
+        // Check if user is authenticated and their agency ID matches the portal's agency ID
+        return request.auth != null
+               && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+               && portal.data.agencyId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId;
       }
-
+      
       function isClientFeedbackUpdate() {
+        // Client is not authenticated, but can only update feedback fields.
         return request.auth == null && 
                request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientFeedback', 'clientComment']);
       }
       
-      allow create, delete: if userCanWriteToPortal();
-      allow update: if userCanWriteToPortal() || isClientFeedbackUpdate();
+      // An agency member can create or delete recommendations.
+      allow create, delete: if isAgencyMember();
+      
+      // An agency member can update anything.
+      // A client (unauthenticated) can ONLY update feedback fields.
+      allow update: if isAgencyMember() || isClientFeedbackUpdate();
     }
   }
 }
