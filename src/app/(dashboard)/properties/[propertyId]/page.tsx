@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing, UserProfile } from '@/lib/types';
+import type { Property, Viewing, UserProfile, Contact } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 // UI Components
@@ -58,6 +58,12 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId, propertyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
+    const contactsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
+    const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
+
     useEffect(() => {
         if (!property?.agentId || !firestore) {
             setIsAgentLoading(false);
@@ -85,7 +91,7 @@ export default function PropertyDetailPage() {
         fetchAgent();
     }, [property, firestore]);
 
-    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || isAgentLoading;
+    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || isAgentLoading || areContactsLoading;
     
     if (isLoading) {
         return <PageSkeleton />;
@@ -103,7 +109,7 @@ export default function PropertyDetailPage() {
              <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     <MediaColumn property={property} />
-                    <InfoColumn property={property} />
+                    <InfoColumn property={property} allContacts={allContacts || []} />
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">

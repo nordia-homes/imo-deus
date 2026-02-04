@@ -2,10 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutList, Users, CheckSquare, FileText, Settings } from "lucide-react";
-import type { Property } from "@/lib/types";
+import type { Property, Contact } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { MatchedLeadsTab } from "./MatchedLeadsTab";
 
-export function InfoColumn({ property }: { property: Property }) {
+export function InfoColumn({ property, allContacts }: { property: Property, allContacts: Contact[] }) {
     return (
         <div className="space-y-6">
             <Tabs defaultValue="overview">
@@ -50,7 +51,9 @@ export function InfoColumn({ property }: { property: Property }) {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="leads"><p>Lead-uri asociate</p></TabsContent>
+                <TabsContent value="leads" className="mt-6">
+                    <MatchedLeadsTab property={property} allContacts={allContacts} />
+                </TabsContent>
                 <TabsContent value="tasks"><p>Task-uri asociate</p></TabsContent>
                 <TabsContent value="documents"><p>Documente asociate</p></TabsContent>
                 <TabsContent value="settings"><p>Setări proprietate</p></TabsContent>
