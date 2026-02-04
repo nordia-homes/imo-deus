@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { Interaction, Task, Contact, Viewing } from '@/lib/types';
 import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare, Clock, Activity, Users } from 'lucide-react';
+import { Phone, MoreHorizontal, Check, Calendar, Mail, FileText, CheckSquare, Clock, Activity, Users, Eye } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 type TimelineItemData = (
   | ({ itemKind: 'interaction' } & Interaction)
   | ({ itemKind: 'task' } & Task)
+  | ({ itemKind: 'viewing' } & Viewing)
 ) & { sortDate: Date };
 
 const getInteractionIcon = (type: Interaction['type']) => {
@@ -34,6 +35,7 @@ const getTimelineIcon = (item: TimelineItemData) => {
     switch (item.itemKind) {
         case 'interaction': return getInteractionIcon(item.type);
         case 'task': return <CheckSquare className="h-4 w-4 text-muted-foreground" />;
+        case 'viewing': return <Eye className="h-4 w-4 text-muted-foreground" />;
         default: return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
 };
@@ -44,6 +46,7 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
     
     let title: string;
     let details: string | React.ReactNode;
+    let dateToShow = item.sortDate;
 
     switch (item.itemKind) {
         case 'interaction':
@@ -51,8 +54,13 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
             details = item.notes;
             break;
         case 'task':
-            title = item.description;
+            title = `Task: ${item.description}`;
             details = `Agent: ${item.agentName || 'Nealocat'}`;
+            break;
+        case 'viewing':
+            title = `Vizionare: ${item.propertyTitle}`;
+            details = `Agent: ${item.agentName || 'Nealocat'}`;
+            dateToShow = new Date(item.viewingDate); // Use specific viewing date for display
             break;
         default:
             title = 'Eveniment';
@@ -68,7 +76,7 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
                 <div className="flex items-baseline justify-between text-sm">
                     <p className="font-semibold">{title}</p>
                     <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(item.sortDate, { addSuffix: true, locale: ro })}
+                        {formatDistanceToNow(dateToShow, { addSuffix: true, locale: ro })}
                     </p>
                 </div>
                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{details}</p>
@@ -80,15 +88,17 @@ const TimelineItem = ({ item }: { item: TimelineItemData }) => {
 type LeadTimelineProps = {
   interactions: Interaction[];
   tasks: Task[];
+  viewings: Viewing[];
 };
 
-export function LeadTimeline({ interactions, tasks }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, tasks, viewings }: LeadTimelineProps) {
   const timelineItems = React.useMemo(() => {
     const combined: TimelineItemData[] = [];
     interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
     tasks.forEach(t => combined.push({ ...t, itemKind: 'task', sortDate: new Date(t.dueDate) }));
+    viewings.forEach(v => combined.push({ ...v, itemKind: 'viewing', sortDate: new Date(v.viewingDate) }));
     return combined.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
-  }, [interactions, tasks]);
+  }, [interactions, tasks, viewings]);
 
   return (
     <Card className="rounded-2xl shadow-sm">

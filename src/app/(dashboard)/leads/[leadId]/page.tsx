@@ -210,9 +210,11 @@ export default function LeadDetailPage() {
                     {/* Left Column */}
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onAddInteraction={handleAddInteraction} onAddTask={handleAddTask} />
+                        <LeadZonesCard contact={contact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
+                            viewings={viewings || []}
                         />
                     </div>
 
@@ -226,7 +228,6 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ScheduledViewingsCard viewings={viewings || []} />
-                        <LeadZonesCard contact={contact} />
                         <ClientPortalManager contact={contact} agency={agency} />
                     </div>
                 </div>
