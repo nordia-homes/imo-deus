@@ -121,260 +121,262 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 
 type ImageSource = File | { url: string; alt: string };
 
-function PropertyForm({
-  isEditMode,
+export function AddPropertyDialog({
+  children,
   property,
-  onClose,
 }: {
-  isEditMode: boolean;
+  children?: React.ReactNode;
   property?: Property | null;
-  onClose: () => void;
 }) {
-    const { toast } = useToast();
-    const { user } = useUser();
-    const { agency, agencyId } = useAgency();
-    const firestore = useFirestore();
-    const storage = useStorage();
-    
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingData, setIsLoadingData] = useState(true);
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+  const isEditMode = !!property;
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  const { user } = useUser();
+  const { agency, agencyId } = useAgency();
+  const firestore = useFirestore();
+  const storage = useStorage();
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agents, setAgents] = useState<UserProfile[]>([]);
+  const [imageSources, setImageSources] = useState<ImageSource[]>([]);
 
-    const defaultValues = useMemo(() => {
-        const baseDefaults = {
-            title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
-            rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-            floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
-            parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-            description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
-            agentId: user?.uid || 'unassigned',
-        };
+  const form = useForm<z.infer<typeof propertySchema>>({
+    resolver: zodResolver(propertySchema),
+  });
 
-        if (isEditMode && property) {
-             return {
-                title: property.title || baseDefaults.title,
-                propertyType: property.propertyType || baseDefaults.propertyType,
-                transactionType: property.transactionType || baseDefaults.transactionType,
-                location: property.location || baseDefaults.location,
-                price: property.price || baseDefaults.price,
-                rooms: property.rooms || baseDefaults.rooms,
-                bathrooms: property.bathrooms || baseDefaults.bathrooms,
-                squareFootage: property.squareFootage || baseDefaults.squareFootage,
-                totalSurface: property.totalSurface || baseDefaults.totalSurface,
-                constructionYear: property.constructionYear || baseDefaults.constructionYear,
-                floor: property.floor || baseDefaults.floor,
-                totalFloors: property.totalFloors || baseDefaults.totalFloors,
-                comfort: property.comfort || baseDefaults.comfort,
-                interiorState: property.interiorState || baseDefaults.interiorState,
-                furnishing: property.furnishing || baseDefaults.furnishing,
-                heatingSystem: property.heatingSystem || baseDefaults.heatingSystem,
-                parking: property.parking || baseDefaults.parking,
-                keyFeatures: property.keyFeatures || property.amenities?.join(', ') || baseDefaults.keyFeatures,
-                description: property.description || baseDefaults.description,
-                status: property.status || baseDefaults.status,
-                featured: property.featured || baseDefaults.featured,
-                ownerName: property.ownerName || baseDefaults.ownerName,
-                ownerPhone: property.ownerPhone || baseDefaults.ownerPhone,
-                salesScore: property.salesScore || baseDefaults.salesScore,
-                agentId: property.agentId || baseDefaults.agentId,
-            };
-        }
-        return baseDefaults;
-    }, [isEditMode, property, user]);
+  useEffect(() => {
+    let isMounted = true;
+    const loadDataAndResetForm = async () => {
+        if (!isOpen) return;
 
-    const form = useForm<z.infer<typeof propertySchema>>({
-        resolver: zodResolver(propertySchema),
-        defaultValues,
-    });
-    
-    useEffect(() => {
-        let isMounted = true;
-        const loadInitialData = async () => {
-            setIsLoadingData(true);
+        // Fetch agents
+        if (agency?.agentIds) {
             try {
-                if (agency?.agentIds) {
-                    const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
-                    const agentDocs = await Promise.all(agentPromises);
-                    if (isMounted) {
-                        const agentProfiles = agentDocs
-                            .filter(docSnap => docSnap.exists())
-                            .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                        setAgents(agentProfiles);
-                    }
-                }
-                if (isEditMode && property && isMounted) {
-                    setImageSources(property.images || []);
+                const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
+                const agentDocs = await Promise.all(agentPromises);
+                if (isMounted) {
+                    const agentProfiles = agentDocs
+                        .filter(docSnap => docSnap.exists())
+                        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
+                    setAgents(agentProfiles);
                 }
             } catch (error) {
-                 console.error("Error loading form data:", error);
-            } finally {
-                if (isMounted) {
-                    setIsLoadingData(false);
-                }
+                console.error("Error loading agents:", error);
             }
-        };
-
-        loadInitialData();
-        
-        return () => {
-            isMounted = false;
         }
-    }, [agency, firestore, isEditMode, property]);
-
-    const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (files) {
-            const newFiles = Array.from(files);
-            setImageSources((prevSources) => [...prevSources, ...newFiles].slice(0, 16));
+        
+        // Set form values and images
+        if (isEditMode && property) {
+            form.reset({
+                title: property.title || '',
+                propertyType: property.propertyType || '',
+                transactionType: property.transactionType || 'Vânzare',
+                location: property.location || 'București',
+                price: property.price || 0,
+                rooms: property.rooms || 0,
+                bathrooms: property.bathrooms || 0,
+                squareFootage: property.squareFootage || 0,
+                totalSurface: property.totalSurface || '',
+                constructionYear: property.constructionYear || '',
+                floor: property.floor || '',
+                totalFloors: property.totalFloors || '',
+                comfort: property.comfort || '',
+                interiorState: property.interiorState || '',
+                furnishing: property.furnishing || '',
+                heatingSystem: property.heatingSystem || '',
+                parking: property.parking || '',
+                keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
+                description: property.description || '',
+                status: property.status || 'Activ',
+                featured: property.featured || false,
+                ownerName: property.ownerName || '',
+                ownerPhone: property.ownerPhone || '',
+                salesScore: property.salesScore || 'Mediu',
+                agentId: property.agentId || user?.uid || 'unassigned',
+            });
+            if (isMounted) {
+                setImageSources(property.images || []);
+            }
+        } else {
+            form.reset({
+                title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+                rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
+                floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+                parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
+                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+                agentId: user?.uid || 'unassigned',
+            });
+            if (isMounted) {
+                setImageSources([]);
+            }
         }
     };
+    
+    loadDataAndResetForm();
 
-    const removeImage = (index: number) => {
-        setImageSources((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    async function handleGenerateDescription() {
-        setIsGenerating(true);
-        const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
-            'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
-        ];
-        const isValid = await form.trigger(fieldsToValidate);
-
-        if (!isValid) {
-            toast({
-                variant: "destructive",
-                title: "Completați câmpurile obligatorii",
-                description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
-            });
-            setIsGenerating(false);
-            return;
-        }
-        
-        const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
-        try {
-            const result = await generatePropertyDescription({
-                propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
-            });
-            form.setValue('description', result.description);
-        } catch (error) {
-            console.error("Failed to generate description:", error);
-            toast({
-                variant: "destructive",
-                title: "A apărut o eroare",
-                description: "Nu am putut genera descrierea. Încercați din nou.",
-            });
-        } finally {
-            setIsGenerating(false);
-        }
+    return () => {
+        isMounted = false;
     }
 
-    async function onSubmit(values: z.infer<typeof propertySchema>) {
-        setIsSubmitting(true);
-        if (!user || !agencyId) {
-            toast({ variant: 'destructive', title: 'Eroare de autentificare', description: 'Nu am putut identifica agenția. Reîncărcați pagina și reîncercați.' });
-            setIsSubmitting(false);
-            return;
-        }
+  }, [isOpen, isEditMode, property, agency, firestore, user, form]);
 
-        try {
-            const newImageFiles = imageSources.filter((s): s is File => s instanceof File);
-            const existingImages = imageSources.filter((s): s is { url: string; alt: string; } => !(s instanceof File));
-            
-            let uploadedImageUrls: { url: string; alt: string; }[] = [];
-            const propertyId = isEditMode ? property!.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;
 
-            if (newImageFiles.length > 0) {
-                toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
-                
-                const uploadPromises = newImageFiles.map(async (file, index) => {
-                    const resizedBlob = await resizeAndGetBlob(file);
-                    const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${propertyId}-${Date.now()}-${index}.jpg`);
-                    await uploadBytes(imageRef, resizedBlob);
-                    const downloadURL = await getDownloadURL(imageRef);
-                    return { url: downloadURL, alt: `${values.title} - imagine ${index + 1}` };
-                });
-                uploadedImageUrls = await Promise.all(uploadPromises);
-            }
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (files) {
+          const newFiles = Array.from(files);
+          setImageSources((prevSources) => [...prevSources, ...newFiles].slice(0, 16));
+      }
+  };
 
-            const finalImages = [...existingImages, ...uploadedImageUrls];
-            const selectedAgent = agents.find(agent => agent.id === values.agentId);
+  const removeImage = (index: number) => {
+      setImageSources((prev) => prev.filter((_, i) => i !== index));
+  };
 
-            const propertyData = {
-                title: values.title,
-                propertyType: values.propertyType,
-                transactionType: values.transactionType,
-                location: values.location,
-                address: values.location,
-                price: values.price,
-                rooms: values.rooms,
-                bathrooms: values.bathrooms,
-                squareFootage: values.squareFootage,
-                totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
-                constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
-                floor: values.floor || null,
-                totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
-                comfort: values.comfort || null,
-                interiorState: values.interiorState || null,
-                furnishing: values.furnishing || null,
-                heatingSystem: values.heatingSystem || null,
-                parking: values.parking || null,
-                keyFeatures: values.keyFeatures,
-                description: values.description || '',
-                images: finalImages,
-                tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
-                amenities: values.keyFeatures.split(',').map((f) => f.trim()),
-                status: values.status,
-                featured: values.featured,
-                ownerName: values.ownerName,
-                ownerPhone: values.ownerPhone,
-                salesScore: values.salesScore as Property['salesScore'],
-                agentId: values.agentId === 'unassigned' ? null : values.agentId,
-                agentName: selectedAgent?.name || null,
-            };
-        
-            if (isEditMode) {
-                const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property!.id);
-                await updateDoc(propertyRef, propertyData);
-                toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
-            } else {
-                const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
-                await setDoc(newPropertyRef, { ...propertyData, id: newPropertyRef.id, createdAt: new Date().toISOString() });
-                toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
-            }
-            
-            onClose();
+  async function handleGenerateDescription() {
+      setIsGenerating(true);
+      const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
+          'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
+      ];
+      const isValid = await form.trigger(fieldsToValidate);
 
-        } catch (error: any) {
-            console.error("Failed to save property:", error);
-            toast({ variant: 'destructive', title: 'Salvare eșuată', description: error.message || 'A apărut o eroare neașteptată.' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    const imagePreviews = useMemo(() => imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url), [imageSources]);
-    
-    useEffect(() => {
-        return () => {
-            imagePreviews.forEach(preview => {
-                if (preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(preview);
-                }
-            });
-        };
-    }, [imagePreviews]);
+      if (!isValid) {
+          toast({
+              variant: "destructive",
+              title: "Completați câmpurile obligatorii",
+              description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
+          });
+          setIsGenerating(false);
+          return;
+      }
+      
+      const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
+      try {
+          const result = await generatePropertyDescription({
+              propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
+          });
+          form.setValue('description', result.description);
+      } catch (error) {
+          console.error("Failed to generate description:", error);
+          toast({
+              variant: "destructive",
+              title: "A apărut o eroare",
+              description: "Nu am putut genera descrierea. Încercați din nou.",
+          });
+      } finally {
+          setIsGenerating(false);
+      }
+  }
 
-    if (isLoadingData) {
-        return (
-            <div className="flex items-center justify-center h-[70vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    return (
+  async function onSubmit(values: z.infer<typeof propertySchema>) {
+      setIsSubmitting(true);
+      if (!user || !agencyId) {
+          toast({ variant: 'destructive', title: 'Eroare de autentificare', description: 'Nu am putut identifica agenția. Reîncărcați pagina și reîncercați.' });
+          setIsSubmitting(false);
+          return;
+      }
+
+      try {
+          const newImageFiles = imageSources.filter((s): s is File => s instanceof File);
+          const existingImages = imageSources.filter((s): s is { url: string; alt: string; } => !(s instanceof File));
+          
+          let uploadedImageUrls: { url: string; alt: string; }[] = [];
+          const propertyId = isEditMode ? property!.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;
+
+          if (newImageFiles.length > 0) {
+              toast({ title: 'Încărcare imagini...', description: 'Acest proces poate dura câteva momente.' });
+              
+              const uploadPromises = newImageFiles.map(async (file, index) => {
+                  const resizedBlob = await resizeAndGetBlob(file);
+                  const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${propertyId}-${Date.now()}-${index}.jpg`);
+                  await uploadBytes(imageRef, resizedBlob);
+                  const downloadURL = await getDownloadURL(imageRef);
+                  return { url: downloadURL, alt: `${values.title} - imagine ${index + 1}` };
+              });
+              uploadedImageUrls = await Promise.all(uploadPromises);
+          }
+
+          const finalImages = [...existingImages, ...uploadedImageUrls];
+          const selectedAgent = agents.find(agent => agent.id === values.agentId);
+
+          const propertyData = {
+              title: values.title,
+              propertyType: values.propertyType,
+              transactionType: values.transactionType,
+              location: values.location,
+              address: values.location,
+              price: values.price,
+              rooms: values.rooms,
+              bathrooms: values.bathrooms,
+              squareFootage: values.squareFootage,
+              totalSurface: values.totalSurface ? Number(values.totalSurface) : null,
+              constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
+              floor: values.floor || null,
+              totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
+              comfort: values.comfort || null,
+              interiorState: values.interiorState || null,
+              furnishing: values.furnishing || null,
+              heatingSystem: values.heatingSystem || null,
+              parking: values.parking || null,
+              keyFeatures: values.keyFeatures,
+              description: values.description || '',
+              images: finalImages,
+              tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
+              amenities: values.keyFeatures.split(',').map((f) => f.trim()),
+              status: values.status,
+              featured: values.featured,
+              ownerName: values.ownerName,
+              ownerPhone: values.ownerPhone,
+              salesScore: values.salesScore as Property['salesScore'],
+              agentId: values.agentId === 'unassigned' ? null : values.agentId,
+              agentName: selectedAgent?.name || null,
+          };
+      
+          if (isEditMode) {
+              const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property!.id);
+              await updateDoc(propertyRef, propertyData);
+              toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
+          } else {
+              const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
+              await setDoc(newPropertyRef, { ...propertyData, id: newPropertyRef.id, createdAt: new Date().toISOString() });
+              toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
+          }
+          
+          setIsOpen(false);
+
+      } catch (error: any) {
+          console.error("Failed to save property:", error);
+          toast({ variant: 'destructive', title: 'Salvare eșuată', description: error.message || 'A apărut o eroare neașteptată.' });
+      } finally {
+          setIsSubmitting(false);
+      }
+  }
+  
+  const imagePreviews = useMemo(() => imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url), [imageSources]);
+  
+  useEffect(() => {
+      return () => {
+          imagePreviews.forEach(preview => {
+              if (preview.startsWith('blob:')) {
+                  URL.revokeObjectURL(preview);
+              }
+          });
+      };
+  }, [imagePreviews]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <ScrollArea className="h-[70vh] p-1 -mx-4">
@@ -555,60 +557,14 @@ function PropertyForm({
                     </div>
                 </ScrollArea>
                 <DialogFooter className="pt-4 border-t mt-4">
-                    <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
-                    <Button type="submit" disabled={isSubmitting || isLoadingData}>
-                        {(isSubmitting || isLoadingData) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
                     </Button>
                 </DialogFooter>
             </form>
         </Form>
-    )
-}
-
-
-export function AddPropertyDialog({
-  children,
-  property,
-}: {
-  children?: React.ReactNode;
-  property?: Property | null;
-}) {
-  const isEditMode = !!property;
-  const [isOpen, setIsOpen] = useState(false);
-  const [formKey, setFormKey] = useState(0);
-  const [propertySnapshot, setPropertySnapshot] = useState<Property | null | undefined>(undefined);
-
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      // Create a snapshot of the property when the dialog opens
-      setPropertySnapshot(property);
-      // Increment the key to force a re-mount of the form component
-      setFormKey(prev => prev + 1);
-    }
-    setIsOpen(open);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Proprietate</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
-          </DialogDescription>
-        </DialogHeader>
-        {isOpen && (
-            <PropertyForm
-              key={formKey}
-              isEditMode={isEditMode}
-              property={propertySnapshot}
-              onClose={() => setIsOpen(false)}
-            />
-        )}
       </DialogContent>
     </Dialog>
   );
