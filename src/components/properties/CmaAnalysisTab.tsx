@@ -47,10 +47,7 @@ export function CmaAnalysisTab({ subjectProperty, allProperties, agencyId }: Cma
     
     return (
         <Card className="rounded-2xl shadow-2xl">
-            <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-sm font-semibold">Analiză Comparativă de Piață</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-0">
+            <CardContent className="p-2">
                 <div className="flex flex-col items-center justify-center text-center">
                     <Button size="sm" className="w-full" onClick={handleGenerateCMA} disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
