@@ -36,7 +36,7 @@ service cloud.firestore {
     match /agencies/{agencyId} {
       allow get: if true; 
       allow list: if request.auth != null;
-      allow create: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
       allow update: if isUserAdminForAgency(agencyId);
       allow delete: if false; // Agencies should not be deleted.
     }
@@ -49,40 +49,46 @@ service cloud.firestore {
     }
     
     // Private agency data (contacts, tasks, etc.) is only accessible to members of that agency.
-    match /agencies/{agencyId}/{privateCollection}/{docId}
-    where privateCollection in ['contacts', 'tasks', 'reports', 'emails', 'viewings'] {
-      allow read, write: if isUserInAgency(agencyId);
+    match /agencies/{agencyId}/contacts/{contactId} {
+        allow read, write: if isUserInAgency(agencyId);
+    }
+    
+    match /agencies/{agencyId}/tasks/{taskId} {
+        allow read, write: if isUserInAgency(agencyId);
     }
 
     // Publicly readable property listings. Only agency members can write.
     match /agencies/{agencyId}/properties/{propertyId} {
-      allow read: if true;
-      allow write: if isUserInAgency(agencyId);
+      allow get: if true;
+      allow list, create, update, delete: if isUserInAgency(agencyId);
+    }
+    
+    match /agencies/{agencyId}/viewings/{viewingId} {
+        allow read, write: if isUserInAgency(agencyId);
     }
 
     // --- Portal Rules ---
-    
-    // Portal documents are publicly readable by the unguessable portalId.
     match /portals/{portalId} {
-        allow get: if true;
+        // Anyone with the (unguessable) link can read the portal.
+        allow get, list: if true;
 
-        // Only an agent of the agency can create or delete the portal.
-        allow create: if isUserInAgency(request.resource.data.agencyId);
-        allow delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
-        
-        allow update: if false; // The main portal doc is immutable by clients.
+        // Only an agent belonging to the correct agency can create or update a portal.
+        allow write: if request.auth != null && isUserInAgency(request.resource.data.agencyId);
+
+        // Only an agent belonging to the correct agency can delete a portal.
+        allow delete: if request.auth != null && isUserInAgency(resource.data.agencyId);
     }
     
     match /portals/{portalId}/recommendations/{recommendationId} {
       // Recommendations are publicly readable via the portal link.
-      allow read: if true;
+      allow get, list: if true;
       
       // An agent of the portal's agency can add/remove recommendations.
-      allow create, delete: if isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+      allow create, delete: if request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       
       // The client (unauthenticated) can only update their own feedback.
       // An agent can update anything.
-      allow update: if (isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
+      allow update: if (request.auth != null && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
                       (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
     }
   }
