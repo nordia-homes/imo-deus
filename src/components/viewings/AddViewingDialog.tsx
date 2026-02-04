@@ -96,7 +96,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
         contactId: selectedContact.id,
         contactName: selectedContact.name,
         viewingDate: viewingDateTime.toISOString(),
-        notes: values.notes,
+        notes: values.notes || '',
     });
 
     setIsOpen(false);

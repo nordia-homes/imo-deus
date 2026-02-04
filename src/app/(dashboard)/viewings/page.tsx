@@ -98,7 +98,7 @@ export default function ViewingsPage() {
             agentId: user.uid,
             agentName: user.displayName || user.email,
             viewingDate: viewingDateTime.toISOString(),
-            notes: values.notes,
+            notes: values.notes || '',
             status: 'scheduled',
             createdAt: new Date().toISOString(),
         };
