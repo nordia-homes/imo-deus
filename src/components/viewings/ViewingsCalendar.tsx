@@ -155,6 +155,7 @@ export function ViewingsCalendar({ viewings, agents }: ViewingsCalendarProps) {
                       <div className="pl-8">
                          <p className="font-semibold">{viewing.propertyTitle}</p>
                          <p className="text-sm text-muted-foreground">Client: {viewing.contactName}</p>
+                         {viewing.agentName && <p className="text-sm text-muted-foreground">Agent: {viewing.agentName}</p>}
                          <Link href={`/properties/${viewing.propertyId}`}>
                            <Button variant="link" className="p-0 h-auto text-xs">Vezi proprietate</Button>
                          </Link>
