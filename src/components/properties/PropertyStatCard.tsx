@@ -30,7 +30,7 @@ export function PropertyStatCard({
             <div className="w-full space-y-1">
                 <div className="flex items-baseline justify-between">
                     <p className="text-muted-foreground text-sm">{label}</p>
-                    <span className="text-xs font-semibold text-green-600">{`${Math.round(progress)}% Realizat`}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">{`${Math.round(progress)}%`}</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
                     <p className="font-bold text-foreground text-lg">{value}</p>

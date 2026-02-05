@@ -33,6 +33,7 @@ export default function PropertiesPage() {
         commissionProgress: 0,
         newThisWeek: 0,
         soldOrReservedThisMonth: 0,
+        soldReservedProgress: 0,
       };
     }
     
@@ -46,6 +47,7 @@ export default function PropertiesPage() {
         return price * (percentage / 100);
     };
 
+    const totalProperties = properties.length;
     const totalCommissionValue = properties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
     
     const realizedCommissionValue = properties
@@ -62,13 +64,16 @@ export default function PropertiesPage() {
       isThisMonth(parseISO(prop.statusUpdatedAt))
     ).length;
 
+    const soldReservedProgress = totalProperties > 0 ? (soldOrReservedThisMonth / totalProperties) * 100 : 0;
+
     return {
-      totalProperties: properties.length,
+      totalProperties,
       totalCommissionValue,
       realizedCommissionValue,
       commissionProgress,
       newThisWeek,
       soldOrReservedThisMonth,
+      soldReservedProgress,
     };
   }, [properties]);
   
@@ -123,7 +128,13 @@ export default function PropertiesPage() {
                         icon={<DollarSign />}
                         progress={stats.commissionProgress}
                     />
-                    <PropertyStatCard label="Vândute/Rezervate Luna Aceasta" value={stats.soldOrReservedThisMonth.toString()} icon={<MapPin />} />
+                    <PropertyStatCard 
+                        label="Vândute/Rezervate Luna Aceasta" 
+                        value={stats.soldOrReservedThisMonth.toString()} 
+                        subValue={`din ${stats.totalProperties}`}
+                        icon={<MapPin />}
+                        progress={stats.soldReservedProgress}
+                    />
                 </>
              )}
         </div>
