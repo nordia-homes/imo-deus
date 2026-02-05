@@ -14,6 +14,8 @@ import { InfoDialog } from './InfoDialog';
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const TRUNCATION_LENGTH = 500;
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
 
@@ -49,7 +51,23 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
+                             <div>
+                                <p className="text-muted-foreground whitespace-pre-wrap">
+                                    {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                                        ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                                        : property.description || 'Nicio descriere adăugată.'
+                                    }
+                                </p>
+                                {property.description && property.description.length > TRUNCATION_LENGTH && (
+                                    <Button 
+                                        variant="link" 
+                                        className="p-0 h-auto mt-2 text-primary"
+                                        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                    >
+                                        {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                                    </Button>
+                                )}
+                            </div>
                              {property.amenities && property.amenities.length > 0 && (
                                 <div className="mt-6">
                                      <div className="flex flex-wrap gap-2">
