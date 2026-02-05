@@ -16,8 +16,7 @@ import { ViewingList } from '@/components/viewings/ViewingList';
 import { parseISO } from 'date-fns';
 
 export default function ViewingsPage() {
-    const { agencyId } = useAgency();
-    const { agency } = useAgency();
+    const { agencyId, agency, userProfile } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -100,7 +99,7 @@ export default function ViewingsPage() {
             propertyAddress: selectedProperty.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || user.email,
             createdAt: new Date().toISOString(),
         };
         
@@ -147,7 +146,12 @@ export default function ViewingsPage() {
                 </AddViewingDialog>
             </div>
 
-            <ViewingsCalendar viewings={viewings || []} agents={agents || []} properties={properties || []} />
+            <ViewingsCalendar 
+                viewings={viewings || []} 
+                agents={agents || []} 
+                properties={properties || []}
+                contacts={contacts || []}
+            />
 
             <div className="mt-8 space-y-8">
                 <ViewingList title="Vizionări Programate" viewings={upcomingViewings} agents={agents} />

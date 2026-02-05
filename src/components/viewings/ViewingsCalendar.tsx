@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import type { Viewing, UserProfile, Property } from '@/lib/types';
+import type { Viewing, UserProfile, Property, Contact } from '@/lib/types';
 import {
   format,
   startOfWeek,
@@ -17,21 +17,23 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { WhatsappIcon } from '../icons/WhatsappIcon';
 
 interface ViewingsCalendarProps {
   viewings: Viewing[];
   agents: UserProfile[];
   properties: Property[];
+  contacts: Contact[];
 }
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
   return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingsCalendar({ viewings, agents, properties }: ViewingsCalendarProps) {
+export function ViewingsCalendar({ viewings, agents, properties, contacts }: ViewingsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
 
@@ -60,13 +62,14 @@ export function ViewingsCalendar({ viewings, agents, properties }: ViewingsCalen
     
     const enrichedViewings = dayViewings.map(viewing => {
       const property = properties.find(p => p.id === viewing.propertyId);
-      return { ...viewing, property };
+      const contact = contacts.find(c => c.id === viewing.contactId);
+      return { ...viewing, property, contact };
     });
 
     return enrichedViewings.sort((a, b) =>
       parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime()
     );
-  }, [selectedDay, viewingsByDay, properties]);
+  }, [selectedDay, viewingsByDay, properties, contacts]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
@@ -160,16 +163,51 @@ export function ViewingsCalendar({ viewings, agents, properties }: ViewingsCalen
                       <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-primary ring-4 ring-background flex items-center justify-center">
                          <div className="h-2 w-2 rounded-full bg-primary-foreground"></div>
                       </div>
-                      <div className="pl-8">
-                         <p className="font-semibold">{viewing.propertyTitle}</p>
-                         <p className="text-sm text-muted-foreground">Client: {viewing.contactName}</p>
-                         {viewing.agentName && <p className="text-sm text-muted-foreground">Agent: {viewing.agentName}</p>}
-                         {viewing.property?.ownerName && (
-                            <p className="text-sm text-muted-foreground">Proprietar: {viewing.property.ownerName} {viewing.property.ownerPhone && `- ${viewing.property.ownerPhone}`}</p>
-                         )}
-                         <Link href={`/properties/${viewing.propertyId}`}>
-                           <Button variant="link" className="p-0 h-auto text-xs">Vezi proprietate</Button>
-                         </Link>
+                      <div className="pl-8 space-y-1">
+                          <p className="font-semibold">{viewing.propertyTitle}</p>
+                          
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span className="w-16">Client:</span>
+                              <span className="flex-1">{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
+                              {viewing.contact?.phone && (
+                                  <div className="flex items-center">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4" /></a>
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4" /></a>
+                                      </Button>
+                                  </div>
+                              )}
+                          </div>
+
+                          {viewing.agentName && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <span className="w-16">Agent:</span>
+                                  <span>{viewing.agentName}</span>
+                              </div>
+                          )}
+
+                          {viewing.property?.ownerName && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <span className="w-16">Proprietar:</span>
+                                  <span className="flex-1">{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
+                                  {viewing.property.ownerPhone && (
+                                      <div className="flex items-center">
+                                          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4" /></a>
+                                          </Button>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4" /></a>
+                                          </Button>
+                                      </div>
+                                  )}
+                              </div>
+                          )}
+
+                          <Link href={`/properties/${viewing.propertyId}`}>
+                            <Button variant="link" className="p-0 h-auto text-xs">Vezi proprietate</Button>
+                          </Link>
                       </div>
                   </div>
                 </div>
