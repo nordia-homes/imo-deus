@@ -70,30 +70,3 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
-
-/* reset pentru react-day-picker */
-.rdp table {
-  display: table !important;
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-.rdp thead {
-  display: table-header-group !important;
-}
-
-.rdp tbody {
-  display: table-row-group !important;
-}
-
-.rdp tr {
-  display: table-row !important;
-}
-
-.rdp th,
-.rdp td {
-  display: table-cell !important;
-  text-align: center;
-  padding: 8px;
-}
