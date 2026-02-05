@@ -45,7 +45,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Informații Complete: {property.title}</DialogTitle>
+          <DialogTitle>{property.title}</DialogTitle>
           <DialogDescription>
             Toate detaliile proprietății într-un singur loc.
           </DialogDescription>
