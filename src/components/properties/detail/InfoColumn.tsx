@@ -9,6 +9,7 @@ import { MatchedLeadsTab } from "./MatchedLeadsTab";
 import { format, parseISO } from "date-fns";
 import { ro } from "date-fns/locale";
 import Link from 'next/link';
+import { RlvTab } from "./RlvTab";
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
     
@@ -32,7 +33,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     </TabsTrigger>
                     <TabsTrigger value="documents" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <FileText className="mr-2 h-4 w-4" />
-                        Documente
+                        RLV
                     </TabsTrigger>
                     <TabsTrigger value="settings" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <Settings className="mr-2 h-4 w-4" />
@@ -77,7 +78,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                                             </div>
                                             <Button asChild variant="ghost" size="sm">
                                                 <Link href={`/leads/${viewing.contactId}`}>
-                                                    Vezi client
+                                                    Vezi Cumpărător
                                                     <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -90,7 +91,9 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="documents"><p>Documente asociate</p></TabsContent>
+                <TabsContent value="documents" className="mt-6">
+                    <RlvTab property={property} />
+                </TabsContent>
                 <TabsContent value="settings"><p>Setări proprietate</p></TabsContent>
             </Tabs>
         </div>

@@ -55,6 +55,7 @@ export type Property = {
   salesScore?: 'Scăzut' | 'Mediu' | 'Ridicată';
   ownerName?: string;
   ownerPhone?: string;
+  rlvUrl?: string;
 };
 
 export type MatchedProperty = Property & { matchScore: number; reasoning: string };
