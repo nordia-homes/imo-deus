@@ -93,8 +93,8 @@ export default function PropertiesPage() {
              ) : (
                 <>
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
-                    <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
                     <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
+                    <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
                     <PropertyStatCard label="Vândute/Rezervate Luna Aceasta" value={stats.soldOrReservedThisMonth.toString()} icon={<MapPin />} />
                 </>
              )}
