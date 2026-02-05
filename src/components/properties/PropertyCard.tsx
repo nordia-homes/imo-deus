@@ -23,7 +23,7 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
     : `/properties/${property.id}`;
     
   const hasImages = property.images && property.images.length > 0;
-  const primaryImageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const primaryImageUrl = hasImages ? property.images[0].url : 'https://via.placeholder.com/800x600.png?text=Imagine+lipsa';
 
   // Check if property was created in the last 7 days
   const isNew = property.createdAt && new Date(property.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
