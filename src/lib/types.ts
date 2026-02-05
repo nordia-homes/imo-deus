@@ -41,6 +41,13 @@ export type Property = {
   parking?: string; // Garaj, Exterior
   keyFeatures?: string; // Used for AI, comma separated
   
+  // New fields from user request
+  buildingState?: string;
+  seismicRisk?: string;
+  balconyTerrace?: string;
+  partitioning?: string;
+  kitchen?: string;
+
   // For compatibility with existing components that might use these
   tagline?: string;
   createdAt?: string;

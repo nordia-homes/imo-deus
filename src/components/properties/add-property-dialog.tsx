@@ -69,6 +69,13 @@ const propertySchema = z.object({
   ownerPhone: z.string().optional(),
   salesScore: z.string().optional(),
   agentId: z.string().optional(),
+  
+  // New fields
+  buildingState: z.string().optional(),
+  seismicRisk: z.string().optional(),
+  balconyTerrace: z.string().optional(),
+  partitioning: z.string().optional(),
+  kitchen: z.string().optional(),
 });
 
 const resizeAndGetBlob = (file: File): Promise<Blob> => {
@@ -168,6 +175,11 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 ownerPhone: propertyData.ownerPhone || '',
                 salesScore: propertyData.salesScore || 'Mediu',
                 agentId: propertyData.agentId || user?.uid || 'unassigned',
+                buildingState: propertyData.buildingState || '',
+                seismicRisk: propertyData.seismicRisk || '',
+                balconyTerrace: propertyData.balconyTerrace || '',
+                partitioning: propertyData.partitioning || '',
+                kitchen: propertyData.kitchen || '',
             });
             setImageSources(propertyData.images || []);
         } else {
@@ -178,6 +190,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
+                buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '',
             });
             setImageSources([]);
         }
@@ -318,6 +331,11 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               salesScore: values.salesScore as Property['salesScore'],
               agentId: values.agentId === 'unassigned' ? null : values.agentId,
               agentName: selectedAgent?.name || null,
+              buildingState: values.buildingState || null,
+              seismicRisk: values.seismicRisk || null,
+              balconyTerrace: values.balconyTerrace || null,
+              partitioning: values.partitioning || null,
+              kitchen: values.kitchen || null,
           };
       
           if (isEditMode) {
@@ -438,14 +456,20 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         <section>
                             <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (mp) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă Totală (cu balcon) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (fără balcon)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel>Orientare</FormLabel><FormControl><Input {...field} placeholder="Sud-Vest" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="partitioning" render={({ field }) => ( <FormItem><FormLabel>Compartimentare</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="seismicRisk" render={({ field }) => ( <FormItem><FormLabel>Risc Seismic</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Risc 2">Risc 2</SelectItem><SelectItem value="Risc 3">Risc 3</SelectItem><SelectItem value="Urgenta 1">Urgență 1</SelectItem><SelectItem value="Urgenta 2">Urgență 2</SelectItem><SelectItem value="Urgenta 3">Urgență 3</SelectItem><SelectItem value="Neexpertizat">Neexpertizat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                             </div>
                         </section>
 
@@ -469,6 +493,15 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel>Parcare</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                     <SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="buildingState" render={({ field }) => ( <FormItem><FormLabel>Stare Clădire</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Clădire nouă">Clădire nouă</SelectItem><SelectItem value="Clădire Anvelopată">Clădire Anvelopată</SelectItem><SelectItem value="Clădire Neanvelopată">Clădire Neanvelopată</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="kitchen" render={({ field }) => ( <FormItem><FormLabel>Bucătărie</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Deschisă">Deschisă</SelectItem><SelectItem value="Închisă">Închisă</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="balconyTerrace" render={({ field }) => ( <FormItem><FormLabel>Balcon / Terasă</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Balcon">Balcon</SelectItem><SelectItem value="Terasa">Terasă</SelectItem><SelectItem value="Fara Balcon">Fără Balcon</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                             </div>
                             <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </section>
