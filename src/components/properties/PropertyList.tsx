@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { locations } from '@/lib/locations';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 
 interface PropertyListProps {
@@ -150,7 +151,7 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
                 </PopoverContent>
             </Popover>
             
-            <Button onClick={() => setFilters(f => ({ ...f, nearMetro: !f.nearMetro }))} variant={filters.nearMetro ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Apropiere Metrou</Button>
+            <Button onClick={() => setFilters(f => ({ ...f, nearMetro: !f.nearMetro }))} variant={filters.nearMetro ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Metrou</Button>
             
             <Popover>
                 <PopoverTrigger asChild><Button variant={filters.minArea ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Suprafață Minimă</Button></PopoverTrigger>
