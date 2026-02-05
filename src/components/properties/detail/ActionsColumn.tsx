@@ -27,10 +27,10 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <ScheduledViewingsCard viewings={viewings} />
             <PotentialBuyersCard property={property} allContacts={allContacts} />
-            <SocialMediaCard property={property} />
-            <FacebookPromotionCard />
             <CmaCard property={property} allProperties={allProperties} />
             <PublishCard property={property} />
+            <FacebookPromotionCard />
+            <SocialMediaCard property={property} />
             <WebsiteToggleCard property={property} />
             <PropertyNotesCard property={property} />
         </div>
