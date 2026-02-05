@@ -170,12 +170,12 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                               <span className="w-16">Client:</span>
                               <span>{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
                               {viewing.contact?.phone && (
-                                  <div className="flex items-center">
+                                  <div className="flex items-center gap-1">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4" /></a>
+                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4 text-green-600" /></a>
                                       </Button>
                                       <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4" /></a>
+                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-600" /></a>
                                       </Button>
                                   </div>
                               )}
@@ -193,12 +193,12 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                                   <span className="w-16">Proprietar:</span>
                                   <span>{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
                                   {viewing.property.ownerPhone && (
-                                      <div className="flex items-center">
+                                      <div className="flex items-center gap-1">
                                           <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4" /></a>
+                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4 text-green-600" /></a>
                                           </Button>
                                           <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4" /></a>
+                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-600" /></a>
                                           </Button>
                                       </div>
                                   )}
