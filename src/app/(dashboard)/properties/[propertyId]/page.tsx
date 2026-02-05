@@ -60,7 +60,7 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId, propertyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
-    const contactsQuery = useMemoFirebase(() => {
+    const allContactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
