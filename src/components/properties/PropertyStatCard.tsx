@@ -26,23 +26,26 @@ export function PropertyStatCard({
         <div className="p-2.5 rounded-lg bg-primary/10 text-primary shrink-0">
           {icon}
         </div>
-        <div className="w-full space-y-1">
-            <div className="flex items-baseline justify-between">
-                <p className="text-muted-foreground text-sm">{label}</p>
-                {progress !== undefined && (
-                     <span className="text-xs font-semibold text-green-600">{`${Math.round(progress)}% Realizat`}</span>
-                )}
-            </div>
-            <div className="flex items-baseline gap-1.5">
-                <p className="font-bold text-foreground text-lg">{value}</p>
-                {subValue && (
-                     <p className="text-sm text-muted-foreground">{subValue}</p>
-                )}
-            </div>
-             {progress !== undefined && (
+        {progress !== undefined ? (
+            <div className="w-full space-y-1">
+                <div className="flex items-baseline justify-between">
+                    <p className="text-muted-foreground text-sm">{label}</p>
+                    <span className="text-xs font-semibold text-green-600">{`${Math.round(progress)}% Realizat`}</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                    <p className="font-bold text-foreground text-lg">{value}</p>
+                    {subValue && (
+                        <p className="text-sm text-muted-foreground">{subValue}</p>
+                    )}
+                </div>
                 <Progress value={progress} className="h-1.5" />
-            )}
-        </div>
+            </div>
+        ) : (
+            <div className="flex items-baseline gap-2">
+                <p className="font-bold text-lg">{value}</p>
+                <p className="text-muted-foreground text-sm">{label}</p>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
