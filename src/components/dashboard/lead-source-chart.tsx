@@ -1,6 +1,7 @@
+
 "use client";
 import * as React from "react"
-import type { LeadSourceData } from '@/lib/types';
+import type { BuyerSourceData } from '@/lib/types';
 import { Label, Pie, PieChart, ResponsiveContainer } from "recharts"
 
 import {
@@ -12,7 +13,7 @@ import {
   ChartConfig
 } from '@/components/ui/chart';
 
-export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
+export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
   const chartConfig = React.useMemo(() => {
     const config: ChartConfig = {
         count: {
@@ -28,7 +29,7 @@ export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
     return config;
   }, [data]);
 
-  const totalLeads = React.useMemo(() => {
+  const totalBuyers = React.useMemo(() => {
     return data.reduce((acc, curr) => acc + curr.count, 0);
   }, [data]);
 
@@ -66,14 +67,14 @@ export function LeadSourceChart({ data }: { data: LeadSourceData[] }) {
                         y={viewBox.cy}
                         className="fill-foreground text-3xl font-bold"
                         >
-                        {totalLeads.toLocaleString()}
+                        {totalBuyers.toLocaleString()}
                         </tspan>
                         <tspan
                         x={viewBox.cx}
                         y={(viewBox.cy || 0) + 20}
                         className="fill-muted-foreground text-sm"
                         >
-                        Lead-uri
+                        Cumpărători
                         </tspan>
                     </text>
                     )

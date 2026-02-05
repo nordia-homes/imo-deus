@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import type { Contact, SalesData, LeadSourceData } from '@/lib/types';
+import type { Contact, SalesData, BuyerSourceData } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesChart } from '@/components/dashboard/sales-chart';
@@ -43,12 +44,12 @@ export default function ReportsPage() {
 
     const isLoading = areContactsLoading || areWonLeadsLoading;
 
-    const { salesData, leadSourceData, totalWonLeads, conversionRate, averageDealSize } = useMemo(() => {
+    const { salesData, buyerSourceData, totalWonBuyers, conversionRate, averageDealSize } = useMemo(() => {
         if (!contacts || !wonLeads) {
             return {
                 salesData: [],
-                leadSourceData: [],
-                totalWonLeads: 0,
+                buyerSourceData: [],
+                totalWonBuyers: 0,
                 conversionRate: 0,
                 averageDealSize: 0,
             };
@@ -82,21 +83,21 @@ export default function ReportsPage() {
             sourceCounts[source] = (sourceCounts[source] || 0) + 1;
         });
         const chartColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE'];
-        const leadSourceData: LeadSourceData[] = Object.keys(sourceCounts).map((source, index) => ({
+        const buyerSourceData: BuyerSourceData[] = Object.keys(sourceCounts).map((source, index) => ({
             source,
             count: sourceCounts[source],
             fill: chartColors[index % chartColors.length],
         }));
         
         // Calculate KPIs
-        const totalWonLeads = wonLeads.length;
+        const totalWonBuyers = wonLeads.length;
         const totalLeads = contacts.length;
-        const conversionRate = totalLeads > 0 ? (totalWonLeads / totalLeads) * 100 : 0;
+        const conversionRate = totalLeads > 0 ? (totalWonBuyers / totalLeads) * 100 : 0;
         const totalSalesVolume = wonLeads.reduce((sum, lead) => sum + (lead.budget || 0), 0);
-        const averageDealSize = totalWonLeads > 0 ? totalSalesVolume / totalWonLeads : 0;
+        const averageDealSize = totalWonBuyers > 0 ? totalSalesVolume / totalWonBuyers : 0;
 
 
-        return { salesData, leadSourceData, totalWonLeads, conversionRate, averageDealSize };
+        return { salesData, buyerSourceData, totalWonBuyers, conversionRate, averageDealSize };
 
     }, [contacts, wonLeads]);
     
@@ -106,9 +107,9 @@ export default function ReportsPage() {
         try {
             const result = await summarizeReport({
                 salesData,
-                leadSourceData,
+                leadSourceData: buyerSourceData,
                 kpis: {
-                    totalWonLeads,
+                    totalWonLeads: totalWonBuyers,
                     conversionRate,
                     averageDealSize
                 }
@@ -202,8 +203,8 @@ export default function ReportsPage() {
                     </>
                 ) : (
                     <>
-                        <StatCard title="Total Vânzări Câștigate" value={totalWonLeads.toString()} icon={<DollarSign />} period="Număr total de tranzacții"/>
-                        <StatCard title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} period="Din totalul de lead-uri"/>
+                        <StatCard title="Total Cumpărători Câștigați" value={totalWonBuyers.toString()} icon={<DollarSign />} period="Număr total de tranzacții"/>
+                        <StatCard title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} period="Din totalul de cumpărători"/>
                         <StatCard title="Valoare Medie Tranzacție" value={`€${averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<TrendingUp />} period="Pe tranzacție câștigată"/>
                     </>
                 )}
@@ -223,10 +224,10 @@ export default function ReportsPage() {
                  {/* Lead Source Chart */}
                 <Card className="lg:col-span-2 shadow-2xl rounded-2xl">
                     <CardHeader>
-                        <CardTitle>Distribuție Surse Lead-uri</CardTitle>
+                        <CardTitle>Distribuție Surse Cumpărători</CardTitle>
                     </CardHeader>
                     <CardContent>
-                         {isLoading ? <Skeleton className="h-[250px] w-full" /> : <LeadSourceChart data={leadSourceData} />}
+                         {isLoading ? <Skeleton className="h-[250px] w-full" /> : <LeadSourceChart data={buyerSourceData} />}
                     </CardContent>
                 </Card>
             </div>

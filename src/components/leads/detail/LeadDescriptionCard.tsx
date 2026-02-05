@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,7 +42,7 @@ export function LeadDescriptionCard({ contact, onUpdateContact }: LeadDescriptio
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     onBlur={handleBlur}
-                    placeholder="Adaugă o descriere detaliată a lead-ului, preferințe, cerințe speciale, etc."
+                    placeholder="Adaugă o descriere detaliată a cumpărătorului, preferințe, cerințe speciale, etc."
                     className="text-sm resize-none overflow-hidden"
                     rows={4}
                 />

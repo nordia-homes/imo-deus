@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -26,13 +27,13 @@ export function LeadList() {
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
 
-    const { data: leads, isLoading } = useCollection<Contact>(contactsCollection);
+    const { data: cumparatori, isLoading } = useCollection<Contact>(contactsCollection);
 
     if (isLoading) {
         return (
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader>
-                    <CardTitle>Listă Lead-uri</CardTitle>
+                    <CardTitle>Listă Cumpărători</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -48,7 +49,7 @@ export function LeadList() {
   return (
     <Card className="shadow-2xl rounded-2xl">
         <CardHeader>
-            <CardTitle>Listă Lead-uri</CardTitle>
+            <CardTitle>Listă Cumpărători</CardTitle>
         </CardHeader>
         <CardContent>
              <Table>
@@ -64,12 +65,12 @@ export function LeadList() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {leads && leads.length > 0 ? leads.map(lead => (
-                        <LeadCard key={lead.id} lead={lead} />
+                    {cumparatori && cumparatori.length > 0 ? cumparatori.map(cumparator => (
+                        <LeadCard key={cumparator.id} lead={cumparator} />
                     )) : (
                         <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center">
-                                Nu ai adăugat niciun lead. Folosește butonul "Adaugă Lead" pentru a începe.
+                                Nu ai adăugat niciun cumpărător. Folosește butonul "Adaugă Cumpărător" pentru a începe.
                             </TableCell>
                         </TableRow>
                     )}

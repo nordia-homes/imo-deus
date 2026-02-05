@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -210,10 +211,10 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
                     name="contactId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Asociază cu un Lead (Opțional)</FormLabel>
+                        <FormLabel>Asociază cu un Cumpărător (Opțional)</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Selectează un lead" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Selectează un cumpărător" /></SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="unassigned">Niciunul</SelectItem>

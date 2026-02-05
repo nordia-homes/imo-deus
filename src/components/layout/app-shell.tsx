@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -58,10 +59,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Lead-uri" asChild>
+                <SidebarMenuButton tooltip="Cumpărători" asChild>
                     <Link href="/leads">
                         <Users />
-                        <span>Lead-uri</span>
+                        <span>Cumpărători</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

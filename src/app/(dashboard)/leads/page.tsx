@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -29,9 +30,9 @@ export default function LeadsPage() {
 
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
-    const { newLeadsCount, totalBudget, averageAiScore } = useMemo(() => {
+    const { newBuyersCount, totalBudget, averageAiScore } = useMemo(() => {
         if (!contacts) {
-            return { newLeadsCount: 0, totalBudget: 0, averageAiScore: 0 };
+            return { newBuyersCount: 0, totalBudget: 0, averageAiScore: 0 };
         }
 
         const oneWeekAgo = new Date();
@@ -43,12 +44,12 @@ export default function LeadsPage() {
 
         const totalBudget = contacts.reduce((sum, contact) => sum + (contact.budget || 0), 0);
         
-        const leadsWithScores = contacts.filter(contact => typeof contact.leadScore === 'number');
-        const totalScore = leadsWithScores.reduce((sum, contact) => sum + (contact.leadScore!), 0);
-        const averageAiScore = leadsWithScores.length > 0 ? Math.round(totalScore / leadsWithScores.length) : 0;
+        const buyersWithScores = contacts.filter(contact => typeof contact.leadScore === 'number');
+        const totalScore = buyersWithScores.reduce((sum, contact) => sum + (contact.leadScore!), 0);
+        const averageAiScore = buyersWithScores.length > 0 ? Math.round(totalScore / buyersWithScores.length) : 0;
 
         return {
-            newLeadsCount: newLeads.length,
+            newBuyersCount: newLeads.length,
             totalBudget,
             averageAiScore
         };
@@ -71,7 +72,7 @@ export default function LeadsPage() {
     <div className="space-y-6">
        <div className="flex items-start justify-between">
             <div>
-                <h1 className="text-3xl font-headline font-bold">Lead-uri</h1>
+                <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
                 <p className="text-muted-foreground">
                     Gestionează și prioritizează potențialii clienți.
                 </p>
@@ -88,9 +89,9 @@ export default function LeadsPage() {
                 </>
             ) : (
                 <>
-                    <StatCard title="Lead-uri Noi" value={newLeadsCount.toString()} period="în ultima săptămână" icon={<Users />} />
-                    <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toate lead-urile" icon={<Target />} />
-                    <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru lead-urile cu scor" icon={<BarChart />} />
+                    <StatCard title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
+                    <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
+                    <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
                 </>
             )}
         </div>

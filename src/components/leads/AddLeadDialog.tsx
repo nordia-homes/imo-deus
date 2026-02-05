@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -38,7 +39,7 @@ import type { UserProfile, Property } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { Card, CardContent } from '../ui/card';
 
-const leadSchema = z.object({
+const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
   phone: z.string().min(1, { message: "Telefonul este obligatoriu." }),
   email: z.string().email({ message: "Adresă de email invalidă." }),
@@ -83,8 +84,8 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
       fetchAgents();
   }, [isOpen, agency, firestore]);
 
-  const form = useForm<z.infer<typeof leadSchema>>({
-    resolver: zodResolver(leadSchema),
+  const form = useForm<z.infer<typeof cumparatorSchema>>({
+    resolver: zodResolver(cumparatorSchema),
     defaultValues: {
       name: '',
       phone: '',
@@ -106,7 +107,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
     setSelectedZones([]);
   }, [watchedCity]);
 
-  function onSubmit(values: z.infer<typeof leadSchema>) {
+  function onSubmit(values: z.infer<typeof cumparatorSchema>) {
     if (!user || !agency?.id) {
         toast({
             variant: "destructive",
@@ -122,11 +123,11 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
     const finalAgentId = isUnassigned ? null : values.agentId;
     const selectedAgent = agents?.find(agent => agent.id === finalAgentId);
 
-    const newLeadData = {
+    const newCumparatorData = {
         ...values,
         agentId: finalAgentId,
         zones: selectedZones,
-        contactType: 'Lead' as const,
+        contactType: 'Cumparator' as const,
         createdAt: new Date().toISOString(),
         interactionHistory: [],
         preferences: {
@@ -143,11 +144,11 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
         sourcePropertyId: values.sourcePropertyId === 'none' ? null : values.sourcePropertyId,
     };
 
-    addDocumentNonBlocking(contactsCollection, newLeadData);
+    addDocumentNonBlocking(contactsCollection, newCumparatorData);
 
     toast({
-        title: "Lead adăugat!",
-        description: `${values.name} a fost adăugat în lista ta de lead-uri.`,
+        title: "Cumpărător adăugat!",
+        description: `${values.name} a fost adăugat în lista ta de cumpărători.`,
     });
 
     setIsOpen(false);
@@ -176,14 +177,14 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Adaugă Lead
+          Adaugă Cumpărător
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Adaugă Lead Nou</DialogTitle>
+          <DialogTitle>Adaugă Cumpărător Nou</DialogTitle>
           <DialogDescription>
-            Completează informațiile despre noul potențial client.
+            Completează informațiile despre noul cumpărător.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -283,7 +284,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Selectează proprietatea care a generat lead-ul" />
+                                                <SelectValue placeholder="Selectează proprietatea care a generat cumpărătorul" />
                                             </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -296,7 +297,7 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                                             </SelectContent>
                                         </Select>
                                         <FormDescription>
-                                            Asociază lead-ul cu anunțul de pe care a venit.
+                                            Asociază cumpărătorul cu anunțul de pe care a venit.
                                         </FormDescription>
                                         <FormMessage />
                                         </FormItem>
@@ -383,14 +384,14 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
 
                     <Card className="shadow-xl">
                         <CardContent className="pt-6">
-                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Lead</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a lead-ului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Cumpărător</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                 </div>
             </ScrollArea>
             <DialogFooter className="pt-4 border-t mt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
-              <Button type="submit">Salvează Lead</Button>
+              <Button type="submit">Salvează Cumpărător</Button>
             </DialogFooter>
           </form>
         </Form>

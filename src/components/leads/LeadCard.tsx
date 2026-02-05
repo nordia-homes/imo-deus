@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
@@ -22,35 +23,35 @@ function getPriorityBadgeVariant(priority: Contact['priority']) {
     }
 }
 
-export function LeadCard({ lead }: { lead: Contact }) {
+export function LeadCard({ lead: cumparator }: { lead: Contact }) {
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell className="font-medium">
-        <Link href={`/leads/${lead.id}`} className="hover:underline">{lead.name}</Link>
+        <Link href={`/leads/${cumparator.id}`} className="hover:underline">{cumparator.name}</Link>
       </TableCell>
       <TableCell>
-          {lead.priority && <Badge variant={getPriorityBadgeVariant(lead.priority)}>{lead.priority}</Badge>}
+          {cumparator.priority && <Badge variant={getPriorityBadgeVariant(cumparator.priority)}>{cumparator.priority}</Badge>}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {lead.agentName ? (
+          {cumparator.agentName ? (
             <>
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{lead.agentName}</span>
+              <span className="text-sm">{cumparator.agentName}</span>
             </>
           ) : (
             <span className="text-sm text-muted-foreground">Nealocat</span>
           )}
         </div>
       </TableCell>
-      <TableCell>€{lead.budget?.toLocaleString() ?? 'N/A'}</TableCell>
-      <TableCell><Badge variant="outline">{lead.status}</Badge></TableCell>
+      <TableCell>€{cumparator.budget?.toLocaleString() ?? 'N/A'}</TableCell>
+      <TableCell><Badge variant="outline">{cumparator.status}</Badge></TableCell>
       <TableCell>
-          {typeof lead.leadScore === 'number' ? (
-            <Badge variant={getScoreBadgeVariant(lead.leadScore)}>{lead.leadScore}</Badge>
+          {typeof cumparator.leadScore === 'number' ? (
+            <Badge variant={getScoreBadgeVariant(cumparator.leadScore)}>{cumparator.leadScore}</Badge>
           ) : (
              <Button variant="outline" size="sm" asChild>
-                 <Link href={`/leads/${lead.id}`}>
+                 <Link href={`/leads/${cumparator.id}`}>
                     <Wand2 className="mr-2 h-4 w-4" />
                     Generează
                  </Link>
@@ -59,7 +60,7 @@ export function LeadCard({ lead }: { lead: Contact }) {
       </TableCell>
       <TableCell className="text-right">
         <Button variant="ghost" size="sm" asChild>
-             <Link href={`/leads/${lead.id}`} className="flex items-center justify-end" passHref>
+             <Link href={`/leads/${cumparator.id}`} className="flex items-center justify-end" passHref>
                 Detalii <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
         </Button>

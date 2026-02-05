@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -60,7 +61,7 @@ const PageSkeleton = () => (
 // Main Component
 export default function LeadDetailPage() {
     const params = useParams();
-    const leadId = params.leadId as string;
+    const cumparatorId = params.leadId as string;
     
     const { agency, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
@@ -76,25 +77,25 @@ export default function LeadDetailPage() {
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
-        if (!agency?.id || !leadId) return null;
-        return doc(firestore, 'agencies', agency.id, 'contacts', leadId);
-    }, [firestore, agency?.id, leadId]);
+        if (!agency?.id || !cumparatorId) return null;
+        return doc(firestore, 'agencies', agency.id, 'contacts', cumparatorId);
+    }, [firestore, agency?.id, cumparatorId]);
 
     const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!agency?.id || !leadId) return null;
+        if (!agency?.id || !cumparatorId) return null;
         const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
-        return query(tasksCollection, where('contactId', '==', leadId));
-    }, [firestore, agency?.id, leadId]);
+        return query(tasksCollection, where('contactId', '==', cumparatorId));
+    }, [firestore, agency?.id, cumparatorId]);
 
     const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
     
     const viewingsQuery = useMemoFirebase(() => {
-        if (!agency?.id || !leadId) return null;
+        if (!agency?.id || !cumparatorId) return null;
         const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
-        return query(viewingsCollection, where('contactId', '==', leadId));
-    }, [firestore, agency?.id, leadId]);
+        return query(viewingsCollection, where('contactId', '==', cumparatorId));
+    }, [firestore, agency?.id, cumparatorId]);
 
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
@@ -170,7 +171,7 @@ export default function LeadDetailPage() {
         
         updateDocumentNonBlocking(contactDocRef, finalData);
         
-        toast({ title: 'Lead actualizat', description: 'Modificările au fost salvate.' });
+        toast({ title: 'Cumpărător actualizat', description: 'Modificările au fost salvate.' });
     };
     
     const handleUpdateRecommendation = (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
@@ -290,7 +291,7 @@ export default function LeadDetailPage() {
         });
     };
 
-    const similarLeads = useMemo(() => {
+    const similarCumparatori = useMemo(() => {
         if (!contact || !allContacts || allContacts.length <= 1) return [];
 
         const hasFilterCriteria = (contact.zones && contact.zones.length > 0) || contact.budget;
@@ -405,7 +406,7 @@ export default function LeadDetailPage() {
                         <MatchedProperties properties={matchedProperties} contact={contact} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                        <SimilarLeadsCard leads={similarLeads} />
+                        <SimilarLeadsCard leads={similarCumparatori} />
                     </div>
 
                     {/* Right Column */}

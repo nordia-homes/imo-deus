@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -20,7 +21,7 @@ import { Skeleton } from '../ui/skeleton';
 import { PipelineColumn } from './PipelineColumn';
 import { PipelineCard } from './PipelineCard';
 
-const LEAD_STATUSES: Contact['status'][] = [
+const BUYER_STATUSES: Contact['status'][] = [
     'Nou',
     'Contactat',
     'Vizionare',
@@ -44,7 +45,7 @@ export function PipelineBoard() {
 
   const columns = useMemo(() => {
     const groupedContacts: Record<string, Contact[]> = {};
-    LEAD_STATUSES.forEach(status => {
+    BUYER_STATUSES.forEach(status => {
         groupedContacts[status] = [];
     });
 
@@ -87,7 +88,7 @@ export function PipelineBoard() {
         const newStatus = String(overContainer) as Contact['status'];
         
         // Ensure newStatus is a valid status before updating
-        if (LEAD_STATUSES.includes(newStatus)) {
+        if (BUYER_STATUSES.includes(newStatus)) {
             const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
             updateDocumentNonBlocking(contactRef, { status: newStatus });
         }
@@ -109,7 +110,7 @@ export function PipelineBoard() {
       onDragEnd={onDragEnd}
     >
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-start">
-        {LEAD_STATUSES.map(status => (
+        {BUYER_STATUSES.map(status => (
           <PipelineColumn
             key={status}
             status={status}

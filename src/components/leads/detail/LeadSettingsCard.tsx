@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,7 +27,7 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
     return (
         <Card className="rounded-2xl shadow-2xl">
             <CardHeader className="pb-4">
-                <CardTitle className="text-base">Setări Lead</CardTitle>
+                <CardTitle className="text-base">Setări Cumpărător</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                  <div>

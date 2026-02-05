@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Agency": {
@@ -154,7 +155,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contact",
       "type": "object",
-      "description": "Represents a contact, which can be a client, lead, or partner.",
+      "description": "Represents a contact, which can be a client, buyer, or partner.",
       "properties": {
         "name": {
           "type": "string",
@@ -171,7 +172,7 @@
         },
         "source": {
           "type": "string",
-          "description": "The source of the lead (e.g., Website, Referral)."
+          "description": "The source of the buyer (e.g., Website, Referral)."
         },
         "budget": {
           "type": "number",
@@ -179,23 +180,23 @@
         },
         "status": {
           "type": "string",
-          "description": "The current status of the lead (e.g., Nou, Contactat)."
+          "description": "The current status of the buyer (e.g., Nou, Contactat)."
         },
         "contactType": {
           "type": "string",
-          "description": "The type of contact (e.g., client, lead, partner)."
+          "description": "The type of contact (e.g., client, buyer, partner)."
         },
         "leadScore": {
           "type": "number",
-          "description": "The lead score of the contact."
+          "description": "The buyer score of the contact."
         },
         "leadScoreReason": {
           "type": "string",
-          "description": "The reasoning behind the AI-generated lead score."
+          "description": "The reasoning behind the AI-generated buyer score."
         },
         "description": {
           "type": "string",
-          "description": "A full, detailed description of the lead including their specific needs, preferences, and any other relevant information."
+          "description": "A full, detailed description of the buyer including their specific needs, preferences, and any other relevant information."
         },
         "createdAt": {
           "type": "string",
@@ -224,7 +225,7 @@
             "Medie",
             "Ridicată"
           ],
-          "description": "The priority level of the lead."
+          "description": "The priority level of the buyer."
         },
         "portalId": {
           "type": "string",
@@ -232,7 +233,7 @@
         },
         "sourcePropertyId": {
           "type": "string",
-          "description": "The ID of the property this lead was initially interested in."
+          "description": "The ID of the property this buyer was initially interested in."
         }
       },
       "required": [
@@ -376,7 +377,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Report",
       "type": "object",
-      "description": "Represents a report on sales performance, lead conversion rates, and agent activity.",
+      "description": "Represents a report on sales performance, buyer conversion rates, and agent activity.",
       "properties": {
         "name": {
           "type": "string",
@@ -393,7 +394,7 @@
         },
         "metrics": {
           "type": "string",
-          "description": "Key metrics included in the report (e.g., sales performance, lead conversion rates)."
+          "description": "Key metrics included in the report (e.g., sales performance, buyer conversion rates)."
         }
       },
       "required": [

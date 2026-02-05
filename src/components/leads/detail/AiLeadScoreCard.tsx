@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -77,7 +78,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
       const result = await leadScoring({
         engagementLevel: getEngagementLevel(contact.interactionHistory?.length || 0),
         potentialValue: getPotentialValue(contact.budget),
-        leadDetails: `Name: ${contact.name}, Description: ${contact.description || 'N/A'}, Budget: €${contact.budget?.toLocaleString()}`,
+        buyerDetails: `Name: ${contact.name}, Description: ${contact.description || 'N/A'}, Budget: €${contact.budget?.toLocaleString()}`,
       });
       
       onUpdateContact({
@@ -106,7 +107,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
         <Card className="rounded-2xl shadow-2xl">
              <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-3">
                 <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                <h3 className="font-semibold">AI-ul analizează lead-ul...</h3>
+                <h3 className="font-semibold">AI-ul analizează cumpărătorul...</h3>
                 <p className="text-sm text-muted-foreground">
                     Se calculează scorul și prioritatea.
                 </p>
@@ -124,7 +125,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
                 </div>
                 <h3 className="text-lg font-semibold">Prioritizează cu AI</h3>
                 <p className="text-sm text-muted-foreground">
-                    Generează un scor de la 0 la 100 pentru a înțelege calitatea acestui lead și a-ți prioritiza eforturile.
+                    Generează un scor de la 0 la 100 pentru a înțelege calitatea acestui cumpărător și a-ți prioritiza eforturile.
                 </p>
                 <Button onClick={handleGenerateScore}>
                     <Sparkles className="mr-2 h-4 w-4" />
@@ -144,7 +145,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">
-                                Calitate Lead
+                                Calitate Cumpărător
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>

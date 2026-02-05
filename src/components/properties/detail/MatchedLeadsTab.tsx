@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -24,7 +25,7 @@ interface MatchedLeadsTabProps {
 
 export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps) {
 
-    const matchedLeads = useMemo(() => {
+    const matchedCumparatori = useMemo(() => {
         if (!allContacts || allContacts.length === 0) {
             return [];
         }
@@ -78,10 +79,10 @@ export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps)
 
     }, [property, allContacts]);
 
-    if (matchedLeads.length === 0) {
+    if (matchedCumparatori.length === 0) {
         return (
             <div className="text-center py-10">
-                <p className="text-muted-foreground">Nu au fost găsite lead-uri compatibile cu această proprietate.</p>
+                <p className="text-muted-foreground">Nu au fost găsiți cumpărători compatibili cu această proprietate.</p>
             </div>
         )
     }
@@ -100,7 +101,7 @@ export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {matchedLeads.map(lead => (
+                        {matchedCumparatori.map(lead => (
                             <TableRow key={lead.id}>
                                 <TableCell className="font-medium">{lead.name}</TableCell>
                                 <TableCell>€{lead.budget?.toLocaleString()}</TableCell>
@@ -120,7 +121,7 @@ export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps)
                                 <TableCell className="text-right">
                                     <Button asChild variant="ghost" size="sm">
                                         <Link href={`/leads/${lead.id}`}>
-                                            Vezi Lead
+                                            Vezi Cumpărător
                                             <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>

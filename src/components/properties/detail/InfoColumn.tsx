@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +18,7 @@ export function InfoColumn({ property, allContacts }: { property: Property, allC
                     </TabsTrigger>
                     <TabsTrigger value="leads" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <Users className="mr-2 h-4 w-4" />
-                        Lead-uri
+                        Cumpărători
                     </TabsTrigger>
                     <TabsTrigger value="tasks" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <CheckSquare className="mr-2 h-4 w-4" />

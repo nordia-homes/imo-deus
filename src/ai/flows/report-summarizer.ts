@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent to analyze and summarize performance reports.
@@ -15,7 +16,7 @@ const SalesDataSchema = z.object({
   sales: z.number(),
 });
 
-const LeadSourceDataSchema = z.object({
+const BuyerSourceDataSchema = z.object({
   source: z.string(),
   count: z.number(),
   fill: z.string(),
@@ -29,7 +30,7 @@ const KpiSchema = z.object({
 
 export const SummarizeReportInputSchema = z.object({
     salesData: z.array(SalesDataSchema).describe("Monthly sales volume data."),
-    leadSourceData: z.array(LeadSourceDataSchema).describe("Data on the count of leads from different sources."),
+    leadSourceData: z.array(BuyerSourceDataSchema).describe("Data on the count of leads from different sources."),
     kpis: KpiSchema.describe("Key Performance Indicators including total won leads, conversion rate (%), and average deal size (€)."),
 });
 export type SummarizeReportInput = z.infer<typeof SummarizeReportInputSchema>;
@@ -51,7 +52,7 @@ const prompt = ai.definePrompt({
   prompt: `You are a professional real estate business analyst. Your task is to analyze the following performance data for a real estate agency in Romania and provide a concise summary and actionable recommendations. The language for the output must be Romanian.
 
   **Key Performance Indicators (KPIs):**
-  - Total Won Leads: {{{kpis.totalWonLeads}}}
+  - Total Cumpărători Câștigați: {{{kpis.totalWonLeads}}}
   - Conversion Rate: {{{kpis.conversionRate.toFixed(1)}}}%
   - Average Deal Size: €{{{kpis.averageDealSize.toLocaleString()}}}
 
@@ -60,9 +61,9 @@ const prompt = ai.definePrompt({
   - {{{this.month}}}: €{{{this.sales.toLocaleString()}}}
   {{/each}}
 
-  **Lead Source Distribution:**
+  **Distribuție Surse Cumpărători:**
   {{#each leadSourceData}}
-  - {{{this.source}}}: {{{this.count}}} leads
+  - {{{this.source}}}: {{{this.count}}} cumpărători
   {{/each}}
 
   **Your Tasks:**
@@ -81,8 +82,8 @@ const summarizeReportFlow = ai.defineFlow(
     // Ensure there is data to process
     if (input.salesData.length === 0 && input.leadSourceData.length === 0) {
         return {
-            summary: "Nu există suficiente date pentru a genera o analiză. Adăugați mai multe lead-uri și tranzacții câștigate.",
-            recommendations: "- Adaugă lead-uri noi.\n- Închide tranzacții pentru a înregistra vânzări."
+            summary: "Nu există suficiente date pentru a genera o analiză. Adăugați mai mulți cumpărători și tranzacții câștigate.",
+            recommendations: "- Adaugă cumpărători noi.\n- Închide tranzacții pentru a înregistra vânzări."
         }
     }
     const {output} = await prompt(input);

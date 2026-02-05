@@ -101,7 +101,7 @@ export type Contact = {
     budget?: number;
     status: 'Nou' | 'Contactat' | 'Vizionare' | 'În negociere' | 'Câștigat' | 'Pierdut';
     description?: string;
-    contactType: 'Lead' | 'Client' | 'Partener';
+    contactType: 'Cumparator' | 'Client' | 'Partener';
     interactionHistory?: Interaction[];
     preferences?: Partial<ContactPreferences>;
     city?: string;
@@ -125,7 +125,7 @@ export type SalesData = {
   sales: number;
 };
 
-export type LeadSourceData = {
+export type BuyerSourceData = {
   source: string;
   count: number;
   fill: string;

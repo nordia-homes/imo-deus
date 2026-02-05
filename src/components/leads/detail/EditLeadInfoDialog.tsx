@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect } from 'react';
@@ -26,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import type { Contact } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
-const editLeadSchema = z.object({
+const editCumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
   phone: z.string().min(1, { message: "Telefonul este obligatoriu." }),
   email: z.string().email({ message: "Adresă de email invalidă." }),
@@ -42,8 +43,8 @@ interface EditLeadInfoDialogProps {
 
 export function EditLeadInfoDialog({ contact, isOpen, onOpenChange, onUpdateContact }: EditLeadInfoDialogProps) {
   
-  const form = useForm<z.infer<typeof editLeadSchema>>({
-    resolver: zodResolver(editLeadSchema),
+  const form = useForm<z.infer<typeof editCumparatorSchema>>({
+    resolver: zodResolver(editCumparatorSchema),
   });
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function EditLeadInfoDialog({ contact, isOpen, onOpenChange, onUpdateCont
     }
   }, [contact, isOpen, form]);
 
-  const onSubmit = (values: z.infer<typeof editLeadSchema>) => {
+  const onSubmit = (values: z.infer<typeof editCumparatorSchema>) => {
     onUpdateContact(values);
     onOpenChange(false);
   };
@@ -68,7 +69,7 @@ export function EditLeadInfoDialog({ contact, isOpen, onOpenChange, onUpdateCont
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Editează Detalii Lead</DialogTitle>
+          <DialogTitle>Editează Detalii Cumpărător</DialogTitle>
           <DialogDescription>
             Actualizează informațiile de contact și bugetul pentru {contact.name}.
           </DialogDescription>
