@@ -25,7 +25,7 @@ const PageSkeleton = () => (
             <div className="flex gap-2"><Skeleton className="h-10 w-32" /><Skeleton className="h-10 w-10" /></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6">
-             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[450px]" /> <Skeleton className="h-96" /> </div>
+             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[405px]" /> <Skeleton className="h-96" /> </div>
              <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-24" /> <Skeleton className="h-32" /> <Skeleton className="h-40" /> <Skeleton className="h-24" /> </div>
         </div>
     </div>
@@ -113,7 +113,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">
-                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} />
+                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} allContacts={allContacts || []} />
                 </div>
             </main>
         </div>
