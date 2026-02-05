@@ -10,7 +10,6 @@ import { ScheduledViewingsCard } from "./actions/ScheduledViewingsCard";
 import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { PotentialBuyersCard } from "./actions/PotentialBuyersCard";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
-import { FinancialAnalysisCard } from "./actions/FinancialAnalysisCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, allContacts }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, allContacts: Contact[] }) {
@@ -28,7 +27,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <ScheduledViewingsCard viewings={viewings} />
             <PotentialBuyersCard property={property} allContacts={allContacts} />
-            <FinancialAnalysisCard property={property} />
             <SocialMediaCard property={property} />
             <FacebookPromotionCard />
             <PublishCard property={property} />
