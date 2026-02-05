@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 
-const filterChips = ["Toate", "Vânzare", "Închiriere", "Noi", ">100k€", "2+ camere", "București"];
+const filterChips = ["Toate", "Vânzare", "Închiriere", "Noi", ">100k€", "2+ camere", "București", "Recomandate", "Apartament", "Casă/Vilă", "Cluj-Napoca", "Timișoara", "Mobilat", "Bloc Nou", "Parcare", "Filtre"];
 
 interface PropertyListProps {
     properties: Property[] | null;
@@ -51,6 +51,14 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
                     case '>100k€': return property.price > 100000;
                     case '2+ camere': return property.rooms >= 2;
                     case 'București': return property.location.toLowerCase().includes('bucurești');
+                    case 'Recomandate': return property.featured === true;
+                    case 'Apartament': return property.propertyType === 'Apartament';
+                    case 'Casă/Vilă': return property.propertyType === 'Casă/Vilă';
+                    case 'Cluj-Napoca': return property.location.toLowerCase().includes('cluj-napoca');
+                    case 'Timișoara': return property.location.toLowerCase().includes('timișoara');
+                    case 'Mobilat': return property.furnishing === 'Complet';
+                    case 'Bloc Nou': return !!property.constructionYear && property.constructionYear >= 2018;
+                    case 'Parcare': return property.parking !== 'Fără' && !!property.parking;
                     default: return true;
                 }
             });
@@ -104,10 +112,6 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
                     {filter}
                     </Button>
                 ))}
-                <Button variant="outline" size="sm" className="rounded-full h-8 font-normal bg-card">
-                    <Filter className="mr-1 h-3 w-3" />
-                    Filtre
-                </Button>
                 <div className="flex-1" />
                 <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 hidden md:inline-flex" onClick={() => setViewMode('grid')}>
                     <LayoutGrid className="h-4 w-4" />
