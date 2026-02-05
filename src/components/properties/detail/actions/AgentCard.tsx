@@ -21,8 +21,8 @@ export function AgentCard({ agent }: { agent: AgentInfo }) {
     const sanitizedPhone = agent.phone?.replace(/\D/g, '') || '';
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-2">
+        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
+            <CardContent className="p-2 w-full">
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">

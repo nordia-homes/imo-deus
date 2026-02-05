@@ -22,8 +22,8 @@ export function FacebookPromotionCard() {
     };
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-2 flex items-center justify-between">
+        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
+            <CardContent className="p-2 flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                     <Facebook className="h-4 w-4 text-blue-600" />
                     <span className="font-semibold text-sm">Promovare Facebook</span>

@@ -87,7 +87,7 @@ export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps)
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
+        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
             <CardContent className="p-0">
                 <Table>
                     <TableHeader>

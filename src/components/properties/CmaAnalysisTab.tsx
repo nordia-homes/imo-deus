@@ -46,12 +46,16 @@ export function CmaAnalysisTab({ subjectProperty, allProperties, agencyId }: Cma
     };
     
     return (
-        <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-2">
-                <div className="flex flex-col items-center justify-center text-center">
-                    <Button size="sm" className="w-full" onClick={handleGenerateCMA} disabled={isGenerating}>
+        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
+            <CardContent className="p-2 w-full">
+                <div className="flex items-center justify-between text-center">
+                     <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-semibold text-sm">Analiză CMA</span>
+                    </div>
+                    <Button size="sm" className="h-8" onClick={handleGenerateCMA} disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                        Generează Analiză CMA
+                        Generează
                     </Button>
                 </div>
             </CardContent>

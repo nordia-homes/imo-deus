@@ -22,7 +22,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
+        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Website Public</CardTitle>
             </CardHeader>

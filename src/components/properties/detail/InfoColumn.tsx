@@ -33,7 +33,7 @@ export function InfoColumn({ property, allContacts }: { property: Property, allC
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="overview" className="mt-6">
-                    <Card className="rounded-2xl shadow-2xl">
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
                             <p className="text-muted-foreground whitespace-pre-wrap">{property.description}</p>
