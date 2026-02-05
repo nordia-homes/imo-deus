@@ -29,25 +29,33 @@ export default function PropertiesPage() {
       return {
         totalProperties: 0,
         totalCommissionValue: 0,
+        realizedCommissionValue: 0,
+        commissionProgress: 0,
         newThisWeek: 0,
         soldOrReservedThisMonth: 0,
       };
     }
-
-    const totalCommissionValue = properties.reduce((sum, prop) => {
+    
+    const calculateCommission = (prop: Property): number => {
         const price = prop.price || 0;
-        if (price === 0) return sum;
-
+        if (price === 0) return 0;
         if (prop.commissionType === 'fixed') {
-            return sum + (prop.commissionValue || 0);
+            return prop.commissionValue || 0;
         }
-
-        // Default to percentage
         const percentage = prop.commissionValue !== undefined ? prop.commissionValue : 2;
-        return sum + (price * (percentage / 100));
-    }, 0);
+        return price * (percentage / 100);
+    };
+
+    const totalCommissionValue = properties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
+    
+    const realizedCommissionValue = properties
+        .filter(prop => prop.status === 'Vândut' || prop.status === 'Rezervat')
+        .reduce((sum, prop) => sum + calculateCommission(prop), 0);
+        
+    const commissionProgress = totalCommissionValue > 0 ? (realizedCommissionValue / totalCommissionValue) * 100 : 0;
 
     const newThisWeek = properties.filter(prop => prop.createdAt && isThisWeek(new Date(prop.createdAt), { weekStartsOn: 1 })).length;
+    
     const soldOrReservedThisMonth = properties.filter(prop =>
       (prop.status === 'Vândut' || prop.status === 'Rezervat') &&
       prop.statusUpdatedAt &&
@@ -57,6 +65,8 @@ export default function PropertiesPage() {
     return {
       totalProperties: properties.length,
       totalCommissionValue,
+      realizedCommissionValue,
+      commissionProgress,
       newThisWeek,
       soldOrReservedThisMonth,
     };
@@ -77,9 +87,9 @@ export default function PropertiesPage() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-3xl font-headline font-bold">Proprietăți</h1>
+                <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți</h1>
                 <p className="text-muted-foreground">
-                    Gestionează portofoliul de proprietăți.
+                    Gestionează și analizează portofoliul de proprietăți.
                 </p>
             </div>
             <Button onClick={() => setIsAddOpen(true)}>
@@ -97,16 +107,22 @@ export default function PropertiesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              {isLoading ? (
                 <>
-                    <Skeleton className="h-[76px]" />
-                    <Skeleton className="h-[76px]" />
-                    <Skeleton className="h-[76px]" />
-                    <Skeleton className="h-[76px]" />
+                    <Skeleton className="h-[98px]" />
+                    <Skeleton className="h-[98px]" />
+                    <Skeleton className="h-[98px]" />
+                    <Skeleton className="h-[98px]" />
                 </>
              ) : (
                 <>
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
                     <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
-                    <PropertyStatCard label="Valoare Comision Total" value={formatValue(stats.totalCommissionValue)} icon={<DollarSign />} />
+                    <PropertyStatCard 
+                        label="Comision Realizat" 
+                        value={formatValue(stats.realizedCommissionValue)} 
+                        subValue={`din ${formatValue(stats.totalCommissionValue)}`}
+                        icon={<DollarSign />}
+                        progress={stats.commissionProgress}
+                    />
                     <PropertyStatCard label="Vândute/Rezervate Luna Aceasta" value={stats.soldOrReservedThisMonth.toString()} icon={<MapPin />} />
                 </>
              )}
