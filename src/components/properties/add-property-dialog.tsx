@@ -179,7 +179,9 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             });
             setImageSources([]);
         }
-    }, [isEditMode, propertyData, form, user?.uid]);
+    // This effect now correctly runs only once when the component is mounted (due to the `key` prop on AddPropertyDialog)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -348,9 +350,9 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className='overflow-y-auto p-1 -mx-4'>
-                    <div className="space-y-6 px-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+                <div className='overflow-y-auto p-6'>
+                    <div className="space-y-6">
                         <section>
                             <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
                             <div className="space-y-4">
@@ -526,7 +528,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         </section>
                     </div>
                 </div>
-                <DialogFooter className="pt-4 border-t px-6">
+                <DialogFooter className="pt-4 border-t px-6 shrink-0">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -550,17 +552,24 @@ export function AddPropertyDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const isEditMode = !!property;
+  
+  const formKey = useMemo(() => {
+    return isOpen ? (property?.id || `new-${Date.now()}`) : 'closed';
+  }, [isOpen, property]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-0 shrink-0">
           <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
           <DialogDescription>
             {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
         </DialogHeader>
-        {isOpen && <PropertyForm propertyData={property || null} onClose={() => onOpenChange(false)} />}
+        {/* The div wrapper with flex-1 and min-h-0 is crucial for the internal scrolling of PropertyForm to work correctly in a flex parent */}
+        <div className="flex-1 min-h-0">
+            {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} />}
+        </div>
       </DialogContent>
     </Dialog>
   );
