@@ -150,6 +150,7 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
+                          locale={ro}
                           disabled={(date) =>
                             date < new Date(new Date().setDate(new Date().getDate() - 1))
                           }
