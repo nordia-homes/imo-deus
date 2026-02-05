@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, getDoc, doc } from 'firebase/firestore';
 import type { Property, Contact, Viewing, UserProfile } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
@@ -14,6 +14,8 @@ import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
 import { ViewingList } from '@/components/viewings/ViewingList';
 import { parseISO } from 'date-fns';
+import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
+import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
 
 export default function ViewingsPage() {
     const { agencyId, agency, userProfile } = useAgency();
@@ -23,6 +25,8 @@ export default function ViewingsPage() {
 
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
+    const [editingViewing, setEditingViewing] = useState<Viewing | null>(null);
+    const [deletingViewing, setDeletingViewing] = useState<Viewing | null>(null);
 
     // Data fetching
     const propertiesQuery = useMemoFirebase(() => {
@@ -108,6 +112,26 @@ export default function ViewingsPage() {
         toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
     };
 
+    const handleUpdateViewing = (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
+        if (!agencyId || !editingViewing) return;
+        const viewingRef = doc(firestore, 'agencies', agencyId, 'viewings', editingViewing.id);
+        const { id, ...dataToUpdate } = updatedViewing;
+        updateDocumentNonBlocking(viewingRef, dataToUpdate);
+        toast({ title: "Vizionare actualizată!" });
+        setEditingViewing(null);
+    };
+
+    const handleDeleteViewing = () => {
+        if (!agencyId || !deletingViewing) return;
+        const viewingRef = doc(firestore, 'agencies', agencyId, 'viewings', deletingViewing.id);
+        deleteDocumentNonBlocking(viewingRef);
+        toast({
+            variant: 'destructive',
+            title: "Vizionare ștearsă!",
+        });
+        setDeletingViewing(null);
+    };
+
     const isLoading = arePropertiesLoading || areContactsLoading || areViewingsLoading || areAgentsLoading;
 
     if (isLoading) {
@@ -154,9 +178,37 @@ export default function ViewingsPage() {
             />
 
             <div className="mt-8 space-y-8">
-                <ViewingList title="Vizionări Programate" viewings={upcomingViewings} agents={agents} />
-                <ViewingList title="Istoric Vizionări" viewings={pastViewings} agents={agents} />
+                <ViewingList 
+                    title="Vizionări Programate" 
+                    viewings={upcomingViewings} 
+                    agents={agents}
+                    onEdit={setEditingViewing}
+                    onDelete={setDeletingViewing}
+                />
+                <ViewingList 
+                    title="Istoric Vizionări" 
+                    viewings={pastViewings} 
+                    agents={agents}
+                    onEdit={setEditingViewing}
+                    onDelete={setDeletingViewing}
+                />
             </div>
+
+            <EditViewingDialog
+                isOpen={!!editingViewing}
+                onOpenChange={(isOpen) => !isOpen && setEditingViewing(null)}
+                viewing={editingViewing}
+                onUpdateViewing={handleUpdateViewing}
+                properties={properties || []}
+                contacts={contacts || []}
+            />
+
+            <DeleteViewingAlert
+                isOpen={!!deletingViewing}
+                onOpenChange={(isOpen) => !isOpen && setDeletingViewing(null)}
+                viewing={deletingViewing}
+                onDelete={handleDeleteViewing}
+            />
 
         </div>
     );

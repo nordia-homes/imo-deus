@@ -8,12 +8,15 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar } from 'lucide-react';
+import { Calendar, Edit, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ViewingListProps {
     title: string;
     viewings: Viewing[];
     agents: UserProfile[];
+    onEdit: (viewing: Viewing) => void;
+    onDelete: (viewing: Viewing) => void;
 }
 
 const getStatusVariant = (status: Viewing['status']) => {
@@ -29,7 +32,7 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingList({ title, viewings, agents }: ViewingListProps) {
+export function ViewingList({ title, viewings, agents, onEdit, onDelete }: ViewingListProps) {
     if (viewings.length === 0) {
         return (
             <Card className="shadow-2xl rounded-2xl">
@@ -57,6 +60,7 @@ export function ViewingList({ title, viewings, agents }: ViewingListProps) {
                             <TableHead>Client</TableHead>
                             <TableHead>Agent</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Acțiuni</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -91,6 +95,14 @@ export function ViewingList({ title, viewings, agents }: ViewingListProps) {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => onEdit(viewing)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => onDelete(viewing)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             );
