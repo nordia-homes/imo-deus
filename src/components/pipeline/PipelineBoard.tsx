@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -81,7 +80,7 @@ export function PipelineBoard() {
     if (!over || active.id === over.id || !agencyId) return;
 
     const activeContainer = active.data.current?.sortable.containerId;
-    const overContainer = over.data.current?.sortable.containerId || over.id;
+    const overContainer = over.data.current?.sortable?.containerId || over.id;
 
     if (activeContainer !== overContainer) {
         const contactId = String(active.id);
