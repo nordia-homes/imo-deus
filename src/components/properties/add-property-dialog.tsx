@@ -52,6 +52,7 @@ const propertySchema = z.object({
   constructionYear: z.coerce.number().int().min(1800).max(new Date().getFullYear() + 1).optional().or(z.literal('')),
   floor: z.string().optional(),
   totalFloors: z.coerce.number().int().min(0).optional().or(z.literal('')),
+  orientation: z.string().optional(),
   
   comfort: z.string().optional(),
   interiorState: z.string().optional(),
@@ -153,6 +154,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 constructionYear: propertyData.constructionYear || '',
                 floor: propertyData.floor || '',
                 totalFloors: propertyData.totalFloors || '',
+                orientation: propertyData.orientation || '',
                 comfort: propertyData.comfort || '',
                 interiorState: propertyData.interiorState || '',
                 furnishing: propertyData.furnishing || '',
@@ -172,7 +174,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
              form.reset({
                 title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
-                floor: '', totalFloors: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
+                floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
@@ -298,6 +300,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               constructionYear: values.constructionYear ? Number(values.constructionYear) : null,
               floor: values.floor || null,
               totalFloors: values.totalFloors ? Number(values.totalFloors) : null,
+              orientation: values.orientation || null,
               comfort: values.comfort || null,
               interiorState: values.interiorState || null,
               furnishing: values.furnishing || null,
@@ -442,6 +445,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel>Orientare</FormLabel><FormControl><Input {...field} placeholder="Sud-Vest" /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                         </section>
 

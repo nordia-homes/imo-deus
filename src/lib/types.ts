@@ -33,6 +33,7 @@ export type Property = {
   constructionYear?: number;
   floor?: string; // Parter, 1, 2...
   totalFloors?: number;
+  orientation?: string;
   comfort?: string; // e.g. 'Lux'
   interiorState?: string; // Renovat, Buna, etc.
   furnishing?: string; // Complet, Partial, Nemobilat

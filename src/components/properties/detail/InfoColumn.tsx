@@ -1,8 +1,7 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, Users, FileText, Settings, CalendarCheck, ArrowRight } from "lucide-react";
+import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight } from "lucide-react";
 import type { Property, Contact, Viewing } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { MatchedLeadsTab } from "./MatchedLeadsTab";
@@ -10,8 +9,11 @@ import { format, parseISO } from "date-fns";
 import { ro } from "date-fns/locale";
 import Link from 'next/link';
 import { RlvTab } from "./RlvTab";
+import { useState } from 'react';
+import { InfoDialog } from './InfoDialog';
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
+    const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
 
@@ -35,10 +37,13 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                         <FileText className="mr-2 h-4 w-4" />
                         RLV
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Setări
-                    </TabsTrigger>
+                    <div 
+                        onClick={() => setIsInfoDialogOpen(true)}
+                        className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-accent hover:shadow-xl transition-all"
+                    >
+                        <Info className="mr-2 h-4 w-4" />
+                        Informații
+                    </div>
                 </TabsList>
                 <TabsContent value="overview" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
@@ -94,8 +99,12 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                 <TabsContent value="documents" className="mt-6">
                     <RlvTab property={property} />
                 </TabsContent>
-                <TabsContent value="settings"><p>Setări proprietate</p></TabsContent>
             </Tabs>
+            <InfoDialog 
+                property={property}
+                isOpen={isInfoDialogOpen}
+                onOpenChange={setIsInfoDialogOpen}
+            />
         </div>
     )
 }
