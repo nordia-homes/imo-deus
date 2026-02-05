@@ -36,13 +36,16 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
 import type { Property, UserProfile } from '@/lib/types';
+import { locations, type City } from '@/lib/locations';
 
 
 const propertySchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
   propertyType: z.string().min(1, { message: "Tipul proprietății este obligatoriu." }),
   transactionType: z.string().min(1, { message: "Tipul tranzacției este obligatoriu." }),
-  location: z.string().min(1, { message: "Locația este obligatorie." }),
+  address: z.string().min(1, { message: "Adresa este obligatorie." }),
+  city: z.string().optional(),
+  zone: z.string().optional(),
   price: z.coerce.number().positive({ message: "Prețul trebuie să fie pozitiv." }),
   rooms: z.coerce.number().int().min(0, { message: "Numărul de camere nu poate fi negativ." }),
   bathrooms: z.coerce.number().min(0, { message: "Numărul de băi nu poate fi negativ." }),
@@ -76,6 +79,7 @@ const propertySchema = z.object({
   balconyTerrace: z.string().optional(),
   partitioning: z.string().optional(),
   kitchen: z.string().optional(),
+  lift: z.string().optional(),
 });
 
 const resizeAndGetBlob = (file: File): Promise<Blob> => {
@@ -146,13 +150,24 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         defaultValues: {},
     });
 
+    const watchedCity = form.watch('city') as City;
+    const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
+    
+    useEffect(() => {
+        if (watchedCity && isEditMode && propertyData?.city !== watchedCity) {
+            form.setValue('zone', '');
+        }
+    }, [watchedCity, form, isEditMode, propertyData?.city]);
+
     useEffect(() => {
         if (isEditMode && propertyData) {
             form.reset({
                 title: propertyData.title || '',
                 propertyType: propertyData.propertyType || '',
                 transactionType: propertyData.transactionType || 'Vânzare',
-                location: propertyData.location || 'București',
+                address: propertyData.address || '',
+                city: propertyData.city || '',
+                zone: propertyData.zone || '',
                 price: propertyData.price || 0,
                 rooms: propertyData.rooms || 0,
                 bathrooms: propertyData.bathrooms || 0,
@@ -180,17 +195,18 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 balconyTerrace: propertyData.balconyTerrace || '',
                 partitioning: propertyData.partitioning || '',
                 kitchen: propertyData.kitchen || '',
+                lift: propertyData.lift || '',
             });
             setImageSources(propertyData.images || []);
         } else {
              form.reset({
-                title: '', propertyType: '', transactionType: 'Vânzare', location: 'București', price: 0,
+                title: '', propertyType: '', transactionType: 'Vânzare', address: '', city: 'Bucuresti-Ilfov', zone: '', price: 0,
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
                 floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
-                buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '',
+                buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '',
             });
             setImageSources([]);
         }
@@ -235,7 +251,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
     async function handleGenerateDescription() {
         setIsGenerating(true);
         const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
-            'propertyType', 'location', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
+            'propertyType', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
         ];
         const isValid = await form.trigger(fieldsToValidate);
 
@@ -249,10 +265,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             return;
         }
         
-        const { propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price } = form.getValues();
+        const { propertyType, rooms, bathrooms, squareFootage, keyFeatures, price, zone, city } = form.getValues();
         try {
             const result = await generatePropertyDescription({
-                propertyType, location, rooms, bathrooms, squareFootage, keyFeatures, price
+                propertyType, location: [zone, city].filter(Boolean).join(', '), rooms, bathrooms, squareFootage, keyFeatures, price
             });
             form.setValue('description', result.description);
         } catch (error) {
@@ -303,8 +319,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               title: values.title,
               propertyType: values.propertyType,
               transactionType: values.transactionType,
-              location: values.location,
-              address: values.location,
+              address: values.address,
+              city: values.city,
+              zone: values.zone,
+              location: [values.zone, values.city].filter(Boolean).join(', '),
               price: values.price,
               rooms: values.rooms,
               bathrooms: values.bathrooms,
@@ -336,6 +354,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               balconyTerrace: values.balconyTerrace || null,
               partitioning: values.partitioning || null,
               kitchen: values.kitchen || null,
+              lift: values.lift || null,
           };
       
           if (isEditMode) {
@@ -388,8 +407,16 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                         <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                     <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>Oraș *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
+                                        <SelectContent>{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel>Zonă</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger><SelectValue placeholder="Selectează zona" /></SelectTrigger></FormControl>
+                                        <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă (stradă, nr, etc) *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, bl. 5" /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Adresă completă / Zonă *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Sector 3, București" /></FormControl><FormMessage /></FormItem> )} />
                                     <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
@@ -502,6 +529,9 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 <FormField control={form.control} name="balconyTerrace" render={({ field }) => ( <FormItem><FormLabel>Balcon / Terasă</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                     <SelectContent><SelectItem value="Balcon">Balcon</SelectItem><SelectItem value="Terasa">Terasă</SelectItem><SelectItem value="Fara Balcon">Fără Balcon</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel>Lift</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                             </div>
                             <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </section>

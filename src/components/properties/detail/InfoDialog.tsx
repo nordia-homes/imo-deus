@@ -10,7 +10,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Handshake, User, Phone, TrendingUp, Key, AlertTriangle } from 'lucide-react';
+import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Handshake, User, Phone, TrendingUp, Key, AlertTriangle, ArrowUpDown } from 'lucide-react';
 
 interface InfoDialogProps {
   property: Property;
@@ -72,6 +72,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Mobilier" value={property.furnishing} />
             <InfoItem icon={<Thermometer className="h-5 w-5 text-primary" />} label="Sistem Încălzire" value={property.heatingSystem} />
             <InfoItem icon={<Car className="h-5 w-5 text-primary" />} label="Parcare" value={property.parking} />
+            <InfoItem icon={<ArrowUpDown className="h-5 w-5 text-primary" />} label="Lift" value={property.lift} />
             <InfoItem icon={<Building className="h-5 w-5 text-primary" />} label="Stare Clădire" value={property.buildingState} />
             <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Bucătărie" value={property.kitchen} />
             <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Balcon/Terasă" value={property.balconyTerrace} />
@@ -84,6 +85,12 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
 
             <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2">
                 <InfoItem icon={<Key className="h-5 w-5 text-primary" />} label="Caracteristici cheie" value={property.keyFeatures} />
+            </div>
+             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+                <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Oraș" value={property.city} />
+            </div>
+             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+                <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Zonă" value={property.zone} />
             </div>
              <div className="col-span-1 sm:col-span-2 md:col-span-3">
                 <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Adresă" value={property.address} />

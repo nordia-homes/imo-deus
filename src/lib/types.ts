@@ -47,6 +47,9 @@ export type Property = {
   balconyTerrace?: string;
   partitioning?: string;
   kitchen?: string;
+  lift?: string;
+  city?: string;
+  zone?: string;
 
   // For compatibility with existing components that might use these
   tagline?: string;
