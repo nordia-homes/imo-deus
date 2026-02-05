@@ -19,9 +19,9 @@ import type { Viewing, Property, Contact } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
-import { collection } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 
 
 const viewingSchema = z.object({
@@ -125,7 +125,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
                 agentId: user.uid,
                 agentName: user.displayName || user.email,
             };
-            const newContactRef = await addDocumentNonBlocking(contactsCollection, newContactData);
+            const newContactRef = await addDoc(contactsCollection, newContactData);
             if (!newContactRef) throw new Error("Failed to get new contact reference");
             contactIdToUse = newContactRef.id;
             contactNameToUse = values.newContactName;
@@ -170,15 +170,16 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
       <DialogTrigger asChild>
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Vizionare</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh] p-0">
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle>Programează o Vizionare Nouă</DialogTitle>
           <DialogDescription>
             Completează detaliile pentru noua vizionare.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
               <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel>Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               
               {isNewContact ? (
@@ -226,8 +227,9 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
                 <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               </div>
               <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
+            </div>
             
-            <DialogFooter className="pt-4">
+            <DialogFooter className="p-6 pt-4 border-t shrink-0">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
