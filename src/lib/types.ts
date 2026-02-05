@@ -67,6 +67,10 @@ export type Property = {
   ownerName?: string;
   ownerPhone?: string;
   rlvUrl?: string;
+
+  // Commission fields
+  commissionType?: 'percentage' | 'fixed';
+  commissionValue?: number;
 };
 
 export type MatchedProperty = Property & { matchScore: number; reasoning: string };

@@ -264,6 +264,15 @@
           "type": "string",
           "description": "The type of property (e.g., house, apartment)."
         },
+        "commissionType": {
+          "type": "string",
+          "enum": ["percentage", "fixed"],
+          "description": "The type of commission (percentage or fixed amount)."
+        },
+        "commissionValue": {
+            "type": "number",
+            "description": "The value of the commission, either a percentage or a fixed amount in EUR."
+        },
         "contactId": {
           "type": "string",
           "description": "Reference to Contact. (Relationship: Contact 1:N Property). Represents the agent or contact associated with the listing."

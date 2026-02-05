@@ -28,13 +28,25 @@ export default function PropertiesPage() {
     if (!properties) {
       return {
         totalProperties: 0,
-        portfolioValue: 0,
+        totalCommissionValue: 0,
         newThisWeek: 0,
         soldOrReservedThisMonth: 0,
       };
     }
 
-    const portfolioValue = properties.reduce((sum, prop) => sum + prop.price, 0);
+    const totalCommissionValue = properties.reduce((sum, prop) => {
+        const price = prop.price || 0;
+        if (price === 0) return sum;
+
+        if (prop.commissionType === 'fixed') {
+            return sum + (prop.commissionValue || 0);
+        }
+
+        // Default to percentage
+        const percentage = prop.commissionValue !== undefined ? prop.commissionValue : 2;
+        return sum + (price * (percentage / 100));
+    }, 0);
+
     const newThisWeek = properties.filter(prop => prop.createdAt && isThisWeek(new Date(prop.createdAt), { weekStartsOn: 1 })).length;
     const soldOrReservedThisMonth = properties.filter(prop =>
       (prop.status === 'Vândut' || prop.status === 'Rezervat') &&
@@ -44,7 +56,7 @@ export default function PropertiesPage() {
 
     return {
       totalProperties: properties.length,
-      portfolioValue,
+      totalCommissionValue,
       newThisWeek,
       soldOrReservedThisMonth,
     };
@@ -94,7 +106,7 @@ export default function PropertiesPage() {
                 <>
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
                     <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
-                    <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
+                    <PropertyStatCard label="Valoare Comision Total" value={formatValue(stats.totalCommissionValue)} icon={<DollarSign />} />
                     <PropertyStatCard label="Vândute/Rezervate Luna Aceasta" value={stats.soldOrReservedThisMonth.toString()} icon={<MapPin />} />
                 </>
              )}

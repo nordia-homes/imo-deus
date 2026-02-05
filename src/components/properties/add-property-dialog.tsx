@@ -38,6 +38,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
 import type { Property, UserProfile } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 
 const propertySchema = z.object({
@@ -81,6 +82,10 @@ const propertySchema = z.object({
   partitioning: z.string().optional(),
   kitchen: z.string().optional(),
   lift: z.string().optional(),
+
+  // Commission fields
+  commissionType: z.string().optional(),
+  commissionValue: z.coerce.number().optional(),
 });
 
 const resizeAndGetBlob = (file: File): Promise<Blob> => {
@@ -153,6 +158,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
 
     const watchedCity = form.watch('city') as City;
     const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
+    const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
     
     useEffect(() => {
         if (watchedCity && isEditMode && propertyData?.city !== watchedCity) {
@@ -197,6 +203,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 partitioning: propertyData.partitioning || '',
                 kitchen: propertyData.kitchen || '',
                 lift: propertyData.lift || '',
+                commissionType: propertyData.commissionType || 'percentage',
+                commissionValue: propertyData.commissionValue ?? 2,
             });
             setImageSources(propertyData.images || []);
         } else {
@@ -208,6 +216,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
                 buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '',
+                commissionType: 'percentage',
+                commissionValue: 2,
             });
             setImageSources([]);
         }
@@ -355,6 +365,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               partitioning: values.partitioning || null,
               kitchen: values.kitchen || null,
               lift: values.lift || null,
+              commissionType: values.commissionType,
+              commissionValue: values.commissionValue,
           };
       
           if (isEditMode) {
@@ -475,6 +487,68 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                         <SelectItem value="Mediu">Mediu</SelectItem>
                                         <SelectItem value="Ridicată">Ridicată</SelectItem>
                                     </SelectContent></Select><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="commissionType"
+                                    render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>Tip Comision</FormLabel>
+                                        <FormControl>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            className="flex items-center space-x-4"
+                                        >
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                            <FormControl><RadioGroupItem value="percentage" id="r1" /></FormControl>
+                                            <FormLabel htmlFor="r1" className="font-normal">Procent</FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                            <FormControl><RadioGroupItem value="fixed" id="r2" /></FormControl>
+                                            <FormLabel htmlFor="r2" className="font-normal">Sumă Fixă</FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                {watchedCommissionType === 'percentage' ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="commissionValue"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Valoare Procent</FormLabel>
+                                            <Select onValueChange={(val) => field.onChange(Number(val))} value={String(field.value)}>
+                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="1">1%</SelectItem>
+                                                    <SelectItem value="1.5">1.5%</SelectItem>
+                                                    <SelectItem value="2">2%</SelectItem>
+                                                    <SelectItem value="3">3%</SelectItem>
+                                                    <SelectItem value="4">4%</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                ) : (
+                                    <FormField
+                                        control={form.control}
+                                        name="commissionValue"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Sumă Fixă (€)</FormLabel>
+                                            <FormControl><Input type="number" {...field} onChange={event => field.onChange(+event.target.value)} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                )}
                             </div>
                         </section>
 
