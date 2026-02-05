@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock } from 'lucide-react';
+import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import { doc } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 export function PropertyHeader({ property }: { property: Property }) {
     const { agencyId } = useAgency();
@@ -53,8 +54,28 @@ export function PropertyHeader({ property }: { property: Property }) {
         <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <div className="inline-block h-auto p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold mb-2">
-                        {property.title}
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="inline-block h-auto p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold">
+                            {property.title}
+                        </div>
+                        {property.ownerName && property.ownerPhone && (
+                            <div className="inline-flex items-center h-auto p-2 rounded-lg border bg-card text-card-foreground shadow-lg">
+                                <div className="mr-2">
+                                    <p className="font-semibold text-sm">{property.ownerName}</p>
+                                    <p className="text-xs text-muted-foreground">{property.ownerPhone}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                                    <a href={`tel:${property.ownerPhone}`}>
+                                        <Phone className="h-4 w-4" />
+                                    </a>
+                                </Button>
+                                <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                                    <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                                        <WhatsappIcon className="h-4 w-4" />
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
                         <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
