@@ -19,7 +19,8 @@ import type { Viewing, Property, Contact } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAgency, useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useAgency } from '@/context/AgencyContext';
 import { collection } from 'firebase/firestore';
 
 
@@ -124,7 +125,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
                 agentId: user.uid,
                 agentName: user.displayName || user.email,
             };
-            const newContactRef = await addDoc(contactsCollection, newContactData);
+            const newContactRef = await addDocumentNonBlocking(contactsCollection, newContactData);
+            if (!newContactRef) throw new Error("Failed to get new contact reference");
             contactIdToUse = newContactRef.id;
             contactNameToUse = values.newContactName;
             toast({ title: "Client nou creat!", description: `${values.newContactName} a fost adăugat în CRM.` });
