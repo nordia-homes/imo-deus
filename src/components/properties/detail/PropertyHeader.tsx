@@ -59,7 +59,7 @@ export function PropertyHeader({ property }: { property: Property }) {
                             {property.title}
                         </div>
                         {property.ownerName && property.ownerPhone && (
-                            <div className="inline-flex items-center h-10 px-3 py-2 rounded-lg border bg-card text-card-foreground shadow-lg">
+                            <div className="inline-flex items-center h-10 px-3 py-2 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg">
                                 <span className="font-semibold text-sm mr-2">{property.ownerName}</span>
                                 <span className="text-xs text-muted-foreground mr-2">{property.ownerPhone}</span>
                                 <Button variant="ghost" size="icon" asChild className="h-8 w-8">
