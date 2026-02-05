@@ -9,6 +9,7 @@ import { WebsiteToggleCard } from "./actions/WebsiteToggleCard";
 import { ScheduledViewingsCard } from "./actions/ScheduledViewingsCard";
 import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { PotentialBuyersCard } from "./actions/PotentialBuyersCard";
+import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, allContacts }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, allContacts: Contact[] }) {
     
@@ -29,6 +30,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <PublishCard property={property} />
             <CmaCard property={property} allProperties={allProperties} />
             <WebsiteToggleCard property={property} />
+            <PropertyNotesCard property={property} />
         </div>
     );
 }
