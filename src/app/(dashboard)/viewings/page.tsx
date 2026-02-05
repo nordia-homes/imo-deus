@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle } from 'lucide-react';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
+import { ViewingList } from '@/components/viewings/ViewingList';
+import { parseISO } from 'date-fns';
 
 export default function ViewingsPage() {
     const { agencyId } = useAgency();
@@ -41,6 +43,22 @@ export default function ViewingsPage() {
         return query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc'));
     }, [firestore, agencyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+
+    const { upcomingViewings, pastViewings } = useMemo(() => {
+        if (!viewings) {
+            return { upcomingViewings: [], pastViewings: [] };
+        }
+        const now = new Date();
+        const upcoming = viewings
+            .filter(v => parseISO(v.viewingDate) >= now)
+            .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+        
+        const past = viewings
+            .filter(v => parseISO(v.viewingDate) < now)
+            .sort((a, b) => parseISO(b.viewingDate).getTime() - parseISO(a.viewingDate).getTime());
+            
+        return { upcomingViewings: upcoming, pastViewings: past };
+    }, [viewings]);
 
     useEffect(() => {
         if (!agency?.agentIds || agency.agentIds.length === 0) {
@@ -130,6 +148,11 @@ export default function ViewingsPage() {
             </div>
 
             <ViewingsCalendar viewings={viewings || []} agents={agents || []}/>
+
+            <div className="mt-8 space-y-8">
+                <ViewingList title="Vizionări Programate" viewings={upcomingViewings} agents={agents} />
+                <ViewingList title="Istoric Vizionări" viewings={pastViewings} agents={agents} />
+            </div>
 
         </div>
     );
