@@ -41,9 +41,14 @@ export function PropertyStatCard({
                 <Progress value={progress} className="h-1.5" />
             </div>
         ) : (
-            <div className="flex items-baseline gap-2">
-                <p className="font-bold text-lg">{value}</p>
-                <p className="text-muted-foreground text-sm">{label}</p>
+            <div>
+                 <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-lg">{value}</p>
+                    <p className="text-muted-foreground text-sm">{label}</p>
+                </div>
+                {subValue && (
+                    <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
+                )}
             </div>
         )}
       </CardContent>

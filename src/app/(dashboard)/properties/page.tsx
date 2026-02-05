@@ -35,6 +35,8 @@ export default function PropertiesPage() {
         newThisWeekProgress: 0,
         soldOrReservedThisMonth: 0,
         soldReservedProgress: 0,
+        forSaleCount: 0,
+        forRentCount: 0,
       };
     }
     
@@ -49,6 +51,9 @@ export default function PropertiesPage() {
     };
 
     const totalProperties = properties.length;
+    const forSaleCount = properties.filter(p => p.transactionType === 'Vânzare').length;
+    const forRentCount = properties.filter(p => p.transactionType === 'Închiriere').length;
+
     const totalCommissionValue = properties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
     
     const realizedCommissionValue = properties
@@ -77,6 +82,8 @@ export default function PropertiesPage() {
       newThisWeekProgress,
       soldOrReservedThisMonth,
       soldReservedProgress,
+      forSaleCount,
+      forRentCount
     };
   }, [properties]);
   
@@ -122,7 +129,12 @@ export default function PropertiesPage() {
                 </>
              ) : (
                 <>
-                    <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
+                    <PropertyStatCard 
+                        label="Total Proprietăți" 
+                        value={stats.totalProperties.toString()} 
+                        icon={<Home />} 
+                        subValue={`${stats.forSaleCount} Vânzare / ${stats.forRentCount} Închiriere`}
+                    />
                     <PropertyStatCard 
                         label="Noi săptămâna aceasta" 
                         value={stats.newThisWeek.toString()} 
