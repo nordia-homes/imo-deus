@@ -2,12 +2,18 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, Users, CheckSquare, FileText, Settings } from "lucide-react";
-import type { Property, Contact } from "@/lib/types";
+import { LayoutList, Users, FileText, Settings, CalendarCheck, ArrowRight } from "lucide-react";
+import type { Property, Contact, Viewing } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { MatchedLeadsTab } from "./MatchedLeadsTab";
+import { format, parseISO } from "date-fns";
+import { ro } from "date-fns/locale";
+import Link from 'next/link';
 
-export function InfoColumn({ property, allContacts }: { property: Property, allContacts: Contact[] }) {
+export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
+    
+    const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+
     return (
         <div className="space-y-6">
             <Tabs defaultValue="overview">
@@ -20,9 +26,9 @@ export function InfoColumn({ property, allContacts }: { property: Property, allC
                         <Users className="mr-2 h-4 w-4" />
                         Cumpărători
                     </TabsTrigger>
-                    <TabsTrigger value="tasks" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <CheckSquare className="mr-2 h-4 w-4" />
-                        Task-uri
+                    <TabsTrigger value="viewings" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
+                        <CalendarCheck className="mr-2 h-4 w-4" />
+                        Vizionări
                     </TabsTrigger>
                     <TabsTrigger value="documents" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
                         <FileText className="mr-2 h-4 w-4" />
@@ -55,7 +61,35 @@ export function InfoColumn({ property, allContacts }: { property: Property, allC
                 <TabsContent value="leads" className="mt-6">
                     <MatchedLeadsTab property={property} allContacts={allContacts} />
                 </TabsContent>
-                <TabsContent value="tasks"><p>Task-uri asociate</p></TabsContent>
+                <TabsContent value="viewings" className="mt-6">
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+                        <CardHeader><CardTitle>Vizionări Programate</CardTitle></CardHeader>
+                        <CardContent>
+                            {scheduledViewings.length > 0 ? (
+                                <div className="space-y-3">
+                                    {scheduledViewings.map(viewing => (
+                                        <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border">
+                                            <div>
+                                                <p className="font-semibold text-sm">{viewing.contactName}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {format(parseISO(viewing.viewingDate), "eeee, d MMMM yyyy 'la' HH:mm", { locale: ro })}
+                                                </p>
+                                            </div>
+                                            <Button asChild variant="ghost" size="sm">
+                                                <Link href={`/leads/${viewing.contactId}`}>
+                                                    Vezi client
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground text-center py-8">Nicio vizionare programată pentru această proprietate.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
                 <TabsContent value="documents"><p>Documente asociate</p></TabsContent>
                 <TabsContent value="settings"><p>Setări proprietate</p></TabsContent>
             </Tabs>

@@ -109,7 +109,7 @@ export default function PropertyDetailPage() {
              <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     <MediaColumn property={property} />
-                    <InfoColumn property={property} allContacts={allContacts || []} />
+                    <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">
