@@ -168,7 +168,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                           
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <span className="w-16">Client:</span>
-                              <span className="flex-1">{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
+                              <span>{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
                               {viewing.contact?.phone && (
                                   <div className="flex items-center">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
@@ -191,7 +191,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                           {viewing.property?.ownerName && (
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <span className="w-16">Proprietar:</span>
-                                  <span className="flex-1">{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
+                                  <span>{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
                                   {viewing.property.ownerPhone && (
                                       <div className="flex items-center">
                                           <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
