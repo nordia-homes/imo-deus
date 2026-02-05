@@ -1,23 +1,23 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Property } from '@/lib/types';
 import { PropertyCard } from "./PropertyCard";
 import { Skeleton } from '../ui/skeleton';
-import { Card, CardContent } from '../ui/card';
-import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { Filter, LayoutGrid, List } from 'lucide-react';
+import { isThisMonth } from 'date-fns';
 
+const filterChips = ["Toate", "Vânzare", "Închiriere", "Noi", ">100k€", "2+ camere", "București"];
 
 export function PropertyList() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('all');
-    const [transactionFilter, setTransactionFilter] = useState('all');
+    const [activeFilters, setActiveFilters] = useState<string[]>(['Toate']);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -26,28 +26,46 @@ export function PropertyList() {
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
+    const handleFilterClick = (filter: string) => {
+        setActiveFilters(prev => {
+            if (filter === 'Toate') {
+                return ['Toate'];
+            }
+            const newFilters = prev.filter(f => f !== 'Toate');
+            if (newFilters.includes(filter)) {
+                const afterRemove = newFilters.filter(f => f !== filter);
+                return afterRemove.length === 0 ? ['Toate'] : afterRemove;
+            }
+            return [...newFilters, filter];
+        });
+    };
+
     const filteredProperties = useMemo(() => {
         if (!properties) return [];
-        return properties.filter(property => {
-            const matchesSearch = searchTerm === '' ||
-                property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                property.address.toLowerCase().includes(searchTerm.toLowerCase());
-            
-            const matchesType = typeFilter === 'all' || property.propertyType === typeFilter;
+        if (activeFilters.includes('Toate')) return properties;
 
-            const matchesTransaction = transactionFilter === 'all' || property.transactionType === transactionFilter;
-            
-            return matchesSearch && matchesType && matchesTransaction;
+        return properties.filter(property => {
+            return activeFilters.every(filter => {
+                switch(filter) {
+                    case 'Vânzare': return property.transactionType === 'Vânzare';
+                    case 'Închiriere': return property.transactionType === 'Închiriere';
+                    case 'Noi': return property.createdAt && isThisMonth(new Date(property.createdAt));
+                    case '>100k€': return property.price > 100000;
+                    case '2+ camere': return property.rooms >= 2;
+                    case 'București': return property.location.toLowerCase().includes('bucurești');
+                    default: return true;
+                }
+            });
         });
-    }, [properties, searchTerm, typeFilter, transactionFilter]);
+    }, [properties, activeFilters]);
 
     const renderPropertyList = () => {
         if (isLoading) {
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(3)].map((_, i) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[...Array(8)].map((_, i) => (
                          <div key={i} className="space-y-3">
-                            <Skeleton className="aspect-square w-full rounded-xl" />
+                            <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
                             <Skeleton className="h-5 w-3/4" />
                             <Skeleton className="h-4 w-1/2" />
                             <Skeleton className="h-5 w-1/3" />
@@ -58,15 +76,15 @@ export function PropertyList() {
         }
 
         if (!properties || properties.length === 0) {
-            return <p className="text-center text-muted-foreground py-10">Nu există proprietăți de afișat. Adaugă una pentru a începe.</p>;
+            return <div className="flex flex-col items-center justify-center text-center py-20 bg-card rounded-2xl"><h3 className="text-lg font-semibold">Nicio proprietate</h3><p className="text-muted-foreground text-sm">Adaugă o proprietate pentru a începe.</p></div>;
         }
 
         if (filteredProperties.length === 0) {
-            return <p className="text-center text-muted-foreground py-10">Nicio proprietate nu corespunde filtrelor selectate.</p>;
+            return <div className="flex flex-col items-center justify-center text-center py-20 bg-card rounded-2xl"><h3 className="text-lg font-semibold">Niciun rezultat</h3><p className="text-muted-foreground text-sm">Nicio proprietate nu corespunde filtrelor selectate.</p></div>;
         }
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProperties.map(property => (
                     <PropertyCard key={property.id} property={property} />
                 ))}
@@ -75,42 +93,31 @@ export function PropertyList() {
     }
 
     return (
-        <div className="space-y-6">
-            <Card className="shadow-2xl rounded-2xl">
-                <CardContent className="p-4 flex flex-col md:flex-row gap-4">
-                    <Input 
-                        placeholder="Caută după titlu sau adresă..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="md:max-w-xs"
-                    />
-                    <div className="flex flex-col sm:flex-row gap-4">
-                         <Select value={typeFilter} onValueChange={setTypeFilter}>
-                            <SelectTrigger className="w-full sm:w-auto">
-                                <SelectValue placeholder="Tip proprietate" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Toate Tipurile</SelectItem>
-                                <SelectItem value="Apartament">Apartament</SelectItem>
-                                <SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem>
-                                <SelectItem value="Garsonieră">Garsonieră</SelectItem>
-                                <SelectItem value="Teren">Teren</SelectItem>
-                                <SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem>
-                            </SelectContent>
-                        </Select>
-                         <Select value={transactionFilter} onValueChange={setTransactionFilter}>
-                            <SelectTrigger className="w-full sm:w-auto">
-                                <SelectValue placeholder="Tip tranzacție" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Toate Tranzacțiile</SelectItem>
-                                <SelectItem value="Vânzare">Vânzare</SelectItem>
-                                <SelectItem value="Închiriere">Închiriere</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 flex-wrap">
+                 {filterChips.map((filter) => (
+                    <Button
+                    key={filter}
+                    variant={activeFilters.includes(filter) ? "default" : "outline"}
+                    size="sm"
+                    className="rounded-full h-8 font-normal bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => handleFilterClick(filter)}
+                    >
+                    {filter}
+                    </Button>
+                ))}
+                <Button variant="outline" size="sm" className="rounded-full h-8 font-normal bg-card">
+                    <Filter className="mr-1 h-3 w-3" />
+                    Filtre
+                </Button>
+                <div className="flex-1" />
+                <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 hidden md:inline-flex" onClick={() => setViewMode('grid')}>
+                    <LayoutGrid className="h-4 w-4" />
+                </Button>
+                 <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 hidden md:inline-flex" onClick={() => setViewMode('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+            </div>
             {renderPropertyList()}
         </div>
     )

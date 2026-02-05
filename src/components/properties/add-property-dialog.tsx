@@ -11,6 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -210,7 +211,6 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             });
             setImageSources([]);
         }
-    // This effect now correctly runs only once when the component is mounted (due to the `key` prop on AddPropertyDialog)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -629,6 +629,11 @@ export function AddPropertyDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {children && (
+         <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-4xl h-[90vh] p-0 flex flex-col">
         <DialogHeader className="p-6 pb-0 shrink-0">
           <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
