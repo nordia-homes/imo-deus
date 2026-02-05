@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { locations } from '@/lib/locations';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 
 interface PropertyListProps {
@@ -36,9 +35,10 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    const parkingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.parking).filter(Boolean))] : [], [properties]);
-    const furnishingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.furnishing).filter(Boolean))] : [], [properties]);
-    const heatingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.heatingSystem).filter(Boolean))] : [], [properties]);
+    const parkingOptions = ['Garaj', 'Loc exterior', 'Subteran', 'Fără'];
+    const furnishingOptions = ['Lux', 'Complet', 'Parțial', 'Nemobilat'];
+    const heatingOptions = ['Centrală proprie', 'Termoficare', 'Sobă/Șemineu'];
+    
     const zoneOptions = useMemo(() => {
         const allZones = Object.values(locations).flat();
         return [...new Set(allZones)].sort();
@@ -90,8 +90,6 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
             <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Toate' }))} variant={filters.transactionType === 'Toate' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Toate</Button>
             <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Vânzare' }))} variant={filters.transactionType === 'Vânzare' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Vânzare</Button>
             <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Închiriere' }))} variant={filters.transactionType === 'Închiriere' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Închiriere</Button>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
 
             <Popover>
                 <PopoverTrigger asChild><Button variant={filters.rooms.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Nr. Camere</Button></PopoverTrigger>
