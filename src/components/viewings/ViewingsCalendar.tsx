@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import type { Viewing, Contact, UserProfile } from '@/lib/types';
+import type { Viewing, UserProfile, Property } from '@/lib/types';
 import {
   format,
   startOfWeek,
@@ -24,13 +24,14 @@ import Link from 'next/link';
 interface ViewingsCalendarProps {
   viewings: Viewing[];
   agents: UserProfile[];
+  properties: Property[];
 }
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
   return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingsCalendar({ viewings, agents }: ViewingsCalendarProps) {
+export function ViewingsCalendar({ viewings, agents, properties }: ViewingsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
 
@@ -55,10 +56,17 @@ export function ViewingsCalendar({ viewings, agents }: ViewingsCalendarProps) {
 
   const selectedDayViewings = useMemo(() => {
     const dayKey = format(selectedDay, 'yyyy-MM-dd');
-    return (viewingsByDay[dayKey] || []).sort((a, b) =>
+    const dayViewings = (viewingsByDay[dayKey] || []);
+    
+    const enrichedViewings = dayViewings.map(viewing => {
+      const property = properties.find(p => p.id === viewing.propertyId);
+      return { ...viewing, property };
+    });
+
+    return enrichedViewings.sort((a, b) =>
       parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime()
     );
-  }, [selectedDay, viewingsByDay]);
+  }, [selectedDay, viewingsByDay, properties]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
@@ -156,6 +164,9 @@ export function ViewingsCalendar({ viewings, agents }: ViewingsCalendarProps) {
                          <p className="font-semibold">{viewing.propertyTitle}</p>
                          <p className="text-sm text-muted-foreground">Client: {viewing.contactName}</p>
                          {viewing.agentName && <p className="text-sm text-muted-foreground">Agent: {viewing.agentName}</p>}
+                         {viewing.property?.ownerName && (
+                            <p className="text-sm text-muted-foreground">Proprietar: {viewing.property.ownerName} {viewing.property.ownerPhone && `- ${viewing.property.ownerPhone}`}</p>
+                         )}
                          <Link href={`/properties/${viewing.propertyId}`}>
                            <Button variant="link" className="p-0 h-auto text-xs">Vezi proprietate</Button>
                          </Link>

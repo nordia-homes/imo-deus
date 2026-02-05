@@ -147,7 +147,7 @@ export default function ViewingsPage() {
                 </AddViewingDialog>
             </div>
 
-            <ViewingsCalendar viewings={viewings || []} agents={agents || []}/>
+            <ViewingsCalendar viewings={viewings || []} agents={agents || []} properties={properties || []} />
 
             <div className="mt-8 space-y-8">
                 <ViewingList title="Vizionări Programate" viewings={upcomingViewings} agents={agents} />
