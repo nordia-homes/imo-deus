@@ -63,7 +63,7 @@ export default function LeadDetailPage() {
     const params = useParams();
     const cumparatorId = params.leadId as string;
     
-    const { agency, isAgencyLoading: isContextLoading } = useAgency();
+    const { agency, userProfile, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -237,7 +237,7 @@ export default function LeadDetailPage() {
             ...taskData,
             status: 'open',
             agentId: user.uid,
-            agentName: user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || user.email,
         };
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({ title: "Task adăugat!" });
@@ -256,7 +256,7 @@ export default function LeadDetailPage() {
             propertyAddress: selectedProperty.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || user.email,
             createdAt: new Date().toISOString(),
         };
         addDocumentNonBlocking(viewingsCollection, viewingToAdd);
@@ -271,7 +271,7 @@ export default function LeadDetailPage() {
             id: crypto.randomUUID(),
             date: new Date().toISOString(),
             agent: {
-                name: user.displayName || user.email || 'Nespecificat',
+                name: userProfile?.name || user.displayName || user.email || 'Nespecificat',
             }
         };
         

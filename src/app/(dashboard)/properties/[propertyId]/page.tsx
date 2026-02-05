@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -34,7 +35,7 @@ const PageSkeleton = () => (
 export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
-    const { agencyId, isAgencyLoading } = useAgency();
+    const { agencyId, userProfile, isAgencyLoading } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -103,7 +104,7 @@ export default function PropertyDetailPage() {
             propertyAddress: property.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || user.email,
             createdAt: new Date().toISOString(),
         };
         addDocumentNonBlocking(viewingsCollection, viewingToAdd);
