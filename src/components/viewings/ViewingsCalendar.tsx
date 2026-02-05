@@ -63,13 +63,14 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
     const enrichedViewings = dayViewings.map(viewing => {
       const property = properties.find(p => p.id === viewing.propertyId);
       const contact = contacts.find(c => c.id === viewing.contactId);
-      return { ...viewing, property, contact };
+      const agent = agents.find(a => a.id === viewing.agentId);
+      return { ...viewing, property, contact, agent };
     });
 
     return enrichedViewings.sort((a, b) =>
       parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime()
     );
-  }, [selectedDay, viewingsByDay, properties, contacts]);
+  }, [selectedDay, viewingsByDay, properties, contacts, agents]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
@@ -181,10 +182,10 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                               )}
                           </div>
 
-                          {viewing.agentName && (
+                          {(viewing.agent?.name || viewing.agentName) && (
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <span className="w-16">Agent:</span>
-                                  <span>{viewing.agentName}</span>
+                                  <span>{viewing.agent?.name || viewing.agentName}</span>
                               </div>
                           )}
 

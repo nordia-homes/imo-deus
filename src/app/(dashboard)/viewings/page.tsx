@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -100,7 +99,7 @@ export default function ViewingsPage() {
             propertyAddress: selectedProperty.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName,
             createdAt: new Date().toISOString(),
         };
         
