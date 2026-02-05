@@ -21,8 +21,8 @@ interface InfoDialogProps {
 const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
     if (!value && value !== 0) return null;
     return (
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-            <div className="bg-background p-2 rounded-md shadow-sm">
+        <div className="flex items-center gap-3 rounded-lg border bg-background p-3 shadow-md">
+            <div className="bg-muted/20 p-2 rounded-md">
                 {icon}
             </div>
             <div>
