@@ -350,7 +350,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className='overflow-y-auto p-6'>
                     <div className="space-y-6">
                         <section>
@@ -528,7 +528,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         </section>
                     </div>
                 </div>
-                <DialogFooter className="pt-4 border-t px-6 shrink-0">
+                <DialogFooter className="pt-4 border-t px-6">
                     <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -566,7 +566,6 @@ export function AddPropertyDialog({
             {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
         </DialogHeader>
-        {/* The div wrapper with flex-1 and min-h-0 is crucial for the internal scrolling of PropertyForm to work correctly in a flex parent */}
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} />}
         </div>
