@@ -68,7 +68,14 @@ export default function DashboardPage() {
         newLeadsCount,
         leadSourceData,
         conversionData,
+        newLeadsProgress,
+        salesProgress,
+        soldThisMonthProgress,
+        reservedThisMonthProgress,
     } = useMemo(() => {
+        const totalPropertiesCount = properties?.length || 0;
+        const totalContactsCount = contacts?.length || 0;
+
         const sold = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reserved = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         
@@ -85,6 +92,13 @@ export default function DashboardPage() {
         
         const oneWeekAgo = addDays(new Date(), -7);
         const newLeadsCount = contacts?.filter(c => c.createdAt && new Date(c.createdAt) > oneWeekAgo).length || 0;
+
+        // Progress calculations
+        const newLeadsProgress = totalContactsCount > 0 ? (newLeadsCount / totalContactsCount) * 100 : 0;
+        const salesProgress = totalContactsCount > 0 ? (totalSalesCount / totalContactsCount) * 100 : 0;
+        const soldThisMonthProgress = totalPropertiesCount > 0 ? (sold.length / totalPropertiesCount) * 100 : 0;
+        const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reserved.length / totalPropertiesCount) * 100 : 0;
+
 
         // Lead Source Data
         const sourceCounts: { [key: string]: number } = {};
@@ -148,6 +162,10 @@ export default function DashboardPage() {
             newLeadsCount,
             leadSourceData: leadSourceDataResult,
             conversionData: conversionDataResult,
+            newLeadsProgress,
+            salesProgress,
+            soldThisMonthProgress,
+            reservedThisMonthProgress,
         };
     }, [properties, viewings, contacts]);
     
@@ -215,14 +233,14 @@ export default function DashboardPage() {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} />
-                <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period="Tranzacții câștigate" icon={<DollarSign />} />
-                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} />
+                <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<DollarSign />} progress={salesProgress} />
+                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
             </div>
 
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="în luna curentă" icon={<Bookmark />} />
-                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="în luna curentă" icon={<Handshake />} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="în luna curentă" icon={<Bookmark />} progress={reservedThisMonthProgress} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="în luna curentă" icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

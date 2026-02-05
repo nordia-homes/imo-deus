@@ -1,7 +1,7 @@
 'use client';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
-import { PropertyStatCard } from "@/components/properties/PropertyStatCard";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { Home, DollarSign, TrendingUp, MapPin, PlusCircle } from "lucide-react";
 import { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
@@ -129,30 +129,30 @@ export default function PropertiesPage() {
                 </>
              ) : (
                 <>
-                    <PropertyStatCard 
-                        label="Total Proprietăți" 
+                    <StatCard 
+                        title="Total Proprietăți" 
                         value={stats.totalProperties.toString()} 
                         icon={<Home />} 
-                        subValue={`${stats.forSaleCount} Vânzare / ${stats.forRentCount} Închiriere`}
+                        period={`${stats.forSaleCount} Vânzare / ${stats.forRentCount} Închiriere`}
                     />
-                    <PropertyStatCard 
-                        label="Noi săptămâna aceasta" 
+                    <StatCard 
+                        title="Noi săptămâna aceasta" 
                         value={stats.newThisWeek.toString()} 
-                        subValue={`din ${stats.totalProperties}`}
+                        period={`din ${stats.totalProperties}`}
                         icon={<TrendingUp />}
                         progress={stats.newThisWeekProgress}
                     />
-                    <PropertyStatCard 
-                        label="Comision Realizat" 
+                    <StatCard 
+                        title="Comision Realizat" 
                         value={formatValue(stats.realizedCommissionValue)} 
-                        subValue={`din ${formatValue(stats.totalCommissionValue)}`}
+                        period={`din ${formatValue(stats.totalCommissionValue)}`}
                         icon={<DollarSign />}
                         progress={stats.commissionProgress}
                     />
-                    <PropertyStatCard 
-                        label="Vândute/Rezervate Luna Aceasta" 
+                    <StatCard 
+                        title="Vândute/Rezervate Luna Aceasta" 
                         value={stats.soldOrReservedThisMonth.toString()} 
-                        subValue={`din ${stats.totalProperties}`}
+                        period={`din ${stats.totalProperties}`}
                         icon={<MapPin />}
                         progress={stats.soldReservedProgress}
                     />
