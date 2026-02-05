@@ -272,7 +272,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               
               const uploadPromises = newImageFiles.map(async (file, index) => {
                   const resizedBlob = await resizeAndGetBlob(file);
-                  const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${propertyId}-${Date.now()}-${index}.jpg`);
+                  const imageName = `${crypto.randomUUID()}.jpg`;
+                  const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${imageName}`);
                   await uploadBytes(imageRef, resizedBlob);
                   const downloadURL = await getDownloadURL(imageRef);
                   return { url: downloadURL, alt: `${values.title} - imagine ${index + 1}` };
@@ -528,12 +529,14 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         </section>
                     </div>
                 </div>
-                <DialogFooter className="pt-4 border-t px-6">
-                    <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
-                    </Button>
+                <DialogFooter className="shrink-0 border-t bg-background p-4">
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
+                        </Button>
+                    </div>
                 </DialogFooter>
             </form>
         </Form>
