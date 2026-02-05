@@ -11,3 +11,4 @@ import '@/ai/flows/email-generator.ts';
 import '@/ai/flows/report-summarizer.ts';
 import '@/ai/flows/property-presentation-generator.ts';
 import '@/ai/flows/cma-generator.ts';
+import '@/ai/flows/social-media-post-generator.ts';
