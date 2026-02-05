@@ -32,6 +32,7 @@ export default function PropertiesPage() {
         realizedCommissionValue: 0,
         commissionProgress: 0,
         newThisWeek: 0,
+        newThisWeekProgress: 0,
         soldOrReservedThisMonth: 0,
         soldReservedProgress: 0,
       };
@@ -57,6 +58,7 @@ export default function PropertiesPage() {
     const commissionProgress = totalCommissionValue > 0 ? (realizedCommissionValue / totalCommissionValue) * 100 : 0;
 
     const newThisWeek = properties.filter(prop => prop.createdAt && isThisWeek(new Date(prop.createdAt), { weekStartsOn: 1 })).length;
+    const newThisWeekProgress = totalProperties > 0 ? (newThisWeek / totalProperties) * 100 : 0;
     
     const soldOrReservedThisMonth = properties.filter(prop =>
       (prop.status === 'Vândut' || prop.status === 'Rezervat') &&
@@ -72,6 +74,7 @@ export default function PropertiesPage() {
       realizedCommissionValue,
       commissionProgress,
       newThisWeek,
+      newThisWeekProgress,
       soldOrReservedThisMonth,
       soldReservedProgress,
     };
@@ -120,7 +123,13 @@ export default function PropertiesPage() {
              ) : (
                 <>
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
-                    <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
+                    <PropertyStatCard 
+                        label="Noi săptămâna aceasta" 
+                        value={stats.newThisWeek.toString()} 
+                        subValue={`din ${stats.totalProperties}`}
+                        icon={<TrendingUp />}
+                        progress={stats.newThisWeekProgress}
+                    />
                     <PropertyStatCard 
                         label="Comision Realizat" 
                         value={formatValue(stats.realizedCommissionValue)} 
