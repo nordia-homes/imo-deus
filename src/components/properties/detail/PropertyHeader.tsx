@@ -53,7 +53,7 @@ export function PropertyHeader({ property }: { property: Property }) {
         <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <div className="h-auto p-3 rounded-lg border bg-card text-card-foreground shadow-lg text-xl font-bold mb-2">
+                    <div className="h-auto p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold mb-2">
                         {property.title}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
