@@ -82,6 +82,7 @@ const propertySchema = z.object({
   partitioning: z.string().optional(),
   kitchen: z.string().optional(),
   lift: z.string().optional(),
+  nearMetro: z.boolean().default(false),
 
   // Commission fields
   commissionType: z.string().optional(),
@@ -203,6 +204,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 partitioning: propertyData.partitioning || '',
                 kitchen: propertyData.kitchen || '',
                 lift: propertyData.lift || '',
+                nearMetro: propertyData.nearMetro || false,
                 commissionType: propertyData.commissionType || 'percentage',
                 commissionValue: propertyData.commissionValue ?? 2,
             });
@@ -215,7 +217,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
-                buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '',
+                buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '', nearMetro: false,
                 commissionType: 'percentage',
                 commissionValue: 2,
             });
@@ -365,6 +367,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               partitioning: values.partitioning || null,
               kitchen: values.kitchen || null,
               lift: values.lift || null,
+              nearMetro: values.nearMetro,
               commissionType: values.commissionType,
               commissionValue: values.commissionValue,
           };
@@ -606,6 +609,23 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel>Lift</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                     <SelectContent><SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField
+                                    control={form.control}
+                                    name="nearMetro"
+                                    render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm col-span-1">
+                                        <div className="space-y-0.5">
+                                        <FormLabel>Apropiere Metrou</FormLabel>
+                                        </div>
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                        </FormControl>
+                                    </FormItem>
+                                    )}
+                                />
                             </div>
                             <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </section>

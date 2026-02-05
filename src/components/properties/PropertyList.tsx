@@ -1,19 +1,18 @@
 'use client';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import type { Property } from '@/lib/types';
 import { PropertyCard } from "./PropertyCard";
 import { Skeleton } from '../ui/skeleton';
-import { useAgency } from '@/context/AgencyContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Filter, LayoutGrid, List } from 'lucide-react';
-import { isThisMonth } from 'date-fns';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { locations } from '@/lib/locations';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
-const filterChips = ["Toate", "Vânzare", "Închiriere", "Noi", ">100k€", "2+ camere", "București", "Recomandate", "Apartament", "Casă/Vilă", "Cluj-Napoca", "Timișoara", "Mobilat", "Bloc Nou", "Parcare", "Filtre"];
 
 interface PropertyListProps {
     properties: Property[] | null;
@@ -21,49 +20,187 @@ interface PropertyListProps {
 }
 
 export function PropertyList({ properties, isLoading }: PropertyListProps) {
-    const [activeFilters, setActiveFilters] = useState<string[]>(['Toate']);
+    const [filters, setFilters] = useState({
+        transactionType: 'Toate',
+        rooms: [] as number[],
+        price: { min: '', max: '' },
+        parking: [] as string[],
+        heating: [] as string[],
+        nearMetro: false,
+        minArea: '',
+        zones: [] as string[],
+        after1977: false,
+        furnishing: [] as string[],
+    });
+
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    const handleFilterClick = (filter: string) => {
-        setActiveFilters(prev => {
-            if (filter === 'Toate') {
-                return ['Toate'];
-            }
-            const newFilters = prev.filter(f => f !== 'Toate');
-            if (newFilters.includes(filter)) {
-                const afterRemove = newFilters.filter(f => f !== filter);
-                return afterRemove.length === 0 ? ['Toate'] : afterRemove;
-            }
-            return [...newFilters, filter];
+    const parkingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.parking).filter(Boolean))] : [], [properties]);
+    const furnishingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.furnishing).filter(Boolean))] : [], [properties]);
+    const heatingOptions = useMemo(() => properties ? [...new Set(properties.map(p => p.heatingSystem).filter(Boolean))] : [], [properties]);
+    const zoneOptions = useMemo(() => {
+        const allZones = Object.values(locations).flat();
+        return [...new Set(allZones)].sort();
+    }, []);
+
+
+    const handleMultiSelectFilter = (filterKey: 'rooms' | 'parking' | 'heating' | 'furnishing' | 'zones', value: any) => {
+        setFilters(prev => {
+            const currentValues = prev[filterKey] as any[];
+            const newValues = currentValues.includes(value)
+                ? currentValues.filter(v => v !== value)
+                : [...currentValues, value];
+            return { ...prev, [filterKey]: newValues };
         });
     };
 
     const filteredProperties = useMemo(() => {
         if (!properties) return [];
-        if (activeFilters.includes('Toate')) return properties;
 
         return properties.filter(property => {
-            return activeFilters.every(filter => {
-                switch(filter) {
-                    case 'Vânzare': return property.transactionType === 'Vânzare';
-                    case 'Închiriere': return property.transactionType === 'Închiriere';
-                    case 'Noi': return property.createdAt && isThisMonth(new Date(property.createdAt));
-                    case '>100k€': return property.price > 100000;
-                    case '2+ camere': return property.rooms >= 2;
-                    case 'București': return property.location.toLowerCase().includes('bucurești');
-                    case 'Recomandate': return property.featured === true;
-                    case 'Apartament': return property.propertyType === 'Apartament';
-                    case 'Casă/Vilă': return property.propertyType === 'Casă/Vilă';
-                    case 'Cluj-Napoca': return property.location.toLowerCase().includes('cluj-napoca');
-                    case 'Timișoara': return property.location.toLowerCase().includes('timișoara');
-                    case 'Mobilat': return property.furnishing === 'Complet';
-                    case 'Bloc Nou': return !!property.constructionYear && property.constructionYear >= 2018;
-                    case 'Parcare': return property.parking !== 'Fără' && !!property.parking;
-                    default: return true;
-                }
-            });
+            const { transactionType, rooms, price, parking, heating, nearMetro, minArea, zones, after1977, furnishing } = filters;
+
+            if (transactionType !== 'Toate' && property.transactionType !== transactionType) return false;
+            if (after1977 && (!property.constructionYear || property.constructionYear <= 1977)) return false;
+            if (nearMetro && !property.nearMetro) return false;
+            if (price.min && property.price < parseInt(price.min, 10)) return false;
+            if (price.max && property.price > parseInt(price.max, 10)) return false;
+            if (minArea && property.squareFootage < parseInt(minArea, 10)) return false;
+
+            if (rooms.length > 0) {
+                const roomMatch = rooms.some(r => {
+                    if (r === 5) return property.rooms >= 5; // Handle "5+"
+                    return property.rooms === r;
+                });
+                if (!roomMatch) return false;
+            }
+
+            if (furnishing.length > 0 && (!property.furnishing || !furnishing.includes(property.furnishing))) return false;
+            if (parking.length > 0 && (!property.parking || !parking.includes(property.parking))) return false;
+            if (heating.length > 0 && (!property.heatingSystem || !heating.includes(property.heatingSystem))) return false;
+            if (zones.length > 0 && (!property.zone || !zones.includes(property.zone))) return false;
+
+            return true;
         });
-    }, [properties, activeFilters]);
+    }, [properties, filters]);
+    
+    const renderFilterButtons = () => (
+        <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Toate' }))} variant={filters.transactionType === 'Toate' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Toate</Button>
+            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Vânzare' }))} variant={filters.transactionType === 'Vânzare' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Vânzare</Button>
+            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Închiriere' }))} variant={filters.transactionType === 'Închiriere' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Închiriere</Button>
+
+            <Separator orientation="vertical" className="h-6 mx-2" />
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.rooms.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Nr. Camere</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                    <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Număr Camere</h4>
+                        {[1, 2, 3, 4, 5].map(num => (
+                            <div key={num} className="flex items-center gap-2">
+                                <Checkbox id={`rooms-${num}`} checked={filters.rooms.includes(num)} onCheckedChange={() => handleMultiSelectFilter('rooms', num)} />
+                                <Label htmlFor={`rooms-${num}`} className="font-normal">{num}{num === 5 ? '+' : ''} camere</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.price.min || filters.price.max ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Preț</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-64">
+                    <div className="space-y-2">
+                         <h4 className="font-medium text-sm">Interval Preț (€)</h4>
+                         <div className="flex gap-2">
+                            <Input placeholder="Min" value={filters.price.min} onChange={e => setFilters(f => ({...f, price: {...f.price, min: e.target.value}}))} />
+                            <Input placeholder="Max" value={filters.price.max} onChange={e => setFilters(f => ({...f, price: {...f.price, max: e.target.value}}))} />
+                         </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+             <Popover>
+                <PopoverTrigger asChild><Button variant={filters.parking.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Parcare</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                     <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Tip Parcare</h4>
+                        {parkingOptions.map(opt => (
+                            <div key={opt} className="flex items-center gap-2">
+                                <Checkbox id={`parking-${opt}`} checked={filters.parking.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('parking', opt)} />
+                                <Label htmlFor={`parking-${opt}`} className="font-normal">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+            
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.heating.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Centrală Termică</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                     <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Sistem Încălzire</h4>
+                        {heatingOptions.map(opt => (
+                            <div key={opt} className="flex items-center gap-2">
+                                <Checkbox id={`heating-${opt}`} checked={filters.heating.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('heating', opt)} />
+                                <Label htmlFor={`heating-${opt}`} className="font-normal">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+            
+            <Button onClick={() => setFilters(f => ({ ...f, nearMetro: !f.nearMetro }))} variant={filters.nearMetro ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Apropiere Metrou</Button>
+            
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.minArea ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Suprafață Minimă</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                    <div className="space-y-2">
+                         <h4 className="font-medium text-sm">Suprafață Minimă (mp)</h4>
+                         <Input placeholder="ex: 50" value={filters.minArea} onChange={e => setFilters(f => ({...f, minArea: e.target.value}))} />
+                    </div>
+                </PopoverContent>
+            </Popover>
+            
+             <Popover>
+                <PopoverTrigger asChild><Button variant={filters.zones.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Zone</Button></PopoverTrigger>
+                <PopoverContent className="p-0 w-64">
+                    <Command>
+                        <CommandInput placeholder="Caută zonă..." />
+                        <CommandList>
+                            <CommandEmpty>Nicio zonă găsită.</CommandEmpty>
+                            <CommandGroup>
+                                {zoneOptions.map(opt => (
+                                <CommandItem key={opt} onSelect={() => handleMultiSelectFilter('zones', opt)}>
+                                    <Checkbox className={cn("mr-2", filters.zones.includes(opt) ? "bg-primary text-primary-foreground" : "")} checked={filters.zones.includes(opt)} />
+                                    <span>{opt}</span>
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+            
+            <Button onClick={() => setFilters(f => ({ ...f, after1977: !f.after1977 }))} variant={filters.after1977 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">După 1977</Button>
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.furnishing.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Mobilat</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                     <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Stare Mobilier</h4>
+                        {furnishingOptions.map(opt => (
+                            <div key={opt} className="flex items-center gap-2">
+                                <Checkbox id={`furnishing-${opt}`} checked={filters.furnishing.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('furnishing', opt)} />
+                                <Label htmlFor={`furnishing-${opt}`} className="font-normal">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+        </div>
+    );
 
     const renderPropertyList = () => {
         if (isLoading) {
@@ -100,26 +237,7 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-                 {filterChips.map((filter) => (
-                    <Button
-                    key={filter}
-                    variant={activeFilters.includes(filter) ? "default" : "outline"}
-                    size="sm"
-                    className="rounded-full h-8 font-normal bg-card data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => handleFilterClick(filter)}
-                    >
-                    {filter}
-                    </Button>
-                ))}
-                <div className="flex-1" />
-                <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 hidden md:inline-flex" onClick={() => setViewMode('grid')}>
-                    <LayoutGrid className="h-4 w-4" />
-                </Button>
-                 <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 hidden md:inline-flex" onClick={() => setViewMode('list')}>
-                    <List className="h-4 w-4" />
-                </Button>
-            </div>
+            {renderFilterButtons()}
             {renderPropertyList()}
         </div>
     )

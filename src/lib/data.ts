@@ -41,6 +41,7 @@ export const properties: Property[] = [
     tagline: '4 camere | 3 băi | 150mp',
     status: 'Activ',
     featured: true,
+    nearMetro: true,
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -328,6 +329,7 @@ export const properties: Property[] = [
     tagline: '150mp | Stradal',
     status: 'Activ',
     featured: true,
+    nearMetro: true,
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {

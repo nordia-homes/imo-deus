@@ -40,6 +40,7 @@ export type Property = {
   heatingSystem?: string; // Centrala proprie, Termoficare
   parking?: string; // Garaj, Exterior
   keyFeatures?: string; // Used for AI, comma separated
+  nearMetro?: boolean;
   
   // New fields from user request
   buildingState?: string;
