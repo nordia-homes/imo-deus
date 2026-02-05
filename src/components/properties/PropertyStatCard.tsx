@@ -23,12 +23,9 @@ export function PropertyStatCard({
         <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
           {icon}
         </div>
-        <div>
+        <div className="flex items-baseline gap-2">
           <p className="font-bold text-foreground text-lg">{value}</p>
-          <div className="flex items-center gap-1.5">
-            <p className="text-muted-foreground text-xs">{label}</p>
-            {subValue && <p className="text-muted-foreground text-xs">· {subValue}</p>}
-          </div>
+          <p className="text-muted-foreground text-sm">{label}</p>
         </div>
       </CardContent>
     </Card>
