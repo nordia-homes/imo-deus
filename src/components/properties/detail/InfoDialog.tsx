@@ -45,8 +45,8 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{property.title}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="truncate">{property.title}</DialogTitle>
+          <DialogDescription className="whitespace-nowrap">
             Toate detaliile proprietății într-un singur loc.
           </DialogDescription>
         </DialogHeader>
