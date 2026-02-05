@@ -9,7 +9,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import type { Property } from '@/lib/types';
-import { isThisWeek } from 'date-fns';
+import { isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
@@ -30,19 +30,23 @@ export default function PropertiesPage() {
         totalProperties: 0,
         portfolioValue: 0,
         newThisWeek: 0,
-        activeToday: 0,
+        soldOrReservedThisMonth: 0,
       };
     }
 
     const portfolioValue = properties.reduce((sum, prop) => sum + prop.price, 0);
     const newThisWeek = properties.filter(prop => prop.createdAt && isThisWeek(new Date(prop.createdAt), { weekStartsOn: 1 })).length;
-    const activeToday = properties.filter(prop => prop.status === 'Activ').length;
+    const soldOrReservedThisMonth = properties.filter(prop =>
+      (prop.status === 'Vândut' || prop.status === 'Rezervat') &&
+      prop.statusUpdatedAt &&
+      isThisMonth(parseISO(prop.statusUpdatedAt))
+    ).length;
 
     return {
       totalProperties: properties.length,
       portfolioValue,
       newThisWeek,
-      activeToday,
+      soldOrReservedThisMonth,
     };
   }, [properties]);
   
@@ -61,7 +65,10 @@ export default function PropertiesPage() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Proprietăți</h1>
+                <h1 className="text-3xl font-headline font-bold">Proprietăți</h1>
+                <p className="text-muted-foreground">
+                    Gestionează portofoliul de proprietăți.
+                </p>
             </div>
             <Button onClick={() => setIsAddOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -88,7 +95,7 @@ export default function PropertiesPage() {
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
                     <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
                     <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
-                    <PropertyStatCard label="Active" value={stats.activeToday.toString()} icon={<MapPin />} />
+                    <PropertyStatCard label="Vândute/Rezervate Luna Aceasta" value={stats.soldOrReservedThisMonth.toString()} icon={<MapPin />} />
                 </>
              )}
         </div>
