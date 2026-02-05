@@ -5,10 +5,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
-import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath } from 'lucide-react';
+import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Handshake, User, Phone, TrendingUp, Key } from 'lucide-react';
 
 interface InfoDialogProps {
   property: Property;
@@ -19,38 +21,68 @@ interface InfoDialogProps {
 const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
     if (!value && value !== 0) return null;
     return (
-        <Button variant="outline" className="h-auto w-full justify-start p-3 text-left pointer-events-none bg-muted/50">
-            <div className="flex items-center gap-3">
-                <div className="bg-background p-2 rounded-md">
-                    {icon}
-                </div>
-                <div>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="font-semibold text-sm">{value}</p>
-                </div>
+        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+            <div className="bg-background p-2 rounded-md shadow-sm">
+                {icon}
             </div>
-        </Button>
+            <div>
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="font-semibold text-sm">{value}</p>
+            </div>
+        </div>
     )
 }
+
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <h3 className="text-base font-semibold text-foreground col-span-1 sm:col-span-2 md:col-span-3">{children}</h3>
+);
+
 
 export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) {
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Informații Esențiale: {property.title}</DialogTitle>
+          <DialogTitle>Informații Complete: {property.title}</DialogTitle>
+          <DialogDescription>
+            Toate detaliile proprietății într-un singur loc.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 py-4 max-h-[70vh] overflow-y-auto pr-3">
+            <SectionTitle>Detalii Esențiale</SectionTitle>
             <InfoItem icon={<Building className="h-5 w-5 text-primary" />} label="Tip Proprietate" value={property.propertyType} />
+            <InfoItem icon={<Handshake className="h-5 w-5 text-primary" />} label="Tip Tranzacție" value={property.transactionType} />
             <InfoItem icon={<Calendar className="h-5 w-5 text-primary" />} label="An Construcție" value={property.constructionYear} />
             <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Etaj" value={property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}`: property.floor || property.totalFloors || 'N/A' } />
             <InfoItem icon={<BedDouble className="h-5 w-5 text-primary" />} label="Camere" value={property.rooms} />
             <InfoItem icon={<Bath className="h-5 w-5 text-primary" />} label="Băi" value={property.bathrooms} />
             <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă" value={property.squareFootage ? `${property.squareFootage} mp` : undefined} />
+            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Construită" value={property.totalSurface ? `${property.totalSurface} mp` : undefined} />
             <InfoItem icon={<Compass className="h-5 w-5 text-primary" />} label="Orientare" value={property.orientation} />
-            <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Adresă" value={property.address} />
+
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator /> </div>
+            <SectionTitle>Dotări & Finisaje</SectionTitle>
+            <InfoItem icon={<Star className="h-5 w-5 text-primary" />} label="Confort" value={property.comfort} />
+            <InfoItem icon={<Paintbrush className="h-5 w-5 text-primary" />} label="Stare Interior" value={property.interiorState} />
+            <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Mobilier" value={property.furnishing} />
+            <InfoItem icon={<Thermometer className="h-5 w-5 text-primary" />} label="Sistem Încălzire" value={property.heatingSystem} />
+            <InfoItem icon={<Car className="h-5 w-5 text-primary" />} label="Parcare" value={property.parking} />
+            
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator /> </div>
+            <SectionTitle>Informații Proprietar & Management</SectionTitle>
+            <InfoItem icon={<User className="h-5 w-5 text-primary" />} label="Nume Proprietar" value={property.ownerName} />
+            <InfoItem icon={<Phone className="h-5 w-5 text-primary" />} label="Telefon Proprietar" value={property.ownerPhone} />
+            <InfoItem icon={<TrendingUp className="h-5 w-5 text-primary" />} label="Potențial Vânzare" value={property.salesScore} />
+
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2">
+                <InfoItem icon={<Key className="h-5 w-5 text-primary" />} label="Caracteristici cheie" value={property.keyFeatures} />
+            </div>
+             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+                <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Adresă" value={property.address} />
+            </div>
+
         </div>
       </DialogContent>
     </Dialog>
