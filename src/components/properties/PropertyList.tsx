@@ -9,22 +9,20 @@ import { collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Filter, LayoutGrid, List } from 'lucide-react';
 import { isThisMonth } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 
 const filterChips = ["Toate", "Vânzare", "Închiriere", "Noi", ">100k€", "2+ camere", "București"];
 
-export function PropertyList() {
-    const { agencyId } = useAgency();
-    const firestore = useFirestore();
+interface PropertyListProps {
+    properties: Property[] | null;
+    isLoading: boolean;
+}
 
+export function PropertyList({ properties, isLoading }: PropertyListProps) {
     const [activeFilters, setActiveFilters] = useState<string[]>(['Toate']);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-    const propertiesQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'properties');
-    }, [firestore, agencyId]);
-
-    const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
     const handleFilterClick = (filter: string) => {
         setActiveFilters(prev => {

@@ -2,12 +2,60 @@
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
 import { PropertyStatCard } from "@/components/properties/PropertyStatCard";
-import { Home, DollarSign, TrendingUp, Building, MapPin, PlusCircle } from "lucide-react";
-import { useState } from 'react';
+import { Home, DollarSign, TrendingUp, MapPin, PlusCircle } from "lucide-react";
+import { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useAgency } from '@/context/AgencyContext';
+import type { Property } from '@/lib/types';
+import { isThisMonth } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const { agencyId } = useAgency();
+  const firestore = useFirestore();
+
+  const propertiesQuery = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return collection(firestore, 'agencies', agencyId, 'properties');
+  }, [firestore, agencyId]);
+
+  const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
+
+  const stats = useMemo(() => {
+    if (!properties) {
+      return {
+        totalProperties: 0,
+        portfolioValue: 0,
+        newThisMonth: 0,
+        activeToday: 0,
+      };
+    }
+
+    const portfolioValue = properties.reduce((sum, prop) => sum + prop.price, 0);
+    const newThisMonth = properties.filter(prop => prop.createdAt && isThisMonth(new Date(prop.createdAt))).length;
+    const activeToday = properties.filter(prop => prop.status === 'Activ').length;
+
+    return {
+      totalProperties: properties.length,
+      portfolioValue,
+      newThisMonth,
+      activeToday,
+    };
+  }, [properties]);
+  
+  const formatValue = (num: number) => {
+    if (num >= 1000000) {
+      return `€${(num / 1000000).toFixed(1)}M`;
+    }
+    if (num >= 1000) {
+      return `€${Math.round(num / 1000)}k`;
+    }
+    return `€${num}`;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -27,15 +75,25 @@ export default function PropertiesPage() {
           property={null}
         />
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <PropertyStatCard label="Proprietăți" value="142" icon={<Home />} />
-            <PropertyStatCard label="Valoare Portofoliu" value="€3.2M" icon={<DollarSign />} />
-            <PropertyStatCard label="Noi luna asta" value="+18" icon={<TrendingUp />} />
-            <PropertyStatCard label="2+ camere" value=">100k€" icon={<Building />} />
-            <PropertyStatCard label="Active azi" value="12" subValue="București" icon={<MapPin />} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+             {isLoading ? (
+                <>
+                    <Skeleton className="h-[76px]" />
+                    <Skeleton className="h-[76px]" />
+                    <Skeleton className="h-[76px]" />
+                    <Skeleton className="h-[76px]" />
+                </>
+             ) : (
+                <>
+                    <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
+                    <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
+                    <PropertyStatCard label="Noi luna aceasta" value={`+${stats.newThisMonth}`} icon={<TrendingUp />} />
+                    <PropertyStatCard label="Active" value={stats.activeToday.toString()} icon={<MapPin />} />
+                </>
+             )}
         </div>
         
-        <PropertyList />
+        <PropertyList properties={properties} isLoading={isLoading} />
     </div>
   );
 }
