@@ -12,6 +12,11 @@ import { Label } from '@/components/ui/label';
 import { locations } from '@/lib/locations';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { useFirestore, deleteDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useAgency } from '@/context/AgencyContext';
+import { useToast } from '@/hooks/use-toast';
+import { DeletePropertyAlert } from './DeletePropertyAlert';
 
 
 interface PropertyListProps {
@@ -36,6 +41,10 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
     });
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const { agencyId } = useAgency();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
 
     const parkingOptions = ['Garaj', 'Loc exterior', 'Subteran', 'Fără'];
     const furnishingOptions = ['Lux', 'Complet', 'Parțial', 'Nemobilat'];
@@ -90,6 +99,18 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
             return true;
         });
     }, [properties, filters]);
+
+    const handleDelete = () => {
+        if (!agencyId || !deletingProperty) return;
+        const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', deletingProperty.id);
+        deleteDocumentNonBlocking(propertyRef);
+        toast({
+            variant: 'destructive',
+            title: "Proprietate ștearsă!",
+            description: `Proprietatea "${deletingProperty.title}" a fost ștearsă.`,
+        });
+        setDeletingProperty(null);
+    };
     
     const renderFilterButtons = () => (
         <div className="flex items-center gap-2 flex-wrap">
@@ -264,7 +285,11 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProperties.map(property => (
-                    <PropertyCard key={property.id} property={property} />
+                    <PropertyCard 
+                        key={property.id} 
+                        property={property}
+                        onDeleteRequest={() => setDeletingProperty(property)}
+                    />
                 ))}
             </div>
         );
@@ -274,6 +299,12 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
         <div className="space-y-4">
             {renderFilterButtons()}
             {renderPropertyList()}
+            <DeletePropertyAlert
+                isOpen={!!deletingProperty}
+                onOpenChange={(isOpen) => !isOpen && setDeletingProperty(null)}
+                property={deletingProperty}
+                onDelete={handleDelete}
+            />
         </div>
     )
 }

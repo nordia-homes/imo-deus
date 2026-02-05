@@ -16,7 +16,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function PropertyCard({ property, agencyId }: { property: Property; agencyId?: string }) {
+export function PropertyCard({
+  property,
+  agencyId,
+  onDeleteRequest,
+}: {
+  property: Property;
+  agencyId?: string;
+  onDeleteRequest?: () => void;
+}) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   
@@ -80,7 +88,7 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
                         <Edit className="mr-2 h-4 w-4" />
                         Editează
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem className="text-destructive" onSelect={onDeleteRequest}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Șterge
                     </DropdownMenuItem>
