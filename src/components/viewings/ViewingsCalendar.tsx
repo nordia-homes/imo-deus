@@ -34,7 +34,6 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
 };
 
 export function ViewingsCalendar({ viewings, agents, properties, contacts }: ViewingsCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
 
   const viewingsByDay = useMemo(() => {
@@ -52,7 +51,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
   }, [viewings]);
 
   const weekDays = useMemo(() => {
-    const start = startOfWeek(selectedDay, { weekStartsOn: 1 });
+    const start = startOfWeek(selectedDay, { weekStartsOn: 1 }); // Start week on Monday
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
   }, [selectedDay]);
 
@@ -72,10 +71,9 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
     );
   }, [selectedDay, viewingsByDay, properties, contacts, agents]);
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
-    setCurrentMonth(newMonth);
-    setSelectedDay(newMonth); // Also select the first day of the new month
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const amount = direction === 'prev' ? -7 : 7;
+    setSelectedDay(current => addDays(current, amount));
   };
 
   return (
@@ -83,25 +81,30 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
       <CardContent className="p-4">
         {/* Header */}
         <header className="flex items-center justify-between px-2 mb-4">
+          <div className="flex items-center gap-4">
+            <Button onClick={() => setSelectedDay(new Date())} variant="outline">
+              Astăzi
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateWeek('prev')}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateWeek('next')}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
           <h2 className="text-xl font-semibold capitalize">
             {format(selectedDay, 'MMMM yyyy', { locale: ro })}
           </h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateMonth('prev')}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateMonth('next')}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
         </header>
 
         {/* Week Selector */}
