@@ -76,25 +76,6 @@ export function PropertyCard({
                 <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors" title={property.title}>{property.title}</h3>
                 <p className="text-sm text-muted-foreground">{property.location}</p>
               </Link>
-               {!agencyId && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 -mr-2 shrink-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editează
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onSelect={onDeleteRequest}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Șterge
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-               )}
             </div>
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -117,9 +98,17 @@ export function PropertyCard({
                 €{property.price.toLocaleString()}
               </p>
               {!agencyId ? (
-                <Button asChild size="sm">
-                    <Link href={href}>Vezi Detalii</Link>
-                </Button>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditDialogOpen(true)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDeleteRequest}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button asChild size="sm">
+                        <Link href={href}>Vezi Detalii</Link>
+                    </Button>
+                </div>
               ) : (
                 <Button asChild size="sm" className="rounded-full">
                     <Link href={href}>Vezi</Link>
