@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Property } from '@/lib/types';
-import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone } from 'lucide-react';
+import type { Property, Contact, Viewing } from '@/lib/types';
+import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone, CalendarCheck } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,9 @@ import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 
-export function PropertyHeader({ property }: { property: Property }) {
+export function PropertyHeader({ property, allContacts, onAddViewing }: { property: Property; allContacts: Contact[]; onAddViewing: (data: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => void }) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -54,7 +55,7 @@ export function PropertyHeader({ property }: { property: Property }) {
         <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-4 mb-2">
+                    <div className="flex items-center gap-4 mb-2 flex-wrap">
                         <div className="inline-block h-auto p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold">
                             {property.title}
                         </div>
@@ -113,12 +114,12 @@ export function PropertyHeader({ property }: { property: Property }) {
                             <SelectItem value="Inactiv">Inactiv</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button asChild>
-                      <Link href={`/agencies/${agencyId}/properties/${property.id}`} target="_blank">
-                        <Globe className="mr-2 h-4 w-4"/> 
-                        Vezi website
-                      </Link>
-                    </Button>
+                    <AddViewingDialog onAddViewing={onAddViewing} contacts={allContacts} properties={[property]}>
+                       <Button>
+                          <CalendarCheck className="mr-2 h-4 w-4"/> 
+                          Adaugă Vizionare
+                       </Button>
+                    </AddViewingDialog>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon">
@@ -129,6 +130,12 @@ export function PropertyHeader({ property }: { property: Property }) {
                             <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
                                 <Edit className="mr-2 h-4 w-4"/> 
                                 Editează
+                            </DropdownMenuItem>
+                             <DropdownMenuItem asChild>
+                                <Link href={`/agencies/${agencyId}/properties/${property.id}`} target="_blank" rel="noopener noreferrer">
+                                    <Globe className="mr-2 h-4 w-4"/> 
+                                    Vezi pe Website
+                                </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem><FileText className="mr-2 h-4 w-4"/> Generează PDF</DropdownMenuItem>
                             <DropdownMenuItem><Rocket className="mr-2 h-4 w-4"/> Promovează</DropdownMenuItem>

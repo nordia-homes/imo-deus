@@ -14,7 +14,7 @@ import { ActionsColumn } from '@/components/properties/detail/ActionsColumn';
 
 // Firebase & Context
 import { useAgency } from '@/context/AgencyContext';
-import { useDoc, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useDoc, useCollection, useMemoFirebase, useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDoc } from 'firebase/firestore';
 
 
@@ -35,7 +35,9 @@ export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
     const { agencyId, isAgencyLoading } = useAgency();
+    const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
 
     const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
     const [isAgentLoading, setIsAgentLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function PropertyDetailPage() {
         if (!agencyId) return null;
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
-    const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
+    const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
 
     useEffect(() => {
         if (!property?.agentId || !firestore) {
@@ -90,6 +92,23 @@ export default function PropertyDetailPage() {
 
         fetchAgent();
     }, [property, firestore]);
+    
+    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+        if (!agencyId || !user || !property) return;
+        
+        const viewingsCollection = collection(firestore, 'agencies', agencyId, 'viewings');
+        const viewingToAdd: Omit<Viewing, 'id'> = {
+            ...viewingData,
+            propertyTitle: property.title,
+            propertyAddress: property.address,
+            status: 'scheduled',
+            agentId: user.uid,
+            agentName: user.displayName || user.email,
+            createdAt: new Date().toISOString(),
+        };
+        addDocumentNonBlocking(viewingsCollection, viewingToAdd);
+        toast({ title: "Vizionare programată!" });
+    };
 
     const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || isAgentLoading || areContactsLoading;
     
@@ -104,7 +123,7 @@ export default function PropertyDetailPage() {
 
     return (
         <div className="h-full">
-            <PropertyHeader property={property} />
+            <PropertyHeader property={property} allContacts={allContacts || []} onAddViewing={handleAddViewing} />
 
              <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
