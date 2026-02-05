@@ -54,9 +54,9 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
     <>
         <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                     <div className="flex items-center gap-4 mb-2 flex-wrap">
-                        <div className="inline-block h-auto p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold">
+                        <div className="inline-block h-auto max-w-lg truncate p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold" title={property.title}>
                             {property.title}
                         </div>
                         {property.ownerName && property.ownerPhone && (

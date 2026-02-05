@@ -72,8 +72,8 @@ export function PropertyCard({
           
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
-              <Link href={href} className="flex-1">
-                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{property.title}</h3>
+              <Link href={href} className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors" title={property.title}>{property.title}</h3>
                 <p className="text-sm text-muted-foreground">{property.location}</p>
               </Link>
                {!agencyId && (
