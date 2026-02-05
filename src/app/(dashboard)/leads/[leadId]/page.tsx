@@ -203,7 +203,7 @@ export default function LeadDetailPage() {
             ...p,
             address: p.address || p.location || '',
             price: p.price || 0,
-            bedrooms: p.bedrooms || 0,
+            rooms: p.rooms || 0,
             bathrooms: p.bathrooms || 0,
             squareFootage: p.squareFootage || 0,
             description: p.description || p.title || '',
