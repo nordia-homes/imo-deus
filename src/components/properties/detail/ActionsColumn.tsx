@@ -29,8 +29,8 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <PotentialBuyersCard property={property} allContacts={allContacts} />
             <SocialMediaCard property={property} />
             <FacebookPromotionCard />
-            <PublishCard property={property} />
             <CmaCard property={property} allProperties={allProperties} />
+            <PublishCard property={property} />
             <WebsiteToggleCard property={property} />
             <PropertyNotesCard property={property} />
         </div>
