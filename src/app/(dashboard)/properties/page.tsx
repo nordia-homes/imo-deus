@@ -9,7 +9,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import type { Property } from '@/lib/types';
-import { isThisMonth } from 'date-fns';
+import { isThisWeek } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
@@ -29,19 +29,19 @@ export default function PropertiesPage() {
       return {
         totalProperties: 0,
         portfolioValue: 0,
-        newThisMonth: 0,
+        newThisWeek: 0,
         activeToday: 0,
       };
     }
 
     const portfolioValue = properties.reduce((sum, prop) => sum + prop.price, 0);
-    const newThisMonth = properties.filter(prop => prop.createdAt && isThisMonth(new Date(prop.createdAt))).length;
+    const newThisWeek = properties.filter(prop => prop.createdAt && isThisWeek(new Date(prop.createdAt), { weekStartsOn: 1 })).length;
     const activeToday = properties.filter(prop => prop.status === 'Activ').length;
 
     return {
       totalProperties: properties.length,
       portfolioValue,
-      newThisMonth,
+      newThisWeek,
       activeToday,
     };
   }, [properties]);
@@ -87,7 +87,7 @@ export default function PropertiesPage() {
                 <>
                     <PropertyStatCard label="Total Proprietăți" value={stats.totalProperties.toString()} icon={<Home />} />
                     <PropertyStatCard label="Valoare Portofoliu" value={formatValue(stats.portfolioValue)} icon={<DollarSign />} />
-                    <PropertyStatCard label="Noi luna aceasta" value={`+${stats.newThisMonth}`} icon={<TrendingUp />} />
+                    <PropertyStatCard label="Noi săptămâna aceasta" value={`+${stats.newThisWeek}`} icon={<TrendingUp />} />
                     <PropertyStatCard label="Active" value={stats.activeToday.toString()} icon={<MapPin />} />
                 </>
              )}
