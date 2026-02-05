@@ -61,7 +61,7 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
     }, [property, allContacts]);
 
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 h-9 flex items-center bg-[#f8f8f9]">
+        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
             <CardContent className="p-2 flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
