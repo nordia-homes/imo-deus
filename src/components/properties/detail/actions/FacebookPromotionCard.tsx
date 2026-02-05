@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Facebook, ExternalLink } from "lucide-react";
+import { Facebook, ExternalLink, Rocket } from "lucide-react";
 import Link from 'next/link';
 
 const facebookGroups = [
@@ -37,6 +37,7 @@ export function FacebookPromotionCard() {
                             <Facebook className="h-4 w-4 text-blue-600" />
                             <span className="font-semibold text-sm">Promovare Facebook</span>
                         </div>
+                        <Rocket className="h-4 w-4 text-muted-foreground" />
                     </CardContent>
                 </Card>
             </DialogTrigger>
