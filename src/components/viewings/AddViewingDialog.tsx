@@ -96,23 +96,20 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
 
   async function onSubmit(values: z.infer<typeof viewingSchema>) {
     setIsSubmitting(true);
-    if (!agencyId || !user) {
-        toast({ variant: 'destructive', title: 'Eroare', description: 'Nu sunteți autentificat sau agenția nu este validă.' });
-        setIsSubmitting(false);
-        return;
-    }
-
-    let contactIdToUse = values.contactId;
-    let contactNameToUse = '';
-
-    if (isNewContact) {
-        if (!values.newContactName || !values.newContactPhone || !values.newContactEmail) {
-            toast({ variant: "destructive", title: "Date incomplete", description: "Numele, telefonul și emailul sunt obligatorii pentru un client nou." });
-            setIsSubmitting(false);
-            return;
+    try {
+        if (!agencyId || !user) {
+            throw new Error('Nu sunteți autentificat sau agenția nu este validă.');
         }
 
-        try {
+        let contactIdToUse = values.contactId;
+        let contactNameToUse = '';
+
+        if (isNewContact) {
+            if (!values.newContactName || !values.newContactPhone || !values.newContactEmail) {
+                toast({ variant: "destructive", title: "Date incomplete", description: "Numele, telefonul și emailul sunt obligatorii pentru un client nou." });
+                return; // Early exit, finally will still run
+            }
+
             const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
             const newContactData: Omit<Contact, 'id'> = {
                 name: values.newContactName,
@@ -126,43 +123,42 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
                 agentName: user.displayName || user.email,
             };
             const newContactRef = await addDoc(contactsCollection, newContactData);
-            if (!newContactRef) throw new Error("Failed to get new contact reference");
             contactIdToUse = newContactRef.id;
             contactNameToUse = values.newContactName;
             toast({ title: "Client nou creat!", description: `${values.newContactName} a fost adăugat în CRM.` });
-        } catch (error) {
-            console.error("Failed to create new contact:", error);
-            toast({ variant: "destructive", title: "Eroare creare client", description: "Nu s-a putut crea clientul nou. Încearcă din nou." });
-            setIsSubmitting(false);
-            return;
+        } else {
+            const selectedContact = contacts.find(c => c.id === values.contactId);
+            if (!selectedContact) {
+                toast({ variant: 'destructive', title: 'Client invalid', description: 'Te rugăm să selectezi un client valid din listă.' });
+                return; // Early exit, finally will still run
+            }
+            contactIdToUse = selectedContact.id;
+            contactNameToUse = selectedContact.name;
         }
+        
+        const [hours, minutes] = values.viewingTime.split(':').map(Number);
+        const viewingDateTime = new Date(values.viewingDate);
+        viewingDateTime.setHours(hours, minutes);
 
-    } else {
-        const selectedContact = contacts.find(c => c.id === values.contactId);
-        if (!selectedContact) {
-            toast({ variant: 'destructive', title: 'Client invalid', description: 'Te rugăm să selectezi un client valid din listă.' });
-            setIsSubmitting(false);
-            return;
-        }
-        contactIdToUse = selectedContact.id;
-        contactNameToUse = selectedContact.name;
+        onAddViewing({
+            propertyId: values.propertyId!,
+            contactId: contactIdToUse!,
+            contactName: contactNameToUse,
+            viewingDate: viewingDateTime.toISOString(),
+            notes: values.notes || '',
+        });
+
+        // If everything is successful, close the dialog
+        setIsOpen(false);
+        form.reset();
+
+    } catch (error) {
+        console.error("Failed to submit viewing:", error);
+        toast({ variant: "destructive", title: "Eroare la salvare", description: "A apărut o problemă la salvarea vizionării. Încearcă din nou." });
+    } finally {
+        // This block will run regardless of success or failure, preventing the UI from freezing.
+        setIsSubmitting(false);
     }
-    
-    const [hours, minutes] = values.viewingTime.split(':').map(Number);
-    const viewingDateTime = new Date(values.viewingDate);
-    viewingDateTime.setHours(hours, minutes);
-
-    onAddViewing({
-        propertyId: values.propertyId!,
-        contactId: contactIdToUse!,
-        contactName: contactNameToUse,
-        viewingDate: viewingDateTime.toISOString(),
-        notes: values.notes || '',
-    });
-
-    setIsSubmitting(false);
-    setIsOpen(false);
-    form.reset();
   }
 
   return (
@@ -223,7 +219,42 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="viewingDate" render={({ field }) => ( <FormItem><FormLabel>Data</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={ro} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
+                <FormField
+                  control={form.control}
+                  name="viewingDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data</FormLabel>
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            locale={ro}
+                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               </div>
               <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
