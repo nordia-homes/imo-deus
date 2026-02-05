@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -124,7 +123,7 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
                 control={form.control}
                 name="dueDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data Scadentă</FormLabel>
                     <Popover modal={true}>
                       <PopoverTrigger asChild>
