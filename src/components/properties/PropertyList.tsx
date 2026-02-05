@@ -31,6 +31,8 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
         zones: [] as string[],
         after1977: false,
         furnishing: [] as string[],
+        partitioning: [] as string[],
+        kitchen: [] as string[],
     });
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -38,6 +40,8 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
     const parkingOptions = ['Garaj', 'Loc exterior', 'Subteran', 'Fără'];
     const furnishingOptions = ['Lux', 'Complet', 'Parțial', 'Nemobilat'];
     const heatingOptions = ['Centrală proprie', 'Termoficare', 'Sobă/Șemineu'];
+    const partitioningOptions = ['Decomandat', 'Semidecomandat', 'Circular', 'Nedecomandat'];
+    const kitchenOptions = ['Deschisă', 'Închisă'];
     
     const zoneOptions = useMemo(() => {
         const allZones = Object.values(locations).flat();
@@ -45,7 +49,7 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
     }, []);
 
 
-    const handleMultiSelectFilter = (filterKey: 'rooms' | 'parking' | 'heating' | 'furnishing' | 'zones', value: any) => {
+    const handleMultiSelectFilter = (filterKey: 'rooms' | 'parking' | 'heating' | 'furnishing' | 'zones' | 'partitioning' | 'kitchen', value: any) => {
         setFilters(prev => {
             const currentValues = prev[filterKey] as any[];
             const newValues = currentValues.includes(value)
@@ -59,7 +63,7 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
         if (!properties) return [];
 
         return properties.filter(property => {
-            const { transactionType, rooms, price, parking, heating, nearMetro, minArea, zones, after1977, furnishing } = filters;
+            const { transactionType, rooms, price, parking, heating, nearMetro, minArea, zones, after1977, furnishing, partitioning, kitchen } = filters;
 
             if (transactionType !== 'Toate' && property.transactionType !== transactionType) return false;
             if (after1977 && (!property.constructionYear || property.constructionYear <= 1977)) return false;
@@ -80,6 +84,8 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
             if (parking.length > 0 && (!property.parking || !parking.includes(property.parking))) return false;
             if (heating.length > 0 && (!property.heatingSystem || !heating.includes(property.heatingSystem))) return false;
             if (zones.length > 0 && (!property.zone || !zones.includes(property.zone))) return false;
+            if (partitioning.length > 0 && (!property.partitioning || !partitioning.includes(property.partitioning))) return false;
+            if (kitchen.length > 0 && (!property.kitchen || !kitchen.includes(property.kitchen))) return false;
 
             return true;
         });
@@ -143,6 +149,36 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
                             <div key={opt} className="flex items-center gap-2">
                                 <Checkbox id={`heating-${opt}`} checked={filters.heating.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('heating', opt)} />
                                 <Label htmlFor={`heating-${opt}`} className="font-normal">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.partitioning.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Compartimentare</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                     <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Compartimentare</h4>
+                        {partitioningOptions.map(opt => (
+                            <div key={opt} className="flex items-center gap-2">
+                                <Checkbox id={`partitioning-${opt}`} checked={filters.partitioning.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('partitioning', opt)} />
+                                <Label htmlFor={`partitioning-${opt}`} className="font-normal">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
+
+            <Popover>
+                <PopoverTrigger asChild><Button variant={filters.kitchen.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Bucătărie</Button></PopoverTrigger>
+                <PopoverContent className="p-4 w-56">
+                     <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Tip Bucătărie</h4>
+                        {kitchenOptions.map(opt => (
+                            <div key={opt} className="flex items-center gap-2">
+                                <Checkbox id={`kitchen-${opt}`} checked={filters.kitchen.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('kitchen', opt)} />
+                                <Label htmlFor={`kitchen-${opt}`} className="font-normal">{opt}</Label>
                             </div>
                         ))}
                     </div>
