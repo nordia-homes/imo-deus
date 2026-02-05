@@ -37,7 +37,7 @@ export function PropertyCard({ property, agencyId }: { property: Property; agenc
 
   return (
     <>
-      <Card className="group overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 bg-card">
+      <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
         <CardContent className="p-0">
           <div className="relative">
             <Link href={href} className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl">

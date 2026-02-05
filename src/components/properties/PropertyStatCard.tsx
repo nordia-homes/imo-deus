@@ -18,7 +18,7 @@ export function PropertyStatCard({
   className,
 }: PropertyStatCardProps) {
   return (
-    <Card className={cn("rounded-xl shadow-sm", className)}>
+    <Card className={cn("rounded-xl shadow-2xl", className)}>
       <CardContent className="p-4 flex items-center gap-3">
         <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
           {icon}
