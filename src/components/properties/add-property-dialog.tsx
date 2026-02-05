@@ -316,7 +316,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               const uploadPromises = newImageFiles.map(async (file, index) => {
                   const resizedBlob = await resizeAndGetBlob(file);
                   const imageName = `${crypto.randomUUID()}.jpg`;
-                  const imageRef = ref(storage, `properties/${agencyId}/${user.uid}/${propertyId}/${imageName}`);
+                  const imageRef = ref(storage, `properties/${propertyId}/${imageName}`);
                   await uploadBytes(imageRef, resizedBlob);
                   const downloadURL = await getDownloadURL(imageRef);
                   return { url: downloadURL, alt: `${values.title} - imagine ${index + 1}` };
