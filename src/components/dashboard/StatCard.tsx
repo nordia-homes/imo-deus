@@ -54,8 +54,10 @@ export function StatCard({
                     {icon}
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                    <div className="text-xl font-bold">{value}</div>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                        <p className="text-xl font-bold">{value}</p>
+                    </div>
                     {period && <p className="text-xs text-muted-foreground mt-0.5">{period}</p>}
                 </div>
             </CardContent>
