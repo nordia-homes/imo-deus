@@ -24,6 +24,10 @@ import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { Button } from '@/components/ui/button';
 import { AgendaCard } from '@/components/dashboard/AgendaCard';
+import { useToast } from '@/hooks/use-toast';
+import { addDocumentNonBlocking } from '@/firebase';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 
 
 const formatValue = (num: number) => {
@@ -40,9 +44,51 @@ export default function DashboardPage() {
     const { user } = useUser();
     const displayName = user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
     
-    const { agencyId, isAgencyLoading } = useAgency();
+    const { agencyId, isAgencyLoading, userProfile } = useAgency();
     const firestore = useFirestore();
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+    const { toast } = useToast();
+
+    // --- Action Handlers ---
+    const handleAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => {
+        if (!agencyId || !user) return;
+        const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
+        const taskToAdd: Omit<Task, 'id'> = {
+            ...taskData,
+            status: 'open',
+            agentId: user.uid,
+            agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+        };
+        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        toast({
+            title: "Task adăugat!",
+            description: `Task-ul "${taskData.description}" a fost adăugat.`,
+        });
+    };
+
+    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+        if (!agencyId || !user) return;
+
+        const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
+        if (!selectedProperty) {
+            toast({ variant: 'destructive', title: 'Proprietate invalidă.' });
+            return;
+        };
+        
+        const viewingToAdd: Omit<Viewing, 'id'> = {
+            ...viewingData,
+            propertyTitle: selectedProperty.title,
+            propertyAddress: selectedProperty.address,
+            status: 'scheduled',
+            agentId: user.uid,
+            agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+            createdAt: new Date().toISOString(),
+        };
+        
+        addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+
+        toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
+    };
 
     // --- DATA FETCHING ---
     const contactsQuery = useMemoFirebase(() => {
@@ -314,6 +360,18 @@ export default function DashboardPage() {
                     <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
                 </div>
                 <div className="flex items-center gap-2">
+                    <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adaugă Task
+                        </Button>
+                    </AddTaskDialog>
+                    <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adaugă Vizionare
+                        </Button>
+                    </AddViewingDialog>
                     <AddLeadDialog properties={properties || []} />
                     <Button onClick={() => setIsAddPropertyOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
