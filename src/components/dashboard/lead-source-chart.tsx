@@ -36,9 +36,9 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[250px]"
+      className="mx-auto aspect-square max-h-[200px]"
     >
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <ChartTooltip
             cursor={false}
@@ -48,7 +48,7 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
             data={data}
             dataKey="count"
             nameKey="source"
-            innerRadius={60}
+            innerRadius={50}
             strokeWidth={5}
             paddingAngle={2}
           >
@@ -65,7 +65,7 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
                         <tspan
                         x={viewBox.cx}
                         y={viewBox.cy}
-                        className="fill-foreground text-3xl font-bold"
+                        className="fill-foreground text-2xl font-bold"
                         >
                         {totalBuyers.toLocaleString()}
                         </tspan>

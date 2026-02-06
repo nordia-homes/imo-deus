@@ -20,15 +20,15 @@ export function ConversionChart({ data }: { data: ConversionData[] }) {
 
   if (!hasData) {
       return (
-          <div className="h-[250px] w-full flex items-center justify-center">
+          <div className="h-[200px] w-full flex items-center justify-center">
               <CardDescription>Nu sunt suficiente date în ultimele 30 de zile pentru a afișa graficul.</CardDescription>
           </div>
       )
   }
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-        <ResponsiveContainer width="100%" height={250}>
+    <ChartContainer config={chartConfig} className="min-h-[150px] w-full">
+        <ResponsiveContainer width="100%" height={200}>
             <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis
