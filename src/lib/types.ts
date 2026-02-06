@@ -148,6 +148,12 @@ export type BuyerSourceData = {
   fill: string;
 };
 
+export type LeadSourceData = {
+  source: string;
+  count: number;
+  fill: string;
+}
+
 export type ConversionData = {
   date: string;
   vizionari: number;

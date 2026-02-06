@@ -3,17 +3,17 @@
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import type { Property, Viewing, Task, Contact, LeadSourceData, ConversionData } from '@/lib/types';
+import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
 
 // Components
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
-import { ConversionChart } from '@/components/dashboard/ConversionChart';
+import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
@@ -84,7 +84,7 @@ export default function DashboardPage() {
         totalSalesCount,
         newLeadsCount,
         leadSourceData,
-        conversionData,
+        monthlyCommissionData,
         newLeadsProgress,
         salesProgress,
         soldThisMonthProgress,
@@ -167,44 +167,27 @@ export default function DashboardPage() {
             fill: chartColors[index % chartColors.length],
         }));
         
-        // Conversion Data (last 30 days)
-        const thirtyDaysAgo = subDays(new Date(), 30);
-        const today = new Date();
-        const dateArray = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
+        // Monthly Commission Data calculation
+        const monthlyCommissions: { [key: string]: { sales: number, date: Date } } = {};
+        const soldOrRentedAllTime = properties?.filter(p => 
+            (p.status === 'Vândut' || p.status === 'Închiriat') && p.statusUpdatedAt
+        ) || [];
 
-        const conversionMap: Map<string, { vizionari: number; tranzactii: number }> = new Map();
-        dateArray.forEach(date => {
-            conversionMap.set(format(date, 'd MMM', { locale: ro }), { vizionari: 0, tranzactii: 0 });
-        });
-
-        viewings?.forEach(viewing => {
-            const viewingDate = parseISO(viewing.viewingDate);
-            if (isWithinInterval(viewingDate, { start: thirtyDaysAgo, end: today })) {
-                const dayKey = format(viewingDate, 'd MMM', { locale: ro });
-                const dayData = conversionMap.get(dayKey);
-                if (dayData) {
-                    dayData.vizionari++;
-                }
+        soldOrRentedAllTime.forEach(prop => {
+            const date = parseISO(prop.statusUpdatedAt!);
+            const monthKey = format(date, 'yyyy-MM');
+            if (!monthlyCommissions[monthKey]) {
+                monthlyCommissions[monthKey] = { sales: 0, date: new Date(date.getFullYear(), date.getMonth(), 1) };
             }
+            monthlyCommissions[monthKey] += calculateCommission(prop);
         });
 
-        properties?.forEach(property => {
-            if ((property.status === 'Vândut' || property.status === 'Rezervat') && property.statusUpdatedAt) {
-                const updatedDate = parseISO(property.statusUpdatedAt);
-                if (isWithinInterval(updatedDate, { start: thirtyDaysAgo, end: today })) {
-                    const dayKey = format(updatedDate, 'd MMM', { locale: ro });
-                    const dayData = conversionMap.get(dayKey);
-                    if (dayData) {
-                        dayData.tranzactii++;
-                    }
-                }
-            }
-        });
-
-        const conversionDataResult: ConversionData[] = Array.from(conversionMap.entries()).map(([date, data]) => ({
-          date,
-          ...data,
-        }));
+        const monthlyCommissionDataResult: SalesData[] = Object.values(monthlyCommissions)
+            .sort((a,b) => a.date.getTime() - b.date.getTime())
+            .map(data => ({
+                month: data.date.toLocaleString('ro-RO', { month: 'short' }),
+                sales: data.sales,
+            }));
 
 
         return {
@@ -217,7 +200,7 @@ export default function DashboardPage() {
             totalSalesCount,
             newLeadsCount,
             leadSourceData: leadSourceDataResult,
-            conversionData: conversionDataResult,
+            monthlyCommissionData: monthlyCommissionDataResult,
             newLeadsProgress,
             salesProgress,
             soldThisMonthProgress,
@@ -311,11 +294,11 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4 shadow-2xl rounded-2xl">
                     <CardHeader>
-                        <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
-                        <CardDescription>Ultimele 30 de zile</CardDescription>
+                        <CardTitle>Evoluție Comision Lunar</CardTitle>
+                        <CardDescription>Comision realizat în ultimele luni</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <ConversionChart data={conversionData} />
+                        <SalesChart data={monthlyCommissionData} />
                     </CardContent>
                 </Card>
                 <Card className="col-span-3 shadow-2xl rounded-2xl">
