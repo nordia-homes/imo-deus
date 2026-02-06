@@ -56,7 +56,7 @@ function hexToHsl(hex: string): string | null {
 }
 
 function DashboardRoot({ children }: { children: React.ReactNode }) {
-    const { agency, isAgencyLoading } = useAgency();
+    const { agency, userProfile, isAgencyLoading } = useAgency();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -87,16 +87,27 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     }, [agency]);
 
     useEffect(() => {
-        // Redirect to settings if loading is done, there's no agency, and we are not already on the settings page.
-        if (!isAgencyLoading && !agency?.id && pathname !== '/settings') {
+        // We redirect if loading is finished, and we can determine there is no agency.
+        // The best way to know is to check if the loaded user profile has an agencyId.
+        if (!isAgencyLoading && !userProfile?.agencyId && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [isAgencyLoading, agency, router, pathname]);
+    }, [isAgencyLoading, userProfile, pathname, router]);
 
-    // Show a loader if:
-    // 1. We are loading the agency info.
-    // 2. We are NOT on the settings page AND we are missing an agency ID (which implies a redirect is about to happen).
-    if (isAgencyLoading || (!agency?.id && pathname !== '/settings')) {
+    // We show the loader if ANY data is still loading.
+    if (isAgencyLoading) {
+        return <FullScreenLoader />;
+    }
+    
+    // After loading, if the user has no agency ID and is not on the settings page, keep showing the loader
+    // until the redirect from the useEffect happens.
+    if (!userProfile?.agencyId && pathname !== '/settings') {
+        return <FullScreenLoader />;
+    }
+
+    // Also, if the user profile has an agency ID, but the agency data itself hasn't arrived yet
+    // (or is null, indicating an invalid ID), we should also wait.
+    if (userProfile?.agencyId && !agency && pathname !== '/settings') {
         return <FullScreenLoader />;
     }
 
