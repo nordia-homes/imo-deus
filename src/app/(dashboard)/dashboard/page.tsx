@@ -239,8 +239,8 @@ export default function DashboardPage() {
 
              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="în luna curentă" icon={<Bookmark />} progress={reservedThisMonthProgress} />
-                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="în luna curentă" icon={<Handshake />} progress={soldThisMonthProgress} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
