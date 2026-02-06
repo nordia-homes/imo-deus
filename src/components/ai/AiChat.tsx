@@ -9,6 +9,9 @@ import { chat } from "@/ai/flows/chat";
 import type { Message } from "genkit";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "../ui/skeleton";
+import type { Contact, Property, Agency, UserProfile } from '@/lib/types';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessage {
     role: 'user' | 'model';
@@ -19,9 +22,13 @@ interface AiChatProps {
     suggestedPrompts: string[];
     promptsLoading: boolean;
     initialPrompt?: string;
+    contacts: Contact[];
+    properties: Property[];
+    agency?: Agency;
+    user?: UserProfile;
 }
 
-export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt }: AiChatProps) {
+export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contacts, properties, agency, user }: AiChatProps) {
     const { toast } = useToast();
     const [messages, setMessages] = useState<ChatMessage[]>([
         { role: 'model', text: 'Bună! Sunt asistentul tău AI. Cum te pot ajuta astăzi cu activitățile tale imobiliare?' }
@@ -54,6 +61,10 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt }: AiCh
             const result = await chat({
                 history: history,
                 prompt: input,
+                contacts,
+                properties,
+                agency,
+                user,
             });
 
             const aiMessage: ChatMessage = { role: 'model', text: result.response };
@@ -80,8 +91,8 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt }: AiCh
             {messages.map((msg, i) => (
                 <div key={i} className={`flex items-start gap-4 ${msg.role === 'model' ? 'justify-start' : 'justify-end'}`}>
                     {msg.role === 'model' && <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>}
-                     <div className={`p-4 rounded-lg max-w-2xl shadow-sm ${msg.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                     <div className={`prose prose-sm max-w-2xl rounded-lg p-4 shadow-sm lg:prose-base dark:prose-invert ${msg.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                        <Markdown remarkPlugins={[remarkGfm]}>{msg.text}</Markdown>
                     </div>
                      {msg.role === 'user' && <div className="p-2 rounded-full bg-secondary"><User className="h-5 w-5" /></div>}
                 </div>

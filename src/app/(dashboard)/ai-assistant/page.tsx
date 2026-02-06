@@ -10,7 +10,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAgency } from '@/context/AgencyContext';
 
 function AiAssistantContent() {
-  const { agencyId } = useAgency();
+  const { agency, userProfile, agencyId } = useAgency();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const initialPrompt = searchParams.get('prompt') || undefined;
@@ -58,13 +58,17 @@ function AiAssistantContent() {
        <div>
             <h1 className="text-3xl font-headline font-bold">Asistent AI</h1>
             <p className="text-muted-foreground">
-                Asistentul tău personal pentru orice întrebare imobiliară.
+                Asistentul tău personal inteligent, conștient de datele tale din CRM.
             </p>
         </div>
         <AiChat 
             suggestedPrompts={suggestedPrompts} 
             promptsLoading={isLoading}
             initialPrompt={initialPrompt}
+            contacts={contacts || []}
+            properties={properties || []}
+            agency={agency || undefined}
+            user={userProfile || undefined}
         />
     </div>
   );
