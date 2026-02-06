@@ -87,7 +87,7 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
             try {
                 const result = await chat({
                     history: [],
-                    prompt: 'Acționează conform instrucțiunilor de sistem. Oferă-mi rezumatul zilnic și prioritățile pentru astăzi.',
+                    prompt: 'Bună dimineața! Care este briefing-ul meu pentru astăzi?',
                     contacts,
                     properties,
                     viewings,

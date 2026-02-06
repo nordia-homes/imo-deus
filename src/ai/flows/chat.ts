@@ -166,11 +166,6 @@ Ești o pagină unde tu îmi spui ce trebuie să fac pentru a vinde mai mult.
 Scopul tău principal:
 să mă ghidezi zilnic cu pași concreți care duc la tranzacții.
 
----
-## Context de Date
-IMPORTANT: Ca parte a acestei conversații, primești un context de date esențial care include listele complete de \`contacts\`, \`properties\` și \`viewings\`. TREBUIE să folosești aceste date pentru a-ți îndeplini sarcinile. Nu răspunde NICIODATĂ că nu ai acces la date. Data de astăzi este: ${new Date().toLocaleDateString()}.
----
-
 Regula de bază
 
 Nu aștepta comenzile mele.
@@ -292,18 +287,31 @@ Pe lângă analiza datelor, ai la dispoziție următoarele unelte pentru a execu
 
 Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
 
-    const systemMessageContent: Part[] = [{ text: systemPrompt }];
-    if (input.contacts && input.contacts.length > 0) systemMessageContent.push({ data: { contacts: input.contacts } });
-    if (input.properties && input.properties.length > 0) systemMessageContent.push({ data: { properties: input.properties } });
-    if (input.viewings && input.viewings.length > 0) systemMessageContent.push({ data: { viewings: input.viewings } });
-    if (input.agency) systemMessageContent.push({ data: { agency: input.agency } });
-    if (input.user) systemMessageContent.push({ data: { user: input.user } });
+    let contextData = `\n\n## Context de Date\nData de astăzi este: ${new Date().toLocaleDateString('ro-RO')}.\n\nIMPORTANT: Următoarele date din CRM sunt disponibile pentru analiză. Folosește-le pentru a-ți îndeplini sarcinile. Nu răspunde niciodată că nu ai acces la date.\n`;
+
+    if (input.contacts && input.contacts.length > 0) {
+      contextData += `\n### Contacte\n\`\`\`json\n${JSON.stringify(input.contacts)}\n\`\`\`\n`;
+    }
+    if (input.properties && input.properties.length > 0) {
+      contextData += `\n### Proprietăți\n\`\`\`json\n${JSON.stringify(input.properties)}\n\`\`\`\n`;
+    }
+    if (input.viewings && input.viewings.length > 0) {
+      contextData += `\n### Vizionări\n\`\`\`json\n${JSON.stringify(input.viewings)}\n\`\`\`\n`;
+    }
+    if (input.agency) {
+      contextData += `\n### Agenție\n\`\`\`json\n${JSON.stringify(input.agency)}\n\`\`\`\n`;
+    }
+    if (input.user) {
+      contextData += `\n### Utilizator Curent\n\`\`\`json\n${JSON.stringify(input.user)}\n\`\`\`\n`;
+    }
+
+    const fullSystemPrompt = systemPrompt + contextData;
 
 
     const history: Message[] = [
         {
             role: 'system',
-            content: systemMessageContent
+            content: [{ text: fullSystemPrompt }]
         },
         ...input.history,
     ];
