@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from '@/lib/types';
 import { PropertyMarker } from './PropertyMarker';
@@ -76,7 +77,13 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
             <CardContent className="p-0 h-full">
                 <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
                     {/* Placeholder map background */}
-                     <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url(https://source.unsplash.com/random/1600x900/?map,city)', opacity: 0.2 }}></div>
+                     <Image
+                        src="https://picsum.photos/seed/map/1600/900"
+                        alt="Map background"
+                        fill
+                        className="object-cover opacity-20"
+                        priority
+                     />
 
                     {validProperties.map(property => {
                         const { x, y } = getPosition(
