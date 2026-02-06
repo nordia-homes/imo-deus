@@ -3,10 +3,10 @@
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData } from '@/lib/types';
+import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData, ConversionData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
 
 // Components
@@ -15,6 +15,7 @@ import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
 import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
+import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -94,6 +95,7 @@ export default function DashboardPage() {
         commissionProgress,
         todaysTasks,
         todaysViewings,
+        conversionData,
     } = useMemo(() => {
         const totalPropertiesCount = properties?.length || 0;
         const totalContactsCount = contacts?.length || 0;
@@ -174,12 +176,13 @@ export default function DashboardPage() {
         ) || [];
 
         soldOrRentedAllTime.forEach(prop => {
-            const date = parseISO(prop.statusUpdatedAt!);
+            if (!prop.statusUpdatedAt) return;
+            const date = parseISO(prop.statusUpdatedAt);
             const monthKey = format(date, 'yyyy-MM');
             if (!monthlyCommissions[monthKey]) {
                 monthlyCommissions[monthKey] = { sales: 0, date: new Date(date.getFullYear(), date.getMonth(), 1) };
             }
-            monthlyCommissions[monthKey] += calculateCommission(prop);
+            monthlyCommissions[monthKey].sales += calculateCommission(prop);
         });
 
         const monthlyCommissionDataResult: SalesData[] = Object.values(monthlyCommissions)
@@ -188,6 +191,45 @@ export default function DashboardPage() {
                 month: data.date.toLocaleString('ro-RO', { month: 'short' }),
                 sales: data.sales,
             }));
+            
+        // Conversion Data (last 30 days)
+        const thirtyDaysAgo = subDays(new Date(), 30);
+        const today = new Date();
+        const dateArray = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
+
+        const conversionMap: Map<string, { vizionari: number; tranzactii: number }> = new Map();
+        dateArray.forEach(date => {
+            conversionMap.set(format(date, 'd MMM', { locale: ro }), { vizionari: 0, tranzactii: 0 });
+        });
+
+        viewings?.forEach(viewing => {
+            const viewingDate = parseISO(viewing.viewingDate);
+            if (isWithinInterval(viewingDate, { start: thirtyDaysAgo, end: today })) {
+                const dayKey = format(viewingDate, 'd MMM', { locale: ro });
+                const dayData = conversionMap.get(dayKey);
+                if (dayData) {
+                    dayData.vizionari++;
+                }
+            }
+        });
+
+        properties?.forEach(property => {
+            if ((property.status === 'Vândut' || property.status === 'Rezervat') && property.statusUpdatedAt) {
+                const updatedDate = parseISO(property.statusUpdatedAt);
+                if (isWithinInterval(updatedDate, { start: thirtyDaysAgo, end: today })) {
+                    const dayKey = format(updatedDate, 'd MMM', { locale: ro });
+                    const dayData = conversionMap.get(dayKey);
+                    if (dayData) {
+                        dayData.tranzactii++;
+                    }
+                }
+            }
+        });
+
+        const conversionDataResult: ConversionData[] = Array.from(conversionMap.entries()).map(([date, data]) => ({
+          date,
+          ...data,
+        }));
 
 
         return {
@@ -210,6 +252,7 @@ export default function DashboardPage() {
             commissionProgress,
             todaysTasks,
             todaysViewings,
+            conversionData: conversionDataResult,
         };
     }, [properties, viewings, contacts, openTasks]);
     
@@ -291,8 +334,8 @@ export default function DashboardPage() {
                 <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="luna aceasta" icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-2xl rounded-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="lg:col-span-2 shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Evoluție Comision Lunar</CardTitle>
                         <CardDescription>Comision realizat în ultimele luni</CardDescription>
@@ -301,7 +344,16 @@ export default function DashboardPage() {
                         <SalesChart data={monthlyCommissionData} />
                     </CardContent>
                 </Card>
-                <Card className="col-span-3 shadow-2xl rounded-2xl">
+                <Card className="shadow-2xl rounded-2xl">
+                    <CardHeader>
+                        <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
+                        <CardDescription>Ultimele 30 de zile</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <ConversionChart data={conversionData} />
+                    </CardContent>
+                </Card>
+                <Card className="shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Distribuție Surse Lead-uri</CardTitle>
                     </CardHeader>
