@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z, Message} from 'genkit';
-import type { Contact, Property, Agency, UserProfile, PropertyDescriptionInput } from '@/lib/types';
+import type { Contact, Property, Agency, UserProfile } from '@/lib/types';
 import { generateEmail } from './email-generator';
 import { generatePropertyDescription } from './property-description-generator';
 
@@ -55,12 +55,12 @@ const getPropertyDescription = ai.defineTool(
   {
     name: 'getPropertyDescription',
     description: 'Generates an engaging, market-ready description for a property based on its key details. Use this when a user asks to write a description for a property.',
-    inputSchema: z.custom<PropertyDescriptionInput>(),
+    inputSchema: z.custom<Property>(),
     outputSchema: z.object({
       description: z.string(),
     }),
   },
-  async (input) => generatePropertyDescription(input)
+  async (property) => generatePropertyDescription(property)
 );
 
 
@@ -81,7 +81,7 @@ const chatFlow = ai.defineFlow(
         inputSchema: z.object({
           count: z.number().optional().default(5).describe("Number of leads to return."),
         }),
-        outputSchema: z.array(z.object({ name: z.string(), status: z.string(), budget: z.number().optional() })),
+        outputSchema: z.array(z.object({ name: z.string(), status: z.string().optional(), budget: z.number().optional() })),
       },
       async ({ count }) => {
         if (!contacts) return [];
@@ -95,26 +95,32 @@ const chatFlow = ai.defineFlow(
     const getPropertyDetails = ai.defineTool(
         {
             name: 'getPropertyDetails',
-            description: 'Retrieves key details for a specific property by its title or partial title from the provided list of properties.',
+            description: 'Retrieves the full data object for a specific property by its title or partial title from the provided list of properties.',
             inputSchema: z.object({
                 propertyTitle: z.string().describe("The title or a key part of the title of the property to find."),
             }),
-            outputSchema: z.custom<PropertyDescriptionInput>().nullable(),
+            outputSchema: z.custom<Property>().nullable(),
         },
         async ({ propertyTitle }) => {
             if (!properties) return null;
             const prop = properties.find(p => p.title.toLowerCase().includes(propertyTitle.toLowerCase()));
-            if (!prop) return null;
-            // Return the data in the format needed for the getPropertyDescription tool
-            return {
-                propertyType: prop.propertyType,
-                location: prop.location,
-                rooms: prop.rooms,
-                bathrooms: prop.bathrooms,
-                squareFootage: prop.squareFootage,
-                keyFeatures: prop.keyFeatures || '',
-                price: prop.price,
-            };
+            return prop || null;
+        }
+    );
+
+    const getContactDetails = ai.defineTool(
+        {
+            name: 'getContactDetails',
+            description: 'Retrieves the full data object for a specific contact (buyer/lead) by their name from the provided list.',
+            inputSchema: z.object({
+                contactName: z.string().describe("The full name or partial name of the contact to find."),
+            }),
+            outputSchema: z.custom<Contact>().nullable(),
+        },
+        async ({ contactName }) => {
+            if (!contacts) return null;
+            const contact = contacts.find(c => c.name.toLowerCase().includes(contactName.toLowerCase()));
+            return contact || null;
         }
     );
 
@@ -151,12 +157,14 @@ Ai acces la un set de unelte puternice. Când o cerere se potrivește cu capacit
 
 *   \`getEmailDraft\`: Pentru a genera draft-uri de email-uri (oferte, follow-up, negocieri).
     *   *Exemplu cerere:* „Scrie un email de follow-up pentru [nume client].”
-*   \`getPropertyDescription\`: Pentru a scrie o descriere de marketing pentru o proprietate.
+*   \`getPropertyDescription\`: Pentru a scrie o descriere de marketing pentru o proprietate. Necesită detaliile complete ale proprietății, pe care le poți obține cu \`getPropertyDetails\`.
     *   *Exemplu cerere:* „Generează o descriere pentru apartamentul din Herăstrău.”
 *   \`listRecentLeads\`: Pentru a vedea o listă cu cele mai noi contacte adăugate în CRM.
     *   *Exemplu cerere:* „Care sunt cele mai noi lead-uri?”
-*   \`getPropertyDetails\`: Pentru a căuta detalii specifice despre o proprietate. Folosește această unealtă înainte de a genera o descriere, dacă nu ai toate detaliile.
+*   \`getPropertyDetails\`: Pentru a căuta **toate detaliile** despre o proprietate. Folosește această unealtă înainte de a genera o descriere, dacă nu ai toate detaliile.
     *   *Exemplu cerere:* „Găsește detaliile pentru proprietatea de pe Șoseaua Nordului.”
+*   \`getContactDetails\`: Pentru a obține **toate informațiile** despre un anumit cumpărător (contact).
+    *   *Exemplu cerere:* „Ce știi despre clientul Ion Popescu?” sau „Care sunt preferințele lui Ion Popescu?”
 
 După ce o unealtă returnează un rezultat, prezintă-l clar, formatat în markdown, nu ca JSON brut.
 
@@ -203,7 +211,7 @@ După ce o unealtă returnează un rezultat, prezintă-l clar, formatat în mark
     const response = await ai.generate({
       prompt: input.prompt,
       history,
-      tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails],
+      tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails, getContactDetails],
       model: 'googleai/gemini-2.5-flash',
     });
     

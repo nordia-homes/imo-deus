@@ -11,25 +11,23 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import type { Property } from '@/lib/types';
 
+// The input is the full property object, wrapped for the flow.
 const PropertyDescriptionInputSchema = z.object({
-  propertyType: z.string().min(1).describe('The type of property (e.g., house, apartment, condo).'),
-  location: z.string().min(1).describe('The location of the property (city, neighborhood).'),
-  rooms: z.number().int().nonnegative().describe('The number of rooms in the property.'),
-  bathrooms: z.number().nonnegative().describe('The number of bathrooms in the property.'),
-  squareFootage: z.number().positive().describe('The square footage of the property.'),
-  keyFeatures: z.string().min(1).describe('A comma separated list of key features of the property.'),
-  price: z.number().positive().describe('The price of the property'),
+  property: z.custom<Property>().describe("The full property object as a JSON object.")
 });
 export type PropertyDescriptionInput = z.infer<typeof PropertyDescriptionInputSchema>;
+
 
 const PropertyDescriptionOutputSchema = z.object({
   description: z.string().describe('An engaging and detailed property description written in Romanian.'),
 });
 export type PropertyDescriptionOutput = z.infer<typeof PropertyDescriptionOutputSchema>;
 
-export async function generatePropertyDescription(input: PropertyDescriptionInput): Promise<PropertyDescriptionOutput> {
-  return propertyDescriptionFlow(input);
+// The exported function now accepts the raw Property object for easier use by other flows/tools.
+export async function generatePropertyDescription(property: Property): Promise<PropertyDescriptionOutput> {
+  return propertyDescriptionFlow({ property });
 }
 
 const prompt = ai.definePrompt({
@@ -38,17 +36,13 @@ const prompt = ai.definePrompt({
   output: {schema: PropertyDescriptionOutputSchema},
   prompt: `You are a real estate expert, and will write a property description in Romanian to attract potential buyers.
 
-  Use the following information about the property to craft a compelling description:
-
-  Property Type: {{{propertyType}}}
-  Location: {{{location}}}
-  Camere: {{{rooms}}}
-  Bathrooms: {{{bathrooms}}}
-  Square Footage: {{{squareFootage}}} mp
-  Key Features: {{{keyFeatures}}}
-  Price: {{{price}}} EUR
+  Use the following JSON object which contains all available information about the property to craft a compelling description:
+  \`\`\`json
+  {{{JSON.stringify(property, null, 2)}}}
+  \`\`\`
 
   Write a description in Romanian that is engaging, highlights the key selling points, and appeals to a broad range of potential buyers.  Be sure to mention the price in the description. The tone should be professional, but also appealing and persuasive.
+  Do not just list the features from the JSON. Weave them into a compelling narrative that tells a story and focuses on the benefits for the buyer.
   `,
 });
 
