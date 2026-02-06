@@ -1,26 +1,8 @@
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 import { useMemo, type DependencyList } from 'react';
-
-/**
- * Initializes and returns the Firebase app and associated services.
- * This function handles both server-side and client-side initialization,
- * ensuring that `initializeApp` is called only once.
- */
-export function initializeFirebase() {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  return {
-    firebaseApp: app,
-    auth: getAuth(app),
-    firestore: getFirestore(app),
-    storage: getStorage(app),
-  };
-}
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 
 // Re-export core hooks and providers from their new locations
+export * from './init';
 export * from './provider';
 export * from './client-provider';
 export * from './auth/use-user';

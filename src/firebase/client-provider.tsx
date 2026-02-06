@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase';
+import { initializeFirebase } from '@/firebase/init';
 
 /**
  * A client-side component that ensures Firebase is initialized only once
