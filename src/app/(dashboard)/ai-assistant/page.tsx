@@ -4,7 +4,7 @@ import { useMemo, Suspense } from 'react';
 import { AiChat } from "@/components/ai/AiChat";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import type { Contact, Property } from '@/lib/types';
+import type { Contact, Property, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import { useAgency } from '@/context/AgencyContext';
@@ -26,6 +26,12 @@ function AiAssistantContent() {
     return query(collection(firestore, 'agencies', agencyId, 'properties'), orderBy('createdAt', 'desc'));
   }, [firestore, agencyId]);
   const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+  const viewingsQuery = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc'));
+  }, [firestore, agencyId]);
+  const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
   const suggestedPrompts = useMemo(() => {
     const prompts = [
@@ -51,7 +57,7 @@ function AiAssistantContent() {
     return prompts.slice(0, 3);
   }, [contacts, properties]);
   
-  const isLoading = areContactsLoading || arePropertiesLoading;
+  const isLoading = areContactsLoading || arePropertiesLoading || areViewingsLoading;
 
   return (
     <div className="h-full flex flex-col">
@@ -67,6 +73,7 @@ function AiAssistantContent() {
             initialPrompt={initialPrompt}
             contacts={contacts || []}
             properties={properties || []}
+            viewings={viewings || []}
             agency={agency || undefined}
             user={userProfile || undefined}
         />

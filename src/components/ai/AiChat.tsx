@@ -9,7 +9,7 @@ import { chat } from "@/ai/flows/chat";
 import type { Message } from "genkit";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "../ui/skeleton";
-import type { Contact, Property, Agency, UserProfile } from '@/lib/types';
+import type { Contact, Property, Agency, UserProfile, Viewing } from '@/lib/types';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -24,11 +24,12 @@ interface AiChatProps {
     initialPrompt?: string;
     contacts: Contact[];
     properties: Property[];
+    viewings: Viewing[];
     agency?: Agency;
     user?: UserProfile;
 }
 
-export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contacts, properties, agency, user }: AiChatProps) {
+export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contacts, properties, viewings, agency, user }: AiChatProps) {
     const { toast } = useToast();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
@@ -55,6 +56,7 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
                 prompt: promptToSend,
                 contacts,
                 properties,
+                viewings,
                 agency,
                 user,
             });
@@ -88,6 +90,7 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
                     prompt: 'Acționează conform instrucțiunilor de sistem. Oferă-mi rezumatul zilnic și prioritățile pentru astăzi.',
                     contacts,
                     properties,
+                    viewings,
                     agency,
                     user,
                 });

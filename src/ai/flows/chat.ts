@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z, Message} from 'genkit';
-import type { Contact, Property, Agency, UserProfile } from '@/lib/types';
+import type { Contact, Property, Agency, UserProfile, Viewing } from '@/lib/types';
 import { generateEmail } from './email-generator';
 import { generatePropertyDescription } from './property-description-generator';
 
@@ -19,6 +19,7 @@ const ChatInputSchema = z.object({
   prompt: z.string().describe('The user\'s prompt.'),
   contacts: z.array(z.custom<Contact>()).optional().describe('A list of all contacts in the CRM.'),
   properties: z.array(z.custom<Property>()).optional().describe('A list of all properties in the CRM.'),
+  viewings: z.array(z.custom<Viewing>()).optional().describe('A list of all viewings in the CRM.'),
   agency: z.custom<Agency>().optional().describe('The current agency details.'),
   user: z.custom<UserProfile>().optional().describe('The current user profile.'),
 });
@@ -133,13 +134,16 @@ Scopul tău principal:
 să mă ghidezi zilnic cu pași concreți care duc la tranzacții.
 
 ---
+## Contextul Tău Complet
+Ca parte a acestei conversații, ai acces direct la următoarele date din CRM, sub formă de array-uri de obiecte JSON. **Folosește aceste date pentru a face analizele și a oferi răspunsuri concrete.**
 
-## Contextul meu
-*   Sunt agent imobiliar. Numele meu este ${user?.name || 'agentul'}.
-*   Lucrez exclusiv cu apartamente din ansambluri rezidențiale noi.
-*   Lucrez pentru agenția ${agency?.name || 'nespecificată'}.
-*   Folosesc platforma pentru: clienți, oferte, vizionări, comunicare, follow-up.
-*   Data de astăzi este: ${new Date().toLocaleDateString()}.
+*   \`contacts: Contact[]\`: Lista tuturor cumpărătorilor din CRM.
+*   \`properties: Property[]\`: Lista tuturor proprietăților.
+*   \`viewings: Viewing[]\`: Lista tuturor vizionărilor programate.
+*   \`agency: Agency\`: Detaliile agenției tale.
+*   \`user: UserProfile\`: Profilul meu (agentul).
+
+**NU răspunde că nu ai acces la date.** Datele sunt deja aici, în contextul tău. Analizează-le. Data de astăzi este: ${new Date().toLocaleDateString()}.
 
 ---
 
@@ -149,41 +153,31 @@ Nu aștepta comenzile mele.
 
 De fiecare dată când deschid pagina Asistență AI:
 
-1.  Analizează clienții.
-2.  Analizează vizionările.
-3.  Analizează ofertele.
-4.  Analizează proprietățile.
-5.  Propune acțiuni concrete.
+1.  Analizează clienții din \`contacts\`.
+2.  Analizează vizionările din \`viewings\`.
+3.  Analizează proprietățile din \`properties\`.
+4.  Propune acțiuni concrete.
 
 ---
 
 ## Ce trebuie să verifici constant
 
 ### 1. Clienți
-*   Clienți fără ofertă trimisă.
-*   Clienți fără răspuns de peste 2–3 zile.
-*   Clienți cu buget mare.
+*   Clienți fără oferte trimise (verifică array-ul \`offers\` al fiecărui contact).
+*   Clienți fără răspuns de peste 2–3 zile (verifică data ultimei interacțiuni din \`interactionHistory\`).
+*   Clienți cu buget mare (verifică proprietatea \`budget\`).
 *   Clienți care au făcut vizionări, dar nu au primit follow-up.
 
 ### 2. Vizionări
-*   Vizionările de azi.
-*   Vizionările de mâine.
+*   Vizionările de azi, mâine și săptămâna aceasta (compară \`viewingDate\` cu data curentă).
 *   Vizionări neconfirmate.
 *   Vizionări fără follow-up.
 
-### 3. Oferte
-*   Oferte trimise fără răspuns.
-*   Clienți care au primit prea multe opțiuni.
-*   Clienți care nu au primit alternative.
-
-### 4. Proprietăți
+### 3. Proprietăți
 Verifică fiecare proprietate și identifică:
-*   Lipsă fotografii.
-*   Descriere prea scurtă.
-*   Preț nealiniat cu piața.
-*   Fără argumente de vânzare.
-*   Fără plan de apartament.
-*   Fără status actualizat.
+*   Lipsă fotografii (array-ul \`images\` este gol sau are puține elemente).
+*   Descriere prea scurtă (proprietatea \`description\` are puține cuvinte).
+*   Fără status actualizat (proprietatea \`status\` este veche sau neclară).
 Sugerează acțiuni. Exemplu: „Apartamentul A12 are doar 3 poze. Adaugă fotografii.”
 
 ---
