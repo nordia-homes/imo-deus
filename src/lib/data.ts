@@ -42,6 +42,8 @@ export const properties: Property[] = [
     status: 'Activ',
     featured: true,
     nearMetro: true,
+    commissionType: 'percentage',
+    commissionValue: 2,
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -83,6 +85,8 @@ export const properties: Property[] = [
     tagline: '6 camere | 4 băi | 320mp',
     status: 'Activ',
     featured: true,
+    commissionType: 'percentage',
+    commissionValue: 2,
     createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -124,6 +128,8 @@ export const properties: Property[] = [
     tagline: '2 camere | 1 baie | 55mp',
     status: 'Activ',
     featured: false,
+    commissionType: 'percentage',
+    commissionValue: 50,
     createdAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString(),
   },
    {
@@ -165,6 +171,8 @@ export const properties: Property[] = [
     tagline: '4 camere | 3 băi | 180mp',
     status: 'Activ',
     featured: true,
+    commissionType: 'percentage',
+    commissionValue: 3,
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -206,6 +214,8 @@ export const properties: Property[] = [
     tagline: '5 camere | 3 băi | 200mp',
     status: 'Activ',
     featured: false,
+    commissionType: 'fixed',
+    commissionValue: 10000,
     createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -247,6 +257,8 @@ export const properties: Property[] = [
     tagline: '3 camere | 2 băi | 78mp',
     status: 'Activ',
     featured: false,
+    commissionType: 'percentage',
+    commissionValue: 2.5,
     createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -288,6 +300,8 @@ export const properties: Property[] = [
     tagline: '1200mp | Deschidere lac',
     status: 'Activ',
     featured: false,
+    commissionType: 'percentage',
+    commissionValue: 3,
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -330,6 +344,8 @@ export const properties: Property[] = [
     status: 'Activ',
     featured: true,
     nearMetro: true,
+    commissionType: 'percentage',
+    commissionValue: 100,
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -371,6 +387,8 @@ export const properties: Property[] = [
     tagline: 'Studio | 1 baie | 32mp',
     status: 'Activ',
     featured: false,
+    commissionType: 'percentage',
+    commissionValue: 50,
     createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -412,6 +430,8 @@ export const properties: Property[] = [
     tagline: 'Teren 1500mp | Oportunitate',
     status: 'Activ',
     featured: false,
+    commissionType: 'fixed',
+    commissionValue: 5000,
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];

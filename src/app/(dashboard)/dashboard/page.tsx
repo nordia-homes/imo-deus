@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { Property, Viewing, Task, Contact, LeadSourceData, ConversionData } from '@/lib/types';
@@ -16,10 +16,24 @@ import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
 import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign } from 'lucide-react';
+import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
+import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
+import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
+import { Button } from '@/components/ui/button';
+import { AgendaCard } from '@/components/dashboard/AgendaCard';
 
+
+const formatValue = (num: number) => {
+    if (num >= 1000000) {
+      return `€${(num / 1000000).toFixed(1)}M`;
+    }
+    if (num >= 1000) {
+      return `€${Math.round(num / 1000)}k`;
+    }
+    return `€${num.toLocaleString('ro-RO')}`;
+};
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -27,6 +41,7 @@ export default function DashboardPage() {
     
     const { agencyId, isAgencyLoading } = useAgency();
     const firestore = useFirestore();
+    const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
 
     // --- DATA FETCHING ---
     const contactsQuery = useMemoFirebase(() => {
@@ -74,9 +89,24 @@ export default function DashboardPage() {
         salesProgress,
         soldThisMonthProgress,
         reservedThisMonthProgress,
+        totalEstimatedCommission,
+        realizedCommissionThisMonth,
+        commissionProgress,
+        todaysTasks,
+        todaysViewings,
     } = useMemo(() => {
         const totalPropertiesCount = properties?.length || 0;
         const totalContactsCount = contacts?.length || 0;
+
+        const calculateCommission = (prop: Property): number => {
+            const price = prop.price || 0;
+            if (price === 0) return 0;
+            if (prop.commissionType === 'fixed') {
+                return prop.commissionValue || 0;
+            }
+            const percentage = prop.commissionValue !== undefined ? prop.commissionValue : 2;
+            return price * (percentage / 100);
+        };
 
         const sold = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reserved = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
@@ -104,6 +134,25 @@ export default function DashboardPage() {
         const soldThisMonthProgress = totalPropertiesCount > 0 ? (sold.length / totalPropertiesCount) * 100 : 0;
         const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reserved.length / totalPropertiesCount) * 100 : 0;
 
+        // Commission Calculations
+        const totalEstimatedCommission = activeProperties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
+        const soldOrRentedThisMonth = properties?.filter(p =>
+            (p.status === 'Vândut' || p.status === 'Închiriat') &&
+            p.statusUpdatedAt &&
+            isThisMonth(parseISO(p.statusUpdatedAt))
+        ) || [];
+        const realizedCommissionThisMonth = soldOrRentedThisMonth.reduce((sum, prop) => sum + calculateCommission(prop), 0);
+        const commissionProgress = totalEstimatedCommission > 0 ? (realizedCommissionThisMonth / totalEstimatedCommission) * 100 : 0;
+
+        // Today's Agenda Calculations
+        const todaysTasks = openTasks?.filter(task => {
+            try { return isToday(new Date(task.dueDate)); } catch (e) { return false; }
+        }) || [];
+
+        const todaysViewings = viewings?.filter(viewing => {
+            if (viewing.status !== 'scheduled') return false;
+            try { return isToday(parseISO(viewing.viewingDate)); } catch (e) { return false; }
+        }) || [];
 
         // Lead Source Data
         const sourceCounts: { [key: string]: number } = {};
@@ -173,8 +222,13 @@ export default function DashboardPage() {
             salesProgress,
             soldThisMonthProgress,
             reservedThisMonthProgress,
+            totalEstimatedCommission,
+            realizedCommissionThisMonth,
+            commissionProgress,
+            todaysTasks,
+            todaysViewings,
         };
-    }, [properties, viewings, contacts]);
+    }, [properties, viewings, contacts, openTasks]);
     
     const priorityTasks = useMemo(() => {
         if (!openTasks) return [];
@@ -195,15 +249,8 @@ export default function DashboardPage() {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
-                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-                    <Skeleton className="h-[108px]"/>
-                    <Skeleton className="h-[108px]"/>
-                    <Skeleton className="h-[108px]"/>
-                </div>
-                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-                    <Skeleton className="h-[108px]"/>
-                    <Skeleton className="h-[108px]"/>
-                    <Skeleton className="h-[108px]"/>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                     <Card className="col-span-4">
@@ -236,18 +283,29 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
-            
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
-                <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<DollarSign />} progress={salesProgress} />
-                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                    <AddLeadDialog properties={properties || []} />
+                    <Button onClick={() => setIsAddPropertyOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adaugă Proprietate
+                    </Button>
+                    <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} />
+                </div>
             </div>
-
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
+                <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" />
+                <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} />
+                <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
+                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
                 <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} />
-                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="luna aceasta" icon={<Bookmark />} progress={reservedThisMonthProgress} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="luna aceasta" icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -272,6 +330,7 @@ export default function DashboardPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
+                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     <RecentActivity />
                 </div>
