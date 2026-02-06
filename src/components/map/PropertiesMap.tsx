@@ -3,22 +3,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from '@/lib/types';
-import { PropertyMarker } from './PropertyMarker';
-
-// Function to convert lat/lon to a percentage-based x/y position
-const getPosition = (
-    lat: number,
-    lon: number,
-    minLat: number,
-    maxLat: number,
-    minLon: number,
-    maxLon: number
-) => {
-    const y = ((lat - minLat) / (maxLat - minLat)) * 100;
-    const x = ((lon - minLon) / (maxLon - minLon)) * 100;
-    // We invert y because screen coordinates start from top-left
-    return { x, y: 100 - y };
-};
 
 export function PropertiesMap({ properties }: { properties: Property[] }) {
 
@@ -57,63 +41,28 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         };
     }, [validProperties]);
 
-    const mapImageUrl = useMemo(() => {
+    const mapEmbedUrl = useMemo(() => {
         const { minLon, minLat, maxLon, maxLat } = bounds;
-        // Using OpenStreetMap static image export
-        return `https://render.openstreetmap.org/cgi-bin/export?bbox=${minLon},${minLat},${maxLon},${maxLat}&format=png`;
-    }, [bounds]);
+        const bbox = `${minLon},${minLat},${maxLon},${maxLat}`;
+        const markers = validProperties
+            .map(p => `marker=${p.latitude},${p.longitude}`)
+            .join('&');
+        
+        const markerString = markers ? `&${markers}` : '';
 
-    if (validProperties.length === 0) {
-        return (
-             <Card className="flex-1 shadow-2xl rounded-2xl">
-                <CardContent className="p-0 h-full">
-                    <div
-                        className="relative h-full w-full bg-muted rounded-lg overflow-hidden bg-cover bg-center"
-                        style={{ backgroundImage: `url(${mapImageUrl})` }}
-                    >
-                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center p-4 text-center">
-                            <p className="font-semibold text-muted-foreground">
-                                Harta este centrată pe București. Adaugă proprietăți cu coordonate pentru a actualiza harta.
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
+        return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik${markerString}`;
+    }, [bounds, validProperties]);
 
     return (
         <Card className="flex-1 shadow-2xl rounded-2xl">
             <CardContent className="p-0 h-full">
-                 <div
-                    className="relative h-full w-full bg-muted rounded-lg overflow-hidden bg-cover bg-center"
-                    style={{ backgroundImage: `url(${mapImageUrl})` }}
-                >
-                    <div className="absolute inset-0 bg-background/20" />
-                    {validProperties.map(property => {
-                        const { x, y } = getPosition(
-                            property.latitude!,
-                            property.longitude!,
-                            bounds.minLat,
-                            bounds.maxLat,
-                            bounds.minLon,
-                            bounds.maxLon
-                        );
-
-                        if (isNaN(x) || isNaN(y)) return null;
-
-                        return (
-                            <PropertyMarker
-                                key={property.id}
-                                property={property}
-                                style={{
-                                    left: `${x}%`,
-                                    top: `${y}%`,
-                                }}
-                            />
-                        );
-                    })}
-                </div>
+                <iframe
+                    className="h-full w-full border-0 rounded-lg"
+                    loading="lazy"
+                    allowFullScreen
+                    title="Proprietăți pe hartă"
+                    src={mapEmbedUrl}
+                ></iframe>
             </CardContent>
         </Card>
     );
