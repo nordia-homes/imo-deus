@@ -135,7 +135,8 @@ export type Contact = {
     offers?: Offer[];
     financialStatus?: FinancialStatus;
     recommendationHistory?: { [propertyId: string]: PortalRecommendation };
-}
+    photoUrl?: string;
+};
 
 export type SalesData = {
   month: string;
@@ -274,3 +275,43 @@ export type CMA = {
     };
     notes: string;
 }
+
+export type BriefingSummaryItem = {
+  label: string;
+  value: number;
+};
+
+export type BriefingPriority = {
+  text: string;
+};
+
+export type BriefingViewing = {
+  id: string;
+  time: string;
+  title: string;
+  contact: string;
+};
+
+export type BriefingClient = {
+  id: string;
+  name: string;
+  reason: string;
+  avatar?: string | null;
+};
+
+export type BriefingProperty = {
+  id: string;
+  name: string;
+  reason: string;
+  image?: string | null;
+};
+
+export type Briefing = {
+  summary: BriefingSummaryItem[];
+  priorities: BriefingPriority[];
+  upcomingViewings: BriefingViewing[];
+  urgentClients: BriefingClient[];
+  propertiesToOptimize: BriefingProperty[];
+  urgentClientsAnalysis: string;
+  propertiesToReviewAnalysis: string;
+};
