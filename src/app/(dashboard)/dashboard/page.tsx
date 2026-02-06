@@ -64,6 +64,8 @@ export default function DashboardPage() {
         reservedThisMonth, 
         viewingsNext7DaysCount,
         activePropertiesCount,
+        activeForSaleCount,
+        activeForRentCount,
         totalSalesCount,
         newLeadsCount,
         leadSourceData,
@@ -87,7 +89,10 @@ export default function DashboardPage() {
             return isWithinInterval(viewingDate, { start: now, end: sevenDaysFromNow });
         }) || [];
 
-        const activePropertiesCount = properties?.filter(p => p.status === 'Activ').length || 0;
+        const activeProperties = properties?.filter(p => p.status === 'Activ') || [];
+        const activePropertiesCount = activeProperties.length;
+        const activeForSaleCount = activeProperties.filter(p => p.transactionType === 'Vânzare').length;
+        const activeForRentCount = activeProperties.filter(p => p.transactionType === 'Închiriere').length;
         const totalSalesCount = contacts?.filter(c => c.status === 'Câștigat').length || 0;
         
         const oneWeekAgo = addDays(new Date(), -7);
@@ -158,6 +163,8 @@ export default function DashboardPage() {
             reservedThisMonth: reserved,
             viewingsNext7DaysCount: next7DaysViewings.length,
             activePropertiesCount,
+            activeForSaleCount,
+            activeForRentCount,
             totalSalesCount,
             newLeadsCount,
             leadSourceData: leadSourceDataResult,
@@ -232,7 +239,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} />
+                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<DollarSign />} progress={salesProgress} />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
             </div>
