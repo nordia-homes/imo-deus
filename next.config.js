@@ -39,6 +39,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'render.openstreetmap.org',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {
