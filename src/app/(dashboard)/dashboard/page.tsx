@@ -356,6 +356,7 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 <div className="space-y-6">
+                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle>Distribuție Surse Lead-uri</CardTitle>
@@ -365,7 +366,6 @@ export default function DashboardPage() {
                             <LeadSourceChart data={leadSourceData} />
                         </CardContent>
                     </Card>
-                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
                 </div>
             </div>
             
