@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from '@/lib/types';
 import { PropertyMarker } from './PropertyMarker';
@@ -68,14 +67,10 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         return (
              <Card className="flex-1 shadow-2xl rounded-2xl">
                 <CardContent className="p-0 h-full">
-                    <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
-                        <Image
-                            src={mapImageUrl}
-                            alt="Hartă implicită București"
-                            fill
-                            className="object-cover opacity-50"
-                            priority
-                        />
+                    <div
+                        className="relative h-full w-full bg-muted rounded-lg overflow-hidden bg-cover bg-center"
+                        style={{ backgroundImage: `url(${mapImageUrl})` }}
+                    >
                          <div className="absolute inset-0 bg-background/50 flex items-center justify-center p-4 text-center">
                             <p className="font-semibold text-muted-foreground">
                                 Harta este centrată pe București. Adaugă proprietăți cu coordonate pentru a actualiza harta.
@@ -90,15 +85,11 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
     return (
         <Card className="flex-1 shadow-2xl rounded-2xl">
             <CardContent className="p-0 h-full">
-                <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
-                     <Image
-                        src={mapImageUrl}
-                        alt="Hartă cu proprietăți"
-                        fill
-                        className="object-cover opacity-50"
-                        priority
-                     />
-
+                 <div
+                    className="relative h-full w-full bg-muted rounded-lg overflow-hidden bg-cover bg-center"
+                    style={{ backgroundImage: `url(${mapImageUrl})` }}
+                >
+                    <div className="absolute inset-0 bg-background/20" />
                     {validProperties.map(property => {
                         const { x, y } = getPosition(
                             property.latitude!,
