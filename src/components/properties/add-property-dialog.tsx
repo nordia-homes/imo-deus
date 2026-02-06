@@ -48,8 +48,6 @@ const propertySchema = z.object({
   address: z.string().min(1, { message: "Adresa este obligatorie." }),
   city: z.string().optional(),
   zone: z.string().optional(),
-  latitude: z.coerce.number().optional().or(z.literal('')),
-  longitude: z.coerce.number().optional().or(z.literal('')),
   price: z.coerce.number().positive({ message: "Prețul trebuie să fie pozitiv." }),
   rooms: z.coerce.number().int().min(0, { message: "Numărul de camere nu poate fi negativ." }),
   bathrooms: z.coerce.number().min(0, { message: "Numărul de băi nu poate fi negativ." }),
@@ -178,8 +176,6 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 address: propertyData.address || '',
                 city: propertyData.city || '',
                 zone: propertyData.zone || '',
-                latitude: propertyData.latitude || '',
-                longitude: propertyData.longitude || '',
                 price: propertyData.price || 0,
                 rooms: propertyData.rooms || 0,
                 bathrooms: propertyData.bathrooms || 0,
@@ -215,7 +211,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             setImageSources(propertyData.images || []);
         } else {
              form.reset({
-                title: '', propertyType: '', transactionType: 'Vânzare', address: '', city: 'Bucuresti-Ilfov', zone: '', latitude: '', longitude: '', price: 0,
+                title: '', propertyType: '', transactionType: 'Vânzare', address: '', city: 'Bucuresti-Ilfov', zone: '', price: 0,
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
                 floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
@@ -330,6 +326,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
 
           const finalImages = [...existingImages, ...uploadedImageUrls];
           const selectedAgent = agents.find(agent => agent.id === values.agentId);
+          
+          // Placeholder geocoding
+          const lat = 44.439663 + (Math.random() - 0.5) * 0.1; // Randomly around Bucharest center
+          const lon = 26.096306 + (Math.random() - 0.5) * 0.1;
 
           const propertyDataToSave = {
               title: values.title,
@@ -338,8 +338,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
               address: values.address,
               city: values.city,
               zone: values.zone,
-              latitude: values.latitude ? Number(values.latitude) : null,
-              longitude: values.longitude ? Number(values.longitude) : null,
+              latitude: lat,
+              longitude: lon,
               location: [values.zone, values.city].filter(Boolean).join(', '),
               price: values.price,
               rooms: values.rooms,
@@ -437,11 +437,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                         <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă (stradă, nr, etc) *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, bl. 5" /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="latitude" render={({ field }) => ( <FormItem><FormLabel>Latitudine</FormLabel><FormControl><Input type="number" step="any" {...field} placeholder="ex: 44.439663" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name="longitude" render={({ field }) => ( <FormItem><FormLabel>Longitudine</FormLabel><FormControl><Input type="number" step="any" {...field} placeholder="ex: 26.096306" /></FormControl><FormMessage /></FormItem> )} />
-                                </div>
-                                <FormDescription>Puteți obține coordonatele din Google Maps (click dreapta pe locație).</FormDescription>
+                                
+                                <FormDescription>Coordonatele vor fi generate automat pe baza adresei.</FormDescription>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
