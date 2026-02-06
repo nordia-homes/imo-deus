@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, Clock, DollarSign, Home, Maximize } from 'lucide-react';
+import { ExternalLink, Clock, Home, Maximize } from 'lucide-react';
 import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // 1. Define the type for the listing data
 type OwnerListing = {
@@ -17,6 +18,7 @@ type OwnerListing = {
   area: string;
   location: string;
   postedAt: number;
+  imageUrl?: string;
 };
 
 // 2. Create the Card component for a single listing
@@ -41,9 +43,20 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
     <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
         <CardContent className="p-0">
             <div className="relative">
-                {/* Placeholder to maintain layout consistency with PropertyCard */}
-                <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted flex items-center justify-center">
-                   <Home className="h-16 w-16 text-muted-foreground/30" />
+                 <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
+                   {listing.imageUrl ? (
+                        <Image 
+                            src={listing.imageUrl} 
+                            alt={listing.title} 
+                            fill 
+                            className="object-cover transition-transform group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                   ) : (
+                        <div className="flex items-center justify-center h-full">
+                           <Home className="h-16 w-16 text-muted-foreground/30" />
+                        </div>
+                   )}
                 </div>
             </div>
             <div className="p-4 space-y-3">
