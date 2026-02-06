@@ -36,9 +36,9 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[200px]"
+      className="mx-auto aspect-square max-h-[180px]"
     >
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <ChartTooltip
             cursor={false}
@@ -48,7 +48,7 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
             data={data}
             dataKey="count"
             nameKey="source"
-            innerRadius={50}
+            innerRadius={40}
             strokeWidth={5}
             paddingAngle={2}
           >
@@ -65,14 +65,14 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
                         <tspan
                         x={viewBox.cx}
                         y={viewBox.cy}
-                        className="fill-foreground text-2xl font-bold"
+                        className="fill-foreground text-xl font-bold"
                         >
                         {totalBuyers.toLocaleString()}
                         </tspan>
                         <tspan
                         x={viewBox.cx}
-                        y={(viewBox.cy || 0) + 20}
-                        className="fill-muted-foreground text-sm"
+                        y={(viewBox.cy || 0) + 16}
+                        className="fill-muted-foreground text-xs"
                         >
                         Cumpărători
                         </tspan>
