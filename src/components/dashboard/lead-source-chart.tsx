@@ -1,25 +1,19 @@
-
 "use client";
 import * as React from "react"
 import type { BuyerSourceData } from '@/lib/types';
-import { Label, Pie, PieChart, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts"
 
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   ChartConfig
 } from '@/components/ui/chart';
+import { CardDescription } from "../ui/card";
 
 export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
   const chartConfig = React.useMemo(() => {
-    const config: ChartConfig = {
-        count: {
-            label: "Count",
-        },
-    };
+    const config: ChartConfig = {};
     data.forEach(item => {
         config[item.source] = {
             label: item.source,
@@ -29,64 +23,43 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
     return config;
   }, [data]);
 
-  const totalBuyers = React.useMemo(() => {
-    return data.reduce((acc, curr) => acc + curr.count, 0);
-  }, [data]);
+  if (!data || data.length === 0) {
+      return (
+          <div className="h-[250px] w-full flex items-center justify-center">
+              <CardDescription>Nu sunt date despre sursa lead-urilor.</CardDescription>
+          </div>
+      )
+  }
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="mx-auto aspect-square max-h-[180px]"
-    >
+    <ChartContainer config={chartConfig} className="w-full h-[250px]">
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent hideLabel />}
-          />
-          <Pie
+        <BarChart
             data={data}
-            dataKey="count"
-            nameKey="source"
-            innerRadius={40}
-            strokeWidth={5}
-            paddingAngle={2}
-          >
-             <Label
-                content={({ viewBox }) => {
-                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                    <text
-                        x={viewBox.cx}
-                        y={viewBox.cy}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                    >
-                        <tspan
-                        x={viewBox.cx}
-                        y={viewBox.cy}
-                        className="fill-foreground text-xl font-bold"
-                        >
-                        {totalBuyers.toLocaleString()}
-                        </tspan>
-                        <tspan
-                        x={viewBox.cx}
-                        y={(viewBox.cy || 0) + 16}
-                        className="fill-muted-foreground text-xs"
-                        >
-                        Cumpărători
-                        </tspan>
-                    </text>
-                    )
-                }
-                }}
+            layout="vertical"
+            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+        >
+            <XAxis type="number" hide />
+            <YAxis
+                dataKey="source"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={5}
+                width={80}
+                stroke="hsl(var(--muted-foreground))"
+                tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
             />
-          </Pie>
-          <ChartLegend
-            content={<ChartLegendContent nameKey="source" />}
-            className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
-          />
-        </PieChart>
+            <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" formatter={(value) => `${value} lead-uri`} />}
+            />
+            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+            </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
