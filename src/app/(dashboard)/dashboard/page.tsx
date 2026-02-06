@@ -334,28 +334,17 @@ export default function DashboardPage() {
                 <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
-                        <CardDescription>Ultimele 30 de zile</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <ConversionChart data={conversionData} />
-                    </CardContent>
-                </Card>
-                <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Distribuție Surse Lead-uri</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <LeadSourceChart data={leadSourceData} />
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div className="space-y-6">
+                    <Card className="shadow-2xl rounded-2xl">
+                        <CardHeader>
+                            <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
+                            <CardDescription>Ultimele 30 de zile</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <ConversionChart data={conversionData} />
+                        </CardContent>
+                    </Card>
                      <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle>Evoluție Comision Lunar</CardTitle>
@@ -365,7 +354,22 @@ export default function DashboardPage() {
                             <SalesChart data={monthlyCommissionData} />
                         </CardContent>
                     </Card>
+                </div>
+                <div className="space-y-6">
+                    <Card className="shadow-2xl rounded-2xl">
+                        <CardHeader>
+                            <CardTitle>Distribuție Surse Lead-uri</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <LeadSourceChart data={leadSourceData} />
+                        </CardContent>
+                    </Card>
                     <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="lg:col-span-2 space-y-6">
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     <RecentActivity />
                 </div>
