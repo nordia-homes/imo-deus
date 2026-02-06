@@ -8,6 +8,7 @@ import type { Contact, Property, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import { useAgency } from '@/context/AgencyContext';
+import { Card } from '@/components/ui/card';
 
 function AiAssistantContent() {
   const { agency, userProfile, agencyId } = useAgency();
@@ -35,38 +36,24 @@ function AiAssistantContent() {
 
   const suggestedPrompts = useMemo(() => {
     const prompts = [
-        "Care este prețul mediu pe metru pătrat în Cluj-Napoca, zona centrală?",
+        "Ce vizionări am azi?",
+        "Propune 3 apartamente pentru un buget de 120.000€.",
     ];
 
     if (contacts && contacts.length > 0) {
         const recentContact = contacts[0];
         if (recentContact) {
-            prompts.unshift(`Creează un email de follow-up pentru ${recentContact.name}.`);
+            prompts.unshift(`Scrie un follow-up pentru ${recentContact.name}.`);
         }
-    }
-
-    if (properties && properties.length > 0) {
-        const recentProperty = properties[0];
-         if (recentProperty) {
-            prompts.unshift(`Generează o descriere pentru proprietatea "${recentProperty.title}".`);
-        }
-    } else {
-         prompts.unshift("Generează o descriere pentru un apartament cu 3 camere în Brașov.");
     }
     
     return prompts.slice(0, 3);
-  }, [contacts, properties]);
+  }, [contacts]);
   
   const isLoading = areContactsLoading || arePropertiesLoading || areViewingsLoading;
 
   return (
-    <div className="h-full flex flex-col">
-       <div>
-            <h1 className="text-3xl font-headline font-bold">Asistent AI</h1>
-            <p className="text-muted-foreground">
-                Asistentul tău personal inteligent, conștient de datele tale din CRM.
-            </p>
-        </div>
+    <Card className="h-full flex flex-col shadow-2xl rounded-2xl">
         <AiChat 
             suggestedPrompts={suggestedPrompts} 
             promptsLoading={isLoading}
@@ -77,7 +64,7 @@ function AiAssistantContent() {
             agency={agency || undefined}
             user={userProfile || undefined}
         />
-    </div>
+    </Card>
   );
 }
 
