@@ -46,9 +46,8 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={5}
-                width={80}
+                width={100}
                 stroke="hsl(var(--muted-foreground))"
-                tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
             />
             <ChartTooltip
                 cursor={false}
