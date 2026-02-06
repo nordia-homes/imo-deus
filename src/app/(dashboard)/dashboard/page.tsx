@@ -359,6 +359,7 @@ export default function DashboardPage() {
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle>Distribuție Surse Lead-uri</CardTitle>
+                            <CardDescription>Canalele care aduc cei mai mulți clienți.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <LeadSourceChart data={leadSourceData} />
