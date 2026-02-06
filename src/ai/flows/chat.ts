@@ -320,7 +320,6 @@ Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
       prompt: input.prompt,
       history,
       tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails, getContactDetails, getScheduledViewings],
-      model: 'googleai/gemini-pro',
     });
     
     return {
