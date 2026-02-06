@@ -338,7 +338,7 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
-                            <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
+                            <CardTitle className="text-xl font-semibold">Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
                             <CardDescription>Ultimele 30 de zile</CardDescription>
                         </CardHeader>
                         <CardContent className="pl-2">
@@ -347,7 +347,7 @@ export default function DashboardPage() {
                     </Card>
                      <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
-                            <CardTitle>Evoluție Comision Lunar</CardTitle>
+                            <CardTitle className="text-xl font-semibold">Evoluție Comision Lunar</CardTitle>
                             <CardDescription>Comision realizat în ultimele luni</CardDescription>
                         </CardHeader>
                         <CardContent className="pl-2">
@@ -357,9 +357,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-6">
                     <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
-                    <Card className="shadow-2xl rounded-2xl">
+                    <Card className="shadow-2xl rounded-2xl h-[289px]">
                         <CardHeader>
-                            <CardTitle>Distribuție Surse Lead-uri</CardTitle>
+                            <CardTitle className="text-xl font-semibold">Distribuție Surse Lead-uri</CardTitle>
                             <CardDescription>Canalele care aduc cei mai mulți clienți.</CardDescription>
                         </CardHeader>
                         <CardContent>

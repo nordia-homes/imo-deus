@@ -97,7 +97,7 @@ export function AgendaCard({ tasks, viewings }: { tasks: Task[]; viewings: Viewi
   return (
     <Card className="shadow-2xl rounded-2xl">
       <CardHeader>
-        <CardTitle>Agenda Zilei - {format(new Date(), 'eeee, d MMMM', {locale: ro})}</CardTitle>
+        <CardTitle className="text-xl font-semibold">Agenda Zilei - {format(new Date(), 'eeee, d MMMM', {locale: ro})}</CardTitle>
         <CardDescription>Sarcinile și vizionările programate pentru astăzi.</CardDescription>
       </CardHeader>
       <CardContent>
