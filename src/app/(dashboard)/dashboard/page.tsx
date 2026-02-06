@@ -330,20 +330,11 @@ export default function DashboardPage() {
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
                 <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period="luna aceasta" icon={<Bookmark />} progress={reservedThisMonthProgress} />
-                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period="luna aceasta" icon={<Handshake />} progress={soldThisMonthProgress} />
+                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} />
+                <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="lg:col-span-2 shadow-2xl rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Evoluție Comision Lunar</CardTitle>
-                        <CardDescription>Comision realizat în ultimele luni</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <SalesChart data={monthlyCommissionData} />
-                    </CardContent>
-                </Card>
                 <Card className="shadow-2xl rounded-2xl">
                     <CardHeader>
                         <CardTitle>Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
@@ -365,6 +356,15 @@ export default function DashboardPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
+                     <Card className="shadow-2xl rounded-2xl">
+                        <CardHeader>
+                            <CardTitle>Evoluție Comision Lunar</CardTitle>
+                            <CardDescription>Comision realizat în ultimele luni</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <SalesChart data={monthlyCommissionData} />
+                        </CardContent>
+                    </Card>
                     <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
                     <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     <RecentActivity />
