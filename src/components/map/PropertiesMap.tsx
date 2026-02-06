@@ -14,10 +14,10 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         if (validProperties.length === 0) {
             // Default to Bucharest area if no properties
             return {
-                minLat: 44.40,
-                maxLat: 44.47,
-                minLon: 26.05,
-                maxLon: 26.15,
+                minLat: 44.3,
+                maxLat: 44.6,
+                minLon: 25.8,
+                maxLon: 26.4,
             };
         }
 
