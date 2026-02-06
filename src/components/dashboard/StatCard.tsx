@@ -1,5 +1,5 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import React from 'react';
@@ -47,18 +47,18 @@ export function StatCard({
         );
     }
 
-  return (
-     <Card className={cn("shadow-2xl rounded-2xl", className)}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-baseline gap-2">
-              <CardTitle className="text-sm font-medium">{title}</CardTitle>
-              <div className="text-2xl font-bold">{value}</div>
-            </div>
-            {icon}
-        </CardHeader>
-        <CardContent>
-            {period && <p className="text-xs text-muted-foreground">{period}</p>}
-        </CardContent>
-    </Card>
-  );
+    return (
+        <Card className={cn("shadow-2xl rounded-2xl", className)}>
+            <CardContent className="p-4 flex items-center gap-4">
+                <div className="p-3 bg-primary/10 text-primary rounded-lg shrink-0">
+                    {icon}
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                    <div className="text-xl font-bold">{value}</div>
+                    {period && <p className="text-xs text-muted-foreground mt-0.5">{period}</p>}
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
