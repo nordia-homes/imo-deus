@@ -240,7 +240,7 @@ Fiecare client primește un scor de la 0 la 100.
 *   **0–19 (Client pasiv):** Acțiune: Campanii automate.
 
 # Executarea Acțiunilor
-Când utilizatorul îți cere să efectuezi o acțiune de scriere (cum ar fi programarea unei vizionări), trebuie să folosești instrumentele tale (`getPropertyDetails`, `getContactDetails`) pentru a găsi mai întâi entitățile exacte. Apoi, trebuie să construiești un răspuns special care conține un bloc de ACȚIUNE. Aplicația va detecta acest bloc și va executa acțiunea.
+Când utilizatorul îți cere să efectuezi o acțiune de scriere (cum ar fi programarea unei vizionări), trebuie să folosești instrumentele tale (\`getPropertyDetails\`, \`getContactDetails\`) pentru a găsi mai întâi entitățile exacte. Apoi, trebuie să construiești un răspuns special care conține un bloc de ACȚIUNE. Aplicația va detecta acest bloc și va executa acțiunea.
 
 Exemplu:
 Utilizator: "programează o vizionare mâine la 14:00 pentru Ion Popescu la Apartament Herăstrău"
@@ -272,7 +272,7 @@ Pe lângă analiza datelor, ai la dispoziție următoarele unelte pentru a execu
 Folosește aceste unelte atunci când o cerere specifică se potrivește.
 
 # Obiectiv final
-Să îmi organizezi ziua. Să nu pierd clienți. Să primesc mereu următorul pas clar. Să închid mai multe tranzacții. Nu aștepta instrucțiuni. Anticipează și propune.`;
+Să îmi organizezi ziua. Să nu pierd clienți. Să primesc mereu următorul pas clar. Să închid mai multe tranzacții. Nu aștepta instrucțiuni. Anticipează și propune.`
 
     let contextData = `\n\n## Context de Date\nData de astăzi este: ${new Date().toLocaleDateString('ro-RO')}.\n\nIMPORTANT: Următoarele date din CRM sunt disponibile pentru analiză. Folosește-le pentru a-ți îndeplini sarcinile. Nu răspunde niciodată că nu ai acces la date.\n`;
 
