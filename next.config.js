@@ -49,7 +49,6 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
-    allowedDevOrigins: ['6000-firebase-studio-1769699917318.cluster-2a24trvdezeggvmpy7fccga2ee.cloudworkstations.dev'],
   },
 };
 
