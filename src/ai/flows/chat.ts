@@ -54,15 +54,15 @@ const getEmailDraft = ai.defineTool(
 );
 
 const getPropertyDescription = ai.defineTool(
-  {
-    name: 'getPropertyDescription',
-    description: 'Generates an engaging, market-ready description for a property based on its key details. Use this when a user asks to write a description for a property.',
-    inputSchema: z.custom<Property>(),
-    outputSchema: z.object({
-      description: z.string(),
-    }),
-  },
-  async (property) => generatePropertyDescription(property)
+    {
+        name: 'getPropertyDescription',
+        description: 'Generates an engaging, market-ready description for a property based on its key details. Use this when a user asks to write a description for a property. Requires the full property data which can be obtained with `getPropertyDetails`.',
+        inputSchema: z.custom<Property>(),
+        outputSchema: z.object({
+            description: z.string(),
+        }),
+    },
+    async (property) => generatePropertyDescription(property)
 );
 
 
@@ -104,7 +104,11 @@ const chatFlow = ai.defineFlow(
         },
         async ({ propertyTitle }) => {
             if (!input.properties) return null;
-            const prop = input.properties.find(p => p.title && p.title.toLowerCase().includes(propertyTitle.toLowerCase()));
+            // Robust search: find property even if title is missing, using address
+            const prop = input.properties.find(p => 
+                (p.title && p.title.toLowerCase().includes(propertyTitle.toLowerCase())) ||
+                (p.address && p.address.toLowerCase().includes(propertyTitle.toLowerCase()))
+            );
             return prop || null;
         }
     );
@@ -289,9 +293,9 @@ Pe lângă analiza datelor, ai la dispoziție următoarele unelte pentru a execu
 Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
 
     const systemMessageContent: Part[] = [{ text: systemPrompt }];
-    if (input.contacts) systemMessageContent.push({ data: { contacts: input.contacts } });
-    if (input.properties) systemMessageContent.push({ data: { properties: input.properties } });
-    if (input.viewings) systemMessageContent.push({ data: { viewings: input.viewings } });
+    if (input.contacts && input.contacts.length > 0) systemMessageContent.push({ data: { contacts: input.contacts } });
+    if (input.properties && input.properties.length > 0) systemMessageContent.push({ data: { properties: input.properties } });
+    if (input.viewings && input.viewings.length > 0) systemMessageContent.push({ data: { viewings: input.viewings } });
     if (input.agency) systemMessageContent.push({ data: { agency: input.agency } });
     if (input.user) systemMessageContent.push({ data: { user: input.user } });
 
@@ -308,7 +312,7 @@ Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
       prompt: input.prompt,
       history,
       tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails, getContactDetails, getScheduledViewings],
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-pro',
     });
     
     return {
