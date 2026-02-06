@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -361,13 +362,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
-                        <Button>
+                        <Button className="bg-[#f8f8f9] text-foreground hover:bg-muted border">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adaugă Task
                         </Button>
                     </AddTaskDialog>
                     <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
-                        <Button>
+                        <Button className="bg-[#f8f8f9] text-foreground hover:bg-muted border">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adaugă Vizionare
                         </Button>
@@ -442,3 +443,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+
