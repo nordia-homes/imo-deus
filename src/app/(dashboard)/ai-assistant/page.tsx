@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { generateBriefing } from '@/ai/flows/briefing-generator';
+import { chat, type Message } from '@/ai/flows/chat';
+import { useToast } from '@/hooks/use-toast';
 
 import type { Contact, Property, Viewing, Briefing } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +15,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Bot, Camera, Check, Clock, Eye, MessageCircle, Send, User, Users } from 'lucide-react';
+import { ArrowRight, Bot, Camera, Check, Clock, Eye, Loader2, Send, User } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
+
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Helper to get initials from a name
 const getInitials = (name?: string | null) => {
@@ -24,8 +29,9 @@ const getInitials = (name?: string | null) => {
 
 // The main component for the AI Assistant page
 export default function AiAssistantPage() {
-  const { agencyId } = useAgency();
+  const { agencyId, agency, userProfile } = useAgency();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   // --- Data Fetching ---
   const contactsQuery = useMemoFirebase(() => agencyId ? query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc')) : null, [firestore, agencyId]);
@@ -55,6 +61,59 @@ export default function AiAssistantPage() {
         });
     }
   }, [isLoading, contacts, properties, viewings]);
+
+  // --- Chat State & Logic ---
+  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string; }[]>([]);
+  const [input, setInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const currentInput = input; // Capture the input value
+    const userMessage = { role: 'user' as const, text: currentInput };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setChatLoading(true);
+
+    try {
+        const history: Message[] = messages.map(msg => ({
+            role: msg.role,
+            content: [{ text: msg.text }]
+        }));
+
+        const result = await chat({
+            history: history,
+            prompt: currentInput, // Use captured value
+            contacts: contacts || [],
+            properties: properties || [],
+            viewings: viewings || [],
+            agency,
+            user: userProfile,
+        });
+
+        const aiMessage = { role: 'model' as const, text: result.response };
+        setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error) {
+        console.error("AI chat failed", error);
+        toast({
+            variant: "destructive",
+            title: "A apărut o eroare",
+            description: "Nu am putut comunica cu asistentul AI. Încearcă din nou.",
+        });
+        // Correctly remove the message that failed to send
+        setMessages(prev => prev.filter(m => m.text !== currentInput));
+    } finally {
+        setChatLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    chatContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
 
   // --- Render Functions for different sections ---
 
@@ -227,10 +286,41 @@ export default function AiAssistantPage() {
                 <CardTitle>Chat Rapid</CardTitle>
             </CardHeader>
             <CardContent>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4 pr-4">
+                    {messages.map((msg, i) => (
+                        <div key={i} className={`flex items-start gap-4 ${msg.role === 'model' ? 'justify-start' : 'justify-end'}`}>
+                            {msg.role === 'model' && <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>}
+                            <div className={`prose prose-sm max-w-full rounded-lg p-4 shadow-sm lg:prose-base dark:prose-invert ${msg.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                                <Markdown remarkPlugins={[remarkGfm]}>{msg.text}</Markdown>
+                            </div>
+                            {msg.role === 'user' && <div className="p-2 rounded-full bg-secondary"><User className="h-5 w-5" /></div>}
+                        </div>
+                    ))}
+                    {chatLoading && (
+                        <div className="flex items-start gap-4 justify-start">
+                            <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>
+                            <div className="p-4 rounded-lg max-w-2xl shadow-sm bg-muted">
+                                <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
+                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div ref={chatContainerRef} />
+                </div>
                  <div className="relative">
-                    <Input placeholder="Ai o întrebare rapidă? Scrie aici..." className="pr-12 h-12" />
-                    <Button size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8">
-                        <Send className="h-4 w-4" />
+                    <Input
+                        placeholder="Ai o întrebare rapidă? Scrie aici..."
+                        className="pr-12 h-12"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !chatLoading && handleSend()}
+                        disabled={chatLoading}
+                    />
+                    <Button size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" onClick={handleSend} disabled={chatLoading}>
+                         {chatLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                     </Button>
                 </div>
             </CardContent>
