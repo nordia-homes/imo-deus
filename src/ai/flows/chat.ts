@@ -13,6 +13,7 @@ import {z, Message, Part} from 'genkit';
 import type { Contact, Property, Agency, UserProfile, Viewing } from '@/lib/types';
 import { generateEmail } from './email-generator';
 import { generatePropertyDescription } from './property-description-generator';
+import { isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
 
 const ChatInputSchema = z.object({
   history: z.array(z.custom<Message>()).describe('The chat history.'),
@@ -121,6 +122,33 @@ const chatFlow = ai.defineFlow(
             if (!input.contacts) return null;
             const contact = input.contacts.find(c => c.name && c.name.toLowerCase().includes(contactName.toLowerCase()));
             return contact || null;
+        }
+    );
+
+    const getScheduledViewings = ai.defineTool(
+        {
+            name: 'getScheduledViewings',
+            description: 'Gets a list of scheduled viewings for a given period (e.g., "today", "tomorrow").',
+            inputSchema: z.object({
+            period: z.enum(['today', 'tomorrow', 'this_week']).describe("The time period to fetch viewings for."),
+            }),
+            outputSchema: z.array(z.custom<Viewing>()),
+        },
+        async ({ period }) => {
+            if (!input.viewings) return [];
+            
+            return input.viewings.filter(v => {
+            if (v.status !== 'scheduled') return false;
+            try {
+                const viewingDate = parseISO(v.viewingDate);
+                if (period === 'today') return isToday(viewingDate);
+                if (period === 'tomorrow') return isTomorrow(viewingDate);
+                if (period === 'this_week') return isThisWeek(viewingDate, { weekStartsOn: 1 }); // Monday start
+                return false;
+            } catch (e) {
+                return false;
+            }
+            });
         }
     );
 
@@ -256,6 +284,7 @@ Pe lângă analiza datelor, ai la dispoziție următoarele unelte pentru a execu
 *   \`listRecentLeads\`: Pentru a vedea o listă cu cele mai noi contacte.
 *   \`getPropertyDetails\`: Pentru a căuta **toate detaliile** despre o proprietate.
 *   \`getContactDetails\`: Pentru a obține **toate informațiile** despre un anumit cumpărător.
+*   \`getScheduledViewings\`: Pentru a obține o listă cu vizionările programate pentru o anumită perioadă (ex: 'today', 'tomorrow'). Folosește această unealtă pentru a răspunde la întrebări despre programul zilei/săptămânii.
 
 Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
 
@@ -278,7 +307,7 @@ Folosește aceste unelte atunci când o cerere specifică se potrivește.`;
     const response = await ai.generate({
       prompt: input.prompt,
       history,
-      tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails, getContactDetails],
+      tools: [getEmailDraft, getPropertyDescription, listRecentLeads, getPropertyDetails, getContactDetails, getScheduledViewings],
       model: 'googleai/gemini-2.5-flash',
     });
     
