@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -22,11 +22,13 @@ const columns = [
 type ColumnId = typeof columns[number]['id'];
 
 function TaskColumn({ id, title, tasks }: { id: ColumnId, title: string, tasks: Task[] }) {
+    const { setNodeRef } = useDroppable({ id });
+
     return (
         <div className="bg-muted/50 rounded-lg p-2 flex flex-col h-full w-full">
             <h3 className="font-semibold text-sm mb-3 px-1 text-center">{title} ({tasks.length})</h3>
             <SortableContext id={id} items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex-1 overflow-y-auto space-y-2 min-h-24 p-1">
+                <div ref={setNodeRef} className="flex-1 overflow-y-auto space-y-2 min-h-24 p-1">
                     {tasks.length > 0 ? tasks.map(task => (
                         <TaskCard key={task.id} task={task} />
                     )) : (
@@ -93,35 +95,70 @@ export function TasksBoard() {
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
 
-        if (!over || active.id === over.id) return;
-        if (!agencyId) return;
+        if (!over) return;
+
+        const activeId = String(active.id);
+        const overId = String(over.id);
+
+        const activeContainer = active.data.current?.sortable?.containerId as ColumnId;
+        const overContainer = over.data.current?.sortable?.containerId as ColumnId || overId as ColumnId;
         
-        const overContainerId = over.data.current?.sortable.containerId || over.id as ColumnId;
-
-        const task = tasks.find(t => t.id === active.id);
-        if (!task) return;
-
-        let newDueDate: Date | null = null;
-        let newStatus: Task['status'] | null = null;
-
-        if (overContainerId === 'completed') {
-            newStatus = 'completed';
-        } else {
-            newStatus = 'open'; // Ensure it's open if moved from completed
-            if (overContainerId === 'today') newDueDate = startOfToday();
-            else if (overContainerId === 'this_week') newDueDate = endOfWeek(new Date(), { weekStartsOn: 1 });
-            else if (overContainerId === 'future') newDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
         }
 
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
-        const updateData: Partial<Task> = {};
-        if (newStatus && task.status !== newStatus) updateData.status = newStatus;
-        if (newDueDate) updateData.dueDate = newDueDate.toISOString().split('T')[0];
+        if (!agencyId) return;
 
+        // Optimistic UI Update
+        setTasks((prev) => {
+            const activeTaskIndex = prev.findIndex((t) => t.id === activeId);
+            if (activeTaskIndex === -1) return prev;
+            
+            const taskToMove = { ...prev[activeTaskIndex] };
+            let newDueDate: Date | null = null;
+
+            if (overContainer === 'completed') {
+                taskToMove.status = 'completed';
+            } else {
+                taskToMove.status = 'open';
+                if (overContainer === 'today') newDueDate = startOfToday();
+                else if (overContainer === 'this_week') newDueDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+                else if (overContainer === 'future') newDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+            }
+            
+            if (newDueDate) {
+                taskToMove.dueDate = newDueDate.toISOString().split('T')[0];
+            }
+            
+            const newTasks = [...prev];
+            newTasks[activeTaskIndex] = taskToMove;
+            return newTasks;
+        });
+
+        // Backend Firestore Update
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', activeId);
+        const updateData: Partial<Task> = {};
+        
+        let backendNewDueDate: Date | null = null;
+
+        if (overContainer === 'completed') {
+            updateData.status = 'completed';
+        } else {
+            updateData.status = 'open';
+            if (overContainer === 'today') backendNewDueDate = startOfToday();
+            else if (overContainer === 'this_week') backendNewDueDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+            else if (overContainer === 'future') backendNewDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+        }
+
+        if (backendNewDueDate) {
+            updateData.dueDate = backendNewDueDate.toISOString().split('T')[0];
+        }
+        
         if (Object.keys(updateData).length > 0) {
             updateDocumentNonBlocking(taskRef, updateData);
         }
     }
+
 
     if (isLoading) {
         return (
