@@ -103,7 +103,7 @@ const chatFlow = ai.defineFlow(
         },
         async ({ propertyTitle }) => {
             if (!properties) return null;
-            const prop = properties.find(p => p.title.toLowerCase().includes(propertyTitle.toLowerCase()));
+            const prop = properties.find(p => p.title && p.title.toLowerCase().includes(propertyTitle.toLowerCase()));
             return prop || null;
         }
     );
@@ -119,7 +119,7 @@ const chatFlow = ai.defineFlow(
         },
         async ({ contactName }) => {
             if (!contacts) return null;
-            const contact = contacts.find(c => c.name.toLowerCase().includes(contactName.toLowerCase()));
+            const contact = contacts.find(c => c.name && c.name.toLowerCase().includes(contactName.toLowerCase()));
             return contact || null;
         }
     );
@@ -183,7 +183,7 @@ După ce o unealtă returnează un rezultat, prezintă-l clar, formatat în mark
 *   Trimite remindere și mesaje de confirmare.
 *   *Comenzi exemplu:* „Ce vizionări am azi?”, „Confirmă vizionarea de mâine la ora 18:00.”
 
-### 3. Comunicarea cu clienții
+### 3. Comunicarea cu clienților
 *   Generează email-uri și mesaje WhatsApp scurte, clare, profesionale.
 *   *Comenzi exemplu:* „Scrie un mesaj WhatsApp pentru clientul Andrei cu oferta de 2 camere.”, „Trimite un follow-up după vizionarea de ieri.”
 
