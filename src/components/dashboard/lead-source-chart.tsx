@@ -25,19 +25,19 @@ export function LeadSourceChart({ data }: { data: BuyerSourceData[] }) {
 
   if (!data || data.length === 0) {
       return (
-          <div className="h-[250px] w-full flex items-center justify-center">
+          <div className="h-[180px] w-full flex items-center justify-center">
               <CardDescription>Nu sunt date despre sursa lead-urilor.</CardDescription>
           </div>
       )
   }
 
   return (
-    <ChartContainer config={chartConfig} className="w-full h-[250px]">
+    <ChartContainer config={chartConfig} className="w-full h-[180px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
             data={data}
             layout="vertical"
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: 20, left: 100, bottom: 5 }}
         >
             <XAxis type="number" hide />
             <YAxis
