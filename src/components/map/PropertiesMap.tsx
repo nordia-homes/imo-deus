@@ -58,14 +58,29 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         };
     }, [validProperties]);
 
-    if (properties.length === 0) {
+    const mapImageUrl = useMemo(() => {
+        const { minLon, minLat, maxLon, maxLat } = bounds;
+        // Using OpenStreetMap static image export
+        return `https://render.openstreetmap.org/cgi-bin/export?bbox=${minLon},${minLat},${maxLon},${maxLat}&format=png`;
+    }, [bounds]);
+
+    if (validProperties.length === 0) {
         return (
              <Card className="flex-1 shadow-2xl rounded-2xl">
                 <CardContent className="p-0 h-full">
-                    <div className="h-full bg-gray-200 rounded-lg flex items-center justify-center">
-                        <p className="text-muted-foreground">
-                            Adaugă proprietăți cu latitudine și longitudine pentru a le vedea pe hartă.
-                        </p>
+                    <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
+                        <Image
+                            src={mapImageUrl}
+                            alt="Hartă implicită București"
+                            fill
+                            className="object-cover opacity-50"
+                            priority
+                        />
+                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center p-4 text-center">
+                            <p className="font-semibold text-muted-foreground">
+                                Harta este centrată pe București. Adaugă proprietăți cu coordonate pentru a actualiza harta.
+                            </p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -76,12 +91,11 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         <Card className="flex-1 shadow-2xl rounded-2xl">
             <CardContent className="p-0 h-full">
                 <div className="relative h-full w-full bg-muted rounded-lg overflow-hidden">
-                    {/* Placeholder map background */}
                      <Image
-                        src="https://picsum.photos/seed/map/1600/900"
-                        alt="Map background"
+                        src={mapImageUrl}
+                        alt="Hartă cu proprietăți"
                         fill
-                        className="object-cover opacity-20"
+                        className="object-cover opacity-50"
                         priority
                      />
 
