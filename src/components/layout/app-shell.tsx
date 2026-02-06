@@ -19,6 +19,7 @@ import {
   Map,
   Globe,
   CalendarCheck,
+  Newspaper,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -71,6 +72,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Anunțuri Proprietari" asChild>
+                    <Link href="/owner-listings">
+                        <Newspaper />
+                        <span>Anunțuri Proprietari</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
