@@ -96,7 +96,7 @@ export default function OwnerListingsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch('https://scrapeolxowners-xxxxx.run.app');
+        const response = await fetch('https://us-central1-studio-652232171-42fb6.cloudfunctions.net/scrapeOlxOwners');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
