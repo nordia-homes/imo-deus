@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { generateBriefing } from '@/ai/flows/briefing-generator';
 import { chat, type Message } from '@/ai/flows/chat';
@@ -29,7 +29,7 @@ const getInitials = (name?: string | null) => {
 
 // The main component for the AI Assistant page
 export default function AiAssistantPage() {
-  const { agencyId, agency, userProfile } = useAgency();
+  const { agencyId, agency, userProfile, user } = useAgency();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -67,11 +67,36 @@ export default function AiAssistantPage() {
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  
+  const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+    if (!agencyId || !user) return;
+
+    const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
+    if (!selectedProperty) {
+        toast({ variant: 'destructive', title: 'Proprietate invalidă.' });
+        return;
+    };
+    
+    const viewingToAdd: Omit<Viewing, 'id'> = {
+        ...viewingData,
+        propertyTitle: selectedProperty.title,
+        propertyAddress: selectedProperty.address,
+        status: 'scheduled',
+        agentId: user.uid,
+        agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+        createdAt: new Date().toISOString(),
+    };
+    
+    addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+
+    toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
+  };
+
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const currentInput = input; // Capture the input value
+    const currentInput = input;
     const userMessage = { role: 'user' as const, text: currentInput };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -85,7 +110,7 @@ export default function AiAssistantPage() {
 
         const result = await chat({
             history: history,
-            prompt: currentInput, // Use captured value
+            prompt: currentInput,
             contacts: contacts || [],
             properties: properties || [],
             viewings: viewings || [],
@@ -96,6 +121,33 @@ export default function AiAssistantPage() {
         const aiMessage = { role: 'model' as const, text: result.response };
         setMessages(prev => [...prev, aiMessage]);
 
+        // Post-processing for actions
+        const actionRegex = /\[ACTION:scheduleViewing\]([\s\S]*?)\[\/ACTION\]/;
+        const match = result.response.match(actionRegex);
+
+        if (match && match[1]) {
+            try {
+                const params = JSON.parse(match[1]);
+                const property = properties?.find(p => p.title === params.propertyTitle);
+                const contact = contacts?.find(c => c.name === params.contactName);
+
+                if (property && contact) {
+                    handleAddViewing({
+                        propertyId: property.id,
+                        contactId: contact.id,
+                        contactName: contact.name,
+                        viewingDate: params.isoDateTime,
+                        notes: `Programat de Asistentul AI.`,
+                    });
+                } else {
+                     toast({ variant: 'destructive', title: 'Nu am putut programa', description: 'Proprietatea sau contactul nu au fost găsite în CRM.' });
+                }
+            } catch (e) {
+                console.error("Failed to parse or execute AI action", e);
+                toast({ variant: 'destructive', title: 'Eroare acțiune AI', description: 'Am primit o comandă invalidă de la asistent.' });
+            }
+        }
+
     } catch (error) {
         console.error("AI chat failed", error);
         toast({
@@ -103,12 +155,12 @@ export default function AiAssistantPage() {
             title: "A apărut o eroare",
             description: "Nu am putut comunica cu asistentul AI. Încearcă din nou.",
         });
-        // Correctly remove the message that failed to send
-        setMessages(prev => prev.filter(m => m.text !== currentInput));
+        setMessages(prev => prev.filter(m => m !== userMessage));
     } finally {
         setChatLoading(false);
     }
   };
+
 
   useEffect(() => {
     chatContainerRef.current?.scrollIntoView({ behavior: 'smooth' });

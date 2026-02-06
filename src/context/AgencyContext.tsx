@@ -6,6 +6,7 @@ import type { UserProfile, Agency } from '@/lib/types';
 
 type AgencyContextType = {
     userProfile: UserProfile | null;
+    user: ReturnType<typeof useUser>['user'];
     agencyId: string | null;
     agency: Agency | null;
     isAgencyLoading: boolean;
@@ -80,6 +81,7 @@ export function AgencyProvider({ children }: { children: React.Node }) {
 
     const value: AgencyContextType = { 
         userProfile, 
+        user,
         agencyId, 
         agency, 
         isAgencyLoading,
