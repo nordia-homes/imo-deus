@@ -45,18 +45,21 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
     const priceStr = listing.price;
     if (!priceStr) return "";
 
-    const hasDigits = /\d/.test(priceStr);
-    const isNegotiable = /negociabil/i.test(priceStr);
+    // Look for a numeric part. This regex finds sequences of digits, dots, commas, spaces, optionally followed by a currency symbol.
+    const numericPart = priceStr.match(/[\d.,\s]+(€|EUR|RON)?/i);
 
-    if (isNegotiable && !hasDigits) {
-      return "Preț negociabil";
+    if (numericPart && numericPart[0].trim()) {
+        // If a numeric part is found, return it, cleaned up.
+        return numericPart[0].trim();
     }
     
-    let result = priceStr.replace(/pretul este negociabil/i, "Prețul e negociabil");
-    result = result.replace(/pretul e negociabil/i, "Prețul e negociabil");
-    result = result.replace(/pret negociabil/i, "Preț negociabil");
-    
-    return result;
+    // If no numeric part, check if it's negotiable.
+    if (/negociabil/i.test(priceStr)) {
+        return "Preț negociabil";
+    }
+
+    // Fallback to original string
+    return priceStr;
   }, [listing.price]);
 
   return (
