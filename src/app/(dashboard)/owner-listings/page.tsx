@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,8 +9,10 @@ import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { collection, query, orderBy } from "firebase/firestore";
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+
 
 // ===============================
 // Tipul datelor
@@ -133,16 +135,35 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 // ===============================
 export default function OwnerListingsPage() {
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
+  const [listings, setListings] = useState<OwnerListing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
-  
-  const listingsQuery = useMemoFirebase(() => {
-      return query(
-        collection(firestore, "ownerListings"),
-        orderBy("postedAt", "desc")
-      );
-  }, [firestore]);
+  const { toast } = useToast();
 
-  const { data: listings, isLoading } = useCollection<OwnerListing>(listingsQuery);
+  useEffect(() => {
+    async function fetchListings() {
+      if (!firestore) return;
+      setIsLoading(true);
+      try {
+        const listingsCollection = collection(firestore, 'ownerListings');
+        const q = query(listingsCollection, orderBy('postedAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as OwnerListing[];
+        setListings(data);
+      } catch (error) {
+        console.error("Failed to fetch owner listings:", error);
+        toast({
+          variant: "destructive",
+          title: "Eroare la încărcarea anunțurilor",
+          description: "Nu am putut prelua datele de la proprietari. Vă rugăm să verificați regulile de securitate.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchListings();
+  }, [firestore, toast]);
 
   const filteredListings = useMemo(() => {
     if (!listings) return [];
@@ -204,12 +225,18 @@ export default function OwnerListingsPage() {
 
       {/* GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredListings.map((listing, index) => (
-          <OwnerListingCard
-            key={listing.link || index}
-            listing={listing}
-          />
-        ))}
+        {filteredListings.length > 0 ? (
+            filteredListings.map((listing, index) => (
+              <OwnerListingCard
+                key={listing.link || index}
+                listing={listing}
+              />
+            ))
+        ) : (
+            <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">Niciun anunț găsit.</p>
+            </div>
+        )}
       </div>
     </div>
   );
