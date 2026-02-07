@@ -4,15 +4,12 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { ExternalLink, Clock, Home, Maximize, Bed } from 'lucide-react';
 import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
-
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
-import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-
 
 // ===============================
 // Tipul datelor
@@ -24,110 +21,117 @@ type OwnerListing = {
   area: string;
   location: string;
   postedAt: number;
-  rooms?: number;
+  rooms?: number | string;
   image?: string;
   imageUrl?: string;
 };
+
+// extrage preț numeric
+function extractPrice(priceStr: string): number | null {
+  if (!priceStr) return null;
+  const match = priceStr.replace(/\s/g, '').match(/[\d.]+/);
+  if (!match) return null;
+  return Number(match[0].replace(/\./g, ''));
+}
 
 // ===============================
 // Card anunț
 // ===============================
 function OwnerListingCard({ listing }: { listing: OwnerListing }) {
-    const calculateTimeAgo = (timestamp: number) => {
-        try {
-            const postDate = fromUnixTime(timestamp);
-            const now = new Date();
-            const hours = differenceInHours(now, postDate);
+  const calculateTimeAgo = (timestamp: number) => {
+    try {
+      const postDate = fromUnixTime(timestamp);
+      const now = new Date();
+      const hours = differenceInHours(now, postDate);
 
-            if (hours < 1) return `Publicat recent`;
+      if (hours < 1) return `Publicat recent`;
 
-            if (hours < 24) {
-            return `Publicat acum ${hours} ${hours === 1 ? 'oră' : 'ore'}`;
-            } else {
-            const days = differenceInDays(now, postDate);
-            return `Publicat acum ${days} ${days === 1 ? 'zi' : 'zile'}`;
-            }
-        } catch (e) {
-            return 'Dată invalidă';
-        }
-    };
-    
+      if (hours < 24) {
+        return `Publicat acum ${hours} ${hours === 1 ? 'oră' : 'ore'}`;
+      } else {
+        const days = differenceInDays(now, postDate);
+        return `Publicat acum ${days} ${days === 1 ? 'zi' : 'zile'}`;
+      }
+    } catch {
+      return 'Dată invalidă';
+    }
+  };
+
     let displayPrice = "Preț negociabil";
     if (listing.price) {
-        // Extracts only the numeric part
         const priceMatch = listing.price.match(/[\d.,\s]+/);
         if (priceMatch && priceMatch[0] && /\d/.test(priceMatch[0])) {
-             displayPrice = `€ ${priceMatch[0].trim()}`;
+            displayPrice = `€ ${priceMatch[0].trim()}`;
         }
     }
 
-    const imageToDisplay = listing.image || listing.imageUrl;
 
-    return (
-        <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
-        <CardContent className="p-0">
-            <div className="relative">
-            <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
-                {imageToDisplay ? (
-                <Image
-                    src={imageToDisplay}
-                    alt={listing.title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    className="object-cover transition-transform group-hover:scale-105"
-                />
-                ) : (
-                <div className="flex items-center justify-center h-full">
-                    <Home className="h-16 w-16 text-muted-foreground/30" />
-                </div>
-                )}
-            </div>
-            </div>
+  const imageToDisplay = listing.image || listing.imageUrl;
 
-            <div className="p-4 space-y-3">
-            <div>
-                <Link href={listing.link} target="_blank">
-                <h3 className="font-semibold truncate">{listing.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                    {listing.location}
-                </p>
-                </Link>
-            </div>
+  return (
+    <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
+      <CardContent className="p-0">
+        <div className="relative">
+          <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
+            {imageToDisplay ? (
+              <Image
+                src={imageToDisplay}
+                alt={listing.title}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Home className="h-16 w-16 text-muted-foreground/30" />
+              </div>
+            )}
+          </div>
+        </div>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {listing.rooms && (
-                <div className="flex items-center gap-1.5">
-                    <Bed className="h-4 w-4" />
-                    <span>{listing.rooms} camere</span>
-                </div>
-                )}
+        <div className="p-4 space-y-3">
+          <div>
+            <Link href={listing.link} target="_blank">
+              <h3 className="font-semibold truncate">{listing.title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {listing.location}
+              </p>
+            </Link>
+          </div>
 
-                {listing.area && (
-                <div className="flex items-center gap-1.5">
-                    <Maximize className="h-4 w-4" />
-                    <span>{listing.area}</span>
-                </div>
-                )}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {listing.rooms && (
+              <div className="flex items-center gap-1.5">
+                <Bed className="h-4 w-4" />
+                <span>{Number(listing.rooms)} camere</span>
+              </div>
+            )}
 
-                <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                <span>{calculateTimeAgo(listing.postedAt)}</span>
-                </div>
-            </div>
+            {listing.area && (
+              <div className="flex items-center gap-1.5">
+                <Maximize className="h-4 w-4" />
+                <span>{listing.area}</span>
+              </div>
+            )}
 
-            <div className="flex justify-between items-center pt-2">
-                <p className="font-bold text-xl">{displayPrice}</p>
-                <Button asChild size="sm">
-                <Link href={listing.link} target="_blank">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Vezi anunț
-                </Link>
-                </Button>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              <span>{calculateTimeAgo(listing.postedAt)}</span>
             </div>
-            </div>
-        </CardContent>
-        </Card>
-    );
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            <p className="font-bold text-xl">{displayPrice}</p>
+            <Button asChild size="sm">
+              <Link href={listing.link} target="_blank">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Vezi anunț
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ===============================
@@ -135,27 +139,35 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 // ===============================
 export default function OwnerListingsPage() {
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
+  const [priceMin, setPriceMin] = useState<string>('');
+  const [priceMax, setPriceMax] = useState<string>('');
+
   const [listings, setListings] = useState<OwnerListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const firestore = useFirestore();
   const { toast } = useToast();
 
   useEffect(() => {
     async function fetchListings() {
-      if (!firestore) return;
       setIsLoading(true);
       try {
-        const listingsCollection = collection(firestore, 'ownerListings');
-        const q = query(listingsCollection, orderBy('postedAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as OwnerListing[];
-        setListings(data);
+        const response = await fetch('/api/scrape');
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+        }
+        const data = await response.json();
+        // The cloud function might return { listings: [...] }
+        const listingsArray = data.listings || data;
+        if (Array.isArray(listingsArray)) {
+            setListings(listingsArray);
+        } else {
+            throw new Error("Invalid data format from API");
+        }
       } catch (error) {
-        console.error("Failed to fetch owner listings:", error);
+        console.error(error);
         toast({
           variant: "destructive",
-          title: "Eroare la încărcarea anunțurilor",
-          description: "Nu am putut prelua datele de la proprietari. Vă rugăm să verificați regulile de securitate.",
+          title: "Eroare la încărcare",
+          description: "Nu am putut prelua anunțurile de la proprietari.",
         });
       } finally {
         setIsLoading(false);
@@ -163,38 +175,71 @@ export default function OwnerListingsPage() {
     }
 
     fetchListings();
-  }, [firestore, toast]);
+  }, [toast]);
 
   const filteredListings = useMemo(() => {
-    if (!listings) return [];
-    if (!roomsFilter) return listings;
-    return listings.filter(l => l.rooms === roomsFilter);
-  }, [listings, roomsFilter]);
+    let result = [...listings];
 
-  if (isLoading) {
-    return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold">
-                Anunțuri de la proprietari
-            </h1>
-            <div className="flex gap-2">
-                <Skeleton className="h-9 w-20" />
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-24" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    // filtrare camere
+    if (roomsFilter !== null) {
+      result = result.filter(
+        (l) => Number(l.rooms) === Number(roomsFilter)
+      );
+    }
+
+    // filtrare preț
+    const min = priceMin ? Number(priceMin) : null;
+    const max = priceMax ? Number(priceMax) : null;
+
+    if (min !== null || max !== null) {
+      result = result.filter((l) => {
+        const price = extractPrice(l.price);
+        if (!price) return false;
+
+        if (min !== null && price < min) return false;
+        if (max !== null && price > max) return false;
+
+        return true;
+      });
+    }
+
+    // sortare după cele mai noi
+    result.sort((a, b) => b.postedAt - a.postedAt);
+
+    return result;
+  }, [listings, roomsFilter, priceMin, priceMax]);
+
+  const renderContent = () => {
+    if (isLoading) {
+        return (
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
                     <div key={i} className="space-y-3">
                         <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
                         <Skeleton className="h-5 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-5 w-1/3" />
                     </div>
                 ))}
             </div>
+        )
+    }
+    
+    return (
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredListings.length > 0 ? (
+            filteredListings.map((listing, index) => (
+                <OwnerListingCard
+                key={listing.link || index}
+                listing={listing}
+                />
+            ))
+            ) : (
+            <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">Niciun anunț găsit.</p>
+            </div>
+            )}
         </div>
-    );
+    )
   }
 
   return (
@@ -203,41 +248,50 @@ export default function OwnerListingsPage() {
         Anunțuri de la proprietari
       </h1>
 
-      {/* FILTRE CAMERE */}
-      <div className="flex gap-2">
-        <Button
-          variant={!roomsFilter ? "default" : "outline"}
-          onClick={() => setRoomsFilter(null)}
-        >
-          Toate
-        </Button>
+      {/* FILTRE */}
+      <div className="flex flex-wrap gap-4 items-center">
 
-        {[1, 2, 3, 4].map((room) => (
+        {/* Filtru camere */}
+        <div className="flex gap-2">
           <Button
-            key={room}
-            variant={roomsFilter === room ? "default" : "outline"}
-            onClick={() => setRoomsFilter(room)}
+            variant={roomsFilter === null ? "default" : "outline"}
+            onClick={() => setRoomsFilter(null)}
           >
-            {room} camere
+            Toate
           </Button>
-        ))}
+
+          {[1, 2, 3, 4].map((room) => (
+            <Button
+              key={room}
+              variant={roomsFilter === room ? "default" : "outline"}
+              onClick={() => setRoomsFilter(room)}
+            >
+              {room} camere
+            </Button>
+          ))}
+        </div>
+
+        {/* Filtru preț */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Preț minim"
+            type="number"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            className="w-32"
+          />
+          <Input
+            placeholder="Preț maxim"
+            type="number"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            className="w-32"
+          />
+        </div>
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredListings.length > 0 ? (
-            filteredListings.map((listing, index) => (
-              <OwnerListingCard
-                key={listing.link || index}
-                listing={listing}
-              />
-            ))
-        ) : (
-            <div className="col-span-full text-center py-10">
-                <p className="text-muted-foreground">Niciun anunț găsit.</p>
-            </div>
-        )}
-      </div>
+      {renderContent()}
     </div>
   );
 }
