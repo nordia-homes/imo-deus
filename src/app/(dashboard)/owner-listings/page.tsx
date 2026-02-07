@@ -46,13 +46,14 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
         }
     };
     
-    let displayPrice = listing.price;
-    if (listing.price && !/\d/.test(listing.price) && listing.price.toLowerCase().includes('negociabil')) {
-        displayPrice = 'Preț negociabil';
-    } else if (listing.price) {
-        const priceMatch = listing.price.match(/([\d\s.,]+)/);
-        if (priceMatch && priceMatch[1]) {
-            displayPrice = priceMatch[1].trim();
+    let displayPrice = "Preț negociabil";
+    if (listing.price) {
+        // Extracts only the numeric part
+        const priceMatch = listing.price.match(/[\d.,\s]+/);
+        if (priceMatch && priceMatch[0] && /\d/.test(priceMatch[0])) {
+             displayPrice = `€ ${priceMatch[0].trim()}`;
+        } else if (listing.price.toLowerCase().includes('negociabil')) {
+             displayPrice = "Preț negociabil";
         }
     }
 
@@ -139,6 +140,7 @@ export default function OwnerListingsPage() {
     if (!firestore) return;
     
     const fetchListings = async () => {
+      setIsLoading(true);
       const listingsCollection = collection(firestore, "ownerListings");
       const q = query(
         listingsCollection,
