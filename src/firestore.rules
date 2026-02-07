@@ -8,13 +8,11 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Checks if the requesting user's profile document says they belong to the specified agency.
-    // This is more robust as a user can always read their own document.
+    // Checks if the user is a member of the agency by checking the agency's 'agentIds' array.
     function isUserInAgency(agencyId) {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() &&
-             exists(userDocPath) &&
-             get(userDocPath).data.agencyId == agencyId;
+            exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
+            request.auth.uid in get(/databases/$(database)/documents/agencies/$(agencyId)).data.agentIds;
     }
 
     // Checks if the user is an admin of the specified agency.
