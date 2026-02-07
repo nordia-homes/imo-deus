@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,8 +9,8 @@ import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, orderBy } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 
 // ===============================
 // Tipul datelor
@@ -32,17 +32,21 @@ type OwnerListing = {
 // ===============================
 function OwnerListingCard({ listing }: { listing: OwnerListing }) {
     const calculateTimeAgo = (timestamp: number) => {
-        const postDate = fromUnixTime(timestamp);
-        const now = new Date();
-        const hours = differenceInHours(now, postDate);
+        try {
+            const postDate = fromUnixTime(timestamp);
+            const now = new Date();
+            const hours = differenceInHours(now, postDate);
 
-        if (hours < 1) return `Publicat recent`;
+            if (hours < 1) return `Publicat recent`;
 
-        if (hours < 24) {
-        return `Publicat acum ${hours} ${hours === 1 ? 'oră' : 'ore'}`;
-        } else {
-        const days = differenceInDays(now, postDate);
-        return `Publicat acum ${days} ${days === 1 ? 'zi' : 'zile'}`;
+            if (hours < 24) {
+            return `Publicat acum ${hours} ${hours === 1 ? 'oră' : 'ore'}`;
+            } else {
+            const days = differenceInDays(now, postDate);
+            return `Publicat acum ${days} ${days === 1 ? 'zi' : 'zile'}`;
+            }
+        } catch (e) {
+            return 'Dată invalidă';
         }
     };
     
@@ -52,11 +56,8 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
         const priceMatch = listing.price.match(/[\d.,\s]+/);
         if (priceMatch && priceMatch[0] && /\d/.test(priceMatch[0])) {
              displayPrice = `€ ${priceMatch[0].trim()}`;
-        } else if (listing.price.toLowerCase().includes('negociabil')) {
-             displayPrice = "Preț negociabil";
         }
     }
-
 
     const imageToDisplay = listing.image || listing.imageUrl;
 
@@ -131,41 +132,20 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 // Pagina principală
 // ===============================
 export default function OwnerListingsPage() {
-  const [listings, setListings] = useState<OwnerListing[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
   const firestore = useFirestore();
-
-  useEffect(() => {
-    if (!firestore) return;
-    
-    const fetchListings = async () => {
-      setIsLoading(true);
-      const listingsCollection = collection(firestore, "ownerListings");
-      const q = query(
-        listingsCollection,
+  
+  const listingsQuery = useMemoFirebase(() => {
+      return query(
+        collection(firestore, "ownerListings"),
         orderBy("postedAt", "desc")
       );
-
-      try {
-        const snapshot = await getDocs(q);
-        const data: OwnerListing[] = snapshot.docs.map((doc) => doc.data() as OwnerListing);
-        setListings(data);
-      } catch (serverError) {
-        const permissionError = new FirestorePermissionError({
-          path: listingsCollection.path,
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchListings();
   }, [firestore]);
 
+  const { data: listings, isLoading } = useCollection<OwnerListing>(listingsQuery);
+
   const filteredListings = useMemo(() => {
+    if (!listings) return [];
     if (!roomsFilter) return listings;
     return listings.filter(l => l.rooms === roomsFilter);
   }, [listings, roomsFilter]);
