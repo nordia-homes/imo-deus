@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,6 +18,7 @@ type OwnerListing = {
   location: string;
   postedAt: number;
   imageUrl?: string;
+  image?: string;
 };
 
 // 2. Create the Card component for a single listing
@@ -39,14 +39,16 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
     }
   };
 
+  const imageToDisplay = listing.image || listing.imageUrl;
+
   return (
     <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
         <CardContent className="p-0">
             <div className="relative">
                  <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
-                   {listing.imageUrl ? (
+                   {imageToDisplay ? (
                         <Image 
-                            src={listing.imageUrl} 
+                            src={imageToDisplay} 
                             alt={listing.title} 
                             fill
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
