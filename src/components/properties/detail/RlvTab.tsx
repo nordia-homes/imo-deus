@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -79,7 +80,7 @@ export function RlvTab({ property }: RlvTabProps) {
              <div className="p-4 border rounded-lg bg-background flex flex-col items-center justify-center">
                 {isImage ? (
                      <div className="relative w-full max-w-md aspect-video">
-                        <Image src={property.rlvUrl} alt="Releveu" fill className="rounded-md object-contain" />
+                        <Image src={property.rlvUrl} alt="Releveu" fill sizes="(max-width: 768px) 100vw, 768px" className="rounded-md object-contain" />
                      </div>
                 ) : (
                     <FileText className="h-16 w-16 text-primary mb-4" />

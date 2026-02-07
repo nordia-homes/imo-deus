@@ -48,7 +48,8 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
                         <Image 
                             src={listing.imageUrl} 
                             alt={listing.title} 
-                            fill 
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                             className="object-cover transition-transform group-hover:scale-105"
                         />
                    ) : (

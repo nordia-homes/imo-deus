@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
@@ -297,7 +298,7 @@ export default function AiAssistantPage() {
                         {briefing?.propertiesToOptimize.map(p => (
                              <div key={p.id} className="flex items-center gap-3 p-2 border rounded-md">
                                 <div className="relative h-12 w-12 shrink-0">
-                                    <Image src={p.image || `https://picsum.photos/seed/${p.id}/200`} alt={p.name} fill className="rounded-md object-cover" />
+                                    <Image src={p.image || `https://picsum.photos/seed/${p.id}/200`} alt={p.name} fill sizes="48px" className="rounded-md object-cover" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-semibold text-sm truncate">{p.name}</p>

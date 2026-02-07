@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
@@ -27,6 +28,7 @@ export function DashboardPropertyList({ title, properties }: DashboardPropertyLi
                                 src={prop.images?.[0]?.url || 'https://placehold.co/100x100'} 
                                 alt={prop.title}
                                 fill
+                                sizes="56px"
                                 className="rounded-md object-cover"
                             />
                         </div>

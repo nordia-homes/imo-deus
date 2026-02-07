@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Property } from '@/lib/types';
@@ -86,9 +87,10 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                         <div className="overflow-hidden rounded-lg">
                             <div className="aspect-[4/3] relative">
                                 <Image
-                                    src={property.images?.[0]?.url || 'https://via.placeholder.com/800x600.png?text=Imagine+lipsa'}
+                                    src={property.images?.[0]?.url || 'https://placehold.co/800x600'}
                                     alt={property.title || 'Proprietate'}
                                     fill
+                                    sizes="(max-width: 1023px) 100vw, 25vw"
                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>

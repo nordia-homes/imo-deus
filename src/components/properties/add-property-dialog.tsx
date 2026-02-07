@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, ChangeEvent, useEffect, useMemo } from 'react';
@@ -680,7 +681,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4">
                                     {imagePreviews.map((src, index) => (
                                         <div key={index} className="relative aspect-square group">
-                                            <Image src={src} alt={`Preview ${index}`} fill className="object-cover rounded-md" />
+                                            <Image src={src} alt={`Preview ${index}`} fill sizes="64px" className="object-cover rounded-md" />
                                             <Button
                                                 type="button"
                                                 variant="destructive"
