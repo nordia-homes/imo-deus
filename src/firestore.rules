@@ -42,6 +42,14 @@ service cloud.firestore {
       // or delete it after accepting.
       allow read, delete: if isSignedIn();
     }
+    
+    // --- Owner Listings (from scraper) ---
+    match /ownerListings/{listingId} {
+      // Any authenticated user can read the scraped listings.
+      // Writes should only happen from the backend service (scraper function).
+      allow read: if isSignedIn();
+      allow write: if false; // Deny client-side writes for safety
+    }
 
     // --- Agencies ---
     match /agencies/{agencyId} {
