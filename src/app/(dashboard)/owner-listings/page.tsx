@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,6 +40,24 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
   };
 
   const imageToDisplay = listing.image || listing.imageUrl;
+  
+  const formattedPrice = useMemo(() => {
+    const priceStr = listing.price;
+    if (!priceStr) return "";
+
+    const hasDigits = /\d/.test(priceStr);
+    const isNegotiable = /negociabil/i.test(priceStr);
+
+    if (isNegotiable && !hasDigits) {
+      return "Preț negociabil";
+    }
+    
+    let result = priceStr.replace(/pretul este negociabil/i, "Prețul e negociabil");
+    result = result.replace(/pretul e negociabil/i, "Prețul e negociabil");
+    result = result.replace(/pret negociabil/i, "Preț negociabil");
+    
+    return result;
+  }, [listing.price]);
 
   return (
     <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
@@ -84,7 +102,7 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 
                 <div className="flex justify-between items-center pt-2">
                     <p className="font-bold text-xl text-foreground">
-                        {listing.price}
+                        {formattedPrice}
                     </p>
                     <Button asChild size="sm">
                         <Link href={listing.link} target="_blank" rel="noopener noreferrer">
