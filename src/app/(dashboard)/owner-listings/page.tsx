@@ -50,7 +50,6 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
                             alt={listing.title} 
                             fill 
                             className="object-cover transition-transform group-hover:scale-105"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                    ) : (
                         <div className="flex items-center justify-center h-full">

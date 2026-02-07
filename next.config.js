@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -12,49 +11,62 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'via.placeholder.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'i.pravatar.cc',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'render.openstreetmap.org',
-        port: '',
+        pathname: '/**',
+      },
+
+      // Domenii reale OLX pentru imagini
+      {
+        protocol: 'https',
+        hostname: 'ireland.apollo.olxcdn.com',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '*.olxcdn.com',
-        port: '',
+        hostname: 'frankfurt.apollo.olxcdn.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'apollo-ireland.akamaized.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'apollo.olxcdn.com',
         pathname: '/**',
       },
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
+    serverComponentsExternalPackages: [
+      '@opentelemetry/instrumentation',
+      'require-in-the-middle',
+    ],
   },
 };
 
