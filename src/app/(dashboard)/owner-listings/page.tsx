@@ -24,6 +24,7 @@ type OwnerListing = {
   postedAt: number;
   rooms?: number;
   image?: string;
+  imageUrl?: string;
 };
 
 // ===============================
@@ -46,17 +47,17 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
     };
     
     let displayPrice = listing.price;
-    if (listing.price && listing.price.toLowerCase().includes('negociabil') && !/\d/.test(listing.price)) {
+    if (listing.price && !/\d/.test(listing.price) && listing.price.toLowerCase().includes('negociabil')) {
         displayPrice = 'Preț negociabil';
     } else if (listing.price) {
         const priceMatch = listing.price.match(/([\d\s.,]+)/);
         if (priceMatch && priceMatch[1]) {
-            displayPrice = `${priceMatch[1].trim()} €`;
+            displayPrice = priceMatch[1].trim();
         }
     }
 
 
-    const imageToDisplay = listing.image;
+    const imageToDisplay = listing.image || listing.imageUrl;
 
     return (
         <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
@@ -114,7 +115,7 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
                 <p className="font-bold text-xl">{displayPrice}</p>
                 <Button asChild size="sm">
                 <Link href={listing.link} target="_blank">
-                    <ExternalLink className="mr-2" />
+                    <ExternalLink className="mr-2 h-4 w-4" />
                     Vezi anunț
                 </Link>
                 </Button>
@@ -168,7 +169,29 @@ export default function OwnerListingsPage() {
   }, [listings, roomsFilter]);
 
   if (isLoading) {
-    return <div className="p-10">Se încarcă anunțurile…</div>;
+    return (
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold">
+                Anunțuri de la proprietari
+            </h1>
+            <div className="flex gap-2">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                    <div key={i} className="space-y-3">
+                        <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-5 w-1/3" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
   }
 
   return (
