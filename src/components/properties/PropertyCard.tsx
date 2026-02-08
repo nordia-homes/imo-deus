@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Heart, BedDouble, Bath, Ruler, MoreHorizontal, Edit, Trash2, Calendar } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
@@ -78,7 +78,7 @@ export function PropertyCard({
               </Link>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
                     <span>{property.rooms}</span>
@@ -91,6 +91,12 @@ export function PropertyCard({
                     <Ruler className="h-4 w-4"/>
                     <span>{property.squareFootage} mp</span>
                 </div>
+                {property.constructionYear && (
+                  <div className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4"/>
+                      <span>{property.constructionYear}</span>
+                  </div>
+                )}
             </div>
 
             <div className="flex justify-between items-center pt-2">
