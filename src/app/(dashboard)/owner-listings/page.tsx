@@ -165,24 +165,30 @@ export default function OwnerListingsPage() {
         }
         const data = await response.json();
         
-        // Handle both { listings: [...] } and [...] formats
-        if (data && Array.isArray(data.listings)) {
-          setListings(data.listings);
-        } else if (Array.isArray(data)) {
-          setListings(data);
+        let foundListings: OwnerListing[] = [];
+        if (Array.isArray(data)) {
+            foundListings = data;
+        } else if (typeof data === 'object' && data !== null) {
+            // Find the first property in the object that is an array and looks like a list of listings
+             const arrayCandidate = Object.values(data).find(value => 
+                Array.isArray(value) && 
+                (value.length === 0 || (value.length > 0 && typeof value[0] === 'object' && 'title' in value[0]))
+            );
+
+            if (arrayCandidate) {
+                foundListings = arrayCandidate as OwnerListing[];
+            }
         }
-        else {
-          console.error("Received unexpected data format from /api/scrape:", data);
-          setListings([]); // Set to empty array to prevent crash
-        }
+        
+        setListings(foundListings);
+
       } catch (error) {
-        console.error(error);
+        setListings([]); // Ensure it's an empty array on error
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
-          description: "Nu am putut prelua anunțurile de la proprietari.",
+          description: "Nu am putut prelua anunțurile de la proprietari. Vă rugăm să reîncărcați pagina.",
         });
-        setListings([]);
       } finally {
         setIsLoading(false);
       }
