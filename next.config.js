@@ -66,6 +66,7 @@ const nextConfig = {
     serverComponentsExternalPackages: [
       '@opentelemetry/instrumentation',
       'require-in-the-middle',
+      'firebase-admin'
     ],
   },
 };
