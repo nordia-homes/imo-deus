@@ -136,7 +136,7 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
           </div>
 
           <div className="flex justify-between items-center pt-2">
-            <Button variant="default" size="sm" className="pointer-events-none font-bold bg-[#f8f8f9] text-foreground hover:bg-muted">
+            <Button variant="default" size="sm" className="pointer-events-none font-bold bg-[#f8f8f9] text-foreground hover:bg-muted border border-primary shadow-lg">
                 {displayPrice}
             </Button>
             <div className="flex items-center gap-2">
