@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { ExternalLink, Clock, Home, Maximize, Bed, Filter, Rocket, Loader2 } from 'lucide-react';
+import { ExternalLink, Clock, Home, Maximize, Bed, Filter, Rocket, Loader2, Calendar } from 'lucide-react';
 import { format, fromUnixTime, formatDistanceToNow, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -34,6 +34,8 @@ type OwnerListing = {
   image?: string;
   imageUrl?: string;
   constructionYear?: number;
+  year?: number;
+  description?: string;
 };
 
 // extrage preț numeric
@@ -90,6 +92,8 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
     return listing.location;
   }, [listing.location]);
 
+  const year = listing.constructionYear || listing.year;
+
   let displayPrice = "Preț negociabil";
   if (listing.price) {
     const priceMatch = listing.price.match(/[\d.,\s]+/);
@@ -130,6 +134,9 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
         <div className="p-4 space-y-3">
           <div>
             <h3 className="font-semibold truncate">{listing.title}</h3>
+            {listing.description && (
+                <p className="text-sm text-muted-foreground truncate" title={listing.description}>{listing.description}</p>
+            )}
             <p className="text-sm text-muted-foreground">
               {locationDisplay}
             </p>
@@ -154,10 +161,10 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
               <Clock className="h-4 w-4" />
               <span>{calculateTimeAgo(listing.postedAt)}</span>
             </div>
-             {listing.constructionYear && (
+             {year && (
                 <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4"/>
-                    <span>{listing.constructionYear}</span>
+                    <Calendar className="h-4 w-4"/>
+                    <span>{year}</span>
                 </div>
             )}
           </div>
@@ -252,6 +259,8 @@ export default function OwnerListingsPage() {
   const handleImport = async (listing: OwnerListing) => {
     setIsLoadingImport(listing.id);
     toast({ title: 'Import în curs...', description: 'Se preiau datele de la sursă.' });
+    
+    const year = listing.constructionYear || listing.year;
 
     // Simulate API call and data scraping
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -259,7 +268,7 @@ export default function OwnerListingsPage() {
     const scrapedData: Partial<Property> = {
         title: listing.title,
         price: extractPrice(listing.price) ?? 0,
-        description: `[Anunț importat de la: ${listing.link}]\n\nDescriere simulată: Acest anunț a fost preluat automat. Aici ar apărea descrierea completă de pe site-ul original.`,
+        description: listing.description || `[Anunț importat de la: ${listing.link}]\n\nDescriere simulată: Acest anunț a fost preluat automat. Aici ar apărea descrierea completă de pe site-ul original.`,
         images: listing.imageUrl ? [
             { url: listing.imageUrl, alt: listing.title },
             { url: 'https://picsum.photos/seed/import2/1200/800', alt: listing.title },
@@ -269,6 +278,7 @@ export default function OwnerListingsPage() {
         squareFootage: parseInt(listing.area?.replace('mp', '').trim() || '0', 10),
         address: listing.location,
         location: listing.location,
+        constructionYear: year,
     };
 
     setPropertyToImport(scrapedData);
