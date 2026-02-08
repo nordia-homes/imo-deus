@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { ExternalLink, Clock, Home, Maximize, Bed, Filter } from 'lucide-react';
+import { ExternalLink, Clock, Home, Maximize, Bed, Filter, Rocket, Loader2 } from 'lucide-react';
 import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,6 +14,9 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
+import type { Property } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 
 // ===============================
@@ -42,7 +46,7 @@ function extractPrice(priceStr: string): number | null {
 // ===============================
 // Card anunț
 // ===============================
-function OwnerListingCard({ listing }: { listing: OwnerListing }) {
+function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing: OwnerListing, handleImport: (listing: OwnerListing) => void, isLoadingImport: boolean }) {
   const calculateTimeAgo = (timestamp: number) => {
     try {
       if (!timestamp || typeof timestamp !== 'number') {
@@ -104,12 +108,10 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 
         <div className="p-4 space-y-3">
           <div>
-            <Link href={listing.link} target="_blank">
-              <h3 className="font-semibold truncate">{listing.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {listing.location}
-              </p>
-            </Link>
+            <h3 className="font-semibold truncate">{listing.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {listing.location}
+            </p>
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -135,12 +137,23 @@ function OwnerListingCard({ listing }: { listing: OwnerListing }) {
 
           <div className="flex justify-between items-center pt-2">
             <p className="font-bold text-xl">{displayPrice}</p>
-            <Button asChild size="sm">
-              <Link href={listing.link} target="_blank">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Vezi anunț
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button 
+                    size="sm"
+                    onClick={() => handleImport(listing)}
+                    disabled={isLoadingImport}
+                >
+                    {isLoadingImport ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Importă Anunțul
+                </Button>
+                <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
+                    <Link href={listing.link} target="_blank">
+                        <Rocket className="h-4 w-4" />
+                    </Link>
+                </Button>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -157,6 +170,11 @@ export default function OwnerListingsPage() {
   const [priceMax, setPriceMax] = useState<string>('');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
 
   const ownerListingsQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc'));
@@ -191,6 +209,34 @@ export default function OwnerListingsPage() {
 
     return result;
   }, [listings, roomsFilter, priceMin, priceMax]);
+  
+  const handleImport = async (listing: OwnerListing) => {
+    setIsLoadingImport(listing.id);
+    toast({ title: 'Import în curs...', description: 'Se preiau datele de la sursă.' });
+
+    // Simulate API call and data scraping
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const scrapedData: Partial<Property> = {
+        title: listing.title,
+        price: extractPrice(listing.price) ?? 0,
+        description: `[Anunț importat de la: ${listing.link}]\n\nDescriere simulată: Acest anunț a fost preluat automat. Aici ar apărea descrierea completă de pe site-ul original.`,
+        images: listing.imageUrl ? [
+            { url: listing.imageUrl, alt: listing.title },
+            { url: 'https://picsum.photos/seed/import2/1200/800', alt: listing.title },
+            { url: 'https://picsum.photos/seed/import3/1200/800', alt: listing.title }
+        ] : [],
+        rooms: typeof listing.rooms === 'number' ? listing.rooms : parseInt(String(listing.rooms) || '0', 10),
+        squareFootage: parseInt(listing.area?.replace('mp', '').trim() || '0', 10),
+        address: listing.location,
+        location: listing.location,
+    };
+
+    setPropertyToImport(scrapedData);
+    setIsImportDialogOpen(true);
+    setIsLoadingImport(null);
+  };
+
 
   const FilterControls = () => (
     <div className="flex flex-col gap-6">
@@ -303,6 +349,8 @@ export default function OwnerListingsPage() {
             <OwnerListingCard
               key={listing.id || index}
               listing={listing}
+              handleImport={handleImport}
+              isLoadingImport={isLoadingImport === listing.id}
             />
           ))
         ) : (
@@ -311,6 +359,12 @@ export default function OwnerListingsPage() {
           </div>
         )}
       </div>
+      
+      <AddPropertyDialog
+        isOpen={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        property={propertyToImport as Property | null}
+      />
     </div>
   );
 }
