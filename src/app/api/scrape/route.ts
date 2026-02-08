@@ -5,12 +5,7 @@ export async function GET() {
   const targetUrl = 'https://us-central1-studio-652232171-42fb6.cloudfunctions.net/scrapeOlxOwners';
 
   try {
-    const response = await fetch(targetUrl, {
-      next: {
-        // Revalidate every 60 minutes to get fresh data
-        revalidate: 3600,
-      }
-    });
+    const response = await fetch(targetUrl);
 
     if (!response.ok) {
       // If the function returned an error, forward it

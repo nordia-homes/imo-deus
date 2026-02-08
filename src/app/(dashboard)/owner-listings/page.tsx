@@ -40,6 +40,9 @@ function extractPrice(priceStr: string): number | null {
 function OwnerListingCard({ listing }: { listing: OwnerListing }) {
   const calculateTimeAgo = (timestamp: number) => {
     try {
+      if (!timestamp || typeof timestamp !== 'number') {
+        return 'Dată necunoscută';
+      }
       const postDate = fromUnixTime(timestamp);
       const now = new Date();
       const hours = differenceInHours(now, postDate);
@@ -162,10 +165,13 @@ export default function OwnerListingsPage() {
         }
         const data = await response.json();
         
-        // The API returns { listings: [...] }, so we need to extract the array.
+        // Handle both { listings: [...] } and [...] formats
         if (data && Array.isArray(data.listings)) {
           setListings(data.listings);
-        } else {
+        } else if (Array.isArray(data)) {
+          setListings(data);
+        }
+        else {
           console.error("Received unexpected data format from /api/scrape:", data);
           setListings([]); // Set to empty array to prevent crash
         }
@@ -176,6 +182,7 @@ export default function OwnerListingsPage() {
           title: "Eroare la încărcare",
           description: "Nu am putut prelua anunțurile de la proprietari.",
         });
+        setListings([]);
       } finally {
         setIsLoading(false);
       }
@@ -209,7 +216,7 @@ export default function OwnerListingsPage() {
       });
     }
 
-    result.sort((a, b) => b.postedAt - a.postedAt);
+    result.sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));
 
     return result;
   }, [listings, roomsFilter, priceMin, priceMax]);
