@@ -265,16 +265,21 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         const values = form.getValues();
         
         try {
-            const propertyForAi: Partial<Property> = {
+            const propertyForAi: Property = {
+                // Required fields with defaults
+                id: 'temp-id-for-ai',
+                images: [],
+
+                // Existing fields from form
                 title: values.title,
                 propertyType: values.propertyType,
                 transactionType: values.transactionType,
                 location: [values.zone, values.city].filter(Boolean).join(', '),
                 address: values.address,
-                price: values.price,
-                rooms: values.rooms,
-                bathrooms: values.bathrooms,
-                squareFootage: values.squareFootage,
+                price: values.price || 0,
+                rooms: values.rooms || 0,
+                bathrooms: values.bathrooms || 0,
+                squareFootage: values.squareFootage || 0,
                 totalSurface: values.totalSurface ? Number(values.totalSurface) : undefined,
                 constructionYear: values.constructionYear ? Number(values.constructionYear) : undefined,
                 keyFeatures: values.keyFeatures,
@@ -293,9 +298,33 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 kitchen: values.kitchen,
                 lift: values.lift,
                 orientation: values.orientation,
+                nearMetro: values.nearMetro,
+                
+                // Other optional fields with defaults
+                agent: undefined,
+                latitude: undefined,
+                longitude: undefined,
+                tagline: undefined,
+                createdAt: undefined,
+                promotions: undefined,
+                agentId: undefined,
+                agentName: undefined,
+                status: 'Activ',
+                featured: false,
+                statusUpdatedAt: undefined,
+                notes: undefined,
+                salesScore: undefined,
+                ownerName: undefined,
+                ownerPhone: undefined,
+                rlvUrl: undefined,
+                commissionType: values.commissionType as 'percentage' | 'fixed' | undefined,
+                commissionValue: values.commissionValue,
+                city: values.city,
+                zone: values.zone,
+                description: values.description // Pass existing description for context if any
             };
 
-            const result = await generatePropertyDescription(propertyForAi as Property);
+            const result = await generatePropertyDescription(propertyForAi);
             
             form.setValue('description', result.description);
             toast({
