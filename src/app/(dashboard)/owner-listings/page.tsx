@@ -159,23 +159,15 @@ export default function OwnerListingsPage() {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/scrape", { cache: "no-store" });
+        const res = await fetch("/api/owner-listings");
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'A eșuat preluarea datelor.');
+        }
         const data = await res.json();
-
-        // Check for error property from our new API logic
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        // Ensure data is an array before setting it
-        if (Array.isArray(data)) {
-            setListings(data);
-        } else {
-            throw new Error("Formatul datelor primite de la server este invalid.");
-        }
+        setListings(data);
       } catch (error: any) {
         console.error(error);
-        setListings([]); // Set to empty on error
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
@@ -185,7 +177,7 @@ export default function OwnerListingsPage() {
         setIsLoading(false);
       }
     }
-  
+
     fetchListings();
   }, [toast]);
 
