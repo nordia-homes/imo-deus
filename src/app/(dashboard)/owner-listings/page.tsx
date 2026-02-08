@@ -5,12 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { ExternalLink, Clock, Home, Maximize, Bed } from 'lucide-react';
+import { ExternalLink, Clock, Home, Maximize, Bed, Filter } from 'lucide-react';
 import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
 
 
 // ===============================
@@ -153,6 +155,7 @@ export default function OwnerListingsPage() {
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const firestore = useFirestore();
 
   const ownerListingsQuery = useMemoFirebase(() => {
@@ -189,6 +192,27 @@ export default function OwnerListingsPage() {
     return result;
   }, [listings, roomsFilter, priceMin, priceMax]);
 
+  const FilterControls = () => (
+    <div className="flex flex-col gap-6">
+        <div>
+            <Label className="font-semibold mb-3 block">Număr camere</Label>
+            <div className="flex flex-wrap gap-2">
+                <Button variant={roomsFilter === null ? "default" : "outline"} onClick={() => setRoomsFilter(null)}>Toate</Button>
+                {[1, 2, 3, 4].map((room) => (
+                    <Button key={room} variant={roomsFilter === room ? "default" : "outline"} onClick={() => setRoomsFilter(room)}>{room} camere</Button>
+                ))}
+            </div>
+        </div>
+        <div>
+            <Label className="font-semibold mb-2 block">Preț</Label>
+            <div className="flex gap-2">
+                <Input placeholder="Preț minim" type="number" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
+                <Input placeholder="Preț maxim" type="number" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+            </div>
+        </div>
+    </div>
+);
+
   if (isLoading) {
     return (
         <div className="space-y-6">
@@ -214,7 +238,8 @@ export default function OwnerListingsPage() {
         Anunțuri de la proprietari
       </h1>
 
-      <div className="flex flex-wrap gap-4 items-center">
+      {/* Desktop Filters */}
+      <div className="hidden md:flex flex-wrap gap-4 items-center">
         <div className="flex gap-2">
           <Button
             variant={roomsFilter === null ? "default" : "outline"}
@@ -250,6 +275,26 @@ export default function OwnerListingsPage() {
             className="w-32"
           />
         </div>
+      </div>
+
+       {/* Mobile Filter Button */}
+      <div className="md:hidden">
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                      <Filter className="mr-2 h-4 w-4" /> Filtrează anunțuri
+                  </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-2xl">
+                  <SheetHeader className="text-left pb-4">
+                      <SheetTitle>Filtre</SheetTitle>
+                  </SheetHeader>
+                  <FilterControls />
+                  <SheetFooter className="pt-6">
+                       <Button onClick={() => setIsSheetOpen(false)} className="w-full">Vezi {filteredListings.length} anunțuri</Button>
+                  </SheetFooter>
+              </SheetContent>
+          </Sheet>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
