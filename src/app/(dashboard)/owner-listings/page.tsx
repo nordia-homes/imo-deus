@@ -160,7 +160,8 @@ export default function OwnerListingsPage() {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/scrape');
+        // Add cache: 'no-store' to ensure we always fetch fresh data
+        const response = await fetch('/api/scrape', { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`API call failed with status: ${response.status}`);
         }

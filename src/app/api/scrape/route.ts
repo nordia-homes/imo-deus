@@ -6,17 +6,16 @@ export async function GET() {
   const targetUrl = 'https://us-central1-studio-652232171-42fb6.cloudfunctions.net/scrapeOlxOwners';
 
   try {
-    const response = await fetch(targetUrl);
+    // Add cache: 'no-store' to ensure we always fetch fresh data
+    const response = await fetch(targetUrl, { cache: 'no-store' });
 
     if (!response.ok) {
-      // If the function returned an error, forward it
-      return new NextResponse(response.statusText, { status: response.status });
+      return new NextResponse(`Error from external API: ${response.statusText}`, { status: response.status });
     }
 
     const data = await response.json();
-
-    // The external API might wrap the array in an object.
-    // This logic extracts the array, making the API response consistent for our frontend.
+    
+    // Robustly find the array within the response data
     let listings: any[] = [];
     if (Array.isArray(data)) {
         listings = data;
@@ -33,6 +32,6 @@ export async function GET() {
   } catch (error) {
     console.error('API Proxy Error for scrapeOlxOwners:', error);
     // Return an empty array on error to prevent frontend from crashing.
-    return NextResponse.json([], { status: 500 });
+    return new NextResponse('Failed to fetch data from external API', { status: 500 });
   }
 }
