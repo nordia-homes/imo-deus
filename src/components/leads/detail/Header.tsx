@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +27,12 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onAddViewing, 
               <Badge variant="outline">{contact.status}</Badge>
             </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" asChild>
             <a href={`tel:${contact.phone}`}>
               <Phone className="mr-2 h-4 w-4" />
-              {contact.phone}
+              <span className="hidden sm:inline">{contact.phone}</span>
+              <span className="sm:hidden">Apel</span>
             </a>
           </Button>
            <Button size="sm" variant="outline" asChild>
@@ -44,22 +44,22 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onAddViewing, 
           <Button size="sm" variant="outline" asChild>
              <a href={`mailto:${contact.email}`}>
                 <Mail className="mr-2 h-4 w-4" />
-                Trimite Email
+                Email
              </a>
           </Button>
           <AddTaskDialog onAddTask={onAddTask} contacts={[contact]}>
              <Button size="sm" variant="outline">
                 <Plus className="mr-2 h-4 w-4" />
-                Creează Task
+                Task
              </Button>
            </AddTaskDialog>
           <AddViewingDialog onAddViewing={onAddViewing} contacts={[contact]} properties={properties}>
             <Button size="sm" variant="outline">
                 <CalendarCheck className="mr-2 h-4 w-4" />
-                Adaugă Vizionare
+                Vizionare
             </Button>
           </AddViewingDialog>
-          <Button size="sm" onClick={() => onUpdateContact({ status: 'Câștigat' })}>
+          <Button size="sm" onClick={() => onUpdateContact({ status: 'Câștigat' })} className="col-span-2">
             Marchează Vândut
           </Button>
         </div>

@@ -31,8 +31,6 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
     const handleStatusChange = (newStatus: Property['status']) => {
         if (!agencyId || !property) return;
         
-        // This will only work if the property exists in Firestore.
-        // For the demo with static data, this updates will not persist.
         if (agencyId && firestore) {
             const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
             updateDocumentNonBlocking(propertyDocRef, {
@@ -55,8 +53,8 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
         <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-4 mb-2 flex-wrap">
-                        <div className="inline-block h-auto max-w-lg truncate p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold" title={property.title}>
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2 flex-wrap">
+                        <div className="inline-block h-auto w-full md:max-w-lg truncate p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold" title={property.title}>
                             {property.title}
                         </div>
                         {property.ownerName && property.ownerPhone && (
@@ -79,9 +77,9 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
                         <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
                         <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
-                        <span className="text-gray-400">•</span>
-                        <span>{property.location}</span>
-                        <span className="text-gray-400">•</span>
+                        <span className="hidden sm:inline text-gray-400">•</span>
+                        <span className="hidden sm:inline">{property.location}</span>
+                        <span className="hidden sm:inline text-gray-400">•</span>
                         <span>{property.rooms} camere</span>
                         <span className="text-gray-400">•</span>
                         <span>{property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}</span>
@@ -89,21 +87,21 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
                         <span>{property.squareFootage} mp</span>
                         {property.constructionYear && (
                             <>
-                                <span className="text-gray-400">•</span>
-                                <span>{property.constructionYear}</span>
+                                <span className="hidden sm:inline text-gray-400">•</span>
+                                <span className="hidden sm:inline">{property.constructionYear}</span>
                             </>
                         )}
                         {property.floor && (
                             <>
-                                <span className="text-gray-400">•</span>
-                                <span>Et. {property.floor}</span>
+                                <span className="hidden sm:inline text-gray-400">•</span>
+                                <span className="hidden sm:inline">Et. {property.floor}</span>
                             </>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                        <SelectTrigger className="w-[120px] h-10 text-sm font-semibold">
+                        <SelectTrigger className="w-full sm:w-auto flex-1 sm:flex-initial h-10 text-sm font-semibold">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -115,9 +113,9 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
                         </SelectContent>
                     </Select>
                     <AddViewingDialog onAddViewing={onAddViewing} contacts={allContacts} properties={[property]}>
-                       <Button>
+                       <Button className="flex-1">
                           <CalendarCheck className="mr-2 h-4 w-4"/> 
-                          Adaugă Vizionare
+                          Vizionare
                        </Button>
                     </AddViewingDialog>
                     <DropdownMenu>

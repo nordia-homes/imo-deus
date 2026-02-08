@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -32,12 +31,15 @@ import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCa
 
 
 const PageSkeleton = () => (
-    <div className="p-4">
-        {/* Header Skeleton */}
-        <div className="flex items-center gap-4 mb-6">
+    <div className="space-y-6">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
             <Skeleton className="h-10 w-48" />
+            <div className="flex gap-2 flex-wrap">
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+            </div>
         </div>
-        {/* Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3 space-y-4">
                 <Skeleton className="h-48" />
@@ -375,15 +377,15 @@ export default function LeadDetailPage() {
             <LeadHeader 
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
-                handleAddTask={handleAddTask}
+                onAddTask={handleAddTask}
                 onAddViewing={handleAddViewing}
                 properties={properties || []}
             />
 
             <main className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Left Column */}
-                    <div className="lg:col-span-3 space-y-6">
+                    
+                    <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
                         <SourcePropertyCard 
                             property={sourceProperty} 
@@ -399,22 +401,12 @@ export default function LeadDetailPage() {
                             contacts={[contact]}
                             onToggleTask={handleToggleTask}
                         />
-                    </div>
-
-                    {/* Center Column */}
-                    <div className="lg:col-span-6 space-y-6">
-                        <MatchedProperties properties={matchedProperties} contact={contact} />
-                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                        <SimilarLeadsCard leads={similarCumparatori} />
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <div className="md:col-span-2 lg:col-span-1">
+                             <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        </div>
                         <ScheduledViewingsCard viewings={viewings || []} />
                         <ClientPortalManager contact={contact} agency={agency} />
-                         <FinancialStatusCard 
+                        <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
                             recommendations={recommendations}
@@ -430,6 +422,14 @@ export default function LeadDetailPage() {
                             onDeleteOffer={handleDeleteOffer}
                         />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+
+                    </div>
+
+                    <div className="lg:col-span-12 grid grid-cols-1 gap-6">
+                         <MatchedProperties properties={matchedProperties} contact={contact} />
+                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
+                        <SimilarLeadsCard leads={similarCumparatori} />
                     </div>
                 </div>
             </main>

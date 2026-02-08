@@ -1,16 +1,16 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Users, Target, BarChart } from 'lucide-react';
+import { Users, Target, BarChart, PlusCircle } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
+import { Button } from '@/components/ui/button';
 
 export default function LeadsPage() {
     const { agencyId } = useAgency();
@@ -70,22 +70,27 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
-       <div className="flex items-start justify-between">
+       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
                 <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
                 <p className="text-muted-foreground">
                     Gestionează și prioritizează potențialii clienți.
                 </p>
             </div>
-            <AddLeadDialog properties={properties || []} />
+            <AddLeadDialog properties={properties || []}>
+                <Button className="w-full md:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adaugă Cumpărător
+                </Button>
+            </AddLeadDialog>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
             {isLoading ? (
                 <>
-                    <Skeleton className="h-[126px]" />
-                    <Skeleton className="h-[126px]" />
-                    <Skeleton className="h-[126px]" />
+                    <Skeleton className="h-[98px]" />
+                    <Skeleton className="h-[98px]" />
+                    <Skeleton className="h-[98px]" />
                 </>
             ) : (
                 <>

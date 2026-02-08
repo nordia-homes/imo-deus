@@ -100,14 +100,14 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-       <div className="flex items-center justify-between">
+       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
                 <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți</h1>
                 <p className="text-muted-foreground">
                     Gestionează și analizează portofoliul de proprietăți.
                 </p>
             </div>
-            <Button onClick={() => setIsAddOpen(true)}>
+            <Button onClick={() => setIsAddOpen(true)} className="w-full md:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
               Adaugă Proprietate
             </Button>

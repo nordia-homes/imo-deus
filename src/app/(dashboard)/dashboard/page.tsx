@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -322,11 +321,11 @@ export default function DashboardPage() {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                     {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                    <Card className="col-span-4">
+                    <Card className="col-span-1 md:col-span-2 lg:col-span-4">
                         <CardHeader>
                             <Skeleton className="h-6 w-1/2"/>
                         </CardHeader>
@@ -334,7 +333,7 @@ export default function DashboardPage() {
                             <Skeleton className="h-[300px] w-full"/>
                         </CardContent>
                     </Card>
-                    <Card className="col-span-3">
+                    <Card className="col-span-1 md:col-span-2 lg:col-span-3">
                          <CardHeader>
                             <Skeleton className="h-6 w-1/2"/>
                         </CardHeader>
@@ -356,21 +355,21 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
-                        <Button className="bg-[#f8f8f9] text-foreground hover:bg-muted border">
+                        <Button variant="outline" size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Adaugă Task
+                            Task
                         </Button>
                     </AddTaskDialog>
                     <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
-                        <Button className="bg-[#f8f8f9] text-foreground hover:bg-muted border">
+                        <Button variant="outline" size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Adaugă Vizionare
+                            Vizionare
                         </Button>
                     </AddViewingDialog>
                     <AddLeadDialog properties={properties || []} />
@@ -378,11 +377,11 @@ export default function DashboardPage() {
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adaugă Proprietate
                     </Button>
-                    <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} />
+                    <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
                 </div>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} />
@@ -443,4 +442,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-

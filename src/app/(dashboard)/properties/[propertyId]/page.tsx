@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -20,13 +19,13 @@ import { doc, collection, query, where, getDoc } from 'firebase/firestore';
 
 
 const PageSkeleton = () => (
-    <div className="p-4">
-        <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="space-y-2"> <Skeleton className="h-8 w-96" /> <Skeleton className="h-5 w-64" /> <Skeleton className="h-5 w-80 mt-2"/></div>
-            <div className="flex gap-2"><Skeleton className="h-10 w-32" /><Skeleton className="h-10 w-10" /></div>
+    <div className="space-y-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+            <div className="space-y-2 w-full"> <Skeleton className="h-8 w-3/4" /> <Skeleton className="h-5 w-1/2" /></div>
+            <div className="flex gap-2 w-full justify-start md:justify-end"><Skeleton className="h-10 w-32" /><Skeleton className="h-10 w-10" /></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6">
-             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[405px]" /> <Skeleton className="h-96" /> </div>
+             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[250px] md:h-[405px]" /> <Skeleton className="h-96" /> </div>
              <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-24" /> <Skeleton className="h-32" /> <Skeleton className="h-40" /> <Skeleton className="h-24" /> </div>
         </div>
     </div>
