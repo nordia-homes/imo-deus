@@ -162,7 +162,7 @@ export default function OwnerListingsPage() {
         }
         const data = await response.json();
         
-        // The API returns { listings: [...] }
+        // The API returns { listings: [...] }, so we need to extract the array.
         if (data && Array.isArray(data.listings)) {
           setListings(data.listings);
         } else {
@@ -185,7 +185,7 @@ export default function OwnerListingsPage() {
   }, [toast]);
 
   const filteredListings = useMemo(() => {
-    if (!listings) return [];
+    if (!listings || !Array.isArray(listings)) return [];
     let result = [...listings];
 
     if (roomsFilter !== null) {
