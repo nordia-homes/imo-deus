@@ -60,6 +60,11 @@ const nextConfig = {
         hostname: 'apollo.olxcdn.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.roamcdn.net',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {
