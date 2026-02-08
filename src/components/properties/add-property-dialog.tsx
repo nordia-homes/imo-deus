@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
-import { generatePropertyDescription, PropertyDescriptionInput } from '@/ai/flows/property-description-generator';
+import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
@@ -263,33 +263,43 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
 
     async function handleGenerateDescription() {
         setIsGenerating(true);
-        const fieldsToValidate: (keyof PropertyDescriptionInput)[] = [
-            'propertyType', 'rooms', 'bathrooms', 'squareFootage', 'keyFeatures', 'price'
-        ];
-        const isValid = await form.trigger(fieldsToValidate);
-
-        if (!isValid) {
-            toast({
-                variant: "destructive",
-                title: "Completați câmpurile obligatorii",
-                description: "Pentru a genera descrierea cu AI, asigurați-vă că ați completat prețul, tipul proprietății și caracteristicile cheie.",
-            });
-            setIsGenerating(false);
-            return;
-        }
+        const values = form.getValues();
         
-        const { propertyType, rooms, bathrooms, squareFootage, keyFeatures, price, zone, city } = form.getValues();
         try {
-            const result = await generatePropertyDescription({
-                propertyType, location: [zone, city].filter(Boolean).join(', '), rooms, bathrooms, squareFootage, keyFeatures, price
-            });
+            // Construct a partial Property object from form values for the AI.
+            // This object needs to match the structure the AI flow expects.
+            const propertyForAi: Partial<Property> = {
+                title: values.title,
+                propertyType: values.propertyType,
+                transactionType: values.transactionType,
+                location: [values.zone, values.city].filter(Boolean).join(', '),
+                price: values.price,
+                rooms: values.rooms,
+                bathrooms: values.bathrooms,
+                squareFootage: values.squareFootage,
+                constructionYear: values.constructionYear ? Number(values.constructionYear) : undefined,
+                keyFeatures: values.keyFeatures,
+                amenities: values.keyFeatures?.split(',').map(s => s.trim()),
+                furnishing: values.furnishing,
+                parking: values.parking,
+                interiorState: values.interiorState,
+            };
+
+            // The flow expects the full Property type, but we can pass a partial one.
+            // Type assertion helps satisfy TypeScript.
+            const result = await generatePropertyDescription(propertyForAi as Property);
+            
             form.setValue('description', result.description);
+            toast({
+                title: "Descriere generată!",
+                description: "Descrierea AI a fost adăugată în formular.",
+            });
         } catch (error) {
             console.error("Failed to generate description:", error);
             toast({
                 variant: "destructive",
                 title: "A apărut o eroare",
-                description: "Nu am putut genera descrierea. Încercați din nou.",
+                description: "Nu am putut genera descrierea. Asigură-te că ai completat câmpurile cheie (ex: tip, preț, caracteristici).",
             });
         } finally {
             setIsGenerating(false);
@@ -751,3 +761,5 @@ export function AddPropertyDialog({
     </Dialog>
   );
 }
+    
+    
