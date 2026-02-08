@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -160,37 +159,26 @@ export default function OwnerListingsPage() {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        // Add cache: 'no-store' to ensure we always fetch fresh data
-        const response = await fetch('/api/scrape', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`API call failed with status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-            setListings(data);
-        } else {
-            console.error("Received non-array data from scrape API:", data);
-            setListings([]);
-        }
-
+        const res = await fetch("/api/owner-listings");
+        const data = await res.json();
+        setListings(data);
       } catch (error) {
-        setListings([]);
+        console.error(error);
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
-          description: "Nu am putut prelua anunțurile de la proprietari. Vă rugăm să reîncărcați pagina.",
+          description: "Nu am putut prelua anunțurile.",
         });
       } finally {
         setIsLoading(false);
       }
     }
-
+  
     fetchListings();
   }, [toast]);
 
   const filteredListings = useMemo(() => {
-    if (!listings || !Array.isArray(listings)) return [];
+    if (!Array.isArray(listings)) return [];
     let result = [...listings];
 
     if (roomsFilter !== null) {
