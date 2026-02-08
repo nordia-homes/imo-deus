@@ -161,9 +161,15 @@ export default function OwnerListingsPage() {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        setListings(data);
+        if (Array.isArray(data)) {
+            setListings(data);
+        } else {
+            console.warn("Received non-array data from scrape API:", data);
+            setListings([]);
+        }
       } catch (error) {
         console.error(error);
+        setListings([]);
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
