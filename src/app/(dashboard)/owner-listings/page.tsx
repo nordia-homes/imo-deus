@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -136,7 +135,9 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
           </div>
 
           <div className="flex justify-between items-center pt-2">
-            <p className="font-bold text-xl">{displayPrice}</p>
+            <Button variant="default" size="sm" className="pointer-events-none font-bold">
+                {displayPrice}
+            </Button>
             <div className="flex items-center gap-2">
                 <Button 
                     size="sm"
