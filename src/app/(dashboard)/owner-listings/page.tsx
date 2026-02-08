@@ -181,6 +181,7 @@ export default function OwnerListingsPage() {
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -198,6 +199,15 @@ export default function OwnerListingsPage() {
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
     let result = [...listings];
+
+    if (sourceFilter) {
+        result = result.filter(l => {
+            if (!l.link) return false;
+            if (sourceFilter === 'olx') return l.link.includes('olx.ro');
+            if (sourceFilter === 'imoradar') return l.link.includes('imoradar.ro');
+            return false;
+        });
+    }
 
     if (roomsFilter !== null) {
       result = result.filter(
@@ -221,7 +231,7 @@ export default function OwnerListingsPage() {
     }
 
     return result;
-  }, [listings, roomsFilter, priceMin, priceMax]);
+  }, [listings, roomsFilter, priceMin, priceMax, sourceFilter]);
   
   const handleImport = async (listing: OwnerListing) => {
     setIsLoadingImport(listing.id);
@@ -253,6 +263,14 @@ export default function OwnerListingsPage() {
 
   const FilterControls = () => (
     <div className="flex flex-col gap-6">
+        <div>
+            <Label className="font-semibold mb-3 block">Sursă</Label>
+            <div className="flex flex-wrap gap-2">
+                <Button variant={sourceFilter === null ? "default" : "outline"} onClick={() => setSourceFilter(null)}>Toate</Button>
+                <Button variant={sourceFilter === 'olx' ? "default" : "outline"} onClick={() => setSourceFilter('olx')}>OLX</Button>
+                <Button variant={sourceFilter === 'imoradar' ? "default" : "outline"} onClick={() => setSourceFilter('imoradar')}>Imoradar</Button>
+            </div>
+        </div>
         <div>
             <Label className="font-semibold mb-3 block">Număr camere</Label>
             <div className="flex flex-wrap gap-2">
@@ -299,6 +317,11 @@ export default function OwnerListingsPage() {
 
       {/* Desktop Filters */}
       <div className="hidden md:flex flex-wrap gap-4 items-center">
+        <div className="flex gap-2">
+          <Button variant={sourceFilter === null ? "default" : "outline"} onClick={() => setSourceFilter(null)}>Toate sursele</Button>
+          <Button variant={sourceFilter === 'olx' ? "default" : "outline"} onClick={() => setSourceFilter('olx')}>OLX</Button>
+          <Button variant={sourceFilter === 'imoradar' ? "default" : "outline"} onClick={() => setSourceFilter('imoradar')}>Imoradar</Button>
+        </div>
         <div className="flex gap-2">
           <Button
             variant={roomsFilter === null ? "default" : "outline"}
