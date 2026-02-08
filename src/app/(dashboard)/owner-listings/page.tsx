@@ -204,7 +204,7 @@ export default function OwnerListingsPage() {
         result = result.filter(l => {
             if (!l.link) return false;
             if (sourceFilter === 'olx') return l.link.includes('olx.ro');
-            if (sourceFilter === 'imoradar') return l.link.includes('imoradar.ro');
+            if (sourceFilter === 'imobiliare') return l.link.includes('imobiliare.ro');
             return false;
         });
     }
@@ -268,7 +268,7 @@ export default function OwnerListingsPage() {
             <div className="flex flex-wrap gap-2">
                 <Button variant={sourceFilter === null ? "default" : "outline"} onClick={() => setSourceFilter(null)}>Toate</Button>
                 <Button variant={sourceFilter === 'olx' ? "default" : "outline"} onClick={() => setSourceFilter('olx')}>OLX</Button>
-                <Button variant={sourceFilter === 'imoradar' ? "default" : "outline"} onClick={() => setSourceFilter('imoradar')}>Imoradar</Button>
+                <Button variant={sourceFilter === 'imobiliare' ? "default" : "outline"} onClick={() => setSourceFilter('imobiliare')}>Imobiliare.ro</Button>
             </div>
         </div>
         <div>
@@ -320,7 +320,7 @@ export default function OwnerListingsPage() {
         <div className="flex gap-2">
           <Button variant={sourceFilter === null ? "default" : "outline"} onClick={() => setSourceFilter(null)}>Toate sursele</Button>
           <Button variant={sourceFilter === 'olx' ? "default" : "outline"} onClick={() => setSourceFilter('olx')}>OLX</Button>
-          <Button variant={sourceFilter === 'imoradar' ? "default" : "outline"} onClick={() => setSourceFilter('imoradar')}>Imoradar</Button>
+          <Button variant={sourceFilter === 'imobiliare' ? "default" : "outline"} onClick={() => setSourceFilter('imobiliare')}>Imobiliare.ro</Button>
         </div>
         <div className="flex gap-2">
           <Button
