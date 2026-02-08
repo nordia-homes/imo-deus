@@ -33,6 +33,7 @@ type OwnerListing = {
   rooms?: number | string;
   image?: string;
   imageUrl?: string;
+  constructionYear?: number;
 };
 
 // extrage preț numeric
@@ -55,6 +56,8 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
       const postDate = fromUnixTime(timestamp);
       let timeAgo = formatDistanceToNow(postDate, { locale: ro });
       timeAgo = timeAgo.replace('circa ', '');
+      timeAgo = timeAgo.replace('aproximativ ', '');
+      timeAgo = timeAgo.replace('mai puțin de un minut', 'un minut');
       return timeAgo.replace('în urmă', '').trim();
     } catch {
       return 'Dată invalidă';
@@ -151,6 +154,12 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
               <Clock className="h-4 w-4" />
               <span>{calculateTimeAgo(listing.postedAt)}</span>
             </div>
+             {listing.constructionYear && (
+                <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4"/>
+                    <span>{listing.constructionYear}</span>
+                </div>
+            )}
           </div>
 
           <div className="flex justify-between items-center pt-2">
