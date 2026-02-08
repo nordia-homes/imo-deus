@@ -159,15 +159,27 @@ export default function OwnerListingsPage() {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/scrape");
+        const res = await fetch("/api/scrape", { cache: "no-store" });
         const data = await res.json();
-        setListings(data);
-      } catch (error) {
+
+        // Check for error property from our new API logic
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Ensure data is an array before setting it
+        if (Array.isArray(data)) {
+            setListings(data);
+        } else {
+            throw new Error("Formatul datelor primite de la server este invalid.");
+        }
+      } catch (error: any) {
         console.error(error);
+        setListings([]); // Set to empty on error
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
-          description: "Nu am putut prelua anunțurile.",
+          description: error.message || "Nu am putut prelua anunțurile.",
         });
       } finally {
         setIsLoading(false);
