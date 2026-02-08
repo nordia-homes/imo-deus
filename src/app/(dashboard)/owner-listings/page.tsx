@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ExternalLink, Clock, Home, Maximize, Bed, Filter, Rocket, Loader2 } from 'lucide-react';
-import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
+import { format, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -53,17 +53,7 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
         return 'Dată necunoscută';
       }
       const postDate = fromUnixTime(timestamp);
-      const now = new Date();
-      const hours = differenceInHours(now, postDate);
-
-      if (hours < 1) return `Publicat recent`;
-
-      if (hours < 24) {
-        return `Publicat acum ${hours} ${hours === 1 ? 'oră' : 'ore'}`;
-      } else {
-        const days = differenceInDays(now, postDate);
-        return `Publicat acum ${days} ${days === 1 ? 'zi' : 'zile'}`;
-      }
+      return `Act. ${format(postDate, 'dd/MM/yyyy')}`;
     } catch {
       return 'Dată invalidă';
     }
@@ -282,7 +272,7 @@ export default function OwnerListingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold md:text-3xl">
+      <h1 className="text-xl font-bold md:text-3xl">
         Anunțuri de la proprietari
       </h1>
 
