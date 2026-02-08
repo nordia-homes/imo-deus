@@ -10,6 +10,9 @@ import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+
 
 // ===============================
 // Tipul datelor
@@ -151,25 +154,18 @@ export default function OwnerListingsPage() {
   const [listings, setListings] = useState<OwnerListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   useEffect(() => {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/scrape');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        if (Array.isArray(data)) {
-            setListings(data);
-        } else {
-            console.warn("Received non-array data from scrape API:", data);
-            setListings([]);
-        }
+        const q = query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const listingsData = querySnapshot.docs.map(doc => doc.data() as OwnerListing);
+        setListings(listingsData);
       } catch (error) {
         console.error(error);
-        setListings([]);
         toast({
           variant: "destructive",
           title: "Eroare la încărcare",
@@ -181,9 +177,10 @@ export default function OwnerListingsPage() {
     }
 
     fetchListings();
-  }, [toast]);
+  }, [firestore, toast]);
 
   const filteredListings = useMemo(() => {
+    if (!listings) return [];
     let result = [...listings];
 
     if (roomsFilter !== null) {
