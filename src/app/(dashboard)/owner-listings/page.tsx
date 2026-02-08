@@ -216,7 +216,7 @@ export default function OwnerListingsPage() {
   if (isLoading) {
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-2xl font-bold md:text-3xl">
                 Anunțuri de la proprietari
             </h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -234,7 +234,7 @@ export default function OwnerListingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">
+      <h1 className="text-2xl font-bold md:text-3xl">
         Anunțuri de la proprietari
       </h1>
 
