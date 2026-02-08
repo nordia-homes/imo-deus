@@ -10,9 +10,6 @@ import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-
 
 // ===============================
 // Tipul datelor
@@ -154,16 +151,24 @@ export default function OwnerListingsPage() {
   const [listings, setListings] = useState<OwnerListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   useEffect(() => {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const q = query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const listingsData = querySnapshot.docs.map(doc => doc.data() as OwnerListing);
-        setListings(listingsData);
+        const response = await fetch('/api/scrape');
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // The API returns { listings: [...] }
+        if (data && Array.isArray(data.listings)) {
+          setListings(data.listings);
+        } else {
+          console.error("Received unexpected data format from /api/scrape:", data);
+          setListings([]); // Set to empty array to prevent crash
+        }
       } catch (error) {
         console.error(error);
         toast({
@@ -177,7 +182,7 @@ export default function OwnerListingsPage() {
     }
 
     fetchListings();
-  }, [firestore, toast]);
+  }, [toast]);
 
   const filteredListings = useMemo(() => {
     if (!listings) return [];
