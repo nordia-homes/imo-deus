@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -54,7 +53,8 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
         return 'Dată necunoscută';
       }
       const postDate = fromUnixTime(timestamp);
-      return formatDistanceToNow(postDate, { addSuffix: true, locale: ro });
+      const timeAgo = formatDistanceToNow(postDate, { locale: ro });
+      return timeAgo.replace('circa ', '');
     } catch {
       return 'Dată invalidă';
     }
