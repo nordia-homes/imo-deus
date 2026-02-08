@@ -53,8 +53,9 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
         return 'Dată necunoscută';
       }
       const postDate = fromUnixTime(timestamp);
-      const timeAgo = formatDistanceToNow(postDate, { locale: ro });
-      return timeAgo.replace('circa ', '');
+      let timeAgo = formatDistanceToNow(postDate, { locale: ro });
+      timeAgo = timeAgo.replace('circa ', '');
+      return timeAgo.replace('în urmă', '').trim();
     } catch {
       return 'Dată invalidă';
     }
@@ -64,6 +65,12 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
     if (!listing.location) {
         return '';
     }
+
+    if (listing.location.includes(' - Reactualizat azi la ')) {
+        const locationPart = listing.location.split(' - Reactualizat azi la ')[0];
+        return `${locationPart} - Act. azi`;
+    }
+
     const parts = listing.location.split(' - Reactualizat la ');
     if (parts.length === 2) {
         const locationPart = parts[0];
@@ -73,10 +80,10 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
             const formattedDate = format(date, 'dd/MM/yyyy');
             return `${locationPart} - Act. ${formattedDate}`;
         } catch (e) {
-            // Fallback for safety
             return listing.location.replace('Reactualizat la', 'Act.');
         }
     }
+    
     return listing.location;
   }, [listing.location]);
 
