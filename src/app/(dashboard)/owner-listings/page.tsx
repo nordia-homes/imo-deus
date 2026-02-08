@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,12 +9,15 @@ import { ExternalLink, Clock, Home, Maximize, Bed } from 'lucide-react';
 import { differenceInHours, differenceInDays, fromUnixTime } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+
 
 // ===============================
 // Tipul datelor
 // ===============================
 type OwnerListing = {
+  id: string;
   title: string;
   price: string;
   link: string;
@@ -150,36 +153,13 @@ export default function OwnerListingsPage() {
   const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
+  const firestore = useFirestore();
 
-  const [listings, setListings] = useState<OwnerListing[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const ownerListingsQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc'));
+  }, [firestore]);
 
-  useEffect(() => {
-    async function fetchListings() {
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/owner-listings");
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'A eșuat preluarea datelor.');
-        }
-        const data = await res.json();
-        setListings(data);
-      } catch (error: any) {
-        console.error(error);
-        toast({
-          variant: "destructive",
-          title: "Eroare la încărcare",
-          description: error.message || "Nu am putut prelua anunțurile.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchListings();
-  }, [toast]);
+  const { data: listings, isLoading } = useCollection<OwnerListing>(ownerListingsQuery);
 
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
@@ -205,8 +185,6 @@ export default function OwnerListingsPage() {
         return true;
       });
     }
-
-    result.sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));
 
     return result;
   }, [listings, roomsFilter, priceMin, priceMax]);
@@ -278,7 +256,7 @@ export default function OwnerListingsPage() {
         {filteredListings.length > 0 ? (
           filteredListings.map((listing, index) => (
             <OwnerListingCard
-              key={listing.link || index}
+              key={listing.id || index}
               listing={listing}
             />
           ))
