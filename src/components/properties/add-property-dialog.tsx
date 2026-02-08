@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, ChangeEvent, useEffect, useMemo } from 'react';
@@ -266,27 +265,36 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         const values = form.getValues();
         
         try {
-            // Construct a partial Property object from form values for the AI.
-            // This object needs to match the structure the AI flow expects.
             const propertyForAi: Partial<Property> = {
                 title: values.title,
                 propertyType: values.propertyType,
                 transactionType: values.transactionType,
                 location: [values.zone, values.city].filter(Boolean).join(', '),
+                address: values.address,
                 price: values.price,
                 rooms: values.rooms,
                 bathrooms: values.bathrooms,
                 squareFootage: values.squareFootage,
+                totalSurface: values.totalSurface ? Number(values.totalSurface) : undefined,
                 constructionYear: values.constructionYear ? Number(values.constructionYear) : undefined,
                 keyFeatures: values.keyFeatures,
                 amenities: values.keyFeatures?.split(',').map(s => s.trim()),
                 furnishing: values.furnishing,
                 parking: values.parking,
                 interiorState: values.interiorState,
+                comfort: values.comfort,
+                floor: values.floor,
+                totalFloors: values.totalFloors ? Number(values.totalFloors) : undefined,
+                partitioning: values.partitioning,
+                heatingSystem: values.heatingSystem,
+                buildingState: values.buildingState,
+                seismicRisk: values.seismicRisk,
+                balconyTerrace: values.balconyTerrace,
+                kitchen: values.kitchen,
+                lift: values.lift,
+                orientation: values.orientation,
             };
 
-            // The flow expects the full Property type, but we can pass a partial one.
-            // Type assertion helps satisfy TypeScript.
             const result = await generatePropertyDescription(propertyForAi as Property);
             
             form.setValue('description', result.description);
@@ -299,7 +307,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             toast({
                 variant: "destructive",
                 title: "A apărut o eroare",
-                description: "Nu am putut genera descrierea. Asigură-te că ai completat câmpurile cheie (ex: tip, preț, caracteristici).",
+                description: "Nu am putut genera descrierea. Asigură-te că ai completat câmpurile cheie (ex: titlu, preț, caracteristici).",
             });
         } finally {
             setIsGenerating(false);
