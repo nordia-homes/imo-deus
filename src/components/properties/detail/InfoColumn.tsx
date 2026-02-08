@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight } from "lucide-react";
+import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight, Menu } from "lucide-react";
 import type { Property, Contact, Viewing } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { MatchedLeadsTab } from "./MatchedLeadsTab";
@@ -11,34 +11,44 @@ import Link from 'next/link';
 import { RlvTab } from "./RlvTab";
 import { useState } from 'react';
 import { InfoDialog } from './InfoDialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const TRUNCATION_LENGTH = 500;
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+    
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        setIsSheetOpen(false);
+    };
+    
+    const menuItems = [
+      { value: "overview", label: "Prezentare generală", icon: <LayoutList className="mr-2 h-4 w-4" /> },
+      { value: "leads", label: "Cumpărători", icon: <Users className="mr-2 h-4 w-4" /> },
+      { value: "viewings", label: "Vizionări", icon: <CalendarCheck className="mr-2 h-4 w-4" /> },
+      { value: "documents", label: "RLV", icon: <FileText className="mr-2 h-4 w-4" /> },
+    ];
 
     return (
         <div className="space-y-6">
-            <Tabs defaultValue="overview">
-                <TabsList className="grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
-                    <TabsTrigger value="overview" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <LayoutList className="mr-2 h-4 w-4" />
-                        Prezentare generală
-                    </TabsTrigger>
-                    <TabsTrigger value="leads" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <Users className="mr-2 h-4 w-4" />
-                        Cumpărători
-                    </TabsTrigger>
-                    <TabsTrigger value="viewings" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <CalendarCheck className="mr-2 h-4 w-4" />
-                        Vizionări
-                    </TabsTrigger>
-                    <TabsTrigger value="documents" className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
-                        <FileText className="mr-2 h-4 w-4" />
-                        RLV
-                    </TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="hidden md:grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
+                    {menuItems.map(item => (
+                         <TabsTrigger key={item.value} value={item.value} className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
+                            {item.icon}
+                            {item.label}
+                        </TabsTrigger>
+                    ))}
                     <div 
                         onClick={() => setIsInfoDialogOpen(true)}
                         className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-accent hover:shadow-xl transition-all"
@@ -47,6 +57,33 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                         Informații
                     </div>
                 </TabsList>
+
+                <div className="md:hidden">
+                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                                <Menu className="mr-2 h-4 w-4" />
+                                Meniu Secțiune
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl bg-[#f8f8f9] text-black p-0">
+                            <div className="flex flex-col gap-1 p-4">
+                                {menuItems.map(item => (
+                                     <Button key={item.value} variant={activeTab === item.value ? 'default' : 'ghost'} className="justify-start text-base py-6" onClick={() => handleTabChange(item.value)}>
+                                        {item.icon}
+                                        {item.label}
+                                    </Button>
+                                ))}
+                                <Separator className="my-2" />
+                                <Button variant='ghost' className="justify-start text-base py-6" onClick={() => { setIsInfoDialogOpen(true); setIsSheetOpen(false); }}>
+                                    <Info className="mr-2 h-4 w-4" />
+                                    Informații Detaliate
+                                </Button>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+
                 <TabsContent value="overview" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>

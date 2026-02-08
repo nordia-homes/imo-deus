@@ -17,7 +17,7 @@ import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
+import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle, Menu } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
@@ -28,6 +28,11 @@ import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 
 const formatValue = (num: number) => {
@@ -47,6 +52,7 @@ export default function DashboardPage() {
     const { agencyId, isAgencyLoading, userProfile } = useAgency();
     const firestore = useFirestore();
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+    const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const { toast } = useToast();
 
     // --- Action Handlers ---
@@ -359,7 +365,7 @@ export default function DashboardPage() {
                 <div>
                     <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="hidden md:flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
                         <Button variant="outline" size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
@@ -377,8 +383,44 @@ export default function DashboardPage() {
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adaugă Proprietate
                     </Button>
-                    <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
                 </div>
+                 <div className="md:hidden">
+                    <Sheet open={isActionSheetOpen} onOpenChange={setIsActionSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="default" className="w-full">
+                                <Menu className="mr-2 h-4 w-4" />
+                                Acțiuni Rapide
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl bg-[#f8f8f9] text-black p-0">
+                            <div className="flex flex-col gap-1 p-4">
+                               <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
+                                    <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adaugă Task Nou
+                                    </Button>
+                                </AddTaskDialog>
+                                <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
+                                    <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Programează Vizionare
+                                    </Button>
+                                </AddViewingDialog>
+                                <AddLeadDialog properties={properties || []}>
+                                     <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adaugă Cumpărător
+                                    </Button>
+                                </AddLeadDialog>
+                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddPropertyOpen(true); setIsActionSheetOpen(false); }}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adaugă Proprietate
+                                </Button>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+                <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             </div>
             
             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

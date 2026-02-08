@@ -17,6 +17,15 @@ import { doc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { useToast } from '@/hooks/use-toast';
 import { DeletePropertyAlert } from './DeletePropertyAlert';
+import { Filter } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 
 interface PropertyListProps {
@@ -45,6 +54,7 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const parkingOptions = ['Garaj', 'Loc exterior', 'Subteran', 'Fără'];
     const furnishingOptions = ['Lux', 'Complet', 'Parțial', 'Nemobilat'];
@@ -112,150 +122,32 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
         setDeletingProperty(null);
     };
     
-    const renderFilterButtons = () => (
-        <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Toate' }))} variant={filters.transactionType === 'Toate' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Toate</Button>
-            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Vânzare' }))} variant={filters.transactionType === 'Vânzare' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Vânzare</Button>
-            <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Închiriere' }))} variant={filters.transactionType === 'Închiriere' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Închiriere</Button>
-
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.rooms.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Nr. Camere</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                    <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Număr Camere</h4>
-                        {[1, 2, 3, 4, 5].map(num => (
-                            <div key={num} className="flex items-center gap-2">
-                                <Checkbox id={`rooms-${num}`} checked={filters.rooms.includes(num)} onCheckedChange={() => handleMultiSelectFilter('rooms', num)} />
-                                <Label htmlFor={`rooms-${num}`} className="font-normal">{num}{num === 5 ? '+' : ''} camere</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.price.min || filters.price.max ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Preț</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-64">
-                    <div className="space-y-2">
-                         <h4 className="font-medium text-sm">Interval Preț (€)</h4>
-                         <div className="flex gap-2">
-                            <Input placeholder="Min" value={filters.price.min} onChange={e => setFilters(f => ({...f, price: {...f.price, min: e.target.value}}))} />
-                            <Input placeholder="Max" value={filters.price.max} onChange={e => setFilters(f => ({...f, price: {...f.price, max: e.target.value}}))} />
-                         </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
-
-             <Popover>
-                <PopoverTrigger asChild><Button variant={filters.parking.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Parcare</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                     <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Tip Parcare</h4>
-                        {parkingOptions.map(opt => (
-                            <div key={opt} className="flex items-center gap-2">
-                                <Checkbox id={`parking-${opt}`} checked={filters.parking.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('parking', opt)} />
-                                <Label htmlFor={`parking-${opt}`} className="font-normal">{opt}</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-            
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.heating.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Centrală Termică</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                     <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Sistem Încălzire</h4>
-                        {heatingOptions.map(opt => (
-                            <div key={opt} className="flex items-center gap-2">
-                                <Checkbox id={`heating-${opt}`} checked={filters.heating.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('heating', opt)} />
-                                <Label htmlFor={`heating-${opt}`} className="font-normal">{opt}</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.partitioning.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Compartimentare</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                     <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Compartimentare</h4>
-                        {partitioningOptions.map(opt => (
-                            <div key={opt} className="flex items-center gap-2">
-                                <Checkbox id={`partitioning-${opt}`} checked={filters.partitioning.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('partitioning', opt)} />
-                                <Label htmlFor={`partitioning-${opt}`} className="font-normal">{opt}</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.kitchen.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Bucătărie</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                     <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Tip Bucătărie</h4>
-                        {kitchenOptions.map(opt => (
-                            <div key={opt} className="flex items-center gap-2">
-                                <Checkbox id={`kitchen-${opt}`} checked={filters.kitchen.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('kitchen', opt)} />
-                                <Label htmlFor={`kitchen-${opt}`} className="font-normal">{opt}</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-            
-            <Button onClick={() => setFilters(f => ({ ...f, nearMetro: !f.nearMetro }))} variant={filters.nearMetro ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Metrou</Button>
-            
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.minArea ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Suprafață Minimă</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                    <div className="space-y-2">
-                         <h4 className="font-medium text-sm">Suprafață Minimă (mp)</h4>
-                         <Input placeholder="ex: 50" value={filters.minArea} onChange={e => setFilters(f => ({...f, minArea: e.target.value}))} />
-                    </div>
-                </PopoverContent>
-            </Popover>
-            
-             <Popover>
-                <PopoverTrigger asChild><Button variant={filters.zones.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Zone</Button></PopoverTrigger>
-                <PopoverContent className="p-0 w-64">
-                    <Command>
-                        <CommandInput placeholder="Caută zonă..." />
-                        <CommandList>
-                            <CommandEmpty>Nicio zonă găsită.</CommandEmpty>
-                            <CommandGroup>
-                                {zoneOptions.map(opt => (
-                                <CommandItem key={opt} onSelect={() => handleMultiSelectFilter('zones', opt)}>
-                                    <Checkbox className={cn("mr-2", filters.zones.includes(opt) ? "bg-primary text-primary-foreground" : "")} checked={filters.zones.includes(opt)} />
-                                    <span>{opt}</span>
-                                </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
-            
-            <Button onClick={() => setFilters(f => ({ ...f, after1977: !f.after1977 }))} variant={filters.after1977 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">După 1977</Button>
-
-            <Popover>
-                <PopoverTrigger asChild><Button variant={filters.furnishing.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Mobilat</Button></PopoverTrigger>
-                <PopoverContent className="p-4 w-56">
-                     <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Stare Mobilier</h4>
-                        {furnishingOptions.map(opt => (
-                            <div key={opt} className="flex items-center gap-2">
-                                <Checkbox id={`furnishing-${opt}`} checked={filters.furnishing.includes(opt)} onCheckedChange={() => handleMultiSelectFilter('furnishing', opt)} />
-                                <Label htmlFor={`furnishing-${opt}`} className="font-normal">{opt}</Label>
-                            </div>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-
+    const FilterControls = () => (
+      <div className="flex flex-col gap-6">
+        <div>
+            <Label className="font-semibold mb-3 block">Tip Tranzacție</Label>
+            <div className="flex items-center gap-2 flex-wrap pt-2">
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Toate' }))} variant={filters.transactionType === 'Toate' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Toate</Button>
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Vânzare' }))} variant={filters.transactionType === 'Vânzare' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Vânzare</Button>
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Închiriere' }))} variant={filters.transactionType === 'Închiriere' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Închiriere</Button>
+            </div>
         </div>
+        <div className="space-y-2">
+            <h4 className="font-medium text-sm">Număr Camere</h4>
+            <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5].map(num => (
+                    <Button key={num} variant={filters.rooms.includes(num) ? "default" : "outline"} onClick={() => handleMultiSelectFilter('rooms', num)} size="sm">{num}{num === 5 ? '+' : ''} cam.</Button>
+                ))}
+            </div>
+        </div>
+        <div className="space-y-2">
+             <h4 className="font-medium text-sm">Interval Preț (€)</h4>
+             <div className="flex gap-2">
+                <Input placeholder="Min" value={filters.price.min} onChange={e => setFilters(f => ({...f, price: {...f.price, min: e.target.value}}))} />
+                <Input placeholder="Max" value={filters.price.max} onChange={e => setFilters(f => ({...f, price: {...f.price, max: e.target.value}}))} />
+             </div>
+        </div>
+      </div>
     );
 
     const renderPropertyList = () => {
@@ -297,7 +189,61 @@ export function PropertyList({ properties, isLoading }: PropertyListProps) {
 
     return (
         <div className="space-y-4">
-            {renderFilterButtons()}
+            <div className="hidden md:flex items-center gap-2 flex-wrap">
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Toate' }))} variant={filters.transactionType === 'Toate' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Toate</Button>
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Vânzare' }))} variant={filters.transactionType === 'Vânzare' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Vânzare</Button>
+                <Button onClick={() => setFilters(f => ({ ...f, transactionType: 'Închiriere' }))} variant={filters.transactionType === 'Închiriere' ? 'default' : 'outline'} size="sm" className="rounded-full h-8 font-normal">Închiriere</Button>
+
+                <Popover>
+                    <PopoverTrigger asChild><Button variant={filters.rooms.length > 0 ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Nr. Camere</Button></PopoverTrigger>
+                    <PopoverContent className="p-4 w-56">
+                        <div className="space-y-2">
+                            <h4 className="font-medium text-sm">Număr Camere</h4>
+                            {[1, 2, 3, 4, 5].map(num => (
+                                <div key={num} className="flex items-center gap-2">
+                                    <Checkbox id={`rooms-${num}`} checked={filters.rooms.includes(num)} onCheckedChange={() => handleMultiSelectFilter('rooms', num)} />
+                                    <Label htmlFor={`rooms-${num}`} className="font-normal">{num}{num === 5 ? '+' : ''} camere</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+                <Popover>
+                    <PopoverTrigger asChild><Button variant={filters.price.min || filters.price.max ? "default" : "outline"} size="sm" className="rounded-full h-8 font-normal">Preț</Button></PopoverTrigger>
+                    <PopoverContent className="p-4 w-64">
+                        <div className="space-y-2">
+                             <h4 className="font-medium text-sm">Interval Preț (€)</h4>
+                             <div className="flex gap-2">
+                                <Input placeholder="Min" value={filters.price.min} onChange={e => setFilters(f => ({...f, price: {...f.price, min: e.target.value}}))} />
+                                <Input placeholder="Max" value={filters.price.max} onChange={e => setFilters(f => ({...f, price: {...f.price, max: e.target.value}}))} />
+                             </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+            
+            <div className="md:hidden">
+                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <Filter className="mr-2 h-4 w-4" /> Filtrează ({filteredProperties.length})
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                        <SheetHeader className="text-left pb-4">
+                            <SheetTitle>Filtre</SheetTitle>
+                        </SheetHeader>
+                        <div className="px-1 overflow-y-auto max-h-[60vh]">
+                           <FilterControls />
+                        </div>
+                        <SheetFooter className="pt-6">
+                            <Button onClick={() => setIsSheetOpen(false)} className="w-full">Vezi {filteredProperties.length} proprietăți</Button>
+                        </SheetFooter>
+                    </SheetContent>
+                </Sheet>
+            </div>
+
             {renderPropertyList()}
             <DeletePropertyAlert
                 isOpen={!!deletingProperty}
