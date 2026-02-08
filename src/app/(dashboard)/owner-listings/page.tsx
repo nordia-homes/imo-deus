@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ExternalLink, Clock, Home, Maximize, Bed, Filter, Rocket, Loader2 } from 'lucide-react';
-import { format, fromUnixTime, formatDistanceToNow } from 'date-fns';
+import { format, fromUnixTime, formatDistanceToNow, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -60,6 +60,26 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
     }
   };
 
+  const locationDisplay = useMemo(() => {
+    if (!listing.location) {
+        return '';
+    }
+    const parts = listing.location.split(' - Reactualizat la ');
+    if (parts.length === 2) {
+        const locationPart = parts[0];
+        const datePart = parts[1];
+        try {
+            const date = parse(datePart, 'dd MMMM yyyy', new Date(), { locale: ro });
+            const formattedDate = format(date, 'dd/MM/yyyy');
+            return `${locationPart} - Act. ${formattedDate}`;
+        } catch (e) {
+            // Fallback for safety
+            return listing.location.replace('Reactualizat la', 'Act.');
+        }
+    }
+    return listing.location;
+  }, [listing.location]);
+
   let displayPrice = "Preț negociabil";
   if (listing.price) {
     const priceMatch = listing.price.match(/[\d.,\s]+/);
@@ -101,7 +121,7 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
           <div>
             <h3 className="font-semibold truncate">{listing.title}</h3>
             <p className="text-sm text-muted-foreground">
-              {listing.location}
+              {locationDisplay}
             </p>
           </div>
 
