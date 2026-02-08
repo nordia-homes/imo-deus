@@ -159,7 +159,7 @@ export default function OwnerListingsPage() {
     async function fetchListings() {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/owner-listings");
+        const res = await fetch("/api/scrape");
         const data = await res.json();
         setListings(data);
       } catch (error) {
