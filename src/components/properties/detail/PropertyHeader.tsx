@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Property, Contact, Viewing } from '@/lib/types';
+import type { Property } from '@/lib/types';
 import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone, CalendarCheck } from 'lucide-react';
 import {
   DropdownMenu,
@@ -20,9 +20,8 @@ import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 
-export function PropertyHeader({ property, allContacts, onAddViewing }: { property: Property; allContacts: Contact[]; onAddViewing: (data: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => void }) {
+export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -112,12 +111,10 @@ export function PropertyHeader({ property, allContacts, onAddViewing }: { proper
                             <SelectItem value="Inactiv">Inactiv</SelectItem>
                         </SelectContent>
                     </Select>
-                    <AddViewingDialog onAddViewing={onAddViewing} contacts={allContacts} properties={[property]}>
-                       <Button className="flex-1">
-                          <CalendarCheck className="mr-2 h-4 w-4"/> 
-                          Vizionare
-                       </Button>
-                    </AddViewingDialog>
+                    <Button className="flex-1" onClick={onTriggerAddViewing}>
+                        <CalendarCheck className="mr-2 h-4 w-4"/> 
+                        Vizionare
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon">

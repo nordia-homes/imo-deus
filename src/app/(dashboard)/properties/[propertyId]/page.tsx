@@ -11,6 +11,7 @@ import { PropertyHeader } from '@/components/properties/detail/PropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { ActionsColumn } from '@/components/properties/detail/ActionsColumn';
+import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 
 // Firebase & Context
 import { useAgency } from '@/context/AgencyContext';
@@ -41,6 +42,7 @@ export default function PropertyDetailPage() {
 
     const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
     const [isAgentLoading, setIsAgentLoading] = useState(true);
+    const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -123,7 +125,10 @@ export default function PropertyDetailPage() {
 
     return (
         <div className="h-full">
-            <PropertyHeader property={property} allContacts={allContacts || []} onAddViewing={handleAddViewing} />
+            <PropertyHeader 
+                property={property} 
+                onTriggerAddViewing={() => setIsAddViewingOpen(true)}
+            />
 
              <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
@@ -135,6 +140,13 @@ export default function PropertyDetailPage() {
                      <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} allContacts={allContacts || []} />
                 </div>
             </main>
+            <AddViewingDialog
+                isOpen={isAddViewingOpen}
+                onOpenChange={setIsAddViewingOpen}
+                onAddViewing={handleAddViewing}
+                properties={[property]}
+                contacts={allContacts || []}
+            />
         </div>
     );
 }

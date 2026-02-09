@@ -27,6 +27,7 @@ export default function ViewingsPage() {
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
     const [editingViewing, setEditingViewing] = useState<Viewing | null>(null);
     const [deletingViewing, setDeletingViewing] = useState<Viewing | null>(null);
+    const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
 
     // Data fetching
     const propertiesQuery = useMemoFirebase(() => {
@@ -158,16 +159,10 @@ export default function ViewingsPage() {
                         Organizează și vizualizează programările.
                     </p>
                 </div>
-                 <AddViewingDialog 
-                    onAddViewing={handleAddViewing}
-                    contacts={contacts || []}
-                    properties={properties || []}
-                >
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4"/>
-                        Programează Vizionare
-                    </Button>
-                </AddViewingDialog>
+                 <Button onClick={() => setIsAddViewingOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    Programează Vizionare
+                </Button>
             </div>
 
             <ViewingsCalendar 
@@ -193,6 +188,14 @@ export default function ViewingsPage() {
                     onDelete={setDeletingViewing}
                 />
             </div>
+            
+            <AddViewingDialog
+                isOpen={isAddViewingOpen}
+                onOpenChange={setIsAddViewingOpen}
+                onAddViewing={handleAddViewing}
+                contacts={contacts || []}
+                properties={properties || []}
+            />
 
             <EditViewingDialog
                 isOpen={!!editingViewing}

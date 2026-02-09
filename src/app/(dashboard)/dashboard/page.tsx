@@ -51,6 +51,7 @@ export default function DashboardPage() {
     const firestore = useFirestore();
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
+    const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
     const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const { toast } = useToast();
 
@@ -375,18 +376,14 @@ export default function DashboardPage() {
                             Task
                         </Button>
                     </AddTaskDialog>
-                    <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
-                        <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Vizionare
-                        </Button>
-                    </AddViewingDialog>
-                    <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
-                        <Button onClick={() => setIsAddLeadOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adaugă Cumpărător
-                        </Button>
-                    </AddLeadDialog>
+                    <Button variant="outline" size="sm" onClick={() => setIsAddViewingOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Vizionare
+                    </Button>
+                    <Button onClick={() => setIsAddLeadOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adaugă Cumpărător
+                    </Button>
                     <Button onClick={() => setIsAddPropertyOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adaugă Proprietate
@@ -408,12 +405,10 @@ export default function DashboardPage() {
                                         Adaugă Task Nou
                                     </Button>
                                 </AddTaskDialog>
-                                <AddViewingDialog onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []}>
-                                    <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Programează Vizionare
-                                    </Button>
-                                </AddViewingDialog>
+                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddViewingOpen(true); setIsActionSheetOpen(false); }}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Programează Vizionare
+                                </Button>
                                 <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddLeadOpen(true); setIsActionSheetOpen(false); }}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adaugă Cumpărător
@@ -428,6 +423,7 @@ export default function DashboardPage() {
                 </div>
                 <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
                 <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
+                <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
             </div>
             
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

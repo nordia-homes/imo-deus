@@ -28,6 +28,7 @@ import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCa
 import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
 import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
+import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 
 
 const PageSkeleton = () => (
@@ -76,6 +77,7 @@ export default function LeadDetailPage() {
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
     const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
+    const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
@@ -378,7 +380,7 @@ export default function LeadDetailPage() {
                 contact={contact} 
                 onUpdateContact={handleUpdateContact}
                 onAddTask={handleAddTask}
-                onAddViewing={handleAddViewing}
+                onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                 properties={properties || []}
             />
 
@@ -439,6 +441,13 @@ export default function LeadDetailPage() {
                 isOpen={isEditInfoOpen}
                 onOpenChange={setIsEditInfoOpen}
                 onUpdateContact={handleUpdateContact}
+            />
+            <AddViewingDialog
+                isOpen={isAddViewingOpen}
+                onOpenChange={setIsAddViewingOpen}
+                onAddViewing={handleAddViewing}
+                properties={properties || []}
+                contacts={allContacts || []}
             />
         </div>
     );

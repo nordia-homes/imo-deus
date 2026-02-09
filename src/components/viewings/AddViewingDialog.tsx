@@ -7,10 +7,10 @@ import { z } from 'zod';
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, PlusCircle, UserPlus, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, UserPlus, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -22,6 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
 import { collection, addDoc } from 'firebase/firestore';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '../ui/card';
 
 
 const viewingSchema = z.object({
@@ -43,17 +45,19 @@ type AddViewingDialogProps = {
     onAddViewing: (viewing: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => void;
     properties: PropertyStub[];
     contacts: ContactStub[];
-    children?: React.ReactNode;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
 }
 
-export function AddViewingDialog({ onAddViewing, properties, contacts, children }: AddViewingDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, onOpenChange }: AddViewingDialogProps) {
   const [isNewContact, setIsNewContact] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { agencyId } = useAgency();
   const { user } = useUser();
   const firestore = useFirestore();
+  const isMobile = useIsMobile();
+  const formKey = useMemo(() => `add-viewing-${isOpen}`, [isOpen]);
 
   const defaultContactId = useMemo(() => {
     if (contacts.length === 1) return contacts[0].id;
@@ -148,127 +152,133 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, children 
             notes: values.notes || '',
         });
 
-        // If everything is successful, close the dialog
-        setIsOpen(false);
-        form.reset();
+        onOpenChange(false);
 
     } catch (error) {
         console.error("Failed to submit viewing:", error);
         toast({ variant: "destructive", title: "Eroare la salvare", description: "A apărut o problemă la salvarea vizionării. Încearcă din nou." });
     } finally {
-        // This block will run regardless of success or failure, preventing the UI from freezing.
         setIsSubmitting(false);
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Vizionare</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-2 shrink-0">
-          <DialogTitle>Programează o Vizionare Nouă</DialogTitle>
-          <DialogDescription>
-            Completează detaliile pentru noua vizionare.
-          </DialogDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-md h-auto")}>
+        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
+          <DialogTitle className="text-xl text-foreground/90 text-center">Programează o Vizionare</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
-              <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel>Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              
-              {isNewContact ? (
-                 <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                    <h4 className="font-semibold text-sm">Detalii Client Nou</h4>
-                    <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
-                     <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => setIsNewContact(false)}>
-                        Sau selectează un client existent
-                    </Button>
-                </div>
-              ) : (
-                <FormItem>
-                  <FormLabel>Client</FormLabel>
-                   <div className="flex items-center gap-2">
-                        <FormField
-                            control={form.control}
-                            name="contactId"
-                            render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className="flex-1">
-                                            <SelectValue placeholder="Selectează clientul" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {contacts?.map(c => (
-                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+        {isOpen && (
+            <Form {...form}>
+            <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6">
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel>Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            {isNewContact ? (
+                                <div className="space-y-4 pt-4 border-t">
+                                    <h4 className="font-semibold text-sm">Detalii Client Nou</h4>
+                                    <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                    <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => setIsNewContact(false)}>
+                                        Sau selectează un client existent
+                                    </Button>
+                                </div>
+                            ) : (
+                                <FormItem>
+                                <FormLabel>Client</FormLabel>
+                                <div className="flex items-center gap-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="contactId"
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="flex-1">
+                                                            <SelectValue placeholder="Selectează clientul" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {contacts?.map(c => (
+                                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)}>
+                                            <UserPlus className="h-4 w-4"/>
+                                        </Button>
+                                </div>
+                                <FormMessage />
+                                </FormItem>
                             )}
-                        />
-                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)}>
-                            <UserPlus className="h-4 w-4"/>
-                        </Button>
-                   </div>
-                   <FormMessage />
-                </FormItem>
-              )}
+                        </CardContent>
+                    </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="viewingDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data</FormLabel>
-                      <Popover modal={true}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            locale={ro}
-                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              </div>
-              <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
-            </div>
-            
-            <DialogFooter className="p-6 pt-4 border-t shrink-0">
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Anulează</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Programează
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                control={form.control}
+                                name="viewingDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Data</FormLabel>
+                                    <Popover modal={true}>
+                                        <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full pl-3 text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                            )}
+                                            >
+                                            {field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                            locale={ro}
+                                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                            initialFocus
+                                        />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                                <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
+                        </CardContent>
+                    </Card>
+                </div>
+                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Anulează</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Programează
+                        </Button>
+                    </div>
+                </DialogFooter>
+            </form>
+            </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
