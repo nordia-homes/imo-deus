@@ -363,7 +363,7 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div>
+                <div className="text-center md:text-left">
                     <h1 className="text-3xl font-headline font-bold">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground">Bine ai revenit, {displayName}!</p>
                 </div>
