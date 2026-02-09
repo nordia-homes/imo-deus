@@ -47,13 +47,14 @@ const formatValue = (num: number) => {
 
 export default function DashboardPage() {
     const { user } = useUser();
-    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
-    
-    const { agencyId, isAgencyLoading, userProfile } = useAgency();
+    const { agencyId, isAgencyLoading, userProfile, agency } = useAgency();
     const firestore = useFirestore();
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
     const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const { toast } = useToast();
+
+    const displayName = userProfile?.name || user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
+    const agencyName = agency?.name;
 
     // --- Action Handlers ---
     const handleAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => {
@@ -363,7 +364,8 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-headline font-bold">Bine ai revenit, {displayName}!</h1>
+                    <h1 className="text-3xl font-headline font-bold">{agencyName || 'Dashboard'}</h1>
+                    <p className="text-muted-foreground">Bine ai revenit, {displayName}!</p>
                 </div>
                 <div className="hidden md:flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
