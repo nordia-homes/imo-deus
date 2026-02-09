@@ -490,6 +490,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className='overflow-y-auto p-6 space-y-8'>
+                    
                     <Card className="shadow-none border-none">
                         <CardContent className="p-0">
                              <FormLabel>Fotografii (max 16)</FormLabel>
@@ -502,18 +503,16 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                         ))}
                                     </SortableContext>
                                 </DndContext>
-
-                                {imageItems.length < 16 && (
-                                    <div className="aspect-square">
-                                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-xl cursor-pointer bg-card hover:bg-muted transition-colors">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <Upload className="w-8 h-8 text-muted-foreground" />
-                                            </div>
-                                            <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                                        </label>
-                                    </div>
-                                )}
                             </div>
+                            {imageItems.length < 16 && (
+                                <div className="mt-4">
+                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer bg-card hover:bg-muted transition-colors">
+                                        <Upload className="w-8 h-8 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground mt-1">Adaugă fotografii</span>
+                                        <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                    </label>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -532,6 +531,43 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card className="shadow-xl rounded-2xl">
+                       <CardContent className="p-6 space-y-4">
+                           <h3 className="text-lg font-semibold text-primary">Descriere</h3>
+                           <FormField
+                                control={form.control}
+                                name="keyFeatures"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Caracteristici Cheie pentru AI *</FormLabel>
+                                    <FormControl><Input {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
+                                    <FormDescription>Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center justify-between">
+                                    <span>Descriere Anunț</span>
+                                    <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
+                                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                        Generează cu AI
+                                    </Button>
+                                    </FormLabel>
+                                    <FormControl>
+                                    <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                     </Card>
 
                     <Card className="shadow-xl rounded-2xl">
                         <CardContent className="p-6 space-y-4">
@@ -592,43 +628,6 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                         </CardContent>
                     </Card>
-
-                    <Card className="shadow-xl rounded-2xl">
-                       <CardContent className="p-6 space-y-4">
-                           <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                           <FormField
-                                control={form.control}
-                                name="keyFeatures"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Caracteristici Cheie pentru AI *</FormLabel>
-                                    <FormControl><Input {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
-                                    <FormDescription>Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center justify-between">
-                                    <span>Descriere Anunț</span>
-                                    <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
-                                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                        Generează cu AI
-                                    </Button>
-                                    </FormLabel>
-                                    <FormControl>
-                                    <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                     </Card>
 
                      <Card className="shadow-xl rounded-2xl">
                          <CardContent className="p-6 space-y-4">
