@@ -474,7 +474,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className='overflow-y-auto md:px-6 md:py-4 space-y-8 px-2 py-4'>
+                <div className='overflow-y-auto md:px-6 md:py-4 space-y-8 px-4 py-4'>
                     
                     <Card className="shadow-xl rounded-2xl bg-muted/30">
                         <CardContent className="p-6">
@@ -724,7 +724,7 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b px-4 py-2">
+        <DialogHeader className="shrink-0 border-b p-2 h-14 flex justify-center shadow-md z-10 relative">
           <DialogTitle className="text-xl">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
