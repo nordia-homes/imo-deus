@@ -54,8 +54,14 @@ const cumparatorSchema = z.object({
   sourcePropertyId: z.string().optional(),
 });
 
-export function AddLeadDialog({ properties, children }: { properties: Property[], children?: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface AddLeadDialogProps {
+  properties: Property[];
+  children?: ReactNode;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: AddLeadDialogProps) {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
@@ -111,6 +117,13 @@ export function AddLeadDialog({ properties, children }: { properties: Property[]
   useEffect(() => {
     setSelectedZones([]);
   }, [watchedCity]);
+  
+  useEffect(() => {
+    if (!isOpen) {
+        form.reset();
+        setSelectedZones([]);
+    }
+  }, [isOpen, form]);
 
   function onSubmit(values: z.infer<typeof cumparatorSchema>) {
     if (!user || !agency?.id) {
@@ -156,19 +169,9 @@ export function AddLeadDialog({ properties, children }: { properties: Property[]
         description: `${values.name} a fost adăugat în lista ta de cumpărători.`,
     });
 
-    setIsOpen(false);
-    form.reset();
-    setSelectedZones([]);
+    onOpenChange(false);
   }
   
-  const handleOpenChange = (open: boolean) => {
-      setIsOpen(open);
-      if (!open) {
-          form.reset();
-          setSelectedZones([]);
-      }
-  }
-
   const handleZoneToggle = (zone: string, checked: boolean) => {
     if (checked) {
       setSelectedZones((prev) => [...prev, zone]);
@@ -178,10 +181,12 @@ export function AddLeadDialog({ properties, children }: { properties: Property[]
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Cumpărător</Button>}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {children && (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-3xl h-[90vh]")}>
         <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
           <DialogTitle className="text-xl text-foreground/90 text-center">Adaugă Cumpărător Nou</DialogTitle>
@@ -393,7 +398,7 @@ export function AddLeadDialog({ properties, children }: { properties: Property[]
 
                 <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Anulează</Button>
                         <Button type="submit">Salvează Cumpărător</Button>
                     </div>
                 </DialogFooter>

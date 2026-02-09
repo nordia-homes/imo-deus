@@ -50,6 +50,7 @@ export default function DashboardPage() {
     const { agencyId, isAgencyLoading, userProfile, agency } = useAgency();
     const firestore = useFirestore();
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+    const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const { toast } = useToast();
 
@@ -380,7 +381,12 @@ export default function DashboardPage() {
                             Vizionare
                         </Button>
                     </AddViewingDialog>
-                    <AddLeadDialog properties={properties || []} />
+                    <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
+                        <Button onClick={() => setIsAddLeadOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adaugă Cumpărător
+                        </Button>
+                    </AddLeadDialog>
                     <Button onClick={() => setIsAddPropertyOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adaugă Proprietate
@@ -408,12 +414,10 @@ export default function DashboardPage() {
                                         Programează Vizionare
                                     </Button>
                                 </AddViewingDialog>
-                                <AddLeadDialog properties={properties || []}>
-                                     <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Adaugă Cumpărător
-                                    </Button>
-                                </AddLeadDialog>
+                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddLeadOpen(true); setIsActionSheetOpen(false); }}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adaugă Cumpărător
+                                </Button>
                                 <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddPropertyOpen(true); setIsActionSheetOpen(false); }}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adaugă Proprietate
@@ -423,6 +427,7 @@ export default function DashboardPage() {
                     </Sheet>
                 </div>
                 <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
+                <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             </div>
             
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

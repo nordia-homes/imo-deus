@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 export default function LeadsPage() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
+    const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
 
     const contactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -77,7 +78,11 @@ export default function LeadsPage() {
                     Gestionează și prioritizează potențialii clienți.
                 </p>
             </div>
-            <AddLeadDialog properties={properties || []}>
+             <AddLeadDialog 
+                properties={properties || []}
+                isOpen={isAddLeadOpen}
+                onOpenChange={setIsAddLeadOpen}
+            >
                 <Button className="w-full md:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adaugă Cumpărător
