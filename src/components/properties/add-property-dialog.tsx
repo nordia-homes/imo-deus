@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, ChangeEvent, useEffect, useMemo } from 'react';
@@ -5,13 +6,29 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  TouchSensor,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -25,7 +42,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, PlusCircle, Sparkles, Upload, X } from 'lucide-react';
+import { Loader2, Sparkles, Upload, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -41,6 +58,7 @@ import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Card, CardContent } from '../ui/card';
 
 
 const propertySchema = z.object({
@@ -140,6 +158,42 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 
 type ImageSource = File | { url: string; alt: string };
 
+function SortableImage({ id, src, onRemove }: { id: string; src: string; onRemove: () => void; }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative aspect-square group touch-none">
+      <Image src={src} alt={`Preview`} fill sizes="128px" className="object-cover rounded-xl" />
+      <Button
+        type="button"
+        variant="destructive"
+        size="icon"
+        className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={(e) => {
+          e.preventDefault(); // prevent dnd listeners from firing
+          onRemove();
+        }}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 function PropertyForm({ propertyData, onClose }: { propertyData: Property | null; onClose: () => void }) {
     const { toast } = useToast();
     const { user } = useUser();
@@ -151,6 +205,11 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+    
+    const sensors = useSensors(
+      useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+      useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } })
+    );
 
     const isEditMode = !!propertyData;
 
@@ -227,6 +286,22 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+    
+    const imageItems = useMemo(() => imageSources.map((source, index) => {
+        const id = source instanceof File ? `${source.name}-${source.lastModified}-${index}` : source.url;
+        const url = source instanceof File ? URL.createObjectURL(source) : source.url;
+        return { id, url };
+    }), [imageSources]);
+
+    useEffect(() => {
+        return () => {
+            imageItems.forEach(item => {
+                if (item.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(item.url);
+                }
+            });
+        };
+    }, [imageItems]);
 
     useEffect(() => {
         let isMounted = true;
@@ -261,6 +336,18 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
     const removeImage = (index: number) => {
         setImageSources((prev) => prev.filter((_, i) => i !== index));
     };
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            setImageSources((items) => {
+                const oldIndex = imageItems.findIndex(item => item.id === active.id);
+                const newIndex = imageItems.findIndex(item => item.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    }
+
 
     async function handleGenerateDescription() {
         setIsGenerating(true);
@@ -445,305 +532,130 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
       }
     }
   
-    const imagePreviews = useMemo(() => imageSources.map(s => s instanceof File ? URL.createObjectURL(s) : s.url), [imageSources]);
-  
-    useEffect(() => {
-        return () => {
-            imagePreviews.forEach(preview => {
-                if (preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(preview);
-                }
-            });
-        };
-    }, [imagePreviews]);
-
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className='overflow-y-auto p-6'>
-                    <div className="space-y-6">
-                        <section>
-                            <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
-                            <div className="space-y-4">
-                                <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                        <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                        <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 350000" /></FormControl><FormMessage /></FormItem> )} />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                     <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>Oraș *</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
-                                        <SelectContent>{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel>Zonă</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger><SelectValue placeholder="Selectează zona" /></SelectTrigger></FormControl>
-                                        <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă (stradă, nr, etc) *</FormLabel><FormControl><Input {...field} placeholder="ex: Strada Pădurii, nr. 10" /></FormControl><FormMessage /></FormItem> )} />
-                                </div>
-                                
-                                <FormDescription>Coordonatele vor fi generate automat pe baza adresei.</FormDescription>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                        <SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField
-                                        control={form.control}
-                                        name="featured"
-                                        render={({ field }) => (
-                                        <FormItem className="flex flex-col justify-end">
-                                            <div className="flex items-center space-x-2 rounded-md border h-10 px-3">
-                                            <FormControl>
-                                                <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                                id="featured-checkbox"
-                                                />
-                                            </FormControl>
-                                            <FormLabel htmlFor="featured-checkbox" className="!mt-0">Recomandată</FormLabel>
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                        
-                        <Separator />
-                        
-                        <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Detalii Proprietar</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="ex: Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="ex: 0722 123 456" /></FormControl><FormMessage /></FormItem> )} />
-                        </div>
-                        </section>
-
-                        <Separator />
-
-                        <section>
-                            <h3 className="text-lg font-semibold text-primary mb-4">Management Intern</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel>Agent Responsabil</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="unassigned">Nealocat</SelectItem>
-                                        {agents.map(agent => (
-                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                <div className='overflow-y-auto p-6 space-y-8'>
+                    <Card className="shadow-none border-none">
+                        <CardContent className="p-0">
+                             <FormLabel>Fotografii (max 16)</FormLabel>
+                             <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                    <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
+                                        {imageItems.map((item, index) => (
+                                            <SortableImage key={item.id} id={item.id} src={item.url} onRemove={() => removeImage(index)} />
                                         ))}
-                                    </SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel>Potențial Vânzare</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Scăzut">Scăzut</SelectItem>
-                                        <SelectItem value="Mediu">Mediu</SelectItem>
-                                        <SelectItem value="Ridicată">Ridicată</SelectItem>
-                                    </SelectContent></Select><FormMessage /></FormItem>)} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <FormField
-                                    control={form.control}
-                                    name="commissionType"
-                                    render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                        <FormLabel>Tip Comision</FormLabel>
-                                        <FormControl>
-                                        <RadioGroup
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                            className="flex items-center space-x-4"
-                                        >
-                                            <FormItem className="flex items-center space-x-2 space-y-0">
-                                            <FormControl><RadioGroupItem value="percentage" id="r1" /></FormControl>
-                                            <FormLabel htmlFor="r1" className="font-normal">Procent</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-2 space-y-0">
-                                            <FormControl><RadioGroupItem value="fixed" id="r2" /></FormControl>
-                                            <FormLabel htmlFor="r2" className="font-normal">Sumă Fixă</FormLabel>
-                                            </FormItem>
-                                        </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                {watchedCommissionType === 'percentage' ? (
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionValue"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Valoare Procent</FormLabel>
-                                            <Select onValueChange={(val) => field.onChange(Number(val))} value={String(field.value)}>
-                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="1">1%</SelectItem>
-                                                    <SelectItem value="1.5">1.5%</SelectItem>
-                                                    <SelectItem value="2">2%</SelectItem>
-                                                    <SelectItem value="3">3%</SelectItem>
-                                                    <SelectItem value="4">4%</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                ) : (
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionValue"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Sumă Fixă (€)</FormLabel>
-                                            <FormControl><Input type="number" {...field} onChange={event => field.onChange(+event.target.value)} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
+                                    </SortableContext>
+                                </DndContext>
+
+                                {imageItems.length < 16 && (
+                                    <div className="aspect-square">
+                                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-xl cursor-pointer bg-card hover:bg-muted transition-colors">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <Upload className="w-8 h-8 text-muted-foreground" />
+                                            </div>
+                                            <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                        </label>
+                                    </div>
                                 )}
                             </div>
-                        </section>
+                        </CardContent>
+                    </Card>
 
-                        <Separator />
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="p-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
+                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 350000" /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                        <section>
-                            <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă Totală (cu balcon) *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (fără balcon)</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 110" /></FormControl><FormMessage /></FormItem> )} />
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="p-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Locație</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>Oraș *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="ex: Bucuresti-Ilfov" /></SelectTrigger></FormControl>
+                                    <SelectContent>{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel>Zonă</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger><SelectValue placeholder="ex: Herăstrău" /></SelectTrigger></FormControl>
+                                    <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă *</FormLabel><FormControl><Input {...field} placeholder="ex: Strada Pădurii, nr. 10" /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <FormField control={form.control} name="nearMetro" render={({ field }) => (
+                                    <FormItem className="flex items-center gap-2 pt-2">
+                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="near-metro-checkbox" /></FormControl>
+                                        <FormLabel htmlFor="near-metro-checkbox" className="!mt-0">Aproape de metrou</FormLabel>
+                                    </FormItem>
+                                )}/>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="p-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Specificații</h3>
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă Totală *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 140" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 2021" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="ex: 3"/></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 10" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel>Orientare</FormLabel><FormControl><Input {...field} placeholder="ex: Sud-Vest" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="partitioning" render={({ field }) => ( <FormItem><FormLabel>Compartimentare</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                     <SelectContent><SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="seismicRisk" render={({ field }) => ( <FormItem><FormLabel>Risc Seismic</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Risc 2">Risc 2</SelectItem><SelectItem value="Risc 3">Risc 3</SelectItem><SelectItem value="Urgenta 1">Urgență 1</SelectItem><SelectItem value="Urgenta 2">Urgență 2</SelectItem><SelectItem value="Urgenta 3">Urgență 3</SelectItem><SelectItem value="Neexpertizat">Neexpertizat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                            </div>
-                        </section>
-
-                        <Separator />
-                        
-                        <section>
-                            <h3 className="text-lg font-semibold text-primary mb-4">Dotări și Caracteristici</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel>Confort</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel>Stare Interior</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel>Mobilier</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel>Sistem Încălzire</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Sobă/Șemineu">Sobă/Șemineu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel>Parcare</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="buildingState" render={({ field }) => ( <FormItem><FormLabel>Stare Clădire</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Clădire nouă">Clădire nouă</SelectItem><SelectItem value="Clădire Anvelopată">Clădire Anvelopată</SelectItem><SelectItem value="Clădire Neanvelopată">Clădire Neanvelopată</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="kitchen" render={({ field }) => ( <FormItem><FormLabel>Bucătărie</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Deschisă">Deschisă</SelectItem><SelectItem value="Închisă">Închisă</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="balconyTerrace" render={({ field }) => ( <FormItem><FormLabel>Balcon / Terasă</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Balcon">Balcon</SelectItem><SelectItem value="Terasa">Terasă</SelectItem><SelectItem value="Fara Balcon">Fără Balcon</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel>Lift</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField
-                                    control={form.control}
-                                    name="nearMetro"
-                                    render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm col-span-1">
-                                        <div className="space-y-0.5">
-                                        <FormLabel>Apropiere Metrou</FormLabel>
-                                        </div>
-                                        <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                        </FormControl>
-                                    </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl><FormMessage /></FormItem> )} />
-                        </section>
-                        
-                        <Separator />
-
-                        <section>
-                        <h3 className="text-lg font-semibold text-primary mb-4">Descriere și Media</h3>
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center justify-between">
-                                <span>Descriere Anunț</span>
-                                <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
-                                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                    Generează cu AI
-                                </Button>
-                                </FormLabel>
-                                <FormControl>
-                                <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-
-                        <FormItem className="mt-4">
-                            <FormLabel>Fotografii (max 16)</FormLabel>
-                            <FormControl>
-                            <div className="flex items-center justify-center w-full">
-                                <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click pentru a încărca</span> sau trageți fișierele aici</p>
-                                    <p className="text-xs text-muted-foreground">PNG, JPG (max 16 fișiere)</p>
-                                </div>
-                                <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                                </label>
-                            </div>
-                            </FormControl>
-                            {imagePreviews.length > 0 && (
-                                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4">
-                                    {imagePreviews.map((src, index) => (
-                                        <div key={index} className="relative aspect-square group">
-                                            <Image src={src} alt={`Preview ${index}`} fill sizes="64px" className="object-cover rounded-md" />
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => removeImage(index)}
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </FormItem>
-                        </section>
-                    </div>
+                             </div>
+                        </CardContent>
+                    </Card>
+                    
+                     <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="p-6 space-y-4">
+                           <h3 className="text-lg font-semibold text-primary">Descriere</h3>
+                           <FormField
+                                control={form.control}
+                                name="keyFeatures"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Caracteristici Cheie pentru AI *</FormLabel>
+                                    <FormControl><Input {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
+                                    <FormDescription>Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center justify-between">
+                                    <span>Descriere Anunț</span>
+                                    <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
+                                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                        Generează cu AI
+                                    </Button>
+                                    </FormLabel>
+                                    <FormControl>
+                                    <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                     </Card>
                 </div>
                 <DialogFooter className="shrink-0 border-t bg-background p-4">
                     <div className="flex justify-end gap-2 w-full">
@@ -786,7 +698,7 @@ export function AddPropertyDialog({
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
         <DialogHeader className="p-6 pb-0 shrink-0">
-          <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+          <DialogTitle className="text-xl">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
           <DialogDescription>
             {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
           </DialogDescription>
