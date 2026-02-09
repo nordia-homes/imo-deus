@@ -327,7 +327,7 @@ export default function DashboardPage() {
         return (
             <div className="space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
-                <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                 <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             </div>
             
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} />
