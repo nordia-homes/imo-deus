@@ -39,6 +39,8 @@ import { Checkbox } from '../ui/checkbox';
 import type { Property, UserProfile } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 
 const propertySchema = z.object({
@@ -266,11 +268,9 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
         
         try {
             const propertyForAi: Property = {
-                // Required fields with defaults
                 id: 'temp-id-for-ai',
                 images: [],
 
-                // Existing fields from form
                 title: values.title,
                 propertyType: values.propertyType,
                 transactionType: values.transactionType,
@@ -300,7 +300,6 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                 orientation: values.orientation,
                 nearMetro: values.nearMetro,
                 
-                // Other optional fields with defaults
                 agent: undefined,
                 latitude: undefined,
                 longitude: undefined,
@@ -466,7 +465,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         <section>
                             <h3 className="text-lg font-semibold text-primary mb-4">Detalii Principale</h3>
                             <div className="space-y-4">
-                                <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Apartament 3 camere decomandat, Tineretului" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
@@ -474,7 +473,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                     <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel>Tip Tranzacție *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                         <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preț (€) *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 350000" /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                      <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>Oraș *</FormLabel>
@@ -483,7 +482,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                     <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel>Zonă</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger><SelectValue placeholder="Selectează zona" /></SelectTrigger></FormControl>
                                         <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă (stradă, nr, etc) *</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, bl. 5" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Adresă (stradă, nr, etc) *</FormLabel><FormControl><Input {...field} placeholder="ex: Strada Pădurii, nr. 10" /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
                                 
                                 <FormDescription>Coordonatele vor fi generate automat pe baza adresei.</FormDescription>
@@ -521,8 +520,8 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         <section>
                         <h3 className="text-lg font-semibold text-primary mb-4">Detalii Proprietar</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numele proprietarului" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="Numărul de telefon" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nume Proprietar</FormLabel><FormControl><Input {...field} placeholder="ex: Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon Proprietar</FormLabel><FormControl><Input {...field} placeholder="ex: 0722 123 456" /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         </section>
 
@@ -616,14 +615,14 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         <section>
                             <h3 className="text-lg font-semibold text-primary mb-4">Specificații &amp; Detalii clădire</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă Totală (cu balcon) *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (fără balcon)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă Totală (cu balcon) *</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă (fără balcon)</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 110" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="Parter, 3, Demisol..."/></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel>Orientare</FormLabel><FormControl><Input {...field} placeholder="Sud-Vest" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 2021" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="floor" render={({ field }) => ( <FormItem><FormLabel>Etaj</FormLabel><FormControl><Input {...field} placeholder="ex: 3"/></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel>Total Etaje</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 10" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel>Orientare</FormLabel><FormControl><Input {...field} placeholder="ex: Sud-Vest" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="partitioning" render={({ field }) => ( <FormItem><FormLabel>Compartimentare</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                     <SelectContent><SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
@@ -683,7 +682,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                     )}
                                 />
                             </div>
-                            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: grădină, piscină, vedere panoramică, etc." /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="keyFeatures" render={({ field }) => ( <FormItem className="mt-4"><FormLabel>Alte Caracteristici Cheie *</FormLabel><FormControl><Input {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl><FormMessage /></FormItem> )} />
                         </section>
                         
                         <Separator />
@@ -703,7 +702,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                 </Button>
                                 </FormLabel>
                                 <FormControl>
-                                <Textarea rows={6} {...field} />
+                                <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -772,6 +771,7 @@ export function AddPropertyDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const isEditMode = !!property;
+  const isMobile = useIsMobile();
   
   const formKey = useMemo(() => {
     return isOpen ? (property?.id || `new-${Date.now()}`) : 'closed';
@@ -784,7 +784,7 @@ export function AddPropertyDialog({
           {children}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-4xl h-[90vh] p-0 flex flex-col">
+      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
         <DialogHeader className="p-6 pb-0 shrink-0">
           <DialogTitle>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
           <DialogDescription>
