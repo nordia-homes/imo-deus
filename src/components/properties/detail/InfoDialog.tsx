@@ -58,8 +58,8 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Etaj" value={property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}`: property.floor || property.totalFloors || 'N/A' } />
             <InfoItem icon={<BedDouble className="h-5 w-5 text-primary" />} label="Camere" value={property.rooms} />
             <InfoItem icon={<Bath className="h-5 w-5 text-primary" />} label="Băi" value={property.bathrooms} />
-            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă Totală (cu balcon)" value={property.squareFootage ? `${property.squareFootage} mp` : undefined} />
-            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă (fără balcon)" value={property.totalSurface ? `${property.totalSurface} mp` : undefined} />
+            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă" value={property.squareFootage ? `${property.squareFootage} mp` : undefined} />
+            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață cu Balcon" value={property.totalSurface ? `${property.totalSurface} mp` : undefined} />
             <InfoItem icon={<Compass className="h-5 w-5 text-primary" />} label="Orientare" value={property.orientation} />
             <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Compartimentare" value={property.partitioning} />
             <InfoItem icon={<AlertTriangle className="h-5 w-5 text-primary" />} label="Risc Seismic" value={property.seismicRisk} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect, useMemo } from 'react';
+import { useState, ChangeEvent, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -531,7 +531,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                         </CardContent>
                     </Card>
-
+                    
                     <Card className="shadow-xl rounded-2xl">
                        <CardContent className="p-6 space-y-4">
                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
@@ -560,7 +560,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                                     </Button>
                                     </FormLabel>
                                     <FormControl>
-                                    <Textarea rows={6} {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                    <Textarea {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -597,7 +597,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             <h3 className="text-lg font-semibold text-primary">Specificații</h3>
                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață Construită</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 140" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="totalSurface" render={({ field }) => ( <FormItem><FormLabel>Suprafață cu Balcon</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 140" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="rooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Camere *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="bathrooms" render={({ field }) => ( <FormItem><FormLabel>Nr. Băi *</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="constructionYear" render={({ field }) => ( <FormItem><FormLabel>An Construcție</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 2021" /></FormControl><FormMessage /></FormItem> )} />
