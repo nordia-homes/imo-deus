@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -38,6 +37,8 @@ import { useAgency } from '@/context/AgencyContext';
 import type { UserProfile, Property } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { Card, CardContent } from '../ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -53,7 +54,7 @@ const cumparatorSchema = z.object({
   sourcePropertyId: z.string().optional(),
 });
 
-export function AddLeadDialog({ properties }: { properties: Property[] }) {
+export function AddLeadDialog({ properties, children }: { properties: Property[], children?: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
@@ -61,6 +62,10 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
   const { agency } = useAgency();
   const firestore = useFirestore();
   const [agents, setAgents] = useState<UserProfile[]>([]);
+  const isMobile = useIsMobile();
+  const formKey = useMemo(() => {
+    return isOpen ? `new-lead-${Date.now()}` : 'closed';
+  }, [isOpen]);
 
   useEffect(() => {
       if (!isOpen || !agency || !agency.agentIds) {
@@ -175,28 +180,25 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adaugă Cumpărător
-        </Button>
+        {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Cumpărător</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Adaugă Cumpărător Nou</DialogTitle>
-          <DialogDescription>
-            Completează informațiile despre noul cumpărător.
-          </DialogDescription>
+      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-3xl h-[90vh]")}>
+        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
+          <DialogTitle className="text-xl text-foreground/90 text-center">Adaugă Cumpărător Nou</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-[60vh] p-1">
-                <div className="space-y-4 px-4">
-                    <Card className="shadow-xl">
-                        <CardContent className="pt-6">
+
+        {isOpen && (
+            <Form {...form}>
+            <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6">
+                    
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Detalii Contact</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="source"
@@ -223,10 +225,11 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                         </CardContent>
                     </Card>
                     
-                    <Card className="shadow-xl">
-                        <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Detalii Căutare</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} placeholder="150000" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="status"
@@ -271,67 +274,11 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                             </div>
                         </CardContent>
                     </Card>
-                    
-                    <Card className="shadow-xl">
-                        <CardContent className="pt-6">
-                            <div className="space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="sourcePropertyId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Proprietate de Interes (Opțional)</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selectează proprietatea care a generat cumpărătorul" />
-                                            </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                            <SelectItem value="none">Niciuna</SelectItem>
-                                            {properties?.map(prop => (
-                                                <SelectItem key={prop.id} value={prop.id}>
-                                                {prop.title}
-                                                </SelectItem>
-                                            ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormDescription>
-                                            Asociază cumpărătorul cu anunțul de pe care a venit.
-                                        </FormDescription>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="agentId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Alocă Agent (Opțional)</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                            <SelectItem value="unassigned">Nealocat</SelectItem>
-                                            {agents?.map(agent => (
-                                                <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                                            ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </CardContent>
-                     </Card>
 
-                    <Card className="shadow-xl">
-                        <CardContent className="pt-6">
-                            <div className="space-y-4">
-                                <FormField
+                     <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Locație</h3>
+                            <FormField
                                 control={form.control}
                                 name="city"
                                 render={({ field }) => (
@@ -378,23 +325,81 @@ export function AddLeadDialog({ properties }: { properties: Property[] }) {
                                         </div>
                                     </div>
                                 )}
-                            </div>
                         </CardContent>
                     </Card>
+                    
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                             <h3 className="text-lg font-semibold text-primary">Asociere (Opțional)</h3>
+                            <FormField
+                                control={form.control}
+                                name="sourcePropertyId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Proprietate de Interes</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selectează proprietatea care a generat cumpărătorul" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="none">Niciuna</SelectItem>
+                                        {properties?.map(prop => (
+                                            <SelectItem key={prop.id} value={prop.id}>
+                                            {prop.title}
+                                            </SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Asociază cumpărătorul cu anunțul de pe care a venit.
+                                    </FormDescription>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="agentId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Alocă Agent</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="unassigned">Nealocat</SelectItem>
+                                        {agents?.map(agent => (
+                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                     </Card>
 
-                    <Card className="shadow-xl">
-                        <CardContent className="pt-6">
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="pt-6 space-y-4">
+                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
                             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Cumpărător</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                 </div>
-            </ScrollArea>
-            <DialogFooter className="pt-4 border-t mt-4">
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
-              <Button type="submit">Salvează Cumpărător</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+
+                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Anulează</Button>
+                        <Button type="submit">Salvează Cumpărător</Button>
+                    </div>
+                </DialogFooter>
+            </form>
+            </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
