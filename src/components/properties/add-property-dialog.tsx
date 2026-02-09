@@ -33,7 +33,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
 import type { Property, UserProfile } from '@/lib/types';
@@ -476,7 +475,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className='overflow-y-auto p-6 space-y-8'>
                     
-                     <Card className="shadow-xl rounded-2xl bg-muted/30">
+                    <Card className="shadow-xl rounded-2xl bg-muted/30">
                         <CardContent className="p-6">
                             <FormLabel>Fotografii (max 16)</FormLabel>
                             <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
@@ -519,7 +518,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                         </CardContent>
                     </Card>
-
+                    
                     <Card className="shadow-xl rounded-2xl">
                        <CardContent className="p-6 space-y-4">
                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
@@ -724,7 +723,7 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="p-4 pb-2 shrink-0">
+        <DialogHeader className="py-3 px-4 shrink-0">
           <DialogTitle className="text-xl">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
@@ -734,5 +733,3 @@ export function AddPropertyDialog({
     </Dialog>
   );
 }
-
-    
