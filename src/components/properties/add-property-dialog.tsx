@@ -476,7 +476,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className='overflow-y-auto p-6 space-y-8'>
                     
-                    <Card className="shadow-xl rounded-2xl">
+                     <Card className="shadow-xl rounded-2xl bg-muted/30">
                         <CardContent className="p-6">
                             <FormLabel>Fotografii (max 16)</FormLabel>
                             <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
@@ -491,10 +491,12 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                             {imageItems.length < 16 && (
                                 <div className="mt-4">
-                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 rounded-2xl cursor-pointer bg-muted/50 border-2 border-dashed border-muted-foreground/30 hover:bg-muted transition-colors shadow-lg">
-                                        <Upload className="w-10 h-10 text-muted-foreground" />
-                                        <span className="mt-2 font-semibold text-foreground">Faceți clic pentru a încărca</span>
-                                        <span className="text-xs text-muted-foreground">sau trageți și plasați fișierele</span>
+                                     <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 rounded-2xl cursor-pointer bg-card/80 border-2 border-dashed border-muted-foreground/30 hover:bg-card transition-colors shadow-lg">
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                            <Upload className="w-10 h-10 mb-4 text-muted-foreground" />
+                                            <p className="mb-2 text-sm text-foreground font-semibold">Faceți clic pentru a încărca</p>
+                                            <p className="text-xs text-muted-foreground">sau trageți și plasați fișierele</p>
+                                        </div>
                                         <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                     </label>
                                 </div>
@@ -505,7 +507,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     <Card className="shadow-xl rounded-2xl">
                         <CardContent className="p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
-                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input className="text-base md:text-sm" {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel>Tip Proprietate *</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
@@ -682,7 +684,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         </CardContent>
                     </Card>
                 </div>
-                <DialogFooter className="shrink-0 border-t bg-background p-4">
+                <DialogFooter className="shrink-0 border-t bg-background p-3">
                     <div className="flex justify-end gap-2 w-full">
                         <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                         <Button type="submit" disabled={isSubmitting}>
@@ -722,11 +724,8 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="p-6 pb-0 shrink-0">
+        <DialogHeader className="p-4 pb-2 shrink-0">
           <DialogTitle className="text-xl">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode ? 'Modifică detaliile proprietății de mai jos.' : 'Completează detaliile de mai jos. Câmpurile marcate cu * sunt obligatorii.'}
-          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} />}
