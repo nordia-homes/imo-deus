@@ -21,23 +21,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -491,10 +476,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className='overflow-y-auto p-6 space-y-8'>
                     
-                    <Card className="shadow-none border-none">
-                        <CardContent className="p-0">
-                             <FormLabel>Fotografii (max 16)</FormLabel>
-                             <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                    <Card className="shadow-xl rounded-2xl">
+                        <CardContent className="p-6">
+                            <FormLabel>Fotografii (max 16)</FormLabel>
+                            <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                     <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
@@ -506,9 +491,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                             {imageItems.length < 16 && (
                                 <div className="mt-4">
-                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer bg-card hover:bg-muted transition-colors">
-                                        <Upload className="w-8 h-8 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground mt-1">Adaugă fotografii</span>
+                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 rounded-2xl cursor-pointer bg-muted/50 border-2 border-dashed border-muted-foreground/30 hover:bg-muted transition-colors shadow-lg">
+                                        <Upload className="w-10 h-10 text-muted-foreground" />
+                                        <span className="mt-2 font-semibold text-foreground">Faceți clic pentru a încărca</span>
+                                        <span className="text-xs text-muted-foreground">sau trageți și plasați fișierele</span>
                                         <Input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                     </label>
                                 </div>
@@ -531,7 +517,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                             </div>
                         </CardContent>
                     </Card>
-                    
+
                     <Card className="shadow-xl rounded-2xl">
                        <CardContent className="p-6 space-y-4">
                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
@@ -749,3 +735,5 @@ export function AddPropertyDialog({
     </Dialog>
   );
 }
+
+    
