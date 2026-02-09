@@ -474,10 +474,10 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className='overflow-y-auto md:px-6 md:py-4 space-y-8 px-4 py-4'>
+                <div className='overflow-y-auto md:px-3 md:py-4 space-y-8 px-2 py-4'>
                     
                     <Card className="shadow-xl rounded-2xl bg-muted/30">
-                        <CardContent className="p-6">
+                        <CardContent className="p-4 md:p-6">
                             <FormLabel>Fotografii (max 16)</FormLabel>
                             <FormDescription className="mb-4">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
@@ -505,7 +505,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
 
                      <Card className="shadow-xl rounded-2xl">
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="p-4 md:p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
                             <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Titlu Anunț *</FormLabel><FormControl><Input className="text-base md:text-sm" {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -521,7 +521,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
 
                     <Card className="shadow-xl rounded-2xl">
-                       <CardContent className="p-6 space-y-4">
+                       <CardContent className="p-4 md:p-6 space-y-4">
                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
                            <FormField
                                 control={form.control}
@@ -558,7 +558,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                      </Card>
 
                     <Card className="shadow-xl rounded-2xl">
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="p-4 md:p-6 space-y-4">
                              <h3 className="text-lg font-semibold text-primary">Locație</h3>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                  <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>Oraș *</FormLabel>
@@ -581,7 +581,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
 
                     <Card className="shadow-xl rounded-2xl">
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="p-4 md:p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Specificații</h3>
                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel>Suprafață Utilă</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
@@ -599,7 +599,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
                     
                      <Card className="shadow-xl rounded-2xl">
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="p-4 md:p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Dotări & Finisaje</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel>Confort</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -618,7 +618,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
 
                      <Card className="shadow-xl rounded-2xl">
-                         <CardContent className="p-6 space-y-4">
+                         <CardContent className="p-4 md:p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Comision</h3>
                             <FormField
                                 control={form.control}
@@ -669,7 +669,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                     </Card>
 
                     <Card className="shadow-xl rounded-2xl">
-                        <CardContent className="p-6 space-y-4">
+                        <CardContent className="p-4 md:p-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -684,7 +684,7 @@ function PropertyForm({ propertyData, onClose }: { propertyData: Property | null
                         </CardContent>
                     </Card>
                 </div>
-                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6">
+                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
                     <div className="flex justify-end gap-2 w-full">
                         <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
                         <Button type="submit" disabled={isSubmitting}>
@@ -724,8 +724,8 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex justify-center shadow-md z-10 relative">
-          <DialogTitle className="text-xl">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative">
+          <DialogTitle className="text-xl text-foreground/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} />}
