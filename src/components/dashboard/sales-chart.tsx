@@ -12,6 +12,15 @@ const chartConfig = {
   } satisfies ChartConfig
 
 export function SalesChart({ data }: { data: SalesData[] }) {
+    const hasData = data && data.length > 0 && data.some(d => d.sales > 0);
+
+    if (!hasData) {
+        return (
+            <div className="h-[180px] w-full flex items-center justify-center">
+                <CardDescription>Nu sunt date despre comisioane.</CardDescription>
+            </div>
+        )
+    }
 
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
@@ -37,11 +46,6 @@ export function SalesChart({ data }: { data: SalesData[] }) {
                             />} 
                 />
                 <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
-                 {(!data || data.length === 0) && (
-                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-muted-foreground text-sm">
-                        Nu sunt date despre comisioane.
-                    </text>
-                )}
             </BarChart>
         </ResponsiveContainer>
     </ChartContainer>
