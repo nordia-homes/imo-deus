@@ -29,6 +29,7 @@ import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
+import { MobileScheduledViewings } from '@/components/dashboard/MobileScheduledViewings';
 
 
 const formatValue = (num: number) => {
@@ -285,7 +286,7 @@ export default function DashboardPage() {
         return {
             soldThisMonth: sold,
             reservedThisMonth: reserved,
-            viewingsNext7Days: next7DaysViewings,
+            viewingsNext7Days,
             activePropertiesCount,
             activeForSaleCount,
             activeForRentCount,
@@ -403,6 +404,8 @@ export default function DashboardPage() {
                 contacts={contacts || []}
             />
             
+            <MobileScheduledViewings viewings={viewingsNext7Days} />
+
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" />
