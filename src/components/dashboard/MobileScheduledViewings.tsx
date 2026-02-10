@@ -11,8 +11,11 @@ export function MobileScheduledViewings({ viewings }: { viewings: Viewing[] }) {
 
   return (
     <Card className="bg-muted/50 shadow-2xl rounded-2xl md:hidden">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold">Vizionări Programate</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-semibold">Vizionări Programate</CardTitle>
+        <Link href="/viewings" className="text-sm text-primary hover:underline">
+          Vezi tot
+        </Link>
       </CardHeader>
       <CardContent>
         {viewings.length === 0 ? (
