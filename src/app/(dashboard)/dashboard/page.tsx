@@ -398,7 +398,7 @@ export default function DashboardPage() {
                 contacts={contacts || []}
             />
             
-            <MobileScheduledViewings viewings={viewingsNext7Days} />
+            <MobileScheduledViewings viewings={viewingsNext7Days} properties={properties || []} contacts={contacts || []} />
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} className="bg-muted/50 md:bg-card" />
@@ -474,6 +474,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
-    
