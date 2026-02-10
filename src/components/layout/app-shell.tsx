@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
+import { BottomNavbar } from './BottomNavbar';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId } = useAgency();
@@ -190,9 +191,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <Topbar />
-        <main className="flex-1 p-4 md:p-6 bg-background">
+        <main className="flex-1 bg-background p-4 pb-20 md:p-6 md:pb-6">
             {children}
         </main>
+        <BottomNavbar />
       </SidebarInset>
     </SidebarProvider>
   );
