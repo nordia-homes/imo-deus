@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { sendPasswordResetEmail, type AuthError } from "firebase/auth";
+import { LogoIcon } from "@/components/icons/LogoIcon";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -55,6 +56,7 @@ export default function ForgotPasswordPage() {
             <Card className="w-full max-w-sm shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
+                        <LogoIcon className="h-8 w-8 text-primary" />
                         <h1 className="font-headline text-3xl font-bold">
                             <span>Imoflux</span><span className="text-success">.ai</span>
                         </h1>
@@ -81,6 +83,7 @@ export default function ForgotPasswordPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
+                        <LogoIcon className="h-8 w-8 text-primary" />
                         <h1 className="font-headline text-3xl font-bold">
                             <span>Imoflux</span><span className="text-success">.ai</span>
                         </h1>

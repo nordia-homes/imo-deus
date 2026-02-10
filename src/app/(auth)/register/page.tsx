@@ -18,6 +18,7 @@ import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, deleteDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import type { Invite } from "@/lib/types";
+import { LogoIcon } from "@/components/icons/LogoIcon";
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -142,6 +143,7 @@ export default function RegisterPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
+                        <LogoIcon className="h-8 w-8 text-primary" />
                         <h1 className="font-headline text-3xl font-bold">
                             <span>Imoflux</span><span className="text-success">.ai</span>
                         </h1>

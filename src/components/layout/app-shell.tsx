@@ -34,6 +34,7 @@ import {
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
+import { LogoIcon } from '../icons/LogoIcon';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId } = useAgency();
@@ -43,6 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
+            <LogoIcon className="h-7 w-7 text-primary" />
             <h1 className="font-headline text-2xl font-bold text-sidebar-foreground">
               <span>Imoflux</span><span className="text-success">.ai</span>
             </h1>
