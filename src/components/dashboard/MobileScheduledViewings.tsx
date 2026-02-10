@@ -5,11 +5,12 @@ import type { Viewing } from '@/lib/types';
 import { parseISO, format, isToday } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export function MobileScheduledViewings({ viewings }: { viewings: Viewing[] }) {
 
   return (
-    <Card className="shadow-2xl rounded-2xl md:hidden">
+    <Card className="bg-muted/50 shadow-2xl rounded-2xl md:hidden">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">Vizionări Programate</CardTitle>
       </CardHeader>
@@ -31,7 +32,7 @@ export function MobileScheduledViewings({ viewings }: { viewings: Viewing[] }) {
                          <p className="text-xs font-medium mt-1">
                             {isToday(parseISO(viewing.viewingDate)) 
                                 ? 'Astăzi' 
-                                : format(parseISO(viewing.viewingDate), "eeee, d MMM", { locale: ro })
+                                : format(parseISO(viewing.viewingDate), "eee, d MMM", { locale: ro })
                             }
                         </p>
                     </Link>
