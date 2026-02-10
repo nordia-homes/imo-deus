@@ -286,7 +286,7 @@ export default function DashboardPage() {
         return {
             soldThisMonth: sold,
             reservedThisMonth: reserved,
-            viewingsNext7Days,
+            viewingsNext7Days: next7DaysViewings,
             activePropertiesCount,
             activeForSaleCount,
             activeForRentCount,
