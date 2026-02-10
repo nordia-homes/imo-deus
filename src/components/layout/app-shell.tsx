@@ -43,9 +43,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Home className="text-primary" />
             <h1 className="font-headline text-2xl font-bold text-sidebar-foreground">
-              EstateFlow
+              <span>Imoflux</span><span className="text-success">.ai</span>
             </h1>
           </div>
         </SidebarHeader>
@@ -185,7 +184,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="p-4 text-center text-xs text-sidebar-foreground/60">
           <p>
-            &copy; {new Date().getFullYear()} EstateFlow Inc.
+            &copy; {new Date().getFullYear()} Imoflux.ai Inc.
           </p>
         </SidebarFooter>
       </Sidebar>

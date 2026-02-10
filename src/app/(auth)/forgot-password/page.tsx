@@ -55,9 +55,8 @@ export default function ForgotPasswordPage() {
             <Card className="w-full max-w-sm shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
-                        <Home className="text-primary h-8 w-8" />
                         <h1 className="font-headline text-3xl font-bold">
-                        EstateFlow
+                            <span>Imoflux</span><span className="text-success">.ai</span>
                         </h1>
                     </div>
                     <CardTitle>Verifică email-ul</CardTitle>
@@ -82,9 +81,8 @@ export default function ForgotPasswordPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center gap-2 mb-4">
-                        <Home className="text-primary h-8 w-8" />
                         <h1 className="font-headline text-3xl font-bold">
-                        EstateFlow
+                            <span>Imoflux</span><span className="text-success">.ai</span>
                         </h1>
                     </div>
                     <CardTitle>Ai uitat parola?</CardTitle>
