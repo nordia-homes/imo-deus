@@ -445,7 +445,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-6 hidden md:block">
                     <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
                     <Card className="shadow-2xl rounded-2xl h-[289px]">
                         <CardHeader>
