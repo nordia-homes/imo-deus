@@ -22,7 +22,7 @@ export function AiHelperCard() {
     };
 
     return (
-        <Card className="bg-muted/50 shadow-2xl rounded-2xl">
+        <Card className="bg-muted/50 shadow-2xl rounded-2xl hidden lg:block">
             <CardHeader>
                 <CardTitle className="text-base font-semibold">Salut, {displayName}! Cum te pot ajuta?</CardTitle>
             </CardHeader>
