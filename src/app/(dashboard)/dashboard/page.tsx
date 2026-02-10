@@ -128,7 +128,7 @@ export default function DashboardPage() {
     const { 
         soldThisMonth, 
         reservedThisMonth, 
-        viewingsNext7DaysCount,
+        viewingsNext7Days,
         activePropertiesCount,
         activeForSaleCount,
         activeForRentCount,
@@ -285,7 +285,7 @@ export default function DashboardPage() {
         return {
             soldThisMonth: sold,
             reservedThisMonth: reserved,
-            viewingsNext7DaysCount: next7DaysViewings.length,
+            viewingsNext7Days: next7DaysViewings,
             activePropertiesCount,
             activeForSaleCount,
             activeForRentCount,
@@ -361,10 +361,10 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="text-center md:text-left overflow-hidden">
-                    <h1 className="md:hidden text-2xl font-headline font-bold text-foreground/90 drop-shadow-sm truncate">
+                    <h1 className="md:hidden text-xl font-headline font-bold text-foreground/90 [text-shadow:0_2px_4px_hsl(var(--primary)/0.3)] truncate">
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
-                    <h1 className="hidden md:block text-3xl font-headline font-bold text-foreground/90 drop-shadow-sm">{agencyName || 'Dashboard'}</h1>
+                    <h1 className="hidden md:block text-2xl font-headline font-bold text-foreground/90 [text-shadow:0_2px_4px_hsl(var(--primary)/0.3)]">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground">
                         <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
                         Iata o privire de ansamblu asupra activitatilor.
@@ -409,7 +409,7 @@ export default function DashboardPage() {
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} />
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
-                <StatCard title="Vizionări Programate" value={viewingsNext7DaysCount.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
+                <StatCard title="Vizionări Programate" value={viewingsNext7Days.length.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
                 <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} />
                 <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} />
             </div>
