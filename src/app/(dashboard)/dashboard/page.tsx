@@ -360,9 +360,12 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="text-center md:text-left">
-                    <h1 className="text-2xl md:text-3xl font-headline font-bold text-foreground/90 drop-shadow-sm">{agencyName || 'Dashboard'}</h1>
-                    <p className="text-muted-foreground">Bine ai revenit, {displayName}!</p>
+                <div className="text-center md:text-left overflow-hidden">
+                    <h1 className="md:hidden text-2xl font-headline font-bold text-foreground/90 drop-shadow-sm truncate">
+                        {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
+                    </h1>
+                    <h1 className="hidden md:block text-3xl font-headline font-bold text-foreground/90 drop-shadow-sm">{agencyName || 'Dashboard'}</h1>
+                    <p className="hidden md:block text-muted-foreground">Bine ai revenit, {displayName}!</p>
                 </div>
                 <div className="hidden md:flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
