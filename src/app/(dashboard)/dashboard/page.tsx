@@ -17,7 +17,7 @@ import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle, Menu } from 'lucide-react';
+import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
@@ -28,11 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 
 
 const formatValue = (num: number) => {
@@ -52,7 +48,6 @@ export default function DashboardPage() {
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
-    const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
     const { toast } = useToast();
 
     const displayName = userProfile?.name || user?.displayName || user?.email?.split('@')[0] || 'Utilizator';
@@ -389,42 +384,18 @@ export default function DashboardPage() {
                         Adaugă Proprietate
                     </Button>
                 </div>
-                 <div className="md:hidden">
-                    <Sheet open={isActionSheetOpen} onOpenChange={setIsActionSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="default" className="w-full">
-                                <Menu className="mr-2 h-4 w-4" />
-                                Acțiuni Rapide
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-2xl bg-[#f8f8f9] text-black p-0">
-                            <div className="flex flex-col gap-1 p-4">
-                               <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
-                                    <Button variant="ghost" className="justify-start text-base py-6" onClick={() => setIsActionSheetOpen(false)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Adaugă Task Nou
-                                    </Button>
-                                </AddTaskDialog>
-                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddViewingOpen(true); setIsActionSheetOpen(false); }}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Programează Vizionare
-                                </Button>
-                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddLeadOpen(true); setIsActionSheetOpen(false); }}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adaugă Cumpărător
-                                </Button>
-                                <Button variant="ghost" className="justify-start text-base py-6" onClick={() => { setIsAddPropertyOpen(true); setIsActionSheetOpen(false); }}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adaugă Proprietate
-                                </Button>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                </div>
                 <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
                 <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
                 <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
             </div>
+
+            <QuickActionsCard
+                onAddLead={() => setIsAddLeadOpen(true)}
+                onAddProperty={() => setIsAddPropertyOpen(true)}
+                onAddViewing={() => setIsAddViewingOpen(true)}
+                onAddTask={handleAddTask}
+                contacts={contacts || []}
+            />
             
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} />
