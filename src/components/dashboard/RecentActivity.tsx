@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { UserPlus, Building2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 type ActivityItem = {
     id: string;
@@ -72,7 +73,7 @@ export function RecentActivity() {
     }, [newContacts, properties]);
 
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-muted/50 md:bg-card">
             <CardHeader>
                 <CardTitle>Activitate Recentă</CardTitle>
             </CardHeader>
