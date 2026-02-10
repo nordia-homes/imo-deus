@@ -365,7 +365,10 @@ export default function DashboardPage() {
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
                     <h1 className="hidden md:block text-3xl font-headline font-bold text-foreground/90 drop-shadow-sm">{agencyName || 'Dashboard'}</h1>
-                    <p className="hidden md:block text-muted-foreground">Bine ai revenit, {displayName}!</p>
+                    <p className="text-muted-foreground">
+                        <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
+                        Iata o privire de ansamblu asupra activitatilor.
+                    </p>
                 </div>
                 <div className="hidden md:flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
