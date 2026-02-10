@@ -150,13 +150,6 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
               </div>
             )}
 
-            {listing.area && (
-              <div className="flex items-center gap-1.5">
-                <Maximize className="h-4 w-4" />
-                <span>{listing.area}</span>
-              </div>
-            )}
-
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
               <span>{calculateTimeAgo(listing.postedAt)}</span>
