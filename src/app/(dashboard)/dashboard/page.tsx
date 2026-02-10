@@ -446,7 +446,7 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 <div className="space-y-6 hidden md:block">
-                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} />
+                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} contacts={contacts || []} properties={properties || []} />
                     <Card className="shadow-2xl rounded-2xl h-[289px]">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Distribuție Surse Lead-uri</CardTitle>
