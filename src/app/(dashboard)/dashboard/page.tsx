@@ -404,6 +404,19 @@ export default function DashboardPage() {
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
+                
+                <div className="sm:col-span-2 lg:hidden">
+                    <Card className="shadow-2xl rounded-2xl">
+                        <CardHeader>
+                            <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
+                            <CardDescription>Ultimele 30 de zile</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <ConversionChart data={conversionData} />
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} />
                 <StatCard title="Vizionări Programate" value={viewingsNext7Days.length.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
@@ -413,9 +426,9 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <div className="space-y-6">
-                    <Card className="shadow-2xl rounded-2xl">
+                    <Card className="shadow-2xl rounded-2xl hidden lg:block">
                         <CardHeader>
-                            <CardTitle className="text-xl font-semibold">Rata de Conversie: Vizionări vs. Tranzacții</CardTitle>
+                            <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
                             <CardDescription>Ultimele 30 de zile</CardDescription>
                         </CardHeader>
                         <CardContent className="pl-2">
