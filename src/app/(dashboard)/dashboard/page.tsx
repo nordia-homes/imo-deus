@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -421,8 +420,12 @@ export default function DashboardPage() {
 
              <div className="grid gap-4 grid-cols-1">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
-                <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
-                <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
+                <div className="hidden md:block">
+                    <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
+                </div>
+                <div className="hidden md:block">
+                    <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
+                </div>
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
                 <div className="col-span-1 hidden md:block">
@@ -438,7 +441,9 @@ export default function DashboardPage() {
                 </div>
 
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
-                <StatCard title="Vizionări Programate" value={viewingsNext7Days.length.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
+                <div className="hidden md:block">
+                    <StatCard title="Vizionări Programate" value={viewingsNext7Days.length.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} />
+                </div>
                 <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} className="bg-muted/50 md:bg-card" />
             </div>
@@ -465,16 +470,20 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 <div className="space-y-6">
-                    <AgendaCard tasks={todaysTasks} viewings={todaysViewings} contacts={contacts || []} properties={properties || []} />
-                    <Card className="shadow-2xl rounded-2xl h-[289px]">
-                        <CardHeader>
-                            <CardTitle className="text-xl font-semibold">Distribuție Surse Lead-uri</CardTitle>
-                            <CardDescription>Canalele care aduc cei mai mulți clienți.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <LeadSourceChart data={leadSourceData} />
-                        </CardContent>
-                    </Card>
+                    <div className="hidden md:block">
+                        <AgendaCard tasks={todaysTasks} viewings={todaysViewings} contacts={contacts || []} properties={properties || []} />
+                    </div>
+                     <div className="hidden md:block">
+                        <Card className="shadow-2xl rounded-2xl h-[289px]">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-semibold">Distribuție Surse Lead-uri</CardTitle>
+                                <CardDescription>Canalele care aduc cei mai mulți clienți.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <LeadSourceChart data={leadSourceData} />
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
             
