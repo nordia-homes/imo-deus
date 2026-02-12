@@ -46,11 +46,13 @@ export function PriorityTasks({ tasks, isLoading }: { tasks: Task[] | null, isLo
     
     return (
         <Card className="shadow-2xl rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between rounded-t-2xl bg-[#152a47] p-3 text-white md:rounded-none md:bg-transparent md:p-6 md:text-card-foreground">
                 <CardTitle className="text-base font-semibold">Task-uri Prioritare</CardTitle>
-                <Link href="/tasks" className="text-sm text-primary hover:underline">Vezi tot</Link>
+                <Link href="/tasks" className="text-sm text-white hover:underline md:text-primary">
+                    Vezi tot
+                </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
                 {renderContent()}
             </CardContent>
         </Card>

@@ -74,10 +74,10 @@ export function RecentActivity() {
 
     return (
         <Card className="shadow-2xl rounded-2xl bg-muted/50 md:bg-card">
-            <CardHeader>
-                <CardTitle>Activitate Recentă</CardTitle>
+            <CardHeader className="rounded-t-2xl bg-[#152a47] p-3 text-white md:rounded-none md:bg-transparent md:p-6 md:text-card-foreground">
+                <CardTitle className="text-base font-semibold">Activitate Recentă</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
                 {isLoading ? (
                     <div className="space-y-4">
                         {[...Array(5)].map((_, i) => (

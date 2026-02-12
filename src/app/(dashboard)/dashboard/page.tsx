@@ -486,8 +486,8 @@ export default function DashboardPage() {
 
             <div className="md:hidden">
                 <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
-                        <CardTitle className="text-base font-semibold">Ultimii Cumpărători Adăugați</CardTitle>
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
+                        <CardTitle className="text-base font-semibold text-white">Ultimii Cumpărători Adăugați</CardTitle>
                     </CardHeader>
                     <CardContent className="p-2 bg-card rounded-b-2xl">
                         {recentContacts.length > 0 ? (
@@ -507,14 +507,6 @@ export default function DashboardPage() {
                         )}
                     </CardContent>
                 </Card>
-            </div>
-
-            <div className="md:hidden">
-                <DashboardPropertyList title="Lista Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
-            </div>
-
-            <div className="md:hidden">
-                <DashboardPropertyList title="Lista Proprietăți Vândute" properties={soldThisMonth} variant="mobile" />
             </div>
 
             <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
@@ -538,8 +530,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="lg:col-span-1 space-y-6">
                     <AiHelperCard />
-                    <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} />
-                    <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} />
                 </div>
             </div>
         </div>
