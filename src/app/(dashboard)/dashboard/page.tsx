@@ -396,16 +396,18 @@ export default function DashboardPage() {
                 onAddViewing={() => setIsAddViewingOpen(true)}
                 onAddTask={handleAddTask}
                 contacts={contacts || []}
+                realizedCommissionThisMonth={realizedCommissionThisMonth}
             />
             
             <MobileScheduledViewings viewings={viewingsNext7Days} properties={properties || []} contacts={contacts || []} />
 
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
+                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
-                <div className="sm:col-span-2 lg:hidden">
+                <div className="col-span-2 lg:hidden">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
@@ -418,7 +420,6 @@ export default function DashboardPage() {
                 </div>
 
                 <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} className="hidden sm:block" />
-                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Vizionări Programate" value={viewingsNext7Days.length.toString()} period="în următoarele 7 zile" icon={<CalendarCheck />} className="hidden sm:block" />
                 <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Proprietăți Vândute" value={soldThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Handshake />} progress={soldThisMonthProgress} className="bg-muted/50 md:bg-card" />
