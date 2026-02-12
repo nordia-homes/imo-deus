@@ -355,11 +355,17 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="text-center md:text-left overflow-hidden">
-                    <h1 className="md:hidden text-xl font-headline font-bold text-foreground/90 [text-shadow:0_2px_4px_hsl(var(--primary)/0.3)] truncate">
+                <div className="md:hidden bg-[#152a47] text-white p-4 rounded-full text-center shadow-lg">
+                    <h1 className="text-lg font-bold truncate">
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
-                    <h1 className="hidden md:block text-2xl font-headline font-bold text-foreground/90 [text-shadow:0_2px_4px_hsl(var(--primary)/0.3)]">{agencyName || 'Dashboard'}</h1>
+                    <p className="text-xs text-white/80">
+                        Iata o privire de ansamblu asupra activitatilor.
+                    </p>
+                </div>
+
+                <div className="hidden md:block text-left overflow-hidden">
+                    <h1 className="text-2xl font-headline font-bold text-foreground/90">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground">
                         <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
                         Iata o privire de ansamblu asupra activitatilor.
