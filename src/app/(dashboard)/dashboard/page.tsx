@@ -476,7 +476,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-             <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+             <div className="hidden md:grid gap-4 grid-cols-1 md:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Total Vânzări" value={totalSoldCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
