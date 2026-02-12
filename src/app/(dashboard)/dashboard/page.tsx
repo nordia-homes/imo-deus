@@ -155,12 +155,12 @@ export default function DashboardPage() {
             return price * (percentage / 100);
         };
 
-        const sold = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
-        const reserved = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
+        const soldThisMonth = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
+        const reservedThisMonth = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         
         const now = new Date();
         const sevenDaysFromNow = addDays(now, 7);
-        const next7DaysViewings = viewings?.filter(v => {
+        const viewingsNext7Days = viewings?.filter(v => {
             if (v.status !== 'scheduled') return false;
             const viewingDate = parseISO(v.viewingDate);
             return isWithinInterval(viewingDate, { start: now, end: sevenDaysFromNow });
@@ -178,8 +178,8 @@ export default function DashboardPage() {
         // Progress calculations
         const newLeadsProgress = totalContactsCount > 0 ? (newLeadsCount / totalContactsCount) * 100 : 0;
         const salesProgress = totalContactsCount > 0 ? (totalSalesCount / totalContactsCount) * 100 : 0;
-        const soldThisMonthProgress = totalPropertiesCount > 0 ? (sold.length / totalPropertiesCount) * 100 : 0;
-        const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reserved.length / totalPropertiesCount) * 100 : 0;
+        const soldThisMonthProgress = totalPropertiesCount > 0 ? (soldThisMonth.length / totalPropertiesCount) * 100 : 0;
+        const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reservedThisMonth.length / totalPropertiesCount) * 100 : 0;
 
         // Commission Calculations
         const totalEstimatedCommission = activeProperties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
@@ -356,7 +356,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                  <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl text-center">
-                    <h1 className="text-lg font-bold">
+                    <h1 className="text-lg font-bold text-center">
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
                     <p className="text-xs text-white/80">
