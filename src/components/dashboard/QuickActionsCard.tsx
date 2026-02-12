@@ -29,7 +29,7 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                     <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddProperty}>
                         Proprietate
                     </Button>
-                    <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddViewing}>
+                    <Button className="h-auto py-3 bg-[#152a47] hover:bg-[#152a47]/90 text-white text-sm rounded-full" onClick={onAddViewing}>
                         Vizionare
                     </Button>
                     <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
