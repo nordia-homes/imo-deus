@@ -10,9 +10,10 @@ import Image from 'next/image';
 interface DashboardPropertyListProps {
     title: string;
     properties: Property[] | null;
+    variant?: 'default' | 'mobile';
 }
 
-export function DashboardPropertyList({ title, properties }: DashboardPropertyListProps) {
+export function DashboardPropertyList({ title, properties, variant = 'default' }: DashboardPropertyListProps) {
     
     const renderContent = () => {
         if (!properties || properties.length === 0) {
@@ -42,6 +43,20 @@ export function DashboardPropertyList({ title, properties }: DashboardPropertyLi
                     </Link>
                 ))}
             </div>
+        )
+    }
+    
+    if (variant === 'mobile') {
+        return (
+             <Card className="shadow-2xl rounded-2xl">
+                <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
+                    <CardTitle className="text-base font-semibold text-white">{title}</CardTitle>
+                    <Link href="/properties" className="text-sm text-white hover:underline">Vezi tot</Link>
+                </CardHeader>
+                <CardContent className="p-2 bg-card rounded-b-2xl">
+                    {renderContent()}
+                </CardContent>
+            </Card>
         )
     }
     
