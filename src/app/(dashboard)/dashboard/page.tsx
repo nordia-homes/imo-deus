@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -487,10 +486,10 @@ export default function DashboardPage() {
 
             <div className="md:hidden">
                 <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader>
-                        <CardTitle>Ultimii Cumpărători Adăugați</CardTitle>
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+                        <CardTitle className="text-base font-semibold">Ultimii Cumpărători Adăugați</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-2 bg-card rounded-b-2xl">
                         {recentContacts.length > 0 ? (
                             <div className="space-y-2">
                                 {recentContacts.map(contact => (
