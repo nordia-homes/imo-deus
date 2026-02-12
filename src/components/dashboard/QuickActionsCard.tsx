@@ -16,7 +16,7 @@ interface QuickActionsCardProps {
 
 export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts }: QuickActionsCardProps) {
     return (
-        <Card className="bg-muted/50 shadow-2xl rounded-2xl md:hidden">
+        <Card className="bg-success shadow-2xl rounded-2xl md:hidden">
             <CardContent className="p-4">
                 <div className="grid grid-cols-2 gap-2 text-center">
                     <Button variant="outline" className="h-auto flex-col py-2 bg-card" onClick={onAddLead}>
