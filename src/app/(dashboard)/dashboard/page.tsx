@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
     // --- DATA CALCULATION ---
     const { 
-        soldThisMonth, 
+        soldThisMonth,
         reservedThisMonth,
         totalSoldCount,
         totalReservedCount, 
@@ -461,6 +461,18 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
+            <div className="md:hidden">
+                <Card className="shadow-2xl rounded-2xl">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+                        <CardTitle className="text-base font-semibold">Evoluție Comision Lunar</CardTitle>
+                        <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2 bg-card rounded-b-2xl">
+                        <SalesChart data={monthlyCommissionData} />
+                    </CardContent>
+                </Card>
+            </div>
+
              <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
@@ -468,7 +480,7 @@ export default function DashboardPage() {
                 <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} className="bg-muted/50 md:bg-card" />
              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
@@ -479,9 +491,6 @@ export default function DashboardPage() {
                             <SalesChart data={monthlyCommissionData} />
                         </CardContent>
                     </Card>
-                </div>
-                <div className="space-y-6">
-                    {/* Placeholder for other charts if needed */}
                 </div>
             </div>
             
