@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -277,9 +278,9 @@ export default function DashboardPage() {
 
 
         return {
-            soldThisMonth: sold,
-            reservedThisMonth: reserved,
-            viewingsNext7Days: next7DaysViewings,
+            soldThisMonth,
+            reservedThisMonth,
+            viewingsNext7Days,
             activePropertiesCount,
             activeForSaleCount,
             activeForRentCount,
@@ -406,6 +407,17 @@ export default function DashboardPage() {
                 properties={properties || []}
             />
             
+            <div className="md:hidden">
+                <Card className="shadow-2xl rounded-2xl">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+                        <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
+                        <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2 bg-card rounded-b-2xl">
+                        <ConversionChart data={conversionData} />
+                    </CardContent>
+                </Card>
+            </div>
 
              <div className="grid gap-4 grid-cols-1">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
@@ -413,7 +425,7 @@ export default function DashboardPage() {
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
-                <div className="col-span-1">
+                <div className="col-span-1 hidden md:block">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
