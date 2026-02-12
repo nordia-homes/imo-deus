@@ -428,7 +428,7 @@ export default function DashboardPage() {
             
             <div className="md:hidden">
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white">
-                    <CardHeader className="pt-4 text-center">
+                    <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-2 space-y-4">
