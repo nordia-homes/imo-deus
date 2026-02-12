@@ -121,12 +121,13 @@ export default function DashboardPage() {
     // --- DATA CALCULATION ---
     const { 
         soldThisMonth, 
-        reservedThisMonth, 
+        reservedThisMonth,
+        totalSoldCount,
+        totalReservedCount, 
         viewingsNext7Days,
         activePropertiesCount,
         activeForSaleCount,
         activeForRentCount,
-        totalSalesCount,
         newLeadsCount,
         leadSourceData,
         monthlyCommissionData,
@@ -160,6 +161,9 @@ export default function DashboardPage() {
         const soldThisMonth = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reservedThisMonth = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         
+        const totalSoldCount = properties?.filter(p => p.status === 'Vândut').length || 0;
+        const totalReservedCount = properties?.filter(p => p.status === 'Rezervat').length || 0;
+
         const now = new Date();
         const sevenDaysFromNow = addDays(now, 7);
         const viewingsNext7Days = viewings?.filter(v => {
@@ -172,14 +176,13 @@ export default function DashboardPage() {
         const activePropertiesCount = activeProperties.length;
         const activeForSaleCount = activeProperties.filter(p => p.transactionType === 'Vânzare').length;
         const activeForRentCount = activeProperties.filter(p => p.transactionType === 'Închiriere').length;
-        const totalSalesCount = contacts?.filter(c => c.status === 'Câștigat').length || 0;
         
         const oneWeekAgo = addDays(new Date(), -7);
         const newLeadsCount = contacts?.filter(c => c.createdAt && new Date(c.createdAt) > oneWeekAgo).length || 0;
 
         // Progress calculations
         const newLeadsProgress = totalContactsCount > 0 ? (newLeadsCount / totalContactsCount) * 100 : 0;
-        const salesProgress = totalContactsCount > 0 ? (totalSalesCount / totalContactsCount) * 100 : 0;
+        const salesProgress = totalContactsCount > 0 ? (totalSoldCount / totalContactsCount) * 100 : 0;
         const soldThisMonthProgress = totalPropertiesCount > 0 ? (soldThisMonth.length / totalPropertiesCount) * 100 : 0;
         const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reservedThisMonth.length / totalPropertiesCount) * 100 : 0;
 
@@ -282,11 +285,12 @@ export default function DashboardPage() {
         return {
             soldThisMonth,
             reservedThisMonth,
+            totalSoldCount,
+            totalReservedCount,
             viewingsNext7Days,
             activePropertiesCount,
             activeForSaleCount,
             activeForRentCount,
-            totalSalesCount,
             newLeadsCount,
             leadSourceData: leadSourceDataResult,
             monthlyCommissionData: monthlyCommissionDataResult,
@@ -435,18 +439,24 @@ export default function DashboardPage() {
                                 <p className="text-xs text-white/80">Cumpărători Activi</p>
                             </div>
                             <div className="text-center p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-2xl">{reservedThisMonth.length}</p>
+                                <p className="font-bold text-2xl">{totalReservedCount}</p>
                                 <p className="text-xs text-white/80">Prop. Rezervate</p>
                             </div>
                             <div className="text-center p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-2xl">{soldThisMonth.length}</p>
+                                <p className="font-bold text-2xl">{totalSoldCount}</p>
                                 <p className="text-xs text-white/80">Prop. Vândute</p>
                             </div>
                         </div>
-                        <Button className="w-full justify-between bg-[#f8f8f9] text-foreground hover:bg-muted font-semibold pointer-events-none">
-                           <span>Nr. Total Proprietati Vandute:</span>
-                           <span>{totalSalesCount}</span>
-                        </Button>
+                        <div className="space-y-2">
+                             <Button className="w-full justify-between bg-[#f8f8f9] text-foreground hover:bg-muted font-semibold pointer-events-none">
+                               <span>Proprietati Rezervate Luna Curenta</span>
+                               <span>{reservedThisMonth.length}</span>
+                            </Button>
+                             <Button className="w-full justify-between bg-[#f8f8f9] text-foreground hover:bg-muted font-semibold pointer-events-none">
+                               <span>Proprietati Vandute Luna Curenta</span>
+                               <span>{soldThisMonth.length}</span>
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -454,7 +464,7 @@ export default function DashboardPage() {
              <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
-                <StatCard title="Total Vânzări" value={totalSalesCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
+                <StatCard title="Total Vânzări" value={totalSoldCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
                 <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} className="bg-muted/50 md:bg-card" />
              </div>
 
