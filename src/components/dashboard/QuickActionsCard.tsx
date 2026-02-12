@@ -23,13 +23,13 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                     <p className="text-3xl font-bold">€{realizedCommissionThisMonth.toLocaleString('ro-RO')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddLead}>
+                    <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddLead}>
                         Cumpărător
                     </Button>
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddProperty}>
+                    <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddProperty}>
                         Proprietate
                     </Button>
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddViewing}>
+                    <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddViewing}>
                         Vizionare
                     </Button>
                     <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
