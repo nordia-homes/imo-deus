@@ -29,7 +29,6 @@ import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
-import { MobileScheduledViewings } from '@/components/dashboard/MobileScheduledViewings';
 
 
 const formatValue = (num: number) => {
@@ -355,7 +354,7 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl text-center shadow-lg">
+                <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl">
                     <h1 className="text-lg font-bold truncate">
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
@@ -403,17 +402,18 @@ export default function DashboardPage() {
                 onAddTask={handleAddTask}
                 contacts={contacts || []}
                 realizedCommissionThisMonth={realizedCommissionThisMonth}
+                viewings={viewingsNext7Days}
+                properties={properties || []}
             />
             
-            <MobileScheduledViewings viewings={viewingsNext7Days} properties={properties || []} contacts={contacts || []} />
 
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} className="bg-muted/50 md:bg-card" />
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
-                <div className="col-span-1 md:col-span-2 lg:hidden">
+                <div className="col-span-2 md:hidden">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
