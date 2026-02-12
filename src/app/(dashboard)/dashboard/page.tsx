@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -17,7 +18,7 @@ import { SalesChart } from '@/components/dashboard/sales-chart';
 import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { ConversionChart } from '@/components/dashboard/ConversionChart';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle } from 'lucide-react';
+import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
@@ -29,6 +30,7 @@ import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
+import Link from 'next/link';
 
 
 const formatValue = (num: number) => {
@@ -320,6 +322,13 @@ export default function DashboardPage() {
         }).slice(0, 5);
     }, [openTasks]);
 
+    const recentContacts = useMemo(() => {
+        if (!contacts) return [];
+        return [...contacts]
+            .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+            .slice(0, 10);
+    }, [contacts]);
+
     const isLoading = isAgencyLoading || arePropertiesLoading || areViewingsLoading || areTasksLoading || areContactsLoading;
     
     // --- RENDER ---
@@ -476,12 +485,30 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-             <div className="hidden md:grid gap-4 grid-cols-1 md:grid-cols-4">
-                <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
-                <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
-                <StatCard title="Total Vânzări" value={totalSoldCount.toString()} period={`din ${contacts?.length || 0} contacte`} icon={<Handshake />} progress={salesProgress} />
-                <StatCard title="Proprietăți Rezervate" value={reservedThisMonth.length.toString()} period={`din ${properties?.length || 0} proprietăți`} icon={<Bookmark />} progress={reservedThisMonthProgress} className="bg-muted/50 md:bg-card" />
-             </div>
+            <div className="md:hidden">
+                <Card className="shadow-2xl rounded-2xl">
+                    <CardHeader>
+                        <CardTitle>Ultimii Cumpărători Adăugați</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {recentContacts.length > 0 ? (
+                            <div className="space-y-2">
+                                {recentContacts.map(contact => (
+                                    <Link href={`/leads/${contact.id}`} key={contact.id} className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-accent group">
+                                        <div>
+                                            <p className="font-semibold text-sm group-hover:text-primary">{contact.name}</p>
+                                            <p className="text-xs text-muted-foreground">{contact.createdAt ? format(new Date(contact.createdAt), 'd MMM yyyy', { locale: ro }) : ''}</p>
+                                        </div>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-center py-4">Niciun cumpărător adăugat recent.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
                 <div className="space-y-6">
