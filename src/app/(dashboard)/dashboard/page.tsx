@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -140,6 +141,7 @@ export default function DashboardPage() {
         todaysTasks,
         todaysViewings,
         conversionData,
+        activeBuyersCount,
     } = useMemo(() => {
         const totalPropertiesCount = properties?.length || 0;
         const totalContactsCount = contacts?.length || 0;
@@ -153,6 +155,8 @@ export default function DashboardPage() {
             const percentage = prop.commissionValue !== undefined ? prop.commissionValue : 2;
             return price * (percentage / 100);
         };
+        
+        const activeBuyersCount = contacts?.filter(c => c.status !== 'Câștigat' && c.status !== 'Pierdut').length || 0;
 
         const soldThisMonth = properties?.filter(p => p.status === 'Vândut' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
         const reservedThisMonth = properties?.filter(p => p.status === 'Rezervat' && p.statusUpdatedAt && isThisMonth(parseISO(p.statusUpdatedAt))) || [];
@@ -297,6 +301,7 @@ export default function DashboardPage() {
             todaysTasks,
             todaysViewings,
             conversionData: conversionDataResult,
+            activeBuyersCount,
         };
     }, [properties, viewings, contacts, openTasks]);
     
@@ -364,8 +369,8 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="hidden md:block text-left overflow-hidden">
-                    <h1 className="text-2xl font-headline font-bold text-foreground/90">{agencyName || 'Dashboard'}</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
+                    <p className="text-muted-foreground text-center md:text-left">
                         <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
                         Iata o privire de ansamblu asupra activitatilor.
                     </p>
@@ -417,8 +422,31 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+            
+            <div className="md:hidden">
+                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white">
+                    <CardContent className="p-4 grid grid-cols-2 gap-4">
+                        <div className="text-center p-2 rounded-lg bg-white/10">
+                            <p className="font-bold text-2xl">{activePropertiesCount}</p>
+                            <p className="text-xs text-white/80">Proprietăți Active</p>
+                        </div>
+                        <div className="text-center p-2 rounded-lg bg-white/10">
+                            <p className="font-bold text-2xl">{activeBuyersCount}</p>
+                            <p className="text-xs text-white/80">Cumpărători Activi</p>
+                        </div>
+                        <div className="text-center p-2 rounded-lg bg-white/10">
+                            <p className="font-bold text-2xl">{reservedThisMonth.length}</p>
+                            <p className="text-xs text-white/80">Prop. Rezervate</p>
+                        </div>
+                        <div className="text-center p-2 rounded-lg bg-white/10">
+                            <p className="font-bold text-2xl">{soldThisMonth.length}</p>
+                            <p className="text-xs text-white/80">Prop. Vândute</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-             <div className="grid gap-4 grid-cols-1">
+             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount}`} className="bg-muted/50 md:bg-card" />
                 <div className="hidden md:block">
                     <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
@@ -428,7 +456,7 @@ export default function DashboardPage() {
                 </div>
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
-                <div className="col-span-1 hidden md:block">
+                <div className="col-span-1 md:col-span-2 lg:col-span-4 hidden md:block">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
