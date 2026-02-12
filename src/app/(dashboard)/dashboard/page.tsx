@@ -401,13 +401,13 @@ export default function DashboardPage() {
             
             <MobileScheduledViewings viewings={viewingsNext7Days} properties={properties || []} contacts={contacts || []} />
 
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Proprietăți Active" value={activePropertiesCount.toString()} icon={<Building2 />} period={`${activeForSaleCount} Vânzare / ${activeForRentCount} Închiriere`} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Estimat" value={formatValue(totalEstimatedCommission)} icon={<Target />} period="Total Portofoliu Activ" className="bg-muted/50 md:bg-card" />
                 <StatCard title="Comision Realizat" value={formatValue(realizedCommissionThisMonth)} period="luna aceasta" icon={<DollarSign />} progress={commissionProgress} className="bg-muted/50 md:bg-card" />
                 <StatCard title="Leaduri Noi" value={`+${newLeadsCount}`} period="în ultima săptămână" icon={<Users />} progress={newLeadsProgress} className="bg-muted/50 md:bg-card" />
                 
-                <div className="col-span-2 lg:hidden">
+                <div className="col-span-1 md:col-span-2 lg:hidden">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
@@ -466,7 +466,9 @@ export default function DashboardPage() {
                     <RecentActivity />
                 </div>
                 <div className="lg:col-span-1 space-y-6">
-                    <AiHelperCard />
+                    <div className='hidden md:block'>
+                        <AiHelperCard />
+                    </div>
                     <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} />
                     <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} />
                 </div>

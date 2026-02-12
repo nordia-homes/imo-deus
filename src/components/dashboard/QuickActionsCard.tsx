@@ -23,18 +23,18 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                     <p className="text-3xl font-bold">€{realizedCommissionThisMonth.toLocaleString('ro-RO')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm" onClick={onAddLead}>
-                        Adaugă Cumpărător
+                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddLead}>
+                        Cumpărător
                     </Button>
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm" onClick={onAddProperty}>
-                        Adaugă Proprietate
+                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddProperty}>
+                        Proprietate
                     </Button>
-                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm" onClick={onAddViewing}>
-                        Adaugă Vizionare
+                    <Button className="h-auto py-3 bg-[#13b180] hover:bg-[#13b180]/90 text-white text-sm rounded-full" onClick={onAddViewing}>
+                        Vizionare
                     </Button>
                     <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
-                        <Button className="h-auto py-3 bg-[#152a47] hover:bg-[#152a47]/90 text-white w-full text-sm">
-                           Adaugă Task
+                        <Button className="h-auto py-3 bg-[#152a47] hover:bg-[#152a47]/90 text-white w-full text-sm rounded-full">
+                           Task
                         </Button>
                     </AddTaskDialog>
                 </div>
