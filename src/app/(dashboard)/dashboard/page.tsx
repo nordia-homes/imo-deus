@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -355,8 +354,8 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                 <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl">
-                    <h1 className="text-lg font-bold truncate">
+                 <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl text-center">
+                    <h1 className="text-lg font-bold">
                         {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
                     </h1>
                     <p className="text-xs text-white/80">
