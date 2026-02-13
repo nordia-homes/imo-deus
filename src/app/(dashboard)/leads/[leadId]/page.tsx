@@ -29,6 +29,7 @@ import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
 import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const PageSkeleton = () => (
@@ -385,16 +386,74 @@ export default function LeadDetailPage() {
             />
 
             <main className="pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    
-                    <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Mobile View: Tabs */}
+                <div className="lg:hidden">
+                    <Tabs defaultValue="general" className="w-full">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="general">General</TabsTrigger>
+                            <TabsTrigger value="timeline">Cronologie</TabsTrigger>
+                            <TabsTrigger value="properties">Proprietăți</TabsTrigger>
+                            <TabsTrigger value="portal">Portal</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="general" className="mt-6 space-y-6">
+                            <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
+                            <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
+                            <FinancialStatusCard 
+                                contact={contact} 
+                                onUpdateContact={handleUpdateContact}
+                                recommendations={recommendations}
+                                properties={properties}
+                                portalId={contact.portalId || null}
+                                onUpdateRecommendation={handleUpdateRecommendation}
+                            />
+                            <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                            <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                        </TabsContent>
+                        <TabsContent value="timeline" className="mt-6 space-y-6">
+                            <LeadTimeline 
+                                interactions={contact.interactionHistory || []} 
+                                tasks={tasks || []}
+                                onAddInteraction={handleAddInteraction}
+                                onAddTask={handleAddTask}
+                                contacts={[contact]}
+                                onToggleTask={handleToggleTask}
+                            />
+                            <ScheduledViewingsCard viewings={viewings || []} />
+                        </TabsContent>
+                        <TabsContent value="properties" className="mt-6 space-y-6">
+                             <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
+                             <SourcePropertyCard 
+                                property={sourceProperty} 
+                                isLoading={isSourcePropertyLoading}
+                                allProperties={properties || []}
+                                onUpdateContact={handleUpdateContact}
+                            />
+                            <MatchedProperties properties={matchedProperties} contact={contact} />
+                            <OfferManagementCard
+                                contact={contact}
+                                properties={properties || []}
+                                onAddOffer={handleAddOffer}
+                                onUpdateOffer={handleUpdateOffer}
+                                onDeleteOffer={handleDeleteOffer}
+                            />
+                            <SimilarLeadsCard leads={similarCumparatori} />
+                        </TabsContent>
+                        <TabsContent value="portal" className="mt-6 space-y-6">
+                            <ClientPortalManager contact={contact} agency={agency} />
+                        </TabsContent>
+                    </Tabs>
+                </div>
+                
+                {/* Desktop View: Grid */}
+                <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
+                    <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
-                        <SourcePropertyCard 
-                            property={sourceProperty} 
-                            isLoading={isSourcePropertyLoading}
-                            allProperties={properties || []}
-                            onUpdateContact={handleUpdateContact}
-                        />
+                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                        <ClientPortalManager contact={contact} agency={agency} />
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-6">
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -403,11 +462,7 @@ export default function LeadDetailPage() {
                             contacts={[contact]}
                             onToggleTask={handleToggleTask}
                         />
-                        <div className="md:col-span-2 lg:col-span-1">
-                             <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        </div>
-                        <ScheduledViewingsCard viewings={viewings || []} />
-                        <ClientPortalManager contact={contact} agency={agency} />
+                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
@@ -416,21 +471,25 @@ export default function LeadDetailPage() {
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
                         />
-                        <OfferManagementCard
+                         <OfferManagementCard
                             contact={contact}
                             properties={properties || []}
                             onAddOffer={handleAddOffer}
                             onUpdateOffer={handleUpdateOffer}
                             onDeleteOffer={handleDeleteOffer}
                         />
-                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-
                     </div>
 
-                    <div className="lg:col-span-12 grid grid-cols-1 gap-6">
+                    <div className="lg:col-span-4 space-y-6">
+                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
                          <MatchedProperties properties={matchedProperties} contact={contact} />
-                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
+                         <SourcePropertyCard 
+                            property={sourceProperty} 
+                            isLoading={isSourcePropertyLoading}
+                            allProperties={properties || []}
+                            onUpdateContact={handleUpdateContact}
+                        />
+                        <ScheduledViewingsCard viewings={viewings || []} />
                         <SimilarLeadsCard leads={similarCumparatori} />
                     </div>
                 </div>
