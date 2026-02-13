@@ -30,7 +30,7 @@ import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
 import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
 import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCard';
 import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
-import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
+import { EditLeadDialog } from '@/components/leads/detail/EditLeadDialog';
 import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
@@ -129,7 +129,7 @@ export default function LeadDetailPage() {
     const [areAgentsLoading, setAreAgentsLoading] = useState(true);
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
-    const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
 
     // --- DATA FETCHING ---
@@ -491,10 +491,10 @@ export default function LeadDetailPage() {
     return (
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] min-h-full -mx-4 -mt-6 pb-4'>
+            <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 pb-4'>
                 <div className="p-4 pt-12 space-y-4 text-white">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
-                        <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditInfoOpen(true)}>
+                        <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditDialogOpen(true)}>
                             <Edit className="h-4 w-4" />
                         </Button>
                         <p className='text-sm text-white/60'>Bună {userProfile?.name?.split(' ')[0]}! Detalii cumpărător</p>
@@ -544,6 +544,18 @@ export default function LeadDetailPage() {
                                         contacts={[contact]}
                                         onToggleTask={handleToggleTask}
                                     />
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <AccordionItem value="description" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Descriere
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                                    </div>
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
@@ -640,7 +652,7 @@ export default function LeadDetailPage() {
                 />
                 <main className="pt-6 grid lg:grid-cols-12 gap-6 items-start">
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
+                        <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} />
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <ClientPortalManager contact={contact} agency={agency} />
@@ -688,11 +700,12 @@ export default function LeadDetailPage() {
                 </main>
             </div>
 
-             <EditLeadInfoDialog 
+             <EditLeadDialog 
                 contact={contact}
-                isOpen={isEditInfoOpen}
-                onOpenChange={setIsEditInfoOpen}
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
                 onUpdateContact={handleUpdateContact}
+                properties={properties || []}
             />
             <AddViewingDialog
                 isOpen={isAddViewingOpen}
@@ -704,5 +717,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
