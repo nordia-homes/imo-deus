@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -501,16 +500,16 @@ export default function LeadDetailPage() {
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
             <div className='lg:hidden bg-[#0F1E33] -mt-6 -mx-4 pb-4'>
-                <div className="px-4 space-y-4 text-white pt-4">
+                <div className="px-4 pt-4 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>
                              <div>
                                 <div className='flex items-center gap-2'>
                                     <h2 className='text-xl font-bold'>{contact.name}</h2>
-                                    <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
                                     <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-7 w-7" onClick={() => setIsEditDialogOpen(true)}>
                                         <Edit className="h-4 w-4" />
                                     </Button>
+                                    <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
                                 </div>
                                 {contact.budget && <p className="mt-2">Buget: €{contact.budget.toLocaleString()}</p>}
                                 {contact.zones && contact.zones.length > 0 && <p className='text-sm text-white/80'>Zone: {contact.zones.join(', ')}</p>}
@@ -534,7 +533,7 @@ export default function LeadDetailPage() {
                                 <Button variant='secondary' className="bg-white/90 text-black hover:bg-white w-full"><Plus className='mr-2'/> Task</Button>
                             </AddTaskDialog>
                         </div>
-                        <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
+                        <Button className='w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                     </Card>
 
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl mx-2">
