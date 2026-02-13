@@ -536,7 +536,7 @@ export default function LeadDetailPage() {
                         <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
                     </Card>
 
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl mx-2">
                         <CardHeader className="p-4">
                             <CardTitle className="font-semibold text-white">Vizionări Programate</CardTitle>
                         </CardHeader>
