@@ -532,6 +532,16 @@ export default function LeadDetailPage() {
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <AccordionItem value="viewings" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Vizionări Programate
+                                </AccordionTrigger>
+                                <AccordionContent className="px-2 pb-2 pt-0">
+                                    <ScheduledViewingsCard viewings={viewings || []} />
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Cronologie & Acțiuni
@@ -644,6 +654,7 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="lg:col-span-5 space-y-6">
+                        <ScheduledViewingsCard viewings={viewings || []} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -679,7 +690,6 @@ export default function LeadDetailPage() {
                             allProperties={properties || []}
                             onUpdateContact={handleUpdateContact}
                         />
-                        <ScheduledViewingsCard viewings={viewings || []} />
                         <SimilarLeadsCard leads={similarCumparatori} />
                     </div>
                 </main>
