@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus, ContactPreferences } from '@/lib/types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Image from 'next/image';
@@ -43,6 +43,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 
 const PageSkeleton = () => (
@@ -535,12 +536,12 @@ export default function LeadDetailPage() {
                         <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
                     </Card>
 
-                    {scheduledViewings.length > 0 && (
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                            <CardHeader className="p-4">
-                                <CardTitle className="font-semibold text-white">Vizionări Programate</CardTitle>
-                            </CardHeader>
-                            <CardContent className="px-4 pb-4 pt-0">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                        <CardHeader className="p-4">
+                            <CardTitle className="font-semibold text-white">Vizionări Programate</CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-4 pt-0">
+                            {scheduledViewings.length > 0 ? (
                                 <div className="space-y-3">
                                     {scheduledViewings.map(viewing => (
                                         <Link href={`/properties/${viewing.propertyId}`} key={viewing.id} className="block p-3 rounded-lg border border-white/20 hover:bg-white/10">
@@ -552,9 +553,13 @@ export default function LeadDetailPage() {
                                         </Link>
                                     ))}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                            ) : (
+                                <p className="text-white/70 text-center py-2">
+                                    Nicio vizionare programată.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
@@ -728,5 +733,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
