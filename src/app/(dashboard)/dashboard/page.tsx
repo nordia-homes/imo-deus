@@ -498,7 +498,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
