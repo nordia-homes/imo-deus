@@ -54,8 +54,8 @@ service cloud.firestore {
       // Public read access is needed for the public website and for some rules to work.
       allow get: if true;
       allow list: if isSignedIn();
-      // Only an admin can update their own agency's details.
-      allow update: if isUserAdminForAgency(agencyId);
+      // An owner or admin can update their own agency's details.
+      allow update: if isUserAdminForAgency(agencyId) || get(/databases/$(database)/documents/agencies/$(agencyId)).data.ownerId == request.auth.uid;
        // A user can create an agency, ensuring they set themselves as the owner.
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       // Deleting agencies is disabled for safety.
