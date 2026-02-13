@@ -1,3 +1,4 @@
+
 // This file uses server-side code.
 'use server';
 
@@ -14,21 +15,21 @@ import {z} from 'genkit';
 
 const PropertySchema = z.object({
   address: z.string().describe('The address of the property.'),
-  price: z.number().describe('The price of the property in USD.'),
-  rooms: z.number().describe('The number of rooms in the property.'),
-  bathrooms: z.number().describe('The number of bathrooms in the property.'),
-  squareFootage: z.number().describe('The square footage of the property.'),
+  price: z.coerce.number().describe('The price of the property in USD.'),
+  rooms: z.coerce.number().describe('The number of rooms in the property.'),
+  bathrooms: z.coerce.number().describe('The number of bathrooms in the property.'),
+  squareFootage: z.coerce.number().describe('The square footage of the property.'),
   description: z.string().describe('A detailed description of the property.'),
   image: z.string().describe('A URL of an image of the property.'),
 });
 
 const ClientPreferencesSchema = z.object({
-  desiredPriceRangeMin: z.number().describe('The minimum desired price.'),
-  desiredPriceRangeMax: z.number().describe('The maximum desired price.'),
-  desiredRooms: z.number().describe('The desired number of rooms.'),
-  desiredBathrooms: z.number().describe('The desired number of bathrooms.'),
-  desiredSquareFootageMin: z.number().describe('The minimum desired square footage.'),
-  desiredSquareFootageMax: z.number().describe('The maximum desired square footage.'),
+  desiredPriceRangeMin: z.coerce.number().describe('The minimum desired price.'),
+  desiredPriceRangeMax: z.coerce.number().describe('The maximum desired price.'),
+  desiredRooms: z.coerce.number().describe('The desired number of rooms.'),
+  desiredBathrooms: z.coerce.number().describe('The desired number of bathrooms.'),
+  desiredSquareFootageMin: z.coerce.number().describe('The minimum desired square footage.'),
+  desiredSquareFootageMax: z.coerce.number().describe('The maximum desired square footage.'),
   desiredFeatures: z.string().describe('A description of the desired features of the property.'),
   locationPreferences: z.string().describe('The desired location or neighborhood.'),
 });
@@ -96,3 +97,5 @@ const propertyMatcherFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

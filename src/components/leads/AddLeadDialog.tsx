@@ -151,7 +151,7 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
         preferences: {
             desiredPriceRangeMin: values.budget > 0 ? Math.round(values.budget * 0.8) : 0,
             desiredPriceRangeMax: values.budget > 0 ? Math.round(values.budget * 1.2) : 0,
-            desiredBedrooms: 0,
+            desiredRooms: 0,
             desiredBathrooms: 0,
             desiredSquareFootageMin: 0,
             desiredSquareFootageMax: 0,
@@ -409,3 +409,5 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
     </Dialog>
   );
 }
+
+    
