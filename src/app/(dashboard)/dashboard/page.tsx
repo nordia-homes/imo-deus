@@ -370,15 +370,6 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                 <div className="md:hidden bg-[#152a47] text-white p-4 rounded-2xl text-center">
-                    <h1 className="text-lg font-bold text-center">
-                        {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
-                    </h1>
-                    <p className="text-xs text-white/80">
-                        Iata o privire de ansamblu asupra activitatilor.
-                    </p>
-                </div>
-
                 <div className="hidden md:block text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground text-center md:text-left">
@@ -420,6 +411,8 @@ export default function DashboardPage() {
                 realizedCommissionThisMonth={realizedCommissionThisMonth}
                 viewings={viewingsNext7Days}
                 properties={properties || []}
+                agencyName={agencyName}
+                displayName={displayName}
             />
             
             <div className="md:hidden">

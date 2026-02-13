@@ -19,14 +19,24 @@ interface QuickActionsCardProps {
     onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: Contact[];
     realizedCommissionThisMonth: number;
-    viewings: Viewing[]; // new
-    properties: Property[]; // new
+    viewings: Viewing[];
+    properties: Property[];
+    agencyName?: string | null;
+    displayName: string;
 }
 
-export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts, realizedCommissionThisMonth, viewings, properties }: QuickActionsCardProps) {
+export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts, realizedCommissionThisMonth, viewings, properties, agencyName, displayName }: QuickActionsCardProps) {
     return (
         <Card className="bg-[#0F1E33] shadow-2xl rounded-2xl md:hidden">
             <CardContent className="p-4 text-white space-y-4">
+                 <div className="text-center">
+                    <h1 className="text-lg font-bold text-center text-white">
+                        {agencyName ? `Buna ${displayName}, de la ${agencyName}!` : `Bine ai revenit, ${displayName}!`}
+                    </h1>
+                    <p className="text-xs text-white/80">
+                        Iata o privire de ansamblu asupra activitatilor.
+                    </p>
+                </div>
                 <div className="text-center">
                     <p className="text-sm text-white/70">Comision luna aceasta</p>
                     <p className="text-3xl font-bold">€{realizedCommissionThisMonth.toLocaleString('ro-RO')}</p>
