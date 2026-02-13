@@ -9,6 +9,9 @@ import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
 import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation, Offer } from '@/lib/types';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { ro } from 'date-fns/locale';
+import Image from 'next/image';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,7 +32,12 @@ import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog';
 import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Phone, Mail, Plus, Check, CheckSquare } from 'lucide-react';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 
 const PageSkeleton = () => (
@@ -61,6 +69,45 @@ const PageSkeleton = () => (
     </div>
 )
 
+const CircularProgress = ({ score, className }: { score: number, className?: string }) => {
+    const size = 60;
+    const strokeWidth = 5;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+        <div className={cn("relative", className)} style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="-rotate-90">
+                <circle
+                    className="text-white/20"
+                    stroke="currentColor"
+                    strokeWidth={strokeWidth}
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                />
+                <circle
+                    className="text-green-400"
+                    stroke="currentColor"
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                    style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
+                {score}
+            </span>
+        </div>
+    );
+};
 
 // Main Component
 export default function LeadDetailPage() {
@@ -99,7 +146,7 @@ export default function LeadDetailPage() {
     const viewingsQuery = useMemoFirebase(() => {
         if (!agency?.id || !cumparatorId) return null;
         const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
-        return query(viewingsCollection, where('contactId', '==', cumparatorId));
+        return query(viewingsCollection, where('contactId', '==', cumparatorId), orderBy('viewingDate', 'asc'));
     }, [firestore, agency?.id, cumparatorId]);
 
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
@@ -159,11 +206,34 @@ export default function LeadDetailPage() {
     }, [agency, firestore, toast]);
 
     useEffect(() => {
-        if (properties) {
-            const initialMatched = properties.slice(0, 2).map(p => ({...p, matchScore: 0, reasoning: ''}));
-            setMatchedProperties(initialMatched);
+        if (properties && contact) {
+            const matcherProperties = properties.map(p => ({
+                ...p,
+                address: p.address || p.location || '',
+                price: p.price || 0,
+                rooms: p.rooms || 0,
+                bathrooms: p.bathrooms || 0,
+                squareFootage: p.squareFootage || 0,
+                description: p.description || p.title || '',
+                image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
+            }));
+            propertyMatcher({
+                clientPreferences: contact.preferences || {
+                    desiredPriceRangeMin: (contact.budget || 0) * 0.8,
+                    desiredPriceRangeMax: (contact.budget || 0) * 1.2,
+                    desiredRooms: 2,
+                    desiredBathrooms: 1,
+                    desiredSquareFootageMin: 50,
+                    desiredSquareFootageMax: 100,
+                    desiredFeatures: '',
+                    locationPreferences: contact.city || '',
+                },
+                properties: matcherProperties,
+            }).then(result => {
+                setMatchedProperties(result.matchedProperties as MatchedProperty[]);
+            });
         }
-    }, [properties]);
+    }, [properties, contact]);
     
     // --- MUTATION HANDLERS ---
     const handleUpdateContact = (data: Partial<Omit<Contact, 'id'>>) => {
@@ -363,6 +433,29 @@ export default function LeadDetailPage() {
         }
     };
 
+    const upcomingViewing = useMemo(() => {
+        if (!viewings) return null;
+        const now = new Date();
+        return viewings.find(v => v.status === 'scheduled' && parseISO(v.viewingDate) >= now);
+    }, [viewings]);
+
+    const upcomingViewingProperty = useMemo(() => {
+        if (!upcomingViewing || !properties) return null;
+        return properties.find(p => p.id === upcomingViewing.propertyId);
+    }, [upcomingViewing, properties]);
+
+    const timelineItems = useMemo(() => {
+        if (!tasks && !contact?.interactionHistory) return [];
+        const combined: ({ type: 'task' } & Task | { type: 'interaction' } & Interaction)[] = [];
+        (tasks || []).forEach(t => combined.push({ ...t, type: 'task' }));
+        (contact?.interactionHistory || []).forEach(i => combined.push({ ...i, type: 'interaction' }));
+        return combined.sort((a, b) => {
+            const dateA = new Date(a.type === 'task' ? a.dueDate : a.date);
+            const dateB = new Date(b.type === 'task' ? b.dueDate : b.date);
+            return dateB.getTime() - dateA.getTime();
+        });
+    }, [tasks, contact?.interactionHistory]);
+
 
     const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading || areRecsLoading;
 
@@ -377,75 +470,112 @@ export default function LeadDetailPage() {
 
     return (
         <div className="h-full flex flex-col">
-            <LeadHeader 
-                contact={contact} 
-                onUpdateContact={handleUpdateContact}
-                onAddTask={handleAddTask}
-                onTriggerAddViewing={() => setIsAddViewingOpen(true)}
-                properties={properties || []}
-            />
+            <div className='lg:hidden bg-[#0F1E33] min-h-full -mx-4 -mt-6 -mb-20'>
+                <div className="p-4 space-y-4 text-white">
+                    <h1 className="text-2xl font-bold pt-12">Cumpărători</h1>
+                    
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
+                        <p className='text-sm text-white/60'>Bună {userProfile?.name?.split(' ')[0]}! Detalii cumpărător</p>
+                        <div className='flex justify-between items-start'>
+                            <div>
+                                <div className='flex items-center gap-2'>
+                                    <h2 className='text-xl font-bold'>{contact.name}</h2>
+                                    <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
+                                </div>
+                                {contact.budget && <p>Buget: €{contact.budget.toLocaleString()}</p>}
+                                {contact.zones && contact.zones.length > 0 && <p className='text-sm text-white/80'>Zone: {contact.zones.join(', ')}</p>}
+                            </div>
+                            {typeof contact.leadScore === 'number' && (
+                                <CircularProgress score={contact.leadScore} />
+                            )}
+                        </div>
 
-            <main className="pt-6">
-                {/* Mobile View: Tabs */}
-                <div className="lg:hidden">
-                    <Tabs defaultValue="general" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="general">General</TabsTrigger>
-                            <TabsTrigger value="timeline">Cronologie</TabsTrigger>
-                            <TabsTrigger value="properties">Proprietăți</TabsTrigger>
-                            <TabsTrigger value="portal">Portal</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="general" className="mt-6 space-y-6">
-                            <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
-                            <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                            <FinancialStatusCard 
-                                contact={contact} 
-                                onUpdateContact={handleUpdateContact}
-                                recommendations={recommendations}
-                                properties={properties}
-                                portalId={contact.portalId || null}
-                                onUpdateRecommendation={handleUpdateRecommendation}
-                            />
-                            <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
-                            <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                        </TabsContent>
-                        <TabsContent value="timeline" className="mt-6 space-y-6">
-                            <LeadTimeline 
-                                interactions={contact.interactionHistory || []} 
-                                tasks={tasks || []}
-                                onAddInteraction={handleAddInteraction}
-                                onAddTask={handleAddTask}
-                                contacts={[contact]}
-                                onToggleTask={handleToggleTask}
-                            />
-                            <ScheduledViewingsCard viewings={viewings || []} />
-                        </TabsContent>
-                        <TabsContent value="properties" className="mt-6 space-y-6">
-                             <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                             <SourcePropertyCard 
-                                property={sourceProperty} 
-                                isLoading={isSourcePropertyLoading}
-                                allProperties={properties || []}
-                                onUpdateContact={handleUpdateContact}
-                            />
-                            <MatchedProperties properties={matchedProperties} contact={contact} />
-                            <OfferManagementCard
-                                contact={contact}
-                                properties={properties || []}
-                                onAddOffer={handleAddOffer}
-                                onUpdateOffer={handleUpdateOffer}
-                                onDeleteOffer={handleDeleteOffer}
-                            />
-                            <SimilarLeadsCard leads={similarCumparatori} />
-                        </TabsContent>
-                        <TabsContent value="portal" className="mt-6 space-y-6">
-                            <ClientPortalManager contact={contact} agency={agency} />
-                        </TabsContent>
-                    </Tabs>
+                        <div className="grid grid-cols-2 gap-2">
+                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
+                             </Button>
+                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
+                             </Button>
+                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                <a href={`mailto:${contact.email}`}><Mail className='mr-2'/> Email</a>
+                             </Button>
+                            <AddTaskDialog onAddTask={handleAddTask} contacts={[contact]}>
+                                <Button variant='secondary' className="bg-white/90 text-black hover:bg-white w-full"><Plus className='mr-2'/> Task</Button>
+                            </AddTaskDialog>
+                        </div>
+                        <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
+                    </Card>
+
+                    {upcomingViewing && (
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <CardContent className='p-0'>
+                                <div className='p-4'>
+                                    <div className='flex justify-between items-center'>
+                                        <h3 className='font-semibold'>Vizionări Programate</h3>
+                                        <p className='text-xs text-white/60'>{format(parseISO(upcomingViewing.viewingDate), "eeee, d MMM", { locale: ro })}</p>
+                                    </div>
+                                </div>
+                                <div className='relative h-32'>
+                                    {upcomingViewingProperty?.images?.[0]?.url && (
+                                        <Image src={upcomingViewingProperty.images[0].url} alt={upcomingViewingProperty.title} fill className='object-cover'/>
+                                    )}
+                                    <div className='absolute inset-0 bg-black/50 flex flex-col justify-end p-4'>
+                                        <h4 className='font-bold text-white'>{upcomingViewing.propertyTitle}</h4>
+                                        <p className='text-sm text-white/80'>{format(parseISO(upcomingViewing.viewingDate), "d MMM, HH:mm", { locale: ro })} cu: {upcomingViewing.contactName}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                     {matchedProperties && matchedProperties.length > 0 && (
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                            <CardContent className='p-4 space-y-2'>
+                                <h3 className='font-semibold'>Proprietăți Potrivite</h3>
+                                {matchedProperties.slice(0, 2).map(p => (
+                                    <div key={p.id} className='bg-white/5 p-3 rounded-lg'>
+                                        <p className='font-semibold text-sm'>{p.title}</p>
+                                        <p className='text-xs text-white/70'>{p.rooms} camere • €{p.price.toLocaleString()}</p>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                     )}
+
+                    {timelineItems && timelineItems.length > 0 && (
+                         <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                            <CardContent className='p-4 space-y-3'>
+                                <h3 className='font-semibold'>Cronologie</h3>
+                                {timelineItems.slice(0, 4).map((item, index) => (
+                                    <div key={index} className='flex justify-between items-center text-sm'>
+                                        <div className='flex items-center gap-2'>
+                                            {item.type === 'task' ? <CheckSquare className='h-4 w-4 text-white/60'/> : <WhatsappIcon className='h-4 w-4 text-white/60'/>}
+                                            <div>
+                                                <p>{item.type === 'task' ? `Task: ${item.description}` : item.type}</p>
+                                                {item.type === 'task' && item.agentName && <p className='text-xs text-white/60'>Agent: {item.agentName}</p>}
+                                            </div>
+                                        </div>
+                                        <p className='text-xs text-white/60'>{formatDistanceToNow(new Date(item.type === 'task' ? item.dueDate : item.date), { locale: ro, addSuffix: true })}</p>
+                                    </div>
+                                ))}
+                            </CardContent>
+                         </Card>
+                    )}
+
                 </div>
-                
-                {/* Desktop View: Grid */}
-                <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
+            </div>
+            
+            {/* Desktop View: Grid */}
+            <div className="hidden lg:block h-full">
+                <LeadHeader 
+                    contact={contact} 
+                    onUpdateContact={handleUpdateContact}
+                    onAddTask={handleAddTask}
+                    onTriggerAddViewing={() => setIsAddViewingOpen(true)}
+                    properties={properties || []}
+                />
+                <main className="pt-6 grid lg:grid-cols-12 gap-6 items-start">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditInfoOpen(true)} />
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
@@ -492,8 +622,8 @@ export default function LeadDetailPage() {
                         <ScheduledViewingsCard viewings={viewings || []} />
                         <SimilarLeadsCard leads={similarCumparatori} />
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
 
              <EditLeadInfoDialog 
                 contact={contact}
