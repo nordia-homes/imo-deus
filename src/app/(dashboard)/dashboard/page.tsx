@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -369,15 +370,15 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="hidden md:block text-left overflow-hidden">
+            <div className="hidden md:flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground text-center md:text-left">
                         <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
                         Iata o privire de ansamblu asupra activitatilor.
                     </p>
                 </div>
-                <div className="hidden md:flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                     <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
                         <Button variant="outline" size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
