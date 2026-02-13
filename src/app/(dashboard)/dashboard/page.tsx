@@ -334,7 +334,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="space-y-6">
+            <div className="md:space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
                 <div className="grid gap-4 grid-cols-1">
                     {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
@@ -369,7 +369,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="md:space-y-6">
             <div className="flex-col md:flex-row md:items-start md:justify-between gap-4 hidden md:flex">
                 <div className="text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
@@ -465,6 +465,18 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+            
+            <div className="md:hidden">
+                <Card className="shadow-2xl rounded-2xl">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+                        <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
+                        <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2 pt-4 bg-card rounded-b-2xl">
+                        <SalesChart data={monthlyCommissionData} />
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="md:hidden">
                 <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
@@ -498,7 +510,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>

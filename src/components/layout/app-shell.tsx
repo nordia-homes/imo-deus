@@ -192,7 +192,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <Topbar />
-        <main className="flex-1 bg-background px-0 pt-1 pb-20 md:p-6 md:pb-6">
+        <main className="flex-1 bg-background px-0 pt-0 pb-20 md:p-6 md:pb-6">
             {children}
         </main>
         <BottomNavbar />
