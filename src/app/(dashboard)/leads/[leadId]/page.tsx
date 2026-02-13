@@ -492,9 +492,7 @@ export default function LeadDetailPage() {
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
             <div className='lg:hidden bg-[#0F1E33] min-h-full -mx-4 -mt-6 pb-4'>
-                <div className="p-4 space-y-4 text-white">
-                    <h1 className="text-2xl font-bold pt-12">Detalii Cumpărător</h1>
-                    
+                <div className="p-4 pt-12 space-y-4 text-white">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
                         <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditInfoOpen(true)}>
                             <Edit className="h-4 w-4" />
@@ -706,3 +704,5 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
