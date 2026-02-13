@@ -17,8 +17,10 @@ service cloud.firestore {
     
     // A more lenient check for read operations, allowing access if the user's profile points to the agency.
     function canReadAgencySubcollection(agencyId) {
-      let userProfilePointsToAgency = exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      let userProfilePointsToAgency = userDoc != null && 
+             'agencyId' in userDoc.data &&
+             userDoc.data.agencyId == agencyId;
       return isSignedIn() && (isUserInAgency(agencyId) || userProfilePointsToAgency);
     }
 
@@ -33,18 +35,29 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
-      function areUsersInSameAgency() {
-        let requestingUserPath = /databases/$(database)/documents/users/$(request.auth.uid);
-        let requestedUserPath = /databases/$(database)/documents/users/$(userId);
-        return exists(requestingUserPath) &&
-               exists(requestedUserPath) &&
-               get(requestingUserPath).data.agencyId != null &&
-               get(requestedUserPath).data.agencyId != null &&
-               get(requestingUserPath).data.agencyId == get(requestedUserPath).data.agencyId;
+      function canReadOtherUsers() {
+        // First, get the requesting user's agency ID from their own profile.
+        let requestingUserDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        // If they don't have a profile or an agency ID, they can't read others' profiles.
+        if (requestingUserDoc == null || !('agencyId' in requestingUserDoc.data) || requestingUserDoc.data.agencyId == null) {
+          return false;
+        }
+        let agencyId = requestingUserDoc.data.agencyId;
+        
+        // Next, get the agency document.
+        let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
+        // If the agency doesn't exist, or doesn't have an agentIds list, deny.
+        if (agencyDoc == null || !('agentIds' in agencyDoc.data)) {
+          return false;
+        }
+
+        // Finally, check if the requested user's ID is in the agency's list of agents.
+        return userId in agencyDoc.data.agentIds;
       }
-      
-      // A user can read their own profile, or profiles of other users in the same agency.
-      allow get: if isSignedIn() && (request.auth.uid == userId || areUsersInSameAgency());
+
+      // A user can read their own profile, or another user's profile if they are in the same agency.
+      allow get: if isSignedIn() && (request.auth.uid == userId || canReadOtherUsers());
+
       // Users can create and update their own profile.
       allow update, create: if isSignedIn() && request.auth.uid == userId;
       // No one can list all users or delete them from the client.
