@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation, Offer } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation, Offer, FinancialStatus } from '@/lib/types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Image from 'next/image';
@@ -34,11 +34,15 @@ import { EditLeadInfoDialog } from '@/components/leads/detail/EditLeadInfoDialog
 import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, Plus, Check, CheckSquare } from 'lucide-react';
+import { Phone, Mail, Plus, Check, CheckSquare, Edit } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const PageSkeleton = () => (
@@ -218,17 +222,32 @@ export default function LeadDetailPage() {
                 description: p.description || p.title || '',
                 image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
             }));
-            propertyMatcher({
-                clientPreferences: contact.preferences || {
-                    desiredPriceRangeMin: (contact.budget || 0) * 0.8,
-                    desiredPriceRangeMax: (contact.budget || 0) * 1.2,
-                    desiredRooms: 2,
-                    desiredBathrooms: 1,
-                    desiredSquareFootageMin: 50,
-                    desiredSquareFootageMax: 100,
+            const clientPrefs = contact.preferences || {
+                desiredPriceRangeMin: (contact.budget || 0) * 0.8,
+                desiredPriceRangeMax: (contact.budget || 0) * 1.2,
+                desiredRooms: 2,
+                desiredBathrooms: 1,
+                desiredSquareFootageMin: 50,
+                desiredSquareFootageMax: 100,
+                desiredFeatures: '',
+                locationPreferences: contact.city || '',
+            };
+            // Ensure required fields are present
+            const fullClientPrefs = {
+                ...{
+                    desiredRooms: 0,
+                    desiredBathrooms: 0,
+                    desiredSquareFootageMin: 0,
+                    desiredSquareFootageMax: 99999,
                     desiredFeatures: '',
-                    locationPreferences: contact.city || '',
+                    locationPreferences: '',
+                    desiredPriceRangeMin: 0,
+                    desiredPriceRangeMax: 9999999,
                 },
+                ...clientPrefs
+            };
+            propertyMatcher({
+                clientPreferences: fullClientPrefs,
                 properties: matcherProperties,
             }).then(result => {
                 setMatchedProperties(result.matchedProperties as MatchedProperty[]);
@@ -471,11 +490,15 @@ export default function LeadDetailPage() {
 
     return (
         <div className="h-full flex flex-col">
-            <div className='lg:hidden bg-[#0F1E33] min-h-full -mx-4 -mt-6 -mb-20'>
+             {/* Mobile View: Dark, app-like */}
+            <div className='lg:hidden bg-[#0F1E33] min-h-full -mx-4 -mt-6 pb-4'>
                 <div className="p-4 space-y-4 text-white">
-                    <h1 className="text-2xl font-bold pt-12">Cumpărători</h1>
+                    <h1 className="text-2xl font-bold pt-12">Detalii Cumpărător</h1>
                     
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
+                        <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditInfoOpen(true)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
                         <p className='text-sm text-white/60'>Bună {userProfile?.name?.split(' ')[0]}! Detalii cumpărător</p>
                         <div className='flex justify-between items-start'>
                             <div>
@@ -508,61 +531,102 @@ export default function LeadDetailPage() {
                         <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
                     </Card>
 
-                    {upcomingViewing && (
+                    <Accordion type="multiple" className="w-full space-y-4">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <CardContent className='p-0'>
-                                <div className='p-4'>
-                                    <div className='flex justify-between items-center'>
-                                        <h3 className='font-semibold'>Vizionări Programate</h3>
-                                        <p className='text-xs text-white/60'>{format(parseISO(upcomingViewing.viewingDate), "eeee, d MMM", { locale: ro })}</p>
-                                    </div>
-                                </div>
-                                <div className='relative h-32'>
-                                    {upcomingViewingProperty?.images?.[0]?.url && (
-                                        <Image src={upcomingViewingProperty.images[0].url} alt={upcomingViewingProperty.title} fill className='object-cover'/>
-                                    )}
-                                    <div className='absolute inset-0 bg-black/50 flex flex-col justify-end p-4'>
-                                        <h4 className='font-bold text-white'>{upcomingViewing.propertyTitle}</h4>
-                                        <p className='text-sm text-white/80'>{format(parseISO(upcomingViewing.viewingDate), "d MMM, HH:mm", { locale: ro })} cu: {upcomingViewing.contactName}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
+                            <AccordionItem value="timeline" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Cronologie & Acțiuni
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0">
+                                    <LeadTimeline 
+                                        interactions={contact.interactionHistory || []} 
+                                        tasks={tasks || []}
+                                        onAddInteraction={handleAddInteraction}
+                                        onAddTask={handleAddTask}
+                                        contacts={[contact]}
+                                        onToggleTask={handleToggleTask}
+                                    />
+                                </AccordionContent>
+                            </AccordionItem>
                         </Card>
-                    )}
-
-                     {matchedProperties && matchedProperties.length > 0 && (
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                            <CardContent className='p-4 space-y-2'>
-                                <h3 className='font-semibold'>Proprietăți Potrivite</h3>
-                                {matchedProperties.slice(0, 2).map(p => (
-                                    <div key={p.id} className='bg-white/5 p-3 rounded-lg'>
-                                        <p className='font-semibold text-sm'>{p.title}</p>
-                                        <p className='text-xs text-white/70'>{p.rooms} camere • €{p.price.toLocaleString()}</p>
+                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <AccordionItem value="preferences" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Preferințe & Potriviri
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
                                     </div>
-                                ))}
-                            </CardContent>
+                                    <div className="mt-4">
+                                        <MatchedProperties properties={matchedProperties} contact={contact} />
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
                         </Card>
-                     )}
-
-                    {timelineItems && timelineItems.length > 0 && (
-                         <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                            <CardContent className='p-4 space-y-3'>
-                                <h3 className='font-semibold'>Cronologie</h3>
-                                {timelineItems.slice(0, 4).map((item, index) => (
-                                    <div key={index} className='flex justify-between items-center text-sm'>
-                                        <div className='flex items-center gap-2'>
-                                            {item.type === 'task' ? <CheckSquare className='h-4 w-4 text-white/60'/> : <WhatsappIcon className='h-4 w-4 text-white/60'/>}
-                                            <div>
-                                                <p>{item.type === 'task' ? `Task: ${item.description}` : item.type}</p>
-                                                {item.type === 'task' && item.agentName && <p className='text-xs text-white/60'>Agent: {item.agentName}</p>}
-                                            </div>
-                                        </div>
-                                        <p className='text-xs text-white/60'>{formatDistanceToNow(new Date(item.type === 'task' ? item.dueDate : item.date), { locale: ro, addSuffix: true })}</p>
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                             <AccordionItem value="offers" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Oferte & Financiar
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0 space-y-4">
+                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <FinancialStatusCard 
+                                            contact={contact} 
+                                            onUpdateContact={handleUpdateContact}
+                                            recommendations={recommendations}
+                                            properties={properties}
+                                            portalId={contact.portalId || null}
+                                            onUpdateRecommendation={handleUpdateRecommendation}
+                                        />
+                                     </div>
+                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <OfferManagementCard
+                                            contact={contact}
+                                            properties={properties || []}
+                                            onAddOffer={handleAddOffer}
+                                            onUpdateOffer={handleUpdateOffer}
+                                            onDeleteOffer={handleDeleteOffer}
+                                        />
+                                     </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                             <AccordionItem value="portal" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Portal Client
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0 text-card-foreground bg-card rounded-b-lg">
+                                    <ClientPortalManager contact={contact} agency={agency} />
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                             <AccordionItem value="settings" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Setări & Asocieri
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0 space-y-4">
+                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                                     </div>
-                                ))}
-                            </CardContent>
-                         </Card>
-                    )}
+                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <SourcePropertyCard 
+                                            property={sourceProperty} 
+                                            isLoading={isSourcePropertyLoading}
+                                            allProperties={properties || []}
+                                            onUpdateContact={handleUpdateContact}
+                                        />
+                                    </div>
+                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
+                                        <SimilarLeadsCard leads={similarCumparatori} />
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+
+                    </Accordion>
 
                 </div>
             </div>
@@ -642,5 +706,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
