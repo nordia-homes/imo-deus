@@ -492,8 +492,7 @@ export default function LeadDetailPage() {
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
             <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 -mx-2 pb-4'>
-                <div className="px-2 pt-12 space-y-4 text-white">
-                    <p className='text-sm text-white/60 text-center'>Bună {userProfile?.name?.split(' ')[0]}!</p>
+                <div className="px-2 pt-4 space-y-4 text-white">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
                         <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditDialogOpen(true)}>
                             <Edit className="h-4 w-4" />
@@ -712,3 +711,5 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    

@@ -8,9 +8,9 @@ import { Calendar } from 'lucide-react';
 
 export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
     
-    // Show only scheduled viewings that are in the future
-    const upcomingViewings = viewings
-        .filter(v => v.status === 'scheduled' && parseISO(v.viewingDate) >= new Date())
+    // Show only scheduled viewings
+    const scheduledViewings = viewings
+        .filter(v => v.status === 'scheduled')
         .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
 
     return (
@@ -19,8 +19,8 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                 <CardTitle className="text-base">Vizionări Programate</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                {upcomingViewings.length > 0 ? (
-                    upcomingViewings.map(viewing => (
+                {scheduledViewings.length > 0 ? (
+                    scheduledViewings.map(viewing => (
                         <Link href={`/properties/${viewing.propertyId}`} key={viewing.id} className="block p-2 rounded-md border hover:bg-accent">
                             <p className="font-semibold text-sm truncate">{viewing.propertyTitle}</p>
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -38,3 +38,5 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
         </Card>
     );
 }
+
+    
