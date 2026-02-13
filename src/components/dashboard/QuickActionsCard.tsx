@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -76,7 +75,7 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                                 return (
                                     <div key={viewing.id} className="p-3 rounded-lg border border-white/10 bg-white/5">
                                         <div className="flex justify-between items-start gap-2">
-                                            <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-sm truncate pr-2 flex-1 text-white hover:underline">{viewing.propertyTitle}</Link>
+                                            <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-sm truncate pr-2 flex-1 text-white hover:underline min-w-0">{viewing.propertyTitle}</Link>
                                             <div className="font-bold text-sm flex items-center gap-1 shrink-0 text-white/90">
                                                 <Clock className="h-3 w-3" />
                                                 {format(parseISO(viewing.viewingDate), 'HH:mm')}
