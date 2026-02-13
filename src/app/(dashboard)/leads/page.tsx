@@ -11,6 +11,7 @@ import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default function LeadsPage() {
     const { agencyId } = useAgency();
@@ -70,43 +71,83 @@ export default function LeadsPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
   return (
-    <div className="space-y-6">
-       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div>
-                <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
-                <p className="text-muted-foreground">
-                    Gestionează și prioritizează potențialii clienți.
-                </p>
+    <div>
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+            <Card className="bg-[#0F1E33] text-white rounded-none -mx-0 shadow-lg">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
+                        <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
+                            <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white"><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
+                        </AddLeadDialog>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <Skeleton className="h-16 w-full" />
+                    ) : (
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <p className="font-bold text-2xl">{newBuyersCount.toString()}</p>
+                                <p className="text-xs text-white/80">Noi (7 zile)</p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <p className="font-bold text-2xl">{formatBudget(totalBudget)}</p>
+                                <p className="text-xs text-white/80">Buget Total</p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <p className="font-bold text-2xl">{averageAiScore.toString()}</p>
+                                <p className="text-xs text-white/80">Scor Mediu AI</p>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            <div className="px-4">
+              <LeadList />
             </div>
-             <AddLeadDialog 
-                properties={properties || []}
-                isOpen={isAddLeadOpen}
-                onOpenChange={setIsAddLeadOpen}
-            >
-                <Button className="w-full md:w-auto">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adaugă Cumpărător
-                </Button>
-            </AddLeadDialog>
-        </div>
-        
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-            {isLoading ? (
-                <>
-                    <Skeleton className="h-[98px]" />
-                    <Skeleton className="h-[98px]" />
-                    <Skeleton className="h-[98px]" />
-                </>
-            ) : (
-                <>
-                    <StatCard title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
-                    <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
-                    <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
-                </>
-            )}
         </div>
 
-        <LeadList />
+        {/* Desktop View */}
+        <div className="hidden md:block space-y-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
+                        <p className="text-muted-foreground">
+                            Gestionează și prioritizează potențialii clienți.
+                        </p>
+                    </div>
+                    <AddLeadDialog 
+                        properties={properties || []}
+                        isOpen={isAddLeadOpen}
+                        onOpenChange={setIsAddLeadOpen}
+                    >
+                        <Button className="w-full md:w-auto">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adaugă Cumpărător
+                        </Button>
+                    </AddLeadDialog>
+                </div>
+                
+                <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
+                    {isLoading ? (
+                        <>
+                            <Skeleton className="h-[98px]" />
+                            <Skeleton className="h-[98px]" />
+                            <Skeleton className="h-[98px]" />
+                        </>
+                    ) : (
+                        <>
+                            <StatCard title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
+                            <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
+                            <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
+                        </>
+                    )}
+                </div>
+
+                <LeadList />
+            </div>
     </div>
   );
 }
