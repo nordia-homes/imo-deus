@@ -33,8 +33,20 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
-      // Users can create, read, and update their own profile.
-      allow read, update, create: if isSignedIn() && request.auth.uid == userId;
+      function areUsersInSameAgency() {
+        let requestingUserPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        let requestedUserPath = /databases/$(database)/documents/users/$(userId);
+        return exists(requestingUserPath) &&
+               exists(requestedUserPath) &&
+               get(requestingUserPath).data.agencyId != null &&
+               get(requestedUserPath).data.agencyId != null &&
+               get(requestingUserPath).data.agencyId == get(requestedUserPath).data.agencyId;
+      }
+      
+      // A user can read their own profile, or profiles of other users in the same agency.
+      allow get: if isSignedIn() && (request.auth.uid == userId || areUsersInSameAgency());
+      // Users can create and update their own profile.
+      allow update, create: if isSignedIn() && request.auth.uid == userId;
       // No one can list all users or delete them from the client.
       allow list, delete: if false;
     }
