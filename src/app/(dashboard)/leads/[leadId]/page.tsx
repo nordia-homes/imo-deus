@@ -1,8 +1,8 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, orderBy } from '@/firebase';
-import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -491,7 +491,7 @@ export default function LeadDetailPage() {
     return (
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 pb-4'>
+            <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 -mx-2 pb-4'>
                 <div className="px-2 pt-12 space-y-4 text-white">
                     <p className='text-sm text-white/60 text-center'>Bună {userProfile?.name?.split(' ')[0]}!</p>
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
@@ -530,7 +530,7 @@ export default function LeadDetailPage() {
                         <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
                     </Card>
 
-                    <Accordion type="multiple" className="w-full space-y-4">
+                    <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
