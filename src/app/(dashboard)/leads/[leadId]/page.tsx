@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, ContactPreferences, PortalRecommendation, Offer, FinancialStatus } from '@/lib/types';
+import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus } from '@/lib/types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Image from 'next/image';
@@ -37,7 +37,7 @@ import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, Plus, Check, CheckSquare, Edit } from 'lucide-react';
+import { Phone, Mail, Plus, Check, CheckSquare, Edit, Calendar } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from '@/components/ui/label';
@@ -452,6 +452,13 @@ export default function LeadDetailPage() {
             toast({ title: 'Ofertă ștearsă!', variant: 'destructive' });
         }
     };
+    
+    const scheduledViewings = useMemo(() => {
+        if (!viewings) return [];
+        return viewings
+            .filter(v => v.status === 'scheduled')
+            .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+    }, [viewings]);
 
     const upcomingViewing = useMemo(() => {
         if (!viewings) return null;
@@ -498,11 +505,11 @@ export default function LeadDetailPage() {
                              <div>
                                 <div className='flex items-center gap-2'>
                                     <h2 className='text-xl font-bold'>{contact.name}</h2>
+                                    <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
                                     <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-7 w-7" onClick={() => setIsEditDialogOpen(true)}>
                                         <Edit className="h-4 w-4" />
                                     </Button>
                                 </div>
-                                <Badge className='bg-white/10 text-white border-none mt-1'>{contact.status}</Badge>
                                 {contact.budget && <p className="mt-2">Buget: €{contact.budget.toLocaleString()}</p>}
                                 {contact.zones && contact.zones.length > 0 && <p className='text-sm text-white/80'>Zone: {contact.zones.join(', ')}</p>}
                             </div>
@@ -528,19 +535,28 @@ export default function LeadDetailPage() {
                         <Button className='w-full bg-green-500 hover:bg-green-600 text-white' onClick={() => handleUpdateContact({ status: 'Câștigat' })}>Marchează Vândut</Button>
                     </Card>
 
+                    {scheduledViewings.length > 0 && (
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                            <CardHeader className="p-4">
+                                <CardTitle className="font-semibold text-white">Vizionări Programate</CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-4 pb-4 pt-0">
+                                <div className="space-y-3">
+                                    {scheduledViewings.map(viewing => (
+                                        <Link href={`/properties/${viewing.propertyId}`} key={viewing.id} className="block p-3 rounded-lg border border-white/20 hover:bg-white/10">
+                                            <p className="font-semibold text-sm truncate">{viewing.propertyTitle}</p>
+                                            <p className="text-xs text-white/80 flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                {format(parseISO(viewing.viewingDate), "d MMM yyyy, HH:mm", { locale: ro })}
+                                            </p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
-                        {viewings && viewings.length > 0 && (
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <AccordionItem value="viewings" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                        Vizionări Programate
-                                    </AccordionTrigger>
-                                    <AccordionContent className="px-2 pb-2 pt-0">
-                                        <ScheduledViewingsCard viewings={viewings || []} />
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Card>
-                        )}
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
