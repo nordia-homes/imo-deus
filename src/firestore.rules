@@ -14,6 +14,13 @@ service cloud.firestore {
             exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
             request.auth.uid in get(/databases/$(database)/documents/agencies/$(agencyId)).data.agentIds;
     }
+    
+    // A more lenient check for read operations, allowing access if the user's profile points to the agency.
+    function canReadAgencySubcollection(agencyId) {
+      let userProfilePointsToAgency = exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
+      return isSignedIn() && (isUserInAgency(agencyId) || userProfilePointsToAgency);
+    }
 
     // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
@@ -62,11 +69,26 @@ service cloud.firestore {
       allow delete: if false;
 
       // --- Agency Sub-collections ---
-      match /contacts/{contactId} { allow read, write: if isUserInAgency(agencyId); }
-      match /tasks/{taskId} { allow read, write: if isUserInAgency(agencyId); }
-      match /reports/{reportId} { allow read, write: if isUserInAgency(agencyId); }
-      match /emails/{emailId} { allow read, write: if isUserInAgency(agencyId); }
-      match /viewings/{viewingId} { allow read, write: if isUserInAgency(agencyId); }
+      match /contacts/{contactId} { 
+        allow read: if canReadAgencySubcollection(agencyId);
+        allow write: if isUserInAgency(agencyId);
+      }
+      match /tasks/{taskId} { 
+        allow read: if canReadAgencySubcollection(agencyId);
+        allow write: if isUserInAgency(agencyId);
+      }
+      match /reports/{reportId} { 
+        allow read: if canReadAgencySubcollection(agencyId);
+        allow write: if isUserInAgency(agencyId);
+      }
+      match /emails/{emailId} { 
+        allow read: if canReadAgencySubcollection(agencyId);
+        allow write: if isUserInAgency(agencyId);
+      }
+      match /viewings/{viewingId} { 
+        allow read: if canReadAgencySubcollection(agencyId);
+        allow write: if isUserInAgency(agencyId);
+      }
 
       // Properties are publicly readable but only writable by agency members.
       match /properties/{propertyId} {
