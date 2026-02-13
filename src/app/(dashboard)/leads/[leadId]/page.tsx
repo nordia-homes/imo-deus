@@ -491,20 +491,19 @@ export default function LeadDetailPage() {
     return (
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 -mx-2 pb-4'>
-                <div className="px-2 pt-4 space-y-4 text-white">
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
-                        <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditDialogOpen(true)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        
+            <div className='lg:hidden bg-[#0F1E33] -mt-6 -mx-4 pb-4'>
+                <div className="px-4 space-y-4 text-white pt-4">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>
-                            <div>
+                             <div>
                                 <div className='flex items-center gap-2'>
                                     <h2 className='text-xl font-bold'>{contact.name}</h2>
-                                    <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
+                                    <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-7 w-7" onClick={() => setIsEditDialogOpen(true)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                {contact.budget && <p>Buget: €{contact.budget.toLocaleString()}</p>}
+                                <Badge className='bg-white/10 text-white border-none mt-1'>{contact.status}</Badge>
+                                {contact.budget && <p className="mt-2">Buget: €{contact.budget.toLocaleString()}</p>}
                                 {contact.zones && contact.zones.length > 0 && <p className='text-sm text-white/80'>Zone: {contact.zones.join(', ')}</p>}
                             </div>
                             {typeof contact.leadScore === 'number' && (
@@ -530,16 +529,18 @@ export default function LeadDetailPage() {
                     </Card>
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="viewings" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Vizionări Programate
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pb-2 pt-0">
-                                    <ScheduledViewingsCard viewings={viewings || []} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
+                        {viewings && viewings.length > 0 && (
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <AccordionItem value="viewings" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                        Vizionări Programate
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-2 pb-2 pt-0">
+                                        <ScheduledViewingsCard viewings={viewings || []} />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+                        )}
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
