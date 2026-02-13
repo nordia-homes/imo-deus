@@ -1,8 +1,8 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, orderBy } from '@/firebase';
+import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -492,12 +492,13 @@ export default function LeadDetailPage() {
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
             <div className='lg:hidden bg-[#0F1E33] min-h-full -mt-6 pb-4'>
-                <div className="p-4 pt-12 space-y-4 text-white">
+                <div className="px-2 pt-12 space-y-4 text-white">
+                    <p className='text-sm text-white/60 text-center'>Bună {userProfile?.name?.split(' ')[0]}!</p>
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4 relative">
                         <Button size="icon" variant="ghost" className="absolute top-3 right-3 text-white/70 hover:text-white" onClick={() => setIsEditDialogOpen(true)}>
                             <Edit className="h-4 w-4" />
                         </Button>
-                        <p className='text-sm text-white/60'>Bună {userProfile?.name?.split(' ')[0]}! Detalii cumpărător</p>
+                        
                         <div className='flex justify-between items-start'>
                             <div>
                                 <div className='flex items-center gap-2'>
@@ -535,7 +536,7 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Cronologie & Acțiuni
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0">
+                                <AccordionContent className="px-2 pb-2 pt-0">
                                     <LeadTimeline 
                                         interactions={contact.interactionHistory || []} 
                                         tasks={tasks || []}
@@ -552,10 +553,8 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Descriere
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0">
-                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
-                                    </div>
+                                <AccordionContent className="px-2 pb-2 pt-0">
+                                    <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
@@ -564,13 +563,9 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Preferințe & Potriviri
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0">
-                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                                    </div>
-                                    <div className="mt-4">
-                                        <MatchedProperties properties={matchedProperties} contact={contact} />
-                                    </div>
+                                <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
+                                    <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
+                                    <MatchedProperties properties={matchedProperties} contact={contact} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
@@ -579,26 +574,22 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Oferte & Financiar
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0 space-y-4">
-                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <FinancialStatusCard 
-                                            contact={contact} 
-                                            onUpdateContact={handleUpdateContact}
-                                            recommendations={recommendations}
-                                            properties={properties}
-                                            portalId={contact.portalId || null}
-                                            onUpdateRecommendation={handleUpdateRecommendation}
-                                        />
-                                     </div>
-                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <OfferManagementCard
-                                            contact={contact}
-                                            properties={properties || []}
-                                            onAddOffer={handleAddOffer}
-                                            onUpdateOffer={handleUpdateOffer}
-                                            onDeleteOffer={handleDeleteOffer}
-                                        />
-                                     </div>
+                                <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
+                                    <FinancialStatusCard 
+                                        contact={contact} 
+                                        onUpdateContact={handleUpdateContact}
+                                        recommendations={recommendations}
+                                        properties={properties}
+                                        portalId={contact.portalId || null}
+                                        onUpdateRecommendation={handleUpdateRecommendation}
+                                    />
+                                    <OfferManagementCard
+                                        contact={contact}
+                                        properties={properties || []}
+                                        onAddOffer={handleAddOffer}
+                                        onUpdateOffer={handleUpdateOffer}
+                                        onDeleteOffer={handleDeleteOffer}
+                                    />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
@@ -607,7 +598,7 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Portal Client
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0 text-card-foreground bg-card rounded-b-lg">
+                                <AccordionContent className="px-2 pt-0 pb-2">
                                     <ClientPortalManager contact={contact} agency={agency} />
                                 </AccordionContent>
                             </AccordionItem>
@@ -617,21 +608,15 @@ export default function LeadDetailPage() {
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Setări & Asocieri
                                 </AccordionTrigger>
-                                <AccordionContent className="p-4 pt-0 space-y-4">
-                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                                    </div>
-                                    <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <SourcePropertyCard 
-                                            property={sourceProperty} 
-                                            isLoading={isSourcePropertyLoading}
-                                            allProperties={properties || []}
-                                            onUpdateContact={handleUpdateContact}
-                                        />
-                                    </div>
-                                     <div className="text-card-foreground bg-card p-4 rounded-lg">
-                                        <SimilarLeadsCard leads={similarCumparatori} />
-                                    </div>
+                                <AccordionContent className="px-2 pt-0 pb-2 space-y-2">
+                                    <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                                    <SourcePropertyCard 
+                                        property={sourceProperty} 
+                                        isLoading={isSourcePropertyLoading}
+                                        allProperties={properties || []}
+                                        onUpdateContact={handleUpdateContact}
+                                    />
+                                    <SimilarLeadsCard leads={similarCumparatori} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
