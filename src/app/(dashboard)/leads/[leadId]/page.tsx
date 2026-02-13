@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -538,7 +539,7 @@ export default function LeadDetailPage() {
 
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl mx-2">
                         <CardHeader className="p-4">
-                            <CardTitle className="font-semibold text-white">Vizionări Programate</CardTitle>
+                            <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
                         </CardHeader>
                         <CardContent className="px-4 pb-4 pt-0">
                             {scheduledViewings.length > 0 ? (
@@ -733,3 +734,5 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
