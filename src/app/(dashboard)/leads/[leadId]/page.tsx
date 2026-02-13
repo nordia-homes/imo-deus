@@ -2,7 +2,7 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, collection, query, where, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -12,6 +12,7 @@ import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Image from 'next/image';
+import { cn } from "@/lib/utils";
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
