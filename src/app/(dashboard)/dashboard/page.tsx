@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -368,8 +369,8 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-8">
-            <div className="hidden md:flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="space-y-6 -mt-6 md:mt-0">
+            <div className="flex-col md:flex-row md:items-start md:justify-between gap-4 hidden md:flex">
                 <div className="text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
                     <p className="text-muted-foreground text-center md:text-left">
@@ -415,20 +416,20 @@ export default function DashboardPage() {
                 displayName={displayName}
             />
             
-            <div className="md:hidden">
-                <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+            <div className="md:hidden w-screen -mx-4 md:w-full md:mx-0">
+                <Card className="shadow-2xl rounded-none md:rounded-2xl">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-none md:rounded-t-2xl">
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
                         <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2 bg-card rounded-b-2xl">
+                    <CardContent className="pl-2 bg-card rounded-none md:rounded-b-2xl">
                         <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
             </div>
             
-            <div className="md:hidden">
-                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white">
+            <div className="md:hidden w-screen -mx-4 md:w-full md:mx-0">
+                <Card className="shadow-2xl rounded-none md:rounded-2xl bg-[#152a47] text-white">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
                     </CardHeader>
@@ -465,24 +466,12 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="md:hidden">
-                <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
-                        <CardTitle className="text-base font-semibold">Evoluție Comision Lunar</CardTitle>
-                        <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2 bg-card rounded-b-2xl">
-                        <SalesChart data={monthlyCommissionData} />
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="md:hidden">
-                <Card className="shadow-2xl rounded-2xl">
-                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
+            <div className="md:hidden w-screen -mx-4 md:w-full md:mx-0">
+                <Card className="shadow-2xl rounded-none md:rounded-2xl">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-none md:rounded-t-2xl flex flex-row items-center justify-between">
                         <CardTitle className="text-base font-semibold text-white">Ultimii Cumpărători Adăugați</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-2 bg-card rounded-b-2xl">
+                    <CardContent className="p-2 bg-card rounded-none md:rounded-b-2xl">
                         {recentContacts.length > 0 ? (
                             <div className="space-y-2">
                                 {recentContacts.map(contact => (
@@ -501,22 +490,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
-            <div className="md:hidden">
-                <DashboardPropertyList 
-                    title="Lista Proprietăți Rezervate" 
-                    properties={reservedThisMonth}
-                    variant="mobile"
-                />
-            </div>
-            <div className="md:hidden">
-                <DashboardPropertyList 
-                    title="Lista Proprietăți Vândute" 
-                    properties={soldThisMonth} 
-                    variant="mobile"
-                />
-            </div>
-
+            
             <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start">
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
@@ -533,8 +507,18 @@ export default function DashboardPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
-                    <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
-                    <RecentActivity />
+                    <div className="md:hidden w-screen -mx-4 md:w-full md:mx-0">
+                        <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
+                    </div>
+                    <div className="md:hidden w-screen -mx-4 md:w-full md:mx-0">
+                        <RecentActivity />
+                    </div>
+                    <div className="hidden md:block">
+                        <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
+                    </div>
+                    <div className="hidden md:block">
+                        <RecentActivity />
+                    </div>
                 </div>
                 <div className="lg:col-span-1 space-y-6">
                     <AiHelperCard />
@@ -542,5 +526,4 @@ export default function DashboardPage() {
             </div>
         </div>
     );
-
-    
+}
