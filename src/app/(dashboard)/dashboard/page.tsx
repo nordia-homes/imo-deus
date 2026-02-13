@@ -369,7 +369,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-6 md:mt-0">
+        <div className="space-y-6">
             <div className="flex-col md:flex-row md:items-start md:justify-between gap-4 hidden md:flex">
                 <div className="text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
@@ -464,6 +464,13 @@ export default function DashboardPage() {
                         </div>
                     </CardContent>
                 </Card>
+            </div>
+
+            <div className="md:hidden">
+                <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
+            </div>
+            <div className="md:hidden">
+                <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} variant="mobile" />
             </div>
 
             <div className="md:hidden">
