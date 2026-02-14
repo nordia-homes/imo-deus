@@ -107,17 +107,17 @@ export function Topbar() {
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
 
     return (
-        <header className="flex h-16 items-center gap-4 border-b border-white/10 bg-[#0F1E33] px-4 text-white md:border-border md:bg-card md:px-6 md:text-card-foreground sticky top-0 z-30">
-            <SidebarTrigger className="text-white md:text-inherit" />
+        <header className="flex h-16 items-center gap-4 border-b border-white/10 bg-[#0F1E33] px-4 md:px-6 text-white sticky top-0 z-30">
+            <SidebarTrigger className="text-white" />
             <div className="flex-1">
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
                         <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/70 md:text-muted-foreground" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/70" />
                             <Input
                                 type="search"
                                 placeholder="Caută lead-uri, proprietăți..."
-                                className="w-full rounded-lg bg-white/10 pl-8 text-white placeholder:text-white/70 md:w-[200px] md:bg-background md:text-foreground md:placeholder:text-muted-foreground lg:w-[320px]"
+                                className="w-full rounded-lg bg-white/10 pl-8 text-white placeholder:text-white/70 md:w-[200px] lg:w-[320px]"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
