@@ -510,7 +510,7 @@ export default function LeadDetailPage() {
     return (
         <div className="h-full flex flex-col overflow-x-hidden">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] -mt-6 -mx-4 pb-4'>
+            <div className='lg:hidden bg-[#0F1E33] -mt-6 -mx-4 pb-4 overflow-x-hidden'>
                 <div className="px-4 pt-4 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +66,7 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
         <Link href={`/properties/${property.id}`} className="block">
             <p className="font-semibold truncate group-hover:underline">{property.title}</p>
         </Link>
-        <p className="text-xs text-muted-foreground">{property.location}</p>
+        <p className="text-xs text-muted-foreground truncate">{property.location}</p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
             <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> {property.bedrooms}</span>
             <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {property.bathrooms}</span>
