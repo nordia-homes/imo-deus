@@ -51,7 +51,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
 export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
             <CardHeader className="p-4">
                 <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             </CardHeader>
@@ -63,7 +63,7 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
   }
 
   return (
-    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
             <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             <Button variant="link" size="sm" asChild className="text-white">
@@ -80,5 +80,6 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
     </Card>
   );
 }
+
 
 
