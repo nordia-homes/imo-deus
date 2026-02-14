@@ -14,8 +14,9 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
-const MatchedPropertyCard = ({ property, onAddRecommendation }: { property: Property, onAddRecommendation: (property: Property) => void }) => {
+const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
   const constructionYear = property.constructionYear;
   
@@ -24,6 +25,17 @@ const MatchedPropertyCard = ({ property, onAddRecommendation }: { property: Prop
     e.stopPropagation();
     onAddRecommendation(property);
   }
+
+  const handleWhatsAppShare = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!agencyId || !contact?.phone) return;
+
+      const propertyUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
+      const message = `Salut, ${contact.name}! Cred că această proprietate ți s-ar potrivi: ${propertyUrl}`;
+      const whatsappUrl = `https://wa.me/${contact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
@@ -50,9 +62,16 @@ const MatchedPropertyCard = ({ property, onAddRecommendation }: { property: Prop
         
         <div className="pt-2 mt-auto flex justify-between items-end">
             <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
-             <Button onClick={handleAddClick} size="icon" className="bg-blue-500 hover:bg-blue-600 text-white rounded-full h-10 w-10">
-                <Plus className="h-5 w-5" />
-            </Button>
+             <div className="flex items-center gap-2">
+                 {contact?.phone && agencyId && (
+                    <Button onClick={handleWhatsAppShare} size="icon" className="bg-green-500 hover:bg-green-600 text-white rounded-full h-10 w-10">
+                        <WhatsappIcon className="h-5 w-5" />
+                    </Button>
+                 )}
+                 <Button onClick={handleAddClick} size="icon" className="bg-blue-500 hover:bg-blue-600 text-white rounded-full h-10 w-10">
+                    <Plus className="h-5 w-5" />
+                </Button>
+            </div>
         </div>
       </div>
     </div>
@@ -60,7 +79,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation }: { property: Prop
 };
 
 
-export function MatchedProperties({ properties, onAddRecommendation }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void }) {
+export function MatchedProperties({ properties, onAddRecommendation, agencyId, contact }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) {
   if (!properties || properties.length === 0) {
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
@@ -88,7 +107,7 @@ export function MatchedProperties({ properties, onAddRecommendation }: { propert
         </CardHeader>
         <CardContent className="px-4 pb-4">
             {singleProperty ? (
-                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} />
+                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agencyId} contact={contact} />
             ) : (
                 <Carousel
                   opts={{
@@ -101,7 +120,7 @@ export function MatchedProperties({ properties, onAddRecommendation }: { propert
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
                         <div className="p-1 h-full">
-                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} />
+                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agencyId={agencyId} contact={contact} />
                         </div>
                       </CarouselItem>
                     ))}

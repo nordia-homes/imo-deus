@@ -644,6 +644,8 @@ export default function LeadDetailPage() {
                     <MatchedProperties
                         properties={matchedProperties}
                         onAddRecommendation={handleAddRecommendation}
+                        agencyId={agency?.id}
+                        contact={contact}
                     />
 
                     <ClientPortalManager contact={contact} agency={agency} />
@@ -765,6 +767,8 @@ export default function LeadDetailPage() {
                          <MatchedProperties
                             properties={matchedProperties}
                             onAddRecommendation={handleAddRecommendation}
+                            agencyId={agency?.id}
+                            contact={contact}
                          />
                          <SourcePropertyCard 
                             property={sourceProperty} 
