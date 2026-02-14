@@ -7,19 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Get the requesting user's profile data
-    function userData() {
+    // Safely get the requesting user's profile data
+    function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
-    // Check if the requesting user belongs to the agency via their own profile
+    // Safely check if the requesting user belongs to the given agency
     function isUserInAgency(agencyId) {
-      return isSignedIn() && userData().agencyId == agencyId;
+      // First, check that the user is signed in and their user profile document exists.
+      // Then, access the data and compare the agencyId.
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserData().agencyId == agencyId;
     }
 
-    // Check if the user is an admin of the specified agency
+    // Safely check if the user is an admin of the specified agency
     function isUserAdminForAgency(agencyId) {
-        return isUserInAgency(agencyId) && userData().role == 'admin';
+        return isUserInAgency(agencyId) && getUserData().role == 'admin';
     }
 
     // --- User Profiles ---
@@ -27,12 +31,17 @@ service cloud.firestore {
       // A user can update their own profile.
       allow update: if isSignedIn() && request.auth.uid == userId;
       
-      // A user can read their own profile, OR the profile of another user in the same agency.
+      // A user can read their own profile.
+      // A user can read another user's profile if they are in the same agency.
+      // This rule is made safe with exists() checks.
       allow get: if (isSignedIn() && request.auth.uid == userId) ||
-                   (isSignedIn() &&
-                    exists(/databases/$(database)/documents/users/$(userId)) &&
-                    userData().agencyId != null &&
-                    userData().agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId);
+                   (
+                     isSignedIn() &&
+                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                     exists(/databases/$(database)/documents/users/$(userId)) &&
+                     getUserData().agencyId != null &&
+                     getUserData().agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId
+                   );
       
       // No one can list all users or create/delete from the client.
       allow list, create, delete: if false;
@@ -40,7 +49,7 @@ service cloud.firestore {
 
     // --- Invites ---
     match /invites/{inviteId} {
-      // Admins can create invites for their own agency.
+      // Admins can create invites for their own agency. Safe because it uses isUserAdminForAgency.
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
       // Any signed-in user can read an invite (e.g., to accept it upon registration)
       // or delete it after accepting.
@@ -95,7 +104,7 @@ service cloud.firestore {
       // Only a verified member of the agency can create or delete a portal.
       allow create: if isUserInAgency(request.resource.data.agencyId);
       // Using `resource.data` is safer for delete operations
-      allow delete: if isUserInAgency(resource.data.agencyId);
+      allow delete: if exists(/databases/$(database)/documents/portals/$(portalId)) && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
 
       // --- Portal Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
