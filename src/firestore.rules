@@ -8,21 +8,21 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Checks if the user is a member of the agency by checking the agency's 'agentIds' array.
+    // Checks if the user's profile says they belong to the agency.
+    // This is safer for read/list operations.
     function isUserInAgency(agencyId) {
-      let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() &&
-             exists(agencyDocPath) &&
-             'agentIds' in get(agencyDocPath).data &&
-             request.auth.uid in get(agencyDocPath).data.agentIds;
+             exists(userDocPath) &&
+             'agencyId' in get(userDocPath).data &&
+             get(userDocPath).data.agencyId == agencyId;
     }
 
     // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
         let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-        // An admin must be in the agency and have the 'admin' role in their own user profile.
+        // An admin must be a member of the agency and have the 'admin' role.
         return isUserInAgency(agencyId) &&
-               exists(userDocPath) &&
                'role' in get(userDocPath).data &&
                get(userDocPath).data.role == 'admin';
     }
