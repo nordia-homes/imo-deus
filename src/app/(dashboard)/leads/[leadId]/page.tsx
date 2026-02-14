@@ -755,11 +755,11 @@ export default function LeadDetailPage() {
                         </Card>
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
-                        <ClientPortalManager contact={contact} agency={agency} />
                     </div>
 
                     <div className="lg:col-span-5 space-y-6">
                         <ScheduledViewingsCard viewings={scheduledViewings} />
+                        <ClientPortalManager contact={contact} agency={agency} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
