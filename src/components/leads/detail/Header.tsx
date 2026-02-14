@@ -42,7 +42,7 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
                 WhatsApp
              </a>
           </Button>
-          <Button size="sm" variant="outline" onClick={onTriggerEditPreferences}>
+          <Button size="sm" variant="secondary" onClick={onTriggerEditPreferences}>
               <Wand2 className="mr-2 h-4 w-4" />
               Actualizare Preferințe
           </Button>

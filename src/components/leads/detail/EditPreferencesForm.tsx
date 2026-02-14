@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -100,86 +99,85 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-        <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Actualizează Preferințele</h1>
+        <div className="flex items-center justify-end">
             <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />
             </Button>
         </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Card className="rounded-2xl shadow-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <SlidersHorizontal className="h-5 w-5 text-primary" />
-                <span>Preferințe Căutare pentru {contact.name}</span>
-              </CardTitle>
-              <CardDescription>Ajustează criteriile pentru a recalcula potrivirile AI.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredRooms')} /></FormControl></FormItem> )}/>
-                <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
-                <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                          <FormItem>
-                          <FormLabel>Localitate</FormLabel>
-                          <Select onValueChange={(value) => {field.onChange(value); handleBlur('city');}} value={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
-                              <SelectContent>
-                              {Object.keys(locations).map(city => (
-                                  <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
-                              ))}
-                              </SelectContent>
-                          </Select>
-                          </FormItem>
-                      )}
-                      />
-                  
-                   <FormItem>
-                      <FormLabel>Zone</FormLabel>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full justify-between" disabled={!watchedCity}>
-                                  <span className="truncate pr-2">
-                                      {currentZones.length === 0 ? 'Selectează zone' : currentZones.length === 1 ? currentZones[0] : `${currentZones.length} zone selectate`}
-                                  </span>
-                                  <ChevronDown className="h-4 w-4 opacity-50" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                              <ScrollArea className="h-72">
-                                  {availableZones.map(zone => (
-                                      <DropdownMenuCheckboxItem
-                                          key={zone}
-                                          checked={currentZones.includes(zone)}
-                                          onCheckedChange={(checked) => handleZonesChange(zone, !!checked)}
-                                          onSelect={(e) => e.preventDefault()}
-                                      >
-                                          {zone}
-                                      </DropdownMenuCheckboxItem>
-                                  ))}
-                              </ScrollArea>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                   </FormItem>
-              </div>
-               <div>
-                <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={isMatching} className="w-full">
-                {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                Actualizează Potrivirile AI
-              </Button>
-            </CardFooter>
-          </Card>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
+              <SlidersHorizontal className="h-5 w-5 text-primary" />
+              <span>Preferințe Căutare pentru {contact.name}</span>
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">Ajustează criteriile pentru a recalcula potrivirile AI.</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredRooms')} /></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
+              <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Localitate</FormLabel>
+                        <Select onValueChange={(value) => {field.onChange(value); handleBlur('city');}} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                            {Object.keys(locations).map(city => (
+                                <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        </FormItem>
+                    )}
+                    />
+                
+                 <FormItem>
+                    <FormLabel>Zone</FormLabel>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between" disabled={!watchedCity}>
+                                <span className="truncate pr-2">
+                                    {currentZones.length === 0 ? 'Selectează zone' : currentZones.length === 1 ? currentZones[0] : `${currentZones.length} zone selectate`}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                            <ScrollArea className="h-72">
+                                {availableZones.map(zone => (
+                                    <DropdownMenuCheckboxItem
+                                        key={zone}
+                                        checked={currentZones.includes(zone)}
+                                        onCheckedChange={(checked) => handleZonesChange(zone, !!checked)}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        {zone}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </ScrollArea>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                 </FormItem>
+            </div>
+             <div>
+              <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
+            </div>
+          </div>
+          
+          <div>
+            <Button type="submit" disabled={isMatching} className="w-full">
+              {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+              Actualizează Potrivirile AI
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
