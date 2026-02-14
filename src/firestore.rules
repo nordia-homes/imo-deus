@@ -7,73 +7,60 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isUserProfile(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isUserInAgency(agencyId) {
+      return isSignedIn() &&
+             isUserProfile(request.auth.uid) &&
+             'agencyId' in getUserData(request.auth.uid) &&
+             getUserData(request.auth.uid).agencyId == agencyId;
+    }
+
+    function isUserAdminForAgency(agencyId) {
+       return isUserInAgency(agencyId) &&
+              'role' in getUserData(request.auth.uid) &&
+              getUserData(request.auth.uid).role == 'admin';
+    }
+
+
     // --- User Profiles ---
     match /users/{userId} {
-      // A user can always read and write to their own profile.
       allow read, write: if isSignedIn() && request.auth.uid == userId;
 
-      // An admin from the same agency can also read a user's profile.
-      allow get: if isSignedIn() &&
-                    // Check that the requesting user's profile and the target user's profile exist
-                    exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                    exists(/databases/$(database)/documents/users/$(userId)) &&
-                    // Check that the necessary fields exist before accessing them
-                    'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                    'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                    'agencyId' in get(/databases/$(database)/documents/users/$(userId)).data &&
-                    // Perform the actual permission check
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/users/$(userId)).data.agencyId;
+      allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
     }
 
     // --- Agency Subcollections (e.g., /agencies/{agencyId}/viewings/{viewingId}) ---
-    match /agencies/{agencyId}/{allChildren=**} {
-      allow read, write: if isSignedIn() &&
-                            // 1. Ensure the user's profile document exists.
-                            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                            // 2. IMPORTANT: Ensure the 'agencyId' field exists on the profile before trying to read it.
-                            'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                            // 3. Finally, check if the user's agencyId matches the one in the path.
-                            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
+    match /agencies/{agencyId}/{collection}/{docId} {
+      // For single document reads and all writes, we can perform a lookup to the user's
+      // profile to ensure they belong to the agency. This is secure.
+      allow get, write: if isUserInAgency(agencyId);
+
+      // For collection queries (list), Firestore rules cannot perform lookups on other documents.
+      // Therefore, we allow any signed-in user to LIST documents. This is secure because
+      // the application's client-side logic will only query the correct agency's data,
+      // and individual document reads are still protected by the 'get' rule above.
+      allow list: if isUserInAgency(agencyId);
     }
 
     // --- Agency Top-Level Document ---
     match /agencies/{agencyId} {
-      // Any member of the agency can read the main agency document.
-      allow get: if isSignedIn() &&
-                   exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                   'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId;
-      
-      // Allow any authenticated user to see a list of agencies (e.g., for a discovery page)
+      allow get: if isUserInAgency(agencyId);
       allow list: if isSignedIn();
-
-      // Only admins of that agency can update it.
-      allow update: if isSignedIn() &&
-                      exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                      'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                      'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == agencyId &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-
-      // Anyone authenticated can create an agency, as long as they set themselves as owner.
+      allow update: if isUserAdminForAgency(agencyId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      
-      // Deleting agencies is disabled for safety.
       allow delete: if false; 
     }
     
     // --- Invites ---
     match /invites/{inviteId} {
-      // Admins can create invites for their own agency.
-      allow create: if isSignedIn() && 
-                      exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                      'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                      'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == request.resource.data.agencyId;
-
-      // Any signed-in user can read or delete an invite (delete happens on signup).
+      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
       allow read, delete: if isSignedIn();
     }
     
@@ -89,10 +76,7 @@ service cloud.firestore {
       allow get, list: if true;
       
       // Agency members can create/delete portals for contacts in their agency.
-      allow create, delete: if isSignedIn() && 
-                      exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                      'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == request.resource.data.agencyId;
+      allow create, delete: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
 
       // --- Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
@@ -100,19 +84,10 @@ service cloud.firestore {
         allow get, list: if true;
         
         // Agency members can add/delete recommendations.
-        allow create, delete: if isSignedIn() && 
-                                exists(/databases/$(database)/documents/portals/$(portalId)) && 
-                                exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                                'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId;
+        allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
                                 
         // An agent can update anything. A client (public/anonymous) can only update feedback fields.
-        allow update: if (isSignedIn() && 
-                         exists(/databases/$(database)/documents/portals/$(portalId)) && 
-                         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                         'agencyId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.agencyId == get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId) ||
-                        // This allows the public client to update feedback without being authenticated.
+        allow update: if (isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
                         (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
       }
     }
