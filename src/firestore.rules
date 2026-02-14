@@ -8,23 +8,23 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Checks if the user's profile says they belong to the agency.
-    // This is safer for read/list operations.
+    // Checks if the user is listed in the agency's agentIds array.
+    // This is the source of truth for membership.
     function isUserInAgency(agencyId) {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      // Use exists() to safely access the agency document and agentIds field.
+      // 'in' operator checks for the user's UID in the list.
       return isSignedIn() &&
-             exists(userDocPath) &&
-             'agencyId' in get(userDocPath).data &&
-             get(userDocPath).data.agencyId == agencyId;
+             exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
+             'agentIds' in get(/databases/$(database)/documents/agencies/$(agencyId)).data &&
+             request.auth.uid in get(/databases/$(database)/documents/agencies/$(agencyId)).data.agentIds;
     }
 
     // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
-        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
         // An admin must be a member of the agency and have the 'admin' role.
         return isUserInAgency(agencyId) &&
-               'role' in get(userDocPath).data &&
-               get(userDocPath).data.role == 'admin';
+               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // --- User Profiles ---
@@ -84,7 +84,6 @@ service cloud.firestore {
 
       // --- Agency Sub-collections ---
       // For all sub-collections, a user can read/write if they are part of that agency.
-      // This is a simpler and more robust rule than checking the user's own profile.
       match /contacts/{contactId}   { allow read, write: if isUserInAgency(agencyId); }
       match /tasks/{taskId}         { allow read, write: if isUserInAgency(agencyId); }
       match /reports/{reportId}     { allow read, write: if isUserInAgency(agencyId); }
