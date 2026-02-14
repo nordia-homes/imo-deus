@@ -664,16 +664,6 @@ export default function LeadDetailPage() {
                             </AccordionItem>
                         </Card>
                          <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="preferences" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Preferințe Curente
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
-                                    <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                              <AccordionItem value="settings" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
                                     Setări & Asocieri
