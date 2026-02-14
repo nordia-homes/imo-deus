@@ -618,6 +618,15 @@ export default function LeadDetailPage() {
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                     </div>
 
+                    <div className="pt-4">
+                      <SourcePropertyCard 
+                          property={sourceProperty} 
+                          isLoading={isSourcePropertyLoading}
+                          allProperties={properties || []}
+                          onUpdateContact={handleUpdateContact}
+                      />
+                    </div>
+
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
@@ -677,12 +686,6 @@ export default function LeadDetailPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="px-2 pt-0 pb-2 space-y-2">
                                     <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                                    <SourcePropertyCard 
-                                        property={sourceProperty} 
-                                        isLoading={isSourcePropertyLoading}
-                                        allProperties={properties || []}
-                                        onUpdateContact={handleUpdateContact}
-                                    />
                                     <SimilarLeadsCard leads={similarCumparatori} />
                                 </AccordionContent>
                             </AccordionItem>
