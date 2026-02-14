@@ -8,17 +8,15 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Checks if the user's profile document links them to the given agencyId.
+    // Checks if the user's UID is in the agency's agentIds list.
     function isUserInAgency(agencyId) {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() &&
-             exists(userDocPath) &&
-             get(userDocPath).data.agencyId == agencyId;
+             exists(/databases/$(database)/documents/agencies/$(agencyId)) &&
+             request.auth.uid in get(/databases/$(database)/documents/agencies/$(agencyId)).data.agentIds;
     }
 
     // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
-        // isUserInAgency already ensures the user document exists and they belong to the agency.
         return isUserInAgency(agencyId) &&
                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
