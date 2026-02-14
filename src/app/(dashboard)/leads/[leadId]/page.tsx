@@ -508,9 +508,9 @@ export default function LeadDetailPage() {
     }
 
     return (
-        <div className="h-full flex flex-col overflow-x-hidden">
+        <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] -mt-6 -mx-4 pb-4 overflow-x-hidden'>
+            <div className='lg:hidden bg-[#0F1E33] -mt-6 pb-4'>
                 <div className="px-4 pt-4 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>
@@ -571,6 +571,8 @@ export default function LeadDetailPage() {
                             )}
                         </CardContent>
                     </Card>
+                    
+                    <MatchedProperties properties={matchedProperties} contact={contact} />
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
@@ -603,11 +605,10 @@ export default function LeadDetailPage() {
                          <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="preferences" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Preferințe & Potriviri
+                                    Preferințe
                                 </AccordionTrigger>
                                 <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
                                     <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                                    <MatchedProperties properties={matchedProperties} contact={contact} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>

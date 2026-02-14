@@ -5,83 +5,45 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Property, Contact } from '@/lib/types';
 import Image from 'next/image';
-import { ArrowRight, BedDouble, Bath, Ruler, Star } from 'lucide-react';
+import { ArrowRight, BedDouble, Bath, Ruler, Star, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAgency } from '@/context/AgencyContext';
 
-const MatchedPropertyCard = ({ property, contact }: { property: Property, contact: Contact }) => {
+const MatchedPropertyCard = ({ property }: { property: Property }) => {
   const hasImages = property.images && property.images.length > 0;
   const imageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const { agencyId } = useAgency();
-
-  const handleAddToPortal = () => {
-    if (!contact.portalId) {
-        toast({ variant: 'destructive', title: 'Portal inactiv', description: 'Activați portalul pentru acest client întâi.' });
-        return;
-    }
-     if (!agencyId) {
-        toast({ variant: 'destructive', title: 'Eroare agenție', description: 'ID-ul agenției nu a putut fi determinat.' });
-        return;
-    }
-    const recommendationRef = doc(firestore, 'portals', contact.portalId, 'recommendations', property.id);
-    
-    const recommendationData = {
-        id: property.id,
-        propertyId: property.id,
-        addedAt: new Date().toISOString(),
-        clientFeedback: 'none' as const,
-    };
-
-    // Add to live portal for client
-    setDocumentNonBlocking(recommendationRef, recommendationData, { merge: true });
-
-    // Add to permanent history on contact
-    const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contact.id);
-    updateDocumentNonBlocking(contactRef, {
-        [`recommendationHistory.${property.id}`]: recommendationData
-    });
-
-
-    toast({ title: 'Proprietate adăugată!', description: `${property.title} a fost adăugată în portalul clientului și în istoric.` });
-  };
-
 
   return (
-    <Card className="rounded-2xl overflow-hidden shadow-2xl w-full group">
-      <Link href={`/properties/${property.id}`} className="block aspect-[4/3] relative">
-        <Image 
-          src={imageUrl} 
-          alt={property.title || 'Proprietate'} 
-          fill 
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-      </Link>
-      <div className="p-4">
-        <p className="font-bold text-lg text-primary">€{property.price.toLocaleString()}</p>
+    <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg">
+      <Image
+        src={imageUrl}
+        alt={property.title || 'Proprietate'}
+        fill
+        className="object-cover object-right opacity-20 pointer-events-none"
+        style={{
+           maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%)'
+        }}
+      />
+      <div className="relative p-4 space-y-3">
         <Link href={`/properties/${property.id}`} className="block">
-            <p className="font-semibold group-hover:underline break-words">{property.title}</p>
+           <h4 className="font-bold text-lg hover:underline">{property.title}</h4>
         </Link>
-        <p className="text-xs text-muted-foreground break-words">{property.location}</p>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
-            <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> {property.bedrooms}</span>
-            <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {property.bathrooms}</span>
-            <span className="flex items-center gap-1"><Ruler className="h-3 w-3" /> {property.squareFootage} m²</span>
+        <p className="text-sm text-slate-300 break-words">{property.address}</p>
+        
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300 pt-2">
+            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" /> {property.zone || property.city}</span>
+            <span className="flex items-center gap-1.5"><BedDouble className="h-4 w-4 text-slate-400" /> {property.rooms}</span>
+            <span className="flex items-center gap-1.5"><Ruler className="h-4 w-4 text-slate-400" /> {property.squareFootage} mp</span>
+        </div>
+        
+        <div className="pt-2">
+             <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
         </div>
       </div>
-       <div className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
-         <Button asChild className="w-full">
-            <Link href={`/properties/${property.id}`}>Vezi proprietatea</Link>
-         </Button>
-         <Button variant="outline" className="w-full" onClick={handleAddToPortal} disabled={!contact.portalId}>
-            + Portal
-         </Button>
-       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -89,32 +51,33 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
 export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
-      <Card className="rounded-2xl shadow-2xl">
-        <CardHeader>
-          <CardTitle>Proprietăți Potrivite</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center text-muted-foreground py-10">
-          Nicio proprietate potrivită găsită.
-        </CardContent>
+        <Card className="rounded-2xl shadow-2xl mx-2 bg-[#152A47] text-white border-none">
+            <CardHeader className="p-4">
+                <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center text-white/70 py-6">
+            Nicio proprietate potrivită găsită.
+            </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="rounded-2xl shadow-2xl">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Proprietăți Potrivite</CardTitle>
-        <Button variant="link" size="sm" asChild>
-          <Link href="/matching">
-            Vezi apel <ArrowRight className="h-4 w-4 ml-1" />
-          </Link>
-        </Button>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {properties.slice(0, 2).map((prop) => (
-          <MatchedPropertyCard key={prop.id} property={prop} contact={contact} />
-        ))}
-      </CardContent>
+    <Card className="rounded-2xl shadow-2xl mx-2 bg-[#152A47] text-white border-none">
+        <CardHeader className="p-4 flex flex-row items-center justify-between">
+            <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
+            <Button variant="link" size="sm" asChild className="text-white">
+            <Link href="/matching">
+                Vezi toate
+            </Link>
+            </Button>
+        </CardHeader>
+        <CardContent className="space-y-4 px-4 pb-4">
+            {properties.slice(0, 3).map((prop) => (
+            <MatchedPropertyCard key={prop.id} property={prop} />
+            ))}
+        </CardContent>
     </Card>
   );
 }
+
