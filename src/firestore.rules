@@ -10,21 +10,13 @@ service cloud.firestore {
     
     // Checks if the user is a member of the agency by checking the agency's 'agentIds' array.
     function isUserInAgency(agencyId) {
-      let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-      // Safely check for the existence of the agency doc and the agentIds field before checking for the uid.
+      // Use exists() for safe access and the 'in' operator for list membership check (limit of 10).
+      // For larger lists, a map is preferred, but this works for small-to-medium agencies.
+      let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
       return isSignedIn() &&
-             agencyDoc != null &&
-             'agentIds' in agencyDoc.data &&
-             request.auth.uid in agencyDoc.data.agentIds;
-    }
-    
-    // A more lenient check for read operations, allowing access if the user's profile points to the agency.
-    function canReadAgencySubcollection(agencyId) {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      let userProfilePointsToAgency = userDoc != null && 
-             'agencyId' in userDoc.data &&
-             userDoc.data.agencyId == agencyId;
-      return isSignedIn() && (isUserInAgency(agencyId) || userProfilePointsToAgency);
+             exists(agencyDocPath) &&
+             'agentIds' in get(agencyDocPath).data &&
+             request.auth.uid in get(agencyDocPath).data.agentIds;
     }
 
     // Checks if the user is an admin of the specified agency.
@@ -39,23 +31,18 @@ service cloud.firestore {
     // --- User Profiles ---
     match /users/{userId} {
       function canReadOtherUsers() {
-        // First, get the requesting user's agency ID from their own profile.
+        // Get the requesting user's profile.
         let requestingUserDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        // If they don't have a profile or an agency ID, they can't read others' profiles.
-        if (requestingUserDoc == null || !('agencyId' in requestingUserDoc.data) || requestingUserDoc.data.agencyId == null) {
-          return false;
-        }
-        let agencyId = requestingUserDoc.data.agencyId;
-        
-        // Next, get the agency document.
-        let agencyDoc = get(/databases/$(database)/documents/agencies/$(agencyId));
-        // Safely check for the existence of the agency and the agentIds field.
-        if (agencyDoc == null || !('agentIds' in agencyDoc.data)) {
-          return false;
-        }
+        // Get the profile of the user to be read.
+        let targetUserDoc = get(/databases/$(database)/documents/users/$(userId));
 
-        // Finally, check if the requested user's ID is in the agency's list of agents.
-        return userId in agencyDoc.data.agentIds;
+        // Both must exist, have an agencyId, and their agencyIds must be the same and not null.
+        return requestingUserDoc != null &&
+               targetUserDoc != null &&
+               'agencyId' in requestingUserDoc.data &&
+               'agencyId' in targetUserDoc.data &&
+               requestingUserDoc.data.agencyId != null &&
+               requestingUserDoc.data.agencyId == targetUserDoc.data.agencyId;
       }
 
       // A user can read their own profile, or another user's profile if they are in the same agency.
@@ -98,24 +85,33 @@ service cloud.firestore {
       allow delete: if false;
 
       // --- Agency Sub-collections ---
+      // A user can read subcollection data if their profile points to that agency.
+      function canReadSubcollection() {
+        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        return isSignedIn() &&
+               exists(userDocPath) &&
+               'agencyId' in get(userDocPath).data &&
+               get(userDocPath).data.agencyId == agencyId;
+      }
+
       match /contacts/{contactId} { 
-        allow read: if canReadAgencySubcollection(agencyId);
+        allow read: if canReadSubcollection();
         allow write: if isUserInAgency(agencyId);
       }
       match /tasks/{taskId} { 
-        allow read: if canReadAgencySubcollection(agencyId);
+        allow read: if canReadSubcollection();
         allow write: if isUserInAgency(agencyId);
       }
       match /reports/{reportId} { 
-        allow read: if canReadAgencySubcollection(agencyId);
+        allow read: if canReadSubcollection();
         allow write: if isUserInAgency(agencyId);
       }
       match /emails/{emailId} { 
-        allow read: if canReadAgencySubcollection(agencyId);
+        allow read: if canReadSubcollection();
         allow write: if isUserInAgency(agencyId);
       }
       match /viewings/{viewingId} { 
-        allow read: if canReadAgencySubcollection(agencyId);
+        allow read: if canReadSubcollection();
         allow write: if isUserInAgency(agencyId);
       }
 
