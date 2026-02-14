@@ -57,7 +57,7 @@ export function OfferManagementCard({ contact, properties, onAddOffer, onUpdateO
                 <div className="flex justify-between items-start">
                     <div>
                         <Link href={`/properties/${offer.propertyId}`} className="hover:underline">
-                            <p className="font-semibold truncate">{offer.propertyTitle}</p>
+                            <p className="font-semibold truncate" title={offer.propertyTitle}>{offer.propertyTitle.length > 20 ? `${offer.propertyTitle.substring(0, 20)}...` : offer.propertyTitle}</p>
                         </Link>
                         <p className="text-xs text-white/70">{format(new Date(offer.date), 'd MMM yyyy', { locale: ro })}</p>
                     </div>
