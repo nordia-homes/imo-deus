@@ -38,13 +38,14 @@ import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, Plus, Check, CheckSquare, Edit, Calendar } from 'lucide-react';
+import { Phone, Mail, Plus, Check, CheckSquare, Edit, Calendar, Wand2 } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { EditPreferencesForm } from '@/components/leads/detail/EditPreferencesForm';
 
 
 const PageSkeleton = () => (
@@ -133,6 +134,8 @@ export default function LeadDetailPage() {
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
+    const [isEditingPreferences, setIsEditingPreferences] = useState(false);
+
 
     // --- DATA FETCHING ---
     const contactDocRef = useMemoFirebase(() => {
@@ -334,6 +337,7 @@ export default function LeadDetailPage() {
             toast({ variant: "destructive", title: "A apărut o eroare", description: "Nu am putut găsi proprietăți potrivite."});
         } finally {
             setIsMatching(false);
+            setIsEditingPreferences(false);
         }
     }
 
@@ -507,6 +511,18 @@ export default function LeadDetailPage() {
         return null;
     }
 
+    if (isEditingPreferences) {
+        return (
+            <EditPreferencesForm
+                contact={contact}
+                onUpdateContact={handleUpdateContact}
+                onRematch={handleRematch}
+                isMatching={isMatching}
+                onClose={() => setIsEditingPreferences(false)}
+            />
+        );
+    }
+
     return (
         <div className="h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
@@ -530,19 +546,18 @@ export default function LeadDetailPage() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
-                             </Button>
-                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
-                             </Button>
-                             <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                <a href={`mailto:${contact.email}`}><Mail className='mr-2'/> Email</a>
-                             </Button>
-                            <AddTaskDialog onAddTask={handleAddTask} contacts={[contact]}>
-                                <Button variant='secondary' className="bg-white/90 text-black hover:bg-white w-full"><Plus className='mr-2'/> Task</Button>
-                            </AddTaskDialog>
+                        <div className="space-y-2">
+                             <div className="grid grid-cols-2 gap-2">
+                                <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                    <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
+                                </Button>
+                                <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                    <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
+                                </Button>
+                            </div>
+                            <Button variant='secondary' className="bg-white/90 text-black hover:bg-white w-full" onClick={() => setIsEditingPreferences(true)}>
+                                <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferințe
+                            </Button>
                         </div>
                         <Button className='w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                     </Card>
@@ -605,7 +620,7 @@ export default function LeadDetailPage() {
                          <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="preferences" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Preferințe
+                                    Preferințe Curente
                                 </AccordionTrigger>
                                 <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
                                     <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
@@ -677,6 +692,7 @@ export default function LeadDetailPage() {
                     onAddTask={handleAddTask}
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                     properties={properties || []}
+                    onTriggerEditPreferences={() => setIsEditingPreferences(true)}
                 />
                 <main className="pt-6 grid lg:grid-cols-12 gap-6 items-start">
                     <div className="lg:col-span-3 space-y-6">
