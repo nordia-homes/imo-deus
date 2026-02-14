@@ -64,9 +64,9 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
       <div className="p-4">
         <p className="font-bold text-lg text-primary">€{property.price.toLocaleString()}</p>
         <Link href={`/properties/${property.id}`} className="block">
-            <p className="font-semibold truncate group-hover:underline">{property.title}</p>
+            <p className="font-semibold group-hover:underline break-words">{property.title}</p>
         </Link>
-        <p className="text-xs text-muted-foreground truncate">{property.location}</p>
+        <p className="text-xs text-muted-foreground break-words">{property.location}</p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
             <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> {property.bedrooms}</span>
             <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {property.bathrooms}</span>
