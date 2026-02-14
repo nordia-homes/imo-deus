@@ -98,19 +98,17 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
   const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
 
   return (
-    <div className="lg:p-6 space-y-6 bg-[#0F1E33] lg:bg-transparent text-white lg:text-inherit h-full lg:h-auto">
-        <div className="flex items-center justify-end pt-4 pr-4 lg:pt-0 lg:pr-0">
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-white lg:text-inherit">
-                <X className="h-5 w-5" />
-            </Button>
-        </div>
+    <div className="lg:p-6 bg-[#0F1E33] lg:bg-transparent text-white lg:text-inherit h-full lg:h-auto">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-4 lg:px-0">
-          <div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 lg:px-0">
+          <div className="flex items-center justify-between pt-4 lg:pt-0">
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               <SlidersHorizontal className="h-5 w-5 text-primary" />
               <span>Preferinte cautare</span>
             </h2>
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white lg:text-inherit -mr-2">
+              <X className="h-5 w-5" />
+            </Button>
           </div>
           
           <div className="space-y-4">
