@@ -760,14 +760,6 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-5 space-y-6">
                         <ScheduledViewingsCard viewings={scheduledViewings} />
                         <ClientPortalManager contact={contact} agency={agency} />
-                        <LeadTimeline 
-                            interactions={contact.interactionHistory || []} 
-                            tasks={tasks || []}
-                            onAddInteraction={handleAddInteraction}
-                            onAddTask={handleAddTask}
-                            contacts={[contact]}
-                            onToggleTask={handleToggleTask}
-                        />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
@@ -776,12 +768,20 @@ export default function LeadDetailPage() {
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
                         />
-                         <OfferManagementCard
+                        <OfferManagementCard
                             contact={contact}
                             properties={properties || []}
                             onAddOffer={handleAddOffer}
                             onUpdateOffer={handleUpdateOffer}
                             onDeleteOffer={handleDeleteOffer}
+                        />
+                        <LeadTimeline 
+                            interactions={contact.interactionHistory || []} 
+                            tasks={tasks || []}
+                            onAddInteraction={handleAddInteraction}
+                            onAddTask={handleAddTask}
+                            contacts={[contact]}
+                            onToggleTask={handleToggleTask}
                         />
                     </div>
 
@@ -815,3 +815,5 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
