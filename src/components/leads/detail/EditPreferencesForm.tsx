@@ -98,14 +98,14 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
   const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-        <div className="flex items-center justify-end">
-            <Button variant="ghost" size="icon" onClick={onClose}>
+    <div className="lg:p-6 space-y-6 bg-[#0F1E33] lg:bg-transparent text-white lg:text-inherit h-full lg:h-auto">
+        <div className="flex items-center justify-end pt-4 pr-4 lg:pt-0 lg:pr-0">
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white lg:text-inherit">
                 <X className="h-5 w-5" />
             </Button>
         </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-4 lg:px-0">
           <div>
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               <SlidersHorizontal className="h-5 w-5 text-primary" />
@@ -114,14 +114,14 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
           </div>
           
           <div className="space-y-4">
-            <Card className="shadow-xl rounded-2xl">
+            <Card className="bg-[#152A47] border-none text-white rounded-2xl">
                 <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredRooms')} /></FormControl></FormItem> )}/>
-                    <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} /></FormControl></FormItem> )}/>
-                    <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} /></FormControl></FormItem> )}/>
+                    <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Nr. camere</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredRooms')} className="bg-white/10 border-white/20" /></FormControl></FormItem> )}/>
+                    <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț maxim (€)</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredPriceRangeMax')} className="bg-white/10 border-white/20" /></FormControl></FormItem> )}/>
+                    <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață minimă</FormLabel><FormControl><Input type="number" {...field} onBlur={() => handleBlur('desiredSquareFootageMin')} className="bg-white/10 border-white/20" /></FormControl></FormItem> )}/>
                 </CardContent>
             </Card>
-            <Card className="shadow-xl rounded-2xl">
+            <Card className="bg-[#152A47] border-none text-white rounded-2xl">
                  <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -130,7 +130,7 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
                             <FormItem>
                             <FormLabel>Localitate</FormLabel>
                             <Select onValueChange={(value) => {field.onChange(value); handleBlur('city');}} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="bg-white/10 border-white/20"><SelectValue placeholder="Selectează orașul" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                 {Object.keys(locations).map(city => (
                                     <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
@@ -145,7 +145,7 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
                         <FormLabel>Zone</FormLabel>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between" disabled={!watchedCity}>
+                                <Button variant="outline" className="w-full justify-between bg-white/10 border-white/20 hover:bg-white/20" disabled={!watchedCity}>
                                     <span className="truncate pr-2">
                                         {currentZones.length === 0 ? 'Selectează zone' : currentZones.length === 1 ? currentZones[0] : `${currentZones.length} zone selectate`}
                                     </span>
@@ -170,15 +170,15 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
                     </FormItem>
                 </CardContent>
             </Card>
-            <Card className="shadow-xl rounded-2xl">
+            <Card className="bg-[#152A47] border-none text-white rounded-2xl">
                 <CardContent className="pt-6">
-                    <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
+                    <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2} className="bg-white/10 border-white/20" /></FormControl></FormItem> )}/>
                 </CardContent>
             </Card>
           </div>
           
-          <div>
-            <Button type="submit" disabled={isMatching} className="w-full">
+          <div className="pb-4 lg:pb-0">
+            <Button type="submit" disabled={isMatching} className="w-full bg-primary hover:bg-primary/90">
               {isMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
               Actualizează Potrivirile AI
             </Button>
