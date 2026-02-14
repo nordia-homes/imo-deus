@@ -614,6 +614,10 @@ export default function LeadDetailPage() {
 
                     <ClientPortalManager contact={contact} agency={agency} />
 
+                    <div className="pt-2">
+                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                    </div>
+
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="timeline" className="border-b-0">
@@ -629,16 +633,6 @@ export default function LeadDetailPage() {
                                         contacts={[contact]}
                                         onToggleTask={handleToggleTask}
                                     />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="description" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Descriere
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pb-2 pt-0">
-                                    <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>

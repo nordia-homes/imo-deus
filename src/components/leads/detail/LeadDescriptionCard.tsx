@@ -1,9 +1,10 @@
 
 'use client';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { Contact } from "@/lib/types";
 import { useState, useEffect, useRef } from "react";
+import { FileText } from 'lucide-react';
 
 type LeadDescriptionCardProps = {
     contact: Contact;
@@ -35,15 +36,21 @@ export function LeadDescriptionCard({ contact, onUpdateContact }: LeadDescriptio
 
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
-            <CardContent className="p-6">
+        <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 lg:bg-card lg:text-card-foreground lg:shadow-2xl">
+             <CardHeader className="p-4 pb-2 lg:p-6 lg:pb-4">
+                <CardTitle className="flex items-center gap-2 text-white lg:text-card-foreground text-base">
+                    <FileText className="h-5 w-5" />
+                    <span>Descriere</span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 lg:p-6 lg:pt-0">
                 <Textarea
                     ref={textareaRef}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     onBlur={handleBlur}
                     placeholder="Adaugă o descriere detaliată a cumpărătorului, preferințe, cerințe speciale, etc."
-                    className="text-sm resize-none overflow-hidden"
+                    className="text-sm resize-none overflow-hidden bg-white/10 lg:bg-background border-white/20 lg:border-input text-white lg:text-inherit"
                     rows={4}
                 />
             </CardContent>
