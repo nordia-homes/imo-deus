@@ -29,7 +29,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
       />
       <div className="relative p-4 space-y-3">
         <Link href={`/properties/${property.id}`} className="block">
-           <h4 className="font-bold text-lg hover:underline">{property.title}</h4>
+           <h4 className="font-bold text-lg hover:underline break-words">{property.title}</h4>
         </Link>
         <p className="text-sm text-slate-300 break-words">{property.address}</p>
         
@@ -51,7 +51,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
 export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
-        <Card className="rounded-2xl shadow-2xl mx-2 bg-[#152A47] text-white border-none">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
             <CardHeader className="p-4">
                 <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             </CardHeader>
@@ -63,7 +63,7 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
   }
 
   return (
-    <Card className="rounded-2xl shadow-2xl mx-2 bg-[#152A47] text-white border-none">
+    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
             <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             <Button variant="link" size="sm" asChild className="text-white">
@@ -80,4 +80,5 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
     </Card>
   );
 }
+
 
