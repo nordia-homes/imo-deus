@@ -89,6 +89,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                     src={property.images?.[0]?.url || 'https://placehold.co/800x600'}
                                     alt={property.title || 'Proprietate'}
                                     fill
+                                    sizes="(max-width: 1023px) 100vw, 25vw"
                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>
