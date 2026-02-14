@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,7 +83,7 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
               offers.map(offer => (
                 <div key={offer.recId} className="text-sm p-2 rounded-md border border-white/20 lg:border-input">
                     <Link href={`/properties/${offer.id}`} className="hover:underline">
-                        <p className="font-semibold truncate">{offer.title}</p>
+                        <p className="font-semibold truncate" title={offer.title}>{offer.title.length > 20 ? `${offer.title.substring(0, 20)}...` : offer.title}</p>
                     </Link>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-primary font-bold">€{offer.price.toLocaleString()}</span>
