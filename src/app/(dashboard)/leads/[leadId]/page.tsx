@@ -2,7 +2,7 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDocs, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -733,5 +733,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
