@@ -53,18 +53,18 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
   };
 
   return (
-    <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 lg:bg-card lg:text-card-foreground lg:shadow-2xl">
+    <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 shadow-2xl">
       <CardHeader className="p-4 pb-2 lg:p-6 lg:pb-4">
-        <CardTitle className="flex items-center gap-2 text-base text-white lg:text-card-foreground">
+        <CardTitle className="flex items-center gap-2 text-base text-white">
           <Banknote className="h-5 w-5 text-primary" />
           <span>Situație Financiară și Oferte</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4 pt-0 lg:p-6 lg:pt-0">
         <div>
-          <Label className="text-xs text-white/70 lg:text-muted-foreground">Status Financiar</Label>
+          <Label className="text-xs text-white/70">Status Financiar</Label>
           <Select value={contact.financialStatus || 'Neprecalificat'} onValueChange={handleStatusChange}>
-            <SelectTrigger className="h-9 bg-white/10 lg:bg-background border-white/20 lg:border-input">
+            <SelectTrigger className="h-9 bg-white/10 border-white/20">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -77,18 +77,18 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
         </div>
 
         <div>
-          <Label className="text-xs text-white/70 lg:text-muted-foreground">Istoric Oferte Portal</Label>
+          <Label className="text-xs text-white/70">Istoric Oferte Portal</Label>
           <div className="mt-2 space-y-2">
             {offers.length > 0 ? (
               offers.map(offer => (
-                <div key={offer.recId} className="text-sm p-2 rounded-md border border-white/20 lg:border-input">
+                <div key={offer.recId} className="text-sm p-2 rounded-md border border-white/20">
                     <Link href={`/properties/${offer.id}`} className="hover:underline">
                         <p className="font-semibold truncate" title={offer.title}>{offer.title.length > 20 ? `${offer.title.substring(0, 20)}...` : offer.title}</p>
                     </Link>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-primary font-bold">€{offer.price.toLocaleString()}</span>
                      <Select value={offer.feedback} onValueChange={(value: PortalRecommendation['clientFeedback']) => handleFeedbackChange(offer.recId, value)}>
-                        <SelectTrigger className={cn("h-8 w-[150px] text-xs bg-white/10 lg:bg-background border-white/20",
+                        <SelectTrigger className={cn("h-8 w-[150px] text-xs bg-white/10 border-white/20",
                             offer.feedback === 'liked' && 'text-green-400 border-green-500',
                             offer.feedback === 'disliked' && 'text-red-400 border-red-500',
                             offer.feedback === 'none' && 'text-yellow-400 border-yellow-500',
@@ -115,7 +115,7 @@ export function FinancialStatusCard({ contact, onUpdateContact, recommendations,
                 </div>
               ))
             ) : (
-              <p className="text-sm text-white/70 lg:text-muted-foreground text-center py-4">Nicio ofertă în portal.</p>
+              <p className="text-sm text-white/70 text-center py-4">Nicio ofertă în portal.</p>
             )}
           </div>
         </div>

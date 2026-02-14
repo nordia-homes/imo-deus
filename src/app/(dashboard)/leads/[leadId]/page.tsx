@@ -649,7 +649,7 @@ export default function LeadDetailPage() {
                     />
 
                     <ClientPortalManager contact={contact} agency={agency} />
-
+                    
                     <div className="pt-2">
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                     </div>
@@ -717,20 +717,44 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View: Grid */}
-            <div className="hidden lg:block h-full">
-                <LeadHeader 
-                    contact={contact} 
-                    onUpdateContact={handleUpdateContact}
-                    onAddTask={handleAddTask}
-                    onTriggerAddViewing={() => setIsAddViewingOpen(true)}
-                    properties={properties || []}
-                    onTriggerEditPreferences={() => setIsEditingPreferences(true)}
-                />
-                <main className="pt-6 grid lg:grid-cols-12 gap-6 items-start">
-                    <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} />
-                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-8 -mb-6 px-8 pt-6 pb-6">
+                 <main className="grid lg:grid-cols-12 gap-6 items-start">
+                    <div className="lg:col-span-4 space-y-6">
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
+                            <div className='flex justify-between items-start'>
+                                <div>
+                                    <div className='flex items-center gap-2'>
+                                        <h2 className='text-xl font-bold'>{contact.name}</h2>
+                                        <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-7 w-7" onClick={() => setIsEditDialogOpen(true)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Badge className='bg-white/10 text-white border-none'>{contact.status}</Badge>
+                                    </div>
+                                    {contact.budget && <p className="mt-2">Buget: €{contact.budget.toLocaleString()}</p>}
+                                    {contact.zones && contact.zones.length > 0 && <p className='text-sm text-white/80'>Zone: {contact.zones.join(', ')}</p>}
+                                </div>
+                                {typeof contact.leadScore === 'number' && (
+                                    <CircularProgress score={contact.leadScore} />
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                        <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
+                                    </Button>
+                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                        <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
+                                    </Button>
+                                </div>
+                                <Button variant='secondary' className="bg-[#0B1319] text-white hover:bg-[#0B1319]/90 w-full" onClick={() => setIsEditingPreferences(true)}>
+                                    <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferinte
+                                </Button>
+                            </div>
+                            <Button className='w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
+                        </Card>
+                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
                         <ClientPortalManager contact={contact} agency={agency} />
                     </div>
 
@@ -744,7 +768,6 @@ export default function LeadDetailPage() {
                             contacts={[contact]}
                             onToggleTask={handleToggleTask}
                         />
-                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
@@ -762,21 +785,15 @@ export default function LeadDetailPage() {
                         />
                     </div>
 
-                    <div className="lg:col-span-4 space-y-6">
-                         <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
+                    <div className="lg:col-span-3 space-y-6">
                          <MatchedProperties
                             properties={matchedProperties}
                             onAddRecommendation={handleAddRecommendation}
                             agencyId={agency?.id}
                             contact={contact}
                          />
-                         <SourcePropertyCard 
-                            property={sourceProperty} 
-                            isLoading={isSourcePropertyLoading}
-                            allProperties={properties || []}
-                            onUpdateContact={handleUpdateContact}
-                        />
                         <SimilarLeadsCard leads={similarCumparatori} />
+                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                     </div>
                 </main>
             </div>
@@ -798,7 +815,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
-
-    
