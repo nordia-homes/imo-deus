@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing, UserProfile, Contact } from '@/lib/types';
+import type { Property, Viewing, UserProfile, Contact } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 
 // UI Components
@@ -105,7 +106,7 @@ export default function PropertyDetailPage() {
             propertyAddress: property.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
         addDocumentNonBlocking(viewingsCollection, viewingToAdd);

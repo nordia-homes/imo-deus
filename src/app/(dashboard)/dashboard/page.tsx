@@ -57,7 +57,7 @@ export default function DashboardPage() {
             ...taskData,
             status: 'open',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
         };
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({
@@ -81,7 +81,7 @@ export default function DashboardPage() {
             propertyAddress: selectedProperty.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
         

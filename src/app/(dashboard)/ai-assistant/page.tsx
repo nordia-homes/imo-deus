@@ -84,7 +84,7 @@ export default function AiAssistantPage() {
         propertyAddress: selectedProperty.address,
         status: 'scheduled',
         agentId: user.uid,
-        agentName: userProfile?.name || user.displayName || user.email || 'Nespecificat',
+        agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
         createdAt: new Date().toISOString(),
     };
     

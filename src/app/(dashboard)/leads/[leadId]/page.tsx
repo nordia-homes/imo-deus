@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -333,7 +334,7 @@ export default function LeadDetailPage() {
             ...taskData,
             status: 'open',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
         };
         addDocumentNonBlocking(tasksCollection, taskToAdd);
         toast({ title: "Task adăugat!" });
@@ -352,7 +353,7 @@ export default function LeadDetailPage() {
             propertyAddress: selectedProperty.address,
             status: 'scheduled',
             agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || user.email,
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
         addDocumentNonBlocking(viewingsCollection, viewingToAdd);
