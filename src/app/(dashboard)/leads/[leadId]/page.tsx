@@ -626,6 +626,24 @@ export default function LeadDetailPage() {
                           onUpdateContact={handleUpdateContact}
                       />
                     </div>
+                    
+                    <div className="pt-4 space-y-4">
+                        <FinancialStatusCard 
+                            contact={contact} 
+                            onUpdateContact={handleUpdateContact}
+                            recommendations={recommendations}
+                            properties={properties}
+                            portalId={contact.portalId || null}
+                            onUpdateRecommendation={handleUpdateRecommendation}
+                        />
+                        <OfferManagementCard
+                            contact={contact}
+                            properties={properties || []}
+                            onAddOffer={handleAddOffer}
+                            onUpdateOffer={handleUpdateOffer}
+                            onDeleteOffer={handleDeleteOffer}
+                        />
+                    </div>
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
@@ -652,30 +670,6 @@ export default function LeadDetailPage() {
                                 </AccordionTrigger>
                                 <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
                                     <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                             <AccordionItem value="offers" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Oferte & Financiar
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pb-2 pt-0 space-y-2">
-                                    <FinancialStatusCard 
-                                        contact={contact} 
-                                        onUpdateContact={handleUpdateContact}
-                                        recommendations={recommendations}
-                                        properties={properties}
-                                        portalId={contact.portalId || null}
-                                        onUpdateRecommendation={handleUpdateRecommendation}
-                                    />
-                                    <OfferManagementCard
-                                        contact={contact}
-                                        properties={properties || []}
-                                        onAddOffer={handleAddOffer}
-                                        onUpdateOffer={handleUpdateOffer}
-                                        onDeleteOffer={handleDeleteOffer}
-                                    />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
