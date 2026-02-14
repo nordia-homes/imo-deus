@@ -578,8 +578,8 @@ export default function LeadDetailPage() {
                                     <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
                                 </Button>
                             </div>
-                            <Button variant='secondary' className="bg-white/90 text-black hover:bg-white w-full" onClick={() => setIsEditingPreferences(true)}>
-                                <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferințe
+                            <Button variant='secondary' className="bg-[#0B1319] text-white hover:bg-[#0B1319]/90 w-full" onClick={() => setIsEditingPreferences(true)}>
+                                <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferinte
                             </Button>
                         </div>
                         <Button className='w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
@@ -611,6 +611,8 @@ export default function LeadDetailPage() {
                     </Card>
                     
                     <MatchedProperties properties={matchedProperties} contact={contact} />
+
+                    <ClientPortalManager contact={contact} agency={agency} />
 
                     <Accordion type="multiple" className="w-full space-y-4 px-2">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
@@ -671,16 +673,6 @@ export default function LeadDetailPage() {
                                         onUpdateOffer={handleUpdateOffer}
                                         onDeleteOffer={handleDeleteOffer}
                                     />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                             <AccordionItem value="portal" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
-                                    Portal Client
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pt-0 pb-2">
-                                    <ClientPortalManager contact={contact} agency={agency} />
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>

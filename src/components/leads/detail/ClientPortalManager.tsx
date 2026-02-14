@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -71,33 +72,33 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   };
 
   return (
-    <Card className="rounded-2xl shadow-2xl">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
+    <Card className="bg-[#152A47] text-white border-none rounded-2xl lg:bg-card lg:text-card-foreground lg:shadow-2xl">
+      <CardHeader className="p-4 pb-2 lg:pb-2">
+        <CardTitle className="flex items-center gap-2 text-white lg:text-card-foreground text-base">
             <Star className="text-yellow-500" />
             <span>Portalul Clientului</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-xs text-muted-foreground">
+      <CardContent className="space-y-3 p-4 pt-0 lg:p-6 lg:pt-0">
+        <p className="text-xs text-white/70 lg:text-muted-foreground">
           Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
         </p>
         {contact.portalId ? (
           <>
             <div>
-              <Label htmlFor="portal-link" className="text-xs text-muted-foreground">Link Unic Portal</Label>
+              <Label htmlFor="portal-link" className="text-xs text-white/70 lg:text-muted-foreground">Link Unic Portal</Label>
               <div className="flex gap-2 mt-1">
-                <Input id="portal-link" readOnly value={portalLink} className="bg-muted h-9" />
-                <Button variant="outline" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0">
+                <Input id="portal-link" readOnly value={portalLink} className="bg-white/10 lg:bg-muted border-white/20 lg:border-input h-9" />
+                <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 lg:bg-secondary hover:bg-white/30 lg:hover:bg-secondary/80">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading}>
+              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading} className="bg-white/90 lg:bg-secondary text-black lg:text-secondary-foreground hover:bg-white lg:hover:bg-secondary/80">
                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handlePortalAction('regenerate')} disabled={isLoading}>
+              <Button size="sm" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoading} className="bg-white/20 lg:bg-secondary hover:bg-white/30 lg:hover:bg-secondary/80">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} Regenerează
               </Button>
               <Button size="sm" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading}>
@@ -106,7 +107,7 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
             </div>
           </>
         ) : (
-          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading}>
+          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
             Activează Portalul
           </Button>
