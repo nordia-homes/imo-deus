@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Property } from '@/lib/types';
@@ -38,7 +37,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     
     if (isEditing) {
          return (
-            <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] lg:bg-card text-white lg:text-inherit">
+             <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] lg:bg-card text-white lg:text-inherit">
                 <CardHeader className="pb-4 pt-4">
                     <CardTitle className="text-base text-white lg:text-inherit">Schimbă Proprietate Sursă</CardTitle>
                 </CardHeader>
@@ -64,7 +63,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
         <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] lg:bg-card text-white lg:text-inherit">
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
                 <CardTitle className="text-base font-semibold text-white lg:text-inherit">
-                    Proprietate Sursă
+                    Proprietate Inițială
                 </CardTitle>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white lg:text-inherit lg:hover:bg-accent" onClick={() => setIsEditing(true)}>
                     <Edit className="h-4 w-4" />
@@ -89,7 +88,9 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="font-semibold group-hover:underline break-words text-sm">{property.title}</p>
+                                <p className="font-semibold group-hover:underline text-sm" title={property.title}>
+                                  {property.title.length > 20 ? `${property.title.substring(0, 20)}...` : property.title}
+                                </p>
                                 <p className="text-xs text-white/70 lg:text-muted-foreground break-words">{property.location}</p>
                                 <p className="font-bold text-base text-white lg:text-primary mt-1">€{property.price.toLocaleString()}</p>
                             </div>
