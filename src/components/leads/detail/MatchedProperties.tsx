@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Property, Contact, MatchedProperty } from '@/lib/types';
 import Image from 'next/image';
-import { ArrowRight, BedDouble, Ruler, Calendar } from 'lucide-react';
+import { ArrowRight, BedDouble, Ruler, Calendar, Plus } from 'lucide-react';
 import Link from 'next/link';
 import {
   Carousel,
@@ -13,16 +14,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
-const MatchedPropertyCard = ({ property, contact, agencyId }: { property: Property, contact: Contact, agencyId: string }) => {
+const MatchedPropertyCard = ({ property, onAddRecommendation }: { property: Property, onAddRecommendation: (property: Property) => void }) => {
   const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
   const constructionYear = property.constructionYear;
   
-  const publicUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
-  const whatsappMessage = encodeURIComponent(`Salut! Cred că ți-ar plăcea această proprietate: ${publicUrl}`);
-  const contactPhone = contact.phone.replace(/\D/g, '');
-  const whatsappUrl = `https://wa.me/${contactPhone}?text=${whatsappMessage}`;
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddRecommendation(property);
+  }
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
@@ -49,10 +50,8 @@ const MatchedPropertyCard = ({ property, contact, agencyId }: { property: Proper
         
         <div className="pt-2 mt-auto flex justify-between items-end">
             <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
-             <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white rounded-full h-10 w-10">
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <WhatsappIcon className="h-5 w-5" />
-                </a>
+             <Button onClick={handleAddClick} size="icon" className="bg-blue-500 hover:bg-blue-600 text-white rounded-full h-10 w-10">
+                <Plus className="h-5 w-5" />
             </Button>
         </div>
       </div>
@@ -61,7 +60,7 @@ const MatchedPropertyCard = ({ property, contact, agencyId }: { property: Proper
 };
 
 
-export function MatchedProperties({ properties, contact, agencyId }: { properties: MatchedProperty[], contact: Contact, agencyId: string }) {
+export function MatchedProperties({ properties, onAddRecommendation }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void }) {
   if (!properties || properties.length === 0) {
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
@@ -89,7 +88,7 @@ export function MatchedProperties({ properties, contact, agencyId }: { propertie
         </CardHeader>
         <CardContent className="px-4 pb-4">
             {singleProperty ? (
-                <MatchedPropertyCard property={properties[0]} contact={contact} agencyId={agencyId} />
+                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} />
             ) : (
                 <Carousel
                   opts={{
@@ -102,7 +101,7 @@ export function MatchedProperties({ properties, contact, agencyId }: { propertie
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
                         <div className="p-1 h-full">
-                          <MatchedPropertyCard property={prop} contact={contact} agencyId={agencyId} />
+                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} />
                         </div>
                       </CarouselItem>
                     ))}
@@ -115,3 +114,5 @@ export function MatchedProperties({ properties, contact, agencyId }: { propertie
     </Card>
   );
 }
+
+    

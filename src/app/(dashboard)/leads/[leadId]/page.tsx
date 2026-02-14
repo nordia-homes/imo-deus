@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -311,6 +311,37 @@ export default function LeadDetailPage() {
             });
         }
     };
+    
+    const handleAddRecommendation = (property: Property) => {
+        if (!contact?.portalId || !contactDocRef) {
+            toast({
+                variant: "destructive",
+                title: "Portal neactivat",
+                description: "Activați portalul clientului înainte de a adăuga proprietăți.",
+            });
+            return;
+        }
+
+        const recommendation: Omit<PortalRecommendation, 'id'> = {
+            propertyId: property.id,
+            addedAt: new Date().toISOString(),
+            clientFeedback: 'none',
+        };
+
+        // Add to portal subcollection. The ID is the property ID.
+        const recRef = doc(firestore, 'portals', contact.portalId, 'recommendations', property.id);
+        setDocumentNonBlocking(recRef, recommendation, {});
+
+        // Add to contact's history
+        updateDocumentNonBlocking(contactDocRef, {
+            [`recommendationHistory.${property.id}`]: { ...recommendation, id: property.id },
+        });
+        
+        toast({
+            title: "Proprietate adăugată!",
+            description: `${property.title} a fost adăugată în portalul clientului.`,
+        });
+    };
 
     const handleRematch = async (preferences: ContactPreferences) => {
         if (!contact || !properties) {
@@ -610,7 +641,10 @@ export default function LeadDetailPage() {
                         </CardContent>
                     </Card>
                     
-                    <MatchedProperties properties={matchedProperties} contact={contact} agencyId={agency.id} />
+                    <MatchedProperties
+                        properties={matchedProperties}
+                        onAddRecommendation={handleAddRecommendation}
+                    />
 
                     <ClientPortalManager contact={contact} agency={agency} />
 
@@ -728,7 +762,10 @@ export default function LeadDetailPage() {
 
                     <div className="lg:col-span-4 space-y-6">
                          <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                         <MatchedProperties properties={matchedProperties} contact={contact} agencyId={agency.id} />
+                         <MatchedProperties
+                            properties={matchedProperties}
+                            onAddRecommendation={handleAddRecommendation}
+                         />
                          <SourcePropertyCard 
                             property={sourceProperty} 
                             isLoading={isSourcePropertyLoading}
@@ -757,5 +794,7 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
 
     
