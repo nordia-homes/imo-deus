@@ -93,15 +93,15 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
                 </Button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading} className="bg-white/90 lg:bg-secondary text-black lg:text-secondary-foreground hover:bg-white lg:hover:bg-secondary/80">
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading} className="bg-white/90 lg:bg-secondary text-black lg:text-secondary-foreground hover:bg-white lg:hover:bg-secondary/80 flex-1">
                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoading} className="bg-white/20 lg:bg-secondary hover:bg-white/30 lg:hover:bg-secondary/80">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} Regenerează
+              <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoading} className="bg-white/20 lg:bg-secondary hover:bg-white/30 lg:hover:bg-secondary/80">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading}>
-                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Dezactivează
+              <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading}>
+                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               </Button>
             </div>
           </>
