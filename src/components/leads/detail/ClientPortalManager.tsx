@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -72,7 +71,7 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   };
 
   return (
-    <Card className="bg-[#152A47] text-white border-none rounded-2xl lg:bg-card lg:text-card-foreground lg:shadow-2xl">
+    <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 lg:bg-card lg:text-card-foreground lg:shadow-2xl">
       <CardHeader className="p-4 pb-2 lg:pb-2">
         <CardTitle className="flex items-center gap-2 text-white lg:text-card-foreground text-base">
             <Star className="text-yellow-500" />
