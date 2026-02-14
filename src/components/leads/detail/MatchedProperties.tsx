@@ -1,46 +1,48 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Property, Contact } from '@/lib/types';
+import type { Property, Contact, MatchedProperty } from '@/lib/types';
 import Image from 'next/image';
-import { ArrowRight, BedDouble, Bath, Ruler, Star, MapPin } from 'lucide-react';
+import { ArrowRight, BedDouble, Ruler, Calendar } from 'lucide-react';
 import Link from 'next/link';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { useAgency } from '@/context/AgencyContext';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const MatchedPropertyCard = ({ property }: { property: Property }) => {
-  const hasImages = property.images && property.images.length > 0;
-  const imageUrl = hasImages ? property.images[0].url : 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const constructionYear = property.constructionYear;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg">
-      <Image
-        src={imageUrl}
-        alt={property.title || 'Proprietate'}
-        fill
-        className="object-cover object-right opacity-20 pointer-events-none"
-        style={{
-           maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%)'
-        }}
-      />
-      <div className="relative p-4 space-y-3">
+    <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
+      <div className="relative aspect-video w-full">
+          <Image
+              src={imageUrl}
+              alt={property.title || 'Proprietate'}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+          />
+      </div>
+      <div className="relative p-4 space-y-3 flex-1 flex flex-col">
         <Link href={`/properties/${property.id}`} className="block">
-           <h4 className="font-bold text-lg hover:underline break-words">{property.title}</h4>
+          <h4 className="font-bold text-lg hover:underline break-words">{property.title}</h4>
         </Link>
         <p className="text-sm text-slate-300 break-words">{property.address}</p>
         
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300 pt-2">
-            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" /> {property.zone || property.city}</span>
             <span className="flex items-center gap-1.5"><BedDouble className="h-4 w-4 text-slate-400" /> {property.rooms}</span>
             <span className="flex items-center gap-1.5"><Ruler className="h-4 w-4 text-slate-400" /> {property.squareFootage} mp</span>
+            {constructionYear && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-slate-400" /> {constructionYear}</span>}
         </div>
         
-        <div className="pt-2">
-             <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
+        <div className="pt-2 mt-auto">
+            <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
         </div>
       </div>
     </div>
@@ -48,7 +50,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
 };
 
 
-export function MatchedProperties({ properties, contact }: { properties: Property[], contact: Contact }) {
+export function MatchedProperties({ properties, contact }: { properties: MatchedProperty[], contact: Contact }) {
   if (!properties || properties.length === 0) {
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
@@ -61,25 +63,44 @@ export function MatchedProperties({ properties, contact }: { properties: Propert
       </Card>
     );
   }
+  
+  const singleProperty = properties.length === 1;
 
   return (
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
             <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             <Button variant="link" size="sm" asChild className="text-white">
-            <Link href="/matching">
-                Vezi toate
-            </Link>
+              <Link href="/matching">
+                  Vezi toate
+              </Link>
             </Button>
         </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4">
-            {properties.slice(0, 3).map((prop) => (
-            <MatchedPropertyCard key={prop.id} property={prop} />
-            ))}
+        <CardContent className="px-4 pb-4">
+            {singleProperty ? (
+                <MatchedPropertyCard property={properties[0]} />
+            ) : (
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  className="w-full"
+                >
+                  <CarouselContent>
+                    {properties.map((prop) => (
+                      <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
+                        <div className="p-1 h-full">
+                          <MatchedPropertyCard property={prop} />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2 bg-white/20 border-white/30 text-white hover:bg-white/30" />
+                  <CarouselNext className="right-2 bg-white/20 border-white/30 text-white hover:bg-white/30" />
+                </Carousel>
+            )}
         </CardContent>
     </Card>
   );
 }
-
-
-
