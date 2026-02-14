@@ -66,7 +66,7 @@ const MatchedPropertyCard = ({ property, contact }: { property: Property, contac
             <p className="font-semibold truncate group-hover:underline">{property.title}</p>
         </Link>
         <p className="text-xs text-muted-foreground">{property.location}</p>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-2">
             <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> {property.bedrooms}</span>
             <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {property.bathrooms}</span>
             <span className="flex items-center gap-1"><Ruler className="h-3 w-3" /> {property.squareFootage} m²</span>
