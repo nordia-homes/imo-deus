@@ -265,7 +265,18 @@ export default function LeadDetailPage() {
                 clientPreferences: fullClientPrefs,
                 properties: matcherProperties,
             }).then(result => {
-                setMatchedProperties(result.matchedProperties as MatchedProperty[]);
+                if (result.matchedProperties && properties) {
+                  const enrichedMatchedProperties = result.matchedProperties.map(matchedProp => {
+                    const originalProperty = properties.find(p => p.id === (matchedProp as any).id);
+                    return {
+                      ...originalProperty, // This has the full 'images' array
+                      ...matchedProp,     // This adds matchScore, reasoning, etc.
+                    };
+                  });
+                  setMatchedProperties(enrichedMatchedProperties as MatchedProperty[]);
+                } else {
+                  setMatchedProperties([]);
+                }
             });
         }
     }, [properties, contact]);
@@ -325,7 +336,19 @@ export default function LeadDetailPage() {
                 clientPreferences: preferences,
                 properties: matcherProperties,
             });
-            setMatchedProperties(result.matchedProperties as MatchedProperty[]);
+            if (result.matchedProperties && properties) {
+              const enrichedMatchedProperties = result.matchedProperties.map(matchedProp => {
+                const originalProperty = properties.find(p => p.id === (matchedProp as any).id);
+                return {
+                  ...originalProperty,
+                  ...matchedProp,
+                };
+              });
+              setMatchedProperties(enrichedMatchedProperties as MatchedProperty[]);
+            } else {
+              setMatchedProperties([]);
+            }
+
             if (result.matchedProperties.length === 0) {
                 toast({
                     title: 'Nicio potrivire perfectă găsită',

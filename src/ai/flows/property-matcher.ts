@@ -14,6 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PropertySchema = z.object({
+  id: z.string().describe('The unique ID of the property.'),
   address: z.string().describe('The address of the property.'),
   price: z.coerce.number().describe('The price of the property in USD.'),
   rooms: z.coerce.number().describe('The number of rooms in the property.'),
@@ -72,6 +73,7 @@ Location Preferences: {{clientPreferences.locationPreferences}}
 And the following list of available properties:
 
 {{#each properties}}
+ID: {{this.id}}
 Address: {{this.address}}
 Price: {{this.price}}
 Rooms: {{this.rooms}}
@@ -83,6 +85,7 @@ Image: {{this.image}}
 
 Match the properties to the client preferences and return a list of matched properties, sorted by match score in descending order.
 Include a match score (0-100) and reasoning for each matched property. Only return the properties that are considered a good match.
+CRITICAL: The returned properties must include their original ID.
 `,
 });
 
