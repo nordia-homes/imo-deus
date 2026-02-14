@@ -13,10 +13,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
-const MatchedPropertyCard = ({ property }: { property: Property }) => {
+const MatchedPropertyCard = ({ property, contact, agencyId }: { property: Property, contact: Contact, agencyId: string }) => {
   const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
   const constructionYear = property.constructionYear;
+  
+  const publicUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
+  const whatsappMessage = encodeURIComponent(`Salut! Cred că ți-ar plăcea această proprietate: ${publicUrl}`);
+  const contactPhone = contact.phone.replace(/\D/g, '');
+  const whatsappUrl = `https://wa.me/${contactPhone}?text=${whatsappMessage}`;
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
@@ -41,8 +47,13 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
             {constructionYear && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-slate-400" /> {constructionYear}</span>}
         </div>
         
-        <div className="pt-2 mt-auto">
+        <div className="pt-2 mt-auto flex justify-between items-end">
             <p className="text-2xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
+             <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white rounded-full h-10 w-10">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                    <WhatsappIcon className="h-5 w-5" />
+                </a>
+            </Button>
         </div>
       </div>
     </div>
@@ -50,7 +61,7 @@ const MatchedPropertyCard = ({ property }: { property: Property }) => {
 };
 
 
-export function MatchedProperties({ properties, contact }: { properties: MatchedProperty[], contact: Contact }) {
+export function MatchedProperties({ properties, contact, agencyId }: { properties: MatchedProperty[], contact: Contact, agencyId: string }) {
   if (!properties || properties.length === 0) {
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
@@ -78,7 +89,7 @@ export function MatchedProperties({ properties, contact }: { properties: Matched
         </CardHeader>
         <CardContent className="px-4 pb-4">
             {singleProperty ? (
-                <MatchedPropertyCard property={properties[0]} />
+                <MatchedPropertyCard property={properties[0]} contact={contact} agencyId={agencyId} />
             ) : (
                 <Carousel
                   opts={{
@@ -91,7 +102,7 @@ export function MatchedProperties({ properties, contact }: { properties: Matched
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
                         <div className="p-1 h-full">
-                          <MatchedPropertyCard property={prop} />
+                          <MatchedPropertyCard property={prop} contact={contact} agencyId={agencyId} />
                         </div>
                       </CarouselItem>
                     ))}

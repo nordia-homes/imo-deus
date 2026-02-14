@@ -610,7 +610,7 @@ export default function LeadDetailPage() {
                         </CardContent>
                     </Card>
                     
-                    <MatchedProperties properties={matchedProperties} contact={contact} />
+                    <MatchedProperties properties={matchedProperties} contact={contact} agencyId={agency.id} />
 
                     <ClientPortalManager contact={contact} agency={agency} />
 
@@ -728,7 +728,7 @@ export default function LeadDetailPage() {
 
                     <div className="lg:col-span-4 space-y-6">
                          <PreferencesCard contact={contact} onUpdateContact={handleUpdateContact} onRematch={handleRematch} isMatching={isMatching} />
-                         <MatchedProperties properties={matchedProperties} contact={contact} />
+                         <MatchedProperties properties={matchedProperties} contact={contact} agencyId={agency.id} />
                          <SourcePropertyCard 
                             property={sourceProperty} 
                             isLoading={isSourcePropertyLoading}
