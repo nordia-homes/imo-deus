@@ -10,8 +10,6 @@ service cloud.firestore {
     
     // Checks if the user is a member of the agency by checking the agency's 'agentIds' array.
     function isUserInAgency(agencyId) {
-      // Use exists() for safe access and the 'in' operator for list membership check (limit of 10).
-      // For larger lists, a map is preferred, but this works for small-to-medium agencies.
       let agencyDocPath = /databases/$(database)/documents/agencies/$(agencyId);
       return isSignedIn() &&
              exists(agencyDocPath) &&
@@ -22,6 +20,7 @@ service cloud.firestore {
     // Checks if the user is an admin of the specified agency.
     function isUserAdminForAgency(agencyId) {
         let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        // An admin must be in the agency and have the 'admin' role in their own user profile.
         return isUserInAgency(agencyId) &&
                exists(userDocPath) &&
                'role' in get(userDocPath).data &&
@@ -30,19 +29,18 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
+      // A user can read another user's profile ONLY IF they are both in the same agency.
       function canReadOtherUsers() {
-        // Get the requesting user's profile.
-        let requestingUserDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        // Get the profile of the user to be read.
-        let targetUserDoc = get(/databases/$(database)/documents/users/$(userId));
-
-        // Both must exist, have an agencyId, and their agencyIds must be the same and not null.
-        return requestingUserDoc != null &&
-               targetUserDoc != null &&
-               'agencyId' in requestingUserDoc.data &&
-               'agencyId' in targetUserDoc.data &&
-               requestingUserDoc.data.agencyId != null &&
-               requestingUserDoc.data.agencyId == targetUserDoc.data.agencyId;
+        let requestingUserDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        let targetUserDocPath = /databases/$(database)/documents/users/$(userId);
+        
+        // This rule is robust against non-existent user documents.
+        return exists(requestingUserDocPath) &&
+               exists(targetUserDocPath) &&
+               'agencyId' in get(requestingUserDocPath).data &&
+               'agencyId' in get(targetUserDocPath).data &&
+               get(requestingUserDocPath).data.agencyId != null &&
+               get(requestingUserDocPath).data.agencyId == get(targetUserDocPath).data.agencyId;
       }
 
       // A user can read their own profile, or another user's profile if they are in the same agency.
@@ -85,35 +83,13 @@ service cloud.firestore {
       allow delete: if false;
 
       // --- Agency Sub-collections ---
-      // A user can read subcollection data if their profile points to that agency.
-      function canReadSubcollection() {
-        let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-        return isSignedIn() &&
-               exists(userDocPath) &&
-               'agencyId' in get(userDocPath).data &&
-               get(userDocPath).data.agencyId == agencyId;
-      }
-
-      match /contacts/{contactId} { 
-        allow read: if canReadSubcollection();
-        allow write: if isUserInAgency(agencyId);
-      }
-      match /tasks/{taskId} { 
-        allow read: if canReadSubcollection();
-        allow write: if isUserInAgency(agencyId);
-      }
-      match /reports/{reportId} { 
-        allow read: if canReadSubcollection();
-        allow write: if isUserInAgency(agencyId);
-      }
-      match /emails/{emailId} { 
-        allow read: if canReadSubcollection();
-        allow write: if isUserInAgency(agencyId);
-      }
-      match /viewings/{viewingId} { 
-        allow read: if canReadSubcollection();
-        allow write: if isUserInAgency(agencyId);
-      }
+      // For all sub-collections, a user can read/write if they are part of that agency.
+      // This is a simpler and more robust rule than checking the user's own profile.
+      match /contacts/{contactId}   { allow read, write: if isUserInAgency(agencyId); }
+      match /tasks/{taskId}         { allow read, write: if isUserInAgency(agencyId); }
+      match /reports/{reportId}     { allow read, write: if isUserInAgency(agencyId); }
+      match /emails/{emailId}       { allow read, write: if isUserInAgency(agencyId); }
+      match /viewings/{viewingId}   { allow read, write: if isUserInAgency(agencyId); }
 
       // Properties are publicly readable but only writable by agency members.
       match /properties/{propertyId} {
