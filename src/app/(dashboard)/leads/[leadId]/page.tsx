@@ -142,21 +142,31 @@ export default function LeadDetailPage() {
 
     const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
-    const tasksQuery = useMemoFirebase(() => {
-        if (!agency?.id || !cumparatorId) return null;
-        const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
-        return query(tasksCollection, where('contactId', '==', cumparatorId));
-    }, [firestore, agency?.id, cumparatorId]);
+    // Fetch ALL tasks and viewings for the agency, then filter locally.
+    // This avoids security rule issues with `where` clauses on subcollections.
+    const allTasksQuery = useMemoFirebase(() => {
+        if (!agency?.id) return null;
+        return collection(firestore, 'agencies', agency.id, 'tasks');
+    }, [firestore, agency?.id]);
+    const { data: allTasks, isLoading: areTasksLoading } = useCollection<Task>(allTasksQuery);
 
-    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
+    const allViewingsQuery = useMemoFirebase(() => {
+        if (!agency?.id) return null;
+        return query(collection(firestore, 'agencies', agency.id, 'viewings'), orderBy('viewingDate', 'asc'));
+    }, [firestore, agency?.id]);
+    const { data: allViewings, isLoading: areViewingsLoading } = useCollection<Viewing>(allViewingsQuery);
     
-    const viewingsQuery = useMemoFirebase(() => {
-        if (!agency?.id || !cumparatorId) return null;
-        const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
-        return query(viewingsCollection, where('contactId', '==', cumparatorId), orderBy('viewingDate', 'asc'));
-    }, [firestore, agency?.id, cumparatorId]);
+    // Client-side filtering
+    const tasks = useMemo(() => {
+        if (!allTasks || !cumparatorId) return [];
+        return allTasks.filter(task => task.contactId === cumparatorId);
+    }, [allTasks, cumparatorId]);
+    
+    const viewings = useMemo(() => {
+        if (!allViewings || !cumparatorId) return [];
+        return allViewings.filter(viewing => viewing.contactId === cumparatorId);
+    }, [allViewings, cumparatorId]);
 
-    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
     const propertiesQuery = useMemoFirebase(() => {
         if (!agency?.id) return null;
@@ -676,7 +686,7 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="lg:col-span-5 space-y-6">
-                        <ScheduledViewingsCard viewings={viewings || []} />
+                        <ScheduledViewingsCard viewings={scheduledViewings} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
