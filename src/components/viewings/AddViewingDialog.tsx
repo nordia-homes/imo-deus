@@ -171,23 +171,23 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
         {isOpen && (
             <Form {...form}>
             <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6">
-                    <Card className="shadow-xl rounded-2xl">
+                <div className={cn("flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6", isMobile && "bg-[#0F1E33]")}>
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
-                            <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel>Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             {isNewContact ? (
-                                <div className="space-y-4 pt-4 border-t">
+                                <div className="space-y-4 pt-4 border-t border-border">
                                     <h4 className="font-semibold text-sm">Detalii Client Nou</h4>
-                                    <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
-                                    <Button type="button" variant="link" size="sm" className="p-0 h-auto" onClick={() => setIsNewContact(false)}>
+                                    <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Email</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                    <Button type="button" variant="link" size="sm" className={cn("p-0 h-auto", isMobile && "text-primary") } onClick={() => setIsNewContact(false)}>
                                         Sau selectează un client existent
                                     </Button>
                                 </div>
                             ) : (
                                 <FormItem>
-                                <FormLabel>Client</FormLabel>
+                                <FormLabel className={cn(isMobile && "text-white/80")}>Client</FormLabel>
                                 <div className="flex items-center gap-2">
                                         <FormField
                                             control={form.control}
@@ -195,7 +195,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                             render={({ field }) => (
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger className="flex-1">
+                                                        <SelectTrigger className={cn("flex-1", isMobile && "bg-white/10 border-white/20 text-white")}>
                                                             <SelectValue placeholder="Selectează clientul" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -207,7 +207,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                                 </Select>
                                             )}
                                         />
-                                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)}>
+                                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)} className={cn(isMobile && "bg-white/10 border-white/20 text-white")}>
                                             <UserPlus className="h-4 w-4"/>
                                         </Button>
                                 </div>
@@ -217,7 +217,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                              <div className="grid grid-cols-2 gap-4">
                                 <FormField
@@ -225,7 +225,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                 name="viewingDate"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Data</FormLabel>
+                                    <FormLabel className={cn(isMobile && "text-white/80")}>Data</FormLabel>
                                     <Popover modal={true}>
                                         <PopoverTrigger asChild>
                                         <FormControl>
@@ -233,7 +233,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                             variant="outline"
                                             className={cn(
                                                 "w-full pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
+                                                !field.value && "text-muted-foreground",
+                                                isMobile && "bg-white/10 border-white/20 text-white"
                                             )}
                                             >
                                             {field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}
@@ -256,14 +257,14 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                     </FormItem>
                                 )}
                                 />
-                                <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             </div>
                         </CardContent>
                     </Card>
                     
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
-                            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notițe (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Notițe (Opțional)</FormLabel><FormControl><Textarea className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="Detalii despre vizionare..." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                 </div>

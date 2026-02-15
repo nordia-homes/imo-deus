@@ -195,24 +195,24 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
         {isOpen && (
             <Form {...form}>
             <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6">
+                <div className={cn("flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6", isMobile && 'bg-[#0F1E33]')}>
                     
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Contact</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Email</FormLabel><FormControl><Input type="email" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="source"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Sursă</FormLabel>
+                                        <FormLabel className={cn(isMobile && "text-white/80")}>Sursă</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
+                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Website">Website</SelectItem>
@@ -230,20 +230,20 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                         </CardContent>
                     </Card>
                     
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Căutare</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel>Buget (€)</FormLabel><FormControl><Input type="number" {...field} placeholder="150000" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Buget (€)</FormLabel><FormControl><Input type="number" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="150000" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="status"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Status</FormLabel>
+                                        <FormLabel className={cn(isMobile && "text-white/80")}>Status</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
+                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Nou">Nou</SelectItem>
@@ -261,10 +261,10 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                     name="priority"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Prioritate</FormLabel>
+                                        <FormLabel className={cn(isMobile && "text-white/80")}>Prioritate</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Scăzută">Scăzută</SelectItem>
@@ -280,7 +280,7 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                         </CardContent>
                     </Card>
 
-                     <Card className="shadow-xl rounded-2xl">
+                     <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Locație</h3>
                             <FormField
@@ -288,10 +288,10 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                 name="city"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Oraș de interes</FormLabel>
+                                    <FormLabel className={cn(isMobile && "text-white/80")}>Oraș de interes</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
+                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
                                         {Object.keys(locations).map(city => (
@@ -306,8 +306,8 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                 
                                 {watchedCity && locations[watchedCity] && (
                                 <div className="space-y-2">
-                                        <Label>Zone de interes</Label>
-                                        <div className="max-h-60 overflow-y-auto rounded-md border p-4">
+                                        <Label className={cn(isMobile && "text-white/80")}>Zone de interes</Label>
+                                        <div className={cn("max-h-60 overflow-y-auto rounded-md border p-4", isMobile && "border-white/20")}>
                                             <div className="flex flex-wrap gap-x-6 gap-y-2">
                                                 {locations[watchedCity].sort().map((zone) => (
                                                     <div key={zone} className="flex items-center gap-2">
@@ -317,10 +317,11 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                                             onCheckedChange={(checked) => {
                                                                 handleZoneToggle(zone, !!checked);
                                                             }}
+                                                            className={cn(isMobile && "border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground")}
                                                         />
                                                         <Label
                                                             htmlFor={`zone-${zone}`}
-                                                            className="font-normal cursor-pointer"
+                                                            className={cn("font-normal cursor-pointer", isMobile && "text-white/80")}
                                                         >
                                                             {zone}
                                                         </Label>
@@ -333,7 +334,7 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                         </CardContent>
                     </Card>
                     
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                              <h3 className="text-lg font-semibold text-primary">Asociere (Opțional)</h3>
                             <FormField
@@ -341,10 +342,10 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                 name="sourcePropertyId"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Proprietate de Interes</FormLabel>
+                                    <FormLabel className={cn(isMobile && "text-white/80")}>Proprietate de Interes</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger>
+                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}>
                                             <SelectValue placeholder="Selectează proprietatea care a generat cumpărătorul" />
                                         </SelectTrigger>
                                         </FormControl>
@@ -357,7 +358,7 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                         ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>
+                                    <FormDescription className={cn(isMobile && "text-white/70")}>
                                         Asociază cumpărătorul cu anunțul de pe care a venit.
                                     </FormDescription>
                                     <FormMessage />
@@ -369,10 +370,10 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                 name="agentId"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Alocă Agent</FormLabel>
+                                    <FormLabel className={cn(isMobile && "text-white/80")}>Alocă Agent</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
                                         <SelectItem value="unassigned">Nealocat</SelectItem>
@@ -388,10 +389,10 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                         </CardContent>
                      </Card>
 
-                    <Card className="shadow-xl rounded-2xl">
+                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Cumpărător</FormLabel><FormControl><Textarea rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Descriere Cumpărător</FormLabel><FormControl><Textarea className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                 </div>
