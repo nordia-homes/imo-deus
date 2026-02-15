@@ -33,7 +33,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -221,7 +221,7 @@ export default function PropertyDetailPage() {
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
-                <div className="px-2 space-y-4">
+                <div className="space-y-4 px-2">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                         <CardContent className="p-3">
                             <div className="flex justify-around items-center text-sm">
@@ -252,7 +252,12 @@ export default function PropertyDetailPage() {
                     <div className="space-y-4">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                              <div>
-                                <h1 className="text-xl font-bold">{property.title}</h1>
+                                <div className="flex items-center justify-between">
+                                    <h1 className="text-xl font-bold">{property.title}</h1>
+                                    <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-8 w-8" onClick={() => setIsEditDialogOpen(true)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                </div>
                                 <p className="text-sm text-white/70">{property.address}</p>
                             </div>
                             <PriceStatusCard property={property} />
@@ -295,7 +300,6 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            
                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="info" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
@@ -304,7 +308,6 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-
                              <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                  <AccordionItem value="rlv" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu Proprietate (RLV)</AccordionTrigger>
@@ -321,7 +324,8 @@ export default function PropertyDetailPage() {
                             <FacebookPromotionCard />
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
-                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <CardHeader className="p-4">
                                     <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
                                 </CardHeader>
