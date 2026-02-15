@@ -8,9 +8,11 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
 import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Handshake, User, Phone, TrendingUp, Key, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+
 
 interface InfoDialogProps {
   property: Property;
@@ -18,39 +20,51 @@ interface InfoDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
-    if (!value && value !== 0) return null;
-    return (
-        <div className="flex items-center gap-3 rounded-lg border bg-background p-3 shadow-md">
-            <div className="bg-muted/20 p-2 rounded-md">
-                {icon}
-            </div>
-            <div>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="font-semibold text-sm">{value}</p>
-            </div>
-        </div>
-    )
-}
-
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <h3 className="text-base font-semibold text-foreground col-span-1 sm:col-span-2 md:col-span-3">{children}</h3>
-);
-
-
 export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) {
-  if (!isOpen) return null;
+    const isMobile = useIsMobile();
+
+    const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
+        if (!value && value !== 0) return null;
+        return (
+             <div className={cn("flex items-center gap-3 rounded-lg border p-3 shadow-md",
+                isMobile ? "bg-white/5 border-white/10" : "bg-background"
+            )}>
+                <div className={cn("p-2 rounded-md", isMobile ? "bg-white/10" : "bg-muted/20")}>
+                    {icon}
+                </div>
+                <div>
+                    <p className={cn("text-xs", isMobile ? "text-white/70" : "text-muted-foreground")}>{label}</p>
+                    <p className="font-semibold text-sm">{value}</p>
+                </div>
+            </div>
+        )
+    }
+
+    const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+        <h3 className={cn("text-base font-semibold col-span-1 sm:col-span-2 md:col-span-3",
+            isMobile ? "text-white" : "text-foreground"
+        )}>{children}</h3>
+    );
+
+
+    if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className={cn(
+          "sm:max-w-2xl",
+          isMobile && "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white flex flex-col"
+        )}>
+        <DialogHeader className={cn(isMobile && "shrink-0 border-b border-white/10")}>
           <DialogTitle className="truncate">{property.title}</DialogTitle>
-          <DialogDescription className="whitespace-nowrap">
+          <DialogDescription className={cn("whitespace-nowrap", isMobile && "text-white/70")}>
             Toate detaliile proprietății într-un singur loc.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-3 gap-3 py-4 max-h-[70vh] overflow-y-auto pr-3">
+        <div className={cn(
+            "grid grid-cols-1 sm:grid-cols-2 md:col-span-3 gap-3 py-4 pr-3",
+            isMobile ? "overflow-y-auto px-4" : "max-h-[70vh] overflow-y-auto"
+        )}>
             <SectionTitle>Detalii Esențiale</SectionTitle>
             <InfoItem icon={<Building className="h-5 w-5 text-primary" />} label="Tip Proprietate" value={property.propertyType} />
             <InfoItem icon={<Handshake className="h-5 w-5 text-primary" />} label="Tip Tranzacție" value={property.transactionType} />
@@ -65,7 +79,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<AlertTriangle className="h-5 w-5 text-primary" />} label="Risc Seismic" value={property.seismicRisk} />
 
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator /> </div>
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator className={cn(isMobile && "bg-white/20")} /> </div>
             <SectionTitle>Dotări & Finisaje</SectionTitle>
             <InfoItem icon={<Star className="h-5 w-5 text-primary" />} label="Confort" value={property.comfort} />
             <InfoItem icon={<Paintbrush className="h-5 w-5 text-primary" />} label="Stare Interior" value={property.interiorState} />
@@ -77,7 +91,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Bucătărie" value={property.kitchen} />
             <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Balcon/Terasă" value={property.balconyTerrace} />
             
-            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator /> </div>
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator className={cn(isMobile && "bg-white/20")} /> </div>
             <SectionTitle>Informații Proprietar & Management</SectionTitle>
             <InfoItem icon={<User className="h-5 w-5 text-primary" />} label="Nume Proprietar" value={property.ownerName} />
             <InfoItem icon={<Phone className="h-5 w-5 text-primary" />} label="Telefon Proprietar" value={property.ownerPhone} />
