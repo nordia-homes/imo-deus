@@ -1,18 +1,12 @@
 'use client';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Facebook, ExternalLink, Rocket } from "lucide-react";
 import Link from 'next/link';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const facebookGroups = [
     "https://www.facebook.com/groups/proprietardirect/",
@@ -60,19 +54,21 @@ export function FacebookPromotionCard() {
                         Postează anunțul în grupurile relevante pentru o vizibilitate maximă.
                     </DialogDescription>
                 </DialogHeader>
-                <div className={cn("space-y-2 max-h-80 overflow-y-auto pr-2", isMobile && "flex-1 p-4")}>
-                    {facebookGroups.map((group, index) => (
-                        <Button asChild key={index} variant="outline" className={cn(
-                            "w-full justify-between",
-                            isMobile && "bg-white/10 hover:bg-white/20 text-white border-white/20"
-                        )}>
-                            <Link href={group} target="_blank" rel="noopener noreferrer">
-                                Grup Facebook {index + 1}
-                                <ExternalLink className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                    ))}
-                </div>
+                <ScrollArea className={cn("max-h-80", isMobile && "flex-1")}>
+                    <div className={cn("space-y-2", isMobile ? "p-4" : "pr-4")}>
+                        {facebookGroups.map((group, index) => (
+                            <Button asChild key={index} variant="outline" className={cn(
+                                "w-full justify-between",
+                                isMobile && "bg-white/10 hover:bg-white/20 text-white border-white/20"
+                            )}>
+                                <Link href={group} target="_blank" rel="noopener noreferrer">
+                                    Grup Facebook {index + 1}
+                                    <ExternalLink className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        ))}
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );
