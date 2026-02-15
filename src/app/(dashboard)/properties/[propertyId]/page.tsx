@@ -269,11 +269,12 @@ export default function PropertyDetailPage() {
                                 email: agentProfile?.email || null,
                                 phone: agentProfile?.phone || null,
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
-                            }} />
+                            }} isMobile={true} />
                             {property.ownerName && property.ownerPhone && (
                                 <Card className="bg-white/10 text-white border-none rounded-lg">
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div>
+                                            <p className="text-xs text-white/70">Proprietar:</p>
                                             <p className="text-sm font-semibold">{property.ownerName}</p>
                                             <p className="text-xs text-white/70">{property.ownerPhone}</p>
                                         </div>

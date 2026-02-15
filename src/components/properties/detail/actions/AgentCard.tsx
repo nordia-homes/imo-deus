@@ -12,13 +12,50 @@ type AgentInfo = {
     avatarUrl?: string | null;
 }
 
-export function AgentCard({ agent }: { agent: AgentInfo }) {
+export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: boolean }) {
     const getInitials = (name?: string | null) => {
         if (!name) return 'A';
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     }
     
     const sanitizedPhone = agent.phone?.replace(/\D/g, '') || '';
+
+    if (isMobile) {
+        return (
+            <Card className="bg-white/10 text-white border-none rounded-lg">
+                <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                        <p className="text-xs text-white/70">Agent:</p>
+                        <p className="text-sm font-semibold">{agent.name}</p>
+                        {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
+                    </div>
+                    <div className="flex items-center">
+                        {agent.phone && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                <a href={`tel:${agent.phone}`} aria-label="Call agent">
+                                    <Phone className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                        {sanitizedPhone && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
+                                    <WhatsappIcon className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                        {agent.email && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                <a href={`mailto:${agent.email}`} aria-label="Email agent">
+                                    <Mail className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
@@ -29,7 +66,10 @@ export function AgentCard({ agent }: { agent: AgentInfo }) {
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
                             <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
-                        <p className="font-semibold text-sm">{agent.name}</p>
+                        <div>
+                             <p className="text-xs text-muted-foreground">Agent:</p>
+                             <p className="font-semibold text-sm leading-tight">{agent.name}</p>
+                        </div>
                     </div>
 
                     <div className="flex items-center">
