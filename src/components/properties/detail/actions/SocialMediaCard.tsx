@@ -95,7 +95,7 @@ export function SocialMediaCard({ property }: { property: Property }) {
                 </DialogHeader>
                 <div className={cn("space-y-4 py-4", isMobile ? "p-4 flex-1 overflow-y-auto" : "px-6")}>
                     {/* Facebook Post Mockup */}
-                    <div className={cn("bg-white rounded-lg shadow-lg p-3 font-sans text-sm text-gray-800", isMobile && "bg-white/5")}>
+                    <div className={cn("bg-white rounded-lg shadow-lg p-3 font-sans text-sm text-gray-800 overflow-hidden", isMobile && "bg-white/5")}>
                         {/* Header */}
                         <div className="flex items-center gap-2 mb-3">
                             <Avatar className="h-10 w-10">
@@ -134,23 +134,23 @@ export function SocialMediaCard({ property }: { property: Property }) {
                         
                         {/* Actions */}
                         <div className={cn("flex justify-around items-center mt-3 pt-2 border-t font-medium", isMobile ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600" )}>
-                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                            <Button variant="ghost" className={cn("flex-1 gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <ThumbsUp className="h-4 w-4" /> Apreciază
                             </Button>
-                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                            <Button variant="ghost" className={cn("flex-1 gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <MessageCircle className="h-4 w-4" /> Comentează
                             </Button>
-                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                            <Button variant="ghost" className={cn("flex-1 gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <Share className="h-4 w-4" /> Distribuie
                             </Button>
                         </div>
                     </div>
-
+                    
                     <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
                         Generează Postare AI
                     </Button>
-                    
+
                     {post && !isGenerating && (
                         <Button onClick={handleCopy} className="w-full">
                           {copied ? <Check className="mr-2 h-4 w-4 text-green-400" /> : <Copy className="mr-2 h-4 w-4" />}
