@@ -133,14 +133,14 @@ export function SocialMediaCard({ property }: { property: Property }) {
                         </div>
                         
                         {/* Actions */}
-                        <div className={cn("flex justify-between items-center mt-3 pt-2 border-t font-medium", isMobile ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600" )}>
-                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                        <div className={cn("flex justify-around items-center mt-3 pt-2 border-t font-medium", isMobile ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600" )}>
+                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <ThumbsUp className="h-4 w-4" /> Apreciază
                             </Button>
-                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <MessageCircle className="h-4 w-4" /> Comentează
                             </Button>
-                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                            <Button variant="ghost" className={cn("gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
                                 <Share className="h-4 w-4" /> Distribuie
                             </Button>
                         </div>
