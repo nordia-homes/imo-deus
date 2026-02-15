@@ -221,7 +221,7 @@ export default function PropertyDetailPage() {
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
-                <div className="px-6 space-y-4">
+                <div className="px-2 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                         <CardContent className="p-3">
                             <div className="flex justify-around items-center text-sm">
@@ -268,7 +268,7 @@ export default function PropertyDetailPage() {
                         <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="description" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere &amp; Dotări</AccordionTrigger>
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere & Dotări</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0">
                                         <p className="text-sm text-white/80 whitespace-pre-wrap">
                                           {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
@@ -309,8 +309,6 @@ export default function PropertyDetailPage() {
                                 <AccordionItem value="actions" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Acțiuni Marketing</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0 space-y-2">
-                                         <ScheduledViewingsCard viewings={viewings || []} />
-                                         <PotentialBuyersCard property={property} allContacts={allContacts || []} />
                                          <CmaCard property={property} allProperties={allProperties || []} />
                                          <PublishCard property={property} />
                                          <FacebookPromotionCard />
@@ -324,7 +322,7 @@ export default function PropertyDetailPage() {
                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                  <AccordionItem value="rlv" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
-                                    <AccordionContent className="px-0 pb-0 pt-0">
+                                    <AccordionContent className="px-2 pb-2 pt-0">
                                         <RlvTab property={property} />
                                     </AccordionContent>
                                 </AccordionItem>
@@ -442,3 +440,5 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
+
+    
