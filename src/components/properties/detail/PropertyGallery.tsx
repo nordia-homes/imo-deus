@@ -1,15 +1,15 @@
-'use client';
+"use client"
 
-import React from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import * as React from "react"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
   DialogHeader,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog"
 import {
   Carousel,
   CarouselApi,
@@ -17,44 +17,44 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from '@/components/ui/carousel';
-import { Grid } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+} from "@/components/ui/carousel"
+import { Grid } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
-  const [api, setApi] = React.useState<CarouselApi>();
-  const [open, setOpen] = React.useState(false);
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const isMobile = useIsMobile();
+  const [api, setApi] = React.useState<CarouselApi>()
+  const [open, setOpen] = React.useState(false)
+  const [activeIndex, setActiveIndex] = React.useState(0)
+  const isMobile = useIsMobile()
 
   React.useEffect(() => {
-    if (!api || isMobile) return;
+    if (!api || isMobile) return
 
     if (open) {
       setTimeout(() => {
-        api.reInit();
-        api.scrollTo(activeIndex, true); 
-      }, 100); 
+        api.reInit()
+        api.scrollTo(activeIndex, true) 
+      }, 100) 
     }
-  }, [open, api, activeIndex, isMobile]);
+  }, [open, api, activeIndex, isMobile])
 
   if (!images || images.length === 0) {
     return (
       <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
         <p className="text-muted-foreground">No images available</p>
       </div>
-    );
+    )
   }
 
   const openDialog = (index: number) => {
-    setActiveIndex(index);
-    setOpen(true);
-  };
+    setActiveIndex(index)
+    setOpen(true)
+  }
 
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
-    const imageUrl = images[index];
-    if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>;
+    const imageUrl = images[index]
+    if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>
 
     return (
       <div
@@ -70,14 +70,14 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
       </div>
-    );
-  };
+    )
+  }
   
   const renderDialogContent = () => {
     if (isMobile) {
       return (
-        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-background flex flex-col rounded-none data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom">
-            <DialogHeader className="p-4 border-b shrink-0">
+        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-[#0F1E33] text-white flex flex-col rounded-none data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom">
+            <DialogHeader className="p-4 border-b border-white/10 shrink-0">
               <DialogTitle>Galerie Foto</DialogTitle>
               <DialogDescription className="sr-only">
                 Listă de imagini pentru {title}
@@ -86,7 +86,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2 p-2">
                 {images.map((src, index) => (
-                  <div key={index} className="relative w-full h-auto rounded-lg overflow-hidden bg-muted">
+                  <div key={index} className="relative w-full h-auto rounded-lg overflow-hidden bg-black/20">
                     <Image
                       src={src}
                       alt={`${title} image ${index + 1}`}
@@ -101,7 +101,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
               </div>
             </div>
         </DialogContent>
-      );
+      )
     }
 
     // Desktop Carousel
@@ -136,7 +136,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
           </Carousel>
       </DialogContent>
-    );
+    )
   }
 
   return (
@@ -172,5 +172,5 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         {renderDialogContent()}
       </Dialog>
     </>
-  );
+  )
 }
