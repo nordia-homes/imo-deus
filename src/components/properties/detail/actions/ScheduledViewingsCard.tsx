@@ -4,19 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import type { Viewing } from "@/lib/types";
 import Link from 'next/link';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
+    const isMobile = useIsMobile();
     const scheduledCount = viewings.filter(v => v.status === 'scheduled').length;
 
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl p-0 h-12 flex items-center",
+            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+        )}>
             <CardContent className="p-2 flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold text-sm">Vizionări Programate:</span>
                     <span className="font-bold text-base">{scheduledCount}</span>
                 </div>
-                <Button asChild variant="link" size="sm" className="text-primary text-xs px-2">
+                <Button asChild variant="link" size="sm" className={cn("text-primary text-xs px-2", isMobile && "text-white")}>
                     <Link href="/viewings" aria-label="Vezi calendarul de vizionări">
                         Vezi tot
                     </Link>

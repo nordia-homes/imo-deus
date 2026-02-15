@@ -5,6 +5,8 @@ import { Users } from "lucide-react";
 import type { Property, Contact } from "@/lib/types";
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface PotentialBuyersCardProps {
     property: Property;
@@ -12,6 +14,7 @@ interface PotentialBuyersCardProps {
 }
 
 export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCardProps) {
+    const isMobile = useIsMobile();
     const matchedBuyersCount = useMemo(() => {
         if (!allContacts || allContacts.length === 0) {
             return 0;
@@ -61,14 +64,17 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
     }, [property, allContacts]);
 
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9]">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl p-0 h-12 flex items-center",
+            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+        )}>
             <CardContent className="p-2 flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold text-sm">Cumpărători Potențiali:</span>
                     <span className="font-bold text-base">{matchedBuyersCount}</span>
                 </div>
-                <Button asChild variant="link" size="sm" className="text-primary text-xs px-2">
+                <Button asChild variant="link" size="sm" className={cn("text-primary text-xs px-2", isMobile && "text-white")}>
                     <Link href="/leads" aria-label="Vezi toți cumpărătorii">
                         Vezi tot
                     </Link>
