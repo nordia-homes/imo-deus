@@ -221,37 +221,35 @@ export default function PropertyDetailPage() {
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
-                <div className="space-y-4">
-                    <div className="px-6">
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                            <CardContent className="p-3">
-                                <div className="flex justify-around items-center text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Bed className="h-5 w-5 text-primary" />
-                                        <span className="font-semibold">{property.rooms}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Ruler className="h-5 w-5 text-primary" />
-                                        <span className="font-semibold">{property.squareFootage} mp</span>
-                                    </div>
-                                    {property.constructionYear && (
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-5 w-5 text-primary" />
-                                            <span className="font-semibold">{property.constructionYear}</span>
-                                        </div>
-                                    )}
-                                    {property.floor && (
-                                        <div className="flex items-center gap-2">
-                                            <Layers className="h-5 w-5 text-primary" />
-                                            <span className="font-semibold">{property.floor}</span>
-                                        </div>
-                                    )}
+                <div className="px-6 space-y-4">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                        <CardContent className="p-3">
+                            <div className="flex justify-around items-center text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Bed className="h-5 w-5 text-primary" />
+                                    <span className="font-semibold">{property.rooms}</span>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                <div className="flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-primary" />
+                                    <span className="font-semibold">{property.squareFootage} mp</span>
+                                </div>
+                                {property.constructionYear && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.constructionYear}</span>
+                                    </div>
+                                )}
+                                {property.floor && (
+                                    <div className="flex items-center gap-2">
+                                        <Layers className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.floor}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                    <div className="px-6 space-y-4">
+                    <div className="space-y-4">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                              <div>
                                 <h1 className="text-xl font-bold">{property.title}</h1>
@@ -270,7 +268,7 @@ export default function PropertyDetailPage() {
                         <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="description" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere & Dotări</AccordionTrigger>
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere &amp; Dotări</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0">
                                         <p className="text-sm text-white/80 whitespace-pre-wrap">
                                           {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
@@ -299,6 +297,15 @@ export default function PropertyDetailPage() {
                             </Card>
 
                              <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <AccordionItem value="info" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
+                                    <AccordionContent className="px-4 pb-4 pt-0">
+                                         <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+                            
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="actions" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Acțiuni Marketing</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0 space-y-2">
@@ -319,15 +326,6 @@ export default function PropertyDetailPage() {
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
                                     <AccordionContent className="px-0 pb-0 pt-0">
                                         <RlvTab property={property} />
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Card>
-                            
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <AccordionItem value="info" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
-                                    <AccordionContent className="px-4 pb-4 pt-0">
-                                         <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
