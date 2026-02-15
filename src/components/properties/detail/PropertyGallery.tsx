@@ -84,7 +84,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto">
-              <div className="space-y-2">
+              <div className="space-y-2 px-4">
                 {images.map((src, index) => (
                   <div key={index} className="relative w-full h-auto rounded-lg overflow-hidden bg-black/20">
                     <Image
