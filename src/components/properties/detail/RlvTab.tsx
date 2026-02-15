@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, FileText, Loader2, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface RlvTabProps {
   property: Property;
@@ -22,6 +24,7 @@ export function RlvTab({ property }: RlvTabProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -89,7 +92,7 @@ export function RlvTab({ property }: RlvTabProps) {
         <div className="p-8 border-2 border-dashed rounded-lg">
           <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">Niciun releveu încărcat pentru această proprietate.</p>
-          <Button asChild variant="outline" disabled={isUploading}>
+          <Button asChild variant={isMobile ? 'secondary' : 'outline'} className={cn(isMobile && 'bg-white/10 hover:bg-white/20 text-white')} disabled={isUploading}>
             <label htmlFor="rlv-upload" className="cursor-pointer">
               {isUploading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
