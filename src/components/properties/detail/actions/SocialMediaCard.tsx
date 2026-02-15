@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useAgency } from "@/context/AgencyContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
+import { Skeleton } from "../../../ui/skeleton";
 
 
 export function SocialMediaCard({ property }: { property: Property }) {
@@ -98,51 +99,63 @@ export function SocialMediaCard({ property }: { property: Property }) {
                         Generează Postare AI
                     </Button>
 
-                    {post && (
-                        <div className="pt-4 mt-4 border-t border-gray-200 dark:border-white/10">
-                            {/* Facebook Post Mockup */}
-                            <div className={cn("bg-white rounded-lg shadow-lg p-3 font-sans text-sm text-gray-800", isMobile && "bg-white/5")}>
-                                {/* Header */}
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={agency?.logoUrl || undefined} alt={agency?.name || 'Agency'} />
-                                        <AvatarFallback>{agency?.name?.charAt(0) ?? 'A'}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className={cn("font-semibold", isMobile ? "text-white" : "text-gray-900")}>{agency?.name || 'Numele Agenției'}</p>
-                                        <p className={cn("text-xs", isMobile ? "text-white/70" : "text-gray-500")}>Chiar acum · <Globe className="inline h-3 w-3" /></p>
-                                    </div>
-                                </div>
-
-                                {/* Body */}
-                                <p className={cn("whitespace-pre-wrap mb-4", isMobile && "text-white/90")}>{post}</p>
-
-                                {/* Image */}
-                                {property.images && property.images.length > 0 && (
-                                    <div className="relative -mx-3 aspect-[1.91/1] w-[calc(100%+24px)] rounded-none overflow-hidden border-y border-gray-200 dark:border-gray-700">
-                                        <Image src={property.images[0].url} alt="Property image" fill className="object-cover" sizes="100vw" />
-                                    </div>
-                                )}
-                                
-                                {/* Actions */}
-                                <div className={cn("flex justify-between items-center mt-3 pt-2 border-t font-medium", isMobile ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600" )}>
-                                    <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
-                                        <ThumbsUp className="h-4 w-4" /> Apreciază
-                                    </Button>
-                                    <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
-                                        <MessageCircle className="h-4 w-4" /> Comentează
-                                    </Button>
-                                    <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
-                                        <Share className="h-4 w-4" /> Distribuie
-                                    </Button>
-                                </div>
+                    {/* Facebook Post Mockup */}
+                    <div className={cn("bg-white rounded-lg shadow-lg p-3 font-sans text-sm text-gray-800", isMobile && "bg-white/5")}>
+                        {/* Header */}
+                        <div className="flex items-center gap-2 mb-3">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={agency?.logoUrl || undefined} alt={agency?.name || 'Agency'} />
+                                <AvatarFallback>{agency?.name?.charAt(0) ?? 'A'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className={cn("font-semibold", isMobile ? "text-white" : "text-gray-900")}>{agency?.name || 'Numele Agenției'}</p>
+                                <p className={cn("text-xs", isMobile ? "text-white/70" : "text-gray-500")}>Chiar acum · <Globe className="inline h-3 w-3" /></p>
                             </div>
-                            
-                            <Button onClick={handleCopy} className="w-full mt-4">
-                              {copied ? <Check className="mr-2 h-4 w-4 text-green-400" /> : <Copy className="mr-2 h-4 w-4" />}
-                              Copiază textul postării
+                        </div>
+
+                        {/* Body */}
+                        <div className="mb-4 min-h-[60px]">
+                            {isGenerating && (
+                                <div className="space-y-2">
+                                    <Skeleton className={cn("h-4 w-full", isMobile && "bg-white/20")} />
+                                    <Skeleton className={cn("h-4 w-5/6", isMobile && "bg-white/20")} />
+                                    <Skeleton className={cn("h-4 w-3/4", isMobile && "bg-white/20")} />
+                                </div>
+                            )}
+                            {!isGenerating && post && (
+                                <p className={cn("whitespace-pre-wrap", isMobile && "text-white/90")}>{post}</p>
+                            )}
+                            {!isGenerating && !post && (
+                                <p className={cn("text-muted-foreground", isMobile && "text-white/50")}>Apasă pe "Generează Postare AI" pentru a vedea conținutul aici.</p>
+                            )}
+                        </div>
+
+                        {/* Image */}
+                        <div className="relative -mx-3 aspect-[1.91/1] w-[calc(100%+24px)] rounded-none overflow-hidden border-y border-gray-200 dark:border-white/20 bg-muted">
+                            {property.images && property.images.length > 0 && (
+                                <Image src={property.images[0].url} alt="Property image" fill className="object-cover" sizes="100vw" />
+                            )}
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className={cn("flex justify-between items-center mt-3 pt-2 border-t font-medium", isMobile ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600" )}>
+                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                                <ThumbsUp className="h-4 w-4" /> Apreciază
+                            </Button>
+                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                                <MessageCircle className="h-4 w-4" /> Comentează
+                            </Button>
+                            <Button variant="ghost" className={cn("w-full gap-2", isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
+                                <Share className="h-4 w-4" /> Distribuie
                             </Button>
                         </div>
+                    </div>
+                    
+                    {post && !isGenerating && (
+                        <Button onClick={handleCopy} className="w-full mt-4">
+                          {copied ? <Check className="mr-2 h-4 w-4 text-green-400" /> : <Copy className="mr-2 h-4 w-4" />}
+                          Copiază textul postării
+                        </Button>
                     )}
                 </div>
             </DialogContent>

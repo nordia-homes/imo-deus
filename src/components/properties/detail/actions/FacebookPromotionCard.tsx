@@ -53,8 +53,8 @@ export function FacebookPromotionCard() {
                         Postează anunțul în grupurile relevante pentru o vizibilitate maximă.
                     </DialogDescription>
                 </DialogHeader>
-                <div className={cn("overflow-y-auto", isMobile ? "flex-1" : "max-h-80")}>
-                    <div className={cn("space-y-2", isMobile ? "p-4" : "pr-4")}>
+                <div className={cn(isMobile ? "flex-1 overflow-y-auto" : "max-h-80 overflow-y-auto pr-4")}>
+                    <div className={cn("space-y-2", isMobile ? "p-4" : "")}>
                         {facebookGroups.map((group, index) => (
                             <Button asChild key={index} variant="outline" className={cn(
                                 "w-full justify-between",
