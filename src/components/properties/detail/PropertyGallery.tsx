@@ -18,15 +18,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid } from "lucide-react"
+import { Grid, Link as LinkIcon, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useAgency } from "@/context/AgencyContext"
+import { useToast } from "@/hooks/use-toast"
 
-export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
+export function PropertyGallery({ images, title, propertyId }: { images: string[]; title: string; propertyId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
   const isMobile = useIsMobile()
+  const { agencyId } = useAgency();
+  const { toast } = useToast();
+  const [copied, setCopied] = React.useState(false);
+
 
   React.useEffect(() => {
     if (!api || isMobile) return
@@ -51,6 +57,22 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
     setActiveIndex(index)
     setOpen(true)
   }
+
+  const handleCopyLink = () => {
+    if (!agencyId || !propertyId) {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut genera link-ul public."
+      });
+      return;
+    }
+    const url = `${window.location.origin}/agencies/${agencyId}/properties/${propertyId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast({ title: "Link copiat!" });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index]
@@ -156,15 +178,25 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
             <ImageItem index={0} className="w-full h-full" />
         </div>
 
-        {/* --- Show all photos button --- */}
-        <Button
-          variant="secondary"
-          className="absolute bottom-4 right-4 z-10"
-          onClick={() => openDialog(0)}
-        >
-          <Grid className="mr-2 h-4 w-4" />
-          Show all photos
-        </Button>
+        {/* --- Buttons container --- */}
+        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10"
+              onClick={handleCopyLink}
+              aria-label="Copiază link-ul public"
+            >
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <LinkIcon className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => openDialog(0)}
+            >
+              <Grid className="mr-2 h-4 w-4" />
+              Vezi Fotografiile
+            </Button>
+        </div>
       </div>
 
       {/* --- Dialog for the full-screen view --- */}

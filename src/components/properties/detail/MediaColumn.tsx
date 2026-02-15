@@ -7,7 +7,7 @@ export function MediaColumn({ property }: { property: Property }) {
     
     return (
         <div className="space-y-6">
-             <PropertyGallery images={propertyImages} title={property.title} />
+             <PropertyGallery images={propertyImages} title={property.title} propertyId={property.id} />
         </div>
     );
 }
