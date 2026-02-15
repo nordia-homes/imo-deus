@@ -33,8 +33,10 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info, Bed, Ruler, Calendar, Layers } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
@@ -49,6 +51,7 @@ import { PropertyNotesCard } from '@/components/properties/detail/actions/Proper
 import { MatchedLeadsTab } from '@/components/properties/detail/MatchedLeadsTab';
 import { RlvTab } from '@/components/properties/detail/RlvTab';
 import { InfoDialog } from '@/components/properties/detail/InfoDialog';
+import Link from 'next/link';
 
 
 
@@ -104,6 +107,54 @@ export default function PropertyDetailPage() {
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
     const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
+
+    const matchedCumparatori = useMemo(() => {
+        if (!allContacts || allContacts.length === 0 || !property) {
+            return [];
+        }
+
+        return allContacts.filter(contact => {
+            if (contact.status === 'Câștigat' || contact.status === 'Pierdut') {
+                return false;
+            }
+
+            let score = 0;
+
+            const contactBudget = contact.budget || 0;
+            if (contactBudget > 0) {
+                const lowerBound = contactBudget * 0.8;
+                const upperBound = contactBudget * 1.5;
+                if (property.price >= lowerBound && property.price <= upperBound) {
+                    score += 50;
+                }
+            }
+
+            const contactRooms = contact.preferences?.desiredRooms || 0;
+            if (contactRooms > 0) {
+                if (property.rooms === contactRooms) {
+                    score += 30;
+                } else if (Math.abs(property.rooms - contactRooms) === 1) {
+                    score += 15;
+                }
+            }
+            
+            const contactCity = contact.city?.toLowerCase();
+            const propertyCity = property.location.split(',')[0]?.trim().toLowerCase();
+            if (contactCity && propertyCity && propertyCity.includes(contactCity)) {
+                score += 20;
+            }
+
+            if (contact.zones && contact.zones.length > 0) {
+                const propertyLocationLower = property.location.toLowerCase();
+                if (contact.zones.some(zone => propertyLocationLower.includes(zone.toLowerCase()))) {
+                    score += 25;
+                }
+            }
+
+            return score > 40;
+        }).sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+
+    }, [property, allContacts]);
 
     useEffect(() => {
         if (!property?.agentId || !firestore) {
@@ -257,15 +308,6 @@ export default function PropertyDetailPage() {
                         </Card>
                         
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                             <AccordionItem value="leads" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Cumpărători Potriviți</AccordionTrigger>
-                                <AccordionContent className="px-0 pb-0 pt-0">
-                                     <MatchedLeadsTab property={property} allContacts={allContacts || []} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                              <AccordionItem value="rlv" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
                                 <AccordionContent className="px-0 pb-0 pt-0">
@@ -284,6 +326,40 @@ export default function PropertyDetailPage() {
                         </Card>
 
                     </Accordion>
+                    
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                        <CardHeader className="p-4">
+                            <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                             {matchedCumparatori.length > 0 ? (
+                                <Table>
+                                    <TableBody>
+                                        {matchedCumparatori.map(lead => (
+                                            <TableRow key={lead.id} className="border-white/20">
+                                                <TableCell className="font-medium text-white p-2">
+                                                    <p>{lead.name}</p>
+                                                    <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
+                                                </TableCell>
+                                                <TableCell className="p-2 text-right">
+                                                    <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
+                                                        <Link href={`/leads/${lead.id}`}>
+                                                            Vezi
+                                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="text-center text-white/70 py-6 px-4">
+                                    <p>Nu au fost găsiți cumpărători compatibili.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
                  
                  <AddViewingDialog
