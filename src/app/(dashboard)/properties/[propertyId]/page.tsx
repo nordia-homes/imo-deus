@@ -13,6 +13,7 @@ import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { InfoColumn } from '@/components/properties/detail/InfoColumn';
 import { ActionsColumn } from '@/components/properties/detail/ActionsColumn';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
+import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 
 // Firebase & Context
 import { useAgency } from '@/context/AgencyContext';
@@ -84,7 +85,7 @@ export default function PropertyDetailPage() {
     const isMobile = useIsMobile();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-    const TRUNCATION_LENGTH = 350;
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -300,7 +301,7 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="info" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0">
@@ -324,49 +325,43 @@ export default function PropertyDetailPage() {
                             <FacebookPromotionCard />
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
-                            
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <CardHeader className="p-4">
-                                    <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
+                            <PropertyNotesCard property={property} />
+                            <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
+                                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+                                    <CardTitle className="text-base font-semibold text-white">Cumpărători Potriviți</CardTitle>
+                                    <Button asChild variant="link" size="sm" className="text-white p-0 h-auto">
+                                        <Link href="/matching">Vezi toți</Link>
+                                    </Button>
                                 </CardHeader>
-                                <CardContent className="p-0">
+                                <CardContent className="p-4 pt-0">
                                     {matchedCumparatori.length > 0 ? (
-                                        <Table>
-                                            <TableBody>
-                                                {matchedCumparatori.map(lead => (
-                                                    <TableRow key={lead.id} className="border-white/20">
-                                                        <TableCell className="font-medium text-white p-2">
-                                                            <p>{lead.name}</p>
-                                                            <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
-                                                        </TableCell>
-                                                        <TableCell className="p-2 text-right">
-                                                            <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
-                                                                <Link href={`/leads/${lead.id}`}>
-                                                                    Vezi
-                                                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                                                </Link>
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    ) : (
-                                        <div className="text-center text-white/70 py-6 px-4">
-                                            <p>Nu au fost găsiți cumpărători compatibili.</p>
+                                        <div className="space-y-3">
+                                            {matchedCumparatori.slice(0,3).map(lead => (
+                                                <Link href={`/leads/${lead.id}`} key={lead.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20 hover:bg-white/10 group">
+                                                    <div>
+                                                        <p className="font-semibold text-sm group-hover:text-primary">{lead.name}</p>
+                                                        <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
+                                                    </div>
+                                                    <ArrowRight className="h-4 w-4 text-white/70 group-hover:translate-x-1 transition-transform" />
+                                                </Link>
+                                            ))}
                                         </div>
+                                    ) : (
+                                        <p className="text-white/70 text-center py-4">Nu au fost găsiți cumpărători compatibili.</p>
                                     )}
                                 </CardContent>
                             </Card>
-                            
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <CardHeader className="p-4">
-                                    <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
+                            <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
+                                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+                                    <CardTitle className="text-base font-semibold text-white">Vizionări Programate</CardTitle>
+                                     <Button asChild variant="link" size="sm" className="text-white p-0 h-auto">
+                                        <Link href="/viewings">Vezi calendar</Link>
+                                    </Button>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0">
                                     {scheduledViewings.length > 0 ? (
                                         <div className="space-y-3">
-                                            {scheduledViewings.map(viewing => (
+                                            {scheduledViewings.slice(0, 3).map(viewing => (
                                                 <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20">
                                                     <div>
                                                         <p className="font-semibold text-sm">{viewing.contactName}</p>
@@ -383,17 +378,19 @@ export default function PropertyDetailPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-white/70 text-center py-4">
-                                            Nicio vizionare programată.
-                                        </p>
+                                        <p className="text-white/70 text-center py-4">Nicio vizionare programată.</p>
                                     )}
                                 </CardContent>
                             </Card>
-                            <PropertyNotesCard property={property} />
                         </div>
                     </div>
                 </div>
                  
+                 <AddPropertyDialog
+                    isOpen={isEditDialogOpen}
+                    onOpenChange={setIsEditDialogOpen}
+                    property={property}
+                />
                  <AddViewingDialog
                     isOpen={isAddViewingOpen}
                     onOpenChange={setIsAddViewingOpen}
