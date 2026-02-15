@@ -41,7 +41,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
-import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
+import { ScheduledViewingsCard } from '@/components/properties/detail/actions/ScheduledViewingsCard';
 import { PotentialBuyersCard } from '@/components/properties/detail/actions/PotentialBuyersCard';
 import { CmaCard } from '@/components/properties/detail/actions/CmaCard';
 import { PublishCard } from '@/components/properties/detail/actions/PublishCard';
@@ -327,62 +327,8 @@ export default function PropertyDetailPage() {
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
                             <PropertyNotesCard property={property} />
-                             <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
-                                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
-                                    <CardTitle className="text-base font-semibold text-white">Cumpărători Potriviți</CardTitle>
-                                    <Button asChild variant="link" size="sm" className="text-white p-0 h-auto">
-                                        <Link href="/matching">Vezi toți</Link>
-                                    </Button>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0">
-                                    {matchedCumparatori.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {matchedCumparatori.slice(0,3).map(lead => (
-                                                <Link href={`/leads/${lead.id}`} key={lead.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20 hover:bg-white/10 group">
-                                                    <div>
-                                                        <p className="font-semibold text-sm group-hover:text-primary">{lead.name}</p>
-                                                        <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
-                                                    </div>
-                                                    <ArrowRight className="h-4 w-4 text-white/70 group-hover:translate-x-1 transition-transform" />
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-white/70 text-center py-4">Nu au fost găsiți cumpărători compatibili.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                            <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
-                                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
-                                    <CardTitle className="text-base font-semibold text-white">Vizionări Programate</CardTitle>
-                                     <Button asChild variant="link" size="sm" className="text-white p-0 h-auto">
-                                        <Link href="/viewings">Vezi calendar</Link>
-                                    </Button>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0">
-                                    {scheduledViewings.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {scheduledViewings.slice(0, 3).map(viewing => (
-                                                <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20">
-                                                    <div>
-                                                        <p className="font-semibold text-sm">{viewing.contactName}</p>
-                                                        <p className="text-xs text-white/70">
-                                                            {format(parseISO(viewing.viewingDate), "d MMM, HH:mm", { locale: ro })}
-                                                        </p>
-                                                    </div>
-                                                    <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
-                                                        <Link href={`/leads/${viewing.contactId}`}>
-                                                            <ArrowRight className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-white/70 text-center py-4">Nicio vizionare programată.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                             <PotentialBuyersCard property={property} allContacts={allContacts || []} />
+                             <ScheduledViewingsCard viewings={viewings || []} />
                         </div>
                     </div>
                 </div>
@@ -436,5 +382,3 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
-
-    
