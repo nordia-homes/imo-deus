@@ -94,11 +94,6 @@ export function SocialMediaCard({ property }: { property: Property }) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className={cn("space-y-4 py-4", isMobile ? "p-4 flex-1 overflow-y-auto" : "px-6")}>
-                    <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
-                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
-                        Generează Postare AI
-                    </Button>
-
                     {/* Facebook Post Mockup */}
                     <div className={cn("bg-white rounded-lg shadow-lg p-3 font-sans text-sm text-gray-800", isMobile && "bg-white/5")}>
                         {/* Header */}
@@ -150,9 +145,14 @@ export function SocialMediaCard({ property }: { property: Property }) {
                             </Button>
                         </div>
                     </div>
+
+                    <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+                        Generează Postare AI
+                    </Button>
                     
                     {post && !isGenerating && (
-                        <Button onClick={handleCopy} className="w-full mt-4">
+                        <Button onClick={handleCopy} className="w-full">
                           {copied ? <Check className="mr-2 h-4 w-4 text-green-400" /> : <Copy className="mr-2 h-4 w-4" />}
                           Copiază textul postării
                         </Button>
