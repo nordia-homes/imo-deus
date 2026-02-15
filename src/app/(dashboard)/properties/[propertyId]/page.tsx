@@ -34,7 +34,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit, Calculator, Facebook, Share2, Globe, StickyNote } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit, Calculator, Facebook, Share2, Globe, StickyNote, Phone } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -55,6 +55,7 @@ import { InfoDialog } from '@/components/properties/detail/InfoDialog';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 
 
@@ -269,6 +270,28 @@ export default function PropertyDetailPage() {
                                 phone: agentProfile?.phone || null,
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
                             }} />
+                            {property.ownerName && property.ownerPhone && (
+                                <Card className="bg-white/10 text-white border-none rounded-lg">
+                                    <CardContent className="p-3 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-semibold">{property.ownerName}</p>
+                                            <p className="text-xs text-white/70">{property.ownerPhone}</p>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                                <a href={`tel:${property.ownerPhone}`}>
+                                                    <Phone className="h-4 w-4" />
+                                                </a>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                                <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                                                    <WhatsappIcon className="h-4 w-4" />
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                             <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                         </Card>
 
