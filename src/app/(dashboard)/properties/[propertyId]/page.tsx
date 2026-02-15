@@ -52,6 +52,8 @@ import { MatchedLeadsTab } from '@/components/properties/detail/MatchedLeadsTab'
 import { RlvTab } from '@/components/properties/detail/RlvTab';
 import { InfoDialog } from '@/components/properties/detail/InfoDialog';
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
+import { ro } from 'date-fns/locale';
 
 
 
@@ -211,155 +213,191 @@ export default function PropertyDetailPage() {
         return null;
     }
     
+    const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+
     if (isMobile) {
         return (
           <div className="bg-[#0F1E33] -mt-6 -mx-4 pb-6 min-h-screen">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
-                <div className="px-6 space-y-4">
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                        <CardContent className="p-3">
-                            <div className="flex justify-around items-center text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Bed className="h-5 w-5 text-primary" />
-                                    <span className="font-semibold">{property.rooms}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Ruler className="h-5 w-5 text-primary" />
-                                    <span className="font-semibold">{property.squareFootage} mp</span>
-                                </div>
-                                {property.constructionYear && (
+                <div className="space-y-4">
+                    <div className="px-6">
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                            <CardContent className="p-3">
+                                <div className="flex justify-around items-center text-sm">
                                     <div className="flex items-center gap-2">
-                                        <Calendar className="h-5 w-5 text-primary" />
-                                        <span className="font-semibold">{property.constructionYear}</span>
+                                        <Bed className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.rooms}</span>
                                     </div>
-                                )}
-                                {property.floor && (
                                     <div className="flex items-center gap-2">
-                                        <Layers className="h-5 w-5 text-primary" />
-                                        <span className="font-semibold">{property.floor}</span>
+                                        <Ruler className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.squareFootage} mp</span>
                                     </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
-                         <div>
-                            <h1 className="text-xl font-bold">{property.title}</h1>
-                            <p className="text-sm text-white/70">{property.address}</p>
-                        </div>
-                        <PriceStatusCard property={property} />
-                        <AgentCard agent={{
-                            name: agentProfile?.name || property.agentName || "Nealocat",
-                            email: agentProfile?.email || null,
-                            phone: agentProfile?.phone || null,
-                            avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
-                        }} />
-                        <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
-                    </Card>
-
-                    <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="description" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere & Dotări</AccordionTrigger>
-                                <AccordionContent className="px-4 pb-4 pt-0">
-                                    <p className="text-sm text-white/80 whitespace-pre-wrap">
-                                      {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
-                                          ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                                          : property.description || 'Nicio descriere adăugată.'
-                                      }
-                                    </p>
-                                    {property.description && property.description.length > TRUNCATION_LENGTH && (
-                                        <Button 
-                                            variant="link" 
-                                            className="p-0 h-auto mt-2 text-primary"
-                                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                                        >
-                                            {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
-                                        </Button>
-                                    )}
-                                     {property.amenities && property.amenities.length > 0 && (
-                                        <div className="mt-4 flex flex-wrap gap-2">
-                                            {property.amenities.map(amenity => (
-                                                <Badge key={amenity} variant="secondary" className="bg-white/10 text-white border-none">{amenity}</Badge>
-                                            ))}
+                                    {property.constructionYear && (
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-5 w-5 text-primary" />
+                                            <span className="font-semibold">{property.constructionYear}</span>
                                         </div>
-                                     )}
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-
-                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="actions" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Acțiuni Marketing</AccordionTrigger>
-                                <AccordionContent className="px-4 pb-4 pt-0 space-y-2">
-                                     <ScheduledViewingsCard viewings={viewings || []} />
-                                     <PotentialBuyersCard property={property} allContacts={allContacts || []} />
-                                     <CmaCard property={property} allProperties={allProperties || []} />
-                                     <PublishCard property={property} />
-                                     <FacebookPromotionCard />
-                                     <SocialMediaCard property={property} />
-                                     <WebsiteToggleCard property={property} />
-                                     <PropertyNotesCard property={property} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                             <AccordionItem value="rlv" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
-                                <AccordionContent className="px-0 pb-0 pt-0">
-                                    <RlvTab property={property} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                        
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <AccordionItem value="info" className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
-                                <AccordionContent className="px-4 pb-4 pt-0">
-                                     <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-
-                    </Accordion>
-                    
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                        <CardHeader className="p-4">
-                            <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                             {matchedCumparatori.length > 0 ? (
-                                <Table>
-                                    <TableBody>
-                                        {matchedCumparatori.map(lead => (
-                                            <TableRow key={lead.id} className="border-white/20">
-                                                <TableCell className="font-medium text-white p-2">
-                                                    <p>{lead.name}</p>
-                                                    <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
-                                                </TableCell>
-                                                <TableCell className="p-2 text-right">
-                                                    <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
-                                                        <Link href={`/leads/${lead.id}`}>
-                                                            Vezi
-                                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <div className="text-center text-white/70 py-6 px-4">
-                                    <p>Nu au fost găsiți cumpărători compatibili.</p>
+                                    )}
+                                    {property.floor && (
+                                        <div className="flex items-center gap-2">
+                                            <Layers className="h-5 w-5 text-primary" />
+                                            <span className="font-semibold">{property.floor}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="px-6 space-y-4">
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
+                             <div>
+                                <h1 className="text-xl font-bold">{property.title}</h1>
+                                <p className="text-sm text-white/70">{property.address}</p>
+                            </div>
+                            <PriceStatusCard property={property} />
+                            <AgentCard agent={{
+                                name: agentProfile?.name || property.agentName || "Nealocat",
+                                email: agentProfile?.email || null,
+                                phone: agentProfile?.phone || null,
+                                avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
+                            }} />
+                            <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
+                        </Card>
+
+                        <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <AccordionItem value="description" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere & Dotări</AccordionTrigger>
+                                    <AccordionContent className="px-4 pb-4 pt-0">
+                                        <p className="text-sm text-white/80 whitespace-pre-wrap">
+                                          {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                                              ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                                              : property.description || 'Nicio descriere adăugată.'
+                                          }
+                                        </p>
+                                        {property.description && property.description.length > TRUNCATION_LENGTH && (
+                                            <Button 
+                                                variant="link" 
+                                                className="p-0 h-auto mt-2 text-primary"
+                                                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                            >
+                                                {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                                            </Button>
+                                        )}
+                                         {property.amenities && property.amenities.length > 0 && (
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {property.amenities.map(amenity => (
+                                                    <Badge key={amenity} variant="secondary" className="bg-white/10 text-white border-none">{amenity}</Badge>
+                                                ))}
+                                            </div>
+                                         )}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+
+                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <AccordionItem value="actions" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Acțiuni Marketing</AccordionTrigger>
+                                    <AccordionContent className="px-4 pb-4 pt-0 space-y-2">
+                                         <ScheduledViewingsCard viewings={viewings || []} />
+                                         <PotentialBuyersCard property={property} allContacts={allContacts || []} />
+                                         <CmaCard property={property} allProperties={allProperties || []} />
+                                         <PublishCard property={property} />
+                                         <FacebookPromotionCard />
+                                         <SocialMediaCard property={property} />
+                                         <WebsiteToggleCard property={property} />
+                                         <PropertyNotesCard property={property} />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+                            
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                 <AccordionItem value="rlv" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
+                                    <AccordionContent className="px-0 pb-0 pt-0">
+                                        <RlvTab property={property} />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+                            
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <AccordionItem value="info" className="border-b-0">
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
+                                    <AccordionContent className="px-4 pb-4 pt-0">
+                                         <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Card>
+                        </Accordion>
+                        
+                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <CardHeader className="p-4">
+                                <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                 {matchedCumparatori.length > 0 ? (
+                                    <Table>
+                                        <TableBody>
+                                            {matchedCumparatori.map(lead => (
+                                                <TableRow key={lead.id} className="border-white/20">
+                                                    <TableCell className="font-medium text-white p-2">
+                                                        <p>{lead.name}</p>
+                                                        <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
+                                                    </TableCell>
+                                                    <TableCell className="p-2 text-right">
+                                                        <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
+                                                            <Link href={`/leads/${lead.id}`}>
+                                                                Vezi
+                                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                                            </Link>
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <div className="text-center text-white/70 py-6 px-4">
+                                        <p>Nu au fost găsiți cumpărători compatibili.</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <CardHeader className="p-4">
+                                <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                {scheduledViewings.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {scheduledViewings.map(viewing => (
+                                            <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20">
+                                                <div>
+                                                    <p className="font-semibold text-sm">{viewing.contactName}</p>
+                                                    <p className="text-xs text-white/70">
+                                                        {format(parseISO(viewing.viewingDate), "d MMM, HH:mm", { locale: ro })}
+                                                    </p>
+                                                </div>
+                                                <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
+                                                    <Link href={`/leads/${viewing.contactId}`}>
+                                                        <ArrowRight className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-white/70 text-center py-4">
+                                        Nicio vizionare programată.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
                  
                  <AddViewingDialog
@@ -406,3 +444,5 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
+
+    
