@@ -75,34 +75,46 @@ export function SocialMediaCard({ property }: { property: Property }) {
                     </CardContent>
                 </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
+            <DialogContent className={cn(
+                "sm:max-w-lg",
+                isMobile && "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white flex flex-col p-0"
+            )}>
+                <DialogHeader className={cn(
+                    "p-6",
+                    isMobile && "p-4 border-b border-white/10 text-center shrink-0"
+                )}>
                     <DialogTitle>Asistent Marketing Social Media</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className={cn(isMobile && "text-white/70")}>
                         Generează o postare atractivă pentru Facebook sau Instagram, gata de copiat.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className={cn("space-y-4 py-4", isMobile && "p-4 flex-1 overflow-y-auto")}>
                     <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
                         Generează Postare AI
                     </Button>
 
                     {post && (
-                        <div className="space-y-2 pt-4 border-t relative">
+                        <div className="space-y-2 pt-4 border-t border-white/10 relative">
                              <Textarea
                                 readOnly
                                 value={post}
-                                className="h-64 bg-muted text-sm"
+                                className={cn(
+                                    "h-64 bg-muted text-sm",
+                                    isMobile && "bg-white/10 border-white/20 text-white"
+                                )}
                                 aria-label="Generated social media post"
                             />
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="absolute top-6 right-2 h-8 w-8"
+                                className={cn(
+                                    "absolute top-6 right-2 h-8 w-8",
+                                    isMobile && "text-white hover:text-white/80"
+                                )}
                                 onClick={handleCopy}
                             >
-                                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                                {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             </Button>
                         </div>
                     )}

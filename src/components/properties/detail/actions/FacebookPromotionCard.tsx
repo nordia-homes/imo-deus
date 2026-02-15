@@ -47,16 +47,25 @@ export function FacebookPromotionCard() {
                     </CardContent>
                 </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
+            <DialogContent className={cn(
+                "sm:max-w-md",
+                isMobile && "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white flex flex-col p-0"
+            )}>
+                <DialogHeader className={cn(
+                    "p-6",
+                    isMobile && "p-4 border-b border-white/10 text-center shrink-0"
+                )}>
                     <DialogTitle>Grupuri de Promovare Facebook</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className={cn(isMobile && "text-white/70")}>
                         Postează anunțul în grupurile relevante pentru o vizibilitate maximă.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                <div className={cn("space-y-2 max-h-80 overflow-y-auto pr-2", isMobile && "flex-1 p-4")}>
                     {facebookGroups.map((group, index) => (
-                        <Button asChild key={index} variant="outline" className="w-full justify-between">
+                        <Button asChild key={index} variant="outline" className={cn(
+                            "w-full justify-between",
+                            isMobile && "bg-white/10 hover:bg-white/20 text-white border-white/20"
+                        )}>
                             <Link href={group} target="_blank" rel="noopener noreferrer">
                                 Grup Facebook {index + 1}
                                 <ExternalLink className="h-4 w-4" />
