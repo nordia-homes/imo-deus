@@ -6,7 +6,6 @@ import { Facebook, ExternalLink, Rocket } from "lucide-react";
 import Link from 'next/link';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const facebookGroups = [
     "https://www.facebook.com/groups/proprietardirect/",
@@ -54,7 +53,7 @@ export function FacebookPromotionCard() {
                         Postează anunțul în grupurile relevante pentru o vizibilitate maximă.
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className={cn("max-h-80", isMobile && "flex-1")}>
+                <div className={cn("overflow-y-auto", isMobile ? "flex-1" : "max-h-80")}>
                     <div className={cn("space-y-2", isMobile ? "p-4" : "pr-4")}>
                         {facebookGroups.map((group, index) => (
                             <Button asChild key={index} variant="outline" className={cn(
@@ -68,7 +67,7 @@ export function FacebookPromotionCard() {
                             </Button>
                         ))}
                     </div>
-                </ScrollArea>
+                </div>
             </DialogContent>
         </Dialog>
     );
