@@ -295,8 +295,8 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-
-                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="info" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0">
@@ -304,10 +304,10 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+
+                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                  <AccordionItem value="rlv" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
+                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu Proprietate (RLV)</AccordionTrigger>
                                     <AccordionContent className="px-2 pb-2 pt-0">
                                         <RlvTab property={property} />
                                     </AccordionContent>
@@ -315,14 +315,7 @@ export default function PropertyDetailPage() {
                             </Card>
                         </Accordion>
                         
-                        <CmaCard property={property} allProperties={allProperties || []} />
-                        <PublishCard property={property} />
-                        <FacebookPromotionCard />
-                        <SocialMediaCard property={property} />
-                        <WebsiteToggleCard property={property} />
-                        <PropertyNotesCard property={property} />
-                        
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden mx-2">
+                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <CardHeader className="p-4">
                                 <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
                             </CardHeader>
@@ -356,7 +349,7 @@ export default function PropertyDetailPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden mx-2">
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <CardHeader className="p-4">
                                 <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
                             </CardHeader>
@@ -386,6 +379,15 @@ export default function PropertyDetailPage() {
                                 )}
                             </CardContent>
                         </Card>
+                        
+                        <div className="pt-4 space-y-4">
+                            <CmaCard property={property} allProperties={allProperties || []} />
+                            <PublishCard property={property} />
+                            <FacebookPromotionCard />
+                            <SocialMediaCard property={property} />
+                            <WebsiteToggleCard property={property} />
+                            <PropertyNotesCard property={property} />
+                        </div>
                     </div>
                 </div>
                  
