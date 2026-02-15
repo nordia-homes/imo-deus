@@ -39,7 +39,7 @@ Your task is to write a short, engaging, and professional social media post (for
 
 Use the following details:
 - Titlu: {{{title}}}
-- Preț: €{{{price.toLocaleString()}}}
+- Preț: €{{{price}}}
 - Tip: {{{transactionType}}}
 - Locație: {{{location}}}
 - Camere: {{{rooms}}}
