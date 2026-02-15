@@ -65,7 +65,7 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
             "rounded-2xl shadow-2xl",
             isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
         )}>
-            <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
+            <CardHeader className="px-3 pt-3 pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Cumpărători Potriviți ({matchedBuyers.length})
@@ -76,7 +76,7 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
                     </Link>
                 </Button>
             </CardHeader>
-            <CardContent className="p-3 pt-0">
+            <CardContent className="px-3 pb-3 pt-0">
                  {matchedBuyers.length > 0 ? (
                     <div className="space-y-2">
                         {matchedBuyers.slice(0, 3).map(lead => (
