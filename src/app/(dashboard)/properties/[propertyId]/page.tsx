@@ -33,7 +33,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
@@ -167,6 +167,33 @@ export default function PropertyDetailPage() {
                  <MediaColumn property={property} />
 
                 <div className="px-6 space-y-4">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                        <CardContent className="p-3">
+                            <div className="flex justify-around items-center text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Bed className="h-5 w-5 text-primary" />
+                                    <span className="font-semibold">{property.rooms}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Ruler className="h-5 w-5 text-primary" />
+                                    <span className="font-semibold">{property.squareFootage} mp</span>
+                                </div>
+                                {property.constructionYear && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.constructionYear}</span>
+                                    </div>
+                                )}
+                                {property.floor && (
+                                    <div className="flex items-center gap-2">
+                                        <Layers className="h-5 w-5 text-primary" />
+                                        <span className="font-semibold">{property.floor}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                          <div>
                             <h1 className="text-xl font-bold">{property.title}</h1>
