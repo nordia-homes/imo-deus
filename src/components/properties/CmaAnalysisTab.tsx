@@ -48,19 +48,16 @@ export function CmaAnalysisTab({ subjectProperty, allProperties, agencyId, isMob
     };
     
     return (
-        <Card className={cn(
-            "rounded-2xl shadow-2xl p-0 h-12 flex items-center",
-            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
-        )}>
+        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#152A47] text-white border-none">
             <CardContent className="p-2 w-full">
                 <div className="flex items-center justify-between text-center">
                      <div className="flex items-center gap-2">
-                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                        <Calculator className="h-4 w-4 text-white/70" />
                         <span className="font-semibold text-sm">Analiză CMA</span>
                     </div>
                     <Button 
                         size="sm" 
-                        className={cn("h-8", isMobile && "bg-white/20 text-white hover:bg-white/30")}
+                        className="h-8 bg-white/20 text-white hover:bg-white/30"
                         onClick={handleGenerateCMA} 
                         disabled={isGenerating}
                     >

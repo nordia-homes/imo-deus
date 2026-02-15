@@ -25,10 +25,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
     }
 
     return (
-        <Card className={cn(
-            "rounded-2xl shadow-2xl",
-            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
-        )}>
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Website Public</CardTitle>
             </CardHeader>
@@ -43,7 +40,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
                         onCheckedChange={handleToggle}
                     />
                 </div>
-                <CardDescription className={cn("text-xs !mt-1", isMobile && "text-white/70")}>
+                <CardDescription className="text-xs !mt-1 text-white/70">
                    Dacă este activ, proprietatea va apărea în secțiunea "Recomandate" de pe website-ul public.
                 </CardDescription>
             </CardContent>

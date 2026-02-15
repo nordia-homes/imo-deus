@@ -62,16 +62,13 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
     }, [property, allContacts]);
 
     return (
-        <Card className={cn(
-            "rounded-2xl shadow-2xl",
-            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
-        )}>
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
             <CardHeader className="px-3 pt-3 pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Cumpărători Potriviți ({matchedBuyers.length})
                 </CardTitle>
-                <Button asChild variant="link" size="sm" className={cn("text-primary text-xs px-0", isMobile && "text-white")}>
+                <Button asChild variant="link" size="sm" className="text-white text-xs px-0">
                     <Link href="/leads" aria-label="Vezi toți cumpărătorii">
                         Vezi toți
                     </Link>
@@ -81,17 +78,17 @@ export function PotentialBuyersCard({ property, allContacts }: PotentialBuyersCa
                  {matchedBuyers.length > 0 ? (
                     <div className="space-y-2">
                         {matchedBuyers.slice(0, 3).map(lead => (
-                            <Link key={lead.id} href={`/leads/${lead.id}`} className={cn("flex items-center justify-between p-2 rounded-lg border hover:bg-accent group", isMobile ? "border-white/10 hover:bg-white/20" : "border-border")}>
+                            <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center justify-between p-2 rounded-lg border border-white/10 hover:bg-white/20 group">
                                 <div>
                                     <p className="font-semibold text-sm group-hover:text-primary">{lead.name}</p>
-                                    <p className={cn("text-xs", isMobile ? "text-white/70" : "text-muted-foreground")}>Buget: €{lead.budget?.toLocaleString()}</p>
+                                    <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
                                 </div>
-                                <ArrowRight className={cn("h-4 w-4 group-hover:translate-x-1 transition-transform", isMobile ? "text-white/70" : "text-muted-foreground")} />
+                                <ArrowRight className="h-4 w-4 text-white/70 group-hover:translate-x-1 transition-transform" />
                             </Link>
                         ))}
                     </div>
                 ) : (
-                    <p className={cn("text-sm text-center py-4", isMobile ? "text-white/70" : "text-muted-foreground")}>Niciun cumpărător potrivit.</p>
+                    <p className="text-sm text-center py-4 text-white/70">Niciun cumpărător potrivit.</p>
                 )}
             </CardContent>
         </Card>

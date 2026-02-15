@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ImobiliareLogo = () => (
     <svg viewBox="0 0 130 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
         <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#0078d4">imobiliare</text>
-        <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#FFF">.ro</text>
+        <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="white">.ro</text>
     </svg>
 );
 
@@ -81,10 +81,7 @@ export function PublishCard({ property }: { property: Property }) {
     };
 
     return (
-        <Card className={cn(
-            "rounded-2xl shadow-2xl",
-            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
-        )}>
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Promovare One-Click</CardTitle>
             </CardHeader>
@@ -95,13 +92,13 @@ export function PublishCard({ property }: { property: Property }) {
                     const isPending = promotion?.status === 'pending';
                     
                     return (
-                        <div key={portal.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted/50">
+                        <div key={portal.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-white/10">
                              <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-2">
                                 {portal.logo}
                              </Label>
                             <div className="flex items-center gap-1">
-                               {isPublished && <span className="text-xs text-green-600 font-semibold">Publicat</span>}
-                               {isPending && <span className="text-xs text-yellow-600 font-semibold">În curs...</span>}
+                               {isPublished && <span className="text-xs text-green-400 font-semibold">Publicat</span>}
+                               {isPending && <span className="text-xs text-yellow-400 font-semibold">În curs...</span>}
                                 <Checkbox
                                     id={`portal-${portal.id}`}
                                     checked={isPublished || isPending}
