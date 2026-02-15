@@ -217,7 +217,7 @@ export default function PropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 -mx-4 pb-6 min-h-screen">
+          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
@@ -442,5 +442,3 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
-
-    
