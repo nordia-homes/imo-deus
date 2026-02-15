@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
+  DialogHeader,
 } from '@/components/ui/dialog';
 import {
   Carousel,
@@ -19,26 +20,24 @@ import {
 } from '@/components/ui/carousel';
 import { Grid } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function PropertyGallery({ images, title }: { images: string[]; title: string }) {
   const [api, setApi] = React.useState<CarouselApi>();
   const [open, setOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const isMobile = useIsMobile();
 
-  // This effect re-initializes the carousel when the dialog is opened.
-  // It's crucial for the carousel to calculate its dimensions correctly inside the modal.
   React.useEffect(() => {
-    if (!api) return;
+    if (!api || isMobile) return;
 
     if (open) {
-      // A small delay ensures the dialog's CSS transitions are complete
       setTimeout(() => {
         api.reInit();
-        // Instantly jump to the image that was clicked, without animation
         api.scrollTo(activeIndex, true); 
       }, 100); 
     }
-  }, [open, api, activeIndex]);
+  }, [open, api, activeIndex, isMobile]);
 
   if (!images || images.length === 0) {
     return (
@@ -53,11 +52,8 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
     setOpen(true);
   };
 
-  // Create a helper component for repeated image items to keep the code clean
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index];
-    // If an image doesn't exist for a given index, render a placeholder.
-    // This makes the grid layout robust even with fewer than 3 images.
     if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>;
 
     return (
@@ -76,6 +72,72 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
       </div>
     );
   };
+  
+  const renderDialogContent = () => {
+    if (isMobile) {
+      return (
+        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-background flex flex-col rounded-none data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom">
+            <DialogHeader className="p-4 border-b shrink-0">
+              <DialogTitle>Galerie Foto</DialogTitle>
+              <DialogDescription className="sr-only">
+                Listă de imagini pentru {title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-2 p-2">
+                {images.map((src, index) => (
+                  <div key={index} className="relative w-full h-auto rounded-lg overflow-hidden bg-muted">
+                    <Image
+                      src={src}
+                      alt={`${title} image ${index + 1}`}
+                      width={1200}
+                      height={800}
+                      className="w-full h-auto object-contain"
+                      sizes="100vw"
+                      priority={index < 2} // Prioritize loading the first couple of images
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+        </DialogContent>
+      );
+    }
+
+    // Desktop Carousel
+    return (
+      <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
+          <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            A carousel of {images.length} images for the property: {title}.
+          </DialogDescription>
+      
+          <Carousel
+            setApi={setApi}
+            className="w-full max-w-5xl"
+            opts={{ loop: true, startIndex: activeIndex }}
+          >
+            <CarouselContent>
+              {images.map((src, index) => (
+                <CarouselItem key={index}>
+                  <div className="relative aspect-video">
+                    <Image
+                      src={src}
+                      alt={`${title} image ${index + 1}`}
+                      fill
+                      className="object-contain"
+                      sizes="90vw"
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+            <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+          </Carousel>
+      </DialogContent>
+    );
+  }
 
   return (
     <>
@@ -84,10 +146,7 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         
         {/* --- Desktop Grid Layout --- */}
         <div className="hidden md:grid md:grid-cols-3 md:grid-rows-2 md:gap-2 h-[405px]">
-          {/* Main image */}
           <ImageItem index={0} className="col-span-2 row-span-2" />
-          
-          {/* Side images */}
           <ImageItem index={1} className="col-span-1" />
           <ImageItem index={2} className="col-span-1" />
         </div>
@@ -108,39 +167,9 @@ export function PropertyGallery({ images, title }: { images: string[]; title: st
         </Button>
       </div>
 
-      {/* --- Dialog for the full-screen carousel --- */}
+      {/* --- Dialog for the full-screen view --- */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
-            {/* Accessibility Titles */}
-            <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
-            <DialogDescription className="sr-only">
-              A carousel of {images.length} images for the property: {title}.
-            </DialogDescription>
-        
-            <Carousel
-              setApi={setApi}
-              className="w-full max-w-5xl"
-              opts={{ loop: true, startIndex: activeIndex }}
-            >
-              <CarouselContent>
-                {images.map((src, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative aspect-video">
-                      <Image
-                        src={src}
-                        alt={`${title} image ${index + 1}`}
-                        fill
-                        className="object-contain"
-                        sizes="90vw"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-            </Carousel>
-        </DialogContent>
+        {renderDialogContent()}
       </Dialog>
     </>
   );
