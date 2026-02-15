@@ -166,7 +166,7 @@ export default function PropertyDetailPage() {
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
-                <div className="px-4 space-y-4">
+                <div className="px-3 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                          <div>
                             <h1 className="text-xl font-bold">{property.title}</h1>
@@ -303,4 +303,3 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
-    
