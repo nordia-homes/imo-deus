@@ -7,10 +7,13 @@ import type { Property } from "@/lib/types";
 import { updateDocumentNonBlocking, useFirestore } from "@/firebase";
 import { doc } from 'firebase/firestore';
 import { useAgency } from "@/context/AgencyContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export function WebsiteToggleCard({ property }: { property: Property }) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
+    const isMobile = useIsMobile();
 
     const handleToggle = (isFeatured: boolean) => {
         if (!agencyId) return;
@@ -22,7 +25,10 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl",
+            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+        )}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Website Public</CardTitle>
             </CardHeader>
@@ -37,7 +43,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
                         onCheckedChange={handleToggle}
                     />
                 </div>
-                <CardDescription className="text-xs !mt-1">
+                <CardDescription className={cn("text-xs !mt-1", isMobile && "text-white/70")}>
                    Dacă este activ, proprietatea va apărea în secțiunea "Recomandate" de pe website-ul public.
                 </CardDescription>
             </CardContent>

@@ -306,20 +306,6 @@ export default function PropertyDetailPage() {
                             </Card>
                             
                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <AccordionItem value="actions" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Acțiuni Marketing</AccordionTrigger>
-                                    <AccordionContent className="px-4 pb-4 pt-0 space-y-2">
-                                         <CmaCard property={property} allProperties={allProperties || []} />
-                                         <PublishCard property={property} />
-                                         <FacebookPromotionCard />
-                                         <SocialMediaCard property={property} />
-                                         <WebsiteToggleCard property={property} />
-                                         <PropertyNotesCard property={property} />
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Card>
-                            
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                  <AccordionItem value="rlv" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu (RLV)</AccordionTrigger>
                                     <AccordionContent className="px-2 pb-2 pt-0">
@@ -329,70 +315,82 @@ export default function PropertyDetailPage() {
                             </Card>
                         </Accordion>
                         
-                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <CardHeader className="p-4">
-                                <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                 {matchedCumparatori.length > 0 ? (
-                                    <Table>
-                                        <TableBody>
-                                            {matchedCumparatori.map(lead => (
-                                                <TableRow key={lead.id} className="border-white/20">
-                                                    <TableCell className="font-medium text-white p-2">
-                                                        <p>{lead.name}</p>
-                                                        <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
-                                                    </TableCell>
-                                                    <TableCell className="p-2 text-right">
-                                                        <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
-                                                            <Link href={`/leads/${lead.id}`}>
-                                                                Vezi
-                                                                <ArrowRight className="ml-2 h-4 w-4" />
-                                                            </Link>
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <div className="text-center text-white/70 py-6 px-4">
-                                        <p>Nu au fost găsiți cumpărători compatibili.</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <div className="px-2 space-y-4">
+                            <h3 className="text-lg font-semibold text-white mt-4">Acțiuni Marketing</h3>
+                            <CmaCard property={property} allProperties={allProperties || []} />
+                            <PublishCard property={property} />
+                            <FacebookPromotionCard />
+                            <SocialMediaCard property={property} />
+                            <WebsiteToggleCard property={property} />
+                            <PropertyNotesCard property={property} />
+                        </div>
+                        
+                         <div className="space-y-4">
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <CardHeader className="p-4">
+                                    <CardTitle className="font-semibold text-white text-base">Cumpărători Potriviți</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {matchedCumparatori.length > 0 ? (
+                                        <Table>
+                                            <TableBody>
+                                                {matchedCumparatori.map(lead => (
+                                                    <TableRow key={lead.id} className="border-white/20">
+                                                        <TableCell className="font-medium text-white p-2">
+                                                            <p>{lead.name}</p>
+                                                            <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()}</p>
+                                                        </TableCell>
+                                                        <TableCell className="p-2 text-right">
+                                                            <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
+                                                                <Link href={`/leads/${lead.id}`}>
+                                                                    Vezi
+                                                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center text-white/70 py-6 px-4">
+                                            <p>Nu au fost găsiți cumpărători compatibili.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
 
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                            <CardHeader className="p-4">
-                                <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                {scheduledViewings.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {scheduledViewings.map(viewing => (
-                                            <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20">
-                                                <div>
-                                                    <p className="font-semibold text-sm">{viewing.contactName}</p>
-                                                    <p className="text-xs text-white/70">
-                                                        {format(parseISO(viewing.viewingDate), "d MMM, HH:mm", { locale: ro })}
-                                                    </p>
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                                <CardHeader className="p-4">
+                                    <CardTitle className="font-semibold text-white text-base">Vizionări Programate</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    {scheduledViewings.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {scheduledViewings.map(viewing => (
+                                                <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border border-white/20">
+                                                    <div>
+                                                        <p className="font-semibold text-sm">{viewing.contactName}</p>
+                                                        <p className="text-xs text-white/70">
+                                                            {format(parseISO(viewing.viewingDate), "d MMM, HH:mm", { locale: ro })}
+                                                        </p>
+                                                    </div>
+                                                    <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
+                                                        <Link href={`/leads/${viewing.contactId}`}>
+                                                            <ArrowRight className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
                                                 </div>
-                                                <Button asChild variant="ghost" size="sm" className="text-white/90 hover:text-white">
-                                                    <Link href={`/leads/${viewing.contactId}`}>
-                                                        <ArrowRight className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-white/70 text-center py-4">
-                                        Nicio vizionare programată.
-                                    </p>
-                                )}
-                            </CardContent>
-                        </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-white/70 text-center py-4">
+                                            Nicio vizionare programată.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
                  

@@ -9,6 +9,7 @@ import { useAgency } from "@/context/AgencyContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Logo components
 const ImobiliareLogo = () => (
@@ -43,6 +44,7 @@ export function PublishCard({ property }: { property: Property }) {
     const { toast } = useToast();
     const { agencyId } = useAgency();
     const firestore = useFirestore();
+    const isMobile = useIsMobile();
 
     const handlePublishToggle = (portalId: string, isChecked: boolean) => {
         if (!agencyId) return;
@@ -78,7 +80,10 @@ export function PublishCard({ property }: { property: Property }) {
     };
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl",
+            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+        )}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Promovare One-Click</CardTitle>
             </CardHeader>

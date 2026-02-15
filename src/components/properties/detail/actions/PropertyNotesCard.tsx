@@ -9,6 +9,8 @@ import { useFirestore, updateDocumentNonBlocking } from "@/firebase";
 import { doc } from 'firebase/firestore';
 import { StickyNote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 type PropertyNotesCardProps = {
     property: Property;
@@ -20,6 +22,7 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         setNotes(property.notes || '');
@@ -45,7 +48,10 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
 
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl",
+            isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+        )}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <StickyNote className="h-4 w-4" />
@@ -59,7 +65,10 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
                     onChange={(e) => setNotes(e.target.value)}
                     onBlur={handleBlur}
                     placeholder="Adaugă notițe despre proprietar, vizite tehnice, etc."
-                    className="text-sm resize-none overflow-hidden bg-background"
+                    className={cn(
+                        "text-sm resize-none overflow-hidden",
+                        isMobile ? "bg-white/10 border-white/20 text-white" : "bg-background"
+                    )}
                     rows={4}
                 />
             </CardContent>

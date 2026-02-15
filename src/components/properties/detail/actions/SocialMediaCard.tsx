@@ -15,6 +15,8 @@ import { generateSocialMediaPost } from "@/ai/flows/social-media-post-generator"
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 
 export function SocialMediaCard({ property }: { property: Property }) {
@@ -23,6 +25,7 @@ export function SocialMediaCard({ property }: { property: Property }) {
     const [post, setPost] = useState('');
     const [copied, setCopied] = useState(false);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const handleGenerate = async () => {
         setIsGenerating(true);
@@ -59,7 +62,10 @@ export function SocialMediaCard({ property }: { property: Property }) {
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                 <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9] cursor-pointer hover:bg-muted/80 transition-colors">
+                 <Card className={cn(
+                    "rounded-2xl shadow-2xl p-0 h-12 flex items-center cursor-pointer hover:bg-muted/80 transition-colors",
+                    isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+                )}>
                     <CardContent className="p-2 flex items-center justify-between w-full">
                         <div className="flex items-center gap-2">
                             <Share2 className="h-4 w-4 text-orange-500" />

@@ -11,6 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Facebook, ExternalLink, Rocket } from "lucide-react";
 import Link from 'next/link';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const facebookGroups = [
     "https://www.facebook.com/groups/proprietardirect/",
@@ -28,10 +30,14 @@ const facebookGroups = [
 ];
 
 export function FacebookPromotionCard() {
+    const isMobile = useIsMobile();
     return (
         <Dialog>
             <DialogTrigger asChild>
-                 <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9] cursor-pointer hover:bg-muted/80 transition-colors">
+                 <Card className={cn(
+                    "rounded-2xl shadow-2xl p-0 h-12 flex items-center cursor-pointer hover:bg-muted/80 transition-colors",
+                    isMobile ? "bg-[#152A47] text-white border-none" : "bg-[#f8f8f9]"
+                )}>
                     <CardContent className="p-2 flex items-center justify-between w-full">
                         <div className="flex items-center gap-2">
                             <Facebook className="h-4 w-4 text-blue-600" />
