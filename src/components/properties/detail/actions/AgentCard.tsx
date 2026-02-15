@@ -1,4 +1,3 @@
-
 'use client';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,7 +59,7 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white">
+        <Card className="rounded-2xl shadow-2xl p-0 flex items-center bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white">
             <CardContent className="p-2 w-full">
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -71,6 +70,7 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
                         <div>
                              <p className="text-xs text-muted-foreground lg:text-white/70">Agent:</p>
                              <p className="font-semibold text-sm leading-tight">{agent.name}</p>
+                             {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
                         </div>
                     </div>
 

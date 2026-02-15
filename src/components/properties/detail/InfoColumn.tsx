@@ -18,6 +18,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
@@ -85,7 +86,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     </Sheet>
                 </div>
 
-                <TabsContent value="overview" className="mt-6">
+                <TabsContent value="overview" className="mt-6 space-y-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
@@ -119,6 +120,9 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                              )}
                         </CardContent>
                     </Card>
+                    <div className="hidden lg:block">
+                        <PropertyNotesCard property={property} />
+                    </div>
                 </TabsContent>
                 <TabsContent value="leads" className="mt-6">
                     <MatchedLeadsTab property={property} allContacts={allContacts} />

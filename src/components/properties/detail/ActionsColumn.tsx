@@ -34,7 +34,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <FacebookPromotionCard />
             <SocialMediaCard property={property} />
             <WebsiteToggleCard property={property} />
-            <PropertyNotesCard property={property} />
         </div>
     );
 }
