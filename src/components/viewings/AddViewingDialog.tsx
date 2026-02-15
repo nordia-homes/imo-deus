@@ -165,8 +165,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-md h-auto")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
-          <DialogTitle className="text-xl text-foreground/90 text-center">Programează o Vizionare</DialogTitle>
+        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+          <DialogTitle className={cn("text-xl text-center", isMobile ? "text-white/90" : "text-foreground/90")}>Programează o Vizionare</DialogTitle>
         </DialogHeader>
         {isOpen && (
             <Form {...form}>
@@ -268,9 +268,9 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                         </CardContent>
                     </Card>
                 </div>
-                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+                <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Anulează</Button>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Programează

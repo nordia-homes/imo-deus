@@ -188,8 +188,8 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-3xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
-          <DialogTitle className="text-xl text-foreground/90 text-center">Adaugă Cumpărător Nou</DialogTitle>
+        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+            <DialogTitle className={cn("text-xl text-center", isMobile ? "text-white/90" : "text-foreground/90")}>Adaugă Cumpărător Nou</DialogTitle>
         </DialogHeader>
 
         {isOpen && (
@@ -397,9 +397,9 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                     </Card>
                 </div>
 
-                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+                <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Anulează</Button>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
                         <Button type="submit">Salvează Cumpărător</Button>
                     </div>
                 </DialogFooter>
@@ -410,5 +410,3 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
     </Dialog>
   );
 }
-
-    

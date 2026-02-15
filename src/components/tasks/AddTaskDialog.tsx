@@ -36,9 +36,10 @@ type TaskFormProps = {
     onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: ContactStub[];
     property?: Property | null;
+    isMobile: boolean;
 };
 
-function TaskForm({ onClose, onAddTask, contacts, property = null }: TaskFormProps) {
+function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: TaskFormProps) {
   const defaultContactId = useMemo(() => {
     if (contacts.length === 1) return contacts[0].id;
     return undefined;
@@ -93,20 +94,20 @@ function TaskForm({ onClose, onAddTask, contacts, property = null }: TaskFormPro
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-        <div className="overflow-y-auto md:px-3 md:py-4 space-y-6 px-2 py-4">
-            <Card className="shadow-xl rounded-2xl">
+        <div className={cn("overflow-y-auto md:px-3 md:py-4 space-y-6 px-2 py-4", isMobile && "bg-[#0F1E33]")}>
+            <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                 <CardContent className="pt-6 space-y-4">
                     <h3 className="text-lg font-semibold text-primary">Detalii Task</h3>
-                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descriere Task</FormLabel><FormControl><Textarea {...field} placeholder="ex: Sună clientul X pentru follow-up" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Descriere Task</FormLabel><FormControl><Textarea {...field} placeholder="ex: Sună clientul X pentru follow-up" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField
                       control={form.control}
                       name="contactId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Asociază cu un Cumpărător (Opțional)</FormLabel>
+                          <FormLabel className={cn(isMobile && "text-white/80")}>Asociază cu un Cumpărător (Opțional)</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Selectează un cumpărător" /></SelectTrigger>
+                              <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează un cumpărător" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="unassigned">Niciunul</SelectItem>
@@ -122,7 +123,7 @@ function TaskForm({ onClose, onAddTask, contacts, property = null }: TaskFormPro
                 </CardContent>
             </Card>
 
-            <Card className="shadow-xl rounded-2xl">
+            <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                 <CardContent className="pt-6 space-y-4">
                      <h3 className="text-lg font-semibold text-primary">Programare</h3>
                       <FormField
@@ -130,11 +131,11 @@ function TaskForm({ onClose, onAddTask, contacts, property = null }: TaskFormPro
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Data Scadentă</FormLabel>
+                            <FormLabel className={cn(isMobile && "text-white/80")}>Data Scadentă</FormLabel>
                             <Popover modal={true}>
                               <PopoverTrigger asChild>
                                 <FormControl>
-                                  <Button variant="outline" className={cn("w-full pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
+                                  <Button variant="outline" className={cn("w-full pl-3 text-left font-normal",!field.value && "text-muted-foreground", isMobile && "bg-white/10 border-white/20 text-white")}>
                                     {field.value ? (format(field.value, "PPP", { locale: ro })) : (<span>Alege o dată</span>)}
                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                   </Button>
@@ -150,16 +151,16 @@ function TaskForm({ onClose, onAddTask, contacts, property = null }: TaskFormPro
                       />
 
                       <div className="grid grid-cols-2 gap-4">
-                         <FormField control={form.control} name="startTime" render={({ field }) => (<FormItem><FormLabel>Ora de început</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => (<SelectItem key={time} value={time}>{time}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                         <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Durată</FormLabel><Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Alege durata" /></SelectTrigger></FormControl><SelectContent>{durationOptions.map(option => (<SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                         <FormField control={form.control} name="startTime" render={({ field }) => (<FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Ora de început</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => (<SelectItem key={time} value={time}>{time}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                         <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Durată</FormLabel><Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={String(field.value)}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Alege durata" /></SelectTrigger></FormControl><SelectContent>{durationOptions.map(option => (<SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                       </div>
                 </CardContent>
             </Card>
         </div>
 
-        <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+        <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
             <div className="flex justify-end gap-2 w-full">
-              <Button type="button" variant="ghost" onClick={onClose}>Anulează</Button>
+              <Button type="button" variant="ghost" onClick={onClose} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
               <Button type="submit">Salvează Task</Button>
             </div>
         </DialogFooter>
@@ -186,12 +187,12 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Task</Button>}
       </DialogTrigger>
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-2xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
-          <DialogTitle className="text-xl text-foreground/90">{property ? 'Adaugă Task' : 'Adaugă Task Nou'}</DialogTitle>
-          {property && <DialogDescription className="text-center -mt-1">{property.title}</DialogDescription>}
+        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+          <DialogTitle className={cn("text-xl text-foreground/90", isMobile && "text-white/90")}>{property ? 'Adaugă Task' : 'Adaugă Task Nou'}</DialogTitle>
+          {property && <DialogDescription className={cn("text-center -mt-1", isMobile && "text-white/70")}>{property.title}</DialogDescription>}
         </DialogHeader>
         <div className="flex-1 min-h-0">
-            {isOpen && <TaskForm key={formKey} onClose={() => setIsOpen(false)} onAddTask={onAddTask} contacts={contacts} property={property} />}
+            {isOpen && <TaskForm key={formKey} onClose={() => setIsOpen(false)} onAddTask={onAddTask} contacts={contacts} property={property} isMobile={isMobile} />}
         </div>
       </DialogContent>
     </Dialog>

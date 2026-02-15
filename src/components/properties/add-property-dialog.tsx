@@ -684,9 +684,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                         </CardContent>
                     </Card>
                 </div>
-                <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
+                <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Anulează</Button>
+                        <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isEditMode ? 'Salvează Modificări' : 'Salvează Proprietatea'}
@@ -724,8 +724,8 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative">
-          <DialogTitle className="text-xl text-foreground/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+          <DialogTitle className={cn("text-xl text-foreground/90", isMobile && "text-white/90")}>{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} isMobile={isMobile} />}
