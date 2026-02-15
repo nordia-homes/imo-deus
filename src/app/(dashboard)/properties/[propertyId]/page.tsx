@@ -79,7 +79,7 @@ export default function PropertyDetailPage() {
     const isMobile = useIsMobile();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-    const TRUNCATION_LENGTH = 500;
+    const TRUNCATION_LENGTH = 350;
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -209,7 +209,7 @@ export default function PropertyDetailPage() {
                         <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                     </Card>
 
-                    <Accordion type="multiple" className="w-full space-y-4">
+                    <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                             <AccordionItem value="description" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Descriere & Dotări</AccordionTrigger>
