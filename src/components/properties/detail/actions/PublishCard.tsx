@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ImobiliareLogo = () => (
     <svg viewBox="0 0 130 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
         <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#0078d4">imobiliare</text>
-        <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#333">.ro</text>
+        <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#FFF">.ro</text>
     </svg>
 );
 
@@ -28,7 +29,7 @@ const StoriaLogo = () => (
 const OlxLogo = () => (
     <svg viewBox="0 0 45 20" className="h-5 w-auto" preserveAspectRatio="xMinYMid meet">
         <text x="0" y="16" fontFamily="Verdana, Arial, sans-serif" fontSize="20" fontWeight="bold">
-            <tspan fill="#002f34">ol</tspan><tspan fill="#23e5db">x</tspan>
+            <tspan fill="#FFF">ol</tspan><tspan fill="#23e5db">x</tspan>
         </text>
     </svg>
 );
