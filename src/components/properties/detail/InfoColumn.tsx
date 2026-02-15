@@ -1,5 +1,5 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight, Menu } from "lucide-react";
 import type { Property, Contact, Viewing } from "@/lib/types";
@@ -152,7 +152,17 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     </Card>
                 </TabsContent>
                 <TabsContent value="documents" className="mt-6">
-                    <RlvTab property={property} />
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+                      <CardHeader>
+                        <CardTitle>Releveu Proprietate (RLV)</CardTitle>
+                        <CardDescription>
+                          Vizualizează sau încarcă releveul pentru această proprietate. Fișierul poate fi PDF sau imagine (JPG, PNG).
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <RlvTab property={property} />
+                      </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
             <InfoDialog 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,6 @@ import { useStorage, useFirestore, updateDocumentNonBlocking } from '@/firebase'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, FileText, Loader2, ExternalLink, Image as ImageIcon } from 'lucide-react';
@@ -67,51 +65,43 @@ export function RlvTab({ property }: RlvTabProps) {
   const isImage = property.rlvUrl && /\.(jpg|jpeg|png|webp|gif)$/i.test(property.rlvUrl);
 
   return (
-    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
-      <CardHeader>
-        <CardTitle>Releveu Proprietate (RLV)</CardTitle>
-        <CardDescription>
-          Vizualizează sau încarcă releveul pentru această proprietate. Fișierul poate fi PDF sau imagine (JPG, PNG).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-center">
-        {property.rlvUrl ? (
-          <div className="space-y-4">
-             <div className="p-4 border rounded-lg bg-background flex flex-col items-center justify-center">
-                {isImage ? (
-                     <div className="relative w-full max-w-md aspect-video">
-                        <Image src={property.rlvUrl} alt="Releveu" fill sizes="(max-width: 768px) 100vw, 768px" className="rounded-md object-contain" />
-                     </div>
-                ) : (
-                    <FileText className="h-16 w-16 text-primary mb-4" />
-                )}
-                <h3 className="font-semibold mt-4">Releveul este disponibil.</h3>
-             </div>
-             <Button asChild>
-                <a href={property.rlvUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Descarcă / Vizualizează
-                </a>
-            </Button>
-          </div>
-        ) : (
-          <div className="p-8 border-2 border-dashed rounded-lg">
-            <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Niciun releveu încărcat pentru această proprietate.</p>
-            <Button asChild variant="outline" disabled={isUploading}>
-              <label htmlFor="rlv-upload" className="cursor-pointer">
-                {isUploading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Upload className="mr-2 h-4 w-4" />
-                )}
-                Încarcă RLV (PDF/Imagine)
-                <Input id="rlv-upload" type="file" className="hidden" accept="application/pdf,image/jpeg,image/png" onChange={handleFileChange} />
-              </label>
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="text-center">
+      {property.rlvUrl ? (
+        <div className="space-y-4">
+           <div className="p-4 border rounded-lg bg-background flex flex-col items-center justify-center">
+              {isImage ? (
+                   <div className="relative w-full aspect-video">
+                      <Image src={property.rlvUrl} alt="Releveu" fill sizes="(max-width: 768px) 100vw, 768px" className="rounded-md object-contain" />
+                   </div>
+              ) : (
+                  <FileText className="h-16 w-16 text-primary mb-4" />
+              )}
+              <h3 className="font-semibold mt-4">Releveul este disponibil.</h3>
+           </div>
+           <Button asChild>
+              <a href={property.rlvUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Descarcă / Vizualizează
+              </a>
+          </Button>
+        </div>
+      ) : (
+        <div className="p-8 border-2 border-dashed rounded-lg">
+          <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">Niciun releveu încărcat pentru această proprietate.</p>
+          <Button asChild variant="outline" disabled={isUploading}>
+            <label htmlFor="rlv-upload" className="cursor-pointer">
+              {isUploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+              )}
+              Încarcă RLV (PDF/Imagine)
+              <Input id="rlv-upload" type="file" className="hidden" accept="application/pdf,image/jpeg,image/png" onChange={handleFileChange} />
+            </label>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
