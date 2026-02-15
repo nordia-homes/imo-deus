@@ -34,14 +34,14 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit, Calculator, Facebook, Share2, Globe, StickyNote } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
-import { ScheduledViewingsCard } from '@/components/properties/detail/actions/ScheduledViewingsCard';
+import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 import { PotentialBuyersCard } from '@/components/properties/detail/actions/PotentialBuyersCard';
 import { CmaCard } from '@/components/properties/detail/actions/CmaCard';
 import { PublishCard } from '@/components/properties/detail/actions/PublishCard';
@@ -86,6 +86,7 @@ export default function PropertyDetailPage() {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const TRUNCATION_LENGTH = 500;
 
     const propertyDocRef = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
@@ -301,7 +302,7 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                 <AccordionItem value="info" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
                                     <AccordionContent className="px-4 pb-4 pt-0">
@@ -320,13 +321,13 @@ export default function PropertyDetailPage() {
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">
-                            <CmaCard property={property} allProperties={allProperties || []} />
+                             <CmaCard property={property} allProperties={allProperties || []} />
                             <PublishCard property={property} />
                             <FacebookPromotionCard />
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
                             <PropertyNotesCard property={property} />
-                            <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
+                             <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
                                 <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
                                     <CardTitle className="text-base font-semibold text-white">Cumpărători Potriviți</CardTitle>
                                     <Button asChild variant="link" size="sm" className="text-white p-0 h-auto">
@@ -435,3 +436,5 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
+
+    
