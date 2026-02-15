@@ -18,7 +18,7 @@ import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { useAgency } from '@/context/AgencyContext';
 import { useDoc, useCollection, useMemoFirebase, useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, getDoc } from 'firebase/firestore';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -303,5 +303,4 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
-
     
