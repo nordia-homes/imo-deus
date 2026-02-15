@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,13 +13,13 @@ export function PriceStatusCard({ property }: { property: Property }) {
     }, [property.price, property.squareFootage]);
 
     return (
-        <Card className="rounded-2xl shadow-2xl border border-primary bg-[#f8f8f9]">
+        <Card className="rounded-2xl shadow-2xl border border-primary bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none">
             <CardContent className="p-3 text-center flex items-baseline justify-center gap-2">
-                <span className="text-xl font-bold text-primary">
+                <span className="text-xl font-bold text-primary lg:text-white">
                     €{property.price.toLocaleString()}
                 </span>
                 {pricePerSqm && (
-                    <span className="text-sm font-medium text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground lg:text-white/70">
                         (€{pricePerSqm}/m²)
                     </span>
                 )}

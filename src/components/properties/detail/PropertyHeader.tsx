@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -49,33 +50,17 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
   return (
     <>
-        <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 border-b">
+        <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:mx-0 px-4 md:px-6 lg:px-0 py-4 border-b lg:bg-transparent lg:border-white/10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="min-w-0">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2 flex-wrap">
-                        <div className="inline-block h-auto w-full md:max-w-lg truncate p-3 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg text-xl font-bold" title={property.title}>
+                        <div className="inline-block h-auto w-full md:max-w-lg truncate p-3 rounded-lg border bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white text-card-foreground shadow-lg text-xl font-bold" title={property.title}>
                             {property.title}
                         </div>
-                        {property.ownerName && property.ownerPhone && (
-                            <div className="inline-flex items-center h-10 px-3 py-2 rounded-lg border bg-[#f8f8f9] text-card-foreground shadow-lg">
-                                <span className="font-semibold text-sm mr-2">{property.ownerName}</span>
-                                <span className="text-xs text-muted-foreground mr-2">{property.ownerPhone}</span>
-                                <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                                    <a href={`tel:${property.ownerPhone}`}>
-                                        <Phone className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                                <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                                    <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                                        <WhatsappIcon className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            </div>
-                        )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm mt-2">
-                        <Badge variant="outline" className="font-normal"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
-                        <Badge variant="secondary"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground lg:text-white/70 text-sm mt-2">
+                        <Badge variant="outline" className="font-normal lg:bg-white/10 lg:text-white lg:border-none"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
+                        <Badge variant="secondary" className="lg:bg-white/10 lg:text-white lg:border-none"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
                         <span className="hidden sm:inline text-gray-400">•</span>
                         <span className="hidden sm:inline">{property.location}</span>
                         <span className="hidden sm:inline text-gray-400">•</span>
@@ -100,7 +85,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                        <SelectTrigger className="w-full sm:w-auto flex-1 sm:flex-initial h-10 text-sm font-semibold">
+                        <SelectTrigger className="w-full sm:w-auto flex-1 sm:flex-initial h-10 text-sm font-semibold lg:bg-white/10 lg:border-white/20 lg:hover:bg-white/20">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -111,13 +96,13 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                             <SelectItem value="Inactiv">Inactiv</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button className="flex-1" onClick={onTriggerAddViewing}>
+                    <Button className="flex-1 bg-primary text-primary-foreground" onClick={onTriggerAddViewing}>
                         <CalendarCheck className="mr-2 h-4 w-4"/> 
                         Vizionare
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" className="lg:bg-white/10 lg:border-white/20 lg:hover:bg-white/20">
                                 <MoreVertical className="h-4 w-4"/>
                             </Button>
                         </DropdownMenuTrigger>

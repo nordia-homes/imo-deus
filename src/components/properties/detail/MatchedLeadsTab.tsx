@@ -81,40 +81,40 @@ export function MatchedLeadsTab({ property, allContacts }: MatchedLeadsTabProps)
 
     if (matchedCumparatori.length === 0) {
         return (
-            <div className="text-center py-10">
-                <p className="text-muted-foreground">Nu au fost găsiți cumpărători compatibili cu această proprietate.</p>
+            <div className="text-center py-10 lg:text-white/70">
+                <p className="text-muted-foreground lg:text-white/70">Nu au fost găsiți cumpărători compatibili cu această proprietate.</p>
             </div>
         )
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-transparent lg:shadow-none lg:border-none">
             <CardContent className="p-0">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Nume Client</TableHead>
-                            <TableHead>Buget</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Agent</TableHead>
+                        <TableRow className="lg:border-white/10">
+                            <TableHead className="lg:text-white/80">Nume Client</TableHead>
+                            <TableHead className="lg:text-white/80">Buget</TableHead>
+                            <TableHead className="lg:text-white/80">Status</TableHead>
+                            <TableHead className="lg:text-white/80">Agent</TableHead>
                             <TableHead className="text-right"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {matchedCumparatori.map(lead => (
-                            <TableRow key={lead.id}>
+                            <TableRow key={lead.id} className="lg:border-white/10">
                                 <TableCell className="font-medium">{lead.name}</TableCell>
                                 <TableCell>€{lead.budget?.toLocaleString()}</TableCell>
-                                <TableCell><Badge variant="outline">{lead.status}</Badge></TableCell>
+                                <TableCell><Badge variant="outline" className="lg:bg-white/10 lg:border-none">{lead.status}</Badge></TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         {lead.agentName ? (
                                             <>
-                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                <User className="h-4 w-4 text-muted-foreground lg:text-white/70" />
                                                 <span className="text-sm">{lead.agentName}</span>
                                             </>
                                         ) : (
-                                            <span className="text-sm text-muted-foreground">Nealocat</span>
+                                            <span className="text-sm text-muted-foreground lg:text-white/70">Nealocat</span>
                                         )}
                                     </div>
                                 </TableCell>

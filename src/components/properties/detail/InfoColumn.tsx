@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,14 +45,14 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="hidden md:grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
                     {menuItems.map(item => (
-                         <TabsTrigger key={item.value} value={item.value} className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl">
+                         <TabsTrigger key={item.value} value={item.value} className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl lg:bg-[#152A47] lg:text-white lg:border-white/10 lg:data-[state=active]:bg-primary">
                             {item.icon}
                             {item.label}
                         </TabsTrigger>
                     ))}
                     <div 
                         onClick={() => setIsInfoDialogOpen(true)}
-                        className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-accent hover:shadow-xl transition-all"
+                        className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-accent hover:shadow-xl transition-all lg:bg-[#152A47] lg:text-white lg:border-white/10 lg:hover:bg-white/5"
                     >
                         <Info className="mr-2 h-4 w-4" />
                         Informații
@@ -85,11 +86,11 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                 </div>
 
                 <TabsContent value="overview" className="mt-6">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
                              <div>
-                                <p className="text-muted-foreground whitespace-pre-wrap">
+                                <p className="text-muted-foreground lg:text-white/70 whitespace-pre-wrap">
                                     {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
                                         ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
                                         : property.description || 'Nicio descriere adăugată.'
@@ -109,7 +110,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                                 <div className="mt-6">
                                      <div className="flex flex-wrap gap-2">
                                         {property.amenities.map(amenity => (
-                                            <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-muted">
+                                            <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-muted lg:bg-white/10 lg:border-white/20">
                                                 {amenity}
                                             </Button>
                                         ))}
@@ -123,20 +124,20 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     <MatchedLeadsTab property={property} allContacts={allContacts} />
                 </TabsContent>
                 <TabsContent value="viewings" className="mt-6">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Vizionări Programate</CardTitle></CardHeader>
                         <CardContent>
                             {scheduledViewings.length > 0 ? (
                                 <div className="space-y-3">
                                     {scheduledViewings.map(viewing => (
-                                        <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border">
+                                        <div key={viewing.id} className="flex items-center justify-between p-3 rounded-lg border lg:border-white/10">
                                             <div>
                                                 <p className="font-semibold text-sm">{viewing.contactName}</p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-muted-foreground lg:text-white/70">
                                                     {format(parseISO(viewing.viewingDate), "eeee, d MMMM yyyy 'la' HH:mm", { locale: ro })}
                                                 </p>
                                             </div>
-                                            <Button asChild variant="ghost" size="sm">
+                                            <Button asChild variant="ghost" size="sm" className="lg:text-white/90 lg:hover:bg-white/20">
                                                 <Link href={`/leads/${viewing.contactId}`}>
                                                     Vezi Cumpărător
                                                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -146,16 +147,16 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-muted-foreground text-center py-8">Nicio vizionare programată pentru această proprietate.</p>
+                                <p className="text-muted-foreground lg:text-white/70 text-center py-8">Nicio vizionare programată pentru această proprietate.</p>
                             )}
                         </CardContent>
                     </Card>
                 </TabsContent>
                 <TabsContent value="documents" className="mt-6">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9]">
+                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                       <CardHeader>
                         <CardTitle>Releveu Proprietate (RLV)</CardTitle>
-                        <CardDescription>
+                        <CardDescription className="lg:text-white/70">
                           Vizualizează sau încarcă releveul pentru această proprietate. Fișierul poate fi PDF sau imagine (JPG, PNG).
                         </CardDescription>
                       </CardHeader>

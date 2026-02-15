@@ -264,7 +264,7 @@ export default function PropertyDetailPage() {
                                 <p className="text-sm text-white/70">{property.address}</p>
                             </div>
                             <PriceStatusCard property={property} />
-                            <AgentCard agent={{
+                             <AgentCard agent={{
                                 name: agentProfile?.name || property.agentName || "Nealocat",
                                 email: agentProfile?.email || null,
                                 phone: agentProfile?.phone || null,
@@ -276,19 +276,23 @@ export default function PropertyDetailPage() {
                                         <div>
                                             <p className="text-xs text-white/70">Proprietar:</p>
                                             <p className="text-sm font-semibold">{property.ownerName}</p>
-                                            <p className="text-xs text-white/70">{property.ownerPhone}</p>
+                                            {property.ownerPhone && <p className="text-xs text-white/70">{property.ownerPhone}</p>}
                                         </div>
                                         <div className="flex items-center">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
-                                                <a href={`tel:${property.ownerPhone}`}>
-                                                    <Phone className="h-4 w-4" />
-                                                </a>
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
-                                                <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                                                    <WhatsappIcon className="h-4 w-4" />
-                                                </a>
-                                            </Button>
+                                            {property.ownerPhone && (
+                                                <>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                                    <a href={`tel:${property.ownerPhone}`}>
+                                                        <Phone className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                                                    <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                                                        <WhatsappIcon className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                                </>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -381,21 +385,23 @@ export default function PropertyDetailPage() {
 
     return (
         <div className="h-full">
-            <PropertyHeader 
-                property={property} 
-                onTriggerAddViewing={() => setIsAddViewingOpen(true)}
-            />
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-8 -mb-6 px-8 pt-6 pb-6 text-white">
+                <PropertyHeader 
+                    property={property} 
+                    onTriggerAddViewing={() => setIsAddViewingOpen(true)}
+                />
 
-             <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <div className="col-span-12 lg:col-span-8 space-y-8">
-                    <MediaColumn property={property} />
-                    <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
-                </div>
+                <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <div className="col-span-12 lg:col-span-8 space-y-8">
+                        <MediaColumn property={property} />
+                        <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
+                    </div>
 
-                <div className="col-span-12 lg:col-span-4">
-                     <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} allContacts={allContacts || []} />
-                </div>
-            </main>
+                    <div className="col-span-12 lg:col-span-4">
+                         <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} allContacts={allContacts || []} />
+                    </div>
+                </main>
+            </div>
             <AddViewingDialog
                 isOpen={isAddViewingOpen}
                 onOpenChange={setIsAddViewingOpen}
