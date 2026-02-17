@@ -19,35 +19,37 @@ export default function MapPage() {
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
-    const content = (
-        <>
-            <div>
-                <h1 className="text-3xl font-headline font-bold text-white">Hartă Proprietăți</h1>
-                <p className="text-white/70">
-                    Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
-                </p>
-            </div>
-            <div className="flex-1 min-h-0">
-                {isLoading ? (
-                    <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
-                ) : (
-                    <PropertiesMap properties={properties || []} />
-                )}
-            </div>
-        </>
+    const headerContent = (
+        <div className="text-center px-4">
+            <h1 className="text-3xl font-headline font-bold text-white">Hartă Proprietăți</h1>
+            <p className="text-white/70">
+                Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
+            </p>
+        </div>
     );
 
+    const mapContent = (
+        <div className="flex-1 min-h-0 px-2 pb-2">
+            {isLoading ? (
+                <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
+            ) : (
+                <PropertiesMap properties={properties || []} />
+            )}
+        </div>
+    );
 
     return (
         <div className="h-full flex flex-col">
             {/* Mobile View */}
-            <div className='lg:hidden bg-[#0F1E33] -m-4 -mb-20 p-4 h-full flex flex-col space-y-4'>
-                {content}
+            <div className='lg:hidden bg-[#0F1E33] -m-4 -mb-20 pt-4 h-full flex flex-col space-y-4'>
+                {headerContent}
+                {mapContent}
             </div>
 
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 p-6 flex flex-col space-y-6">
-                {content}
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 pt-6 flex flex-col space-y-6">
+                {headerContent}
+                {mapContent}
             </div>
         </div>
     );
