@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -24,17 +23,17 @@ import Link from 'next/link';
 import { WhatsappIcon } from '../icons/WhatsappIcon';
 
 interface ViewingsCalendarProps {
-  viewings: Viewing[];
-  agents: UserProfile[];
-  properties: Property[];
-  contacts: Contact[];
+  viewings?: Viewing[];
+  agents?: UserProfile[];
+  properties?: Property[];
+  contacts?: Contact[];
 }
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
   return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingsCalendar({ viewings, agents, properties, contacts }: ViewingsCalendarProps) {
+export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [] }: ViewingsCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
 
   const viewingsByDay = useMemo(() => {

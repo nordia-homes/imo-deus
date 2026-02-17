@@ -166,10 +166,10 @@ export default function ViewingsPage() {
             </div>
 
             <ViewingsCalendar 
-                viewings={viewings || []} 
-                agents={agents || []} 
-                properties={properties || []}
-                contacts={contacts || []}
+                viewings={viewings} 
+                agents={agents} 
+                properties={properties}
+                contacts={contacts}
             />
 
             <div className="mt-8 space-y-6">
@@ -177,8 +177,8 @@ export default function ViewingsPage() {
                     title="Vizionări Programate" 
                     viewings={upcomingViewings} 
                     agents={agents}
-                    properties={properties || []}
-                    contacts={contacts || []}
+                    properties={properties}
+                    contacts={contacts}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
                 />
@@ -186,8 +186,8 @@ export default function ViewingsPage() {
                     title="Istoric Vizionări" 
                     viewings={pastViewings} 
                     agents={agents}
-                    properties={properties || []}
-                    contacts={contacts || []}
+                    properties={properties}
+                    contacts={contacts}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
                 />

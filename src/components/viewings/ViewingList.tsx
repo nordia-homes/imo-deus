@@ -23,9 +23,9 @@ import { Separator } from '../ui/separator';
 interface ViewingListProps {
     title: string;
     viewings: Viewing[];
-    agents: UserProfile[];
-    properties: Property[];
-    contacts: Contact[];
+    agents?: UserProfile[];
+    properties?: Property[];
+    contacts?: Contact[];
     onEdit: (viewing: Viewing) => void;
     onDelete: (viewing: Viewing) => void;
 }
@@ -43,7 +43,7 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingList({ title, viewings, agents, properties, contacts, onEdit, onDelete }: ViewingListProps) {
+export function ViewingList({ title, viewings, agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingListProps) {
     if (viewings.length === 0) {
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
