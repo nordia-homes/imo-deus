@@ -48,7 +48,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
                 <CardHeader>
-                    <CardTitle className="text-white">{title}</CardTitle>
+                    <CardTitle className="text-white text-center text-xl">{title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-white/70 text-center py-4">Nicio vizionare de afișat în această categorie.</p>
