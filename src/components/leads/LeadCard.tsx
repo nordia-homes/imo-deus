@@ -72,7 +72,7 @@ export function LeadCard({ lead: cumparator }: { lead: Contact }) {
                 {cumparator.zones && cumparator.zones.length > 0 && (
                     <div className="flex items-center gap-2 text-white/70 lg:text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5" />
-                        <span className="truncate">Zone: {cumparator.zones.join(', ')}</span>
+                        <span className="truncate">Zone: {cumparator.zones.slice(0, 4).join(', ')}{cumparator.zones.length > 4 ? '...' : ''}</span>
                     </div>
                 )}
             </div>
