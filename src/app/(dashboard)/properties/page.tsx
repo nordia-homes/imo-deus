@@ -164,47 +164,6 @@ export default function PropertiesPage() {
                 </Button>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {isLoading ? (
-                    <>
-                        <Skeleton className="h-[98px]" />
-                        <Skeleton className="h-[98px]" />
-                        <Skeleton className="h-[98px]" />
-                        <Skeleton className="h-[98px]" />
-                    </>
-                ) : (
-                    <>
-                        <StatCard 
-                            title="Total Proprietăți" 
-                            value={stats.totalProperties.toString()} 
-                            icon={<Home />} 
-                            period={`${stats.forSaleCount} Vânzare / ${stats.forRentCount} Închiriere`}
-                        />
-                        <StatCard 
-                            title="Noi săptămâna aceasta" 
-                            value={stats.newThisWeek.toString()} 
-                            period={`din ${stats.totalProperties}`}
-                            icon={<TrendingUp />}
-                            progress={stats.newThisWeekProgress}
-                        />
-                        <StatCard 
-                            title="Comision Realizat" 
-                            value={formatValue(stats.realizedCommissionValue)} 
-                            period={`din ${formatValue(stats.totalCommissionValue)}`}
-                            icon={<DollarSign />}
-                            progress={stats.commissionProgress}
-                        />
-                        <StatCard 
-                            title="Vândute/Rezervate Luna Aceasta" 
-                            value={stats.soldOrReservedThisMonth.toString()} 
-                            period={`din ${stats.totalProperties}`}
-                            icon={<MapPin />}
-                            progress={stats.soldReservedProgress}
-                        />
-                    </>
-                )}
-            </div>
-            
             <PropertyList properties={properties} isLoading={isLoading} />
         </div>
     </div>
