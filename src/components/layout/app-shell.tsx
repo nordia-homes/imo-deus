@@ -196,8 +196,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <Topbar />
         <main className={cn(
-          "flex-1 bg-background px-0 pt-0 pb-20 md:p-6 md:pb-6",
-          pathname === '/dashboard' && "bg-[#0F1E33] md:bg-background"
+          "flex-1 bg-background px-0 pt-0 pb-20 lg:p-6 lg:pb-6",
+          pathname === '/dashboard' && "bg-[#0F1E33] lg:bg-background"
         )}>
             {children}
         </main>
