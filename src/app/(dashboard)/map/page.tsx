@@ -41,7 +41,7 @@ export default function MapPage() {
     return (
         <div className="h-full flex flex-col">
             {/* Mobile View */}
-            <div className='lg:hidden bg-[#0F1E33] -m-4 -mb-20 h-full flex flex-col space-y-4'>
+            <div className='lg:hidden bg-[#0F1E33] -mt-4 -mb-20 h-full flex flex-col space-y-4'>
                 {headerContent}
                 {mapContent}
             </div>
