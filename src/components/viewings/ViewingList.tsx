@@ -40,11 +40,12 @@ const getStatusVariant = (status: Viewing['status']) => {
 };
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
+    if (!agents || agents.length === 0) return null;
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
 export function ViewingList({ title, viewings, agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingListProps) {
-    if (viewings.length === 0) {
+    if (!viewings || viewings.length === 0) {
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
                 <CardHeader>
@@ -62,8 +63,8 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
              <h2 className="text-xl font-semibold text-white px-2 text-center">{title} ({viewings.length})</h2>
             {viewings.map(viewing => {
                 const agent = getAgentForViewing(viewing, agents);
-                const property = properties.find(p => p.id === viewing.propertyId);
-                const contact = contacts.find(c => c.id === viewing.contactId);
+                const property = properties?.find(p => p.id === viewing.propertyId);
+                const contact = contacts?.find(c => c.id === viewing.contactId);
 
                 const contactPhone = contact?.phone?.replace(/\D/g, '');
                 const ownerPhone = property?.ownerPhone?.replace(/\D/g, '');
@@ -86,7 +87,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                     </div>
                                 )}
                                 <div className="absolute bottom-2 left-2">
-                                    <Button variant="secondary" className="bg-background/70 text-white backdrop-blur-sm pointer-events-none h-auto py-1 px-3 text-sm">
+                                    <Button variant="secondary" className="bg-[#0F1E33]/80 border border-white/10 text-white backdrop-blur-sm pointer-events-none h-auto py-1 px-3 text-sm">
                                         <Calendar className="mr-2 h-4 w-4" />
                                         {format(parseISO(viewing.viewingDate), 'd MMM, HH:mm', { locale: ro })}
                                     </Button>

@@ -40,7 +40,8 @@ interface ViewingsCalendarProps {
 }
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
-  return agents.find(agent => agent.id === viewing.agentId);
+    if (!agents || agents.length === 0) return null;
+    return agents.find(agent => agent.id === viewing.agentId);
 };
 
 const getStatusVariant = (status: Viewing['status']) => {
@@ -79,9 +80,9 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     const dayViewings = (viewingsByDay[dayKey] || []);
     
     const enrichedViewings = dayViewings.map(viewing => {
-      const property = properties.find(p => p.id === viewing.propertyId);
-      const contact = contacts.find(c => c.id === viewing.contactId);
-      const agent = agents.find(a => a.id === viewing.agentId);
+      const property = properties?.find(p => p.id === viewing.propertyId);
+      const contact = contacts?.find(c => c.id === viewing.contactId);
+      const agent = agents?.find(a => a.id === viewing.agentId);
       return { ...viewing, property, contact, agent };
     });
 
@@ -199,7 +200,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                     </div>
                                 )}
                                 <div className="absolute bottom-2 left-2">
-                                    <Button variant="secondary" className="bg-background/70 text-white backdrop-blur-sm pointer-events-none h-auto py-1 px-3 text-sm">
+                                    <Button variant="secondary" className="bg-[#0F1E33]/80 border border-white/10 text-white backdrop-blur-sm pointer-events-none h-auto py-1 px-3 text-sm">
                                         <Calendar className="mr-2 h-4 w-4" />
                                         {format(parseISO(viewing.viewingDate), 'd MMM, HH:mm', { locale: ro })}
                                     </Button>
