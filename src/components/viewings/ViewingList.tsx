@@ -59,7 +59,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
 
     return (
         <div className="space-y-6">
-             <h2 className="text-2xl font-bold text-white px-2">{title} ({viewings.length})</h2>
+             <h2 className="text-xl font-semibold text-white px-2 text-center">{title} ({viewings.length})</h2>
             {viewings.map(viewing => {
                 const agent = getAgentForViewing(viewing, agents);
                 const property = properties.find(p => p.id === viewing.propertyId);
