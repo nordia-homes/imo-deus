@@ -72,9 +72,9 @@ export default function LeadsPage() {
 
   return (
     <div>
-        {/* Mobile View */}
-        <div className="md:hidden space-y-4">
-            <Card className="bg-[#0F1E33] text-white rounded-none -mx-0 shadow-lg">
+        {/* Mobile & Tablet View */}
+        <div className="lg:hidden p-4 space-y-4">
+            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
@@ -104,13 +104,11 @@ export default function LeadsPage() {
                     )}
                 </CardContent>
             </Card>
-            <div className="px-4">
-              <LeadList />
-            </div>
+            <LeadList />
         </div>
 
         {/* Desktop View */}
-        <div className="hidden md:block space-y-6">
+        <div className="hidden lg:block space-y-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
