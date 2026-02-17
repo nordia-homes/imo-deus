@@ -221,7 +221,7 @@ export default function PropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 md:-mx-6 lg:mx-0 pb-6 min-h-screen">
+          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
@@ -360,7 +360,7 @@ export default function PropertyDetailPage() {
 
     return (
         <div className="h-full">
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-8 -mb-6 px-8 pt-6 pb-6 text-white">
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 px-6 pt-6 pb-6 text-white">
                 <PropertyHeader 
                     property={property} 
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
