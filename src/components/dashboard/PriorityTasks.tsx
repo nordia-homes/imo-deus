@@ -26,7 +26,7 @@ export function PriorityTasks({ tasks, isLoading }: { tasks: Task[] | null, isLo
         return (
             <div className="space-y-4">
                 {tasks.map((task) => (
-                    <Link href={`/tasks`} key={task.id} className="flex items-center gap-4 group p-2 rounded-md hover:bg-accent">
+                    <Link href={`/tasks`} key={task.id} className="flex items-center gap-4 group p-2 -m-2 rounded-md hover:bg-accent">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                            <CheckSquare className="text-primary" />
                         </div>
@@ -46,7 +46,7 @@ export function PriorityTasks({ tasks, isLoading }: { tasks: Task[] | null, isLo
     }
     
     return (
-        <Card className="shadow-2xl rounded-2xl border-none">
+        <Card className="shadow-2xl rounded-2xl md:bg-card border-none">
             <CardHeader className="flex flex-row items-center justify-between rounded-t-2xl bg-[#152a47] p-3 text-white md:rounded-none md:bg-transparent md:p-6 md:text-card-foreground">
                 <CardTitle className="text-base font-semibold">Task-uri Prioritare</CardTitle>
                 <Link href="/tasks" className="text-sm text-white hover:underline md:text-primary">

@@ -21,7 +21,7 @@ export function DashboardPropertyList({ title, properties, variant = 'default' }
         }
 
         return (
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {properties.map((prop) => (
                     <Link href={`/properties/${prop.id}`} key={prop.id} className="flex items-center gap-4 group p-2 rounded-md hover:bg-accent">
                          <div className="relative h-14 w-14 shrink-0">

@@ -74,7 +74,7 @@ export function RecentActivity() {
     }, [newContacts, properties]);
 
     return (
-        <Card className="shadow-2xl rounded-2xl bg-muted/50 md:bg-card border-none">
+        <Card className="shadow-2xl rounded-2xl md:bg-card border-none">
             <CardHeader className="rounded-t-2xl bg-[#152a47] p-3 text-white md:rounded-none md:bg-transparent md:p-6 md:text-card-foreground">
                 <CardTitle className="text-base font-semibold">Activitate Recentă</CardTitle>
             </CardHeader>
