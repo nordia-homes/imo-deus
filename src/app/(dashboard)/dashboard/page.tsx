@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -334,7 +333,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="md:space-y-6">
+            <div className="lg:space-y-6">
                 <Skeleton className="h-10 w-64 mb-4" />
                 <div className="grid gap-4 grid-cols-1">
                     {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
@@ -369,12 +368,12 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="px-2 space-y-4 md:space-y-6 bg-[#0F1E33] lg:bg-transparent md:-m-6 md:p-6 lg:m-0 lg:p-0">
-            <div className="flex-col md:flex-row md:items-start md:justify-between gap-4 hidden md:flex">
+        <div className="px-2 space-y-4 lg:space-y-6 bg-[#0F1E33] lg:bg-transparent lg:m-0 lg:p-0">
+            <div className="flex-col lg:flex-row lg:items-start lg:justify-between gap-4 hidden lg:flex">
                 <div className="text-left overflow-hidden">
-                    <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
-                    <p className="text-muted-foreground text-center md:text-left">
-                        <span className="hidden md:inline">Bine ai revenit, {displayName}! </span>
+                    <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center lg:text-left">{agencyName || 'Dashboard'}</h1>
+                    <p className="text-muted-foreground text-center lg:text-left">
+                        <span className="hidden lg:inline">Bine ai revenit, {displayName}! </span>
                         Iata o privire de ansamblu asupra activitatilor.
                     </p>
                 </div>
@@ -416,7 +415,7 @@ export default function DashboardPage() {
                 displayName={displayName}
             />
             
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                 <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
@@ -428,7 +427,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
@@ -466,7 +465,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                  <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
@@ -478,14 +477,14 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                 <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
             </div>
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                 <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} variant="mobile" />
             </div>
 
-            <div className="md:hidden mt-4">
+            <div className="lg:hidden mt-4">
                 <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
                         <CardTitle className="text-base font-semibold text-white">Ultimii Cumpărători Adăugați</CardTitle>
@@ -510,7 +509,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="hidden md:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start mt-4">
+            <div className="hidden lg:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start mt-4">
                 <div className="space-y-6">
                     <Card className="shadow-2xl rounded-2xl">
                         <CardHeader>
@@ -526,16 +525,16 @@ export default function DashboardPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-4">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="md:hidden mt-4">
+                    <div className="lg:hidden mt-4">
                         <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     </div>
-                    <div className="md:hidden mt-4">
+                    <div className="lg:hidden mt-4">
                         <RecentActivity />
                     </div>
-                    <div className="hidden md:block">
+                    <div className="hidden lg:block">
                         <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
                     </div>
-                    <div className="hidden md:block">
+                    <div className="hidden lg:block">
                         <RecentActivity />
                     </div>
                 </div>
