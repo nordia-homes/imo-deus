@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -39,18 +40,9 @@ export default function MapPage() {
     );
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Mobile View */}
-            <div className='lg:hidden bg-[#0F1E33] -mt-4 -mb-20 h-full flex flex-col space-y-4'>
-                {headerContent}
-                {mapContent}
-            </div>
-
-            {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 flex flex-col">
-                {headerContent}
-                {mapContent}
-            </div>
+        <div className="h-full flex flex-col bg-[#0F1E33]">
+            {headerContent}
+            {mapContent}
         </div>
     );
 }

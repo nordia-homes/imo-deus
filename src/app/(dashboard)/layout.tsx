@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { AgencyProvider, useAgency } from '@/context/AgencyContext';
+import { cn } from '@/lib/utils';
 
 
 // A simple skeleton loader
@@ -123,6 +124,7 @@ export default function DashboardLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // We only want to redirect when we are certain about the auth state
@@ -138,7 +140,11 @@ export default function DashboardLayout({
 
   return (
     <AgencyProvider>
-        <DashboardRoot>{children}</DashboardRoot>
+        <DashboardRoot>
+             <div className="h-full">
+                {children}
+            </div>
+        </DashboardRoot>
     </AgencyProvider>
   );
 }
