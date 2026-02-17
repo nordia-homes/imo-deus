@@ -146,7 +146,7 @@ export default function ViewingsPage() {
 
     return (
         <div className="space-y-6 h-full flex flex-col bg-[#0F1E33] text-white p-2">
-            <Button onClick={() => setIsAddViewingOpen(true)} className="w-full">
+            <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
                 <PlusCircle className="mr-2 h-4 w-4"/>
                 Programează Vizionare
             </Button>
