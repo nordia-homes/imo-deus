@@ -13,6 +13,8 @@ import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFiltersDialog';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function LeadsPage() {
     const { agencyId } = useAgency();
@@ -20,6 +22,7 @@ export default function LeadsPage() {
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [filters, setFilters] = useState<LeadFilters | null>(null);
+    const isMobile = useIsMobile();
 
     const contactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -65,12 +68,14 @@ export default function LeadsPage() {
         if (!filters) return contacts;
 
         return contacts.filter(contact => {
-            const { budgetMin, budgetMax, rooms, zones } = filters;
+            const { budgetMin, budgetMax, rooms, zones, city } = filters;
 
             if (budgetMin && (contact.budget || 0) < budgetMin) return false;
             if (budgetMax && (contact.budget || 0) > budgetMax) return false;
             
             if (rooms && (contact.preferences?.desiredRooms !== rooms)) return false;
+
+            if (city && contact.city !== city) return false;
             
             if (zones && zones.length > 0) {
                 if (!contact.zones || contact.zones.length === 0) return false;
@@ -95,10 +100,10 @@ export default function LeadsPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
   return (
-    <div className="lg:space-y-6">
+    <div className={cn("space-y-6", isMobile && "p-0")}>
         {/* Mobile & Tablet View */}
-        <div className="lg:hidden p-4 space-y-4">
-            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+        <div className="lg:hidden space-y-4">
+            <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none -mt-4">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
@@ -128,13 +133,15 @@ export default function LeadsPage() {
                     )}
                 </CardContent>
             </Card>
-            <div className="mt-4">
+            <div className="mt-4 px-2">
                 <Button variant="outline" className="w-full" onClick={() => setIsFilterOpen(true)}>
                     <Filter className="mr-2 h-4 w-4" />
                     Filtrare Preferinte si Buget
                 </Button>
             </div>
-            <LeadList contacts={filteredContacts} isLoading={isLoading} />
+            <div className="px-2">
+              <LeadList contacts={filteredContacts} isLoading={isLoading} />
+            </div>
         </div>
 
         {/* Desktop View */}

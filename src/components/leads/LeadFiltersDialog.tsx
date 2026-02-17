@@ -8,18 +8,20 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { locations } from '@/lib/locations';
+import { locations, type City } from '@/lib/locations';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const leadFilterSchema = z.object({
   budgetMin: z.coerce.number().optional(),
   budgetMax: z.coerce.number().optional(),
   rooms: z.coerce.number().optional(),
   zones: z.array(z.string()).optional(),
+  city: z.string().optional(),
 });
 
 export type LeadFilters = z.infer<typeof leadFilterSchema>;
@@ -37,13 +39,25 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
     resolver: zodResolver(leadFilterSchema),
     defaultValues: {
       zones: [],
+      city: '',
     },
   });
 
+  const watchedCity = form.watch('city') as City;
+
   const zoneOptions = useMemo(() => {
+    if (watchedCity && locations[watchedCity]) {
+      return locations[watchedCity].sort();
+    }
     const allZones = Object.values(locations).flat();
     return [...new Set(allZones)].sort();
-  }, []);
+  }, [watchedCity]);
+  
+  useEffect(() => {
+    // Reset zones when city changes
+    form.setValue('zones', []);
+  }, [watchedCity, form]);
+
 
   function onSubmit(values: LeadFilters) {
     onApplyFilters(values);
@@ -56,6 +70,7 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
       budgetMax: undefined,
       rooms: undefined,
       zones: [],
+      city: '',
     });
     onApplyFilters(null);
     onOpenChange(false);
@@ -97,15 +112,26 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
                 )}
               />
             </div>
-            <FormField
+             <FormField
               control={form.control}
-              name="rooms"
+              name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nr. Camere Dorit</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
+                  <FormLabel>Localitate</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Toate localitățile" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="">Toate localitățile</SelectItem>
+                        {Object.keys(locations).map(city => (
+                            <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -165,6 +191,18 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="rooms"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nr. Camere Dorit</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />
