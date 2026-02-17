@@ -20,7 +20,7 @@ export default function MapPage() {
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
     const headerContent = (
-        <div className="text-center px-4 pt-8">
+        <div className="text-center px-4 pt-8 lg:pb-6">
             <h1 className="text-3xl font-headline font-bold text-white">Hartă Proprietăți</h1>
             <p className="text-white/70">
                 Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
@@ -47,7 +47,7 @@ export default function MapPage() {
             </div>
 
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 flex flex-col space-y-6">
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 flex flex-col">
                 {headerContent}
                 {mapContent}
             </div>
