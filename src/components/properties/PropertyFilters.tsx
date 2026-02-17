@@ -18,7 +18,8 @@ import { Label } from '../ui/label';
 const propertyFilterSchema = z.object({
   transactionType: z.string().optional(),
   rooms: z.coerce.number().optional(),
-  priceRange: z.string().optional(),
+  priceMin: z.coerce.number().optional(),
+  priceMax: z.coerce.number().optional(),
   hasParking: z.boolean().optional(),
   heatingSystem: z.string().optional(),
   nearMetro: z.boolean().optional(),
@@ -50,7 +51,6 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
       zones: [],
       furnishing: 'all',
       heatingSystem: 'all',
-      priceRange: 'all',
     },
   });
 
@@ -81,7 +81,8 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
     form.reset({
       transactionType: 'all',
       rooms: undefined,
-      priceRange: 'all',
+      priceMin: undefined,
+      priceMax: undefined,
       hasParking: undefined,
       heatingSystem: 'all',
       nearMetro: undefined,
@@ -137,21 +138,32 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
                 )} />
               </div>
               
-              <FormField control={form.control} name="priceRange" render={({ field }) => (
-                <FormItem><FormLabel className="text-white/80">Preț (€)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue/></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">Oricare</SelectItem>
-                        <SelectItem value="0-50000">Sub 50.000 €</SelectItem>
-                        <SelectItem value="50000-100000">50.000 € - 100.000 €</SelectItem>
-                        <SelectItem value="100000-200000">100.000 € - 200.000 €</SelectItem>
-                        <SelectItem value="200000-500000">200.000 € - 500.000 €</SelectItem>
-                        <SelectItem value="500000-Infinity">Peste 500.000 €</SelectItem>
-                      </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="priceMin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/80">Preț Minim (€)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} placeholder="ex: 50000" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="priceMax"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/80">Preț Maxim (€)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} placeholder="ex: 150000" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField control={form.control} name="minSurface" render={({ field }) => (<FormItem><FormLabel className="text-white/80">Suprafață Minimă (mp)</FormLabel><FormControl><Input type="number" {...field} placeholder="ex: 50" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl></FormItem>)} />
               

@@ -43,10 +43,8 @@ export default function PropertiesPage() {
       if (filters.rooms && filters.rooms !== 4 && prop.rooms !== filters.rooms) return false;
       if (filters.rooms && filters.rooms === 4 && prop.rooms < 4) return false;
       
-      if (filters.priceRange && filters.priceRange !== 'all') {
-        const [min, max] = filters.priceRange.split('-').map(Number);
-        if (prop.price < min || (max !== Infinity && prop.price > max)) return false;
-      }
+      if (filters.priceMin && prop.price < filters.priceMin) return false;
+      if (filters.priceMax && prop.price > filters.priceMax) return false;
 
       if (filters.hasParking && (!prop.parking || prop.parking === 'Fără')) return false;
       if (filters.heatingSystem && filters.heatingSystem !== 'all' && prop.heatingSystem !== filters.heatingSystem) return false;
@@ -88,11 +86,6 @@ export default function PropertiesPage() {
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
                          <div className="flex items-center gap-2">
-                           <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                              <Button size="sm" variant="outline" className="bg-white/10 hover:bg-white/20 text-white">
-                                <Filter className="mr-2 h-4 w-4" /> Filtrează
-                              </Button>
-                           </PropertyFilters>
                            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white" onClick={() => setIsAddOpen(true)}>
                              <PlusCircle className="mr-2 h-4 w-4" /> Adaugă
                            </Button>
@@ -100,6 +93,13 @@ export default function PropertiesPage() {
                     </div>
                 </CardHeader>
             </Card>
+             <div className="px-2">
+                <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+                    <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
+                        <Filter className="mr-2 h-4 w-4" /> Filtrează
+                    </Button>
+                </PropertyFilters>
+            </div>
             <div className="px-2">
               <PropertyList properties={filteredProperties} isLoading={isLoading} onDeleteRequest={setDeletingProperty} />
             </div>
@@ -115,11 +115,6 @@ export default function PropertiesPage() {
                     </p>
                 </div>
                  <div className="flex items-center gap-2">
-                    <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                      <Button variant="outline">
-                        <Filter className="mr-2 h-4 w-4" /> Filtrează Proprietăți
-                      </Button>
-                    </PropertyFilters>
                     <Button onClick={() => setIsAddOpen(true)} className="w-full md:w-auto">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adaugă Proprietate
@@ -127,6 +122,12 @@ export default function PropertiesPage() {
                 </div>
             </div>
             
+            <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+              <Button variant="outline" className="w-full">
+                <Filter className="mr-2 h-4 w-4" /> Filtrează Proprietăți
+              </Button>
+            </PropertyFilters>
+
             <PropertyList properties={filteredProperties} isLoading={isLoading} onDeleteRequest={setDeletingProperty} />
         </div>
         <DeletePropertyAlert
