@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Users, Target, BarChart, PlusCircle } from 'lucide-react';
+import { Users, Target, BarChart, PlusCircle, Filter } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
@@ -12,11 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFiltersDialog';
 
 export default function LeadsPage() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filters, setFilters] = useState<LeadFilters | null>(null);
 
     const contactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -57,7 +60,28 @@ export default function LeadsPage() {
         };
     }, [contacts]);
 
-    // Function to format large numbers for budget
+    const filteredContacts = useMemo(() => {
+        if (!contacts) return [];
+        if (!filters) return contacts;
+
+        return contacts.filter(contact => {
+            const { budgetMin, budgetMax, rooms, zones } = filters;
+
+            if (budgetMin && (contact.budget || 0) < budgetMin) return false;
+            if (budgetMax && (contact.budget || 0) > budgetMax) return false;
+            
+            if (rooms && (contact.preferences?.desiredRooms !== rooms)) return false;
+            
+            if (zones && zones.length > 0) {
+                if (!contact.zones || contact.zones.length === 0) return false;
+                const hasZoneMatch = zones.some(filterZone => contact.zones?.includes(filterZone));
+                if (!hasZoneMatch) return false;
+            }
+
+            return true;
+        });
+    }, [contacts, filters]);
+
     const formatBudget = (num: number) => {
         if (num >= 1000000) {
             return `€${(num / 1000000).toFixed(1)}M`;
@@ -71,7 +95,7 @@ export default function LeadsPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
   return (
-    <div>
+    <div className="lg:space-y-6">
         {/* Mobile & Tablet View */}
         <div className="lg:hidden p-4 space-y-4">
             <Card className="bg-[#152A47] text-white border-none rounded-2xl">
@@ -104,7 +128,13 @@ export default function LeadsPage() {
                     )}
                 </CardContent>
             </Card>
-            <LeadList />
+            <div className="mt-4">
+                <Button variant="outline" className="w-full" onClick={() => setIsFilterOpen(true)}>
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filtrare Preferinte si Buget
+                </Button>
+            </div>
+            <LeadList contacts={filteredContacts} isLoading={isLoading} />
         </div>
 
         {/* Desktop View */}
@@ -116,16 +146,22 @@ export default function LeadsPage() {
                             Gestionează și prioritizează potențialii clienți.
                         </p>
                     </div>
-                    <AddLeadDialog 
-                        properties={properties || []}
-                        isOpen={isAddLeadOpen}
-                        onOpenChange={setIsAddLeadOpen}
-                    >
-                        <Button className="w-full md:w-auto">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adaugă Cumpărător
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
+                            <Filter className="mr-2 h-4 w-4" />
+                            Filtrare Preferinte si Buget
                         </Button>
-                    </AddLeadDialog>
+                        <AddLeadDialog 
+                            properties={properties || []}
+                            isOpen={isAddLeadOpen}
+                            onOpenChange={setIsAddLeadOpen}
+                        >
+                            <Button className="w-full md:w-auto">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adaugă Cumpărător
+                            </Button>
+                        </AddLeadDialog>
+                    </div>
                 </div>
                 
                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
@@ -144,8 +180,13 @@ export default function LeadsPage() {
                     )}
                 </div>
 
-                <LeadList />
+                <LeadList contacts={filteredContacts} isLoading={isLoading} />
             </div>
+        <LeadFiltersDialog
+            isOpen={isFilterOpen}
+            onOpenChange={setIsFilterOpen}
+            onApplyFilters={(appliedFilters) => setFilters(appliedFilters)}
+        />
     </div>
   );
 }
