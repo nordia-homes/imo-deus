@@ -138,25 +138,25 @@ export default function ViewingsPage() {
 
     if (isLoading) {
         return (
-             <div className="space-y-6">
+             <div className="space-y-6 bg-[#0F1E33] -m-6 p-6">
                 <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                        <Skeleton className="h-8 w-48"/>
-                        <Skeleton className="h-4 w-72"/>
+                        <Skeleton className="h-8 w-48 bg-white/10"/>
+                        <Skeleton className="h-4 w-72 bg-white/10"/>
                     </div>
-                    <Skeleton className="h-10 w-36"/>
+                    <Skeleton className="h-10 w-36 bg-white/10"/>
                 </div>
-                 <Skeleton className="h-[70vh] w-full"/>
+                 <Skeleton className="h-[70vh] w-full bg-white/10"/>
              </div>
         )
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="space-y-6 h-full flex flex-col bg-[#0F1E33] text-white -m-6 p-6">
             <div className="flex items-start justify-between">
                 <div>
                     <h1 className="text-3xl font-headline font-bold">Calendar Vizionări</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-white/70">
                         Organizează și vizualizează programările.
                     </p>
                 </div>

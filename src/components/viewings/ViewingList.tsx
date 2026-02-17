@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Viewing, UserProfile } from '@/lib/types';
@@ -35,42 +36,42 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
 export function ViewingList({ title, viewings, agents, onEdit, onDelete }: ViewingListProps) {
     if (viewings.length === 0) {
         return (
-            <Card className="shadow-2xl rounded-2xl">
+            <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
                 <CardHeader>
-                    <CardTitle>{title}</CardTitle>
+                    <CardTitle className="text-white">{title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground text-center py-4">Nicio vizionare de afișat în această categorie.</p>
+                    <p className="text-white/70 text-center py-4">Nicio vizionare de afișat în această categorie.</p>
                 </CardContent>
             </Card>
         );
     }
 
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
             <CardHeader>
-                <CardTitle>{title} ({viewings.length})</CardTitle>
+                <CardTitle className="text-white">{title} ({viewings.length})</CardTitle>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Dată și Oră</TableHead>
-                            <TableHead>Proprietate</TableHead>
-                            <TableHead>Client</TableHead>
-                            <TableHead>Agent</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Acțiuni</TableHead>
+                        <TableRow className="border-white/10">
+                            <TableHead className="text-white/80">Dată și Oră</TableHead>
+                            <TableHead className="text-white/80">Proprietate</TableHead>
+                            <TableHead className="text-white/80">Client</TableHead>
+                            <TableHead className="text-white/80">Agent</TableHead>
+                            <TableHead className="text-white/80">Status</TableHead>
+                            <TableHead className="text-right text-white/80">Acțiuni</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {viewings.map(viewing => {
                             const agent = getAgentForViewing(viewing, agents);
                             return (
-                                <TableRow key={viewing.id}>
+                                <TableRow key={viewing.id} className="border-white/10">
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                            <Calendar className="h-4 w-4 text-white/70" />
                                             <span className="font-medium">{format(parseISO(viewing.viewingDate), 'd MMM yyyy, HH:mm', { locale: ro })}</span>
                                         </div>
                                     </TableCell>
@@ -88,7 +89,7 @@ export function ViewingList({ title, viewings, agents, onEdit, onDelete }: Viewi
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-6 w-6">
                                                 <AvatarImage src={agent?.photoUrl || undefined} />
-                                                <AvatarFallback className="text-xs">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                                <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
                                             </Avatar>
                                             <span>{agent?.name || 'N/A'}</span>
                                         </div>
@@ -97,10 +98,10 @@ export function ViewingList({ title, viewings, agents, onEdit, onDelete }: Viewi
                                         <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => onEdit(viewing)}>
+                                        <Button variant="ghost" size="icon" onClick={() => onEdit(viewing)} className="text-white/80 hover:bg-white/10 hover:text-white">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => onDelete(viewing)}>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/20" onClick={() => onDelete(viewing)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -77,12 +78,12 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
   };
 
   return (
-    <Card className="shadow-2xl rounded-2xl">
+    <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
       <CardContent className="p-4">
         {/* Header */}
         <header className="flex items-center justify-between px-2 mb-4">
           <div className="flex items-center gap-4">
-            <Button onClick={() => setSelectedDay(new Date())} variant="outline">
+            <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
               Astăzi
             </Button>
             <div className="flex items-center gap-2">
@@ -90,6 +91,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('prev')}
+                className="hover:bg-white/10"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
@@ -97,12 +99,13 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('next')}
+                className="hover:bg-white/10"
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
-          <h2 className="text-xl font-semibold capitalize">
+          <h2 className="text-xl font-semibold capitalize text-white">
             {format(selectedDay, 'MMMM yyyy', { locale: ro })}
           </h2>
         </header>
@@ -121,16 +124,16 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                 onClick={() => setSelectedDay(day)}
                 className={cn(
                   'flex flex-col items-center p-2 rounded-lg transition-colors',
-                  isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                  isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-white/10'
                 )}
               >
-                <span className={cn("text-xs uppercase font-medium text-muted-foreground mb-1", isSelected && 'text-primary-foreground/70')} >
+                <span className={cn("text-xs uppercase font-medium text-white/70 mb-1", isSelected && 'text-primary-foreground/70')} >
                   {format(day, 'eee', { locale: ro })}
                 </span>
                 <span
                   className={cn(
                     'text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full',
-                    isCurrent && !isSelected && 'bg-accent text-accent-foreground'
+                    isCurrent && !isSelected && 'bg-white/20 text-white'
                   )}
                 >
                   {format(day, 'd')}
@@ -139,7 +142,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                   {dayViewings.slice(0, 3).map((v, i) => {
                     const agent = getAgentForViewing(v, agents);
                     return (
-                        <Avatar key={i} className={cn("h-4 w-4 border-background", i > 0 && "-ml-1.5")}>
+                        <Avatar key={i} className={cn("h-4 w-4 border-[#152A47]", i > 0 && "-ml-1.5")}>
                             <AvatarImage src={agent?.photoUrl || `https://i.pravatar.cc/32?u=${v.agentId}`} alt={agent?.name || 'Agent'} />
                             <AvatarFallback className="text-[8px]">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
                         </Avatar>
@@ -157,52 +160,52 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
             <div className="space-y-4">
               {selectedDayViewings.map((viewing, index) => (
                 <div key={viewing.id} className="flex items-start gap-4">
-                  <div className="w-16 text-right text-sm font-medium text-muted-foreground">
+                  <div className="w-16 text-right text-sm font-medium text-white/70">
                     {format(parseISO(viewing.viewingDate), 'HH:mm')}
                   </div>
                   <div className="relative flex-1 pb-4">
                       {index < selectedDayViewings.length - 1 && (
-                        <div className="absolute left-[9px] top-5 h-full w-px bg-border"></div>
+                        <div className="absolute left-[9px] top-5 h-full w-px bg-white/10"></div>
                       )}
-                      <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-primary ring-4 ring-background flex items-center justify-center">
+                      <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-primary ring-4 ring-[#152A47] flex items-center justify-center">
                          <div className="h-2 w-2 rounded-full bg-primary-foreground"></div>
                       </div>
                       <div className="pl-8 space-y-1">
-                          <p className="font-semibold">{viewing.propertyTitle}</p>
+                          <p className="font-semibold text-white">{viewing.propertyTitle}</p>
                           
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-white/70">
                               <span className="w-16">Client:</span>
                               <span>{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
                               {viewing.contact?.phone && (
                                   <div className="flex items-center gap-1">
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4 text-green-600" /></a>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4 text-green-400" /></a>
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-600" /></a>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
                                       </Button>
                                   </div>
                               )}
                           </div>
 
                           {(viewing.agent?.name || viewing.agentName) && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2 text-sm text-white/70">
                                   <span className="w-16">Agent:</span>
                                   <span>{viewing.agent?.name || viewing.agentName}</span>
                               </div>
                           )}
 
                           {viewing.property?.ownerName && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2 text-sm text-white/70">
                                   <span className="w-16">Proprietar:</span>
                                   <span>{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
                                   {viewing.property.ownerPhone && (
                                       <div className="flex items-center gap-1">
-                                          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4 text-green-600" /></a>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4 text-green-400" /></a>
                                           </Button>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-600" /></a>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
                                           </Button>
                                       </div>
                                   )}
@@ -210,7 +213,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                           )}
 
                           <Link href={`/properties/${viewing.propertyId}`}>
-                            <Button variant="link" className="p-0 h-auto text-xs">Vezi proprietate</Button>
+                            <Button variant="link" className="p-0 h-auto text-xs text-primary hover:underline">Vezi proprietate</Button>
                           </Link>
                       </div>
                   </div>
@@ -218,7 +221,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-white/70">
               Nicio vizionare programată pentru această zi.
             </div>
           )}
