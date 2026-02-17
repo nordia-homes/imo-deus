@@ -119,13 +119,22 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
                      </FormItem>
                  )} />
                  <FormField control={form.control} name="rooms" render={({ field }) => (
-                     <FormItem><FormLabel className="text-white/80">Nr. Camere</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(val ? Number(val) : undefined)} value={String(field.value || '')}>
-                            <FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Toate"/></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="">Toate</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem><SelectItem value="4">4+</SelectItem></SelectContent>
+                    <FormItem><FormLabel className="text-white/80">Nr. Camere</FormLabel>
+                        <Select
+                            onValueChange={(val) => field.onChange(val === 'any' ? undefined : Number(val))}
+                            value={field.value ? String(field.value) : 'any'}
+                        >
+                            <FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="any">Toate</SelectItem>
+                                <SelectItem value="1">1</SelectItem>
+                                <SelectItem value="2">2</SelectItem>
+                                <SelectItem value="3">3</SelectItem>
+                                <SelectItem value="4">4+</SelectItem>
+                            </SelectContent>
                         </Select>
-                     </FormItem>
-                 )} />
+                    </FormItem>
+                )} />
               </div>
               
               <FormField control={form.control} name="priceRange" render={({ field }) => (
