@@ -20,7 +20,7 @@ export default function MapPage() {
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
     const headerContent = (
-        <div className="text-center px-4 pt-4">
+        <div className="text-center px-4 pt-8">
             <h1 className="text-3xl font-headline font-bold text-white">Hartă Proprietăți</h1>
             <p className="text-white/70">
                 Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
@@ -29,7 +29,7 @@ export default function MapPage() {
     );
 
     const mapContent = (
-        <div className="flex-1 min-h-0 px-2 pb-2">
+        <div className="flex-1 min-h-0 px-4 pb-4">
             {isLoading ? (
                 <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
             ) : (
