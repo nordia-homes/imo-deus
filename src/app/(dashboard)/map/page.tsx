@@ -19,19 +19,36 @@ export default function MapPage() {
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
-    return (
-        <div className="space-y-6 h-full flex flex-col">
+    const content = (
+        <>
             <div>
-                <h1 className="text-3xl font-headline font-bold">Hartă Proprietăți</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-3xl font-headline font-bold text-white">Hartă Proprietăți</h1>
+                <p className="text-white/70">
                     Vizualizează toate proprietățile din portofoliul tău pe o hartă interactivă.
                 </p>
             </div>
-            {isLoading ? (
-                 <Skeleton className="flex-1 w-full" />
-            ) : (
-                <PropertiesMap properties={properties || []} />
-            )}
+            <div className="flex-1 min-h-0">
+                {isLoading ? (
+                    <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
+                ) : (
+                    <PropertiesMap properties={properties || []} />
+                )}
+            </div>
+        </>
+    );
+
+
+    return (
+        <div className="h-full flex flex-col">
+            {/* Mobile View */}
+            <div className='lg:hidden bg-[#0F1E33] -m-4 -mb-20 p-4 h-full flex flex-col space-y-4'>
+                {content}
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 p-6 flex flex-col space-y-6">
+                {content}
+            </div>
         </div>
     );
 }
