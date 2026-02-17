@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -173,11 +172,13 @@ export default function ViewingsPage() {
                 contacts={contacts || []}
             />
 
-            <div className="mt-8 space-y-8">
+            <div className="mt-8 space-y-6">
                 <ViewingList 
                     title="Vizionări Programate" 
                     viewings={upcomingViewings} 
                     agents={agents}
+                    properties={properties || []}
+                    contacts={contacts || []}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
                 />
@@ -185,6 +186,8 @@ export default function ViewingsPage() {
                     title="Istoric Vizionări" 
                     viewings={pastViewings} 
                     agents={agents}
+                    properties={properties || []}
+                    contacts={contacts || []}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
                 />

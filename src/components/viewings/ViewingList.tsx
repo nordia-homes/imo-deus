@@ -1,26 +1,31 @@
 'use client';
 
-import type { Viewing, UserProfile } from '@/lib/types';
+import type { Viewing, UserProfile, Property, Contact } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Calendar, Edit, Trash2, MoreVertical, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
+} from "@/components/ui/dropdown-menu";
+import Image from 'next/image';
+import { WhatsappIcon } from '../icons/WhatsappIcon';
+import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 interface ViewingListProps {
     title: string;
     viewings: Viewing[];
     agents: UserProfile[];
+    properties: Property[];
+    contacts: Contact[];
     onEdit: (viewing: Viewing) => void;
     onDelete: (viewing: Viewing) => void;
 }
@@ -38,10 +43,10 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingList({ title, viewings, agents, onEdit, onDelete }: ViewingListProps) {
+export function ViewingList({ title, viewings, agents, properties, contacts, onEdit, onDelete }: ViewingListProps) {
     if (viewings.length === 0) {
         return (
-            <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
+            <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle className="text-white">{title}</CardTitle>
                 </CardHeader>
@@ -53,28 +58,44 @@ export function ViewingList({ title, viewings, agents, onEdit, onDelete }: Viewi
     }
 
     return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
-            <CardHeader>
-                <CardTitle className="text-white">{title} ({viewings.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {viewings.map(viewing => {
-                    const agent = getAgentForViewing(viewing, agents);
-                    return (
-                        <Card key={viewing.id} className="bg-white/5 border border-white/10">
-                            <CardContent className="p-4">
+        <div className="space-y-6">
+             <h2 className="text-2xl font-bold text-white px-2">{title} ({viewings.length})</h2>
+            {viewings.map(viewing => {
+                const agent = getAgentForViewing(viewing, agents);
+                const property = properties.find(p => p.id === viewing.propertyId);
+                const contact = contacts.find(c => c.id === viewing.contactId);
+
+                const contactPhone = contact?.phone?.replace(/\D/g, '');
+                const ownerPhone = property?.ownerPhone?.replace(/\D/g, '');
+
+                return (
+                    <Card key={viewing.id} className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden">
+                        <div className="md:flex">
+                             <div className="md:w-1/3 relative aspect-video md:aspect-auto">
+                                {property?.images?.[0]?.url ? (
+                                    <Image
+                                        src={property.images[0].url}
+                                        alt={property.title}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                    />
+                                ) : (
+                                    <div className="bg-white/5 h-full flex items-center justify-center">
+                                        <p className="text-xs text-white/50">Imagine lipsă</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 flex-1">
                                 <div className="flex justify-between items-start gap-3">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2 text-sm text-white/70 mb-1">
+                                         <div className="flex items-center gap-2 text-sm text-white/70 mb-1">
                                             <Calendar className="h-4 w-4" />
                                             <span>{format(parseISO(viewing.viewingDate), 'd MMM yyyy, HH:mm', { locale: ro })}</span>
                                         </div>
-                                        <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-base hover:underline">
+                                        <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-lg text-white hover:underline">
                                             {viewing.propertyTitle}
                                         </Link>
-                                        <p className="text-sm text-white/80">
-                                            Client: <Link href={`/leads/${viewing.contactId}`} className="font-medium hover:underline">{viewing.contactName}</Link>
-                                        </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
@@ -95,21 +116,63 @@ export function ViewingList({ title, viewings, agents, onEdit, onDelete }: Viewi
                                         </DropdownMenu>
                                     </div>
                                 </div>
+                                
+                                <Separator className="my-3 bg-white/10" />
 
-                                <div className="border-t border-white/10 mt-3 pt-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    {/* Client Info */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-white/60">Client</p>
+                                        <div className="flex items-center justify-between">
+                                            <Link href={`/leads/${viewing.contactId}`} className="font-medium hover:underline text-white/90">{viewing.contactName}</Link>
+                                            {contactPhone && (
+                                                <div className="flex items-center">
+                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
+                                                        <a href={`tel:${contactPhone}`}><Phone className="h-4 w-4 text-green-400" /></a>
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
+                                                        <a href={`https://wa.me/${contactPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Owner Info */}
+                                    {property?.ownerName && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-white/60">Proprietar</p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="font-medium text-white/90">{property.ownerName}</p>
+                                                {ownerPhone && (
+                                                     <div className="flex items-center">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
+                                                            <a href={`tel:${ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
+                                                            <a href={`https://wa.me/${ownerPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-gray-400" /></a>
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="mt-3 pt-3 border-t border-white/10">
                                     <div className="flex items-center gap-2 text-sm">
                                         <Avatar className="h-6 w-6">
                                             <AvatarImage src={agent?.photoUrl || undefined} />
                                             <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
                                         </Avatar>
-                                        <span>Agent: {agent?.name || 'N/A'}</span>
+                                        <span className="text-white/70">Agent: {agent?.name || 'N/A'}</span>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </CardContent>
-        </Card>
+                            </div>
+                        </div>
+                    </Card>
+                );
+            })}
+        </div>
     );
 }
