@@ -114,6 +114,20 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="rooms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={cn(isMobile && "text-white/80")}>Nr. Camere Dorit</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")}/>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            
             <FormField
               control={form.control}
               name="city"
@@ -175,19 +189,7 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
                   </div>
               </ScrollArea>
             </div>
-            
-            <FormField
-              control={form.control}
-              name="rooms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={cn(isMobile && "text-white/80")}>Nr. Camere Dorit</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")}/>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
             </div>
             <DialogFooter className={cn("shrink-0 border-t p-4", isMobile && "bg-[#0F1E33] border-white/10")}>
               <Button type="button" variant="ghost" onClick={handleReset} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>
