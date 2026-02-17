@@ -369,7 +369,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="md:space-y-6">
+        <div className="md:space-y-6 bg-[#0F1E33] lg:bg-transparent">
             <div className="flex-col md:flex-row md:items-start md:justify-between gap-4 hidden md:flex">
                 <div className="text-left overflow-hidden">
                     <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center md:text-left">{agencyName || 'Dashboard'}</h1>
