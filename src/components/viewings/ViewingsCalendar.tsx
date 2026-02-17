@@ -198,14 +198,16 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                         <p className="text-xs text-white/50">Imagine lipsă</p>
                                     </div>
                                 )}
+                                <div className="absolute bottom-2 left-2">
+                                    <Button variant="secondary" className="bg-background/70 text-white backdrop-blur-sm pointer-events-none h-auto py-1 px-3 text-sm">
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        {format(parseISO(viewing.viewingDate), 'd MMM, HH:mm', { locale: ro })}
+                                    </Button>
+                                </div>
                             </div>
                             <div className="p-4 flex-1">
                                 <div className="flex justify-between items-start gap-3">
                                     <div className="flex-1">
-                                         <div className="flex items-center gap-2 text-sm text-white/70 mb-1">
-                                            <Calendar className="h-4 w-4" />
-                                            <span>{format(parseISO(viewing.viewingDate), 'd MMM yyyy, HH:mm', { locale: ro })}</span>
-                                        </div>
                                         <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-lg text-white hover:underline">
                                             {viewing.propertyTitle}
                                         </Link>
