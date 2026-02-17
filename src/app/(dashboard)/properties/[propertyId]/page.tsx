@@ -271,7 +271,7 @@ export default function PropertyDetailPage() {
                                 phone: agentProfile?.phone || null,
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
                             }} isMobile={true} />
-                            <OwnerCard property={property} />
+                            <OwnerCard property={property} isMobile={true} />
                             <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                         </Card>
 
