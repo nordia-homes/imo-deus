@@ -56,6 +56,7 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
 
 
 
@@ -220,7 +221,7 @@ export default function PropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
+          <div className="bg-[#0F1E33] -mt-6 md:-mx-6 lg:mx-0 pb-6 min-h-screen">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
@@ -265,38 +266,12 @@ export default function PropertyDetailPage() {
                             </div>
                             <PriceStatusCard property={property} />
                              <AgentCard agent={{
-                                name: agentProfile?.name || property.agentName || "Nealocat",
+                                name: agentProfile?.name || property.agentName,
                                 email: agentProfile?.email || null,
                                 phone: agentProfile?.phone || null,
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
                             }} isMobile={true} />
-                            {property.ownerName && property.ownerPhone && (
-                                <Card className="bg-white/10 text-white border-none rounded-lg">
-                                    <CardContent className="p-3 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs text-white/70">Proprietar:</p>
-                                            <p className="text-sm font-semibold">{property.ownerName}</p>
-                                            {property.ownerPhone && <p className="text-xs text-white/70">{property.ownerPhone}</p>}
-                                        </div>
-                                        <div className="flex items-center">
-                                            {property.ownerPhone && (
-                                                <>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
-                                                    <a href={`tel:${property.ownerPhone}`}>
-                                                        <Phone className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
-                                                    <a href={`https://wa.me/${property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                                                        <WhatsappIcon className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <OwnerCard property={property} />
                             <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                         </Card>
 
@@ -412,3 +387,5 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
+
+    
