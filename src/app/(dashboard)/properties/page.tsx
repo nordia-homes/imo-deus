@@ -119,30 +119,6 @@ export default function PropertiesPage() {
                         <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white" onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <Skeleton className="h-24 w-full" />
-                    ) : (
-                        <div className="grid grid-cols-2 gap-2 text-center">
-                            <div className="p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-lg">{stats.totalProperties}</p>
-                                <p className="text-xs text-white/80">Total</p>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-lg">{stats.forSaleCount}/{stats.forRentCount}</p>
-                                <p className="text-xs text-white/80">Vânz/Înch</p>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-lg">{formatValue(stats.realizedCommissionValue)}</p>
-                                <p className="text-xs text-white/80">Comision Realizat</p>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-lg">{stats.soldOrReservedThisMonth}</p>
-                                <p className="text-xs text-white/80">Finalizate Luna</p>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
             </Card>
             <div className="px-2">
                 <PropertyList properties={properties} isLoading={isLoading} />
