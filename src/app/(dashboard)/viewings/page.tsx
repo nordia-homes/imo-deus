@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -157,6 +156,8 @@ export default function ViewingsPage() {
                 agents={agents} 
                 properties={properties}
                 contacts={contacts}
+                onEdit={setEditingViewing}
+                onDelete={setDeletingViewing}
             />
 
             <div className="mt-8 space-y-6">
