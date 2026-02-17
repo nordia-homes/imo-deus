@@ -111,7 +111,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
         </header>
 
         {/* Week Selector */}
-        <div className="grid grid-cols-7 gap-2 mb-6">
+        <div className="grid grid-cols-7 gap-1 mb-6">
           {weekDays.map((day) => {
             const dayKey = format(day, 'yyyy-MM-dd');
             const dayViewings = viewingsByDay[dayKey] || [];
@@ -123,7 +123,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                 key={dayKey}
                 onClick={() => setSelectedDay(day)}
                 className={cn(
-                  'flex flex-col items-center p-2 rounded-lg transition-colors',
+                  'flex flex-col items-center p-1 rounded-lg transition-colors',
                   isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-white/10'
                 )}
               >
@@ -132,7 +132,7 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                 </span>
                 <span
                   className={cn(
-                    'text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full',
+                    'text-base font-bold w-7 h-7 flex items-center justify-center rounded-full',
                     isCurrent && !isSelected && 'bg-white/20 text-white'
                   )}
                 >
@@ -170,47 +170,49 @@ export function ViewingsCalendar({ viewings, agents, properties, contacts }: Vie
                       <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-primary ring-4 ring-[#152A47] flex items-center justify-center">
                          <div className="h-2 w-2 rounded-full bg-primary-foreground"></div>
                       </div>
-                      <div className="pl-8 space-y-1">
+                      <div className="pl-8 space-y-2">
                           <p className="font-semibold text-white">{viewing.propertyTitle}</p>
                           
-                          <div className="flex items-center gap-2 text-sm text-white/70">
-                              <span className="w-16">Client:</span>
-                              <span>{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
-                              {viewing.contact?.phone && (
-                                  <div className="flex items-center gap-1">
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
-                                          <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4 text-green-400" /></a>
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
-                                          <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
-                                      </Button>
-                                  </div>
-                              )}
-                          </div>
+                           <div className="text-sm text-white/70 space-y-1">
+                                <div className="flex flex-wrap items-center gap-x-2">
+                                    <span className="font-semibold">Client:</span>
+                                    <span>{viewing.contactName} {viewing.contact?.phone && `(${viewing.contact.phone})`}</span>
+                                    {viewing.contact?.phone && (
+                                        <div className="flex items-center gap-0">
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                                <a href={`tel:${viewing.contact.phone}`}><Phone className="h-4 w-4 text-green-400" /></a>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                                <a href={`https://wa.me/${viewing.contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
 
-                          {(viewing.agent?.name || viewing.agentName) && (
-                              <div className="flex items-center gap-2 text-sm text-white/70">
-                                  <span className="w-16">Agent:</span>
-                                  <span>{viewing.agent?.name || viewing.agentName}</span>
-                              </div>
-                          )}
+                                {(viewing.agent?.name || viewing.agentName) && (
+                                    <div>
+                                        <span className="font-semibold">Agent:</span>
+                                        <span> {viewing.agent?.name || viewing.agentName}</span>
+                                    </div>
+                                )}
 
-                          {viewing.property?.ownerName && (
-                              <div className="flex items-center gap-2 text-sm text-white/70">
-                                  <span className="w-16">Proprietar:</span>
-                                  <span>{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
-                                  {viewing.property.ownerPhone && (
-                                      <div className="flex items-center gap-1">
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
-                                              <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4 text-green-400" /></a>
-                                          </Button>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
-                                              <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
-                                          </Button>
-                                      </div>
-                                  )}
-                              </div>
-                          )}
+                                {viewing.property?.ownerName && (
+                                    <div className="flex flex-wrap items-center gap-x-2">
+                                        <span className="font-semibold">Proprietar:</span>
+                                        <span>{viewing.property.ownerName} {viewing.property.ownerPhone && `(${viewing.property.ownerPhone})`}</span>
+                                        {viewing.property.ownerPhone && (
+                                            <div className="flex items-center gap-0">
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                                    <a href={`tel:${viewing.property.ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-white/80 hover:bg-white/10" asChild>
+                                                    <a href={`https://wa.me/${viewing.property.ownerPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-gray-400" /></a>
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                           <Link href={`/properties/${viewing.propertyId}`}>
                             <Button variant="link" className="p-0 h-auto text-xs text-primary hover:underline">Vezi proprietate</Button>
