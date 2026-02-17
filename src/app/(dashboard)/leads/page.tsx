@@ -106,7 +106,7 @@ export default function LeadsPage() {
             <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none -mt-4">
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
+                        <CardTitle className="text-white text-xl">Cumpărători ({filteredContacts.length})</CardTitle>
                         <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
                             <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white"><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
                         </AddLeadDialog>
@@ -148,7 +148,7 @@ export default function LeadsPage() {
         <div className="hidden lg:block space-y-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-headline font-bold">Cumpărători</h1>
+                        <h1 className="text-3xl font-headline font-bold">Cumpărători ({filteredContacts.length})</h1>
                         <p className="text-muted-foreground">
                             Gestionează și prioritizează potențialii clienți.
                         </p>
