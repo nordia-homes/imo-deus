@@ -39,7 +39,7 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
     resolver: zodResolver(leadFilterSchema),
     defaultValues: {
       zones: [],
-      city: '',
+      city: 'all',
     },
   });
 
@@ -70,7 +70,7 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
       budgetMax: undefined,
       rooms: undefined,
       zones: [],
-      city: '',
+      city: 'all',
     });
     onApplyFilters(null);
     onOpenChange(false);
@@ -118,14 +118,14 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Localitate</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || 'all'}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Toate localitățile" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        <SelectItem value="">Toate localitățile</SelectItem>
+                        <SelectItem value="all">Toate localitățile</SelectItem>
                         {Object.keys(locations).map(city => (
                             <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
                         ))}

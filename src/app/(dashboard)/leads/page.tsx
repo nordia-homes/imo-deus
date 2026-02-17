@@ -75,7 +75,7 @@ export default function LeadsPage() {
             
             if (rooms && (contact.preferences?.desiredRooms !== rooms)) return false;
 
-            if (city && contact.city !== city) return false;
+            if (city && city !== 'all' && contact.city !== city) return false;
             
             if (zones && zones.length > 0) {
                 if (!contact.zones || contact.zones.length === 0) return false;
