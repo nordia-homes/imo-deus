@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   Building2,
@@ -35,9 +36,11 @@ import { Topbar } from './Topbar';
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { LogoIcon } from '../icons/LogoIcon';
+import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId } = useAgency();
+  const pathname = usePathname();
   
   return (
     <SidebarProvider>
@@ -192,7 +195,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <Topbar />
-        <main className="flex-1 bg-background px-0 pt-0 pb-20 md:p-6 md:pb-6">
+        <main className={cn(
+          "flex-1 bg-background px-0 pt-0 pb-20 md:p-6 md:pb-6",
+          pathname === '/dashboard' && "bg-[#0F1E33] md:bg-background"
+        )}>
             {children}
         </main>
         <BottomNavbar />
@@ -200,5 +206,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
