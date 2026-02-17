@@ -13,7 +13,7 @@ import { PlusCircle } from 'lucide-react';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
 import { ViewingList } from '@/components/viewings/ViewingList';
-import { parseISO } from 'date-fns';
+import { parseISO, isSameDay } from 'date-fns';
 import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
 import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
 
@@ -54,7 +54,10 @@ export default function ViewingsPage() {
         }
         const now = new Date();
         const upcoming = viewings
-            .filter(v => parseISO(v.viewingDate) >= now)
+            .filter(v => {
+                const viewingDate = parseISO(v.viewingDate);
+                return viewingDate >= now && !isSameDay(viewingDate, now);
+            })
             .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
         
         const past = viewings
@@ -138,7 +141,7 @@ export default function ViewingsPage() {
     if (isLoading) {
         return (
              <div className="space-y-6 bg-[#0F1E33] p-2">
-                <Skeleton className="h-10 w-full bg-white/10"/>
+                <Skeleton className="h-12 w-full bg-white/10"/>
                 <Skeleton className="h-[70vh] w-full bg-white/10"/>
              </div>
         )
