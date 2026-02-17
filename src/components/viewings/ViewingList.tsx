@@ -1,16 +1,21 @@
-
 'use client';
 
 import type { Viewing, UserProfile } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 interface ViewingListProps {
     title: string;
@@ -52,64 +57,58 @@ export function ViewingList({ title, viewings, agents, onEdit, onDelete }: Viewi
             <CardHeader>
                 <CardTitle className="text-white">{title} ({viewings.length})</CardTitle>
             </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow className="border-white/10">
-                            <TableHead className="text-white/80">Dată și Oră</TableHead>
-                            <TableHead className="text-white/80">Proprietate</TableHead>
-                            <TableHead className="text-white/80">Client</TableHead>
-                            <TableHead className="text-white/80">Agent</TableHead>
-                            <TableHead className="text-white/80">Status</TableHead>
-                            <TableHead className="text-right text-white/80">Acțiuni</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {viewings.map(viewing => {
-                            const agent = getAgentForViewing(viewing, agents);
-                            return (
-                                <TableRow key={viewing.id} className="border-white/10">
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-white/70" />
-                                            <span className="font-medium">{format(parseISO(viewing.viewingDate), 'd MMM yyyy, HH:mm', { locale: ro })}</span>
+            <CardContent className="space-y-4">
+                {viewings.map(viewing => {
+                    const agent = getAgentForViewing(viewing, agents);
+                    return (
+                        <Card key={viewing.id} className="bg-white/5 border border-white/10">
+                            <CardContent className="p-4">
+                                <div className="flex justify-between items-start gap-3">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 text-sm text-white/70 mb-1">
+                                            <Calendar className="h-4 w-4" />
+                                            <span>{format(parseISO(viewing.viewingDate), 'd MMM yyyy, HH:mm', { locale: ro })}</span>
                                         </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Link href={`/properties/${viewing.propertyId}`} className="hover:underline font-medium">
+                                        <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-base hover:underline">
                                             {viewing.propertyTitle}
                                         </Link>
-                                    </TableCell>
-                                    <TableCell>
-                                         <Link href={`/leads/${viewing.contactId}`} className="hover:underline">
-                                            {viewing.contactName}
-                                         </Link>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={agent?.photoUrl || undefined} />
-                                                <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
-                                            </Avatar>
-                                            <span>{agent?.name || 'N/A'}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
+                                        <p className="text-sm text-white/80">
+                                            Client: <Link href={`/leads/${viewing.contactId}`} className="font-medium hover:underline">{viewing.contactName}</Link>
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
                                         <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => onEdit(viewing)} className="text-white/80 hover:bg-white/10 hover:text-white">
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/20" onClick={() => onDelete(viewing)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:bg-white/20 hover:text-white">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => onEdit(viewing)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Editează
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => onDelete(viewing)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Șterge
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-white/10 mt-3 pt-3">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Avatar className="h-6 w-6">
+                                            <AvatarImage src={agent?.photoUrl || undefined} />
+                                            <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                        </Avatar>
+                                        <span>Agent: {agent?.name || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </CardContent>
         </Card>
     );
