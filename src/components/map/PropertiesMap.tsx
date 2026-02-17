@@ -54,7 +54,7 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
     }, [bounds, validProperties]);
 
     return (
-        <Card className="flex-1 shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
+        <Card className="h-full shadow-2xl rounded-2xl bg-[#152A47] text-white border-none">
             <CardContent className="p-0 h-full">
                 <iframe
                     className="h-full w-full border-0 rounded-2xl"
