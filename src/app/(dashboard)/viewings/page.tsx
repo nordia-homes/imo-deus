@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -137,7 +138,7 @@ export default function ViewingsPage() {
 
     if (isLoading) {
         return (
-             <div className="space-y-6 bg-[#0F1E33] -m-6 py-6 px-2">
+             <div className="space-y-6 bg-[#0F1E33] p-2">
                 <Skeleton className="h-10 w-full bg-white/10"/>
                 <Skeleton className="h-[70vh] w-full bg-white/10"/>
              </div>
@@ -145,7 +146,7 @@ export default function ViewingsPage() {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col bg-[#0F1E33] text-white -m-6 py-6 px-2">
+        <div className="space-y-6 h-full flex flex-col bg-[#0F1E33] text-white p-2">
             <Button onClick={() => setIsAddViewingOpen(true)} className="w-full">
                 <PlusCircle className="mr-2 h-4 w-4"/>
                 Programează Vizionare

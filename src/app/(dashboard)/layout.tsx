@@ -142,7 +142,13 @@ export default function DashboardLayout({
     <AgencyProvider>
         <DashboardRoot>
              <div className="h-full">
-                {children}
+                <main className={cn(
+                  "flex-1 bg-background px-0 pt-0 pb-20 lg:p-6 lg:pb-6",
+                   (pathname === '/map' || pathname === '/viewings') && "p-0",
+                  (pathname === '/dashboard' || pathname === '/leads' || pathname === '/properties' || pathname === '/viewings') && "bg-[#0F1E33] lg:bg-background"
+                )}>
+                    {children}
+                </main>
             </div>
         </DashboardRoot>
     </AgencyProvider>
