@@ -36,7 +36,7 @@ export default function PropertiesPage() {
         
         {/* Mobile & Tablet View */}
         <div className="lg:hidden space-y-4">
-            <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none -mt-4">
+            <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Proprietăți ({properties?.length || 0})</CardTitle>
