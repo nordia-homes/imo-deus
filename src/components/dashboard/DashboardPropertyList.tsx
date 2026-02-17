@@ -48,7 +48,7 @@ export function DashboardPropertyList({ title, properties, variant = 'default' }
     
     if (variant === 'mobile') {
         return (
-             <Card className="shadow-2xl rounded-2xl">
+             <Card className="shadow-2xl rounded-2xl border-none">
                 <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
                     <CardTitle className="text-base font-semibold text-white">{title}</CardTitle>
                     <Link href="/properties" className="text-sm text-white hover:underline">Vezi tot</Link>
