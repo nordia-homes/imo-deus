@@ -174,13 +174,13 @@ export default function AiAssistantPage() {
     if (!briefing && !error) return <Card className="p-4 grid grid-cols-4 gap-4"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></Card>;
     if (error) return null;
     return (
-      <Card className="p-2 shadow-2xl rounded-2xl bg-[#f8f8f9]">
+      <Card className="p-2 shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
         <CardContent className="p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {briefing?.summary.map(item => (
-                    <div key={item.label} className="p-3 rounded-lg text-center bg-card border">
+                    <div key={item.label} className="p-3 rounded-lg text-center bg-white/10 border border-white/20">
                         <p className="text-3xl font-bold">{item.value}</p>
-                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                        <p className="text-xs text-white/70">{item.label}</p>
                     </div>
                 ))}
             </div>
@@ -193,7 +193,7 @@ export default function AiAssistantPage() {
     if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-4/5" /><Skeleton className="h-5 w-full" /></div></Card>;
     if (error) return null;
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <CardTitle>Prioritățile tale azi</CardTitle>
             </CardHeader>
@@ -217,20 +217,20 @@ export default function AiAssistantPage() {
     if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
     if (error) return null;
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <CardTitle>Vizionări Programate Astăzi</CardTitle>
             </CardHeader>
             <CardContent>
                 {briefing?.upcomingViewings.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">Nicio vizionare azi. Bucură-te de timp liber!</p>
+                    <p className="text-white/70 text-center py-4">Nicio vizionare azi. Bucură-te de timp liber!</p>
                 ) : (
                     <div className="space-y-2">
                         {briefing?.upcomingViewings.map(v => (
-                            <div key={v.id} className="flex items-center justify-between p-2 rounded-md border">
+                            <div key={v.id} className="flex items-center justify-between p-2 rounded-md border border-white/20">
                                 <div>
                                     <p className="font-semibold text-sm">{v.title}</p>
-                                    <p className="text-xs text-muted-foreground">cu {v.contact}</p>
+                                    <p className="text-xs text-white/70">cu {v.contact}</p>
                                 </div>
                                 <div className="font-bold text-sm flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
@@ -249,18 +249,18 @@ export default function AiAssistantPage() {
     if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
     if (error) return null;
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <CardTitle>Clienți de Urgență</CardTitle>
-                <CardDescription>{briefing?.urgentClientsAnalysis}</CardDescription>
+                <CardDescription className="text-white/70">{briefing?.urgentClientsAnalysis}</CardDescription>
             </CardHeader>
             <CardContent>
                 {briefing?.urgentClients.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">Niciun client nu necesită atenție urgentă.</p>
+                    <p className="text-white/70 text-center py-4">Niciun client nu necesită atenție urgentă.</p>
                 ) : (
                     <div className="space-y-3">
                         {briefing?.urgentClients.map(c => (
-                            <div key={c.id} className="flex items-center gap-3 p-2 border rounded-md">
+                            <div key={c.id} className="flex items-center gap-3 p-2 border border-white/20 rounded-md">
                                 <Avatar>
                                     <AvatarImage src={c.avatar || `https://i.pravatar.cc/150?u=${c.id}`} />
                                     <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
@@ -269,7 +269,7 @@ export default function AiAssistantPage() {
                                     <p className="font-semibold text-sm">{c.name}</p>
                                     <p className="text-xs text-destructive">{c.reason}</p>
                                 </div>
-                                <Button asChild size="sm" variant="ghost">
+                                <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
                                     <Link href={`/leads/${c.id}`}><ArrowRight/></Link>
                                 </Button>
                             </div>
@@ -285,18 +285,18 @@ export default function AiAssistantPage() {
     if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
     if (error) return null;
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <CardTitle>Proprietăți de Optimizat</CardTitle>
-                <CardDescription>{briefing?.propertiesToReviewAnalysis}</CardDescription>
+                <CardDescription className="text-white/70">{briefing?.propertiesToReviewAnalysis}</CardDescription>
             </CardHeader>
             <CardContent>
                 {briefing?.propertiesToOptimize.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">Toate proprietățile sunt optimizate.</p>
+                    <p className="text-white/70 text-center py-4">Toate proprietățile sunt optimizate.</p>
                 ) : (
                     <div className="space-y-3">
                         {briefing?.propertiesToOptimize.map(p => (
-                             <div key={p.id} className="flex items-center gap-3 p-2 border rounded-md">
+                             <div key={p.id} className="flex items-center gap-3 p-2 border border-white/20 rounded-md">
                                 <div className="relative h-12 w-12 shrink-0">
                                     <Image src={p.image || `https://picsum.photos/seed/${p.id}/200`} alt={p.name} fill sizes="48px" className="rounded-md object-cover" />
                                 </div>
@@ -304,7 +304,7 @@ export default function AiAssistantPage() {
                                     <p className="font-semibold text-sm truncate">{p.name}</p>
                                     <p className="text-xs text-destructive flex items-center gap-1"><Camera className="h-3 w-3" />{p.reason}</p>
                                 </div>
-                                <Button asChild size="sm" variant="ghost">
+                                <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
                                     <Link href={`/properties/${p.id}`}><ArrowRight/></Link>
                                 </Button>
                             </div>
@@ -318,7 +318,7 @@ export default function AiAssistantPage() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
         {error && (
             <Alert variant="destructive">
                 <AlertTitle>Eroare la generarea briefing-ului</AlertTitle>
@@ -334,7 +334,7 @@ export default function AiAssistantPage() {
             {renderUrgentClients()}
             {renderPropertiesToOptimize()}
         </div>
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <CardTitle>Chat Rapid</CardTitle>
             </CardHeader>
@@ -343,7 +343,7 @@ export default function AiAssistantPage() {
                     {messages.map((msg, i) => (
                         <div key={i} className={`flex items-start gap-4 ${msg.role === 'model' ? 'justify-start' : 'justify-end'}`}>
                             {msg.role === 'model' && <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>}
-                            <div className={`prose prose-sm max-w-full rounded-lg p-4 shadow-sm lg:prose-base dark:prose-invert ${msg.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                            <div className={`prose prose-sm max-w-full rounded-lg p-4 shadow-sm lg:prose-base dark:prose-invert ${msg.role === 'model' ? 'bg-white/10 text-white' : 'bg-primary text-primary-foreground'}`}>
                                 <Markdown remarkPlugins={[remarkGfm]}>{msg.text}</Markdown>
                             </div>
                             {msg.role === 'user' && <div className="p-2 rounded-full bg-secondary"><User className="h-5 w-5" /></div>}
@@ -352,7 +352,7 @@ export default function AiAssistantPage() {
                     {chatLoading && (
                         <div className="flex items-start gap-4 justify-start">
                             <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>
-                            <div className="p-4 rounded-lg max-w-2xl shadow-sm bg-muted">
+                            <div className="p-4 rounded-lg max-w-2xl shadow-sm bg-white/10">
                                 <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
                                 <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
@@ -366,7 +366,7 @@ export default function AiAssistantPage() {
                  <div className="relative">
                     <Input
                         placeholder="Ai o întrebare rapidă? Scrie aici..."
-                        className="pr-12 h-12"
+                        className="pr-12 h-12 bg-white/10 border-white/20 placeholder:text-white/50 text-white"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !chatLoading && handleSend()}
