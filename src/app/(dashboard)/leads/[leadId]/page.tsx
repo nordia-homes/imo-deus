@@ -541,6 +541,7 @@ export default function LeadDetailPage() {
         return properties.find(p => p.id === upcomingViewing.propertyId);
     }, [upcomingViewing, properties]);
 
+
     const timelineItems = useMemo(() => {
         if (!tasks && !contact?.interactionHistory) return [];
         const combined: ({ type: 'task' } & Task | { type: 'interaction' } & Interaction)[] = [];
@@ -752,6 +753,7 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="lg:col-span-3 space-y-6">
+                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <ClientPortalManager contact={contact} agency={agency} />
                         <FinancialStatusCard 
                             contact={contact} 
