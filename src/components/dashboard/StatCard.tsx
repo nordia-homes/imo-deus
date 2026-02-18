@@ -56,8 +56,8 @@ export function StatCard({
                 <div>
                     <div className="flex items-baseline gap-2">
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                        <p className="text-lg font-bold">{value}</p>
                     </div>
+                    <p className="text-lg font-bold">{value}</p>
                     {period && <p className="text-xs text-muted-foreground mt-0.5">{period}</p>}
                 </div>
             </CardContent>

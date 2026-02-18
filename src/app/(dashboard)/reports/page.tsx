@@ -132,42 +132,42 @@ export default function ReportsPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 bg-[#0F1E33] text-white p-4 lg:p-6">
             <div>
-                <h1 className="text-3xl font-headline font-bold">Rapoarte de Performanță</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-3xl font-headline font-bold text-white">Rapoarte de Performanță</h1>
+                <p className="text-white/70">
                     Analizează performanța vânzărilor și eficiența canalelor de marketing.
                 </p>
             </div>
             
-             <Card className="shadow-2xl rounded-2xl">
+             <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-white">
                         <Lightbulb className="text-primary"/>
                         Analiză și Recomandări AI
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-white/70">
                         Obține o sinteză a datelor de performanță și recomandări personalizate generate de AI.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isGenerating && (
-                        <div className="flex items-center justify-center p-8 text-muted-foreground">
+                        <div className="flex items-center justify-center p-8 text-white/70">
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             <span>AI-ul analizează datele...</span>
                         </div>
                     )}
                     {!isGenerating && aiReport && (
                         <div className="space-y-4">
-                            <Alert>
-                                <AlertTitle className="font-semibold">Sinteză Performanță</AlertTitle>
-                                <AlertDescription>
+                            <Alert className="bg-white/5 border-white/10 text-white">
+                                <AlertTitle className="font-semibold text-white">Sinteză Performanță</AlertTitle>
+                                <AlertDescription className="text-white/90">
                                     {aiReport.summary}
                                 </AlertDescription>
                             </Alert>
-                            <Alert variant="default" className="bg-accent/50">
-                                <AlertTitle className="font-semibold">Recomandări</AlertTitle>
-                                <AlertDescription>
+                            <Alert variant="default" className="bg-primary/10 border-primary/20 text-white">
+                                <AlertTitle className="font-semibold text-primary">Recomandări</AlertTitle>
+                                <AlertDescription className="text-white/90">
                                     <ul className="list-disc pl-5 space-y-1 mt-2">
                                         {aiReport.recommendations.split('\n').map((rec, i) => rec.trim() && <li key={i}>{rec.replace('-', '').trim()}</li>)}
                                     </ul>
@@ -177,12 +177,12 @@ export default function ReportsPage() {
                     )}
                     {!isGenerating && !aiReport && (
                          <div className="flex flex-col items-center justify-center text-center p-8 space-y-2">
-                            <p className="text-sm text-muted-foreground">Apasă pe buton pentru a începe analiza AI.</p>
+                            <p className="text-sm text-white/70">Apasă pe buton pentru a începe analiza AI.</p>
                         </div>
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleGenerateReport} disabled={isLoading || isGenerating}>
+                    <Button onClick={handleGenerateReport} disabled={isLoading || isGenerating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                         {isGenerating ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
@@ -197,37 +197,37 @@ export default function ReportsPage() {
             <div className="grid gap-6 md:grid-cols-3">
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-[126px]" />
-                        <Skeleton className="h-[126px]" />
-                        <Skeleton className="h-[126px]" />
+                        <Skeleton className="h-[126px] bg-white/10" />
+                        <Skeleton className="h-[126px] bg-white/10" />
+                        <Skeleton className="h-[126px] bg-white/10" />
                     </>
                 ) : (
                     <>
-                        <StatCard title="Total Cumpărători Câștigați" value={totalWonBuyers.toString()} icon={<DollarSign />} period="Număr total de tranzacții"/>
-                        <StatCard title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} period="Din totalul de cumpărători"/>
-                        <StatCard title="Valoare Medie Tranzacție" value={`€${averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<TrendingUp />} period="Pe tranzacție câștigată"/>
+                        <StatCard className="bg-[#152A47] border-none text-white" title="Total Cumpărători Câștigați" value={totalWonBuyers.toString()} icon={<DollarSign />} period="Număr total de tranzacții"/>
+                        <StatCard className="bg-[#152A47] border-none text-white" title="Rata de Conversie" value={`${conversionRate.toFixed(1)}%`} icon={<Target />} period="Din totalul de cumpărători"/>
+                        <StatCard className="bg-[#152A47] border-none text-white" title="Valoare Medie Tranzacție" value={`€${averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={<TrendingUp />} period="Pe tranzacție câștigată"/>
                     </>
                 )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                  {/* Sales Chart */}
-                <Card className="lg:col-span-3 shadow-2xl rounded-2xl">
+                <Card className="lg:col-span-3 shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
                     <CardHeader>
-                        <CardTitle>Volum Vânzări Lunare</CardTitle>
+                        <CardTitle className="text-white">Volum Vânzări Lunare</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? <Skeleton className="h-[250px] w-full" /> : <SalesChart data={salesData} />}
+                        {isLoading ? <Skeleton className="h-[250px] w-full bg-white/10" /> : <SalesChart data={salesData} />}
                     </CardContent>
                 </Card>
 
                  {/* Lead Source Chart */}
-                <Card className="lg:col-span-2 shadow-2xl rounded-2xl">
+                <Card className="lg:col-span-2 shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
                     <CardHeader>
-                        <CardTitle>Distribuție Surse Cumpărători</CardTitle>
+                        <CardTitle className="text-white">Distribuție Surse Cumpărători</CardTitle>
                     </CardHeader>
                     <CardContent>
-                         {isLoading ? <Skeleton className="h-[250px] w-full" /> : <LeadSourceChart data={buyerSourceData} />}
+                         {isLoading ? <Skeleton className="h-[250px] w-full bg-white/10" /> : <LeadSourceChart data={buyerSourceData} />}
                     </CardContent>
                 </Card>
             </div>
