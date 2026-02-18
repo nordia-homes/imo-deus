@@ -46,9 +46,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 justify-center">
+          <Link href="/dashboard" className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-center">
             <LogoIcon className="h-7 w-7 text-white" />
-          </div>
+            <h1 className="font-bold text-xl group-data-[collapsible=icon]:hidden">
+                <span>Imoflux</span><span className="text-primary">.ai</span>
+            </h1>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
