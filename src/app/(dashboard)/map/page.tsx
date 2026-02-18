@@ -19,19 +19,13 @@ export default function MapPage() {
 
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
-    const mapContent = (
-        <div className="flex-1 min-h-0">
+    return (
+        <div className="h-full w-full">
             {isLoading ? (
                 <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
             ) : (
                 <PropertiesMap properties={properties || []} />
             )}
-        </div>
-    );
-
-    return (
-        <div className="h-full flex flex-col">
-            {mapContent}
         </div>
     );
 }

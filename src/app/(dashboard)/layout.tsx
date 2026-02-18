@@ -1,4 +1,3 @@
-
 'use client';
 import { AppShell } from '@/components/layout/app-shell';
 import { useRouter, usePathname } from 'next/navigation';
@@ -141,15 +140,7 @@ export default function DashboardLayout({
   return (
     <AgencyProvider>
         <DashboardRoot>
-             <div className="h-full">
-                <main className={cn(
-                  "flex-1 bg-background px-0 pt-0 pb-20 lg:p-6 lg:pb-6",
-                   (pathname === '/map' || pathname === '/viewings') && "p-0",
-                  (pathname === '/dashboard' || pathname === '/leads' || pathname === '/properties' || pathname === '/viewings') && "bg-[#0F1E33] lg:bg-background"
-                )}>
-                    {children}
-                </main>
-            </div>
+            {children}
         </DashboardRoot>
     </AgencyProvider>
   );
