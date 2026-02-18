@@ -1,13 +1,11 @@
-
 'use client';
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact } from '@/lib/types';
 import { leadScoring } from '@/ai/flows/lead-scoring';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type AiLeadScoreCardProps = {
   contact: Contact;
@@ -138,21 +136,17 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
 
   return (
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
-      <CardHeader className="p-4">
-        <div className="flex items-center justify-between">
-            <div className="flex flex-col items-start gap-2">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none bg-primary/10">
-                                Calitate Cumpărător
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="max-w-xs text-xs">{contact.leadScoreReason || 'Nicio justificare disponibilă.'}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+        <CardHeader className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+                <div className="pr-4">
+                    <h4 className="font-semibold text-primary">Calitate Cumpărător</h4>
+                </div>
+                <CircularProgress score={contact.leadScore} />
+            </div>
+            <CardDescription className="text-white/70 text-xs pt-1">
+                {contact.leadScoreReason || 'Justificarea scorului va apărea aici după generare.'}
+            </CardDescription>
+            <div className="pt-1">
                 <Button 
                     variant="ghost" 
                     size="sm" 
@@ -160,14 +154,11 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
                     disabled={isGenerating}
                     className="text-xs h-auto p-0 text-white/70 hover:text-white"
                 >
-                  <RefreshCw className="mr-1 h-3 w-3" />
-                  Regenerează
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Regenerează scorul
                 </Button>
             </div>
-            <CircularProgress score={contact.leadScore} />
-        </div>
-        <CardDescription className="text-white/70 text-xs pt-2">Scor calculat de AI pe baza datelor din CRM.</CardDescription>
-      </CardHeader>
+        </CardHeader>
     </Card>
   );
 }
