@@ -113,8 +113,8 @@ service cloud.firestore {
       // Allow the security rule helper function (`get()`) to read this document without authentication.
       allow get: if true; 
       
-      // Only authenticated admins of the agency can create links.
-      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+      // Only authenticated agents of the agency can create links.
+      allow create: if isUserInAgency(request.resource.data.agencyId);
 
       // No one else should be able to list, update, or delete these links directly.
       allow list, update, delete: if false;
