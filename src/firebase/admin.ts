@@ -7,6 +7,12 @@
 
 import { initializeApp, cert, getApps, App, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { config } from 'dotenv';
+
+// Încarcă variabilele de mediu din fișierul .env
+// Acest pas este esențial pentru a asigura că `process.env` are valorile corecte
+// atunci când codul de server este executat.
+config();
 
 let app: App;
 
