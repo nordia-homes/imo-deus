@@ -204,7 +204,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-[#0F1E33] p-0 text-white [&>button]:hidden"
+            className="w-[--sidebar-width] bg-[#0F1E33] p-0 text-white"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -618,7 +618,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-white outline-none ring-primary transition-transform hover:bg-white/10 hover:text-white focus-visible:ring-2 peer-hover/menu-button:text-white peer-data-[active=true]/menu-button:text-primary-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-white outline-none ring-primary transition-transform hover:bg-white/10 hover:text-white focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
