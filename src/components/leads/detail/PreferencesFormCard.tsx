@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact, Agency } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,14 +46,14 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
         generalZone: contact.generalZone,
       };
       
-      await setDocumentNonBlocking(newLinkRef, linkData, {}); 
-      await updateDocumentNonBlocking(contactRef, { preferencesLinkId: newLinkId });
+      await setDoc(newLinkRef, linkData); 
+      await updateDoc(contactRef, { preferencesLinkId: newLinkId });
       
       toast({ title: 'Link generat!', description: 'Acum poți copia linkul și să-l trimiți clientului.' });
 
     } catch (e) {
         console.error("Failed to generate preferences link", e);
-        toast({ variant: 'destructive', title: 'Eroare', description: 'Nu am putut genera linkul.' });
+        toast({ variant: 'destructive', title: 'Eroare', description: 'Nu am putut genera linkul. Vă rugăm să reîncercați.' });
     } finally {
         setIsLoading(false);
     }
