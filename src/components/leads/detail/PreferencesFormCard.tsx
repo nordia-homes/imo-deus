@@ -8,7 +8,7 @@ import type { Contact, Agency } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, Copy, Link as LinkIcon, Loader2, Send } from 'lucide-react';
+import { Check, Copy, Link as LinkIcon, Loader2, RefreshCw, Send } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 interface PreferencesFormCardProps {
@@ -82,6 +82,9 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
                 <Input id="preferences-link" readOnly value={preferencesLink} className="bg-white/10 border-white/20 h-9" />
                 <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button variant="secondary" size="icon" onClick={handleGenerateLink} disabled={isLoading} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
