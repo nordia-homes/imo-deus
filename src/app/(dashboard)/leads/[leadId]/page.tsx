@@ -728,8 +728,7 @@ export default function LeadDetailPage() {
                  />
                  <main className="grid lg:grid-cols-12 gap-6 items-start mt-6 lg:px-6">
                     <div className="lg:col-span-3 space-y-6">
-                        <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} />
-                        <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} onUpdateContact={handleUpdateContact} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
                     </div>
 

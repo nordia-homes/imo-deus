@@ -3,19 +3,45 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Contact } from '@/lib/types';
-import { Calendar, Clock, MapPin, Edit, DollarSign, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, DollarSign, User, FileText } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useState, useEffect, useRef } from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 type LeadInfoCardProps = {
   contact: Contact;
   onEdit: () => void;
+  onUpdateContact: (data: Partial<Omit<Contact, 'id'>>) => void;
 };
 
-export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
+export function LeadInfoCard({ contact, onEdit, onUpdateContact }: LeadInfoCardProps) {
     const creationDate = contact.createdAt ? new Date(contact.createdAt) : new Date(); // Fallback for demo
     const ageInDays = differenceInDays(new Date(), creationDate);
+
+    const [description, setDescription] = useState(contact.description || '');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        setDescription(contact.description || '');
+    }, [contact]);
+
+    const handleBlur = () => {
+        if (description !== (contact.description || '')) {
+            onUpdateContact({ description });
+        }
+    };
+
+    // Auto-resize textarea
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto'; // Temporarily shrink to get the correct scrollHeight
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [description]);
+
 
     let ageBadgeVariant: 'success' | 'warning' | 'destructive' = 'success';
     if (ageInDays > 30) {
@@ -58,16 +84,30 @@ export function LeadInfoCard({ contact, onEdit }: LeadInfoCardProps) {
                         Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
                     </Badge>
                 </div>
+                <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Descriere
+                    </h4>
+                    <Textarea
+                        ref={textareaRef}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        onBlur={handleBlur}
+                        placeholder="Adaugă o descriere detaliată a cumpărătorului, preferințe, cerințe speciale, etc."
+                        className="text-sm resize-none overflow-hidden bg-white/10 border-white/20 text-white"
+                        rows={4}
+                    />
+                </div>
                  {contact.zones && contact.zones.length > 0 && (
                     <div className="space-y-2">
                         <h4 className="text-sm font-semibold text-white/70">Zone Preferate</h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="space-y-1">
                             {contact.zones.map(zone => (
                                 <Button 
                                     key={zone} 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="pointer-events-none cursor-default bg-white/10 border-white/20 text-white"
+                                    variant="outline"
+                                    className="pointer-events-none cursor-default bg-white/10 border-white/20 text-white w-full justify-start"
                                 >
                                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                                     {zone}
