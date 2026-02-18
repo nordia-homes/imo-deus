@@ -748,6 +748,7 @@ export default function LeadDetailPage() {
                             contact={contact}
                         />
                         <ScheduledViewingsCard viewings={scheduledViewings} />
+                        <SimilarLeadsCard leads={similarCumparatori} />
                         <OfferManagementCard
                             contact={contact}
                             properties={properties || []}
@@ -767,7 +768,6 @@ export default function LeadDetailPage() {
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
                         />
-                         <SimilarLeadsCard leads={similarCumparatori} />
                          <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                     </div>
                 </main>
