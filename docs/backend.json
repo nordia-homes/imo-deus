@@ -234,6 +234,22 @@
         "sourcePropertyId": {
           "type": "string",
           "description": "The ID of the property this buyer was initially interested in."
+        },
+        "preferencesLinkId": {
+          "type": "string",
+          "description": "The secure ID for the public buyer preferences form link."
+        },
+        "generalZone": {
+          "type": "string",
+          "enum": [
+            "Nord",
+            "Sud",
+            "Est",
+            "Vest",
+            "Central",
+            "Oricare"
+          ],
+          "description": "The general area of interest for the buyer."
         }
       },
       "required": [
@@ -613,6 +629,30 @@
         "viewingDate",
         "status"
       ]
+    },
+    "BuyerPreferencesLink": {
+      "title": "Buyer Preferences Link",
+      "description": "A secure link to a public form for the buyer to update their preferences.",
+      "type": "object",
+      "properties": {
+        "contactId": {
+          "type": "string",
+          "description": "The ID of the contact this link belongs to."
+        },
+        "agencyId": {
+          "type": "string",
+          "description": "The ID of the agency this link belongs to."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "contactId",
+        "agencyId",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -824,6 +864,22 @@
             {
               "name": "recommendationId",
               "description": "The ID of the recommended property."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/buyer-preferences-links/{linkId}",
+        "definition": {
+          "entityName": "BuyerPreferencesLink",
+          "schema": {
+            "$ref": "#/backend/entities/BuyerPreferencesLink"
+          },
+          "description": "Stores secure links for buyers to update their preferences.",
+          "params": [
+            {
+              "name": "linkId",
+              "description": "The secure access token for the preferences form."
             }
           ]
         }

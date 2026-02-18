@@ -136,6 +136,8 @@ export type Contact = {
     financialStatus?: FinancialStatus;
     recommendationHistory?: { [propertyId: string]: PortalRecommendation };
     photoUrl?: string;
+    preferencesLinkId?: string;
+    generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare';
 };
 
 export type SalesData = {
@@ -319,4 +321,11 @@ export type Briefing = {
   propertiesToOptimize: BriefingProperty[];
   urgentClientsAnalysis: string;
   propertiesToReviewAnalysis: string;
+};
+
+export type BuyerPreferencesLink = {
+  id: string;
+  contactId: string;
+  agencyId: string;
+  createdAt: string;
 };

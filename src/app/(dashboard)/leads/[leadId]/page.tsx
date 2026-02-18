@@ -46,6 +46,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { EditPreferencesForm } from '@/components/leads/detail/EditPreferencesForm';
+import { PreferencesFormCard } from '@/components/leads/detail/PreferencesFormCard';
 
 
 const PageSkeleton = () => (
@@ -772,6 +773,7 @@ export default function LeadDetailPage() {
 
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
+                        <PreferencesFormCard contact={contact} agency={agency} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
