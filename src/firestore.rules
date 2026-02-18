@@ -93,11 +93,8 @@ service cloud.firestore {
     }
 
     // --- Buyer Preferences Link ---
-    match /buyer-preferences-links/{linkId} {
-      // Explicitly requiring a signed-in user (including anonymous) for reading,
-      // as `allow read: if true;` was not behaving as expected.
-      allow read: if isSignedIn();
-      allow write: if true;
+    match /buyer-preferences-links/{path=**} {
+      allow read, write: if true;
     }
   }
 }
