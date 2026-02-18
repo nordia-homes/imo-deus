@@ -277,7 +277,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="space-y-4 p-2 lg:px-0">
+            <div className="space-y-4 p-2 lg:px-2">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -288,7 +288,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-4 bg-[#0F1E33] p-2 lg:px-0">
+        <div className="space-y-4 bg-[#0F1E33] p-2 lg:px-2">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
@@ -366,10 +366,8 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
-            </div>
-            <div className="mt-4">
                 <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} variant="mobile" />
             </div>
 
