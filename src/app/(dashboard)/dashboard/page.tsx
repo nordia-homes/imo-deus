@@ -277,7 +277,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="space-y-4 lg:p-0">
+            <div className="space-y-4 px-2">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                     displayName={displayName}
                 />
                 
-                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none px-2">
+                <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl bg-[#152a47] text-white border-none px-2">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
                     </CardHeader>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="mt-4">
-                <Card className="shadow-2xl rounded-2xl border-none">
+                <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
                         <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
@@ -357,7 +357,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="mt-4">
-                 <Card className="shadow-2xl rounded-2xl border-none">
+                 <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
                         <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4">
-                <Card className="shadow-2xl rounded-2xl border-none">
+                <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
                         <CardTitle className="text-base font-semibold text-white">Ultimii Cumpărători Adăugați</CardTitle>
                     </CardHeader>
