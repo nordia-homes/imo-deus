@@ -25,7 +25,7 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
     return (
         <Card className="bg-[#152a47] text-white border-none rounded-2xl shadow-2xl shadow-black/20">
             <CardContent className="p-4 space-y-4">
-                 <div className="text-left">
+                 <div className="text-center">
                     <h1 className="text-xl font-bold text-white">
                         {`Bună ${displayName}, de la ${agencyName}!`}
                     </h1>
@@ -33,7 +33,7 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                         Iată o privire de ansamblu asupra activităților.
                     </p>
                 </div>
-                <div className="text-left">
+                <div className="text-center">
                     <p className="text-sm text-white/70">Comision luna aceasta</p>
                     <p className="text-3xl font-bold">€{realizedCommissionThisMonth.toLocaleString('ro-RO')}</p>
                 </div>
