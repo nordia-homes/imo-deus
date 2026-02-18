@@ -301,7 +301,7 @@ export default function AiAssistantPage() {
                                     <Image src={p.image || `https://picsum.photos/seed/${p.id}/200`} alt={p.name} fill sizes="48px" className="rounded-md object-cover" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-semibold text-sm truncate">{p.name}</p>
+                                    <p className="font-semibold text-sm truncate" title={p.name}>{p.name.length > 25 ? `${p.name.substring(0, 25)}...` : p.name}</p>
                                     <p className="text-xs text-destructive flex items-center gap-1"><Camera className="h-3 w-3" />{p.reason}</p>
                                 </div>
                                 <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
