@@ -726,10 +726,18 @@ export default function LeadDetailPage() {
                     properties={properties || []}
                     onTriggerEditPreferences={() => setIsEditingPreferences(true)}
                  />
-                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6 lg:px-6">
+                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6 px-6">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} onUpdateContact={handleUpdateContact} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
+                         <LeadTimeline 
+                            interactions={contact.interactionHistory || []} 
+                            tasks={tasks || []}
+                            onAddInteraction={handleAddInteraction}
+                            onAddTask={handleAddTask}
+                            contacts={[contact]}
+                            onToggleTask={handleToggleTask}
+                        />
                     </div>
 
                     <div className="lg:col-span-6 space-y-6">
@@ -738,14 +746,6 @@ export default function LeadDetailPage() {
                             onAddRecommendation={handleAddRecommendation}
                             agencyId={agency?.id}
                             contact={contact}
-                        />
-                        <LeadTimeline 
-                            interactions={contact.interactionHistory || []} 
-                            tasks={tasks || []}
-                            onAddInteraction={handleAddInteraction}
-                            onAddTask={handleAddTask}
-                            contacts={[contact]}
-                            onToggleTask={handleToggleTask}
                         />
                         <OfferManagementCard
                             contact={contact}
