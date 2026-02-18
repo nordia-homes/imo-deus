@@ -29,13 +29,11 @@ export default function ContractsPage() {
     
     return (
         <div className="space-y-6 h-full bg-[#0F1E33] text-white p-4">
-            <div className="flex items-start justify-between">
-                <div>
-                    <h1 className="text-3xl font-headline font-bold text-white">Documente și Contracte</h1>
-                    <p className="text-white/70">
-                        Accesează documentele standard ale agenției.
-                    </p>
-                </div>
+            <div className="text-center">
+                <h1 className="text-3xl font-headline font-bold text-white">Documente și Contracte</h1>
+                <p className="text-white/70">
+                    Accesează documentele standard ale agenției.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
