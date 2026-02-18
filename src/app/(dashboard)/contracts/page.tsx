@@ -28,11 +28,11 @@ export default function ContractsPage() {
     ];
     
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full bg-[#0F1E33] text-white p-4">
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-3xl font-headline font-bold">Documente și Contracte</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-3xl font-headline font-bold text-white">Documente și Contracte</h1>
+                    <p className="text-white/70">
                         Accesează documentele standard ale agenției.
                     </p>
                 </div>
@@ -40,16 +40,16 @@ export default function ContractsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {contracts.map((contract) => (
-                    <Card key={contract.title} className="flex flex-col shadow-2xl rounded-2xl">
+                    <Card key={contract.title} className="flex flex-col bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                         <CardHeader>
-                            <CardTitle>{contract.title}</CardTitle>
-                            <CardDescription>{contract.description}</CardDescription>
+                            <CardTitle className="text-white">{contract.title}</CardTitle>
+                            <CardDescription className="text-white/70">{contract.description}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow">
                             {/* Empty content for spacing */}
                         </CardContent>
                         <CardFooter>
-                            <Button asChild className="w-full" disabled={!contract.enabled}>
+                            <Button asChild variant="outline" className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white" disabled={!contract.enabled}>
                                 <Link href={contract.link} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="mr-2 h-4 w-4" />
                                     Deschide Document
@@ -59,7 +59,7 @@ export default function ContractsPage() {
                     </Card>
                 ))}
             </div>
-             <p className="text-xs text-muted-foreground text-center pt-4">
+             <p className="text-xs text-white/70 text-center pt-4">
                 Pentru a adăuga link-urile lipsă, vă rog să mi le furnizați în conversație.
             </p>
         </div>
