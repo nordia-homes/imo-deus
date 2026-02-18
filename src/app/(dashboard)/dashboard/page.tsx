@@ -311,7 +311,7 @@ export default function DashboardPage() {
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2 space-y-4">
+                    <CardContent className="py-4 px-2 pt-2 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="text-center p-2 rounded-lg bg-white/10">
                                 <p className="font-bold text-2xl">{activePropertiesCount}</p>
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
                         <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2 bg-card rounded-b-2xl">
+                    <CardContent className="px-2 bg-card rounded-b-2xl">
                         <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
@@ -362,7 +362,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
                         <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2 pt-4 bg-card rounded-b-2xl">
+                    <CardContent className="px-2 pt-4 bg-card rounded-b-2xl">
                         <SalesChart data={monthlyCommissionData} />
                     </CardContent>
                 </Card>

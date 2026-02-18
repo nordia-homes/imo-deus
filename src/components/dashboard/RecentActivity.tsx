@@ -78,7 +78,7 @@ export function RecentActivity() {
             <CardHeader className="rounded-t-2xl bg-[#152a47] p-3 text-white md:rounded-none md:bg-transparent md:p-6 md:text-card-foreground">
                 <CardTitle className="text-base font-semibold">Activitate Recentă</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-6">
+            <CardContent className="py-4 px-2 md:p-6">
                 {isLoading ? (
                     <div className="space-y-4">
                         {[...Array(5)].map((_, i) => (
