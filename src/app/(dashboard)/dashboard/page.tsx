@@ -277,7 +277,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="px-2 space-y-4">
+            <div className="space-y-4 lg:p-0">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -288,7 +288,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="px-2 space-y-4 bg-[#0F1E33]">
+        <div className="space-y-4 bg-[#0F1E33] lg:p-0">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
@@ -309,7 +309,7 @@ export default function DashboardPage() {
                 
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
                     <CardHeader className="pt-4 pb-2 text-center">
-                        <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
+                        <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-2 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -331,12 +331,12 @@ export default function DashboardPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                             <Button className="w-full justify-between bg-[#f8f8f9] text-foreground hover:bg-muted font-semibold pointer-events-none">
-                               <span>Proprietati Rezervate Luna Curenta</span>
+                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold pointer-events-none">
+                               <span>Proprietăți Rezervate Luna Curentă</span>
                                <span>{reservedThisMonth.length}</span>
                             </Button>
-                             <Button className="w-full justify-between bg-[#f8f8f9] text-foreground hover:bg-muted font-semibold pointer-events-none">
-                               <span>Proprietati Vandute Luna Curenta</span>
+                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold pointer-events-none">
+                               <span>Proprietăți Vândute Luna Curentă</span>
                                <span>{soldThisMonth.length}</span>
                             </Button>
                         </div>
