@@ -146,30 +146,25 @@ export default function LeadDetailPage() {
 
     const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
 
-    // Fetch ALL tasks and viewings for the agency, then filter locally.
-    // This avoids security rule issues with `where` clauses on subcollections.
-    const allTasksQuery = useMemoFirebase(() => {
-        if (!agency?.id) return null;
-        return collection(firestore, 'agencies', agency.id, 'tasks');
-    }, [firestore, agency?.id]);
-    const { data: allTasks, isLoading: areTasksLoading } = useCollection<Task>(allTasksQuery);
+    // Fetch tasks and viewings filtered for this specific contact
+    const tasksQuery = useMemoFirebase(() => {
+        if (!agency?.id || !cumparatorId) return null;
+        return query(
+            collection(firestore, 'agencies', agency.id, 'tasks'),
+            where('contactId', '==', cumparatorId)
+        );
+    }, [firestore, agency?.id, cumparatorId]);
+    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
 
-    const allViewingsQuery = useMemoFirebase(() => {
-        if (!agency?.id) return null;
-        return query(collection(firestore, 'agencies', agency.id, 'viewings'), orderBy('viewingDate', 'asc'));
-    }, [firestore, agency?.id]);
-    const { data: allViewings, isLoading: areViewingsLoading } = useCollection<Viewing>(allViewingsQuery);
-    
-    // Client-side filtering
-    const tasks = useMemo(() => {
-        if (!allTasks || !cumparatorId) return [];
-        return allTasks.filter(task => task.contactId === cumparatorId);
-    }, [allTasks, cumparatorId]);
-    
-    const viewings = useMemo(() => {
-        if (!allViewings || !cumparatorId) return [];
-        return allViewings.filter(viewing => viewing.contactId === cumparatorId);
-    }, [allViewings, cumparatorId]);
+    const viewingsQuery = useMemoFirebase(() => {
+        if (!agency?.id || !cumparatorId) return null;
+        return query(
+            collection(firestore, 'agencies', agency.id, 'viewings'),
+            where('contactId', '==', cumparatorId),
+            orderBy('viewingDate', 'asc')
+        );
+    }, [firestore, agency?.id, cumparatorId]);
+    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
 
     const propertiesQuery = useMemoFirebase(() => {
