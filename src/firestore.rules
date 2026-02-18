@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -28,24 +29,51 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
+    function isPublicPreferencesUpdate(agencyId, contactId) {
+      // Public form update must be unauthenticated
+      if (request.auth != null) {
+        return false;
+      }
+      
+      // Check for the validation token
+      if (!('validationLinkId' in request.resource.data)) {
+        return false;
+      }
+      
+      let linkId = request.resource.data.validationLinkId;
+      
+      // Validate the token exists and maps to the correct contact/agency
+      if (!exists(/databases/$(database)/documents/buyer-preferences-links/$(linkId))) {
+        return false;
+      }
+      let linkData = get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data;
+      if (linkData.contactId != contactId || linkData.agencyId != agencyId) {
+        return false;
+      }
+      
+      // Ensure only the allowed fields are being modified by the public form
+      let changedKeys = request.resource.data.diff(resource.data).affectedKeys;
+      let allowedFields = ['budget', 'city', 'generalZone', 'zones', 'preferences', 'interactionHistory', 'validationLinkId'];
+      
+      return changedKeys.hasOnly(allowedFields);
+    }
 
     // --- User Profiles ---
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
-
       allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
     }
+    
+    // --- Specific Rule for Contacts ---
+    match /agencies/{agencyId}/contacts/{contactId} {
+      allow get, list, create, delete: if isUserInAgency(agencyId);
+      allow update: if isUserInAgency(agencyId) || isPublicPreferencesUpdate(agencyId, contactId);
+    }
 
-    // --- Agency Subcollections (e.g., /agencies/{agencyId}/viewings/{viewingId}) ---
-    match /agencies/{agencyId}/{collection}/{docId} {
-      // For single document reads and all writes, we can perform a lookup to the user's
-      // profile to ensure they belong to the agency. This is secure.
+    // --- Generic Rule for other Agency Subcollections ---
+    match /agencies/{agencyId}/{collection}/{docId} 
+      where collection != 'contacts' {
       allow get, write: if isUserInAgency(agencyId);
-
-      // For collection queries (list), Firestore rules cannot perform lookups on other documents.
-      // Therefore, we allow any signed-in user to LIST documents. This is secure because
-      // the application's client-side logic will only query the correct agency's data,
-      // and individual document reads are still protected by the 'get' rule above.
       allow list: if isUserInAgency(agencyId);
     }
 
@@ -93,8 +121,10 @@ service cloud.firestore {
     }
 
     // --- Buyer Preferences Link ---
-    match /buyer-preferences-links/{path=**} {
-      allow read, write: if true;
+    match /buyer-preferences-links/{linkId} {
+      allow read: if true; // Public read is needed for the form page.
+      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+      allow update, delete: if false; // Links are immutable once created.
     }
   }
 }

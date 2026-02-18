@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { initializeServerFirebase } from '@/firebase/server';
-import { doc, getDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import type { Contact, Interaction } from '@/lib/types';
 
 
@@ -47,7 +47,6 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
     const { linkId, mentiuni, ...formData } = input;
 
     try {
-        // 1. Validate the linkId
         const linkRef = doc(firestore, 'buyer-preferences-links', linkId);
         const linkSnap = await getDoc(linkRef);
 
@@ -57,30 +56,27 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         
         const { agencyId, contactId } = linkSnap.data();
 
-        // 2. Prepare the data for update
         const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
         const contactSnap = await getDoc(contactRef);
         if (!contactSnap.exists()) {
             throw new Error("Contactul nu a fost găsit.");
         }
         const existingContact = contactSnap.data() as Contact;
-
-        const dataToUpdate: Partial<Omit<Contact, 'id' | 'preferences' | 'interactionHistory'>> & { preferences?: any } = {};
         
+        // Prepare a single update object
+        const dataToUpdate: { [key: string]: any } = {
+            validationLinkId: linkId // For security rules
+        };
+
         if (formData.budget !== undefined) dataToUpdate.budget = formData.budget;
         if (formData.city !== undefined) dataToUpdate.city = formData.city;
-        if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone as Contact['generalZone'];
+        if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone;
         if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
 
         const updatedPreferences = { ...existingContact.preferences };
         if (formData.desiredRooms !== undefined) updatedPreferences.desiredRooms = formData.desiredRooms;
         if (formData.desiredSquareFootageMin !== undefined) updatedPreferences.desiredSquareFootageMin = formData.desiredSquareFootageMin;
-        
         dataToUpdate.preferences = updatedPreferences;
-        
-        const batch = writeBatch(firestore);
-        
-        batch.update(contactRef, dataToUpdate);
 
         if (mentiuni) {
             const newInteraction: Interaction = {
@@ -90,12 +86,12 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
-            batch.update(contactRef, {
-                interactionHistory: arrayUnion(newInteraction)
-            });
+            // Replicate arrayUnion by creating a new array
+            dataToUpdate.interactionHistory = [...(existingContact.interactionHistory || []), newInteraction];
         }
-        
-        await batch.commit();
+
+        // A single update call with all changes
+        await updateDoc(contactRef, dataToUpdate);
 
         return { success: true, message: "Preferințele au fost actualizate cu succes. Mulțumim!" };
 
