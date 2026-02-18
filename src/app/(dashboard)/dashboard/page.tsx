@@ -288,7 +288,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-4 bg-[#0F1E33] lg:p-0">
+        <div className="space-y-4 bg-[#0F1E33] lg:px-2">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
