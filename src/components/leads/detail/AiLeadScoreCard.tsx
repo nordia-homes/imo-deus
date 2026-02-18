@@ -25,47 +25,6 @@ function getPotentialValue(budget?: number): string {
     return 'low';
 }
 
-// Helper component for circular progress
-const CircularProgress = ({ score }: { score: number }) => {
-    const size = 60;
-    const strokeWidth = 5;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (score / 100) * circumference;
-
-    return (
-        <div className="relative" style={{ width: size, height: size }}>
-            <svg width={size} height={size} className="-rotate-90">
-                <circle
-                    className="text-white/20"
-                    stroke="currentColor"
-                    strokeWidth={strokeWidth}
-                    fill="transparent"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                />
-                <circle
-                    className="text-primary"
-                    stroke="currentColor"
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                    style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
-                />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-primary">
-                {score}
-            </span>
-        </div>
-    );
-};
-
 export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -138,15 +97,21 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
         <CardHeader className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-4">
-                <div className="pr-4">
-                    <h4 className="font-semibold text-primary">Calitate Cumpărător</h4>
+                <div>
+                    <CardTitle className="text-base text-white">Calitate Cumpărător</CardTitle>
+                    <CardDescription className="text-xs text-white/70 !mt-1">Scor generat de AI pe baza datelor din CRM.</CardDescription>
                 </div>
-                <CircularProgress score={contact.leadScore} />
+                <div className="text-right">
+                    <p className="text-4xl font-bold text-primary">{contact.leadScore}</p>
+                    <p className="text-xs text-white/70 -mt-1">/ 100</p>
+                </div>
             </div>
-            <CardDescription className="text-white/70 text-xs pt-1">
-                {contact.leadScoreReason || 'Justificarea scorului va apărea aici după generare.'}
-            </CardDescription>
-            <div className="pt-1">
+            {contact.leadScoreReason && (
+                <CardDescription className="text-white/80 text-sm pt-2 border-t border-white/10 !mt-3">
+                    {contact.leadScoreReason}
+                </CardDescription>
+            )}
+             <div className="pt-1">
                 <Button 
                     variant="ghost" 
                     size="sm" 
