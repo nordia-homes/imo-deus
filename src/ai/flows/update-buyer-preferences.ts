@@ -63,26 +63,31 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
 
         const existingContactData = contactSnap.data();
         
+        // This object will be sent to Firestore. It MUST include the validationLinkId
+        // so the security rules can verify the request.
         const dataToUpdate: { [key: string]: any } = {
             validationLinkId: linkId
         };
 
+        // Add form data to the update object, ensuring we don't save "undefined"
         if (formData.budget !== undefined) {
           dataToUpdate.budget = formData.budget;
+        }
+        if (formData.city !== undefined) dataToUpdate.city = formData.city === 'all' ? null : formData.city;
+        if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone === 'all' ? null : formData.generalZone;
+        if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
+        
+        // Update preferences sub-object
+        if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
+        if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
+
+        // If a budget is provided, also update the price range in preferences
+        if (formData.budget !== undefined) {
           dataToUpdate['preferences.desiredPriceRangeMin'] = Math.round(formData.budget * 0.8);
           dataToUpdate['preferences.desiredPriceRangeMax'] = Math.round(formData.budget * 1.2);
         }
-        if (formData.city !== undefined && formData.city !== 'all') dataToUpdate.city = formData.city;
-        else if (formData.city === 'all') dataToUpdate.city = null;
         
-        if (formData.generalZone !== undefined && formData.generalZone !== 'all') dataToUpdate.generalZone = formData.generalZone;
-        else if (formData.generalZone === 'all') dataToUpdate.generalZone = null;
-        
-        if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
-        
-        if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
-        if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
-        
+        // Handle notes by adding them to the interaction history
         if (mentiuni) {
             const newInteraction = {
                 id: crypto.randomUUID(),
@@ -91,10 +96,12 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
+            // Manually construct the new history array instead of using arrayUnion
             const existingHistory = existingContactData.interactionHistory || [];
             dataToUpdate.interactionHistory = [...existingHistory, newInteraction];
         }
 
+        // Perform the update
         await updateDoc(contactRef, dataToUpdate);
 
         return { success: true, message: "Preferințele au fost actualizate cu succes. Mulțumim!" };

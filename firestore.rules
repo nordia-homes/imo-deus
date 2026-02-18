@@ -30,27 +30,26 @@ service cloud.firestore {
     }
 
     function isPublicPreferencesUpdate(agencyId, contactId) {
-      // The request must be unauthenticated.
+      // 1. The request must be unauthenticated (from the server flow).
       if (request.auth != null) {
         return false;
       }
       
-      // The data being sent in the update MUST contain the 'validationLinkId'.
+      // 2. The data being written MUST contain the validationLinkId.
       if (!('validationLinkId' in request.resource.data)) {
         return false;
       }
       
       let linkId = request.resource.data.validationLinkId;
       
-      // The link document must exist.
+      // 3. The link document must exist.
+      // This `get()` call is allowed by the public `allow get: if true` rule below.
       if (!exists(/databases/$(database)/documents/buyer-preferences-links/$(linkId))) {
         return false;
       }
       
-      // Get the data from the link document.
+      // 4. The data inside the link document must match the contact being updated.
       let linkData = get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data;
-
-      // The contactId and agencyId from the link must match the path of the document being updated.
       return linkData.contactId == contactId && linkData.agencyId == agencyId;
     }
 
@@ -63,6 +62,7 @@ service cloud.firestore {
     // --- Specific Rule for Contacts ---
     match /agencies/{agencyId}/contacts/{contactId} {
       allow get, list, create, delete: if isUserInAgency(agencyId);
+      // An update is allowed if you're a member of the agency OR it's a valid public form submission.
       allow update: if isUserInAgency(agencyId) || isPublicPreferencesUpdate(agencyId, contactId);
     }
 
@@ -96,21 +96,12 @@ service cloud.firestore {
 
     // --- Client Portals ---
     match /portals/{portalId} {
-      // Anyone with the link can read portal and recommendation data.
       allow get, list: if true;
-      
-      // Agency members can create/delete portals for contacts in their agency.
       allow create, delete: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
 
-      // --- Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
-        // Publicly readable for the client with the portal link.
         allow get, list: if true;
-        
-        // Agency members can add/delete recommendations.
         allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
-                                
-        // An agent can update anything. A client (public/anonymous) can only update feedback fields.
         allow update: if (isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
                         (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
       }
@@ -118,9 +109,9 @@ service cloud.firestore {
 
     // --- Buyer Preferences Link ---
     match /buyer-preferences-links/{linkId} {
-      // Allow the security rule helper function (`get()`) to read this document.
+      // Allow the security rule helper function (`get()`) to read this document without authentication.
       allow get: if true; 
-
+      
       // Only authenticated admins of the agency can create links.
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
 
