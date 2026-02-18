@@ -608,7 +608,7 @@ export default function LeadDetailPage() {
                                         <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
                                     </Button>
                                     <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                        <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
+                                        <a href={`https://wa.me/${sanitizeForWhatsapp(contact.phone)}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
                                     </Button>
                                 </div>
                              )}
@@ -647,7 +647,7 @@ export default function LeadDetailPage() {
                     <MatchedProperties
                         properties={matchedProperties}
                         onAddRecommendation={handleAddRecommendation}
-                        agencyId={agency?.id}
+                        agency={agency}
                         contact={contact}
                     />
 
@@ -723,7 +723,7 @@ export default function LeadDetailPage() {
             <div className="hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
                  <LeadHeader 
                     contact={contact} 
-                    onUpdateContact={handleUpdateContact}
+                    onUpdateContact={onUpdateContact}
                     onAddTask={handleAddTask}
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                     properties={properties || []}
@@ -732,7 +732,6 @@ export default function LeadDetailPage() {
                  <main className="grid lg:grid-cols-12 gap-6 items-start mt-6">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} onUpdateContact={handleUpdateContact} />
-                        <ClientPortalManager contact={contact} agency={agency} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
@@ -748,8 +747,9 @@ export default function LeadDetailPage() {
                         <MatchedProperties
                             properties={matchedProperties}
                             onAddRecommendation={handleAddRecommendation}
-                            agencyId={agency?.id}
+                            agency={agency}
                             contact={contact}
+                            showPortalManager={true}
                         />
                         <ScheduledViewingsCard viewings={scheduledViewings} />
                         <SimilarLeadsCard leads={similarCumparatori} />
@@ -795,3 +795,5 @@ export default function LeadDetailPage() {
     );
 }
 
+
+    

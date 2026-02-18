@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Property, Contact, MatchedProperty } from '@/lib/types';
+import type { Property, Contact, MatchedProperty, Agency } from '@/lib/types';
 import Image from 'next/image';
 import { ArrowRight, BedDouble, Ruler, Calendar, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -14,6 +15,14 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { useState } from 'react';
+import { useFirestore, useUser, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Check, Copy, Link as LinkIcon, Loader2, RefreshCw, Star, Trash2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 const sanitizeForWhatsapp = (phone?: string | null) => {
     if (!phone) return '';
@@ -49,7 +58,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
-      <div className="relative aspect-video lg:aspect-[111/50] w-full">
+      <div className="relative aspect-video lg:aspect-[16/6] w-full">
           <Image
               src={imageUrl}
               alt={property.title || 'Proprietate'}
@@ -89,7 +98,60 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 };
 
 
-export function MatchedProperties({ properties, onAddRecommendation, agencyId, contact }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) {
+export function MatchedProperties({ properties, onAddRecommendation, agency, contact, showPortalManager }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void, agency: Agency | null, contact: Contact | null, showPortalManager?: boolean }) {
+  const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const portalLink = contact?.portalId ? `${window.location.origin}/portal/${contact.portalId}` : '';
+
+  const handlePortalAction = (action: 'activate' | 'regenerate' | 'deactivate') => {
+    if (!user || !agency || !contact) return;
+    setIsLoadingPortal(true);
+
+    const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', contact.id);
+
+    if (action === 'activate' || action === 'regenerate') {
+      if (action === 'regenerate' && contact.portalId) {
+        const oldPortalRef = doc(firestore, 'portals', contact.portalId);
+        deleteDocumentNonBlocking(oldPortalRef);
+      }
+
+      const newPortalToken = crypto.randomUUID();
+      const newPortalRef = doc(firestore, 'portals', newPortalToken);
+      
+      const portalData = {
+        contactId: contact.id,
+        agencyId: agency.id,
+        contactName: contact.name,
+        agentName: user.displayName || user.email,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setDocumentNonBlocking(newPortalRef, portalData, {}); 
+      updateDocumentNonBlocking(contactRef, { portalId: newPortalToken });
+      
+      toast({ title: 'Portal activat!', description: 'Linkul unic pentru client a fost generat.' });
+
+    } else if (action === 'deactivate' && contact.portalId) {
+      const portalRef = doc(firestore, 'portals', contact.portalId);
+      deleteDocumentNonBlocking(portalRef);
+      updateDocumentNonBlocking(contactRef, { portalId: null });
+      toast({ title: 'Portal dezactivat!', variant: 'destructive' });
+    }
+    
+    setIsLoadingPortal(false);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(portalLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ title: 'Link copiat!' });
+  };
+  
   if (!properties || properties.length === 0) {
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2 lg:mx-0">
@@ -99,6 +161,51 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
             <CardContent className="text-center text-white/70 py-6">
             Nicio proprietate potrivită găsită.
             </CardContent>
+            {showPortalManager && agency && contact && (
+                <>
+                    <Separator className="bg-white/20 mx-4" />
+                    <div className="p-4">
+                        <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
+                            <Star className="text-yellow-500" />
+                            <span>Portalul Clientului</span>
+                        </CardTitle>
+                        <div className="space-y-3">
+                            <p className="text-xs text-white/70">
+                                Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
+                            </p>
+                            {contact.portalId ? (
+                            <>
+                                <div>
+                                <Label htmlFor="portal-link-empty" className="text-xs text-white/70">Link Unic Portal</Label>
+                                <div className="flex gap-2 mt-1">
+                                    <Input id="portal-link-empty" readOnly value={portalLink} className="bg-white/10 border-white/20 h-9" />
+                                    <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="bg-white/90 text-black hover:bg-white flex-1">
+                                    <LinkIcon className="mr-2 h-4 w-4" /> Deschide
+                                </Button>
+                                <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoadingPortal} className="bg-white/20 hover:bg-white/30">
+                                    {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                                <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoadingPortal}>
+                                    {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                                </div>
+                            </>
+                            ) : (
+                            <Button onClick={() => handlePortalAction('activate')} disabled={isLoadingPortal} className="w-full bg-primary hover:bg-primary/90 text-white">
+                                {isLoadingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
+                                Activează Portalul
+                            </Button>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
       </Card>
     );
   }
@@ -117,7 +224,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
         </CardHeader>
         <CardContent className="px-4 pb-4">
             {singleProperty ? (
-                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agencyId} contact={contact} />
+                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
             ) : (
                 <Carousel
                   opts={{
@@ -130,7 +237,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
                         <div className="p-1 h-full">
-                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agencyId={agencyId} contact={contact} />
+                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
                         </div>
                       </CarouselItem>
                     ))}
@@ -140,6 +247,53 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
                 </Carousel>
             )}
         </CardContent>
+         {showPortalManager && agency && contact && (
+            <>
+                <Separator className="bg-white/20 mx-4" />
+                <div className="p-4">
+                    <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
+                        <Star className="text-yellow-500" />
+                        <span>Portalul Clientului</span>
+                    </CardTitle>
+                    <div className="space-y-3">
+                        <p className="text-xs text-white/70">
+                        Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
+                        </p>
+                        {contact.portalId ? (
+                        <>
+                            <div>
+                            <Label htmlFor="portal-link" className="text-xs text-white/70">Link Unic Portal</Label>
+                            <div className="flex gap-2 mt-1">
+                                <Input id="portal-link" readOnly value={portalLink} className="bg-white/10 border-white/20 h-9" />
+                                <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                            <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="bg-white/90 text-black hover:bg-white flex-1">
+                                <LinkIcon className="mr-2 h-4 w-4" /> Deschide
+                            </Button>
+                            <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoadingPortal} className="bg-white/20 hover:bg-white/30">
+                                {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            </Button>
+                            <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoadingPortal}>
+                                {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </Button>
+                            </div>
+                        </>
+                        ) : (
+                        <Button onClick={() => handlePortalAction('activate')} disabled={isLoadingPortal} className="w-full bg-primary hover:bg-primary/90 text-white">
+                            {isLoadingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
+                            Activează Portalul
+                        </Button>
+                        )}
+                    </div>
+                </div>
+            </>
+        )}
     </Card>
   );
 }
+
+    
