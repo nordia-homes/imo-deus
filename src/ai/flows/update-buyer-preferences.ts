@@ -2,14 +2,16 @@
 'use server';
 /**
  * @fileOverview A flow to securely update a buyer's preferences via a public link.
+ * This flow now uses the Firebase Admin SDK to bypass security rules for this specific server-side operation.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+// IMPORTANT: We now use the Admin SDK which has different imports and syntax.
 import { adminDb } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-// Schemas
+// Schemas remain the same
 const UpdateBuyerPreferencesInputSchema = z.object({
   linkId: z.string().describe("The secure ID from the preferences form link."),
   budget: z.coerce.number().optional(),
@@ -44,6 +46,7 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
     const { linkId, mentiuni, ...formData } = input;
 
     try {
+        // Step 1: Validate the link using the Admin SDK
         const linkRef = adminDb.collection('buyer-preferences-links').doc(linkId);
         const linkSnap = await linkRef.get();
 
@@ -53,27 +56,26 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         
         const { agencyId, contactId } = linkSnap.data()!;
 
+        // Step 2: Get a reference to the contact document
         const contactRef = adminDb.collection('agencies').doc(agencyId).collection('contacts').doc(contactId);
         
         const dataToUpdate: { [key: string]: any } = {};
 
-        // Add form data to the update object, ensuring we don't save "undefined"
+        // Step 3: Build the update object from form data
         if (formData.budget !== undefined) dataToUpdate.budget = formData.budget;
         if (formData.city !== undefined) dataToUpdate.city = formData.city === 'all' ? null : formData.city;
         if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone === 'all' ? null : formData.generalZone;
         if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
         
-        // Update preferences sub-object using dot notation
         if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
         if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
 
-        // If a budget is provided, also update the price range in preferences
         if (formData.budget !== undefined) {
           dataToUpdate['preferences.desiredPriceRangeMin'] = Math.round(formData.budget * 0.8);
           dataToUpdate['preferences.desiredPriceRangeMax'] = Math.round(formData.budget * 1.2);
         }
         
-        // Handle notes by adding them to the interaction history
+        // Step 4: If there are notes, add them to the interaction history using FieldValue.arrayUnion
         if (mentiuni) {
             const newInteraction = {
                 id: crypto.randomUUID(),
@@ -82,10 +84,12 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
+            // arrayUnion is available on the Admin SDK's FieldValue
             dataToUpdate.interactionHistory = FieldValue.arrayUnion(newInteraction);
         }
 
-        // Perform the update if there's anything to update
+        // Step 5: Perform the update if there's anything to update.
+        // Because we are using the Admin SDK, this operation bypasses security rules.
         if (Object.keys(dataToUpdate).length > 0) {
             await contactRef.update(dataToUpdate);
         }
@@ -94,7 +98,8 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
 
     } catch (error: any) {
         console.error("Error updating buyer preferences via Admin SDK:", error);
-        return { success: false, message: error.message || "A apărut o eroare neașteptată." };
+        // The error is now more likely to be a configuration or server issue, not a permissions one.
+        return { success: false, message: error.message || "A apărut o eroare neașteptată pe server." };
     }
   }
 );

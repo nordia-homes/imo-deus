@@ -29,49 +29,16 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
-    function isPublicPreferencesUpdate(agencyId, contactId) {
-      // 1. The request must be unauthenticated (from the server flow).
-      if (request.auth != null) {
-        return false;
-      }
-      
-      // 2. The data being written MUST contain the validationLinkId.
-      // Use request.writeFields for updates to be precise.
-      if (!('validationLinkId' in request.writeFields)) {
-        return false;
-      }
-      
-      let linkId = request.writeFields.validationLinkId;
-      
-      // 3. The link document must exist.
-      // This `get()` call is allowed by the public `allow get: if true` rule below.
-      if (!exists(/databases/$(database)/documents/buyer-preferences-links/$(linkId))) {
-        return false;
-      }
-      
-      // 4. The data inside the link document must match the contact being updated.
-      let linkData = get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data;
-      return linkData.contactId == contactId && linkData.agencyId == agencyId;
-    }
-
     // --- User Profiles ---
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
-      allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
+      allow get: if isUserAdminForAgency(getUserData(userId).agencyId) || (isSignedIn() && request.auth.uid == userId);
     }
     
-    // --- Specific Rule for Contacts ---
-    match /agencies/{agencyId}/contacts/{contactId} {
-      allow get, list, create, delete: if isUserInAgency(agencyId);
-      // An update is allowed if you're a member of the agency OR it's a valid public form submission.
-      allow update: if isUserInAgency(agencyId) || isPublicPreferencesUpdate(agencyId, contactId);
-    }
-
-    // --- Generic Rule for other Agency Subcollections ---
-    match /agencies/{agencyId}/{collection}/{docId} 
-      where collection != 'contacts' {
-      allow get, write: if isUserInAgency(agencyId);
-      allow list: if isUserInAgency(agencyId);
+    // --- Agency Subcollections (Generic Rule) ---
+    // This now covers contacts as well, since the public update is handled by the Admin SDK.
+    match /agencies/{agencyId}/{collection}/{docId} {
+      allow read, write: if isUserInAgency(agencyId);
     }
 
     // --- Agency Top-Level Document ---
@@ -109,15 +76,17 @@ service cloud.firestore {
     }
 
     // --- Buyer Preferences Link ---
+    // This collection is now only written to by the Admin SDK.
+    // Agents create links via a flow that uses the Admin SDK.
+    // Public users use the link, triggering a flow that uses the Admin SDK.
+    // Therefore, we can simplify the rules significantly.
     match /buyer-preferences-links/{linkId} {
-      // Allow the security rule helper function (`get()`) to read this document without authentication.
-      allow get: if true; 
-      
-      // Only authenticated agents of the agency can create links.
-      allow create: if isUserInAgency(request.resource.data.agencyId);
+        // Only authenticated agency members can create links.
+        allow create: if isUserInAgency(request.resource.data.agencyId);
 
-      // No one else should be able to list, update, or delete these links directly.
-      allow list, update, delete: if false;
+        // No one should be able to read, update or delete these directly
+        // except through server-side logic (which uses Admin SDK and bypasses these rules).
+        allow read, update, delete: if false;
     }
   }
 }
