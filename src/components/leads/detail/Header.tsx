@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Badge } from '@/components/ui/badge';
@@ -20,11 +19,13 @@ type LeadHeaderProps = {
 export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddViewing, properties, onTriggerEditPreferences }: LeadHeaderProps) {
   
   return (
-    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:mx-0 px-4 md:px-6 lg:px-6 py-3 lg:py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
+    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-6 py-3 lg:py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 h-full">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{contact.name}</h1>
+              <div className="inline-flex h-auto items-center justify-start whitespace-nowrap rounded-md px-4 py-2 text-2xl font-bold ring-offset-background transition-colors border border-primary pointer-events-none bg-primary/10 text-white">
+                {contact.name}
+              </div>
               <Badge variant="outline" className="lg:bg-white/10 lg:border-none">{contact.status}</Badge>
             </div>
         </div>
