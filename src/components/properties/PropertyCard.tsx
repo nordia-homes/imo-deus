@@ -79,7 +79,7 @@ export function PropertyCard({
             <div className="flex justify-between items-start">
               <Link href={href} className="flex-1 min-w-0">
                 <h3 className={cn("font-semibold text-foreground truncate group-hover:text-primary transition-colors", isMobile && !agencyId && "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
-                <p className={cn("text-sm text-muted-foreground", isMobile && !agencyId && "text-white/70")}>{property.location}</p>
+                <p className={cn("text-sm text-muted-foreground truncate", isMobile && !agencyId && "text-white/70")} title={property.address}>{property.address}</p>
               </Link>
             </div>
             
