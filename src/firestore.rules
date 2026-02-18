@@ -95,7 +95,8 @@ service cloud.firestore {
 
     // --- Buyer Preferences Link ---
     match /buyer-preferences-links/{linkId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn(); // Agents can create links
     }
   }
