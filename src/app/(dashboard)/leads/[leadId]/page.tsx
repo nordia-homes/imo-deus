@@ -747,6 +747,7 @@ export default function LeadDetailPage() {
                             agencyId={agency?.id}
                             contact={contact}
                         />
+                        <ScheduledViewingsCard viewings={scheduledViewings} />
                         <OfferManagementCard
                             contact={contact}
                             properties={properties || []}
