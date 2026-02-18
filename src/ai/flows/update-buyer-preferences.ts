@@ -6,8 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { initializeServerFirebase } from '@/firebase/server';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { adminDb } from '@/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Schemas
 const UpdateBuyerPreferencesInputSchema = z.object({
@@ -41,43 +41,29 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
     outputSchema: UpdateBuyerPreferencesOutputSchema,
   },
   async (input) => {
-    const { firestore } = initializeServerFirebase();
     const { linkId, mentiuni, ...formData } = input;
 
     try {
-        const linkRef = doc(firestore, 'buyer-preferences-links', linkId);
-        const linkSnap = await getDoc(linkRef);
+        const linkRef = adminDb.collection('buyer-preferences-links').doc(linkId);
+        const linkSnap = await linkRef.get();
 
-        if (!linkSnap.exists()) {
+        if (!linkSnap.exists) {
             throw new Error("Link invalid sau expirat.");
         }
         
-        const { agencyId, contactId } = linkSnap.data();
+        const { agencyId, contactId } = linkSnap.data()!;
 
-        const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
-        const contactSnap = await getDoc(contactRef);
-
-        if (!contactSnap.exists()) {
-          throw new Error("Clientul asociat acestui link nu a fost găsit.");
-        }
-
-        const existingContactData = contactSnap.data();
+        const contactRef = adminDb.collection('agencies').doc(agencyId).collection('contacts').doc(contactId);
         
-        // This object will be sent to Firestore. It MUST include the validationLinkId
-        // so the security rules can verify the request.
-        const dataToUpdate: { [key: string]: any } = {
-            validationLinkId: linkId
-        };
+        const dataToUpdate: { [key: string]: any } = {};
 
         // Add form data to the update object, ensuring we don't save "undefined"
-        if (formData.budget !== undefined) {
-          dataToUpdate.budget = formData.budget;
-        }
+        if (formData.budget !== undefined) dataToUpdate.budget = formData.budget;
         if (formData.city !== undefined) dataToUpdate.city = formData.city === 'all' ? null : formData.city;
         if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone === 'all' ? null : formData.generalZone;
         if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
         
-        // Update preferences sub-object
+        // Update preferences sub-object using dot notation
         if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
         if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
 
@@ -96,18 +82,18 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
-            // Manually construct the new history array instead of using arrayUnion
-            const existingHistory = existingContactData.interactionHistory || [];
-            dataToUpdate.interactionHistory = [...existingHistory, newInteraction];
+            dataToUpdate.interactionHistory = FieldValue.arrayUnion(newInteraction);
         }
 
-        // Perform the update
-        await updateDoc(contactRef, dataToUpdate);
+        // Perform the update if there's anything to update
+        if (Object.keys(dataToUpdate).length > 0) {
+            await contactRef.update(dataToUpdate);
+        }
 
         return { success: true, message: "Preferințele au fost actualizate cu succes. Mulțumim!" };
 
     } catch (error: any) {
-        console.error("Error updating buyer preferences:", error);
+        console.error("Error updating buyer preferences via Admin SDK:", error);
         return { success: false, message: error.message || "A apărut o eroare neașteptată." };
     }
   }
