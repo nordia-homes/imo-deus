@@ -184,8 +184,11 @@ export default function SettingsPage() {
     return (
       <div className="space-y-8 bg-[#0F1E33] p-4 lg:p-6">
         <div><Skeleton className="h-8 w-48 mb-2 bg-white/20" /><Skeleton className="h-4 w-72 bg-white/20" /></div>
-        <Card className="bg-transparent border-none"><CardHeader><Skeleton className="h-6 w-32 bg-white/20" /></CardHeader><CardContent className="space-y-4 max-w-md"><div className="space-y-2"><Skeleton className="h-4 w-16 bg-white/20" /><Skeleton className="h-10 w-full bg-white/20" /></div><div className="space-y-2"><Skeleton className="h-4 w-16 bg-white/20" /><Skeleton className="h-10 w-full bg-white/20" /></div><Skeleton className="h-10 w-32 bg-white/20" /></CardContent></Card>
-        <Card className="bg-transparent border-none"><CardHeader><Skeleton className="h-6 w-48 mb-2 bg-white/20" /><Skeleton className="h-4 w-80 bg-white/20" /></CardHeader><CardContent className="space-y-4 max-w-md"><div className="space-y-2"><Skeleton className="h-4 w-24 bg-white/20" /><Skeleton className="h-10 w-full bg-white/20" /></div><div className="space-y-2"><Skeleton className="h-4 w-24 bg-white/20" /><Skeleton className="h-10 w-full bg-white/20" /></div><div className="space-y-2"><Skeleton className="h-4 w-24 bg-white/20" /><Skeleton className="h-10 w-24 bg-white/20" /></div><Skeleton className="h-10 w-40 bg-white/20" /></CardContent></Card>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <Skeleton className="xl:col-span-1 h-96 bg-white/10" />
+            <Skeleton className="xl:col-span-2 h-96 bg-white/10" />
+        </div>
+        <Skeleton className="h-96 w-full bg-white/10" />
       </div>
     );
   }
@@ -193,57 +196,69 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 bg-[#0F1E33] text-white p-4 lg:p-6">
       <div><h1 className="text-3xl font-headline font-bold text-white">Setări</h1><p className="text-white/70">Configurează setările contului și ale agenției.</p></div>
-      <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-        <Form {...profileForm}>
-          <form onSubmit={profileForm.handleSubmit(handleProfileSave)}>
-            <CardHeader><CardTitle className="text-white">Profilul Tău</CardTitle></CardHeader>
-            <CardContent className="space-y-4 max-w-md">
-              <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-              <div className="space-y-2"><Label className="text-white/80" htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled className="bg-white/10 border-white/20 text-white/70" /></div>
-              <FormField control={profileForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-              <FormField control={profileForm.control} name="agentBio" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Scurtă Biografie</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Descrie-te pe scurt ca agent imobiliar..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50"/></FormControl><FormDescription className="text-white/70">Biografia ta va fi afișată pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
-              <div className="space-y-2">
-                <Label className="text-white/80">Rol</Label>
-                <div>
-                  {userProfile?.role ? (
-                    <Badge variant={userProfile.role === 'admin' ? 'default' : 'secondary'} className={userProfile.role === 'admin' ? '' : 'bg-white/20 text-white border-none'}>{userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}</Badge>
-                  ) : (
-                    <Badge variant="outline">Indisponibil</Badge>
-                  )}
-                </div>
-              </div>
-              <Button type="submit" disabled={profileForm.formState.isSubmitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">{profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvează Profil</Button>
-            </CardContent>
-          </form>
-        </Form>
-      </Card>
 
-      <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-        <Form {...agencyForm}>
-          <form onSubmit={agencyForm.handleSubmit(handleAgencySave)}>
-            <CardHeader><CardTitle className="text-white">Setări Agenție</CardTitle><CardDescription className="text-white/70">Personalizează informațiile și aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
-            <CardContent className="space-y-4 max-w-md">
-                <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Agenție</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="agencyDescription" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Descriere Agenție (Despre Noi)</FormLabel><FormControl><Textarea rows={5} {...field} placeholder="Povestea, misiunea și valorile agenției tale..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50"/></FormControl><FormDescription className="text-white/70">Acest text va apărea pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="address" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Adresă Sediu</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Oraș" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                
-                <Separator className="my-6 bg-white/20"/>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+            <div className="xl:col-span-1 space-y-8">
+                <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+                    <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(handleProfileSave)}>
+                        <CardHeader><CardTitle className="text-white">Profilul Tău</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                        <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                        <div className="space-y-2"><Label className="text-white/80" htmlFor="email">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled className="bg-white/10 border-white/20 text-white/70" /></div>
+                        <FormField control={profileForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                        <FormField control={profileForm.control} name="agentBio" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Scurtă Biografie</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Descrie-te pe scurt ca agent imobiliar..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50"/></FormControl><FormDescription className="text-white/70">Biografia ta va fi afișată pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
+                        <div className="space-y-2">
+                            <Label className="text-white/80">Rol</Label>
+                            <div>
+                            {userProfile?.role ? (
+                                <Badge variant={userProfile.role === 'admin' ? 'default' : 'secondary'} className={userProfile.role === 'admin' ? '' : 'bg-white/20 text-white border-none'}>{userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}</Badge>
+                            ) : (
+                                <Badge variant="outline">Indisponibil</Badge>
+                            )}
+                            </div>
+                        </div>
+                        <Button type="submit" disabled={profileForm.formState.isSubmitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">{profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvează Profil</Button>
+                        </CardContent>
+                    </form>
+                    </Form>
+                </Card>
+            </div>
+            <div className="xl:col-span-2">
+                 <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+                    <Form {...agencyForm}>
+                    <form onSubmit={agencyForm.handleSubmit(handleAgencySave)}>
+                        <CardHeader><CardTitle className="text-white">Setări Agenție</CardTitle><CardDescription className="text-white/70">Personalizează informațiile și aspectul platformei pentru agenția ta.</CardDescription></CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Agenție</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                            <FormField control={agencyForm.control} name="agencyDescription" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Descriere Agenție (Despre Noi)</FormLabel><FormControl><Textarea rows={5} {...field} placeholder="Povestea, misiunea și valorile agenției tale..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50"/></FormControl><FormDescription className="text-white/70">Acest text va apărea pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                            </div>
+                            <FormField control={agencyForm.control} name="address" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Adresă Sediu</FormLabel><FormControl><Input {...field} placeholder="Str. Exemplu nr. 1, Oraș" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                            
+                            <Separator className="my-6 bg-white/20"/>
 
-                <h4 className="text-sm font-medium text-white">Branding & Social Media</h4>
-                <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="facebookUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Facebook URL</FormLabel><FormControl><Input {...field} placeholder="https://facebook.com/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="instagramUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Instagram URL</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-                <FormField control={agencyForm.control} name="linkedinUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">LinkedIn URL</FormLabel><FormControl><Input {...field} placeholder="https://linkedin.com/company/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
-              
-              <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'} className="bg-primary hover:bg-primary/90 text-primary-foreground">{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
-              {userProfile?.role !== 'admin' && <p className="text-xs text-white/70 mt-2">Doar administratorii agenției pot modifica aceste setări.</p>}
-            </CardContent>
-          </form>
-        </Form>
-      </Card>
+                            <h4 className="text-lg font-semibold text-white">Branding & Social Media</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">URL Logo</FormLabel><FormControl><Input {...field} placeholder="https://..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Culoare Primară</FormLabel><FormControl><Input type="color" {...field} className="w-24 p-1 h-10" /></FormControl><FormMessage /></FormItem> )}/>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={agencyForm.control} name="facebookUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Facebook URL</FormLabel><FormControl><Input {...field} placeholder="https://facebook.com/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="instagramUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Instagram URL</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="linkedinUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">LinkedIn URL</FormLabel><FormControl><Input {...field} placeholder="https://linkedin.com/company/agentie" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                            </div>
+                        <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'} className="bg-primary hover:bg-primary/90 text-primary-foreground">{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
+                        {userProfile?.role !== 'admin' && <p className="text-xs text-white/70 mt-2">Doar administratorii agenției pot modifica aceste setări.</p>}
+                        </CardContent>
+                    </form>
+                    </Form>
+                </Card>
+            </div>
+      </div>
+      
 
       {userProfile?.role === 'admin' && agency && <AgentManagementCard agency={agency} />}
     </div>
