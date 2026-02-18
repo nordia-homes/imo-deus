@@ -734,6 +734,12 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="lg:col-span-6 space-y-6">
+                        <MatchedProperties
+                            properties={matchedProperties}
+                            onAddRecommendation={handleAddRecommendation}
+                            agencyId={agency?.id}
+                            contact={contact}
+                        />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -752,12 +758,6 @@ export default function LeadDetailPage() {
                     </div>
 
                     <div className="lg:col-span-3 space-y-6">
-                        <MatchedProperties
-                            properties={matchedProperties}
-                            onAddRecommendation={handleAddRecommendation}
-                            agencyId={agency?.id}
-                            contact={contact}
-                        />
                         <ClientPortalManager contact={contact} agency={agency} />
                         <FinancialStatusCard 
                             contact={contact} 
