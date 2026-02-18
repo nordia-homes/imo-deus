@@ -115,16 +115,8 @@ export function Topbar() {
         <header className="flex h-16 items-center gap-4 border-b border-white/10 bg-[#0F1E33] px-4 md:px-6 text-white sticky top-0 z-30">
             
             <div className="flex items-center gap-4">
-                {/* Mobile sidebar trigger */}
-                <SidebarTrigger className="md:hidden" />
-                
-                {/* Desktop logo and name */}
-                <Link href="/dashboard" className="hidden md:flex items-center gap-2">
-                    <LogoIcon className="h-7 w-7 text-white" />
-                    <h1 className="font-bold text-xl">
-                        <span>Imoflux</span><span className="text-primary">.ai</span>
-                    </h1>
-                </Link>
+                {/* Sidebar trigger for all screen sizes */}
+                <SidebarTrigger />
             </div>
 
 
