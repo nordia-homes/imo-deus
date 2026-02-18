@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, MoreHorizontal, Edit, Trash2, Calendar } from "lucide-react";
+import { Heart, BedDouble, Bath, Ruler, MoreHorizontal, Edit, Trash2, Calendar, Link as LinkIcon, Check } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
@@ -16,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAgency } from "@/context/AgencyContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function PropertyCard({
   property,
@@ -29,6 +31,9 @@ export function PropertyCard({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const isMobile = useIsMobile();
+  const { agencyId: dashboardAgencyId } = useAgency();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
   
   const href = agencyId
     ? `/agencies/${agencyId}/properties/${property.id}`
@@ -44,6 +49,22 @@ export function PropertyCard({
   } else {
       statusBadge = <Badge variant="outline" className="bg-white">{property.transactionType}</Badge>
   }
+
+  const handleCopyLink = () => {
+    if (!dashboardAgencyId) {
+        toast({
+            variant: "destructive",
+            title: "Eroare",
+            description: "ID-ul agenției nu a fost găsit."
+        });
+        return;
+    }
+    const url = `${window.location.origin}/agencies/${dashboardAgencyId}/properties/${property.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast({ title: "Link copiat!" });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <>
@@ -110,6 +131,9 @@ export function PropertyCard({
               </p>
               {!agencyId ? (
                 <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile && "text-white/80 hover:bg-white/10")} onClick={handleCopyLink}>
+                        {copied ? <Check className="h-4 w-4 text-green-500" /> : <LinkIcon className="h-4 w-4" />}
+                    </Button>
                     <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile && "text-white/80 hover:bg-white/10")} onClick={() => setIsEditDialogOpen(true)}>
                         <Edit className="h-4 w-4" />
                     </Button>
