@@ -39,7 +39,7 @@ const CircularProgress = ({ score }: { score: number }) => {
         <div className="relative" style={{ width: size, height: size }}>
             <svg width={size} height={size} className="-rotate-90">
                 <circle
-                    className="text-muted"
+                    className="text-white/20"
                     stroke="currentColor"
                     strokeWidth={strokeWidth}
                     fill="transparent"
@@ -104,11 +104,11 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
   
   if (isGenerating) {
     return (
-        <Card className="rounded-2xl shadow-2xl">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
              <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-3">
                 <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                <h3 className="font-semibold">AI-ul analizează cumpărătorul...</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold text-white">AI-ul analizează cumpărătorul...</h3>
+                <p className="text-sm text-white/70">
                     Se calculează scorul și prioritatea.
                 </p>
             </CardContent>
@@ -118,16 +118,16 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
 
   if (typeof contact.leadScore !== 'number') {
     return (
-        <Card className="rounded-2xl bg-muted/50 border-dashed shadow-2xl">
+        <Card className="rounded-2xl bg-[#152A47] border-none shadow-2xl text-white">
             <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
                 <div className="p-3 bg-primary/10 rounded-full">
                     <Lightbulb className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold">Prioritizează cu AI</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/70">
                     Generează un scor de la 0 la 100 pentru a înțelege calitatea acestui cumpărător și a-ți prioritiza eforturile.
                 </p>
-                <Button onClick={handleGenerateScore}>
+                <Button onClick={handleGenerateScore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generează Scor
                 </Button>
@@ -137,14 +137,14 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
   }
 
   return (
-    <Card className="rounded-2xl shadow-2xl border-primary/20">
+    <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
       <CardHeader>
         <div className="flex items-center justify-between">
             <div className="flex flex-col items-start gap-2">
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none">
+                            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary pointer-events-none bg-primary/10">
                                 Calitate Cumpărător
                             </Button>
                         </TooltipTrigger>
@@ -158,7 +158,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
                     size="sm" 
                     onClick={handleGenerateScore} 
                     disabled={isGenerating}
-                    className="text-xs h-auto p-0 text-muted-foreground"
+                    className="text-xs h-auto p-0 text-white/70 hover:text-white"
                 >
                   <RefreshCw className="mr-1 h-3 w-3" />
                   Regenerează
