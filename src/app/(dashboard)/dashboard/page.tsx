@@ -12,29 +12,21 @@ import { ro } from "date-fns/locale";
 // Components
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PriorityTasks } from '@/components/dashboard/PriorityTasks';
-import { AiHelperCard } from '@/components/dashboard/AiHelperCard';
 import { SalesChart } from '@/components/dashboard/sales-chart';
-import { LeadSourceChart } from '@/components/dashboard/lead-source-chart';
 import { ConversionChart } from '@/components/dashboard/ConversionChart';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { Handshake, Bookmark, CalendarCheck, Users, Building2, DollarSign, Target, PlusCircle, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPropertyList } from '@/components/dashboard/DashboardPropertyList';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { Button } from '@/components/ui/button';
-import { AgendaCard } from '@/components/dashboard/AgendaCard';
-import { useToast } from '@/hooks/use-toast';
-import { addDocumentNonBlocking } from '@/firebase';
-import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { addDocumentNonBlocking } from '@/firebase';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 
-
-const formatValue = (num: number) => {
-    return `€${num.toLocaleString('ro-RO')}`;
-};
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -127,26 +119,13 @@ export default function DashboardPage() {
         totalReservedCount, 
         viewingsNext7Days,
         activePropertiesCount,
-        activeForSaleCount,
-        activeForRentCount,
-        newLeadsCount,
-        leadSourceData,
         monthlyCommissionData,
-        newLeadsProgress,
-        salesProgress,
-        soldThisMonthProgress,
-        reservedThisMonthProgress,
-        totalEstimatedCommission,
         realizedCommissionThisMonth,
-        commissionProgress,
         todaysTasks,
         todaysViewings,
         conversionData,
         activeBuyersCount,
     } = useMemo(() => {
-        const totalPropertiesCount = properties?.length || 0;
-        const totalContactsCount = contacts?.length || 0;
-
         const calculateCommission = (prop: Property): number => {
             const price = prop.price || 0;
             if (price === 0) return 0;
@@ -175,27 +154,14 @@ export default function DashboardPage() {
 
         const activeProperties = properties?.filter(p => p.status === 'Activ') || [];
         const activePropertiesCount = activeProperties.length;
-        const activeForSaleCount = activeProperties.filter(p => p.transactionType === 'Vânzare').length;
-        const activeForRentCount = activeProperties.filter(p => p.transactionType === 'Închiriere').length;
         
-        const oneWeekAgo = addDays(new Date(), -7);
-        const newLeadsCount = contacts?.filter(c => c.createdAt && new Date(c.createdAt) > oneWeekAgo).length || 0;
-
-        // Progress calculations
-        const newLeadsProgress = totalContactsCount > 0 ? (newLeadsCount / totalContactsCount) * 100 : 0;
-        const salesProgress = totalContactsCount > 0 ? (totalSoldCount / totalContactsCount) * 100 : 0;
-        const soldThisMonthProgress = totalPropertiesCount > 0 ? (soldThisMonth.length / totalPropertiesCount) * 100 : 0;
-        const reservedThisMonthProgress = totalPropertiesCount > 0 ? (reservedThisMonth.length / totalPropertiesCount) * 100 : 0;
-
         // Commission Calculations
-        const totalEstimatedCommission = activeProperties.reduce((sum, prop) => sum + calculateCommission(prop), 0);
         const soldOrRentedThisMonth = properties?.filter(p =>
             (p.status === 'Vândut' || p.status === 'Închiriat') &&
             p.statusUpdatedAt &&
             isThisMonth(parseISO(p.statusUpdatedAt))
         ) || [];
         const realizedCommissionThisMonth = soldOrRentedThisMonth.reduce((sum, prop) => sum + calculateCommission(prop), 0);
-        const commissionProgress = totalEstimatedCommission > 0 ? (realizedCommissionThisMonth / totalEstimatedCommission) * 100 : 0;
 
         // Today's Agenda Calculations
         const todaysTasks = openTasks?.filter(task => {
@@ -207,19 +173,6 @@ export default function DashboardPage() {
             try { return isToday(parseISO(viewing.viewingDate)); } catch (e) { return false; }
         }) || [];
 
-        // Lead Source Data
-        const sourceCounts: { [key: string]: number } = {};
-        contacts?.forEach(contact => {
-            const source = contact.source || 'Necunoscută';
-            sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-        });
-        const chartColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE'];
-        const leadSourceDataResult: LeadSourceData[] = Object.keys(sourceCounts).map((source, index) => ({
-            source,
-            count: sourceCounts[source],
-            fill: chartColors[index % chartColors.length],
-        }));
-        
         // Monthly Commission Data calculation
         const monthlyCommissions: { [key: string]: { sales: number, date: Date } } = {};
         const soldOrRentedAllTime = properties?.filter(p => 
@@ -290,18 +243,8 @@ export default function DashboardPage() {
             totalReservedCount,
             viewingsNext7Days,
             activePropertiesCount,
-            activeForSaleCount,
-            activeForRentCount,
-            newLeadsCount,
-            leadSourceData: leadSourceDataResult,
             monthlyCommissionData: monthlyCommissionDataResult,
-            newLeadsProgress,
-            salesProgress,
-            soldThisMonthProgress,
-            reservedThisMonthProgress,
-            totalEstimatedCommission,
             realizedCommissionThisMonth,
-            commissionProgress,
             todaysTasks,
             todaysViewings,
             conversionData: conversionDataResult,
@@ -333,74 +276,21 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="lg:space-y-6">
-                <Skeleton className="h-10 w-64 mb-4" />
-                <div className="grid gap-4 grid-cols-1">
-                    {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-[98px]" />)}
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                    <Card className="col-span-1 md:col-span-2 lg:col-span-4">
-                        <CardHeader>
-                            <Skeleton className="h-6 w-1/2"/>
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-[300px] w-full"/>
-                        </CardContent>
-                    </Card>
-                    <Card className="col-span-1 md:col-span-2 lg:col-span-3">
-                         <CardHeader>
-                            <Skeleton className="h-6 w-1/2"/>
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-[300px] w-full"/>
-                        </CardContent>
-                    </Card>
-                </div>
-                 <div className="grid gap-6 lg:grid-cols-3">
-                    <Skeleton className="lg:col-span-2 h-96" />
-                    <div className="space-y-6">
-                        <Skeleton className="h-48" />
-                        <Skeleton className="h-48" />
-                    </div>
-                </div>
+            <div className="px-2 space-y-4">
+                <Skeleton className="h-48 w-full rounded-2xl" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
+                <Skeleton className="h-48 w-full rounded-2xl" />
+                <Skeleton className="h-48 w-full rounded-2xl" />
             </div>
         );
     }
 
     return (
-        <div className="px-2 space-y-4 lg:space-y-6 bg-[#0F1E33] lg:bg-transparent lg:m-0 lg:p-0">
-            <div className="flex-col lg:flex-row lg:items-start lg:justify-between gap-4 hidden lg:flex">
-                <div className="text-left overflow-hidden">
-                    <h1 className="text-2xl font-headline font-bold text-foreground/90 text-center lg:text-left">{agencyName || 'Dashboard'}</h1>
-                    <p className="text-muted-foreground text-center lg:text-left">
-                        <span className="hidden lg:inline">Bine ai revenit, {displayName}! </span>
-                        Iata o privire de ansamblu asupra activitatilor.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                    <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
-                        <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Task
-                        </Button>
-                    </AddTaskDialog>
-                    <Button variant="outline" size="sm" onClick={() => setIsAddViewingOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Vizionare
-                    </Button>
-                    <Button onClick={() => setIsAddLeadOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adaugă Cumpărător
-                    </Button>
-                    <Button onClick={() => setIsAddPropertyOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adaugă Proprietate
-                    </Button>
-                </div>
-                <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
-                <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
-                <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
-            </div>
+        <div className="px-2 space-y-4 bg-[#0F1E33]">
+            <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
+            <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
+            <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
 
             <QuickActionsCard
                 onAddLead={() => setIsAddLeadOpen(true)}
@@ -415,7 +305,7 @@ export default function DashboardPage() {
                 displayName={displayName}
             />
             
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                 <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
@@ -427,7 +317,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
@@ -465,7 +355,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                  <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
@@ -477,14 +367,14 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                 <DashboardPropertyList title="Proprietăți Rezervate" properties={reservedThisMonth} variant="mobile" />
             </div>
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                 <DashboardPropertyList title="Proprietăți Vândute" properties={soldThisMonth} variant="mobile" />
             </div>
 
-            <div className="lg:hidden mt-4">
+            <div className="mt-4">
                 <Card className="shadow-2xl rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl flex flex-row items-center justify-between">
                         <CardTitle className="text-base font-semibold text-white">Ultimii Cumpărători Adăugați</CardTitle>
@@ -508,39 +398,12 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-            
-            <div className="hidden lg:grid grid-cols-1 lg:grid-cols-1 gap-6 items-start mt-4">
-                <div className="space-y-6">
-                    <Card className="shadow-2xl rounded-2xl">
-                        <CardHeader>
-                            <CardTitle className="text-xl font-semibold">Evoluție Comision Lunar</CardTitle>
-                            <CardDescription>Comision realizat în ultimele luni</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pl-2">
-                            <SalesChart data={monthlyCommissionData} />
-                        </CardContent>
-                    </Card>
-                </div>
+
+            <div className="mt-4">
+                <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-4">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="lg:hidden mt-4">
-                        <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
-                    </div>
-                    <div className="lg:hidden mt-4">
-                        <RecentActivity />
-                    </div>
-                    <div className="hidden lg:block">
-                        <PriorityTasks tasks={priorityTasks} isLoading={areTasksLoading} />
-                    </div>
-                    <div className="hidden lg:block">
-                        <RecentActivity />
-                    </div>
-                </div>
-                <div className="lg:col-span-1 space-y-6 mt-4 lg:mt-0">
-                    <AiHelperCard />
-                </div>
+            <div className="mt-4">
+                <RecentActivity />
             </div>
         </div>
     );

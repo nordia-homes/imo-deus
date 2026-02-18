@@ -28,7 +28,7 @@ interface QuickActionsCardProps {
 
 export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts, realizedCommissionThisMonth, viewings, properties, agencyName, displayName }: QuickActionsCardProps) {
     return (
-        <Card className="bg-[#0F1E33] shadow-2xl lg:hidden rounded-t-none rounded-b-2xl border-none">
+        <Card className="bg-[#0F1E33] shadow-2xl rounded-t-none rounded-b-2xl border-none">
             <CardContent className="pt-4 px-4 pb-4 text-white space-y-4">
                  <div className="text-center">
                     <h1 className="text-lg font-bold text-center text-white">
