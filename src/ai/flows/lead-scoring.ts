@@ -37,7 +37,7 @@ const ScoreBuyerOutputSchema = z.object({
     ),
   reason: z
     .string()
-    .describe('Explanation of why the buyer received the score assigned.'),
+    .describe('Explanation in Romanian of why the buyer received the score assigned.'),
 });
 export type ScoreBuyerOutput = z.infer<typeof ScoreBuyerOutputSchema>;
 
@@ -49,18 +49,20 @@ const prompt = ai.definePrompt({
   name: 'leadScoringPrompt',
   input: {schema: ScoreBuyerInputSchema},
   output: {schema: ScoreBuyerOutputSchema},
-  prompt: `You are an AI assistant that scores real estate buyers.
+  prompt: `You are an AI assistant that scores real estate buyers for the Romanian market.
 
-  Given the following information about a buyer, provide a score between 0 and 100 and a short explanation for the score.
+  Given the following information about a buyer, provide a score between 0 and 100 and a short explanation for the score, in Romanian.
 
   Buyer Details: {{{buyerDetails}}}
   Engagement Level: {{{engagementLevel}}}
   Potential Value: {{{potentialValue}}}
 
+  The output must be in Romanian.
+
   Score: (0-100)
   Reason: Explanation of score.
 
-  Make sure to output the score as a number and the reason as a string.
+  Make sure to output the score as a number and the reason as a string. The reason must be in Romanian.
   `,
 });
 
