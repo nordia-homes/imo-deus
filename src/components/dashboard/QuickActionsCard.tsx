@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Task, Contact, Viewing, Property, ActiveBuyersEvolutionData } from '@/lib/types';
 import { AddTaskDialog } from '../tasks/AddTaskDialog';
-import { Clock, Plus } from 'lucide-react';
-import { parseISO, format } from 'date-fns';
+import { Clock, Plus, Calendar } from 'lucide-react';
+import { parseISO, format, isToday } from 'date-fns';
+import { ro } from "date-fns/locale";
 import Link from 'next/link';
 import { ActiveBuyersChart } from './ActiveBuyersChart';
 import { Separator } from '../ui/separator';
@@ -83,17 +84,25 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                        <p className="text-white/70 text-center py-4 text-sm">Nicio viziune programată.</p>
                     ) : (
                         <div className="space-y-2">
-                            {viewings.map(viewing => (
-                                <div key={viewing.id} className="p-3 rounded-lg border border-white/10 bg-white/5">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-sm truncate pr-2 flex-1 text-white hover:underline min-w-0">{viewing.propertyTitle}</Link>
-                                        <div className="font-bold text-sm flex items-center gap-1 shrink-0 text-white/90">
-                                            <Clock className="h-3 w-3" />
-                                            {format(parseISO(viewing.viewingDate), 'HH:mm')}
+                            {viewings.slice(0, 3).map(viewing => {
+                                const viewingDate = parseISO(viewing.viewingDate);
+                                const isViewingToday = isToday(viewingDate);
+                                return (
+                                    <div key={viewing.id} className="p-3 rounded-lg border border-white/10 bg-white/5">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-sm truncate pr-2 flex-1 text-white hover:underline min-w-0">{viewing.propertyTitle}</Link>
+                                            <div className="font-bold text-sm flex items-center gap-1 shrink-0 text-white/90">
+                                                {isViewingToday ? (
+                                                    <Clock className="h-3 w-3" />
+                                                ) : (
+                                                    <Calendar className="h-3 w-3" />
+                                                )}
+                                                {isViewingToday ? format(viewingDate, 'HH:mm') : format(viewingDate, 'd MMM', { locale: ro })}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
                     )}
                 </div>

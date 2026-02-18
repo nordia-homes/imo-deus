@@ -1,13 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData, ConversionData, ActiveBuyersEvolutionData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
+import { useToast } from '@/hooks/use-toast';
+import { addDocumentNonBlocking } from '@/firebase';
+import { useUser } from '@/firebase';
 
 // Components
 import { SalesChart } from '@/components/dashboard/sales-chart';
@@ -18,8 +21,6 @@ import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { Button } from '@/components/ui/button';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
-import { useToast } from '@/hooks/use-toast';
-import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { Separator } from '@/components/ui/separator';
 
@@ -116,7 +117,7 @@ export default function DashboardPage() {
         activePropertiesCount,
         monthlyCommissionData,
         realizedCommissionThisMonth,
-        todaysViewings,
+        upcomingViewings,
         conversionData,
         activeBuyersCount,
         activeBuyersEvolutionData,
@@ -149,10 +150,10 @@ export default function DashboardPage() {
         ) || [];
         const realizedCommissionThisMonth = soldOrRentedThisMonth.reduce((sum, prop) => sum + calculateCommission(prop), 0);
 
-        const todaysViewings = viewings?.filter(viewing => {
+        const upcomingViewings = viewings?.filter(viewing => {
             if (viewing.status !== 'scheduled') return false;
-            try { return isToday(parseISO(viewing.viewingDate)); } catch (e) { return false; }
-        }) || [];
+            try { return !isPast(parseISO(viewing.viewingDate)); } catch (e) { return false; }
+        }).sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime()) || [];
 
         const monthlyCommissions: { [key: string]: { sales: number, date: Date } } = {};
         const soldOrRentedAllTime = properties?.filter(p => 
@@ -249,7 +250,7 @@ export default function DashboardPage() {
             activePropertiesCount,
             monthlyCommissionData: monthlyCommissionDataResult,
             realizedCommissionThisMonth,
-            todaysViewings,
+            upcomingViewings,
             conversionData: conversionDataResult,
             activeBuyersCount,
             activeBuyersEvolutionData: activeBuyersEvolutionDataResult,
@@ -283,7 +284,7 @@ export default function DashboardPage() {
                     onAddTask={handleAddTask}
                     contacts={contacts || []}
                     realizedCommissionThisMonth={realizedCommissionThisMonth}
-                    viewings={todaysViewings}
+                    viewings={upcomingViewings}
                     properties={properties || []}
                     agencyName={agencyName}
                     displayName={displayName}
