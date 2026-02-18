@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -292,32 +293,20 @@ export default function DashboardPage() {
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
 
-            <QuickActionsCard
-                onAddLead={() => setIsAddLeadOpen(true)}
-                onAddProperty={() => setIsAddPropertyOpen(true)}
-                onAddViewing={() => setIsAddViewingOpen(true)}
-                onAddTask={handleAddTask}
-                contacts={contacts || []}
-                realizedCommissionThisMonth={realizedCommissionThisMonth}
-                viewings={viewingsNext7Days}
-                properties={properties || []}
-                agencyName={agencyName}
-                displayName={displayName}
-            />
-            
-            <div className="mt-4">
-                <Card className="shadow-2xl rounded-2xl border-none">
-                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
-                        <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
-                        <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2 bg-card rounded-b-2xl">
-                        <ConversionChart data={conversionData} />
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <QuickActionsCard
+                    onAddLead={() => setIsAddLeadOpen(true)}
+                    onAddProperty={() => setIsAddPropertyOpen(true)}
+                    onAddViewing={() => setIsAddViewingOpen(true)}
+                    onAddTask={handleAddTask}
+                    contacts={contacts || []}
+                    realizedCommissionThisMonth={realizedCommissionThisMonth}
+                    viewings={viewingsNext7Days}
+                    properties={properties || []}
+                    agencyName={agencyName}
+                    displayName={displayName}
+                />
+                
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanta Contului Tau</CardTitle>
@@ -351,6 +340,18 @@ export default function DashboardPage() {
                                <span>{soldThisMonth.length}</span>
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="mt-4">
+                <Card className="shadow-2xl rounded-2xl border-none">
+                    <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
+                        <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
+                        <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2 bg-card rounded-b-2xl">
+                        <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
             </div>
