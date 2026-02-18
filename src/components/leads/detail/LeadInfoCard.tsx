@@ -2,21 +2,26 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import type { Contact } from '@/lib/types';
+import type { Contact, Property } from '@/lib/types';
 import { Calendar, Clock, MapPin, Edit, DollarSign, User, FileText } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import { SourcePropertyCard } from './SourcePropertyCard';
+import { Separator } from '@/components/ui/separator';
 
 type LeadInfoCardProps = {
   contact: Contact;
   onEdit: () => void;
   onUpdateContact: (data: Partial<Omit<Contact, 'id'>>) => void;
+  sourceProperty: Property | null;
+  isSourcePropertyLoading: boolean;
+  allProperties: Property[];
 };
 
-export function LeadInfoCard({ contact, onEdit, onUpdateContact }: LeadInfoCardProps) {
+export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty, isSourcePropertyLoading, allProperties }: LeadInfoCardProps) {
     const creationDate = contact.createdAt ? new Date(contact.createdAt) : new Date(); // Fallback for demo
     const ageInDays = differenceInDays(new Date(), creationDate);
 
@@ -117,6 +122,15 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact }: LeadInfoCardP
                     </div>
                 )}
             </CardContent>
+             <div className="hidden lg:block px-4 pb-4">
+              <Separator className="my-4 bg-white/10" />
+              <SourcePropertyCard 
+                  property={sourceProperty} 
+                  isLoading={isSourcePropertyLoading}
+                  allProperties={allProperties}
+                  onUpdateContact={onUpdateContact}
+              />
+            </div>
         </Card>
     );
 }
