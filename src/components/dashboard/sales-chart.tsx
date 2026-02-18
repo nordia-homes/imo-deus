@@ -12,16 +12,6 @@ const chartConfig = {
   } satisfies ChartConfig
 
 export function SalesChart({ data }: { data: SalesData[] }) {
-    const hasData = data && data.length > 0 && data.some(d => d.sales > 0);
-
-    if (!hasData) {
-        return (
-            <div className="h-[180px] w-full flex items-center justify-center">
-                <CardDescription className="text-white/70">Nu sunt date despre comisioane.</CardDescription>
-            </div>
-        )
-    }
-
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
