@@ -19,6 +19,7 @@ import { Button } from '../ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Card, CardContent } from '../ui/card';
 
 // Helper to calculate task position
 const calculateTaskPosition = (
@@ -89,124 +90,128 @@ export function TasksCalendar() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
-        <Skeleton className="h-12 w-1/4 mb-4" />
-        <Skeleton className="flex-1 w-full" />
+        <Skeleton className="h-12 w-1/4 mb-4 bg-white/10" />
+        <Skeleton className="flex-1 w-full bg-white/10" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-card border rounded-2xl overflow-hidden shadow-2xl">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-4">
-          <Button onClick={() => setCurrentDate(new Date())} variant="outline">
-            Astăzi
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateWeek('prev')}
-            >
-              <ChevronLeft className="h-5 w-5" />
+     <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none h-full flex flex-col">
+      <CardContent className="p-4 flex flex-col flex-1">
+        {/* Header */}
+        <header className="flex items-center justify-between p-0 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-4">
+            <Button onClick={() => setCurrentDate(new Date())} variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+              Astăzi
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateWeek('next')}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateWeek('prev')}
+                className="hover:bg-white/10"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateWeek('next')}
+                className="hover:bg-white/10"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          <h2 className="text-xl font-semibold capitalize">
+            {format(currentDate, 'MMMM yyyy', { locale: ro })}
+          </h2>
+        </header>
+
+        {/* Main Grid */}
+        <div className="flex-1 grid grid-cols-[auto_1fr] overflow-auto mt-4">
+          {/* Time Column */}
+          <div className="flex flex-col text-xs text-white/70 border-r border-white/10">
+            {/* Empty space for day headers */}
+            <div className="h-20 border-b border-white/10"></div>
+            {hours.map((hour) => (
+              <div
+                key={hour}
+                className="flex-shrink-0 text-right pr-2"
+                style={{ height: `${hourHeight}px` }}
+              >
+                {hour}
+              </div>
+            ))}
+          </div>
+
+          {/* Days Columns */}
+          <div className="grid grid-cols-7 w-full">
+            {weekDays.map((day) => {
+              const dayKey = format(day, 'yyyy-MM-dd');
+              const dayTasks = tasksByDay[dayKey] || [];
+              const isCurrent = isToday(day);
+
+              return (
+                <div
+                  key={dayKey}
+                  className="relative flex flex-col border-r border-white/10 last:border-r-0"
+                >
+                  {/* Day Header */}
+                  <div className="sticky top-0 z-10 bg-[#152A47] h-20 p-2 flex flex-col items-center justify-center border-b border-white/10">
+                    <span className="text-sm uppercase font-medium text-white/70">
+                      {format(day, 'eee', { locale: ro })}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-2xl font-bold mt-1 w-10 h-10 flex items-center justify-center rounded-full',
+                        !isSameMonth(day, currentDate) && 'text-white/40',
+                        isCurrent && 'bg-primary text-primary-foreground'
+                      )}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                  </div>
+
+                  {/* Grid Lines */}
+                  <div className="absolute top-20 left-0 w-full -z-10">
+                      {hours.map((hour) => (
+                          <div key={hour} style={{ height: `${hourHeight}px`}} className="border-b border-white/10"></div>
+                      ))}
+                  </div>
+
+                  {/* Tasks Container */}
+                  <div className="relative flex-1">
+                    {dayTasks.map((task) => {
+                      const { top, height } = calculateTaskPosition(task, hourHeight);
+                      if (height === 0) return null; // Don't render tasks without duration/time
+
+                      return (
+                        <Link
+                          key={task.id}
+                          href={task.contactId ? `/leads/${task.contactId}` : '/tasks'}
+                          className="absolute w-[calc(100%-8px)] left-1 p-2 rounded-lg bg-primary/20 border-l-4 border-primary text-primary-foreground transition-all hover:bg-primary/30"
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                          <p className="text-xs font-bold text-white truncate">
+                            {task.description}
+                          </p>
+                          {task.contactName && (
+                            <p className="text-xs text-white/80 truncate">
+                              {task.contactName}
+                            </p>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-        <h2 className="text-xl font-semibold capitalize">
-          {format(currentDate, 'MMMM yyyy', { locale: ro })}
-        </h2>
-      </header>
-
-      {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-[auto_1fr] overflow-auto">
-        {/* Time Column */}
-        <div className="flex flex-col text-xs text-muted-foreground border-r">
-          {/* Empty space for day headers */}
-          <div className="h-20 border-b"></div>
-          {hours.map((hour) => (
-            <div
-              key={hour}
-              className="flex-shrink-0 text-right pr-2"
-              style={{ height: `${hourHeight}px` }}
-            >
-              {hour}
-            </div>
-          ))}
-        </div>
-
-        {/* Days Columns */}
-        <div className="grid grid-cols-7 w-full">
-          {weekDays.map((day) => {
-            const dayKey = format(day, 'yyyy-MM-dd');
-            const dayTasks = tasksByDay[dayKey] || [];
-            const isCurrent = isToday(day);
-
-            return (
-              <div
-                key={dayKey}
-                className="relative flex flex-col border-r last:border-r-0"
-              >
-                {/* Day Header */}
-                <div className="sticky top-0 z-10 bg-card h-20 p-2 flex flex-col items-center justify-center border-b">
-                  <span className="text-sm uppercase font-medium text-muted-foreground">
-                    {format(day, 'eee', { locale: ro })}
-                  </span>
-                  <span
-                    className={cn(
-                      'text-2xl font-bold mt-1 w-10 h-10 flex items-center justify-center rounded-full',
-                      !isSameMonth(day, currentDate) && 'text-muted-foreground/50',
-                      isCurrent && 'bg-primary text-primary-foreground'
-                    )}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                </div>
-
-                {/* Grid Lines */}
-                <div className="absolute top-20 left-0 w-full -z-10">
-                    {hours.map((hour) => (
-                        <div key={hour} style={{ height: `${hourHeight}px`}} className="border-b"></div>
-                    ))}
-                </div>
-
-                {/* Tasks Container */}
-                <div className="relative flex-1">
-                  {dayTasks.map((task) => {
-                    const { top, height } = calculateTaskPosition(task, hourHeight);
-                    if (height === 0) return null; // Don't render tasks without duration/time
-
-                    return (
-                      <Link
-                        key={task.id}
-                        href={task.contactId ? `/leads/${task.contactId}` : '/tasks'}
-                        className="absolute w-[calc(100%-8px)] left-1 p-2 rounded-lg bg-primary/10 border-l-4 border-primary text-primary-foreground transition-all hover:bg-primary/20"
-                        style={{ top: `${top}px`, height: `${height}px` }}
-                      >
-                        <p className="text-xs font-bold text-primary truncate">
-                          {task.description}
-                        </p>
-                        {task.contactName && (
-                          <p className="text-xs text-primary/80 truncate">
-                            {task.contactName}
-                          </p>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

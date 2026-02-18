@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import type { Task, Contact } from '@/lib/types';
+import type { Task, Contact } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -86,27 +86,31 @@ export function TasksList() {
       if (areTasksLoading) {
         return (
           <>
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full bg-white/10" />
+            <Skeleton className="h-16 w-full bg-white/10" />
+            <Skeleton className="h-16 w-full bg-white/10" />
           </>
         )
       }
       if (taskList.length === 0) {
-        return <p className="text-muted-foreground">{isCompletedList ? 'Niciun task completat.' : 'Niciun task. Ești la zi!'}</p>;
+        return <p className="text-white/70 text-center">{isCompletedList ? 'Niciun task completat.' : 'Niciun task. Ești la zi!'}</p>;
       }
       return taskList.map(task => (
-        <Card key={task.id} className={cn("shadow-xl rounded-xl", isCompletedList && "bg-muted")}>
+        <Card key={task.id} className={cn(
+            "shadow-lg rounded-xl bg-white/5 border border-white/10 text-white",
+            isCompletedList && "bg-white/5 opacity-60"
+        )}>
             <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className='flex items-center gap-4 flex-1'>
+                <div className='flex items-center gap-4 flex-1 min-w-0'>
                     <Checkbox 
                         id={`task-list-${task.id}`} 
                         checked={task.status === 'completed'}
                         onCheckedChange={() => handleToggleTask(task)}
+                        className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                     />
-                    <div className="flex-1">
-                        <label htmlFor={`task-list-${task.id}`} className={cn("font-medium cursor-pointer", isCompletedList && "text-muted-foreground line-through")}>{task.description}</label>
-                        <p className={cn("text-sm text-muted-foreground", isCompletedList && "line-through")}>
+                    <div className="flex-1 min-w-0">
+                        <label htmlFor={`task-list-${task.id}`} className={cn("font-medium cursor-pointer truncate", isCompletedList && "text-white/50 line-through")}>{task.description}</label>
+                        <p className={cn("text-sm truncate", isCompletedList ? "text-white/50 line-through" : "text-white/70")}>
                             Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             {task.startTime && ` la ${task.startTime}`}
                             {task.contactName && (
@@ -122,10 +126,10 @@ export function TasksList() {
                 </div>
                 {!isCompletedList && (
                     <div className="flex gap-2">
-                         <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)}>
+                         <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)} className="text-white/80 hover:bg-white/20 hover:text-white">
                             <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeletingTask(task)}><Trash2 className="h-4 w-4"/></Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20 focus:text-destructive" onClick={() => setDeletingTask(task)}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                 )}
             </CardContent>
@@ -138,13 +142,13 @@ export function TasksList() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section>
-            <h2 className="text-xl font-headline font-semibold mb-4">De făcut ({upcomingTasks.length})</h2>
+            <h2 className="text-xl font-headline font-semibold mb-4 text-white">De făcut ({upcomingTasks.length})</h2>
             <div className="space-y-4">
                 {renderTaskList(upcomingTasks)}
             </div>
         </section>
         <section>
-            <h2 className="text-xl font-headline font-semibold mb-4">Completate ({completedTasks.length})</h2>
+            <h2 className="text-xl font-headline font-semibold mb-4 text-white">Completate ({completedTasks.length})</h2>
             <div className="space-y-4">
                  {renderTaskList(completedTasks, true)}
             </div>

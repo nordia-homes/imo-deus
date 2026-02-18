@@ -25,15 +25,15 @@ function TaskColumn({ id, title, tasks }: { id: ColumnId, title: string, tasks: 
     const { setNodeRef } = useDroppable({ id });
 
     return (
-        <div className="bg-muted/50 rounded-lg p-2 flex flex-col h-full w-full">
-            <h3 className="font-semibold text-sm mb-3 px-1 text-center">{title} ({tasks.length})</h3>
+        <div className="bg-white/5 rounded-lg p-2 flex flex-col h-full w-full border border-white/10">
+            <h3 className="font-semibold text-sm mb-3 px-1 text-center text-white/80">{title} ({tasks.length})</h3>
             <SortableContext id={id} items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                 <div ref={setNodeRef} className="flex-1 overflow-y-auto space-y-2 min-h-24 p-1">
                     {tasks.length > 0 ? tasks.map(task => (
                         <TaskCard key={task.id} task={task} />
                     )) : (
                         <div className="h-full flex items-center justify-center">
-                            <p className="text-xs text-muted-foreground">Niciun task</p>
+                            <p className="text-xs text-white/60">Niciun task</p>
                         </div>
                     )}
                 </div>
@@ -163,7 +163,7 @@ export function TasksBoard() {
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-full">
-                {columns.map(col => <Skeleton key={col.id} className="h-full w-full" />)}
+                {columns.map(col => <Skeleton key={col.id} className="h-full w-full bg-white/10" />)}
             </div>
         );
     }

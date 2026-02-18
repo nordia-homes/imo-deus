@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -198,7 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Topbar />
         <main className={cn(
           "flex-1 bg-background p-0 lg:p-6 pb-20 lg:pb-6",
-           (pathname === '/map' || pathname === '/viewings') && "lg:p-0",
+          (pathname === '/map' || pathname === '/viewings' || pathname === '/tasks') && "lg:p-0",
           (pathname === '/dashboard' || pathname === '/leads' || pathname === '/properties') && "bg-[#0F1E33] lg:bg-background"
         )}>
             {children}
