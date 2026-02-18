@@ -20,24 +20,24 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-[#0F1E33] text-white p-4 lg:p-6">
       <div>
-        <h1 className="text-3xl font-headline font-bold">Facturare și Abonament</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-headline font-bold text-white">Facturare și Abonament</h1>
+        <p className="text-white/70">
           Gestionează abonamentul și vezi consumul.
         </p>
       </div>
 
-       <Card className="shadow-2xl rounded-2xl">
+       <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
            <CardHeader>
-               <CardTitle>Abonamentul Tău: Starter</CardTitle>
+               <CardTitle className="text-white">Abonamentul Tău: Starter</CardTitle>
            </CardHeader>
            <CardContent className="grid md:grid-cols-2 gap-6">
                 <UsageMeter title="Agenți" used={currentUsage.agents.used} total={currentUsage.agents.total} />
                 <UsageMeter title="Credite AI" used={currentUsage.aiCredits.used} total={currentUsage.aiCredits.total} />
            </CardContent>
            <CardFooter>
-                <Button onClick={redirectToBillingPortal}>
+                <Button onClick={redirectToBillingPortal} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Gestionează Facturarea
                 </Button>
@@ -45,7 +45,7 @@ export default function BillingPage() {
        </Card>
 
       <div>
-        <h2 className="text-2xl font-headline font-semibold mb-4">Schimbă abonamentul</h2>
+        <h2 className="text-2xl font-headline font-semibold mb-4 text-white">Schimbă abonamentul</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map(plan => (
                 <PlanCard 

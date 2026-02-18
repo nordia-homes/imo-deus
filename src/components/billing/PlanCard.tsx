@@ -17,25 +17,32 @@ export default function PlanCard({ name, price, features, recommended, onChooseP
     const isCustom = price.toLowerCase() === 'custom';
     
     return (
-        <Card className={cn("flex flex-col shadow-2xl rounded-2xl", recommended && "border-primary")}>
+        <Card className={cn(
+            "flex flex-col shadow-2xl rounded-2xl bg-[#152A47] border-none text-white", 
+            recommended && "border-2 border-primary"
+        )}>
             <CardHeader>
                 {recommended && <p className="text-sm font-semibold text-primary mb-2">Recomandat</p>}
-                <CardTitle>{name}</CardTitle>
-                <CardDescription>
-                    <span className="text-3xl font-bold">{price}</span>
-                    {!isCustom && <span className="text-muted-foreground">/lună</span>}
+                <CardTitle className="text-white">{name}</CardTitle>
+                <CardDescription className="text-white/90">
+                    <span className="text-3xl font-bold text-white">{price}</span>
+                    {!isCustom && <span className="text-white/70">/lună</span>}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 space-y-3">
+            <CardContent className="flex-1 space-y-3 text-white/90">
                 {features.map(feature => (
                     <div key={feature} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
+                        <Check className="h-4 w-4 text-green-400" />
                         <span>{feature}</span>
                     </div>
                 ))}
             </CardContent>
             <CardFooter>
-                <Button className="w-full" variant={recommended ? "default" : "outline"} onClick={onChoosePlan}>
+                <Button 
+                    className={cn("w-full", !recommended && "bg-white/10 border-white/20 hover:bg-white/20 text-white")}
+                    variant={recommended ? "default" : "outline"} 
+                    onClick={onChoosePlan}
+                >
                     {isCustom ? 'Contactează-ne' : 'Alege Planul'}
                 </Button>
             </CardFooter>

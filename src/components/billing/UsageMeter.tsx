@@ -12,10 +12,10 @@ export default function UsageMeter({ title, used, total }: UsageMeterProps) {
     return (
         <div>
             <div className="flex justify-between items-baseline mb-1">
-                <p className="font-semibold">{title}</p>
-                <p className="text-sm text-muted-foreground">{used} / {total}</p>
+                <p className="font-semibold text-white">{title}</p>
+                <p className="text-sm text-white/70">{used} / {total}</p>
             </div>
-            <Progress value={percentage} />
+            <Progress value={percentage} className="bg-white/20" />
         </div>
     )
 }
