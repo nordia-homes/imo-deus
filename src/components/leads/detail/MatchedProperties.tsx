@@ -163,7 +163,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
             </CardContent>
             {showPortalManager && agency && contact && (
                 <>
-                    <Separator className="bg-white/20" />
+                    <Separator className="bg-white/20 mx-4" />
                     <div className="p-4">
                         <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
                             <Star className="text-yellow-500" />
@@ -214,15 +214,27 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
 
   return (
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2 lg:mx-0">
-        <CardHeader className="p-4 flex flex-row items-center justify-between">
-            <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
+        <div className="lg:hidden p-4 flex flex-row items-center justify-between">
+            <h3 className="font-semibold text-white text-base">Proprietăți Potrivite</h3>
             <Button variant="link" size="sm" asChild className="text-white">
               <Link href="/matching">
                   Vezi toate
               </Link>
             </Button>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
+        </div>
+        
+        <CardContent className="px-4 pb-4 lg:p-0 relative">
+             <div className="hidden lg:flex absolute top-4 left-4 right-4 z-10 justify-between items-start">
+                <Button variant="secondary" className="bg-black/50 text-white hover:bg-black/70 pointer-events-none">
+                  Proprietăți Potrivite
+                </Button>
+                <Button variant="secondary" asChild className="bg-black/50 text-white hover:bg-black/70">
+                  <Link href="/matching">
+                      Vezi toate
+                  </Link>
+                </Button>
+            </div>
+
             {singleProperty ? (
                 <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
             ) : (
@@ -233,10 +245,10 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                   }}
                   className="w-full"
                 >
-                  <CarouselContent>
+                  <CarouselContent className="lg:m-0">
                     {properties.map((prop) => (
-                      <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full">
-                        <div className="p-1 h-full">
+                      <CarouselItem key={prop.id} className="md:basis-1/2 lg:basis-full lg:p-0">
+                        <div className="h-full">
                           <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
                         </div>
                       </CarouselItem>
@@ -249,7 +261,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
         </CardContent>
          {showPortalManager && agency && contact && (
             <>
-                <Separator className="bg-white/20" />
+                <Separator className="bg-white/20 mx-4" />
                 <div className="p-4">
                     <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
                         <Star className="text-yellow-500" />
