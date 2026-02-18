@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
@@ -288,7 +288,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-4 bg-[#0F1E33] lg:px-2">
+        <div className="space-y-4 bg-[#0F1E33] px-2">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                     displayName={displayName}
                 />
                 
-                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
+                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none px-2">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
                     </CardHeader>
@@ -331,11 +331,11 @@ export default function DashboardPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold pointer-events-none">
+                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold">
                                <span>Proprietăți Rezervate Luna Curentă</span>
                                <span>{reservedThisMonth.length}</span>
                             </Button>
-                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold pointer-events-none">
+                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold">
                                <span>Proprietăți Vândute Luna Curentă</span>
                                <span>{soldThisMonth.length}</span>
                             </Button>
