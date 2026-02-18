@@ -602,14 +602,16 @@ export default function LeadDetailPage() {
                         </div>
 
                         <div className="space-y-2">
-                             <div className="grid grid-cols-2 gap-2">
-                                <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                    <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
-                                </Button>
-                                <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
-                                    <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
-                                </Button>
-                            </div>
+                             {contact.phone && (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                        <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
+                                    </Button>
+                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                        <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
+                                    </Button>
+                                </div>
+                             )}
                             <Button variant='secondary' className="bg-[#0B1319] text-white hover:bg-[#0B1319]/90 w-full" onClick={() => setIsEditingPreferences(true)}>
                                 <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferinte
                             </Button>
