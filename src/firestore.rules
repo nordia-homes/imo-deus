@@ -46,15 +46,9 @@ service cloud.firestore {
         return false;
       }
       let linkData = get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data;
-      if (linkData.contactId != contactId || linkData.agencyId != agencyId) {
-        return false;
-      }
-      
-      // Ensure only the allowed fields are being modified by the public form
-      let changedKeys = request.resource.data.diff(resource.data).affectedKeys;
-      let allowedFields = ['budget', 'city', 'generalZone', 'zones', 'preferences', 'interactionHistory', 'validationLinkId'];
-      
-      return changedKeys.hasOnly(allowedFields);
+
+      // Check if the link data matches the document being written to
+      return linkData.contactId == contactId && linkData.agencyId == agencyId;
     }
 
     // --- User Profiles ---
@@ -121,9 +115,10 @@ service cloud.firestore {
 
     // --- Buyer Preferences Link ---
     match /buyer-preferences-links/{linkId} {
-      allow read: if true; // Public read is needed for the form page and for the validation in security rules.
-      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
-      allow write: if false; // Links are immutable once created.
+        allow get: if true; // Allow the security rule function to read the link
+        allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+        // Allow an admin to manage links if needed for debugging/cleanup
+        allow read, write, delete: if isUserAdminForAgency(get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data.agencyId);
     }
   }
 }
