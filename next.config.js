@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -77,8 +78,8 @@ const nextConfig = {
       '@opentelemetry/instrumentation',
       'require-in-the-middle'
     ],
-    allowedDevOrigins: ["https://*.cloudworkstations.dev"],
   },
+  allowedDevOrigins: ["https://*.cloudworkstations.dev"],
 };
 
 module.exports = nextConfig;
