@@ -14,18 +14,19 @@ let app: App;
 // Acest lucru previne erorile în mediul de dezvoltare Next.js (HMR).
 if (!getApps().length) {
 
-  // PAS 2: Verificăm dacă variabila de mediu cu credențialele există.
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (!serviceAccountJson || serviceAccountJson.trim() === '') {
     throw new Error(
-      'Credentialele Firebase Admin SDK nu sunt setate în .env. Vă rugăm să verificați variabila FIREBASE_SERVICE_ACCOUNT_JSON.'
+      'Variabila de mediu FIREBASE_SERVICE_ACCOUNT_JSON nu este setată în fișierul .env. Vă rugăm să urmați instrucțiunile din acel fișier pentru a copia conținutul fișierului JSON al contului de serviciu.'
     );
   }
 
   try {
-    // PAS 3: Parsăm JSON-ul din variabila de mediu.
-    const serviceAccount: ServiceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    // PAS 2: Parsăm JSON-ul din variabila de mediu.
+    const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
 
-    // PAS 4: Inițializăm aplicația folosind credențialele parsate.
+    // PAS 3: Inițializăm aplicația folosind credențialele parsate.
     app = initializeApp({
       credential: cert(serviceAccount),
     });
@@ -43,6 +44,6 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-// PAS 5: Exportăm instanța Firestore pentru Admin SDK.
+// PAS 4: Exportăm instanța Firestore pentru Admin SDK.
 // Aceasta va fi folosită în fluxurile de pe server.
 export const adminDb = getFirestore(app);
