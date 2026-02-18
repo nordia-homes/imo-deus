@@ -577,6 +577,15 @@ export default function LeadDetailPage() {
             />
         );
     }
+    
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
 
     return (
         <div className="h-full flex flex-col">
@@ -723,7 +732,7 @@ export default function LeadDetailPage() {
             <div className="hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
                  <LeadHeader 
                     contact={contact} 
-                    onUpdateContact={onUpdateContact}
+                    onUpdateContact={handleUpdateContact}
                     onAddTask={handleAddTask}
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                     properties={properties || []}
