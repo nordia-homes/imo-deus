@@ -1,50 +1,103 @@
 'use client';
-import { useState } from 'react';
-import { Bot, Menu, MapPin, ChevronRight, Smile, Send } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import { Bot, Menu, Send, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { preferencesChat } from '@/ai/flows/preferences-chat';
+import type { Message } from 'genkit';
+import Markdown from 'react-markdown';
+
+interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+}
+
+const AiBubble = ({ children }: { children: React.ReactNode }) => (
+  <div className="self-start max-w-[85%] bg-[#251A46] p-4 rounded-2xl rounded-bl-sm shadow-lg">
+    <div className="prose prose-sm prose-invert text-white">
+        <Markdown>{`${children}`}</Markdown>
+    </div>
+  </div>
+);
+
+const UserBubble = ({ children }: { children: React.ReactNode }) => (
+  <div className="self-end max-w-[85%] bg-gradient-to-r from-[#6382FF] to-[#9166FF] p-4 rounded-2xl rounded-br-sm shadow-[0_0_20px_rgba(122,102,255,0.5)]">
+    <p>{children}</p>
+  </div>
+);
 
 export default function PreferencesChatPage() {
-  const [selectedBudget, setSelectedBudget] = useState('150.000€');
-  const [selectedRooms, setSelectedRooms] = useState(2);
+  const params = useParams();
+  const linkId = params.linkId as string;
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const hasStarted = useRef(false);
 
-  const AiBubble = ({ children }: { children: React.ReactNode }) => (
-    <div className="self-start max-w-[85%] bg-[#251A46] p-4 rounded-2xl rounded-bl-sm shadow-lg">
-      <p>{children}</p>
-    </div>
-  );
+  // Initial greeting from the AI
+  useEffect(() => {
+    if (hasStarted.current || !linkId) return;
+    hasStarted.current = true;
+    
+    const startConversation = async () => {
+        setIsLoading(true);
+        try {
+            const result = await preferencesChat({
+                history: [],
+                prompt: "Salut! Mă poți ajuta, te rog?", // A friendly starting prompt
+                linkId,
+            });
+            setMessages([{ role: 'model', content: result.response }]);
+        } catch (error) {
+            console.error("Error starting conversation:", error);
+            setMessages([{ role: 'model', content: "Oops! Se pare că am o problemă tehnică. Te rog, revino puțin mai târziu." }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    startConversation();
+  }, [linkId]);
 
-  const OptionButton = ({
-    children,
-    onClick,
-    isSelected,
-  }: {
-    children: React.ReactNode;
-    onClick: () => void;
-    isSelected: boolean;
-  }) => (
-    <button
-      onClick={onClick}
-      className={cn(
-        'px-5 py-3 rounded-xl text-sm font-medium transition-all backdrop-blur-sm',
-        isSelected
-          ? 'bg-gradient-to-r from-[#6382FF] to-[#9166FF] text-white shadow-[0_0_20px_rgba(122,102,255,0.5)]'
-          : 'bg-[#251A46]/80 text-white/80 hover:bg-[#251A46]'
-      )}
-    >
-      {isSelected ? `${children} ✓` : children}
-    </button>
-  );
-  
-  const SelectOptionButton = ({ children }: { children: React.ReactNode }) => (
-     <button className="w-full flex items-center justify-between px-5 py-4 rounded-xl text-sm font-medium transition-all bg-[#251A46]/80 text-white/80 hover:bg-[#251A46]">
-        <div className="flex items-center gap-3">
-            {children}
-        </div>
-        <ChevronRight className="h-5 w-5" />
-    </button>
-  )
+  useEffect(() => {
+    chatContainerRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: ChatMessage = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    const historyForAi: Message[] = messages.map(msg => ({
+        role: msg.role,
+        content: [{ text: msg.content }]
+    }));
+
+    try {
+        const result = await preferencesChat({
+            history: historyForAi,
+            prompt: userMessage.content,
+            linkId: linkId,
+        });
+
+        const aiMessage: ChatMessage = { role: 'model', content: result.response };
+        setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error) {
+        console.error("Chat error:", error);
+        const errorMessage: ChatMessage = { role: 'model', content: "Îmi pare rău, am întâmpinat o eroare. Putem încerca din nou?" };
+        setMessages(prev => [...prev, errorMessage]);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto">
@@ -58,8 +111,8 @@ export default function PreferencesChatPage() {
              </div>
           </div>
           <div>
-            <h1 className="font-bold text-lg">Căutare Proprietăți</h1>
-            <p className="text-sm text-white/70">Îți stau la dispoziție!</p>
+            <h1 className="font-bold text-lg">Asistent Preferințe</h1>
+            <p className="text-sm text-white/70">Agentul tău virtual</p>
           </div>
         </div>
         <button aria-label="Meniu">
@@ -68,38 +121,20 @@ export default function PreferencesChatPage() {
       </header>
 
       {/* Chat Area */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-8">
-        <div className="flex flex-col items-start space-y-4">
-          <AiBubble>Te ajut să găsești proprietatea perfectă.</AiBubble>
-          
-          <AiBubble>Ce buget ai?</AiBubble>
-          
-          <div className="self-stretch flex flex-wrap gap-2">
-            <OptionButton isSelected={selectedBudget === '80.000€'} onClick={() => setSelectedBudget('80.000€')}>80.000€</OptionButton>
-            <OptionButton isSelected={selectedBudget === '100.000€'} onClick={() => setSelectedBudget('100.000€')}>100.000€</OptionButton>
-            <OptionButton isSelected={selectedBudget === '150.000€'} onClick={() => setSelectedBudget('150.000€')}>150.000€</OptionButton>
-             <OptionButton isSelected={selectedBudget === 'altul'} onClick={() => setSelectedBudget('altul')}>Alt buget...</OptionButton>
+      <main className="flex-1 overflow-y-auto p-4 space-y-8 flex flex-col">
+        {messages.map((msg, index) => (
+          <div key={index} className="flex flex-col">
+            {msg.role === 'model' ? <AiBubble>{msg.content}</AiBubble> : <UserBubble>{msg.content}</UserBubble>}
           </div>
-        </div>
-
-        <div className="flex flex-col items-start space-y-4">
-          <AiBubble>Câte camere îți dorești?</AiBubble>
-          <div className="self-stretch flex flex-wrap gap-2">
-            <OptionButton isSelected={selectedRooms === 1} onClick={() => setSelectedRooms(1)}>1</OptionButton>
-            <OptionButton isSelected={selectedRooms === 2} onClick={() => setSelectedRooms(2)}>2</OptionButton>
-            <OptionButton isSelected={selectedRooms === 3} onClick={() => setSelectedRooms(3)}>3</OptionButton>
-          </div>
-        </div>
-        
-         <div className="flex flex-col items-start space-y-4">
-          <AiBubble>În ce oraș cauți?</AiBubble>
-          <div className="self-stretch">
-             <SelectOptionButton>
-                <MapPin className="h-5 w-5 text-blue-400" />
-                <span>Selectează oraș</span>
-            </SelectOptionButton>
-          </div>
-        </div>
+        ))}
+        {isLoading && (
+            <div className="self-start flex items-center gap-2 bg-[#251A46] p-4 rounded-2xl rounded-bl-sm shadow-lg">
+                <span className="h-2 w-2 bg-blue-300 rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
+                <span className="h-2 w-2 bg-blue-300 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                <span className="h-2 w-2 bg-blue-300 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+            </div>
+        )}
+        <div ref={chatContainerRef} />
       </main>
 
       {/* Input Footer */}
@@ -107,11 +142,14 @@ export default function PreferencesChatPage() {
         <div className="relative flex items-center">
           <Input
             placeholder="Scrie mesajul tău..."
-            className="w-full h-14 pl-12 pr-16 rounded-full bg-[#251A46]/80 border-none placeholder:text-white/50 text-white focus:ring-2 focus:ring-blue-500/50"
+            className="w-full h-14 pl-6 pr-16 rounded-full bg-[#251A46]/80 border-none placeholder:text-white/50 text-white focus:ring-2 focus:ring-blue-500/50"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            disabled={isLoading}
           />
-          <Smile className="absolute left-4 h-6 w-6 text-white/50" />
-           <Button size="icon" className="absolute right-2 h-11 w-11 rounded-full bg-gradient-to-br from-[#6382FF] to-[#9166FF] shadow-[0_0_15px_rgba(122,102,255,0.4)]">
-             <Send className="h-5 w-5" />
+           <Button size="icon" className="absolute right-2 h-11 w-11 rounded-full bg-gradient-to-br from-[#6382FF] to-[#9166FF] shadow-[0_0_15px_rgba(122,102,255,0.4)]" onClick={handleSend} disabled={isLoading}>
+             {isLoading ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
            </Button>
         </div>
       </footer>

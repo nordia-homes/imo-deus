@@ -13,3 +13,4 @@ import '@/ai/flows/property-presentation-generator.ts';
 import '@/ai/flows/cma-generator.ts';
 import '@/ai/flows/social-media-post-generator.ts';
 import '@/ai/flows/update-buyer-preferences.ts';
+import '@/ai/flows/preferences-chat.ts';
