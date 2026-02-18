@@ -23,6 +23,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 const propertyMatchSchema = z.object({
   desiredPriceRangeMin: z.coerce.number(),
@@ -130,23 +131,23 @@ export default function MatchingPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-headline font-bold">Potrivire Proprietăți AI</h1>
-                <p className="text-muted-foreground">
+        <div className="space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
+            <div className="text-center lg:text-left">
+                <h1 className="text-3xl font-headline font-bold text-white">Potrivire Proprietăți AI</h1>
+                <p className="text-white/70">
                     Găsește cele mai bune proprietăți pentru clienții tăi folosind inteligența artificială.
                 </p>
             </div>
             
-            <Card className="shadow-2xl rounded-2xl">
+            <Card className="bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                 <CardHeader>
-                    <CardTitle>1. Selectează un client</CardTitle>
-                    <CardDescription>Alege un lead din lista ta pentru a-i vedea preferințele și a rula analiza.</CardDescription>
+                    <CardTitle className="text-white">1. Selectează un client</CardTitle>
+                    <CardDescription className="text-white/70">Alege un lead din lista ta pentru a-i vedea preferințele și a rula analiza.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <Skeleton className="h-10 w-full md:w-1/2" /> : (
+                    {isLoading ? <Skeleton className="h-10 w-full md:w-1/2 bg-white/10" /> : (
                         <Select onValueChange={setSelectedContactId} value={selectedContactId || ''}>
-                            <SelectTrigger className="w-full md:w-1/2">
+                            <SelectTrigger className="w-full md:w-1/2 bg-white/10 border-white/20 text-white">
                                 <SelectValue placeholder="Selectează un client..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -164,23 +165,23 @@ export default function MatchingPage() {
             {selectedContact && (
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onMatchSubmit)}>
-                        <Card className="animate-in fade-in-0 shadow-2xl rounded-2xl">
+                        <Card className="animate-in fade-in-0 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                             <CardHeader>
-                                <CardTitle>2. Preferințele lui {selectedContact.name}</CardTitle>
-                                <CardDescription>Ajustează criteriile de mai jos, apoi lansează analiza AI.</CardDescription>
+                                <CardTitle className="text-white">2. Preferințele lui {selectedContact.name}</CardTitle>
+                                <CardDescription className="text-white/70">Ajustează criteriile de mai jos, apoi lansează analiza AI.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                     <FormField control={form.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem><FormLabel>Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel>Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel>Camere</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredBathrooms" render={({ field }) => ( <FormItem><FormLabel>Băi</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel>Suprafață Min</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
-                                     <FormField control={form.control} name="desiredSquareFootageMax" render={({ field }) => ( <FormItem><FormLabel>Suprafață Max</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredPriceRangeMin" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Preț Min (€)</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredPriceRangeMax" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Preț Max (€)</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredRooms" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Camere</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredBathrooms" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Băi</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Suprafață Min</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                     <FormField control={form.control} name="desiredSquareFootageMax" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Suprafață Max</FormLabel><FormControl><Input type="number" {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel>Locație Preferată</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )}/>
-                                    <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2}/></FormControl></FormItem> )}/>
+                                    <FormField control={form.control} name="locationPreferences" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Locație Preferată</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
+                                    <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Caracteristici Dorite</FormLabel><FormControl><Textarea {...field} rows={2} className="bg-white/10 border-white/20 text-white" /></FormControl></FormItem> )}/>
                                 </div>
                             </CardContent>
                             <CardFooter>
@@ -197,38 +198,43 @@ export default function MatchingPage() {
             {isMatching && (
                 <div className="text-center p-8">
                     <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary mb-4" />
-                    <p className="font-semibold">Analiza AI este în curs...</p>
-                    <p className="text-sm text-muted-foreground">Căutăm cele mai bune proprietăți. Acest proces poate dura câteva momente.</p>
+                    <p className="font-semibold text-white">Analiza AI este în curs...</p>
+                    <p className="text-sm text-white/70">Căutăm cele mai bune proprietăți. Acest proces poate dura câteva momente.</p>
                 </div>
             )}
             
             {matchedProperties.length > 0 && !isMatching && (
                  <div className="space-y-6 animate-in fade-in-0">
-                     <h2 className="text-2xl font-headline font-bold">3. Rezultate Analiză AI</h2>
+                     <h2 className="text-2xl font-headline font-bold text-white">3. Rezultate Analiză AI</h2>
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {matchedProperties.map(prop => (
-                            <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4 shadow-2xl rounded-2xl">
+                            <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                                 <Link href={`/properties/${prop.id}`} className="block w-full md:w-1/3 aspect-video md:aspect-auto relative shrink-0">
                                     <Image 
                                         src={prop.images?.[0]?.url || `https://picsum.photos/seed/${prop.id}/400/300`}
                                         alt={prop.title || 'Proprietate'}
                                         fill
                                         className="rounded-md object-cover"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                                     />
                                 </Link>
                                 <div className="flex-1">
                                     <Link href={`/properties/${prop.id}`} className="hover:underline">
-                                        <CardTitle className="text-base">{prop.title}</CardTitle>
+                                        <CardTitle className="text-base text-white">{prop.title}</CardTitle>
                                     </Link>
                                     <p className="text-lg font-bold text-primary mt-1">€{prop.price.toLocaleString()}</p>
                                     
-                                     <Alert className="mt-4 bg-blue-50 border-blue-200 text-blue-900">
-                                         <Star className="h-4 w-4 !text-blue-900" />
-                                        <AlertTitle className="font-bold">Potrivire: {prop.matchScore}/100</AlertTitle>
-                                        <AlertDescription className="text-xs">
-                                           {prop.reasoning}
-                                        </AlertDescription>
-                                    </Alert>
+                                     <Card className="mt-4 bg-blue-900/30 border-blue-500/50 text-white">
+                                        <CardHeader className="flex flex-row items-center gap-2 p-2">
+                                            <Star className="h-4 w-4 text-blue-400" />
+                                            <CardTitle className="font-bold text-blue-300 text-sm">Potrivire: {prop.matchScore}/100</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-2 pt-0">
+                                            <CardDescription className="text-xs text-blue-200">
+                                            {prop.reasoning}
+                                            </CardDescription>
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             </Card>
                         ))}
@@ -237,10 +243,10 @@ export default function MatchingPage() {
             )}
 
              {!isMatching && matchedProperties.length === 0 && selectedContactId && (
-                 <Alert className="mt-6">
-                     <Info className="h-4 w-4" />
-                    <AlertTitle>Gata de analiză</AlertTitle>
-                    <AlertDescription>
+                 <Alert className="mt-6 bg-transparent border-white/20 text-white">
+                     <Info className="h-4 w-4 text-white" />
+                    <AlertTitle className="text-white">Gata de analiză</AlertTitle>
+                    <AlertDescription className="text-white/70">
                        Apasă pe butonul "Găsește Potriviri" pentru a începe analiza AI folosind criteriile de mai sus.
                     </AlertDescription>
                 </Alert>
