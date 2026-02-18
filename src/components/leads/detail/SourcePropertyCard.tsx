@@ -3,12 +3,13 @@
 import type { Property } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BedDouble, Bath, Ruler, Edit, Link2 } from 'lucide-react';
+import { BedDouble, Bath, Ruler, Edit, Link2, Calendar, Layers } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface SourcePropertyCardProps {
     property: Property | null;
@@ -60,7 +61,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     }
     
     return (
-        <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white">
+        <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
                 <CardTitle className="text-base font-semibold text-white">
                     Proprietate Inițială
@@ -76,27 +77,74 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                          <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)} className="bg-white/10 hover:bg-white/20 text-white">Asociază o proprietate</Button>
                     </div>
                 ) : (
-                    <Link href={`/properties/${property.id}`} className="block group">
-                        <div className="flex gap-4 items-center">
-                            <div className="relative h-20 w-20 shrink-0">
-                                <Image
-                                    src={property.images?.[0]?.url || 'https://placehold.co/200x200'}
-                                    alt={property.title || 'Proprietate'}
-                                    fill
-                                    sizes="80px"
-                                    className="object-cover rounded-md"
-                                />
+                    <>
+                        {/* Desktop View */}
+                        <div className="hidden lg:block group">
+                            <div className="relative w-full overflow-hidden rounded-xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
+                                <Link href={`/properties/${property.id}`} className="block">
+                                    <div className="relative aspect-video w-full">
+                                        <Image
+                                            src={property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa'}
+                                            alt={property.title || 'Proprietate'}
+                                            fill
+                                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                            sizes="(max-width: 1023px) 100vw, 25vw"
+                                        />
+                                        <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-2">
+                                            <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                <BedDouble className="mr-1.5 h-4 w-4" /> {property.rooms} camere
+                                            </Button>
+                                            <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                <Ruler className="mr-1.5 h-4 w-4" /> {property.squareFootage} mp
+                                            </Button>
+                                            {property.floor && (
+                                                <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                    <Layers className="mr-1.5 h-4 w-4" /> Et. {property.floor}
+                                                </Button>
+                                            )}
+                                            {property.constructionYear && (
+                                                <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                    <Calendar className="mr-1.5 h-4 w-4" /> {property.constructionYear}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="relative p-3 space-y-2 flex-1 flex flex-col">
+                                        <h4 className="font-bold text-base hover:underline break-words">{property.title}</h4>
+                                        <p className="text-sm text-slate-300 break-words">{property.address}</p>
+                                        <div className="pt-1 mt-auto flex justify-between items-end">
+                                            <p className="text-xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </Link>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold group-hover:underline text-sm" title={property.title}>
-                                  {property.title.length > 20 ? `${property.title.substring(0, 20)}...` : property.title}
-                                </p>
-                                <p className="text-xs text-white/70 break-words">{property.location}</p>
-                                <p className="font-bold text-base text-white mt-1">€{property.price.toLocaleString()}</p>
-                            </div>
-                            <Link2 className="h-5 w-5 text-white/70 group-hover:text-white" />
                         </div>
-                    </Link>
+
+                        {/* Mobile view */}
+                        <div className="block lg:hidden">
+                            <Link href={`/properties/${property.id}`} className="block group">
+                                <div className="flex gap-4 items-center">
+                                    <div className="relative h-20 w-20 shrink-0">
+                                        <Image
+                                            src={property.images?.[0]?.url || 'https://placehold.co/200x200'}
+                                            alt={property.title || 'Proprietate'}
+                                            fill
+                                            sizes="80px"
+                                            className="object-cover rounded-md"
+                                        />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold group-hover:underline text-sm" title={property.title}>
+                                        {property.title.length > 20 ? `${property.title.substring(0, 20)}...` : property.title}
+                                        </p>
+                                        <p className="text-xs text-white/70 break-words">{property.location}</p>
+                                        <p className="font-bold text-base text-white mt-1">€{property.price.toLocaleString()}</p>
+                                    </div>
+                                    <Link2 className="h-5 w-5 text-white/70 group-hover:text-white" />
+                                </div>
+                            </Link>
+                        </div>
+                    </>
                 )}
             </CardContent>
         </Card>
