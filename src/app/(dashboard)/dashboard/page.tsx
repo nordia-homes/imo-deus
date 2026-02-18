@@ -21,6 +21,7 @@ import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { Separator } from '@/components/ui/separator';
 
 
 export default function DashboardPage() {
@@ -322,21 +323,19 @@ export default function DashboardPage() {
                                <span>{soldThisMonth.length}</span>
                             </Button>
                         </div>
+                        <Separator className="bg-white/10" />
+                        <div className="pt-2">
+                          <CardTitle className="text-base font-semibold text-white text-center">Conversie Vizionări vs. Tranzacții</CardTitle>
+                          <CardDescription className="text-white/80 text-center">Ultimele 30 de zile</CardDescription>
+                          <div className="px-0 pt-2">
+                              <ConversionChart data={conversionData} />
+                          </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="shadow-2xl rounded-2xl border-none bg-[#152a47]">
-                    <CardHeader className="text-white p-4">
-                        <CardTitle className="text-base font-semibold">Conversie Vizionări vs. Tranzacții</CardTitle>
-                        <CardDescription className="text-white/80">Ultimele 30 de zile</CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-2">
-                        <ConversionChart data={conversionData} />
-                    </CardContent>
-                </Card>
-            
+            <div className="grid grid-cols-1 gap-6">
                  <Card className="shadow-2xl rounded-2xl border-none bg-[#152a47]">
                     <CardHeader className="text-white p-4">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
