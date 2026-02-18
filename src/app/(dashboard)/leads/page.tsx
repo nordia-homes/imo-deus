@@ -100,7 +100,10 @@ export default function LeadsPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
   return (
-    <div className={cn("space-y-6", isMobile && "p-0")}>
+    <div className={cn(
+        "space-y-6", 
+        isMobile ? "p-0" : "bg-[#0F1E33] text-white p-4 lg:p-6"
+    )}>
         {/* Mobile & Tablet View */}
         <div className="lg:hidden space-y-4">
             <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
@@ -148,13 +151,13 @@ export default function LeadsPage() {
         <div className="hidden lg:block space-y-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-headline font-bold">Cumpărători ({filteredContacts.length})</h1>
-                        <p className="text-muted-foreground">
+                        <h1 className="text-3xl font-headline font-bold text-white">Cumpărători ({filteredContacts.length})</h1>
+                        <p className="text-white/70">
                             Gestionează și prioritizează potențialii clienți.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                         <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
+                         <Button variant="outline" onClick={() => setIsFilterOpen(true)} className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                             <Filter className="mr-2 h-4 w-4" />
                             Filtrare Preferinte si Buget
                         </Button>
@@ -163,7 +166,7 @@ export default function LeadsPage() {
                             isOpen={isAddLeadOpen}
                             onOpenChange={setIsAddLeadOpen}
                         >
-                            <Button className="w-full md:w-auto">
+                            <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Adaugă Cumpărător
                             </Button>
@@ -174,15 +177,15 @@ export default function LeadsPage() {
                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
                     {isLoading ? (
                         <>
-                            <Skeleton className="h-[98px]" />
-                            <Skeleton className="h-[98px]" />
-                            <Skeleton className="h-[98px]" />
+                            <Skeleton className="h-[98px] bg-white/10" />
+                            <Skeleton className="h-[98px] bg-white/10" />
+                            <Skeleton className="h-[98px] bg-white/10" />
                         </>
                     ) : (
                         <>
-                            <StatCard title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
-                            <StatCard title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
-                            <StatCard title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
+                            <StatCard className="bg-[#152A47] border-none text-white" title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
+                            <StatCard className="bg-[#152A47] border-none text-white" title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
+                            <StatCard className="bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
                         </>
                     )}
                 </div>
