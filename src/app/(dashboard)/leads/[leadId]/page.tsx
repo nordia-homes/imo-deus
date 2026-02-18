@@ -717,7 +717,7 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] p-2 text-white">
+            <div className="hidden lg:block h-full bg-[#0F1E33] px-2 pb-2 pt-5 text-white">
                  <LeadHeader 
                     contact={contact} 
                     onUpdateContact={handleUpdateContact}
@@ -790,5 +790,7 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
+    
 
     
