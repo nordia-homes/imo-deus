@@ -277,7 +277,7 @@ export default function DashboardPage() {
     // --- RENDER ---
     if (isLoading) {
         return (
-            <div className="space-y-4 px-2">
+            <div className="space-y-4 p-2 lg:px-0">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -288,7 +288,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-4 bg-[#0F1E33] px-2">
+        <div className="space-y-4 bg-[#0F1E33] p-2 lg:px-0">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
@@ -344,7 +344,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-            <div className="mt-4">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold">Conversie Vizionari vs. Tranzactii</CardTitle>
@@ -354,9 +354,7 @@ export default function DashboardPage() {
                         <ConversionChart data={conversionData} />
                     </CardContent>
                 </Card>
-            </div>
             
-            <div className="mt-4">
                  <Card className="shadow-2xl shadow-[#f8f8f9]/20 rounded-2xl border-none">
                     <CardHeader className="bg-[#152a47] text-white p-3 rounded-t-2xl">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
