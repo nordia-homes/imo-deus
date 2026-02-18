@@ -7,8 +7,7 @@ export default function PreferencesLayout({
   children: ReactNode;
 }) {
   return (
-    // Set a background color that matches the app-like feel from the image
-    <div className="bg-[#F4F2FB]">
+    <div className="bg-gradient-to-b from-[#181134] to-[#0A0612] text-white">
       <main className="font-sans">
         {children}
       </main>
