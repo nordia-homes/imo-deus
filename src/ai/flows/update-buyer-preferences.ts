@@ -13,12 +13,12 @@ import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 const UpdateBuyerPreferencesInputSchema = z.object({
   linkId: z.string().describe("The secure ID from the preferences form link."),
   budget: z.coerce.number().optional(),
-  desiredRooms: z.coerce.number().optional(),
-  desiredSquareFootageMin: z.coerce.number().optional(),
   city: z.string().optional(),
   generalZone: z.string().optional(),
   zones: z.array(z.string()).optional(),
   mentiuni: z.string().optional().describe("Additional notes from the buyer."),
+  desiredRooms: z.coerce.number().optional(),
+  desiredSquareFootageMin: z.coerce.number().optional(),
 });
 export type UpdateBuyerPreferencesInput = z.infer<typeof UpdateBuyerPreferencesInputSchema>;
 
@@ -56,24 +56,26 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
 
         const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
         
-        // Prepare a single update object using dot notation for nested fields
         const dataToUpdate: { [key: string]: any } = {
-            validationLinkId: linkId // This is crucial for the security rule
+            validationLinkId: linkId // CRUCIAL: Include the token for the security rule
         };
 
-        if (formData.budget !== undefined) dataToUpdate.budget = formData.budget;
-        if (formData.city !== undefined && formData.city !== 'all') dataToUpdate.city = formData.city;
-        if (formData.generalZone !== undefined && formData.generalZone !== 'all') dataToUpdate.generalZone = formData.generalZone;
-        if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
-        
-        // Use dot notation for nested preference updates to avoid overwriting the whole object
-        if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
-        if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
         if (formData.budget !== undefined) {
+          dataToUpdate.budget = formData.budget;
           dataToUpdate['preferences.desiredPriceRangeMin'] = Math.round(formData.budget * 0.8);
           dataToUpdate['preferences.desiredPriceRangeMax'] = Math.round(formData.budget * 1.2);
         }
-
+        if (formData.city !== undefined && formData.city !== 'all') dataToUpdate.city = formData.city;
+        else if (formData.city === 'all') dataToUpdate.city = null;
+        
+        if (formData.generalZone !== undefined && formData.generalZone !== 'all') dataToUpdate.generalZone = formData.generalZone;
+        else if (formData.generalZone === 'all') dataToUpdate.generalZone = null;
+        
+        if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
+        
+        if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
+        if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
+        
         if (mentiuni) {
             const newInteraction = {
                 id: crypto.randomUUID(),
@@ -85,7 +87,6 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
             dataToUpdate.interactionHistory = arrayUnion(newInteraction);
         }
 
-        // A single update call with all changes
         await updateDoc(contactRef, dataToUpdate);
 
         return { success: true, message: "Preferințele au fost actualizate cu succes. Mulțumim!" };
