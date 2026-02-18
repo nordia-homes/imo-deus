@@ -163,7 +163,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
             </CardContent>
             {showPortalManager && agency && contact && (
                 <>
-                    <Separator className="bg-white/20 mx-4" />
+                    <Separator className="bg-white/20" />
                     <div className="p-4">
                         <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
                             <Star className="text-yellow-500" />
@@ -249,7 +249,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
         </CardContent>
          {showPortalManager && agency && contact && (
             <>
-                <Separator className="bg-white/20 mx-4" />
+                <Separator className="bg-white/20" />
                 <div className="p-4">
                     <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
                         <Star className="text-yellow-500" />
@@ -295,5 +295,3 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
     </Card>
   );
 }
-
-    
