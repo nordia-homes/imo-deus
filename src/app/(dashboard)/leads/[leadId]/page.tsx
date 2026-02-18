@@ -732,6 +732,7 @@ export default function LeadDetailPage() {
                  <main className="grid lg:grid-cols-12 gap-6 items-start mt-6">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} onUpdateContact={handleUpdateContact} />
+                        <ClientPortalManager contact={contact} agency={agency} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
@@ -756,7 +757,6 @@ export default function LeadDetailPage() {
 
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <ClientPortalManager contact={contact} agency={agency} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
