@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Contact, Agency } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,7 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
     const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', contact.id);
 
     try {
+      const batch = writeBatch(firestore);
       const newLinkId = crypto.randomUUID();
       const newLinkRef = doc(firestore, 'buyer-preferences-links', newLinkId);
       
@@ -46,14 +47,16 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
         generalZone: contact.generalZone,
       };
       
-      await setDoc(newLinkRef, linkData); 
-      await updateDoc(contactRef, { preferencesLinkId: newLinkId });
+      batch.set(newLinkRef, linkData);
+      batch.update(contactRef, { preferencesLinkId: newLinkId });
+
+      await batch.commit();
       
       toast({ title: 'Link generat!', description: 'Acum poți copia linkul și să-l trimiți clientului.' });
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Failed to generate preferences link", e);
-        toast({ variant: 'destructive', title: 'Eroare', description: 'Nu am putut genera linkul. Vă rugăm să reîncercați.' });
+        toast({ variant: 'destructive', title: 'Eroare', description: e.message || 'Nu am putut genera linkul. Vă rugăm să reîncercați.' });
     } finally {
         setIsLoading(false);
     }
