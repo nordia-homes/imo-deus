@@ -15,25 +15,25 @@ interface PortalStatusCardProps {
 }
 export default function PortalStatusCard({ name, connected, lastSync, listings, leads, errors }: PortalStatusCardProps) {
     return (
-        <Card className="shadow-2xl rounded-2xl">
+        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle>{name}</CardTitle>
+                    <CardTitle className="text-white">{name}</CardTitle>
                     {connected ? (
-                        <span className="flex items-center text-sm text-green-600"><CheckCircle2 className="h-4 w-4 mr-1" /> Conectat</span>
+                        <span className="flex items-center text-sm text-green-400"><CheckCircle2 className="h-4 w-4 mr-1" /> Conectat</span>
                     ) : (
-                        <span className="flex items-center text-sm text-red-600"><XCircle className="h-4 w-4 mr-1" /> Deconectat</span>
+                        <span className="flex items-center text-sm text-red-500"><XCircle className="h-4 w-4 mr-1" /> Deconectat</span>
                     )}
                 </div>
-                 <CardDescription>Ultima sincronizare: {lastSync}</CardDescription>
+                 <CardDescription className="text-white/70">Ultima sincronizare: {lastSync}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
                 <div className="text-sm flex justify-between">
-                    <span className="text-muted-foreground">Anunțuri sincronizate:</span>
+                    <span className="text-white/70">Anunțuri sincronizate:</span>
                     <span className="font-medium">{listings}</span>
                 </div>
                  <div className="text-sm flex justify-between">
-                    <span className="text-muted-foreground">Lead-uri primite:</span>
+                    <span className="text-white/70">Lead-uri primite:</span>
                     <span className="font-medium">{leads}</span>
                 </div>
                 {errors > 0 && (
@@ -44,7 +44,7 @@ export default function PortalStatusCard({ name, connected, lastSync, listings, 
                 )}
             </CardContent>
             <CardFooter>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white">
                     {connected ? 'Vezi Setări' : 'Conectează'}
                 </Button>
             </CardFooter>
