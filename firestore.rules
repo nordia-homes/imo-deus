@@ -31,11 +31,11 @@ service cloud.firestore {
     // --- User Profiles ---
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
-      allow get: if isUserAdminForAgency(getUserData(userId).agencyId) || (isSignedIn() && request.auth.uid == userId);
     }
     
     // --- Agency Subcollections (Generic Rule) ---
-    // This now covers contacts as well, since the public update is handled by the Admin SDK.
+    // Public updates are now handled by the Admin SDK, so we only need to
+    // allow authenticated agency members to perform actions.
     match /agencies/{agencyId}/{collection}/{docId} {
       allow read, write: if isUserInAgency(agencyId);
     }
@@ -75,16 +75,14 @@ service cloud.firestore {
     }
 
     // --- Buyer Preferences Link ---
-    // This collection is now only written to by the Admin SDK.
-    // Agents create links via a flow that uses the Admin SDK.
-    // Public users use the link, triggering a flow that uses the Admin SDK.
-    // Therefore, we can simplify the rules significantly.
+    // This collection is now only written to by server-side logic (Admin SDK), which bypasses rules.
+    // We only need a rule to allow agents to create the links.
+    // Public access for validation is no longer needed in the rules, as the Admin SDK handles it.
     match /buyer-preferences-links/{linkId} {
         // Only authenticated agency members can create links.
         allow create: if isUserInAgency(request.resource.data.agencyId);
 
-        // No one should be able to read, update or delete these directly
-        // except through server-side logic (which uses Admin SDK and bypasses these rules).
+        // No one should be able to read, update or delete these directly.
         allow read, update, delete: if false;
     }
   }
