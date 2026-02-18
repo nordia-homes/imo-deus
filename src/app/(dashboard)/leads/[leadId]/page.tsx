@@ -717,7 +717,7 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] px-2 pb-2 pt-5 text-white">
+            <div className="hidden lg:block h-full bg-[#0F1E33] pb-2 pt-5 text-white">
                  <LeadHeader 
                     contact={contact} 
                     onUpdateContact={handleUpdateContact}
@@ -726,7 +726,7 @@ export default function LeadDetailPage() {
                     properties={properties || []}
                     onTriggerEditPreferences={() => setIsEditingPreferences(true)}
                  />
-                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6">
+                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6 lg:px-6">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} />
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
@@ -790,7 +790,3 @@ export default function LeadDetailPage() {
         </div>
     );
 }
-
-    
-
-    
