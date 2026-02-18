@@ -717,7 +717,7 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] pb-2 pt-5 text-white">
+            <div className="hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
                  <LeadHeader 
                     contact={contact} 
                     onUpdateContact={handleUpdateContact}
@@ -726,11 +726,11 @@ export default function LeadDetailPage() {
                     properties={properties || []}
                     onTriggerEditPreferences={() => setIsEditingPreferences(true)}
                  />
-                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6 px-6">
+                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6">
                     <div className="lg:col-span-3 space-y-6">
                         <LeadInfoCard contact={contact} onEdit={() => setIsEditDialogOpen(true)} onUpdateContact={handleUpdateContact} />
                         <SourcePropertyCard property={sourceProperty} isLoading={isSourcePropertyLoading} allProperties={properties || []} onUpdateContact={handleUpdateContact} />
-                         <LeadTimeline 
+                        <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
                             onAddInteraction={handleAddInteraction}
@@ -749,13 +749,6 @@ export default function LeadDetailPage() {
                         />
                         <ScheduledViewingsCard viewings={scheduledViewings} />
                         <SimilarLeadsCard leads={similarCumparatori} />
-                        <OfferManagementCard
-                            contact={contact}
-                            properties={properties || []}
-                            onAddOffer={handleAddOffer}
-                            onUpdateOffer={handleUpdateOffer}
-                            onDeleteOffer={handleDeleteOffer}
-                        />
                     </div>
 
                     <div className="lg:col-span-3 space-y-6">
@@ -769,6 +762,13 @@ export default function LeadDetailPage() {
                             onUpdateRecommendation={handleUpdateRecommendation}
                         />
                          <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
+                         <OfferManagementCard
+                            contact={contact}
+                            properties={properties || []}
+                            onAddOffer={handleAddOffer}
+                            onUpdateOffer={handleUpdateOffer}
+                            onDeleteOffer={handleDeleteOffer}
+                        />
                     </div>
                 </main>
             </div>
@@ -790,3 +790,4 @@ export default function LeadDetailPage() {
         </div>
     );
 }
+
