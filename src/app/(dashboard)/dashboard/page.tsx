@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData, ConversionData } from '@/lib/types';
+import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData, ConversionData, ActiveBuyersEvolutionData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
@@ -118,6 +118,7 @@ export default function DashboardPage() {
         todaysViewings,
         conversionData,
         activeBuyersCount,
+        activeBuyersEvolutionData,
     } = useMemo(() => {
         const calculateCommission = (prop: Property): number => {
             const price = prop.price || 0;
@@ -213,6 +214,31 @@ export default function DashboardPage() {
           ...data,
         }));
 
+        const dailyNewContactsMap: Map<string, number> = new Map();
+        dateArray.forEach(date => {
+            const dayKey = format(date, 'd');
+            dailyNewContactsMap.set(dayKey, 0);
+        });
+
+        contacts?.forEach(contact => {
+            if (contact.createdAt) {
+                try {
+                    const creationDate = parseISO(contact.createdAt);
+                    if (isWithinInterval(creationDate, { start: thirtyDaysAgo, end: today })) {
+                        const dayKey = format(creationDate, 'd');
+                        dailyNewContactsMap.set(dayKey, (dailyNewContactsMap.get(dayKey) || 0) + 1);
+                    }
+                } catch (e) {
+                    console.error("Invalid createdAt date for contact:", contact.id, contact.createdAt);
+                }
+            }
+        });
+
+        const activeBuyersEvolutionDataResult: ActiveBuyersEvolutionData[] = Array.from(dailyNewContactsMap.entries()).map(([date, count]) => ({
+          date,
+          count,
+        }));
+
 
         return {
             soldThisMonth,
@@ -225,6 +251,7 @@ export default function DashboardPage() {
             todaysViewings,
             conversionData: conversionDataResult,
             activeBuyersCount,
+            activeBuyersEvolutionData: activeBuyersEvolutionDataResult,
         };
     }, [properties, viewings, contacts, openTasks]);
     
@@ -259,6 +286,7 @@ export default function DashboardPage() {
                     properties={properties || []}
                     agencyName={agencyName}
                     displayName={displayName}
+                    activeBuyersEvolutionData={activeBuyersEvolutionData}
                 />
                 
                 <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">

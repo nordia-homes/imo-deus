@@ -2,11 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { Task, Contact, Viewing, Property } from '@/lib/types';
+import type { Task, Contact, Viewing, Property, ActiveBuyersEvolutionData } from '@/lib/types';
 import { AddTaskDialog } from '../tasks/AddTaskDialog';
 import { Clock, Plus } from 'lucide-react';
 import { parseISO, format } from 'date-fns';
 import Link from 'next/link';
+import { ActiveBuyersChart } from './ActiveBuyersChart';
+import { Separator } from '../ui/separator';
 
 interface QuickActionsCardProps {
     onAddLead: () => void;
@@ -19,9 +21,10 @@ interface QuickActionsCardProps {
     properties: Property[];
     agencyName?: string | null;
     displayName: string;
+    activeBuyersEvolutionData: ActiveBuyersEvolutionData[];
 }
 
-export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts, realizedCommissionThisMonth, viewings, properties, agencyName, displayName }: QuickActionsCardProps) {
+export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAddTask, contacts, realizedCommissionThisMonth, viewings, properties, agencyName, displayName, activeBuyersEvolutionData }: QuickActionsCardProps) {
     return (
         <Card className="bg-[#152a47] text-white border-none rounded-2xl shadow-2xl shadow-black/20">
             <CardContent className="p-4 space-y-4">
@@ -66,6 +69,12 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                     </Button>
                 </div>
                 
+                <div className="pt-4">
+                    <Separator className="bg-white/10 mb-4" />
+                    <h3 className="text-base font-semibold text-center mb-2 text-white">Evoluție Cumpărători Activi</h3>
+                    <ActiveBuyersChart data={activeBuyersEvolutionData} />
+                </div>
+
                 <div className="pt-2">
                     <div className="text-white text-center p-3 rounded-lg font-semibold mb-2">
                         Vizionări Programate

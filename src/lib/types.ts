@@ -161,6 +161,11 @@ export type ConversionData = {
   tranzactii: number;
 };
 
+export type ActiveBuyersEvolutionData = {
+  date: string;
+  count: number;
+};
+
 export type Task = {
   id: string;
   description: string;
