@@ -94,7 +94,7 @@ export default function PortalSyncPage() {
 
   return (
     <div className="space-y-6 bg-[#0F1E33] text-white p-4 lg:p-6">
-       <div>
+       <div className="text-center">
             <h1 className="text-3xl font-headline font-bold text-white">Integrări Portale</h1>
             <p className="text-white/70">
                 Sincronizează anunțurile și lead-urile cu principalele portaluri imobiliare.
