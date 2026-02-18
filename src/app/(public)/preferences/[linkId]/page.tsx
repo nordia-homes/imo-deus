@@ -2,6 +2,7 @@
 'use client';
 import { useParams, notFound } from 'next/navigation';
 import { BuyerPreferencesForm } from '@/components/public/BuyerPreferencesForm';
+import { Menu } from 'lucide-react';
 
 function PreferencesPageContent() {
     const params = useParams();
@@ -13,16 +14,18 @@ function PreferencesPageContent() {
     }
 
     return (
-        <div className="container mx-auto max-w-2xl py-12 px-4">
-             <header className="mb-8 text-center">
-                <h1 className="text-4xl font-bold">Preferințele tale de căutare</h1>
-                <p className="text-muted-foreground mt-2">Te rugăm să completezi sau să actualizezi formularul de mai jos pentru a ne ajuta să găsim proprietatea perfectă pentru tine.</p>
+        <div className="max-w-md mx-auto px-4 py-8 min-h-screen">
+             <header className="flex justify-between items-center w-full mb-4">
+                <h1 className="text-3xl font-bold text-slate-800">Căutare Proprietăți</h1>
+                <button aria-label="Menu">
+                    <Menu className="h-6 w-6 text-slate-800" />
+                </button>
             </header>
+            <p className="text-slate-500 mb-8">Setează-ți preferințele pentru a găsi proprietatea dorită.</p>
             <BuyerPreferencesForm linkId={linkId} />
         </div>
     );
 }
-
 
 export default function BuyerPreferencesPage() {
   return <PreferencesPageContent />;

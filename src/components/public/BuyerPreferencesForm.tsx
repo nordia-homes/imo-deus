@@ -1,31 +1,30 @@
-'use client';
 
+'use client';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useMemo, useEffect } from 'react';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { updateContactPreferences } from '@/ai/flows/update-buyer-preferences';
-
+import { Loader2, Banknote, BedDouble, Ruler, MapPin, Map, MessageSquare, ChevronRight } from 'lucide-react';
 import { locations, type City } from '@/lib/locations';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
+import { cn } from '@/lib/utils';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { BuyerPreferencesLink, Contact } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
 
 const preferencesSchema = z.object({
   budget: z.coerce.number().optional(),
   desiredRooms: z.coerce.number().optional(),
   desiredSquareFootageMin: z.coerce.number().optional(),
   city: z.string().optional(),
-  generalZone: z.string().optional(),
-  zones: z.array(z.string()).optional(),
+  generalZone: z.enum(['Nord', 'Sud', 'Est', 'Vest', 'Central', 'Oricare', 'all']).nullable().optional(),
   mentiuni: z.string().optional(),
 });
 
@@ -33,228 +32,198 @@ export function BuyerPreferencesForm({ linkId }: { linkId: string }) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const firestore = useFirestore();
+  
+  const linkDocRef = useMemoFirebase(() => doc(firestore, 'buyer-preferences-links', linkId), [firestore, linkId]);
+  const { data: linkData, isLoading: isLinkLoading } = useDoc<BuyerPreferencesLink>(linkDocRef);
+
+  const contactDocRef = useMemoFirebase(() => {
+    if (!linkData) return null;
+    return doc(firestore, 'agencies', linkData.agencyId, 'contacts', linkData.contactId);
+  }, [linkData, firestore]);
+  const { data: contact, isLoading: isContactLoading } = useDoc<Contact>(contactDocRef);
 
   const form = useForm<z.infer<typeof preferencesSchema>>({
     resolver: zodResolver(preferencesSchema),
     defaultValues: {
-      budget: undefined,
-      desiredRooms: undefined,
-      desiredSquareFootageMin: undefined,
-      city: undefined,
-      generalZone: undefined,
-      zones: [],
-      mentiuni: '',
-    },
-  });
-  
-  const watchedCity = form.watch('city') as City;
-  
-  const availableZones = useMemo(() => {
-    if (watchedCity && locations[watchedCity]) {
-      return locations[watchedCity].sort();
+      generalZone: 'all',
+      city: 'all',
     }
-    return [];
-  }, [watchedCity]);
+  });
 
   useEffect(() => {
-    if (watchedCity) {
-      form.setValue('zones', []);
+    if (contact) {
+      form.reset({
+        budget: contact.budget,
+        desiredRooms: contact.preferences?.desiredRooms,
+        desiredSquareFootageMin: contact.preferences?.desiredSquareFootageMin,
+        city: contact.city || 'all',
+        generalZone: contact.generalZone || 'all',
+        mentiuni: '',
+      });
     }
-  }, [watchedCity, form]);
-
+  }, [contact, form]);
+  
 
   async function onSubmit(values: z.infer<typeof preferencesSchema>) {
     setIsSubmitting(true);
     try {
-      const result = await updateContactPreferences({ linkId, ...values });
+      const result = await updateContactPreferences({
+        ...values,
+        linkId,
+      });
+
       if (result.success) {
         setIsSuccess(true);
-        toast({
-          title: 'Mulțumim!',
-          description: 'Preferințele tale au fost actualizate cu succes.',
-        });
       } else {
-        throw new Error(result.message);
+        toast({
+          variant: 'destructive',
+          title: 'Eroare la trimitere',
+          description: result.message || 'A apărut o problemă. Vă rugăm să reîncercați.',
+        });
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Submission error:', error);
       toast({
         variant: 'destructive',
-        title: 'A apărut o eroare',
-        description: error.message || 'Nu am putut salva preferințele. Te rugăm să încerci din nou.',
+        title: 'Eroare neașteptată',
+        description: 'A apărut o eroare de server. Vă rugăm să reîncercați mai târziu.',
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  if (isLinkLoading || isContactLoading) {
+    return (
+        <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-4 space-y-4 shadow-md">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+            </div>
+             <div className="space-y-4">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+            <Skeleton className="h-14 w-full" />
+        </div>
+    );
+  }
+
   if (isSuccess) {
     return (
-      <Alert variant="default" className="border-green-500 bg-green-50">
-        <AlertTitle className="text-green-800">Succes!</AlertTitle>
-        <AlertDescription className="text-green-700">
-          Formularul a fost trimis. Agentul tău va reveni cu proprietăți care se potrivesc noilor tale preferințe. Poți închide această pagină.
-        </AlertDescription>
-      </Alert>
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Mulțumim!</h2>
+        <p className="text-slate-600">Preferințele tale au fost salvate cu succes. Agentul tău va reveni cu cele mai bune oferte.</p>
+      </div>
     );
   }
 
   return (
-    <Card className="shadow-2xl rounded-2xl">
-        <CardContent className="p-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="budget"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Buget (€)</FormLabel>
-                            <FormControl><Input type="number" {...field} placeholder="150000" /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="desiredRooms"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nr. Camere</FormLabel>
-                            <FormControl><Input type="number" {...field} placeholder="2" /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="desiredSquareFootageMin"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Suprafață Minimă (mp)</FormLabel>
-                            <FormControl><Input type="number" {...field} placeholder="50" /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Oraș de interes</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+        {/* --- Top Card --- */}
+        <div className="bg-white rounded-2xl p-4 space-y-4 shadow-md">
+            {/* Buget */}
+            <FormField control={form.control} name="budget" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><Banknote className="h-5 w-5" /><label>Buget (€)</label></div>
+                    <div className="relative">
+                        <FormControl>
+                            <Input type="number" {...field} className="h-14 w-full rounded-xl border-none bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white text-2xl font-bold pl-4 pr-12 placeholder:text-white/80" placeholder='150.000'/>
+                        </FormControl>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 font-semibold">€</span>
+                    </div>
+                </FormItem>
+            )}/>
+            {/* Camere */}
+            <FormField control={form.control} name="desiredRooms" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><BedDouble className="h-5 w-5" /><label>Număr Camere</label></div>
+                    <div className="relative">
+                        <FormControl>
+                             <Input type="number" {...field} className="h-14 w-full rounded-xl border-none bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white text-2xl font-bold pl-4 pr-12 placeholder:text-white/80" placeholder='2' />
+                        </FormControl>
+                        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 h-6 w-6" />
+                    </div>
+                </FormItem>
+            )}/>
+             {/* Suprafata */}
+            <FormField control={form.control} name="desiredSquareFootageMin" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><Ruler className="h-5 w-5" /><label>Suprafață Minimă (mp)</label></div>
+                    <div className="relative">
+                        <FormControl>
+                           <Input type="number" {...field} className="h-14 w-full rounded-xl border-none bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white text-2xl font-bold pl-4 pr-12 placeholder:text-white/80" placeholder='50'/>
+                        </FormControl>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 font-semibold flex items-center gap-1">mp <ChevronRight className="h-5 w-5" /></span>
+                    </div>
+                </FormItem>
+            )}/>
+        </div>
+
+        {/* --- Bottom Section --- */}
+        <div className="space-y-4 pt-2">
+            {/* Oras */}
+            <FormField control={form.control} name="city" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><MapPin className="h-5 w-5" /><label>Oraș de Interes</label></div>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger className="h-14 rounded-xl border-slate-200 bg-white justify-between text-slate-500">
                                 <SelectValue placeholder="Selectează orașul" />
                             </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {Object.keys(locations).map((city) => (
-                                <SelectItem key={city} value={city}>
-                                {city.replace('-', ' - ')}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="generalZone"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Zonă Generală</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selectează zona generală" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Oricare">Oricare</SelectItem>
-                                    <SelectItem value="Nord">Nord</SelectItem>
-                                    <SelectItem value="Sud">Sud</SelectItem>
-                                    <SelectItem value="Est">Est</SelectItem>
-                                    <SelectItem value="Vest">Vest</SelectItem>
-                                    <SelectItem value="Central">Central</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                </div>
-
-                {watchedCity && availableZones.length > 0 && (
-                    <div>
-                         <Label>Zone Specifice</Label>
-                         <p className="text-sm text-muted-foreground mb-2">Selectează zonele de interes din {watchedCity.replace('-', ' - ')}.</p>
-                        <div className="max-h-60 overflow-y-auto rounded-md border p-4">
-                            <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                {availableZones.map((zone) => (
-                                    <FormField
-                                        key={zone}
-                                        control={form.control}
-                                        name="zones"
-                                        render={({ field }) => {
-                                        return (
-                                            <FormItem
-                                                key={zone}
-                                                className="flex flex-row items-start space-x-3 space-y-0"
-                                            >
-                                                <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.includes(zone)}
-                                                        onCheckedChange={(checked) => {
-                                                            return checked
-                                                                ? field.onChange([...(field.value || []), zone])
-                                                                : field.onChange(field.value?.filter((value) => value !== zone));
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
-                                                    {zone}
-                                                </FormLabel>
-                                            </FormItem>
-                                        );
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                <FormField
-                    control={form.control}
-                    name="mentiuni"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Mențiuni Suplimentare</FormLabel>
-                        <FormControl>
-                            <Textarea
-                            placeholder="Orice alte detalii sau preferințe: etaj, an construcție, apropiere de parc, etc."
-                            className="resize-none"
-                            {...field}
-                            />
                         </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Trimite Preferințele
-                </Button>
-                </form>
-            </Form>
-        </CardContent>
-    </Card>
+                        <SelectContent>
+                             <SelectItem value="all">Toate</SelectItem>
+                            {Object.keys(locations).map((city) => (
+                                <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </FormItem>
+            )}/>
+            {/* Zona Generala */}
+            <FormField control={form.control} name="generalZone" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><Map className="h-5 w-5" /><label>Zonă Generală</label></div>
+                     <Select onValueChange={field.onChange} value={field.value || 'all'}>
+                        <FormControl>
+                            <SelectTrigger className="h-14 rounded-xl border-slate-200 bg-white justify-between text-slate-500">
+                                <SelectValue placeholder="Selectează zona generală" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                             <SelectItem value="all">Oricare</SelectItem>
+                             <SelectItem value="Nord">Nord</SelectItem>
+                             <SelectItem value="Sud">Sud</SelectItem>
+                             <SelectItem value="Est">Est</SelectItem>
+                             <SelectItem value="Vest">Vest</SelectItem>
+                             <SelectItem value="Central">Central</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </FormItem>
+            )}/>
+             {/* Detalii */}
+            <FormField control={form.control} name="mentiuni" render={({ field }) => (
+                <FormItem>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1.5"><MessageSquare className="h-5 w-5" /><label>Detalii Suplimentare</label></div>
+                    <FormControl>
+                        <Textarea {...field} placeholder="Alte preferințe sau detalii: etaj, an construcție, apropiere de parc, etc." className="rounded-xl border-slate-200 bg-white min-h-[100px]" />
+                    </FormControl>
+                </FormItem>
+            )}/>
+        </div>
+        
+        <div className="pt-4">
+            <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-xl text-lg font-semibold bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-lg">
+            {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : 'Caută Proprietăți'}
+            </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

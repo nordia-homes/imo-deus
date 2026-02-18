@@ -137,7 +137,7 @@ export type Contact = {
     recommendationHistory?: { [propertyId: string]: PortalRecommendation };
     photoUrl?: string;
     preferencesLinkId?: string;
-    generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare';
+    generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
 };
 
 export type SalesData = {
