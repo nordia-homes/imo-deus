@@ -38,13 +38,13 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
         contactId: contact.id,
         agencyId: agency.id,
         createdAt: new Date().toISOString(),
-        // Denormalized data for public form
-        contactName: contact.name,
-        budget: contact.budget,
-        preferences: contact.preferences,
-        city: contact.city,
-        zones: contact.zones,
-        generalZone: contact.generalZone,
+        // Denormalized data for public form, ensuring no undefined values
+        contactName: contact.name ?? null,
+        budget: contact.budget ?? null,
+        preferences: contact.preferences ?? null,
+        city: contact.city ?? null,
+        zones: contact.zones ?? [],
+        generalZone: contact.generalZone ?? null,
       };
       
       batch.set(newLinkRef, linkData);
