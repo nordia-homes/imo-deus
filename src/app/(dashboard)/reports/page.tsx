@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Contact, SalesData, BuyerSourceData } from '@/lib/types';
+import { collection, query } from 'firebase/firestore';
+import type { Contact, SalesData, BuyerSourceData, Property } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesChart } from '@/components/dashboard/sales-chart';
@@ -35,17 +34,17 @@ export default function ReportsPage() {
     }, [firestore, agencyId]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
     
-    // Fetch only won contacts for sales volume
-    const wonLeadsQuery = useMemoFirebase(() => {
+    // Fetch all properties to correctly calculate sales data
+    const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
-        return query(collection(firestore, 'agencies', agencyId, 'contacts'), where('status', '==', 'Câștigat'));
+        return collection(firestore, 'agencies', agencyId, 'properties');
     }, [firestore, agencyId]);
-    const { data: wonLeads, isLoading: areWonLeadsLoading } = useCollection<Contact>(wonLeadsQuery);
+    const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
-    const isLoading = areContactsLoading || areWonLeadsLoading;
+    const isLoading = areContactsLoading || arePropertiesLoading;
 
     const { salesData, buyerSourceData, totalWonBuyers, conversionRate, averageDealSize } = useMemo(() => {
-        if (!contacts || !wonLeads) {
+        if (!contacts || !properties) {
             return {
                 salesData: [],
                 buyerSourceData: [],
@@ -54,24 +53,26 @@ export default function ReportsPage() {
                 averageDealSize: 0,
             };
         }
+        
+        const soldProperties = properties.filter(p => p.status === 'Vândut' && p.statusUpdatedAt);
 
-        // Process sales data (monthly sales volume from won leads)
+        // Process sales data (monthly sales volume from sold properties)
         const monthlySales: { [key: string]: { sales: number, date: Date } } = {};
-        wonLeads.forEach(lead => {
-            if (lead.createdAt) {
-                const date = new Date(lead.createdAt);
-                const monthKey = `${date.getFullYear()}-${date.getMonth()}`; // '2024-0' for Jan
+        soldProperties.forEach(prop => {
+            if (prop.statusUpdatedAt) {
+                const date = new Date(prop.statusUpdatedAt);
+                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
                 if (!monthlySales[monthKey]) {
                     monthlySales[monthKey] = { sales: 0, date: new Date(date.getFullYear(), date.getMonth(), 1) };
                 }
-                monthlySales[monthKey].sales += (lead.budget || 0);
+                monthlySales[monthKey].sales += (prop.price || 0);
             }
         });
 
         const salesData: SalesData[] = Object.values(monthlySales)
             .sort((a,b) => a.date.getTime() - b.date.getTime())
             .map(data => ({
-                month: data.date.toLocaleString('ro-RO', { month: 'short' }), // "ian."
+                month: data.date.toLocaleString('ro-RO', { month: 'short' }),
                 sales: data.sales,
             }));
 
@@ -90,16 +91,18 @@ export default function ReportsPage() {
         }));
         
         // Calculate KPIs
+        const wonLeads = contacts.filter(c => c.status === 'Câștigat');
         const totalWonBuyers = wonLeads.length;
         const totalLeads = contacts.length;
         const conversionRate = totalLeads > 0 ? (totalWonBuyers / totalLeads) * 100 : 0;
-        const totalSalesVolume = wonLeads.reduce((sum, lead) => sum + (lead.budget || 0), 0);
-        const averageDealSize = totalWonBuyers > 0 ? totalSalesVolume / totalWonBuyers : 0;
+        
+        const totalSalesVolume = soldProperties.reduce((sum, prop) => sum + (prop.price || 0), 0);
+        const averageDealSize = soldProperties.length > 0 ? totalSalesVolume / soldProperties.length : 0;
 
 
         return { salesData, buyerSourceData, totalWonBuyers, conversionRate, averageDealSize };
 
-    }, [contacts, wonLeads]);
+    }, [contacts, properties]);
     
     const handleGenerateReport = async () => {
         setIsGenerating(true);
