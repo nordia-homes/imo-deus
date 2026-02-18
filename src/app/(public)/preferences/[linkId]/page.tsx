@@ -15,15 +15,7 @@ function PreferencesPageContent() {
     const linkDocRef = useMemoFirebase(() => doc(firestore, 'buyer-preferences-links', linkId), [firestore, linkId]);
     const { data: linkData, isLoading: isLinkLoading, error: linkError } = useDoc<BuyerPreferencesLink>(linkDocRef);
 
-    const contactDocRef = useMemoFirebase(() => {
-        if (!linkData) return null;
-        return doc(firestore, 'agencies', linkData.agencyId, 'contacts', linkData.contactId);
-    }, [firestore, linkData]);
-    const { data: contact, isLoading: isContactLoading, error: contactError } = useDoc<Contact>(contactDocRef);
-
-    const isLoading = isLinkLoading || isContactLoading;
-
-    if (isLoading) {
+    if (isLinkLoading) {
         return (
             <div className="container mx-auto max-w-2xl py-12 px-4 space-y-6">
                 <Skeleton className="h-10 w-2/3" />
@@ -35,18 +27,28 @@ function PreferencesPageContent() {
         );
     }
     
-    if (linkError || contactError || !linkData || !contact) {
+    if (linkError || !linkData) {
         notFound();
         return null;
     }
+
+    // The contact data is denormalized in the link document itself
+    const contactDataForForm: Partial<Contact> = {
+        name: linkData.contactName,
+        budget: linkData.budget,
+        preferences: linkData.preferences,
+        city: linkData.city,
+        zones: linkData.zones,
+        generalZone: linkData.generalZone,
+    };
 
     return (
         <div className="container mx-auto max-w-2xl py-12 px-4">
              <header className="mb-8">
                 <h1 className="text-4xl font-bold">Preferințele tale de căutare</h1>
-                <p className="text-muted-foreground mt-2">Salut, {contact.name}! Te rugăm să completezi sau să actualizezi formularul de mai jos pentru a ne ajuta să găsim proprietatea perfectă pentru tine.</p>
+                <p className="text-muted-foreground mt-2">Salut, {contactDataForForm.name}! Te rugăm să completezi sau să actualizezi formularul de mai jos pentru a ne ajuta să găsim proprietatea perfectă pentru tine.</p>
             </header>
-            <BuyerPreferencesForm contact={contact} linkId={linkId} />
+            <BuyerPreferencesForm contact={contactDataForForm} linkId={linkId} />
         </div>
     );
 }
