@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import type { Task, Contact, Viewing, Property } from '@/lib/types';
 import { AddTaskDialog } from '../tasks/AddTaskDialog';
 
 // new imports
-import { Clock, Phone } from 'lucide-react';
+import { Clock, Phone, Plus } from 'lucide-react';
 import { parseISO, format, isToday } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -42,25 +41,29 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                     <p className="text-sm text-white/70">Comision luna aceasta</p>
                     <p className="text-3xl font-bold">€{realizedCommissionThisMonth.toLocaleString('ro-RO')}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2">
                     <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddLead}>
+                        <Plus className="mr-2 h-4 w-4 text-green-500" />
                         Cumpărător
                     </Button>
                     <Button className="h-auto py-3 bg-[#f8f8f9] hover:bg-muted text-foreground text-sm rounded-full" onClick={onAddProperty}>
+                        <Plus className="mr-2 h-4 w-4 text-green-500" />
                         Proprietate
                     </Button>
                     <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
                         <Button className="h-auto py-3 bg-[#152a47] hover:bg-[#152a47]/90 text-white w-full text-sm rounded-full">
+                           <Plus className="mr-2 h-4 w-4 text-green-500" />
                            Task
                         </Button>
                     </AddTaskDialog>
                     <Button className="h-auto py-3 bg-[#152a47] hover:bg-[#152a47]/90 text-white text-sm rounded-full" onClick={onAddViewing}>
+                        <Plus className="mr-2 h-4 w-4 text-green-500" />
                         Vizionare
                     </Button>
                 </div>
                 
                 <div className="pt-2">
-                    <div className="bg-[#f8f8f9] text-center p-2 rounded-lg font-semibold text-foreground mb-2">
+                    <div className="bg-white/10 text-white text-center p-3 rounded-lg font-semibold mb-2">
                         Vizionări Programate
                     </div>
                      {viewings.length === 0 ? (
