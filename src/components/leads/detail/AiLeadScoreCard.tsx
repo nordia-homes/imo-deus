@@ -1,7 +1,7 @@
 
 'use client';
 import { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -118,7 +118,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
 
   if (typeof contact.leadScore !== 'number') {
     return (
-        <Card className="rounded-2xl bg-[#152A47] border-none shadow-2xl text-white">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
             <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
                 <div className="p-3 bg-primary/10 rounded-full">
                     <Lightbulb className="h-8 w-8 text-primary" />
@@ -138,7 +138,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
 
   return (
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
-      <CardHeader>
+      <CardHeader className="p-4">
         <div className="flex items-center justify-between">
             <div className="flex flex-col items-start gap-2">
                 <TooltipProvider>
@@ -166,6 +166,7 @@ export function AiLeadScoreCard({ contact, onUpdateContact }: AiLeadScoreCardPro
             </div>
             <CircularProgress score={contact.leadScore} />
         </div>
+        <CardDescription className="text-white/70 text-xs pt-2">Scor calculat de AI pe baza datelor din CRM.</CardDescription>
       </CardHeader>
     </Card>
   );
