@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Property, Contact, MatchedProperty, Agency } from '@/lib/types';
 import Image from 'next/image';
-import { ArrowRight, BedDouble, Ruler, Calendar, Plus } from 'lucide-react';
+import { ArrowRight, BedDouble, Ruler, Calendar, Plus, Layers } from 'lucide-react';
 import Link from 'next/link';
 import {
   Carousel,
@@ -66,6 +66,24 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
           />
+           <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-2">
+                <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                    <BedDouble className="mr-1.5 h-4 w-4" /> {property.rooms} camere
+                </Button>
+                 <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                    <Ruler className="mr-1.5 h-4 w-4" /> {property.squareFootage} mp
+                </Button>
+                {property.floor && (
+                    <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                        <Layers className="mr-1.5 h-4 w-4" /> Et. {property.floor}
+                    </Button>
+                )}
+                {constructionYear && (
+                    <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                        <Calendar className="mr-1.5 h-4 w-4" /> {constructionYear}
+                    </Button>
+                )}
+            </div>
       </div>
       <div className="relative p-4 space-y-3 flex-1 flex flex-col">
         <Link href={`/properties/${property.id}`} className="block">
@@ -73,7 +91,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
         </Link>
         <p className="text-sm text-slate-300 break-words">{property.address}</p>
         
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300 pt-2">
+        <div className="lg:hidden flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300 pt-2">
             <span className="flex items-center gap-1.5"><BedDouble className="h-4 w-4 text-slate-400" /> {property.rooms}</span>
             <span className="flex items-center gap-1.5"><Ruler className="h-4 w-4 text-slate-400" /> {property.squareFootage} mp</span>
             {constructionYear && <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-slate-400" /> {constructionYear}</span>}
