@@ -1,4 +1,3 @@
-
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -122,8 +121,8 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
                     </div>
                 )}
             </CardContent>
-             <div className="hidden lg:block px-4 pb-4 pt-0">
-              <Separator className="my-4 bg-white/10" />
+             <div className="hidden lg:block px-4 pb-4">
+              <Separator className="mt-0 mb-4 bg-white/10" />
               <SourcePropertyCard 
                   property={sourceProperty} 
                   isLoading={isSourcePropertyLoading}
