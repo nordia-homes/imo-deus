@@ -10,6 +10,7 @@ import { z } from 'genkit';
 // IMPORTANT: We now use the Admin SDK which has different imports and syntax.
 import { adminDb } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import type { Interaction } from '@/lib/types';
 
 // Schemas remain the same
 const UpdateBuyerPreferencesInputSchema = z.object({
@@ -45,6 +46,10 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
   async (input) => {
     const { linkId, mentiuni, ...formData } = input;
 
+    if (!linkId) {
+        return { success: false, message: "ID-ul link-ului este invalid." };
+    }
+
     try {
         // Step 1: Validate the link using the Admin SDK
         const linkRef = adminDb.collection('buyer-preferences-links').doc(linkId);
@@ -55,9 +60,17 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         }
         
         const { agencyId, contactId } = linkSnap.data()!;
+        if (!agencyId || !contactId) {
+            throw new Error("Datele link-ului sunt incomplete.");
+        }
 
-        // Step 2: Get a reference to the contact document
+        // Step 2: Get a reference to the contact document and read its current data
         const contactRef = adminDb.collection('agencies').doc(agencyId).collection('contacts').doc(contactId);
+        const contactSnap = await contactRef.get();
+        if (!contactSnap.exists) {
+            throw new Error("Contactul asociat acestui link nu a fost găsit.");
+        }
+        const existingContactData = contactSnap.data()!;
         
         const dataToUpdate: { [key: string]: any } = {};
 
@@ -67,25 +80,34 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone === 'all' ? null : formData.generalZone;
         if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
         
-        if (formData.desiredRooms !== undefined) dataToUpdate['preferences.desiredRooms'] = formData.desiredRooms;
-        if (formData.desiredSquareFootageMin !== undefined) dataToUpdate['preferences.desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
+        // Merge new preferences with existing ones
+        const existingPreferences = existingContactData.preferences || {};
+        const newPreferences: { [key: string]: any } = {};
+        if (formData.desiredRooms !== undefined) newPreferences['desiredRooms'] = formData.desiredRooms;
+        if (formData.desiredSquareFootageMin !== undefined) newPreferences['desiredSquareFootageMin'] = formData.desiredSquareFootageMin;
 
+        if (Object.keys(newPreferences).length > 0) {
+            dataToUpdate.preferences = { ...existingPreferences, ...newPreferences };
+        }
+        
+        // Update price range based on budget
         if (formData.budget !== undefined) {
-          dataToUpdate['preferences.desiredPriceRangeMin'] = Math.round(formData.budget * 0.8);
-          dataToUpdate['preferences.desiredPriceRangeMax'] = Math.round(formData.budget * 1.2);
+          dataToUpdate.preferences = {
+            ...(dataToUpdate.preferences || existingPreferences),
+            desiredPriceRangeMin: Math.round(formData.budget * 0.8),
+            desiredPriceRangeMax: Math.round(formData.budget * 1.2),
+          };
         }
         
         // Step 4: If there are notes, add them to the interaction history using FieldValue.arrayUnion
         if (mentiuni) {
-            const newInteraction = {
-                id: crypto.randomUUID(),
+            const newInteraction: Omit<Interaction, 'id'> = {
                 type: 'Notiță' as const,
                 date: new Date().toISOString(),
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
-            // arrayUnion is available on the Admin SDK's FieldValue
-            dataToUpdate.interactionHistory = FieldValue.arrayUnion(newInteraction);
+            dataToUpdate.interactionHistory = FieldValue.arrayUnion({ ...newInteraction, id: crypto.randomUUID() });
         }
 
         // Step 5: Perform the update if there's anything to update.

@@ -30,6 +30,8 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
+      // A user can always read and write their own profile.
+      // This is crucial for the helper functions above to work correctly.
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
     
