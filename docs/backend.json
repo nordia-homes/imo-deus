@@ -632,7 +632,7 @@
     },
     "BuyerPreferencesLink": {
       "title": "Buyer Preferences Link",
-      "description": "A secure link to a public form for the buyer to update their preferences, containing denormalized data for display.",
+      "description": "A secure link to a public form for the buyer to update their preferences.",
       "type": "object",
       "properties": {
         "contactId": {
@@ -646,31 +646,6 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
-        },
-        "contactName": {
-            "type": "string"
-        },
-        "budget": {
-            "type": "number"
-        },
-        "preferences": {
-            "type": "object",
-            "properties": {
-                "desiredRooms": {"type": "number"},
-                "desiredSquareFootageMin": {"type": "number"},
-                "desiredFeatures": {"type": "string"}
-            }
-        },
-        "city": {
-            "type": "string"
-        },
-        "zones": {
-            "type": "array",
-            "items": {"type": "string"}
-        },
-        "generalZone": {
-            "type": "string",
-            "enum": ["Nord", "Sud", "Est", "Vest", "Central", "Oricare"]
         }
       },
       "required": [

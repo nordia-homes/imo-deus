@@ -3,7 +3,7 @@
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import type { BuyerPreferencesLink, Contact } from '@/lib/types';
+import type { BuyerPreferencesLink } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BuyerPreferencesForm } from '@/components/public/BuyerPreferencesForm';
 
@@ -32,23 +32,13 @@ function PreferencesPageContent() {
         return null;
     }
 
-    // The contact data is denormalized in the link document itself
-    const contactDataForForm: Partial<Contact> = {
-        name: linkData.contactName,
-        budget: linkData.budget,
-        preferences: linkData.preferences,
-        city: linkData.city,
-        zones: linkData.zones,
-        generalZone: linkData.generalZone,
-    };
-
     return (
         <div className="container mx-auto max-w-2xl py-12 px-4">
-             <header className="mb-8">
+             <header className="mb-8 text-center">
                 <h1 className="text-4xl font-bold">Preferințele tale de căutare</h1>
-                <p className="text-muted-foreground mt-2">Salut, {contactDataForForm.name}! Te rugăm să completezi sau să actualizezi formularul de mai jos pentru a ne ajuta să găsim proprietatea perfectă pentru tine.</p>
+                <p className="text-muted-foreground mt-2">Te rugăm să completezi sau să actualizezi formularul de mai jos pentru a ne ajuta să găsim proprietatea perfectă pentru tine.</p>
             </header>
-            <BuyerPreferencesForm contact={contactDataForForm} linkId={linkId} />
+            <BuyerPreferencesForm linkId={linkId} />
         </div>
     );
 }

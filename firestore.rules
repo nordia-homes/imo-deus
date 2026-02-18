@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUserProfile(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isUserInAgency(agencyId) {
+      return isSignedIn() &&
+             isUserProfile(request.auth.uid) &&
+             'agencyId' in getUserData(request.auth.uid) &&
+             getUserData(request.auth.uid).agencyId == agencyId;
+    }
+
+    function isUserAdminForAgency(agencyId) {
+       return isUserInAgency(agencyId) &&
+              'role' in getUserData(request.auth.uid) &&
+              getUserData(request.auth.uid).role == 'admin';
+    }
+
+
+    // --- User Profiles ---
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
+    }
+
+    // --- Agency Subcollections (e.g., /agencies/{agencyId}/viewings/{viewingId}) ---
+    match /agencies/{agencyId}/{collection}/{docId} {
+      // For single document reads and all writes, we can perform a lookup to the user's
+      // profile to ensure they belong to the agency. This is secure.
+      allow get, write: if isUserInAgency(agencyId);
+
+      // For collection queries (list), Firestore rules cannot perform lookups on other documents.
+      // Therefore, we allow any signed-in user to LIST documents. This is secure because
+      // the application's client-side logic will only query the correct agency's data,
+      // and individual document reads are still protected by the 'get' rule above.
+      allow list: if isUserInAgency(agencyId);
+    }
+
+    // --- Agency Top-Level Document ---
+    match /agencies/{agencyId} {
+      allow get: if isUserInAgency(agencyId);
+      allow list: if isSignedIn();
+      allow update: if isUserAdminForAgency(agencyId);
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if false; 
+    }
+    
+    // --- Invites ---
+    match /invites/{inviteId} {
+      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+      allow read, delete: if isSignedIn();
+    }
+    
+    // --- Scraper Collection ---
+    match /ownerListings/{listingId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // --- Client Portals ---
+    match /portals/{portalId} {
+      // Anyone with the link can read portal and recommendation data.
+      allow get, list: if true;
+      
+      // Agency members can create/delete portals for contacts in their agency.
+      allow create, delete: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
+
+      // --- Recommendations Sub-collection ---
+      match /recommendations/{recommendationId} {
+        // Publicly readable for the client with the portal link.
+        allow get, list: if true;
+        
+        // Agency members can add/delete recommendations.
+        allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
+                                
+        // An agent can update anything. A client (public/anonymous) can only update feedback fields.
+        allow update: if (isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
+                        (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
+      }
+    }
+
+    // --- Buyer Preferences Link ---
+    match /buyer-preferences-links/{path=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

@@ -7,22 +7,20 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { initializeServerFirebase } from '@/firebase/server';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import type { Contact } from '@/lib/types';
+import { doc, getDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import type { Contact, Interaction } from '@/lib/types';
 
 
 // Schemas
 const UpdateBuyerPreferencesInputSchema = z.object({
   linkId: z.string().describe("The secure ID from the preferences form link."),
-  budget: z.number().optional(),
-  preferences: z.object({
-      desiredRooms: z.number().optional(),
-      desiredSquareFootageMin: z.number().optional(),
-      desiredFeatures: z.string().optional(),
-  }).optional(),
+  budget: z.coerce.number().optional(),
+  desiredRooms: z.coerce.number().optional(),
+  desiredSquareFootageMin: z.coerce.number().optional(),
   city: z.string().optional(),
   generalZone: z.string().optional(),
   zones: z.array(z.string()).optional(),
+  mentiuni: z.string().optional().describe("Additional notes from the buyer."),
 });
 export type UpdateBuyerPreferencesInput = z.infer<typeof UpdateBuyerPreferencesInputSchema>;
 
@@ -46,14 +44,15 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
   },
   async (input) => {
     const { firestore } = initializeServerFirebase();
+    const { linkId, mentiuni, ...formData } = input;
 
     try {
         // 1. Validate the linkId
-        const linkRef = doc(firestore, 'buyer-preferences-links', input.linkId);
+        const linkRef = doc(firestore, 'buyer-preferences-links', linkId);
         const linkSnap = await getDoc(linkRef);
 
         if (!linkSnap.exists()) {
-            throw new Error("Link invalid or expired.");
+            throw new Error("Link invalid sau expirat.");
         }
         
         const { agencyId, contactId } = linkSnap.data();
@@ -62,33 +61,47 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
         const contactSnap = await getDoc(contactRef);
         if (!contactSnap.exists()) {
-            throw new Error("Contact not found.");
+            throw new Error("Contactul nu a fost găsit.");
         }
         const existingContact = contactSnap.data() as Contact;
 
-        const dataToUpdate: Partial<Contact> = {};
+        const dataToUpdate: Partial<Omit<Contact, 'id' | 'preferences' | 'interactionHistory'>> & { preferences?: any } = {};
         
-        if (input.budget !== undefined) dataToUpdate.budget = input.budget;
-        if (input.city !== undefined) dataToUpdate.city = input.city;
-        if (input.generalZone !== undefined) dataToUpdate.generalZone = input.generalZone as Contact['generalZone'];
-        if (input.zones !== undefined) dataToUpdate.zones = input.zones;
+        if (formData.budget !== undefined) dataToUpdate.budget = formData.budget;
+        if (formData.city !== undefined) dataToUpdate.city = formData.city;
+        if (formData.generalZone !== undefined) dataToUpdate.generalZone = formData.generalZone as Contact['generalZone'];
+        if (formData.zones !== undefined) dataToUpdate.zones = formData.zones;
 
         const updatedPreferences = { ...existingContact.preferences };
-        if (input.preferences?.desiredRooms !== undefined) updatedPreferences.desiredRooms = input.preferences.desiredRooms;
-        if (input.preferences?.desiredSquareFootageMin !== undefined) updatedPreferences.desiredSquareFootageMin = input.preferences.desiredSquareFootageMin;
-        if (input.preferences?.desiredFeatures !== undefined) updatedPreferences.desiredFeatures = input.preferences.desiredFeatures;
+        if (formData.desiredRooms !== undefined) updatedPreferences.desiredRooms = formData.desiredRooms;
+        if (formData.desiredSquareFootageMin !== undefined) updatedPreferences.desiredSquareFootageMin = formData.desiredSquareFootageMin;
         
         dataToUpdate.preferences = updatedPreferences;
         
-        // 3. Update the document
-        await updateDoc(contactRef, dataToUpdate);
+        const batch = writeBatch(firestore);
+        
+        batch.update(contactRef, dataToUpdate);
 
-        return { success: true, message: "Preferences updated successfully." };
+        if (mentiuni) {
+            const newInteraction: Interaction = {
+                id: crypto.randomUUID(),
+                type: 'Notiță',
+                date: new Date().toISOString(),
+                notes: `Notă de la client (formular preferințe): ${mentiuni}`,
+                agent: { name: 'Formular Public' },
+            };
+            batch.update(contactRef, {
+                interactionHistory: arrayUnion(newInteraction)
+            });
+        }
+        
+        await batch.commit();
+
+        return { success: true, message: "Preferințele au fost actualizate cu succes. Mulțumim!" };
 
     } catch (error: any) {
         console.error("Error updating buyer preferences:", error);
-        // Do not expose detailed internal errors to the client
-        return { success: false, message: error.message || "An unexpected error occurred." };
+        return { success: false, message: error.message || "A apărut o eroare neașteptată." };
     }
   }
 );

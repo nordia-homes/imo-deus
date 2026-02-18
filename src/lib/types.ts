@@ -328,10 +328,4 @@ export type BuyerPreferencesLink = {
   contactId: string;
   agencyId: string;
   createdAt: string;
-  contactName?: string | null;
-  budget?: number | null;
-  preferences?: Partial<ContactPreferences> | null;
-  city?: string | null;
-  zones?: string[] | null;
-  generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | null;
 };
