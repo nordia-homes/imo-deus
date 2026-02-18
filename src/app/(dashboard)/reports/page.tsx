@@ -141,8 +141,8 @@ export default function ReportsPage() {
             </div>
             
              <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
+                <CardHeader className="text-center">
+                    <CardTitle className="flex items-center justify-center gap-2 text-white">
                         <Lightbulb className="text-primary"/>
                         Analiză și Recomandări AI
                     </CardTitle>
@@ -181,7 +181,7 @@ export default function ReportsPage() {
                         </div>
                     )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="justify-center">
                     <Button onClick={handleGenerateReport} disabled={isLoading || isGenerating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                         {isGenerating ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
