@@ -64,7 +64,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
         <div className="mx-2 lg:mx-0">
              {!property ? (
                 <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
-                    <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+                    <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 pt-4">
                         <CardTitle className="text-base font-semibold text-white">
                             Proprietate Inițială
                         </CardTitle>
@@ -122,7 +122,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                     </div>
                                 </div>
                                 <div className="relative p-3 space-y-2 flex-1 flex flex-col">
-                                    <h4 className="font-bold text-base hover:underline break-words">{property.title}</h4>
+                                    <h4 className="font-bold text-base hover:underline break-words" title={property.title}>{property.title.length > 25 ? `${property.title.substring(0, 25)}...` : property.title}</h4>
                                     <p className="text-sm text-slate-300 break-words">{property.address}</p>
                                     <div className="pt-1 mt-auto flex justify-between items-end">
                                         <p className="text-xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
@@ -157,7 +157,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold group-hover:underline text-sm" title={property.title}>
-                                            {property.title.length > 20 ? `${property.title.substring(0, 20)}...` : property.title}
+                                            {property.title.length > 25 ? `${property.title.substring(0, 25)}...` : property.title}
                                             </p>
                                             <p className="text-xs text-white/70 break-words">{property.location}</p>
                                             <p className="font-bold text-base text-white mt-1">€{property.price.toLocaleString()}</p>
