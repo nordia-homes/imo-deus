@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+             <SidebarMenuItem className="hidden md:block">
                 <SidebarMenuButton tooltip="Pipeline" asChild>
                     <Link href="/pipeline">
                         <Waypoints />
@@ -197,8 +197,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <Topbar />
         <main className={cn(
-          "flex-1 bg-background px-0 pt-0 pb-20 lg:p-6 lg:pb-6",
-           (pathname === '/map') && "lg:p-0",
+          "flex-1 bg-background p-0 lg:p-6 pb-20 lg:pb-6",
+           (pathname === '/map' || pathname === '/viewings') && "lg:p-0",
           (pathname === '/dashboard' || pathname === '/leads' || pathname === '/properties') && "bg-[#0F1E33] lg:bg-background"
         )}>
             {children}
