@@ -717,10 +717,10 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mx-6 -mb-6 px-6 pt-6 pb-6 text-white">
+            <div className="hidden lg:block h-full bg-[#0F1E33] p-2 text-white">
                  <LeadHeader 
                     contact={contact} 
-                    onUpdateContact={handleUpdateContact}
+                    onUpdateContact={onUpdateContact}
                     onAddTask={handleAddTask}
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                     properties={properties || []}
@@ -761,7 +761,7 @@ export default function LeadDetailPage() {
                         <ClientPortalManager contact={contact} agency={agency} />
                         <FinancialStatusCard 
                             contact={contact} 
-                            onUpdateContact={handleUpdateContact}
+                            onUpdateContact={onUpdateContact}
                             recommendations={recommendations}
                             properties={properties}
                             portalId={contact.portalId || null}
