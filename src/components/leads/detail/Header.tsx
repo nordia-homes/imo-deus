@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +18,16 @@ type LeadHeaderProps = {
 
 export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddViewing, properties, onTriggerEditPreferences }: LeadHeaderProps) {
   
+  const sanitizeForWhatsapp = (phone?: string | null) => {
+    if (!phone) return '';
+    let sanitized = phone.replace(/\D/g, '');
+    if (sanitized.length === 10 && sanitized.startsWith('07')) {
+        return `40${sanitized.substring(1)}`;
+    }
+    return sanitized;
+  };
+  const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
+
   return (
     <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-6 py-3 lg:py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 h-full">
@@ -41,7 +50,7 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
                 </a>
               </Button>
                <Button size="sm" variant="outline" asChild className="lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
-                 <a href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
                     <WhatsappIcon className="mr-2 h-4 w-4" />
                     WhatsApp
                  </a>

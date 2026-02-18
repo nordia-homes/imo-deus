@@ -45,6 +45,16 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
 };
 
 export function ViewingList({ title, viewings, agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingListProps) {
+    
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+
     if (!viewings || viewings.length === 0) {
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
@@ -66,8 +76,8 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                 const property = properties?.find(p => p.id === viewing.propertyId);
                 const contact = contacts?.find(c => c.id === viewing.contactId);
 
-                const contactPhone = contact?.phone?.replace(/\D/g, '');
-                const ownerPhone = property?.ownerPhone?.replace(/\D/g, '');
+                const contactPhone = sanitizeForWhatsapp(contact?.phone);
+                const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
 
                 return (
                     <Card key={viewing.id} className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden">
@@ -131,7 +141,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                             {contactPhone && (
                                                 <div className="flex items-center">
                                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
-                                                        <a href={`tel:${contactPhone}`}><Phone className="h-4 w-4 text-green-400" /></a>
+                                                        <a href={`tel:${contact?.phone}`}><Phone className="h-4 w-4 text-green-400" /></a>
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
                                                         <a href={`https://wa.me/${contactPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
@@ -150,7 +160,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                                 {ownerPhone && (
                                                      <div className="flex items-center">
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
-                                                            <a href={`tel:${ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
+                                                            <a href={`tel:${property?.ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
                                                         </Button>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
                                                             <a href={`https://wa.me/${ownerPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-gray-400" /></a>

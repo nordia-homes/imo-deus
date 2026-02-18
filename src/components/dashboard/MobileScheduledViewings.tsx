@@ -10,6 +10,15 @@ import { WhatsappIcon } from '../icons/WhatsappIcon';
 
 export function MobileScheduledViewings({ viewings, properties, contacts }: { viewings: Viewing[]; properties: Property[]; contacts: Contact[] }) {
 
+  const sanitizeForWhatsapp = (phone?: string | null) => {
+    if (!phone) return '';
+    let sanitized = phone.replace(/\D/g, '');
+    if (sanitized.length === 10 && sanitized.startsWith('07')) {
+        return `40${sanitized.substring(1)}`;
+    }
+    return sanitized;
+  };
+
   return (
     <Card className="bg-muted/50 shadow-2xl rounded-2xl md:hidden">
       <CardHeader className="flex flex-row items-center justify-between bg-[#13b180] text-white p-3 rounded-t-2xl">
@@ -26,8 +35,8 @@ export function MobileScheduledViewings({ viewings, properties, contacts }: { vi
                 {viewings.map(viewing => {
                     const contact = contacts.find(c => c.id === viewing.contactId);
                     const property = properties.find(p => p.id === viewing.propertyId);
-                    const contactPhone = contact?.phone?.replace(/\D/g, '');
-                    const ownerPhone = property?.ownerPhone?.replace(/\D/g, '');
+                    const contactPhone = sanitizeForWhatsapp(contact?.phone);
+                    const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                     
                     return (
                         <div key={viewing.id} className="p-3 rounded-lg border bg-background">
@@ -44,7 +53,7 @@ export function MobileScheduledViewings({ viewings, properties, contacts }: { vi
                                 {contactPhone && (
                                     <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                                        <a href={`tel:${contactPhone}`}><Phone className="h-4 w-4 text-green-600" /></a>
+                                        <a href={`tel:${contact?.phone}`}><Phone className="h-4 w-4 text-green-600" /></a>
                                     </Button>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                                         <a href={`https://wa.me/${contactPhone}`} target="_blank"><WhatsappIcon className="h-4 w-4 text-green-600" /></a>
@@ -59,7 +68,7 @@ export function MobileScheduledViewings({ viewings, properties, contacts }: { vi
                                     {ownerPhone && (
                                     <div className="flex items-center">
                                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                                            <a href={`tel:${ownerPhone}`}><Phone className="h-4 w-4 text-gray-500" /></a>
+                                            <a href={`tel:${property?.ownerPhone}`}><Phone className="h-4 w-4 text-gray-500" /></a>
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                                             <a href={`https://wa.me/${ownerPhone}`} target="_blank"><WhatsappIcon className="h-4 w-4 text-gray-500" /></a>

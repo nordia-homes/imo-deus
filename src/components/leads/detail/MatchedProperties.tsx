@@ -15,6 +15,16 @@ import {
 } from "@/components/ui/carousel";
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
+const sanitizeForWhatsapp = (phone?: string | null) => {
+    if (!phone) return '';
+    let sanitized = phone.replace(/\D/g, '');
+    if (sanitized.length === 10 && sanitized.startsWith('07')) {
+        return `40${sanitized.substring(1)}`;
+    }
+    return sanitized;
+};
+
+
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
   const constructionYear = property.constructionYear;
@@ -32,7 +42,8 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 
       const propertyUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
       const message = `Salut, ${contact.name}! Cred că această proprietate ți s-ar potrivi: ${propertyUrl}`;
-      const whatsappUrl = `https://wa.me/${contact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+      const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
+      const whatsappUrl = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
   };
 

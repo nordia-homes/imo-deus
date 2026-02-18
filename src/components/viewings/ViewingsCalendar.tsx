@@ -53,6 +53,15 @@ const getStatusVariant = (status: Viewing['status']) => {
     }
 };
 
+const sanitizeForWhatsapp = (phone?: string | null) => {
+    if (!phone) return '';
+    let sanitized = phone.replace(/\D/g, '');
+    if (sanitized.length === 10 && sanitized.startsWith('07')) {
+        return `40${sanitized.substring(1)}`;
+    }
+    return sanitized;
+};
+
 export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingsCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
 
@@ -179,8 +188,8 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
             <div className="space-y-4">
               {selectedDayViewings.map((viewing) => {
                 const { property, contact, agent } = viewing;
-                const contactPhone = contact?.phone?.replace(/\D/g, '');
-                const ownerPhone = property?.ownerPhone?.replace(/\D/g, '');
+                const contactPhone = sanitizeForWhatsapp(contact?.phone);
+                const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
 
                 return (
                     <Card key={viewing.id} className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden">
@@ -244,7 +253,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                             {contactPhone && (
                                                 <div className="flex items-center">
                                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
-                                                        <a href={`tel:${contactPhone}`}><Phone className="h-4 w-4 text-green-400" /></a>
+                                                        <a href={`tel:${contact?.phone}`}><Phone className="h-4 w-4 text-green-400" /></a>
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
                                                         <a href={`https://wa.me/${contactPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-green-400" /></a>
@@ -263,7 +272,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                                 {ownerPhone && (
                                                      <div className="flex items-center">
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
-                                                            <a href={`tel:${ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
+                                                            <a href={`tel:${property?.ownerPhone}`}><Phone className="h-4 w-4 text-gray-400" /></a>
                                                         </Button>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white/80 hover:bg-white/10" asChild>
                                                             <a href={`https://wa.me/${ownerPhone}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="h-4 w-4 text-gray-400" /></a>
