@@ -25,15 +25,15 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
             <CardHeader className="pb-4">
-                <CardTitle className="text-base">Setări Cumpărător</CardTitle>
+                <CardTitle className="text-base text-white">Setări Cumpărător</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                  <div>
-                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <Label className="text-xs text-white/70">Status</Label>
                     <Select defaultValue={contact.status} onValueChange={(value: Contact['status']) => onUpdateContact({ status: value })}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-9 bg-white/10 border-white/20"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Nou">Nou</SelectItem>
                             <SelectItem value="Contactat">Contactat</SelectItem>
@@ -45,9 +45,9 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
                     </Select>
                 </div>
                  <div>
-                    <Label className="text-xs text-muted-foreground">Probabilitate</Label>
+                    <Label className="text-xs text-white/70">Probabilitate</Label>
                     <Select defaultValue={contact.priority} onValueChange={(value: Contact['priority']) => onUpdateContact({ priority: value })}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-9 bg-white/10 border-white/20"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Scăzută">Scăzută</SelectItem>
                             <SelectItem value="Medie">Medie</SelectItem>
@@ -56,9 +56,9 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
                     </Select>
                 </div>
                  <div>
-                    <Label className="text-xs text-muted-foreground">Agent</Label>
+                    <Label className="text-xs text-white/70">Agent</Label>
                      <Select defaultValue={contact.agentId || 'unassigned'} onValueChange={handleAgentChange}>
-                        <SelectTrigger className="h-9">
+                        <SelectTrigger className="h-9 bg-white/10 border-white/20">
                             <div className="flex items-center gap-2">
                                 <User className="h-4 w-4" />
                                 <SelectValue />
