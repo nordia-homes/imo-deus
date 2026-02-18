@@ -55,9 +55,16 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
         const { agencyId, contactId } = linkSnap.data();
 
         const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
+        const contactSnap = await getDoc(contactRef);
+
+        if (!contactSnap.exists()) {
+          throw new Error("Clientul asociat acestui link nu a fost găsit.");
+        }
+
+        const existingContactData = contactSnap.data();
         
         const dataToUpdate: { [key: string]: any } = {
-            validationLinkId: linkId // CRUCIAL: Include the token for the security rule
+            validationLinkId: linkId
         };
 
         if (formData.budget !== undefined) {
@@ -84,7 +91,8 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
                 notes: `Notă de la client (formular preferințe): ${mentiuni}`,
                 agent: { name: 'Formular Public' },
             };
-            dataToUpdate.interactionHistory = arrayUnion(newInteraction);
+            const existingHistory = existingContactData.interactionHistory || [];
+            dataToUpdate.interactionHistory = [...existingHistory, newInteraction];
         }
 
         await updateDoc(contactRef, dataToUpdate);
