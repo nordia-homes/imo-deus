@@ -36,11 +36,12 @@ service cloud.firestore {
       }
       
       // 2. The data being written MUST contain the validationLinkId.
-      if (!('validationLinkId' in request.resource.data)) {
+      // Use request.writeFields for updates to be precise.
+      if (!('validationLinkId' in request.writeFields)) {
         return false;
       }
       
-      let linkId = request.resource.data.validationLinkId;
+      let linkId = request.writeFields.validationLinkId;
       
       // 3. The link document must exist.
       // This `get()` call is allowed by the public `allow get: if true` rule below.
