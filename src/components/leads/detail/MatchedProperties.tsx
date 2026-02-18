@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
-      <div className="relative aspect-video w-full">
+      <div className="relative aspect-video lg:aspect-[111/50] w-full">
           <Image
               src={imageUrl}
               alt={property.title || 'Proprietate'}
@@ -82,7 +81,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 export function MatchedProperties({ properties, onAddRecommendation, agencyId, contact }: { properties: MatchedProperty[], onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) {
   if (!properties || properties.length === 0) {
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
+        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2 lg:mx-0">
             <CardHeader className="p-4">
                 <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             </CardHeader>
@@ -96,7 +95,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
   const singleProperty = properties.length === 1;
 
   return (
-    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2">
+    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2 lg:mx-0">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
             <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
             <Button variant="link" size="sm" asChild className="text-white">
@@ -133,5 +132,3 @@ export function MatchedProperties({ properties, onAddRecommendation, agencyId, c
     </Card>
   );
 }
-
-    
