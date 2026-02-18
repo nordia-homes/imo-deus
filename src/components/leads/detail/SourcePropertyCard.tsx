@@ -62,7 +62,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
     
     return (
         <Card className="mx-2 lg:mx-0 rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between px-4 pt-0 pb-2">
                 <CardTitle className="text-base font-semibold text-white">
                     Proprietate Inițială
                 </CardTitle>
