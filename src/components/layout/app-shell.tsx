@@ -46,17 +46,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <LogoIcon className="h-7 w-7 text-primary" />
-            <h1 className="font-headline text-2xl font-bold text-sidebar-foreground">
-              <span>Imoflux</span><span className="text-success">.ai</span>
-            </h1>
+          <div className="flex items-center gap-2 p-2 justify-center">
+            <LogoIcon className="h-7 w-7 text-white" />
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" asChild>
+                <SidebarMenuButton tooltip="Dashboard" asChild isActive={pathname === '/dashboard'}>
                     <Link href="/dashboard">
                         <BarChart3 />
                         <span>Dashboard</span>
@@ -64,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Cumpărători" asChild>
+                <SidebarMenuButton tooltip="Cumpărători" asChild isActive={pathname.startsWith('/leads')}>
                     <Link href="/leads">
                         <Users />
                         <span>Cumpărători</span>
@@ -72,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Proprietăți" asChild>
+                <SidebarMenuButton tooltip="Proprietăți" asChild isActive={pathname.startsWith('/properties')}>
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
@@ -80,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Anunțuri Proprietari" asChild>
+                <SidebarMenuButton tooltip="Anunțuri Proprietari" asChild isActive={pathname === '/owner-listings'}>
                     <Link href="/owner-listings">
                         <Newspaper />
                         <span>Anunțuri Proprietari</span>
@@ -88,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Hartă" asChild>
+                <SidebarMenuButton tooltip="Hartă" asChild isActive={pathname === '/map'}>
                     <Link href="/map">
                         <Map />
                         <span>Hartă</span>
@@ -96,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem className="hidden md:block">
-                <SidebarMenuButton tooltip="Pipeline" asChild>
+                <SidebarMenuButton tooltip="Pipeline" asChild isActive={pathname === '/pipeline'}>
                     <Link href="/pipeline">
                         <Waypoints />
                         <span>Pipeline</span>
@@ -104,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vizionări" asChild>
+                <SidebarMenuButton tooltip="Vizionări" asChild isActive={pathname === '/viewings'}>
                     <Link href="/viewings">
                         <CalendarCheck />
                         <span>Vizionări</span>
@@ -112,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Task-uri" asChild>
+                <SidebarMenuButton tooltip="Task-uri" asChild isActive={pathname.startsWith('/tasks')}>
                     <Link href="/tasks">
                         <CheckSquare />
                         <span>Task-uri</span>
@@ -120,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Contracte" asChild>
+                <SidebarMenuButton tooltip="Contracte" asChild isActive={pathname === '/contracts'}>
                     <Link href="/contracts">
                         <FileText />
                         <span>Contracte</span>
@@ -128,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Assistant" asChild>
+                <SidebarMenuButton tooltip="AI Assistant" asChild isActive={pathname === '/ai-assistant'}>
                     <Link href="/ai-assistant">
                         <MessageSquare />
                         <span>AI Assistant</span>
@@ -136,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Potrivire Proprietăți AI" asChild>
+              <SidebarMenuButton tooltip="Potrivire Proprietăți AI" asChild isActive={pathname === '/matching'}>
                 <Link href="/matching">
                   <UserCheck />
                   <span>Potrivire AI</span>
@@ -144,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rapoarte" asChild>
+                <SidebarMenuButton tooltip="Rapoarte" asChild isActive={pathname === '/reports'}>
                     <Link href="/reports">
                         <BarChart3 />
                         <span>Rapoarte</span>
@@ -152,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Integrări" asChild>
+                <SidebarMenuButton tooltip="Integrări" asChild isActive={pathname === '/portal-sync'}>
                     <Link href="/portal-sync">
                         <AppWindow />
                         <span>Integrări</span>
@@ -160,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Facturare" asChild>
+                <SidebarMenuButton tooltip="Facturare" asChild isActive={pathname === '/billing'}>
                     <Link href="/billing">
                         <CreditCard />
                         <span>Facturare</span>
@@ -178,7 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
              )}
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Setări" asChild>
+                <SidebarMenuButton tooltip="Setări" asChild isActive={pathname === '/settings'}>
                     <Link href="/settings">
                         <Settings />
                         <span>Setări</span>
@@ -189,17 +186,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="p-4 text-center text-xs text-sidebar-foreground/60">
           <p>
-            &copy; {new Date().getFullYear()} Imoflux.ai Inc.
+            &copy; {new Date().getFullYear()} Imoflux.ai
           </p>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <Topbar />
-        <main className={cn(
-          "flex-1 bg-background p-0 pb-20 lg:p-0",
-          (pathname === '/map' || pathname === '/viewings' || pathname === '/tasks' || pathname === '/ai-assistant' || pathname === '/contracts') && "lg:p-0",
-          (pathname === '/dashboard' || pathname === '/leads' || pathname === '/properties') && "bg-[#0F1E33] lg:bg-background"
-        )}>
+        <main className="flex-1 bg-[#0F1E33] pb-20 lg:pb-0">
             {children}
         </main>
         <BottomNavbar />

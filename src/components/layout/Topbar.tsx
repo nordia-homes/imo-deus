@@ -14,6 +14,7 @@ import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { useRouter } from 'next/navigation';
+import { LogoIcon } from '../icons/LogoIcon';
 
 export function Topbar() {
     const auth = useAuth();
@@ -88,9 +89,13 @@ export function Topbar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery, contacts, properties, tasks]);
 
-    const getInitials = (email?: string | null) => {
-        if (!email) return 'U';
-        return email.substring(0, 2).toUpperCase();
+    const getInitials = (name?: string | null) => {
+        if (!name) return 'U';
+        const nameParts = name.split(' ');
+        if (nameParts.length > 1) {
+            return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
     }
     
     const handleSelect = () => {
@@ -108,7 +113,10 @@ export function Topbar() {
 
     return (
         <header className="flex h-16 items-center gap-4 border-b border-white/10 bg-[#0F1E33] px-4 md:px-6 text-white sticky top-0 z-30">
-            <SidebarTrigger className="text-white" />
+            <SidebarTrigger className="text-white md:hidden" />
+            <div className="hidden md:flex items-center gap-2">
+                 <LogoIcon className="h-7 w-7 text-white" />
+            </div>
             <div className="flex-1">
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
@@ -117,7 +125,7 @@ export function Topbar() {
                             <Input
                                 type="search"
                                 placeholder="Caută lead-uri, proprietăți..."
-                                className="w-full rounded-lg bg-white/10 pl-8 text-white placeholder:text-white/70 md:w-[200px] lg:w-[320px]"
+                                className="w-full rounded-lg bg-white/10 pl-8 text-white placeholder:text-white/70 md:w-[280px] lg:w-[320px] border-none"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
@@ -186,10 +194,12 @@ export function Topbar() {
             <div className='flex items-center gap-4'>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Avatar className="cursor-pointer">
-                            <AvatarImage src={user?.photoURL || undefined} />
-                            <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
-                        </Avatar>
+                        <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full hover:bg-white/10">
+                            <Avatar className="cursor-pointer h-8 w-8">
+                                <AvatarImage src={user?.photoURL || undefined} />
+                                <AvatarFallback className="bg-white/20">{getInitials(user?.displayName || user?.email)}</AvatarFallback>
+                            </Avatar>
+                        </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={handleLogout}>
