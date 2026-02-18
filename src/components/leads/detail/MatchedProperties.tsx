@@ -58,7 +58,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
-      <div className="relative aspect-video lg:aspect-[16/6] w-full">
+      <div className="relative aspect-video lg:aspect-[160/57] w-full">
           <Image
               src={imageUrl}
               alt={property.title || 'Proprietate'}
@@ -279,7 +279,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
         </CardContent>
          {showPortalManager && agency && contact && (
             <>
-                <Separator className="bg-white/20" />
+                <Separator className="bg-white/20 px-4" />
                 <div className="p-4">
                     <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
                         <Star className="text-yellow-500" />
