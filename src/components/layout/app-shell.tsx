@@ -35,8 +35,7 @@ import {
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
-import { LogoIcon } from '../icons/LogoIcon';
-import Image from 'next/image';
+import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
 import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -48,10 +47,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center p-2 justify-center group-data-[collapsible=icon]:justify-center h-14">
-            <div className="relative w-36 h-9 group-data-[collapsible=icon]:hidden">
-              <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/imodeus%20logo.jpeg?alt=media&token=6c82bca6-ba2e-4801-8cd7-3118a4a94ce7" alt="ImoDeus.ai Logo" fill style={{objectFit: 'contain'}} priority />
+            <div className="group-data-[collapsible=icon]:hidden">
+                <ImoDeusTextLogo size="text-2xl" />
             </div>
-            <LogoIcon className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
+            <Home className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
         <SidebarContent>
