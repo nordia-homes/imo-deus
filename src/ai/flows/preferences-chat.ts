@@ -35,7 +35,7 @@ const PreferencesChatInputSchema = z.object({
   prompt: z.string().describe("The user's latest message."),
   linkId: z.string().describe("The secure link ID for the buyer."),
 });
-export type PreferencesChatInput = z.infer<typeof PreferencesChatInputSchema>;
+
 
 const PreferencesChatOutputSchema = z.object({
   response: z.string().describe("The AI's text-only response to the user."),
@@ -43,8 +43,8 @@ const PreferencesChatOutputSchema = z.object({
 export type PreferencesChatOutput = z.infer<typeof PreferencesChatOutputSchema>;
 
 
-// The main function to be called from the frontend
-export async function preferencesChat(input: PreferencesChatInput): Promise<PreferencesChatOutput> {
+// Main function to be called from the frontend
+export async function preferencesChat(input: z.infer<typeof PreferencesChatInputSchema>): Promise<PreferencesChatOutput> {
   return preferencesChatFlow(input);
 }
 
@@ -77,21 +77,20 @@ Nu combina întrebările. Nu sari peste pași. Nu modifica ordinea. Nu adăuga �
 # FLOW OBLIGATORIU:
 Pornind de la istoricul conversației și ultimul mesaj al utilizatorului, continuă la următorul pas.
 
-0. Mesaj de bun venit (doar pentru primul mesaj): "Bună! Mă bucur că ai ajuns aici 😊 Te voi ajuta să transmitem preferințele tale unui consultant imobiliar. Îți voi adresa câteva întrebări scurte, ca să înțelegem exact ce cauți."
-1. Buget maxim: "Ca să începem, spune-mi te rog care este bugetul tău maxim pentru achiziție?"
-2. Număr camere: "Perfect. Câte camere îți dorești?"
-3. Zonă generală: "Am notat. În ce zonă generală cauți? Nord, Sud, Est, Vest sau ești deschis către oricare?"
-4. Zonă specifică: "Excelent. Ai o preferință pentru o zonă mai exactă? De exemplu: Crângași, Pipera, Aviației etc."
-5. Imobil nou: "Mulțumesc. Îți dorești un imobil nou sau ești flexibil în această privință?"
-6. Acceptare imobil vechi: "Ok. Accepți și imobil vechi?"
-7. An minim construcție (doar dacă la pasul 6 răspunsul este DA): "Înțeles. Care ar fi anul minim de construcție pe care îl consideri acceptabil?"
-8. Scop achiziție: "Aproape am terminat. Proprietatea este pentru locuit sau pentru investiție?"
-9. Urgență: "Cât de urgentă este achiziția pentru tine?"
-10. Modalitate plată: "Vei achiziționa prin cash, credit sau încă nu este stabilit?"
-11. Preferințe: "Super. Ai alte preferințe importante? De exemplu apropiere de metrou, centrală proprie, etaj intermediar, balcon etc."
-12. Mesaj final: "Dacă mai există detalii sau lucruri importante pentru tine, le poți menționa aici."
+0. Mesaj de bun venit și prima întrebare (doar pentru primul mesaj, într-un singur răspuns): "Bună! Mă bucur că ai ajuns aici 😊 Te voi ajuta să transmitem preferințele tale unui consultant imobiliar. Îți voi adresa câteva întrebări scurte, ca să înțelegem exact ce cauți. Ca să începem, spune-mi te rog care este bugetul tău maxim pentru achiziție?"
+1. Număr camere: "Perfect. Câte camere îți dorești?"
+2. Zonă generală: "Am notat. În ce zonă generală cauți? Nord, Sud, Est, Vest sau ești deschis către oricare?"
+3. Zonă specifică: "Excelent. Ai o preferință pentru o zonă mai exactă? De exemplu: Crângași, Pipera, Aviației etc."
+4. Imobil nou: "Mulțumesc. Îți dorești un imobil nou sau ești flexibil în această privință?"
+5. Acceptare imobil vechi: "Ok. Accepți și imobil vechi?"
+6. An minim construcție (doar dacă la pasul 5 răspunsul este DA): "Înțeles. Care ar fi anul minim de construcție pe care îl consideri acceptabil?"
+7. Scop achiziție: "Aproape am terminat. Proprietatea este pentru locuit sau pentru investiție?"
+8. Urgență: "Cât de urgentă este achiziția pentru tine?"
+9. Modalitate plată: "Vei achiziționa prin cash, credit sau încă nu este stabilit?"
+10. Preferințe: "Super. Ai alte preferințe importante? De exemplu apropiere de metrou, centrală proprie, etaj intermediar, balcon etc."
+11. Mesaj final: "Dacă mai există detalii sau lucruri importante pentru tine, le poți menționa aici."
 
-La final (după pasul 12), mulțumește natural: "Îți mulțumesc pentru informații 🙌 Le transmitem către un consultant care te va contacta în cel mai scurt timp." și setează "completat" la true.
+La final (după pasul 11), mulțumește natural: "Îți mulțumesc pentru informații 🙌 Le transmitem către un consultant care te va contacta în cel mai scurt timp." și setează "completat" la true.
 
 # STRUCTURĂ DATE (OBLIGATORIU)
 La finalul fiecărui răspuns TREBUIE să returnezi un bloc JSON actualizat, separat de textul conversațional prin "---JSON---". Completează câmpurile pe baza răspunsurilor utilizatorului.
@@ -117,7 +116,7 @@ Format:
 
 Reguli JSON:
 - Completează doar ce este sigur. Nu inventa valori.
-- 'pas_curent' trebuie să reflecte etapa actuală (0–12).
+- 'pas_curent' trebuie să reflecte etapa actuală a conversației conform flow-ului (0–11). Când adresezi întrebarea de la pasul 0, setează pas_curent la 0. Când primești răspunsul și adresezi întrebarea de la pasul 1, setează pas_curent la 1, și așa mai departe.
 - 'completat' devine true doar după ultimul pas.
 - Dacă utilizatorul nu acceptă imobil vechi, 'an_minim_constructie' rămâne null.
 - Blocul JSON trebuie să fie ultimul element din răspuns, precedat de "---JSON---". Nu adăuga explicații după JSON.
