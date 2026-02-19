@@ -78,15 +78,20 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
                         </p>
                     ) : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="px-3 py-1 text-xs font-normal bg-white/10 border-none text-white">
-                        <Calendar className="mr-2 h-3.5 w-3.5" />
+                <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" className="w-full justify-start pointer-events-none text-white bg-primary/10 border-primary">
+                        <Calendar className="mr-2 h-4 w-4" />
                         {new Date(creationDate).toLocaleDateString('ro-RO')}
-                    </Badge>
-                    <Badge variant={ageBadgeVariant} className="px-3 py-1 text-xs">
-                        <Clock className="mr-2 h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="outline" className={cn(
+                        "w-full justify-start pointer-events-none text-white",
+                        ageBadgeVariant === 'success' && 'bg-green-500/10 border-green-500',
+                        ageBadgeVariant === 'warning' && 'bg-yellow-500/10 border-yellow-500',
+                        ageBadgeVariant === 'destructive' && 'bg-red-500/10 border-red-500'
+                    )}>
+                        <Clock className="mr-2 h-4 w-4" />
                         Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
-                    </Badge>
+                    </Button>
                 </div>
                 <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-white/70 flex items-center gap-2">
