@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center p-2 justify-center group-data-[collapsible=icon]:justify-center h-14">
             <div className="group-data-[collapsible=icon]:hidden">
-                <ImoDeusTextLogo size="text-2xl" />
+                <ImoDeusTextLogo className="w-36" />
             </div>
             <Home className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
           </Link>
