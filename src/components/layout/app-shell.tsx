@@ -36,6 +36,7 @@ import { Topbar } from './Topbar';
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { LogoIcon } from '../icons/LogoIcon';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -46,11 +47,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <Link href="/dashboard" className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-center">
-            <LogoIcon className="h-7 w-7 text-white" />
-            <h1 className="font-bold text-xl group-data-[collapsible=icon]:hidden">
-                <span>ImoDeus</span><span className="text-primary">.ai</span>
-            </h1>
+          <Link href="/dashboard" className="flex items-center p-2 justify-center group-data-[collapsible=icon]:justify-center h-14">
+            <div className="relative w-36 h-9 group-data-[collapsible=icon]:hidden">
+              <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" fill style={{objectFit: 'contain'}} priority />
+            </div>
+            <LogoIcon className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
         <SidebarContent>

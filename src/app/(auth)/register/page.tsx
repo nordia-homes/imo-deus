@@ -18,7 +18,7 @@ import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, deleteDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import type { Invite } from "@/lib/types";
-import { LogoIcon } from "@/components/icons/LogoIcon";
+import Image from "next/image";
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -142,11 +142,8 @@ export default function RegisterPage() {
         <form onSubmit={form.handleSubmit(handleRegister)} className="w-full max-w-sm">
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
-                     <div className="flex justify-center items-center gap-2 mb-4">
-                        <LogoIcon className="h-8 w-8 text-primary" />
-                        <h1 className="font-headline text-3xl font-bold">
-                            <span>ImoDeus</span><span className="text-success">.ai</span>
-                        </h1>
+                     <div className="flex justify-center items-center mb-4">
+                        <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" width={180} height={40} priority />
                     </div>
                     <CardTitle>Creează un cont nou</CardTitle>
                     <CardDescription>Introdu datele pentru a te înregistra.</CardDescription>

@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { sendPasswordResetEmail, type AuthError } from "firebase/auth";
-import { LogoIcon } from "@/components/icons/LogoIcon";
+import Image from "next/image";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -55,11 +55,8 @@ export default function ForgotPasswordPage() {
         <div className="flex items-center justify-center min-h-screen bg-background">
             <Card className="w-full max-w-sm shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
-                     <div className="flex justify-center items-center gap-2 mb-4">
-                        <LogoIcon className="h-8 w-8 text-primary" />
-                        <h1 className="font-headline text-3xl font-bold">
-                            <span>ImoDeus</span><span className="text-success">.ai</span>
-                        </h1>
+                     <div className="flex justify-center items-center mb-4">
+                        <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" width={180} height={40} priority />
                     </div>
                     <CardTitle>Verifică email-ul</CardTitle>
                     <CardDescription>
@@ -82,11 +79,8 @@ export default function ForgotPasswordPage() {
         <form onSubmit={form.handleSubmit(handleResetPassword)} className="w-full max-w-sm">
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
-                     <div className="flex justify-center items-center gap-2 mb-4">
-                        <LogoIcon className="h-8 w-8 text-primary" />
-                        <h1 className="font-headline text-3xl font-bold">
-                            <span>ImoDeus</span><span className="text-success">.ai</span>
-                        </h1>
+                     <div className="flex justify-center items-center mb-4">
+                        <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" width={180} height={40} priority />
                     </div>
                     <CardTitle>Ai uitat parola?</CardTitle>
                     <CardDescription>Introdu adresa de email și îți vom trimite un link de resetare.</CardDescription>
