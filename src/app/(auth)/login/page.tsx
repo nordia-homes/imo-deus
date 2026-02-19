@@ -86,7 +86,7 @@ export default function LoginPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
-                        <ImoDeusTextLogo className="w-56" />
+                        <ImoDeusTextLogo className="w-64" />
                     </div>
                     <CardTitle>Autentificare</CardTitle>
                     <CardDescription>Introdu datele pentru a accesa platforma.</CardDescription>

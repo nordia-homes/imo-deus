@@ -143,7 +143,7 @@ export default function RegisterPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
-                        <ImoDeusTextLogo className="w-56" />
+                        <ImoDeusTextLogo className="w-64" />
                     </div>
                     <CardTitle>Creează un cont nou</CardTitle>
                     <CardDescription>Introdu datele pentru a te înregistra.</CardDescription>
