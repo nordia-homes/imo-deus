@@ -90,7 +90,7 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
                         ageBadgeVariant === 'destructive' && 'bg-red-500/10 border-red-500'
                     )}>
                         <Clock className="mr-2 h-4 w-4" />
-                        Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
+                        {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
                     </Button>
                 </div>
                 <div className="space-y-2">
