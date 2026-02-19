@@ -7,14 +7,14 @@ import { z, Message } from 'genkit';
 import { updateContactPreferences, UpdateBuyerPreferencesInputSchema } from './update-buyer-preferences';
 
 // Define schemas
-export const PreferencesChatInputSchema = z.object({
+const PreferencesChatInputSchema = z.object({
   history: z.array(z.custom<Message>()).describe('The chat history.'),
   prompt: z.string().describe("The user's latest message."),
   linkId: z.string().describe("The secure link ID for the buyer."),
 });
 export type PreferencesChatInput = z.infer<typeof PreferencesChatInputSchema>;
 
-export const PreferencesChatOutputSchema = z.object({
+const PreferencesChatOutputSchema = z.object({
   response: z.string().describe("The AI's response to the user."),
 });
 export type PreferencesChatOutput = z.infer<typeof PreferencesChatOutputSchema>;
