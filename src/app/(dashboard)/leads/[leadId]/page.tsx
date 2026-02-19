@@ -776,12 +776,12 @@ export default function LeadDetailPage() {
                         />
                         <ScheduledViewingsCard viewings={scheduledViewings} />
                         <SimilarLeadsCard leads={similarCumparatori} />
+                        <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
                     </div>
 
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <PreferencesFormCard contact={contact} agency={agency} />
-                        <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
