@@ -658,6 +658,7 @@ export default function LeadDetailPage() {
                     />
 
                     <ClientPortalManager contact={contact} agency={agency} />
+                    <PreferencesFormCard contact={contact} agency={agency} />
                     
                     <div className="pt-2">
                         <LeadDescriptionCard contact={contact} onUpdateContact={handleUpdateContact} />
