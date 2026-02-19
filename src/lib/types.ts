@@ -137,6 +137,7 @@ export type Contact = {
     recommendationHistory?: { [propertyId: string]: PortalRecommendation };
     photoUrl?: string;
     preferencesLinkId?: string;
+    preferencesChatHistory?: { role: 'user' | 'model'; content: string; }[];
     generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
 };
 

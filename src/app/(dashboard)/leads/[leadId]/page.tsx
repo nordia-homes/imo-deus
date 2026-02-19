@@ -47,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { EditPreferencesForm } from '@/components/leads/detail/EditPreferencesForm';
 import { PreferencesFormCard } from '@/components/leads/detail/PreferencesFormCard';
+import { PreferencesChatHistoryCard } from '@/components/leads/detail/PreferencesChatHistoryCard';
 
 
 const PageSkeleton = () => (
@@ -707,6 +708,16 @@ export default function LeadDetailPage() {
                                 </AccordionContent>
                             </AccordionItem>
                         </Card>
+                        <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                            <AccordionItem value="chat-history" className="border-b-0">
+                                <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
+                                    Istoric Chat Preferințe
+                                </AccordionTrigger>
+                                <AccordionContent className="px-2 pb-2 pt-0">
+                                    <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
                          <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                              <AccordionItem value="settings" className="border-b-0">
                                 <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">
@@ -769,6 +780,7 @@ export default function LeadDetailPage() {
                     <div className="lg:col-span-3 space-y-6">
                         <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
                         <PreferencesFormCard contact={contact} agency={agency} />
+                        <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
                         <FinancialStatusCard 
                             contact={contact} 
                             onUpdateContact={handleUpdateContact}
