@@ -8,7 +8,7 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Imoflux.ai CRM',
+  title: 'ImoDeus.ai CRM',
   description: 'AI-First Real Estate CRM Platform',
 };
 

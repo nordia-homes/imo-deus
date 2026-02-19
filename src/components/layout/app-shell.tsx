@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-center">
             <LogoIcon className="h-7 w-7 text-white" />
             <h1 className="font-bold text-xl group-data-[collapsible=icon]:hidden">
-                <span>Imoflux</span><span className="text-primary">.ai</span>
+                <span>ImoDeus</span><span className="text-primary">.ai</span>
             </h1>
           </Link>
         </SidebarHeader>
@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="p-4 text-center text-xs text-sidebar-foreground/60">
           <p>
-            &copy; {new Date().getFullYear()} Imoflux.ai
+            &copy; {new Date().getFullYear()} ImoDeus.ai
           </p>
         </SidebarFooter>
       </Sidebar>

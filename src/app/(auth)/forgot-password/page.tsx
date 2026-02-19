@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
                      <div className="flex justify-center items-center gap-2 mb-4">
                         <LogoIcon className="h-8 w-8 text-primary" />
                         <h1 className="font-headline text-3xl font-bold">
-                            <span>Imoflux</span><span className="text-success">.ai</span>
+                            <span>ImoDeus</span><span className="text-success">.ai</span>
                         </h1>
                     </div>
                     <CardTitle>Verifică email-ul</CardTitle>
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
                      <div className="flex justify-center items-center gap-2 mb-4">
                         <LogoIcon className="h-8 w-8 text-primary" />
                         <h1 className="font-headline text-3xl font-bold">
-                            <span>Imoflux</span><span className="text-success">.ai</span>
+                            <span>ImoDeus</span><span className="text-success">.ai</span>
                         </h1>
                     </div>
                     <CardTitle>Ai uitat parola?</CardTitle>
