@@ -86,7 +86,7 @@ export default function LoginPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
-                        <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" width={180} height={40} priority />
+                        <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/imodeus%20logo.jpeg?alt=media&token=6c82bca6-ba2e-4801-8cd7-3118a4a94ce7" alt="ImoDeus.ai Logo" width={180} height={40} priority />
                     </div>
                     <CardTitle>Autentificare</CardTitle>
                     <CardDescription>Introdu datele pentru a accesa platforma.</CardDescription>

@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
           <Link href="/dashboard" className="flex items-center p-2 justify-center group-data-[collapsible=icon]:justify-center h-14">
             <div className="relative w-36 h-9 group-data-[collapsible=icon]:hidden">
-              <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logoImoDeus-ai.jpeg?alt=media&token=0157fe1c-acd8-46df-84ed-d1e6074aa507" alt="ImoDeus.ai Logo" fill style={{objectFit: 'contain'}} priority />
+              <Image src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/imodeus%20logo.jpeg?alt=media&token=6c82bca6-ba2e-4801-8cd7-3118a4a94ce7" alt="ImoDeus.ai Logo" fill style={{objectFit: 'contain'}} priority />
             </div>
             <LogoIcon className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
           </Link>
