@@ -5,7 +5,7 @@ import type { SVGProps } from "react";
 export function ImoDeusTextLogo({ className, ...props }: SVGProps<SVGSVGElement> & { className?: string }) {
   return (
     <svg
-      viewBox="0 0 650 140"
+      viewBox="0 0 550 140"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("h-auto", className)}
       {...props}
@@ -25,15 +25,17 @@ export function ImoDeusTextLogo({ className, ...props }: SVGProps<SVGSVGElement>
         im
       </text>
 
-      <g transform="translate(150,25)">
+      <g transform="translate(130, 25)">
         <circle cx="40" cy="40" r="40" fill="#2C1E63"/>
+
         <polygon points="15,45 40,25 65,45" fill="white"/>
         <rect x="27" y="45" width="26" height="25" fill="white"/>
+
         <circle cx="40" cy="55" r="4" fill="#2C1E63"/>
         <rect x="38" y="58" width="4" height="12" fill="#2C1E63"/>
       </g>
 
-      <text x="230" y="90"
+      <text x="210" y="90"
             fontFamily="Poppins, Montserrat, sans-serif"
             fontWeight="600"
             fontSize="70"
@@ -41,7 +43,7 @@ export function ImoDeusTextLogo({ className, ...props }: SVGProps<SVGSVGElement>
         deus
       </text>
 
-      <text x="440" y="90"
+      <text x="400" y="90"
             fontFamily="Poppins, Montserrat, sans-serif"
             fontWeight="500"
             fontSize="55"

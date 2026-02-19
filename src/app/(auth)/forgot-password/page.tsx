@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
             <Card className="w-full max-w-sm shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
-                        <ImoDeusTextLogo className="w-48" />
+                        <ImoDeusTextLogo className="w-56" />
                     </div>
                     <CardTitle>Verifică email-ul</CardTitle>
                     <CardDescription>
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
             <Card className="shadow-2xl rounded-2xl">
                 <CardHeader className="text-center">
                      <div className="flex justify-center items-center mb-4">
-                        <ImoDeusTextLogo className="w-48" />
+                        <ImoDeusTextLogo className="w-56" />
                     </div>
                     <CardTitle>Ai uitat parola?</CardTitle>
                     <CardDescription>Introdu adresa de email și îți vom trimite un link de resetare.</CardDescription>
