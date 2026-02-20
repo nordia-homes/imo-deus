@@ -481,7 +481,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     
                     {!isMobile && (
-                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#152A47] border-2 border-dashed border-primary/50">
+                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#0F1E33] border-2 border-dashed border-primary/50">
                             <CardContent className="p-6">
                                 <div className="mb-4 text-center">
                                     <FormLabel className="text-xl font-semibold mb-2 block text-primary">Fotografii (max 16)</FormLabel>
