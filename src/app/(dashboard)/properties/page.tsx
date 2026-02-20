@@ -117,21 +117,26 @@ export default function PropertiesPage() {
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button onClick={() => setIsAddOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adaugă Proprietate
-                            </Button>
+                            <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+                              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                                <Filter className="mr-2 h-4 w-4" /> Filtrează
+                              </Button>
+                            </PropertyFilters>
+                            <AddPropertyDialog 
+                                isOpen={isAddOpen} 
+                                onOpenChange={setIsAddOpen}
+                                property={null}
+                            >
+                                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adaugă Proprietate
+                                </Button>
+                            </AddPropertyDialog>
                         </div>
                     </div>
                 </CardHeader>
             </Card>
             
-            <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-              <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
-                <Filter className="mr-2 h-4 w-4" /> Filtrează Proprietăți
-              </Button>
-            </PropertyFilters>
-
             <PropertyList properties={filteredProperties} isLoading={isLoading} onDeleteRequest={setDeletingProperty} />
         </div>
         <DeletePropertyAlert
