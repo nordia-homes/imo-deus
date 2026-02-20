@@ -483,18 +483,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                 <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    accept="image/png, image/jpeg"
-                    onChange={handleImageChange}
-                />
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     
                     {!isMobile && (
-                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#0F1E33] border-2 border-dashed border-primary/50">
+                         <Card className="shadow-2xl rounded-2xl mb-8 bg-[#152A47] border-2 border-dashed border-primary/50 text-white">
                             <CardContent className="p-6">
                                 <div className="mb-4 text-center">
                                     <FormLabel className="text-xl font-semibold mb-2 block text-primary">Fotografii (max 16)</FormLabel>
@@ -512,10 +504,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
-                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
-                                                <p className="text-sm font-semibold">Încarcă</p>
-                                            </div>
+                                           <label className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                                <input ref={fileInputRef} type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                                    <p className="text-sm font-semibold">Încarcă</p>
+                                                </div>
+                                            </label>
                                         )}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
@@ -542,10 +537,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
-                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
-                                                <p className="text-sm font-semibold">Încarcă</p>
-                                            </div>
+                                            <label className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                                <input ref={fileInputRef} type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                                    <p className="text-sm font-semibold">Încarcă</p>
+                                                </div>
+                                            </label>
                                         )}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
@@ -622,7 +620,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </Button>
                                             </FormLabel>
                                             <FormControl>
-                                            <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                            <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50 lg:h-[454px]" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
