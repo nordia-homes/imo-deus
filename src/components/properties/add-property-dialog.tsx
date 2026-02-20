@@ -475,11 +475,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className="overflow-y-auto p-4 md:p-6">
-                    <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white mb-8">
-                        <CardContent className="p-4 md:p-6">
-                            <FormLabel className="text-white/80">Fotografii (max 16)</FormLabel>
-                            <FormDescription className="mb-4 text-white/70">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
+                    <Card className={cn("shadow-xl rounded-2xl mb-8", isMobile ? "bg-[#152A47] border-none text-white" : "bg-transparent border-none shadow-none")}>
+                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-0")}>
+                            <FormLabel className={cn(isMobile ? "text-white/80" : "text-foreground")}>Fotografii (max 16)</FormLabel>
+                            <FormDescription className={cn("mb-4", isMobile ? "text-white/70 !mt-2" : "")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                              <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                                 <div className="flex w-max space-x-4 pb-4">
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -506,10 +506,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                         </CardContent>
                     </Card>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-8">
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                    <div className={cn("grid grid-cols-1 gap-8", !isMobile && "md:grid-cols-2")}>
+                        <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
                                     <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Titlu Anunț *</FormLabel><FormControl><Input className="text-base md:text-sm bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -524,8 +524,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
 
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Locație</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Oraș *</FormLabel>
@@ -547,8 +547,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
 
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Comision</h3>
                                     <FormField
                                         control={form.control}
@@ -598,8 +598,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
 
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -614,9 +614,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
                         </div>
-                        <div className="space-y-8">
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                               <CardContent className="p-4 md:p-6 space-y-4">
+                        <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                               <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                    <h3 className="text-lg font-semibold text-primary">Descriere</h3>
                                    <FormField
                                         control={form.control}
@@ -651,8 +651,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     />
                                 </CardContent>
                              </Card>
-                             <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Specificații</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <FormField control={form.control} name="squareFootage" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Suprafață Utilă</FormLabel><FormControl><Input type="number" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: 120" /></FormControl><FormMessage /></FormItem> )} />
@@ -669,8 +669,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
                             
-                            <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
-                                <CardContent className="p-4 md:p-6 space-y-4">
+                            <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Dotări & Finisaje</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confort</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -730,12 +730,9 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn(
-        "p-0 flex flex-col", 
-        isMobile 
-            ? "h-screen w-screen max-w-full rounded-none border-none" 
-            : "h-screen w-screen max-w-full rounded-none bg-[#0F1E33] text-white border-none"
+        "p-0 flex flex-col h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white"
       )}>
-        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10")}>
+        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
           <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
