@@ -481,7 +481,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     
                     {!isMobile && (
-                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#0F1E33] border-2 border-dashed border-primary/50">
+                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#152A47] border-2 border-dashed border-primary/50">
                             <CardContent className="p-6">
                                 <div className="mb-4 text-center">
                                     <FormLabel className="text-xl font-semibold mb-2 block text-primary">Fotografii (max 16)</FormLabel>
@@ -499,11 +499,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file" className="grid place-content-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                                <div>
-                                                    <Upload className="w-8 h-8 mx-auto mb-2 text-white/70" />
-                                                    <p className="text-sm font-semibold">Încarcă</p>
-                                                </div>
+                                            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                                <p className="text-sm font-semibold">Încarcă</p>
                                                 <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                             </label>
                                         )}
@@ -532,12 +530,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file" className="grid place-content-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                                <div>
-                                                    <Upload className="w-8 h-8 mx-auto mb-2 text-white/70" />
-                                                    <p className="text-sm font-semibold">Încarcă</p>
-                                                </div>
-                                                <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                            <label htmlFor="dropzone-file-mobile" className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                                <p className="text-sm font-semibold">Încarcă</p>
+                                                <input id="dropzone-file-mobile" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                             </label>
                                         )}
                                     </div>
