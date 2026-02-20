@@ -106,7 +106,7 @@ export default function PropertiesPage() {
         </div>
 
         {/* Desktop View */}
-        <div className="hidden lg:block space-y-6">
+        <div className="hidden lg:block space-y-6 px-3">
             <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                 <CardHeader>
                     <div className="flex items-center justify-between">
