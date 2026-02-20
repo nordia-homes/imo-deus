@@ -477,10 +477,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     <Card className={cn("shadow-xl rounded-2xl mb-8", isMobile ? "bg-[#152A47] border-none text-white" : "bg-transparent border-none shadow-none")}>
-                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-0")}>
-                            <FormLabel className={cn(isMobile ? "text-white/80" : "text-foreground")}>Fotografii (max 16)</FormLabel>
-                            <FormDescription className={cn("mb-4", isMobile ? "text-white/70 !mt-2" : "")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
-                             <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-0 text-center")}>
+                             <div className={cn(!isMobile && 'mb-4')}>
+                                <FormLabel className={cn(isMobile ? "text-white/80" : "text-lg font-semibold text-primary")}>Fotografii (max 16)</FormLabel>
+                                <FormDescription className={cn("mb-4", isMobile ? "text-white/70 !mt-2" : "text-sm text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                            </div>
+                            <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                                 <div className="flex w-max space-x-4 pb-4">
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                         <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
@@ -547,6 +549,43 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
 
+                            <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                               <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
+                                   <h3 className="text-lg font-semibold text-primary">Descriere</h3>
+                                   <FormField
+                                        control={form.control}
+                                        name="keyFeatures"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/80">Caracteristici Cheie pentru AI *</FormLabel>
+                                            <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
+                                            <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center justify-between text-white/80">
+                                            <span>Descriere Anunț</span>
+                                            <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
+                                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                                Generează cu AI
+                                            </Button>
+                                            </FormLabel>
+                                            <FormControl>
+                                            <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                </CardContent>
+                             </Card>
+                             
                              <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Comision</h3>
@@ -597,60 +636,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     />
                                 </CardContent>
                             </Card>
-
-                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
-                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
-                                    <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Agent</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Nealocat</SelectItem>{agents.map(agent => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                    </div>
-                                    <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
-                                </CardContent>
-                            </Card>
                         </div>
                         <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
-                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
-                               <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
-                                   <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                                   <FormField
-                                        control={form.control}
-                                        name="keyFeatures"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white/80">Caracteristici Cheie pentru AI *</FormLabel>
-                                            <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
-                                            <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center justify-between text-white/80">
-                                            <span>Descriere Anunț</span>
-                                            <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
-                                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                                Generează cu AI
-                                            </Button>
-                                            </FormLabel>
-                                            <FormControl>
-                                            <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                             </Card>
                              <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Specificații</h3>
@@ -685,6 +672,22 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Lift</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Orientare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Nord">Nord</SelectItem><SelectItem value="Sud">Sud</SelectItem><SelectItem value="Est">Est</SelectItem><SelectItem value="Vest">Vest</SelectItem><SelectItem value="NV">NV</SelectItem><SelectItem value="NE">NE</SelectItem><SelectItem value="SV">SV</SelectItem><SelectItem value="SE">SE</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
+                                    <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Agent</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Nealocat</SelectItem>{agents.map(agent => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                    </div>
+                                    <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
                                 </CardContent>
                             </Card>
                         </div>
@@ -734,6 +737,7 @@ export function AddPropertyDialog({
       )}>
         <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
           <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+           <DialogClose className="absolute right-2 top-1/2 -translate-y-1/2" />
         </DialogHeader>
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} isMobile={isMobile} />}
