@@ -21,7 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -479,8 +479,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     <Card className={cn("shadow-xl rounded-2xl mb-8", isMobile ? "bg-[#152A47] border-none text-white" : "bg-transparent border-none shadow-none")}>
                         <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-0 text-center")}>
                              <div className={cn(!isMobile && 'mb-4')}>
-                                <FormLabel className={cn(isMobile ? "text-white/80" : "text-lg font-semibold text-primary")}>Fotografii (max 16)</FormLabel>
-                                <FormDescription className={cn("mb-4", isMobile ? "text-white/70 !mt-2" : "text-sm text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                                <FormLabel className={cn("text-center font-semibold mb-2 block", isMobile ? "text-white/80" : "text-lg text-primary")}>Fotografii (max 16)</FormLabel>
+                                <FormDescription className={cn("text-center", isMobile ? "text-white/70 !mt-2" : "text-sm text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                             </div>
                             <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                                 <div className="flex w-max space-x-4 pb-4">
@@ -586,56 +586,6 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                              </Card>
                              
-                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
-                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
-                                    <h3 className="text-lg font-semibold text-primary">Comision</h3>
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionType"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-3">
-                                            <FormLabel className="text-white/80">Tip Comision</FormLabel>
-                                            <FormControl>
-                                                <RadioGroup
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                className="flex items-center gap-6"
-                                                >
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                    <RadioGroupItem value="percentage" className="border-white/50 text-white" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal text-white/80">Procentual (%)</FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                    <RadioGroupItem value="fixed" className="border-white/50 text-white" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal text-white/80">Sumă Fixă (€)</FormLabel>
-                                                </FormItem>
-                                                </RadioGroup>
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="text-white/80">
-                                                Valoare Comision {watchedCommissionType === 'percentage' ? '(%)' : '(€)'}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input type="number" step="any" {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
                         </div>
                         <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
                              <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
@@ -688,6 +638,57 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                     </div>
                                     <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
+                                </CardContent>
+                            </Card>
+
+                             <Card className={cn("shadow-xl rounded-2xl", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#152A47] border-none text-white")}>
+                                <CardContent className={cn("space-y-4", isMobile ? "p-4 pt-6" : "p-6")}>
+                                    <h3 className="text-lg font-semibold text-primary">Comision</h3>
+                                    <FormField
+                                        control={form.control}
+                                        name="commissionType"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-3">
+                                            <FormLabel className="text-white/80">Tip Comision</FormLabel>
+                                            <FormControl>
+                                                <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                className="flex items-center gap-6"
+                                                >
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                    <RadioGroupItem value="percentage" className="border-white/50 text-white" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal text-white/80">Procentual (%)</FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                    <RadioGroupItem value="fixed" className="border-white/50 text-white" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal text-white/80">Sumă Fixă (€)</FormLabel>
+                                                </FormItem>
+                                                </RadioGroup>
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="commissionValue"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="text-white/80">
+                                                Valoare Comision {watchedCommissionType === 'percentage' ? '(%)' : '(€)'}
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input type="number" step="any" {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
                         </div>
