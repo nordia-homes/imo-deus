@@ -187,6 +187,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const sensors = useSensors(
       useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -315,6 +316,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
           const updatedSources = [...prevSources, ...newFiles];
           return updatedSources.slice(0, 16);
         });
+      }
+      // Reset file input to allow re-selecting the same file(s)
+      if (event.target) {
+        event.target.value = '';
       }
     };
 
@@ -478,6 +483,14 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
+                 <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept="image/png, image/jpeg"
+                    onChange={handleImageChange}
+                />
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     
                     {!isMobile && (
@@ -499,11 +512,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                            <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
                                                 <Upload className="w-8 h-8 mb-2 text-white/70" />
                                                 <p className="text-sm font-semibold">Încarcă</p>
-                                                <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                                            </label>
+                                            </div>
                                         )}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
@@ -530,11 +542,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file-mobile" className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
+                                            <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#0F1E33]/70 text-white transition-colors shadow-lg">
                                                 <Upload className="w-8 h-8 mb-2 text-white/70" />
                                                 <p className="text-sm font-semibold">Încarcă</p>
-                                                <input id="dropzone-file-mobile" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                                            </label>
+                                            </div>
                                         )}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
