@@ -479,35 +479,69 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
-                    <Card className={cn("shadow-2xl rounded-2xl mb-8", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#0F1E33] border border-white/10")}>
-                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-6")}>
-                            <div className={cn('mb-4 text-center')}>
-                                <FormLabel className={cn("font-semibold mb-2 block", isMobile ? "text-white/80" : "text-xl text-primary")}>Fotografii (max 16)</FormLabel>
-                                <FormDescription className={cn(isMobile ? "text-white/70 !mt-2" : "text-base text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
-                            </div>
-                            <ScrollArea className="w-full whitespace-nowrap rounded-lg">
-                                <div className="flex items-center w-max space-x-4 pb-4">
-                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                        <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
-                                            {imageItems.map((item, index) => (
-                                                <div className="w-40 h-40" key={item.id}>
-                                                    <SortableImage id={item.id} src={item.url} onRemove={() => removeImage(index)} />
-                                                </div>
-                                            ))}
-                                        </SortableContext>
-                                    </DndContext>
-                                    {imageItems.length < 16 && (
-                                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                            <Upload className="w-8 h-8 mb-2 text-white/70" />
-                                            <p className="text-sm font-semibold">Încarcă</p>
-                                            <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
-                                        </label>
-                                    )}
+                    
+                    {!isMobile && (
+                        <Card className="shadow-2xl rounded-2xl mb-8 bg-[#0F1E33] border border-white/10">
+                            <CardContent className="p-6">
+                                <div className="mb-4 text-center">
+                                    <FormLabel className="text-xl font-semibold mb-2 block text-primary">Fotografii (max 16)</FormLabel>
+                                    <FormDescription className="text-base text-white/70 !mt-2">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                                 </div>
-                                <ScrollBar orientation="horizontal" />
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
+                                <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                                    <div className="flex items-center w-max space-x-4 pb-4">
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                            <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
+                                                {imageItems.map((item, index) => (
+                                                    <div className="w-40 h-40" key={item.id}>
+                                                        <SortableImage id={item.id} src={item.url} onRemove={() => removeImage(index)} />
+                                                    </div>
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                        {imageItems.length < 16 && (
+                                            <label htmlFor="dropzone-file" className="flex flex-col justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
+                                                <Upload className="w-8 h-8 mb-2 text-white/70 mx-auto" />
+                                                <p className="text-sm font-semibold text-center">Încarcă</p>
+                                                <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                            </label>
+                                        )}
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    )}
+                    {isMobile && (
+                         <Card className={"shadow-xl rounded-2xl mb-8 bg-[#152A47] border-none text-white"}>
+                            <CardContent className={"p-4 pt-6 space-y-4"}>
+                                <div className={cn('mb-4 text-center')}>
+                                    <FormLabel className={cn("font-semibold mb-2 block", "text-white/80")}>Fotografii (max 16)</FormLabel>
+                                    <FormDescription className={cn("text-white/70 !mt-2")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                                </div>
+                                <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                                    <div className="flex items-center w-max space-x-4 pb-4">
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                            <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
+                                                {imageItems.map((item, index) => (
+                                                    <div className="w-40 h-40" key={item.id}>
+                                                        <SortableImage id={item.id} src={item.url} onRemove={() => removeImage(index)} />
+                                                    </div>
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                        {imageItems.length < 16 && (
+                                            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
+                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                                <p className="text-sm font-semibold">Încarcă</p>
+                                                <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
+                                            </label>
+                                        )}
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <div className={cn("grid grid-cols-1 gap-8", !isMobile && "md:grid-cols-2")}>
                          <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
@@ -733,7 +767,8 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn(
-        "p-0 flex flex-col h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white"
+        "p-0 flex flex-col max-w-full rounded-none border-none bg-[#0F1E33] text-white",
+        isMobile ? "h-screen w-screen" : "w-screen h-screen"
       )}>
         <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
           <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
