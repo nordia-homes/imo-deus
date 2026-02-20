@@ -499,9 +499,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
-                                                <p className="text-sm font-semibold text-center">Încarcă</p>
+                                            <label htmlFor="dropzone-file" className="grid place-content-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
+                                                <div>
+                                                    <Upload className="w-8 h-8 mx-auto mb-2 text-white/70" />
+                                                    <p className="text-sm font-semibold">Încarcă</p>
+                                                </div>
                                                 <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                             </label>
                                         )}
@@ -530,9 +532,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </SortableContext>
                                         </DndContext>
                                         {imageItems.length < 16 && (
-                                            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                                <Upload className="w-8 h-8 mb-2 text-white/70" />
-                                                <p className="text-sm font-semibold text-center">Încarcă</p>
+                                            <label htmlFor="dropzone-file" className="grid place-content-center text-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
+                                                <div>
+                                                    <Upload className="w-8 h-8 mx-auto mb-2 text-white/70" />
+                                                    <p className="text-sm font-semibold">Încarcă</p>
+                                                </div>
                                                 <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                             </label>
                                         )}
