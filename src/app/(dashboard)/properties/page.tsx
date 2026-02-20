@@ -107,23 +107,27 @@ export default function PropertiesPage() {
 
         {/* Desktop View */}
         <div className="hidden lg:block space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți</h1>
-                    <p className="text-muted-foreground">
-                        Gestionează și analizează portofoliul de proprietăți.
-                    </p>
-                </div>
-                 <div className="flex items-center gap-2">
-                    <Button onClick={() => setIsAddOpen(true)} className="w-full md:w-auto">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adaugă Proprietate
-                    </Button>
-                </div>
-            </div>
+            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
+                            <p className="text-white/70">
+                                Gestionează și analizează portofoliul de proprietăți.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button onClick={() => setIsAddOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adaugă Proprietate
+                            </Button>
+                        </div>
+                    </div>
+                </CardHeader>
+            </Card>
             
             <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
                 <Filter className="mr-2 h-4 w-4" /> Filtrează Proprietăți
               </Button>
             </PropertyFilters>

@@ -70,7 +70,7 @@ export function PropertyCard({
     <>
       <Card className={cn(
         "group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card",
-        isMobile && !agencyId && "bg-[#152A47] text-white border-none"
+        !agencyId && "bg-[#152A47] text-white border-none"
       )}>
         <CardContent className="p-0">
           <div className="relative">
@@ -99,12 +99,12 @@ export function PropertyCard({
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <Link href={href} className="flex-1 min-w-0">
-                <h3 className={cn("font-semibold text-foreground truncate group-hover:text-primary transition-colors", isMobile && !agencyId && "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
-                <p className={cn("text-sm text-muted-foreground truncate", isMobile && !agencyId && "text-white/70")} title={property.address}>{property.address}</p>
+                <h3 className={cn("font-semibold text-foreground truncate group-hover:text-primary transition-colors", !agencyId && "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
+                <p className={cn("text-sm text-muted-foreground truncate", !agencyId && "text-white/70")} title={property.address}>{property.address}</p>
               </Link>
             </div>
             
-            <div className={cn("flex items-center gap-4 text-sm text-muted-foreground flex-wrap", isMobile && !agencyId && "text-white/70")}>
+            <div className={cn("flex items-center gap-4 text-sm text-muted-foreground flex-wrap", !agencyId && "text-white/70")}>
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
                     <span>{property.rooms}</span>
@@ -126,21 +126,21 @@ export function PropertyCard({
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <p className={cn("font-bold text-xl text-foreground", isMobile && !agencyId && "text-white")}>
+              <p className={cn("font-bold text-xl text-foreground", !agencyId && "text-white")}>
                 €{property.price.toLocaleString()}
               </p>
               {!agencyId ? (
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile && "text-white/80 hover:bg-white/10")} onClick={handleCopyLink}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", !agencyId && "text-white/80 hover:bg-white/10")} onClick={handleCopyLink}>
                         {copied ? <Check className="h-4 w-4 text-green-500" /> : <LinkIcon className="h-4 w-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile && "text-white/80 hover:bg-white/10")} onClick={() => setIsEditDialogOpen(true)}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", !agencyId && "text-white/80 hover:bg-white/10")} onClick={() => setIsEditDialogOpen(true)}>
                         <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDeleteRequest}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
-                    <Button asChild size="sm" className={cn(isMobile && "bg-white/10 text-white hover:bg-white/20")}>
+                    <Button asChild size="sm" className={cn(!agencyId && "bg-white/10 text-white hover:bg-white/20")}>
                         <Link href={href}>Vezi Detalii</Link>
                     </Button>
                 </div>
