@@ -474,7 +474,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className="overflow-y-auto md:px-3 md:py-4 space-y-8 px-2 py-4 bg-[#0F1E33]">
+                <div className="overflow-y-auto md:px-3 md:py-4 space-y-8 px-2 py-4">
                     
                     <Card className="shadow-xl rounded-2xl bg-[#152A47] border-none text-white">
                         <CardContent className="p-4 md:p-6">
@@ -723,9 +723,14 @@ export function AddPropertyDialog({
           {children}
         </DialogTrigger>
       )}
-      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-4xl h-[90vh]")}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
-          <DialogTitle className="text-xl text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
+      <DialogContent className={cn(
+        "p-0 flex flex-col", 
+        isMobile 
+            ? "h-screen w-screen max-w-full rounded-none border-none" 
+            : "sm:max-w-4xl h-[90vh] bg-[#0F1E33] text-white border-none"
+      )}>
+        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10")}>
+          <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
             {isOpen && <PropertyForm key={formKey} propertyData={property || null} onClose={() => onOpenChange(false)} isMobile={isMobile} />}
