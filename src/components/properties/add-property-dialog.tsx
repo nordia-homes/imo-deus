@@ -21,7 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -479,14 +479,14 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
                 <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
-                    <Card className={cn("shadow-xl rounded-2xl mb-8", "bg-[#152A47] border-none text-white")}>
-                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-6 text-center")}>
-                             <div className={cn(!isMobile && 'mb-4')}>
-                                <FormLabel className={cn("text-center font-semibold mb-2 block", isMobile ? "text-white/80" : "text-lg text-primary")}>Fotografii (max 16)</FormLabel>
-                                <FormDescription className={cn("text-center", isMobile ? "text-white/70 !mt-2" : "text-sm text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
+                    <Card className={cn("shadow-2xl rounded-2xl mb-8", isMobile ? "bg-[#152A47] border-none text-white" : "bg-[#0F1E33] border border-white/10")}>
+                        <CardContent className={cn(isMobile ? "p-4 pt-6 space-y-4" : "p-6")}>
+                            <div className={cn('mb-4 text-center')}>
+                                <FormLabel className={cn("font-semibold mb-2 block", isMobile ? "text-white/80" : "text-xl text-primary")}>Fotografii (max 16)</FormLabel>
+                                <FormDescription className={cn(isMobile ? "text-white/70 !mt-2" : "text-base text-white/70")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                             </div>
                             <ScrollArea className="w-full whitespace-nowrap rounded-lg">
-                                <div className="flex w-max space-x-4 pb-4">
+                                <div className="flex items-center w-max space-x-4 pb-4">
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                         <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
                                             {imageItems.map((item, index) => (
@@ -497,9 +497,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         </SortableContext>
                                     </DndContext>
                                     {imageItems.length < 16 && (
-                                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#0F1E33] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
-                                            <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                                            <p className="text-xs font-semibold">Încarcă</p>
+                                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-40 h-40 shrink-0 rounded-2xl cursor-pointer bg-[#152A47] border-2 border-dashed border-white/20 hover:bg-[#152A47]/70 text-white transition-colors shadow-lg">
+                                            <Upload className="w-8 h-8 mb-2 text-white/70" />
+                                            <p className="text-sm font-semibold">Încarcă</p>
                                             <input id="dropzone-file" type="file" className="hidden" multiple accept="image/png, image/jpeg" onChange={handleImageChange} />
                                         </label>
                                     )}
