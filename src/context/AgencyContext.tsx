@@ -97,7 +97,16 @@ export function AgencyProvider({ children }: { children: React.Node }) {
 export const useAgency = () => {
     const context = useContext(AgencyContext);
     if (context === undefined) {
-        throw new Error('useAgency must be used within an AgencyProvider');
+        // This component is likely on a public page. Return a safe, empty state
+        // instead of throwing an error. Components using this hook should
+        // handle the null state gracefully.
+        return {
+            userProfile: null,
+            user: null,
+            agencyId: null,
+            agency: null,
+            isAgencyLoading: false,
+        };
     }
     return context;
 };
