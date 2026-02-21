@@ -73,12 +73,6 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: [
-      '@opentelemetry/instrumentation',
-      'require-in-the-middle'
-    ],
-  },
   allowedDevOrigins: ["https://*.cloudworkstations.dev"],
 };
 
