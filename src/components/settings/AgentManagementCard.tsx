@@ -104,14 +104,14 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
     }
 
     return (
-        <Card className={cn("shadow-2xl rounded-2xl", "lg:bg-[#152A47] lg:border-none lg:text-white")}>
+        <Card className={cn("shadow-2xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
             <CardHeader>
-                <CardTitle className="lg:text-white">Management Agenți</CardTitle>
-                <CardDescription className="lg:text-white/70">Invită și gestionează agenții din cadrul agenției tale.</CardDescription>
+                <CardTitle className="text-white">Management Agenți</CardTitle>
+                <CardDescription className="text-white/70">Invită și gestionează agenții din cadrul agenției tale.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="font-semibold mb-2 lg:text-white">Invită Agent Nou</h3>
+                    <h3 className="font-semibold mb-2 text-white">Invită Agent Nou</h3>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleInviteAgent)} className="flex items-start gap-4">
                             <FormField
@@ -121,13 +121,13 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                                     <FormItem className="flex-1">
                                         <FormLabel className="sr-only">Email</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="email" placeholder="email@agent.ro" className="lg:bg-white/10 lg:border-white/20 lg:text-white lg:placeholder:text-white/50" />
+                                            <Input {...field} type="email" placeholder="email@agent.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" disabled={isInviting} className="lg:bg-primary lg:hover:bg-primary/90 lg:text-primary-foreground">
+                            <Button type="submit" disabled={isInviting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                                 {isInviting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                                 Invită
                             </Button>
@@ -135,33 +135,33 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                     </Form>
                 </div>
                 <div>
-                    <h3 className="font-semibold mb-2 lg:text-white">Agenți existenți</h3>
+                    <h3 className="font-semibold mb-2 text-white">Agenți existenți</h3>
                      <Table>
                         <TableHeader>
-                            <TableRow className="lg:border-white/20 hover:bg-muted lg:hover:bg-white/10">
-                                <TableHead className="lg:text-white/80">Nume</TableHead>
-                                <TableHead className="lg:text-white/80">Email</TableHead>
-                                <TableHead className="lg:text-white/80">Rol</TableHead>
+                            <TableRow className="border-white/20 hover:bg-white/10">
+                                <TableHead className="text-white/80">Nume</TableHead>
+                                <TableHead className="text-white/80">Email</TableHead>
+                                <TableHead className="text-white/80">Rol</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 [...Array(agency?.agentIds?.length || 1)].map((_, i) => (
-                                    <TableRow key={i} className="lg:border-white/20">
-                                        <TableCell colSpan={3}><Skeleton className="h-10 w-full bg-muted lg:bg-white/20" /></TableCell>
+                                    <TableRow key={i} className="border-white/20">
+                                        <TableCell colSpan={3}><Skeleton className="h-10 w-full bg-white/20" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : agents && agents.length > 0 ? (
                                 agents.map(agent => (
-                                    <TableRow key={agent.id} className="lg:border-white/20 hover:bg-muted lg:hover:bg-white/10">
-                                        <TableCell className="lg:text-white">{agent.name}</TableCell>
-                                        <TableCell className="text-muted-foreground lg:text-white/90">{agent.email}</TableCell>
-                                        <TableCell><Badge variant={agent.role === 'admin' ? 'default' : 'secondary'} className={cn(agent.role !== 'admin' && 'lg:bg-white/20 lg:text-white lg:border-none')}>{agent.role}</Badge></TableCell>
+                                    <TableRow key={agent.id} className="border-white/20 hover:bg-white/10">
+                                        <TableCell className="text-white">{agent.name}</TableCell>
+                                        <TableCell className="text-muted-foreground text-white/90">{agent.email}</TableCell>
+                                        <TableCell><Badge variant={agent.role === 'admin' ? 'default' : 'secondary'} className={cn(agent.role !== 'admin' && 'bg-white/20 text-white border-none')}>{agent.role}</Badge></TableCell>
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow className="lg:border-white/20">
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground lg:text-white/70 h-24">
+                                <TableRow className="border-white/20">
+                                    <TableCell colSpan={3} className="text-center text-white/70 h-24">
                                         Niciun agent în agenție. Invită unul mai sus.
                                     </TableCell>
                                 </TableRow>
