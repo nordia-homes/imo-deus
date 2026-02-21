@@ -14,7 +14,7 @@ type AgencyContextType = {
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
 
-export function AgencyProvider({ children }: { children: React.Node }) {
+export function AgencyProvider({ children }: { children: ReactNode }) {
     const { user, isUserLoading: isUserAuthLoading } = useUser();
     const firestore = useFirestore();
 
@@ -105,7 +105,7 @@ export const useAgency = () => {
             user: null,
             agencyId: null,
             agency: null,
-            isAgencyLoading: false,
+            isAgencyLoading: true, // Set loading to true to avoid rendering incomplete public pages
         };
     }
     return context;
