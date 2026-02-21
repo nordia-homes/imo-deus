@@ -27,13 +27,13 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
         if (!value && value !== 0) return null;
         return (
              <div className={cn("flex items-center gap-3 rounded-lg border p-3 shadow-md",
-                isMobile ? "bg-white/5 border-white/10" : "bg-background"
+                isMobile ? "bg-white/5 border-white/10" : "bg-white/5 border-white/10"
             )}>
-                <div className={cn("p-2 rounded-md", isMobile ? "bg-white/10" : "bg-muted/20")}>
+                <div className={cn("p-2 rounded-md", isMobile ? "bg-white/10" : "bg-white/10")}>
                     {icon}
                 </div>
                 <div>
-                    <p className={cn("text-xs", isMobile ? "text-white/70" : "text-muted-foreground")}>{label}</p>
+                    <p className={cn("text-xs", isMobile ? "text-white/70" : "text-white/70")}>{label}</p>
                     <p className="font-semibold text-sm">{value}</p>
                 </div>
             </div>
@@ -41,8 +41,8 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
     }
 
     const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-        <h3 className={cn("text-base font-semibold col-span-1 sm:col-span-2 md:col-span-3",
-            isMobile ? "text-white" : "text-foreground"
+        <h3 className={cn("text-base font-semibold col-span-1 sm:col-span-2 md:col-span-4",
+            isMobile ? "text-white" : "text-white"
         )}>{children}</h3>
     );
 
@@ -52,17 +52,18 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-          "sm:max-w-2xl",
+          "sm:max-w-5xl",
+          "sm:bg-[#0F1E33] sm:text-white sm:border-none",
           isMobile && "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white flex flex-col"
         )}>
-        <DialogHeader className={cn(isMobile && "shrink-0 border-b border-white/10")}>
+        <DialogHeader className={cn("shrink-0", isMobile && "border-b border-white/10")}>
           <DialogTitle className="truncate">{property.title}</DialogTitle>
-          <DialogDescription className={cn("whitespace-nowrap", isMobile && "text-white/70")}>
+          <DialogDescription className={cn("whitespace-nowrap", isMobile ? "text-white/70" : "text-white/70")}>
             Toate detaliile proprietății într-un singur loc.
           </DialogDescription>
         </DialogHeader>
         <div className={cn(
-            "grid grid-cols-1 sm:grid-cols-2 md:col-span-3 gap-3 py-4 pr-3",
+            "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 py-4 pr-3",
             isMobile ? "overflow-y-auto px-4" : "max-h-[70vh] overflow-y-auto"
         )}>
             <SectionTitle>Detalii Esențiale</SectionTitle>
@@ -79,7 +80,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<AlertTriangle className="h-5 w-5 text-primary" />} label="Risc Seismic" value={property.seismicRisk} />
 
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator className={cn(isMobile && "bg-white/20")} /> </div>
+            <div className="col-span-1 sm:col-span-2 md:col-span-4 pt-2"> <Separator className={cn("bg-white/20")} /> </div>
             <SectionTitle>Dotări & Finisaje</SectionTitle>
             <InfoItem icon={<Star className="h-5 w-5 text-primary" />} label="Confort" value={property.comfort} />
             <InfoItem icon={<Paintbrush className="h-5 w-5 text-primary" />} label="Stare Interior" value={property.interiorState} />
@@ -91,22 +92,22 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Bucătărie" value={property.kitchen} />
             <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Balcon/Terasă" value={property.balconyTerrace} />
             
-            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2"> <Separator className={cn(isMobile && "bg-white/20")} /> </div>
+            <div className="col-span-1 sm:col-span-2 md:col-span-4 pt-2"> <Separator className={cn("bg-white/20")} /> </div>
             <SectionTitle>Informații Proprietar & Management</SectionTitle>
             <InfoItem icon={<User className="h-5 w-5 text-primary" />} label="Nume Proprietar" value={property.ownerName} />
             <InfoItem icon={<Phone className="h-5 w-5 text-primary" />} label="Telefon Proprietar" value={property.ownerPhone} />
             <InfoItem icon={<TrendingUp className="h-5 w-5 text-primary" />} label="Potențial Vânzare" value={property.salesScore} />
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2">
+            <div className="col-span-1 sm:col-span-2 md:col-span-4 pt-2">
                 <InfoItem icon={<Key className="h-5 w-5 text-primary" />} label="Caracteristici cheie" value={property.keyFeatures} />
             </div>
-             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+             <div className="col-span-1 sm:col-span-2 md:col-span-4">
                 <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Oraș" value={property.city} />
             </div>
-             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+             <div className="col-span-1 sm:col-span-2 md:col-span-4">
                 <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Zonă" value={property.zone} />
             </div>
-             <div className="col-span-1 sm:col-span-2 md:col-span-3">
+             <div className="col-span-1 sm:col-span-2 md:col-span-4">
                 <InfoItem icon={<MapPin className="h-5 w-5 text-primary" />} label="Adresă" value={property.address} />
             </div>
 
