@@ -1,11 +1,10 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -14,14 +13,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2, Camera } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -45,10 +47,13 @@ const agencySchema = z.object({
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const { userProfile, agency, isAgencyLoading } = useAgency();
 
   const [isCreatingAgency, setIsCreatingAgency] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -107,10 +112,62 @@ export default function SettingsPage() {
       ...values,
       email: user.email,
     };
-    setDocumentNonBlocking(userDocRef, dataToSave, { merge: true });
+    updateDocumentNonBlocking(userDocRef, dataToSave);
+    if(user.displayName !== values.name) {
+      updateProfile(user, { displayName: values.name });
+    }
     toast({ title: 'Profil salvat!', description: 'Informațiile profilului tău au fost actualizate.' });
   };
   
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    toast({ title: 'Încărcare fotografie...', description: 'Acest proces poate dura câteva momente.' });
+
+    try {
+        const resizedBlob = await new Promise<Blob>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 512;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return reject(new Error('Could not get canvas context'));
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Canvas to blob failed'));
+                    }, 'image/jpeg', 0.8);
+                };
+                img.src = e.target?.result as string;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        const photoRef = ref(storage, `users/${user.uid}/profile.jpg`);
+        await uploadBytes(photoRef, resizedBlob);
+        const photoURL = await getDownloadURL(photoRef);
+
+        await updateProfile(user, { photoURL });
+
+        const userDocRef = doc(firestore, 'users', user.uid);
+        await updateDocumentNonBlocking(userDocRef, { photoUrl: photoURL });
+
+        toast({ title: 'Fotografie actualizată!', description: 'Noua ta fotografie de profil a fost salvată.' });
+    } catch (error) {
+        console.error("Photo upload failed:", error);
+        toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut salva fotografia. Încearcă din nou.' });
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
   const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
     if (!agency?.id) return;
     const agencyDocRef = doc(firestore, 'agencies', agency.id);
@@ -184,10 +241,10 @@ export default function SettingsPage() {
 
   if (isAgencyLoading) {
     return (
-      <div className="space-y-8 px-4 lg:px-6">
+      <div className="space-y-8 p-4 bg-[#0F1E33] text-white">
         <div><Skeleton className="h-8 w-48 mb-2" /><Skeleton className="h-4 w-72" /></div>
-        <Card><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></CardContent></Card>
-        <Card><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></CardContent></Card>
+        <Card className="bg-[#152A47]"><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></CardContent></Card>
+        <Card className="bg-[#152A47]"><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div></CardContent></Card>
       </div>
     );
   }
@@ -203,6 +260,30 @@ export default function SettingsPage() {
                     <form onSubmit={profileForm.handleSubmit(handleProfileSave)}>
                         <CardHeader><CardTitle className="text-white">Profilul Tău</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="relative group">
+                                    <Avatar className="h-24 w-24 border-2 border-primary/50">
+                                        <AvatarImage src={userProfile?.photoUrl || user?.photoURL || undefined} alt={userProfile?.name} />
+                                        <AvatarFallback className="text-3xl bg-white/10">{userProfile?.name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-primary hover:bg-primary/90"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploading}
+                                    >
+                                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                                    </Button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/png, image/jpeg"
+                                        onChange={handlePhotoUpload}
+                                    />
+                                </div>
+                            </div>
                         <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
                         <div className="space-y-2"><Label htmlFor="email" className="text-white/80">Email</Label><Input id="email" type="email" value={user?.email || ''} disabled className="bg-white/10 border-white/20 text-white" /></div>
                         <FormField control={profileForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
