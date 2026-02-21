@@ -1,24 +1,37 @@
 'use client';
-import { PublicPropertyList } from '@/components/properties/PropertyList';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
-import { properties as allProperties } from '@/lib/data';
 import type { Property } from '@/lib/types';
 import { useMemo } from 'react';
 import { Hero } from '@/components/public/Hero';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function AgencyHomePage() {
-  const { agencyId, isAgencyLoading } = usePublicAgency();
+  const { agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
+  const firestore = useFirestore();
 
-  // Filter properties from the static data
+  // Fetch properties from Firestore
+  const propertiesQuery = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return query(
+        collection(firestore, 'agencies', agencyId, 'properties'),
+        where('status', '==', 'Activ')
+    );
+  }, [firestore, agencyId]);
+
+  const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+
+  // Filter featured properties from the fetched data
   const featuredProperties = useMemo(() => {
-    return allProperties.filter(p => p.featured && p.status === 'Activ').slice(0, 4);
-  }, []);
+    if (!properties) return [];
+    return properties.filter(p => p.featured).slice(0, 4);
+  }, [properties]);
 
-  const isLoading = isAgencyLoading;
+  const isLoading = isAgencyContextLoading || arePropertiesLoading;
 
   if (isLoading) {
     return (
