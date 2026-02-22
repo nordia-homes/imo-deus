@@ -90,12 +90,13 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         </header>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {images.map((src, index) => (
-            <div key={index} className="relative aspect-video w-full rounded-lg overflow-hidden">
+            <div key={index} className="relative w-full rounded-lg overflow-hidden">
               <Image
                 src={src}
                 alt={`${title} image ${index + 1}`}
-                fill
-                className="object-cover"
+                width={1200}
+                height={800}
+                className="w-full h-auto"
                 sizes="100vw"
               />
             </div>
