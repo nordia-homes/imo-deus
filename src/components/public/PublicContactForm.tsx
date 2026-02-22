@@ -4,84 +4,96 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { scheduleViewing } from '@/ai/flows/schedule-viewing';
-import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const contactSchema = z.object({
-  name: z.string().min(1, 'Numele este obligatoriu.'),
-  phone: z.string().min(1, 'Telefonul este obligatoriu.'),
-  email: z.string().email('Email invalid.'),
-  message: z.string().optional(),
+    name: z.string().min(2, { message: 'Numele trebuie să aibă cel puțin 2 caractere.' }),
+    phone: z.string().min(10, { message: 'Numărul de telefon este invalid.' }),
+    email: z.string().email({ message: 'Adresa de email este invalidă.' }),
+    message: z.string().optional(),
 });
 
 interface PublicContactFormProps {
-  propertyId: string;
-  agencyId: string;
+    propertyId: string;
+    agencyId: string;
 }
 
 export function PublicContactForm({ propertyId, agencyId }: PublicContactFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isMobile = useIsMobile();
 
-  const form = useForm<z.infer<typeof contactSchema>>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: { name: '', phone: '', email: '', message: '' },
-  });
+    const form = useForm<z.infer<typeof contactSchema>>({
+        resolver: zodResolver(contactSchema),
+        defaultValues: {
+            name: '',
+            phone: '',
+            email: '',
+            message: '',
+        },
+    });
 
-  async function onSubmit(values: z.infer<typeof contactSchema>) {
-    setIsSubmitting(true);
-    try {
-      const result = await scheduleViewing({ ...values, propertyId, agencyId });
-      if (result.success) {
-        setIsSuccess(true);
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Eroare',
-        description: error.message || 'Nu am putut trimite solicitarea. Vă rugăm să reîncercați.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    const onSubmit = async (values: z.infer<typeof contactSchema>) => {
+        setIsSubmitting(true);
+        try {
+            const result = await scheduleViewing({
+                ...values,
+                propertyId,
+                agencyId,
+            });
 
-  if (isSuccess) {
+            if (result.success) {
+                toast({
+                    title: 'Solicitare trimisă!',
+                    description: result.message,
+                });
+                form.reset();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Eroare la trimitere',
+                description: error.message || 'A apărut o problemă. Vă rugăm să reîncercați.',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
     return (
-        <div className="p-6 text-center bg-green-500/10 rounded-lg border border-green-500/20">
-          <h3 className="text-lg font-semibold text-white">Mulțumim!</h3>
-          <p className="text-white/80">Solicitarea ta a fost trimisă. Un agent te va contacta în curând.</p>
-        </div>
+        <Card className={cn(
+            "shadow-2xl rounded-2xl",
+            isMobile ? "bg-[#152A47] border-none text-white" : "bg-card text-card-foreground"
+        )}>
+            <CardHeader>
+                <CardTitle className="text-lg">Programează o Vizionare</CardTitle>
+                <CardDescription className={cn(isMobile && "text-white/70")}>Completează formularul și agentul te va contacta în cel mai scurt timp.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii..." className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Trimite Solicitarea
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     );
-  }
-
-  return (
-    <div className="space-y-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Nume</FormLabel><FormControl><Input {...field} placeholder="Nume" className="bg-white/10 border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Telefon</FormLabel><FormControl><Input {...field} placeholder="Telefon" className="bg-white/10 border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Email</FormLabel><FormControl><Input type="email" {...field} placeholder="Email" className="bg-white/10 border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Mesaj</FormLabel><FormControl><Textarea {...field} placeholder="Mesaj (Opțional)" className="bg-white/10 border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full h-12 text-base rounded-lg bg-transparent border border-green-500 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)] hover:bg-green-500/10 hover:text-green-300"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Programează Vizionare
-            </Button>
-          </form>
-        </Form>
-    </div>
-  );
 }

@@ -10,7 +10,16 @@ import { cn } from "@/lib/utils";
 export function OwnerCard({ property, isMobile }: { property: Property, isMobile?: boolean }) {
     const ownerName = property.ownerName;
     const ownerPhone = property.ownerPhone;
-    const sanitizedPhone = ownerPhone?.replace(/\D/g, '') || '';
+
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+    const sanitizedPhone = sanitizeForWhatsapp(ownerPhone);
 
     const getInitials = (name?: string | null) => {
         if (!name) return 'P'; // P for Proprietar
@@ -33,7 +42,7 @@ export function OwnerCard({ property, isMobile }: { property: Property, isMobile
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className={cn(!isMobile && "bg-muted")}>{getInitials(ownerName)}</AvatarFallback>
+                            <AvatarFallback className={cn("bg-muted", isMobile && "bg-white/20")}>{getInitials(ownerName)}</AvatarFallback>
                         </Avatar>
                         <div>
                              <p className={cn("text-xs", isMobile ? "text-white/70" : "text-muted-foreground lg:text-white/70")}>Proprietar:</p>

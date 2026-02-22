@@ -19,16 +19,30 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     }
     
-    const sanitizedPhone = agent.phone?.replace(/\D/g, '') || '';
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+    const sanitizedPhone = sanitizeForWhatsapp(agent.phone);
 
     if (isMobile) {
         return (
             <Card className="bg-white/10 text-white border-none rounded-lg">
                 <CardContent className="p-3 flex items-center justify-between">
-                    <div>
-                        <p className="text-xs text-white/70">Agent:</p>
-                        <p className="text-sm font-semibold">{agent.name}</p>
-                        {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
+                    <div className="flex items-center gap-3">
+                         <Avatar className="h-10 w-10">
+                            <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
+                            <AvatarFallback className="bg-white/20">{getInitials(agent.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-xs text-white/70">Agent:</p>
+                            <p className="text-sm font-semibold">{agent.name}</p>
+                            {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
+                        </div>
                     </div>
                     <div className="flex items-center">
                         {agent.phone && (
@@ -65,7 +79,7 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                            <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-muted">{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
                         <div>
                              <p className="text-xs text-muted-foreground lg:text-white/70">Agent:</p>

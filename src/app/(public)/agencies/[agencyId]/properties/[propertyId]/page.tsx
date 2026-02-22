@@ -13,8 +13,9 @@ import { PublicActionsColumn } from '@/components/public/PublicActionsColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bed, Ruler, Calendar, Layers } from 'lucide-react';
+import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 
 
 const PageSkeleton = () => (
@@ -90,7 +91,17 @@ export default function PublicPropertyDetailPage() {
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className="bg-[#152A47] border-none rounded-2xl">
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-xl font-bold">{property.title}</CardTitle>
+                            <CardDescription className="text-sm text-white/70">{property.address}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-2">
+                             <PriceStatusCard property={property} />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                         <CardContent className="p-3">
                             <div className="flex justify-around items-center text-sm">
                                 <div className="flex items-center gap-2"><Bed className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.rooms}</span></div>
@@ -100,11 +111,9 @@ export default function PublicPropertyDetailPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    <div className="space-y-4">
-                        <PublicInfoColumn property={property} isMobile={true} />
-                        <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={true} />
-                    </div>
+                    
+                    <PublicInfoColumn property={property} isMobile={true} />
+                    <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={true} />
                 </div>
             </div>
           </div>

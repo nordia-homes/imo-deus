@@ -7,25 +7,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import type { Property } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-export function AiPriceEvaluationDialog({ property }: { property: Property }) {
+
+export function AiPriceEvaluationDialog({ trigger }: { trigger: React.ReactNode }) {
+    const isMobile = useIsMobile();
     return (
         <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="w-full bg-transparent border-cyan-400/50 hover:bg-cyan-400/10 hover:border-cyan-400/70 glow-card" style={{ color: '#67e8f9' }}>
-                    Evalueaza Pretul cu ImoDeus.ai
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogContent className={cn(isMobile && "bg-[#0F1E33] text-white border-none")}>
                 <DialogHeader>
-                    <DialogTitle>Evaluare Preț AI (Demo)</DialogTitle>
-                    <DialogDescription>
-                        Această funcționalitate este în dezvoltare. Într-o versiune viitoare, AI-ul va oferi o analiză comparativă a prețului proprietății.
+                    <DialogTitle>Evaluare Preț AI</DialogTitle>
+                    <DialogDescription className={cn(isMobile && "text-white/70")}>
+                        Această funcționalitate este în curs de dezvoltare.
                     </DialogDescription>
                 </DialogHeader>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
