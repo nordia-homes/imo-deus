@@ -1,108 +1,95 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Info, BedDouble, Ruler, Calendar, Layers, Handshake, Building } from "lucide-react";
-import type { Property } from "@/lib/types";
-import { Button } from "../ui/button";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 
-export function PublicInfoColumn({ property, isMobile }: { property: Property, isMobile?: boolean }) {
-    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-    const TRUNCATION_LENGTH = 250;
+import {
+  Building,
+  Calendar,
+  Layers,
+  BedDouble,
+  Bath,
+  Ruler,
+  Paintbrush,
+  Sofa,
+  Thermometer,
+  ArrowUpDown,
+} from 'lucide-react';
+import type { Property } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '../ui/button';
 
-    const details = [
-        { label: 'Compartimentare', value: property.partitioning, icon: <Layers className="h-5 w-5 text-primary" /> },
-        { label: 'Nr. camere', value: property.rooms, icon: <BedDouble className="h-5 w-5 text-primary" /> },
-        { label: 'An construcție', value: property.constructionYear, icon: <Calendar className="h-5 w-5 text-primary" /> },
-        { label: 'Etaj', value: property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}`: property.floor || property.totalFloors, icon: <Layers className="h-5 w-5 text-primary" /> },
-        { label: 'Suprafață utilă', value: property.squareFootage ? `${property.squareFootage} mp` : null, icon: <Ruler className="h-5 w-5 text-primary" /> },
-        { label: 'Suprafață cu balcon', value: property.totalSurface ? `${property.totalSurface} mp`: null, icon: <Ruler className="h-5 w-5 text-primary" /> },
-        { label: 'Stare interior', value: property.interiorState, icon: <Building className="h-5 w-5 text-primary" /> },
-        { label: 'Bucătărie', value: property.kitchen, icon: <BedDouble className="h-5 w-5 text-primary" /> },
-        { label: 'Balcon/Terasă', value: property.balconyTerrace, icon: <BedDouble className="h-5 w-5 text-primary" /> },
-        { label: 'Lift', value: property.lift, icon: <Layers className="h-5 w-5 text-primary" /> },
-        { label: 'Sistem încălzire', value: property.heatingSystem, icon: <BedDouble className="h-5 w-5 text-primary" /> },
-    ].filter(item => item.value);
-
-    const cardClasses = isMobile 
-        ? "bg-[#152A47] text-white border-none rounded-2xl"
-        : "bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none";
-    
-    const mutedTextClasses = isMobile 
-        ? "text-white/70"
-        : "text-muted-foreground lg:text-white/70";
-
-    if (isMobile) {
-        return (
-            <div className="space-y-4">
-                 <Card className={cardClasses}>
-                    <CardHeader>
-                        <CardTitle>Descriere</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div>
-                            <p className={cn("whitespace-pre-wrap", mutedTextClasses)}>
-                                {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
-                                    ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                                    : property.description || 'Nicio descriere adăugată.'
-                                }
-                            </p>
-                            {property.description && property.description.length > TRUNCATION_LENGTH && (
-                                <Button 
-                                    variant="link" 
-                                    className="p-0 h-auto mt-2 text-primary"
-                                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                                >
-                                    {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
-                                </Button>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card className={cardClasses}>
-                    <CardHeader>
-                        <CardTitle>Informații Detaliate</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {details.map(item => (
-                            <Button key={item.label} variant="outline" className="w-full justify-between pointer-events-none bg-white/10 border-white/20">
-                                <div className="flex items-center gap-2">
-                                    {item.icon}
-                                    <span className="text-white/80">{item.label}</span>
-                                </div>
-                                <span className="font-semibold text-white">{item.value}</span>
-                            </Button>
-                        ))}
-                    </CardContent>
-                </Card>
-            </div>
-        )
-    }
-
+export function PublicInfoColumn({
+  property,
+  isMobile = false,
+}: {
+  property: Property;
+  isMobile?: boolean;
+}) {
+  const details = [
+    { icon: <BedDouble className="h-5 w-5 text-primary" />, label: "Nr. Camere", value: property.rooms },
+    { icon: <Bath className="h-5 w-5 text-primary" />, label: "Nr. Băi", value: property.bathrooms },
+    { icon: <Layers className="h-5 w-5 text-primary" />, label: "Compartimentare", value: property.partitioning },
+    { icon: <Calendar className="h-5 w-5 text-primary" />, label: "An construcție", value: property.constructionYear },
+    { icon: <Layers className="h-5 w-5 text-primary" />, label: "Etaj", value: property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}` : property.floor },
+    { icon: <Ruler className="h-5 w-5 text-primary" />, label: "Suprafață utilă", value: property.squareFootage ? `${property.squareFootage} mp` : undefined },
+    { icon: <Ruler className="h-5 w-5 text-primary" />, label: "Suprafață cu balcon", value: property.totalSurface ? `${property.totalSurface} mp` : undefined },
+    { icon: <Paintbrush className="h-5 w-5 text-primary" />, label: "Stare interior", value: property.interiorState },
+    { icon: <Sofa className="h-5 w-5 text-primary" />, label: "Bucătărie", value: property.kitchen },
+    { icon: <Building className="h-5 w-5 text-primary" />, label: "Balcon / Terasă", value: property.balconyTerrace },
+    { icon: <ArrowUpDown className="h-5 w-5 text-primary" />, label: "Lift", value: property.lift },
+    { icon: <Thermometer className="h-5 w-5 text-primary" />, label: "Sistem încălzire", value: property.heatingSystem },
+  ];
+  
+  const InfoItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number | undefined | null }) => {
+    if (!value && value !== 0) return null;
     return (
-        <Card className={cardClasses}>
-            <CardHeader>
-                <CardTitle>Descriere</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div>
-                    <p className={cn("whitespace-pre-wrap", mutedTextClasses)}>
-                        {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
-                            ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                            : property.description || 'Nicio descriere adăugată.'
-                        }
-                    </p>
-                    {property.description && property.description.length > TRUNCATION_LENGTH && (
-                        <Button 
-                            variant="link" 
-                            className="p-0 h-auto mt-2 text-primary"
-                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                        >
-                            {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
-                        </Button>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+        <Button
+            variant="outline"
+            className="w-full justify-between pointer-events-none h-auto py-3 px-4 text-left bg-[#0F1E33] border border-cyan-400/50"
+        >
+            <div className="flex items-center gap-3">
+                {icon}
+                <span className="text-white/70">{label}</span>
+            </div>
+            <span className="font-semibold text-white">{value}</span>
+        </Button>
     );
+};
+
+
+  if (isMobile) {
+      return (
+          <Card className="bg-transparent border-none text-white shadow-none">
+              <CardHeader className="p-2 pt-6">
+                <CardTitle>Informații detaliate</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2 space-y-2">
+                 {details.map((item, index) => (
+                    <InfoItem key={index} {...item} />
+                 ))}
+              </CardContent>
+          </Card>
+      );
+  }
+
+  // Desktop view (or future implementation)
+  return (
+    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-transparent lg:shadow-none lg:border-none">
+      <CardHeader>
+        <CardTitle>Informații Generale</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-4">
+        {details.map((item, index) => {
+            if (!item.value && item.value !== 0) return null;
+            return (
+                <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted lg:bg-white/5">
+                    <div className="text-primary">{item.icon}</div>
+                    <div>
+                        <p className="text-sm text-muted-foreground lg:text-white/70">{item.label}</p>
+                        <p className="font-semibold">{item.value}</p>
+                    </div>
+                </div>
+            )
+        })}
+      </CardContent>
+    </Card>
+  );
 }
