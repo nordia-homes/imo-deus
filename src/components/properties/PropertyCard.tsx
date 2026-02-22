@@ -41,15 +41,6 @@ export function PropertyCard({
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
 
-  const isNew = property.createdAt && new Date(property.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  
-  let statusBadge;
-  if (isNew) {
-      statusBadge = <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Nou</Badge>
-  } else {
-      statusBadge = <Badge variant="outline" className="bg-white">{property.transactionType}</Badge>
-  }
-
   const handleCopyLink = () => {
     if (!dashboardAgencyId) {
         toast({
@@ -68,10 +59,7 @@ export function PropertyCard({
 
   return (
     <>
-      <Card className={cn(
-        "group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card",
-        !agencyId && "bg-[#152A47] text-white border-none"
-      )}>
+      <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-[#152A47] text-white border-none">
         <CardContent className="p-0">
           <div className="relative">
             <Link href={href} className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl">
@@ -84,27 +72,27 @@ export function PropertyCard({
               />
             </Link>
             <div className="absolute top-3 left-3">
-              {statusBadge}
+               <Badge variant="outline" className="bg-white/90 text-black font-semibold">{property.transactionType}</Badge>
             </div>
             <Button
               size="icon"
               variant="secondary"
-              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background"
+              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
               onClick={() => setIsFavorite(!isFavorite)}
             >
-              <Heart className={cn("h-4 w-4 text-slate-600", isFavorite && "fill-red-500 text-red-500")} />
+              <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />
             </Button>
           </div>
           
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <Link href={href} className="flex-1 min-w-0">
-                <h3 className={cn("font-semibold text-foreground truncate group-hover:text-primary transition-colors", !agencyId && "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
-                <p className={cn("text-sm text-muted-foreground truncate", !agencyId && "text-white/70")} title={property.address}>{property.address}</p>
+                <h3 className="font-semibold text-white truncate group-hover:text-primary/90 transition-colors" title={property.title}>{property.title}</h3>
+                <p className="text-sm text-white/70 truncate" title={property.address}>{property.address}</p>
               </Link>
             </div>
             
-            <div className={cn("flex items-center gap-4 text-sm text-muted-foreground flex-wrap", !agencyId && "text-white/70")}>
+            <div className="flex items-center gap-4 text-sm text-white/70 flex-wrap">
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
                     <span>{property.rooms}</span>
@@ -126,27 +114,27 @@ export function PropertyCard({
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <p className={cn("font-bold text-xl text-foreground", !agencyId && "text-white")}>
+              <p className="font-bold text-xl text-white">
                 €{property.price.toLocaleString()}
               </p>
               {!agencyId ? (
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", !agencyId && "text-white/80 hover:bg-white/10")} onClick={handleCopyLink}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:bg-white/10" onClick={handleCopyLink}>
                         {copied ? <Check className="h-4 w-4 text-green-500" /> : <LinkIcon className="h-4 w-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8", !agencyId && "text-white/80 hover:bg-white/10")} onClick={() => setIsEditDialogOpen(true)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:bg-white/10" onClick={() => setIsEditDialogOpen(true)}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDeleteRequest}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={onDeleteRequest}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
-                    <Button asChild size="sm" className={cn(!agencyId && "bg-white/10 text-white hover:bg-white/20")}>
+                    <Button asChild size="sm" className="bg-white/10 text-white hover:bg-white/20">
                         <Link href={href}>Vezi Detalii</Link>
                     </Button>
                 </div>
               ) : (
-                <Button asChild size="sm" className="rounded-full">
-                    <Link href={href}>Vezi</Link>
+                <Button asChild size="sm" className="rounded-full bg-primary hover:bg-primary/90">
+                    <Link href={href}>Vezi Detalii</Link>
                 </Button>
               )}
             </div>
