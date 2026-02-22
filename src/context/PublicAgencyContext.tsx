@@ -32,3 +32,8 @@ export const usePublicAgency = () => {
     }
     return context;
 };
+
+/**
+ * @deprecated Use `usePublicAgency` instead. This is an alias to fix an import error.
+ */
+export const useAgency = usePublicAgency;
