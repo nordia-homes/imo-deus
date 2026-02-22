@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { Property, UserProfile } from '@/lib/types';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -250,10 +250,33 @@ export default function PublicPropertyDetailPage() {
         notFound();
         return null;
     }
+    
+    const getInitials = (name?: string | null) => {
+        if (!name) return 'A';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+    
+    const agentForCard = {
+        name: agentProfile?.name || property.agentName || "Nealocat",
+        email: agentProfile?.email || null,
+        phone: agentProfile?.phone || null,
+        avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
+    };
+    const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
+
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen text-white">
+          <div className="bg-[#0F1E33] -mt-6 pb-24 min-h-screen text-white">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
@@ -279,7 +302,36 @@ export default function PublicPropertyDetailPage() {
                     <PriceStatusCard property={property} isMobile={isMobile}/>
                     
                     <PublicInfoColumn property={property} isMobile={true} />
-                    <PublicScheduleViewingCard property={property} agentProfile={agentProfile} agencyId={agencyId} />
+                </div>
+            </div>
+             <div className="fixed bottom-0 left-0 right-0 bg-[#152A47] p-3 border-t border-white/10 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.4)] z-50">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-11 w-11">
+                            <AvatarImage src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
+                            <AvatarFallback className="bg-white/20">{getInitials(agentForCard.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-xs text-white/70">Contactează agentul</p>
+                            <p className="text-base font-semibold">{agentForCard.name}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {agentForCard.phone && (
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full bg-white/10 border-white/20" asChild>
+                                <a href={`tel:${agentForCard.phone}`} aria-label="Apelează agentul">
+                                    <Phone className="h-5 w-5" />
+                                </a>
+                            </Button>
+                        )}
+                        {sanitizedPhone && (
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full bg-green-500/20 border-green-500/50 text-green-400" asChild>
+                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
+                                    <WhatsappIcon className="h-6 w-6" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
           </div>
