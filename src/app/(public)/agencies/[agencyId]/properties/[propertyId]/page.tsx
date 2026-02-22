@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { PropertiesMap } from '@/components/map/PropertiesMap';
 
 
 // ----------- START OF INLINED/NEW COMPONENTS -----------
@@ -302,6 +303,16 @@ export default function PublicPropertyDetailPage() {
                     <PriceStatusCard property={property} isMobile={isMobile}/>
                     
                     <PublicInfoColumn property={property} isMobile={true} />
+
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-lg font-bold">Localizare pe hartă</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 h-80">
+                            <PropertiesMap properties={[property]} />
+                        </CardContent>
+                    </Card>
+
                 </div>
             </div>
              <div className="fixed bottom-0 left-0 right-0 bg-[#152A47] p-3 border-t border-white/10 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.4)] z-50">
