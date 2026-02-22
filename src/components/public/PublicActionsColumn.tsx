@@ -1,23 +1,21 @@
 'use client';
-
-import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
-import { Phone } from "lucide-react";
-import { WhatsappIcon } from "../icons/WhatsappIcon";
-import { Star, TrendingUp } from "lucide-react";
+import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Separator } from "../ui/separator";
+import { Star, TrendingUp, Phone, Mail } from "lucide-react";
 import type { Property, UserProfile } from "@/lib/types";
-import { PublicContactForm } from "../public/PublicContactForm";
+import { PublicContactForm } from "./PublicContactForm";
 import Image from "next/image";
 import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { AiPriceEvaluationDialog } from "./AiPriceEvaluationDialog";
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-
+import { WhatsappIcon } from "../icons/WhatsappIcon";
 
 export function PublicActionsColumn({ property, agentProfile }: { property: Property, agentProfile: UserProfile | null }) {
     const { agencyId } = usePublicAgency();
 
     const pricePerSqm = property.price && property.squareFootage
-        ? `(${(property.price / property.squareFootage).toFixed(0)} €/m²)`
+        ? (property.price / property.squareFootage).toFixed(0)
         : null;
 
     const getInitials = (name?: string | null) => {
@@ -33,53 +31,58 @@ export function PublicActionsColumn({ property, agentProfile }: { property: Prop
         }
         return sanitized;
     };
-    
-    const agentName = agentProfile?.name || property.agentName || "Nespecificat";
-    const agentAvatarUrl = agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`;
-    const agentPhone = agentProfile?.phone || null;
-    const sanitizedWhatsappPhone = sanitizeForWhatsapp(agentPhone);
+    const sanitizedPhone = sanitizeForWhatsapp(agentProfile?.phone);
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-slate-900/40 border border-cyan-400/20 backdrop-blur-lg text-white glow-card">
-            <CardContent className="p-4 space-y-4">
-                <div className="text-center">
-                    <p className="text-3xl font-bold">
-                        {property.price.toLocaleString()} € {pricePerSqm && <span className="text-base font-normal text-cyan-300">{pricePerSqm}</span>}
+        <Card className="glow-card bg-slate-900/60 backdrop-blur-xl border-cyan-400/20 text-white shadow-2xl shadow-cyan-500/10 rounded-2xl">
+            <CardContent className="p-6 space-y-6">
+                {/* Price Section */}
+                <div>
+                     <p className="text-3xl font-bold">
+                        €{property.price.toLocaleString()}
+                        {pricePerSqm && <span className="text-base font-normal text-slate-400 ml-2">({`€${pricePerSqm}/mp`})</span>}
                     </p>
-                    <div className="flex items-center justify-center gap-4 mt-2">
+                    <div className="flex items-center gap-4 mt-2">
                         <AiPriceEvaluationDialog property={property} />
                     </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-cyan-400/20">
+                <Separator className="bg-cyan-400/20" />
+                
+                {/* Agent Section */}
+                <div className="space-y-4">
                     <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16">
-                            <AvatarImage src={agentAvatarUrl || undefined} />
-                            <AvatarFallback>{getInitials(agentName)}</AvatarFallback>
+                        <Avatar className="h-16 w-16 border-2 border-cyan-400/50">
+                            <AvatarImage src={agentProfile?.photoUrl || undefined} alt={agentProfile?.name ?? 'Agent'} />
+                            <AvatarFallback className="bg-slate-700 text-slate-300">{getInitials(agentProfile?.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="font-semibold text-lg">{agentName}</p>
-                            <p className="text-sm text-cyan-300">Agent Imobiliar</p>
+                            <p className="font-bold text-lg">{agentProfile?.name || 'Agent Imobiliar'}</p>
+                            <p className="text-sm text-slate-400">Agent Imobiliar</p>
                         </div>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                        <Button variant="outline" asChild className="border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20" disabled={!agentPhone}>
-                            <a href={`tel:${agentPhone}`}>
-                                <Phone className="mr-2" /> Apelează
+                    <div className="grid grid-cols-2 gap-2">
+                         <Button variant="outline" className="bg-slate-800/50 border-slate-700 hover:bg-slate-800" asChild disabled={!agentProfile?.phone}>
+                            <a href={`tel:${agentProfile?.phone}`}>
+                                <Phone className="mr-2 h-4 w-4" /> Apel
                             </a>
                         </Button>
-                        <Button variant="outline" asChild className="border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20" disabled={!sanitizedWhatsappPhone}>
-                            <a href={`https://wa.me/${sanitizedWhatsappPhone}`} target="_blank" rel="noopener noreferrer">
-                                <WhatsappIcon className="mr-2" /> WhatsApp
+                         <Button variant="outline" className="bg-slate-800/50 border-slate-700 hover:bg-slate-800" asChild disabled={!sanitizedPhone}>
+                             <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
+                                <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
                             </a>
                         </Button>
                     </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-cyan-400/20">
-                    <h3 className="font-semibold text-center text-lg mb-3">Programează o vizionare</h3>
-                    <PublicContactForm agencyId={agencyId!} propertyId={property.id} />
+                <Separator className="bg-cyan-400/20" />
+                
+                {/* Contact Form Section */}
+                <div>
+                    <p className="font-semibold text-center mb-4">Programează o vizionare</p>
+                    {agencyId && <PublicContactForm agencyId={agencyId} propertyId={property.id} />}
                 </div>
+
             </CardContent>
         </Card>
     );
