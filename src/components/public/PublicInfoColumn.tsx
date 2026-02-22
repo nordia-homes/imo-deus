@@ -1,100 +1,152 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight, Menu, Map, Car, Building } from "lucide-react";
+import { LayoutList, Users, FileText, Info, Map, CheckSquare } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { RlvTab } from "../properties/detail/RlvTab";
+import { RlvTab } from "./RlvTab";
 import { useState } from "react";
-import { InfoDialog } from "../properties/detail/InfoDialog";
+import { InfoDialog } from "./InfoDialog";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Menu } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 
 export function PublicInfoColumn({ property }: { property: Property }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    
+    const TRUNCATION_LENGTH = 500;
+
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        setIsSheetOpen(false);
+    };
+
     const menuItems = [
       { value: "overview", label: "Prezentare generală", icon: <LayoutList className="mr-2 h-4 w-4" /> },
       { value: "location", label: "Vezi locația", icon: <Map className="mr-2 h-4 w-4" /> },
       { value: "rlv", label: "RLV", icon: <FileText className="mr-2 h-4 w-4" /> },
-      { value: "features", label: "Caracteristici", icon: <Building className="mr-2 h-4 w-4" /> },
+      { value: "features", label: "Caracteristici", icon: <CheckSquare className="mr-2 h-4 w-4" /> },
     ];
-
-    const glowClasses = "border border-green-400/50 bg-transparent text-green-300 hover:bg-green-900/50 hover:text-green-200 hover:border-green-400 shadow-[0_0_10px_0] shadow-green-500/30 transition-all duration-300";
-
-    const renderTabsContent = () => (
-        <>
-            <TabsContent value="overview">
-                <Card className="bg-transparent border-none shadow-none">
-                    <CardContent className="text-white/80 whitespace-pre-wrap p-0 pt-6">
-                        {property.description || 'Nicio descriere adăugată.'}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="location">
-                 <Card className="bg-transparent border-none shadow-none">
-                    <CardContent className="p-0 pt-6">
-                        <iframe
-                            className="w-full aspect-video rounded-md border"
-                            loading="lazy"
-                            allowFullScreen
-                            referrerPolicy="no-referrer-when-downgrade"
-                            src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(property.address)}`}>
-                        </iframe>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="rlv">
-                <Card className="bg-transparent border-none shadow-none">
-                    <CardContent className="p-0 pt-6">
-                        <RlvTab property={property} />
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="features">
-                 <Card className="bg-transparent border-none shadow-none">
-                    <CardContent className="p-0 pt-6">
-                        {property.amenities && property.amenities.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                                {property.amenities.map(amenity => (
-                                    <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-white/10 text-white border-white/20">
-                                        {amenity}
-                                    </Button>
-                                ))}
-                            </div>
-                        ) : <p className="text-white/70">Nicio caracteristică specificată.</p>}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </>
-    )
-
+    
     return (
         <div className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-transparent p-0 gap-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <div className="hidden md:grid h-auto grid-cols-5 gap-2 bg-transparent p-0">
                     {menuItems.map(item => (
-                         <TabsTrigger key={item.value} value={item.value} className={`${glowClasses} h-16`}>
+                         <Button
+                            key={item.value}
+                            variant="outline"
+                            className="h-10 rounded-lg border-primary/50 text-primary bg-transparent hover:bg-primary/10 glow-card"
+                            onClick={() => handleTabChange(item.value)}
+                            data-state={activeTab === item.value ? 'active' : 'inactive'}
+                         >
                             {item.icon}
                             {item.label}
-                        </TabsTrigger>
+                        </Button>
                     ))}
-                     <Button 
+                    <Button 
+                        variant="outline"
+                        className="h-10 rounded-lg border-primary/50 text-primary bg-transparent hover:bg-primary/10 glow-card"
                         onClick={() => setIsInfoDialogOpen(true)}
-                        className={`${glowClasses} h-16`}
                     >
                         <Info className="mr-2 h-4 w-4" />
                         Informații
                     </Button>
-                </TabsList>
+                </div>
 
-                {renderTabsContent()}
+                {/* Mobile Menu Trigger */}
+                <div className="md:hidden">
+                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                                <Menu className="mr-2 h-4 w-4" />
+                                Meniu Secțiune
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl bg-[#f8f8f9] text-black p-0">
+                            <div className="flex flex-col gap-1 p-4">
+                                {menuItems.map(item => (
+                                     <Button key={item.value} variant={activeTab === item.value ? 'default' : 'ghost'} className="justify-start text-base py-6" onClick={() => handleTabChange(item.value)}>
+                                        {item.icon}
+                                        {item.label}
+                                    </Button>
+                                ))}
+                                <Separator className="my-2" />
+                                <Button variant='ghost' className="justify-start text-base py-6" onClick={() => { setIsInfoDialogOpen(true); setIsSheetOpen(false); }}>
+                                    <Info className="mr-2 h-4 w-4" />
+                                    Informații Detaliate
+                                </Button>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+
+                <TabsContent value="overview" className="mt-6 space-y-6">
+                    <p className="text-muted-foreground lg:text-white/70 whitespace-pre-wrap">
+                        {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                            ? `${'\'\'\''}${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                            : property.description || 'Nicio descriere adăugată.'
+                        }
+                    </p>
+                    {property.description && property.description.length > TRUNCATION_LENGTH && (
+                        <Button 
+                            variant="link" 
+                            className="p-0 h-auto mt-2 text-primary"
+                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                        >
+                            {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                        </Button>
+                    )}
+                </TabsContent>
+                <TabsContent value="location" className="mt-6">
+                    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+                        <CardHeader>
+                            <CardTitle>Locație pe Hartă</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {property.latitude && property.longitude ? (
+                                <iframe
+                                    className="w-full aspect-video rounded-md border"
+                                    loading="lazy"
+                                    allowFullScreen
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude-0.01},${property.latitude-0.01},${property.longitude+0.01},${property.latitude+0.01}&layer=mapnik&marker=${property.latitude},${property.longitude}`}>
+                                </iframe>
+                            ) : (
+                                <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                                    <p className="text-sm text-muted-foreground">Coordonatele hărții nu sunt disponibile.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="rlv" className="mt-6">
+                    <RlvTab property={property} />
+                </TabsContent>
+                <TabsContent value="features" className="mt-6">
+                    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+                        <CardHeader>
+                            <CardTitle>Caracteristici & Dotări</CardTitle>
+                        </CardHeader>
+                         {property.amenities && property.amenities.length > 0 && (
+                            <CardContent>
+                                 <div className="flex flex-wrap gap-2">
+                                    {property.amenities.map(amenity => (
+                                        <Button key={amenity} variant="secondary" className="pointer-events-none cursor-default bg-white/10 border-none text-white">
+                                            {amenity}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </CardContent>
+                         )}
+                    </Card>
+                </TabsContent>
             </Tabs>
             <InfoDialog 
                 property={property}
