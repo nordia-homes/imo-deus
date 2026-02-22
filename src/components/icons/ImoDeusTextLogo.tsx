@@ -7,7 +7,7 @@ export function ImoDeusTextLogo({ className, ...props }: HTMLAttributes<HTMLDivE
   return (
     <div className={cn("relative h-auto", className)} {...props}>
       <Image
-        src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logo%202%20imodeus%20ai.png?alt=media&token=e238b56b-1b9f-487a-bd01-7979f59ded90"
+        src="https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/logo%20imodeus%20ai%20(1).png?alt=media&token=26038317-5735-4333-85f6-e4a8397a61f3"
         alt="ImoDeus.ai Logo"
         width={500}
         height={135}
