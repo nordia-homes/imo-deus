@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -22,7 +23,7 @@ const PageSkeleton = () => (
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6">
              <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[250px] md:h-[550px] bg-white/10" /> <Skeleton className="h-96 bg-white/10" /> </div>
-             <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-24 bg-white/10" /> <Skeleton className="h-32 bg-white/10" /> <Skeleton className="h-40 bg-white/10" /> <Skeleton className="h-24 bg-white/10" /> </div>
+             <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-[700px] bg-white/10" /> </div>
         </div>
     </div>
 );
@@ -71,7 +72,7 @@ export default function PublicPropertyDetailPage() {
     const isLoading = isPropertyLoading || isAgentLoading;
     
     if (isLoading) {
-        return <div className="h-full bg-white lg:bg-[#0F1E33] text-white"><PageSkeleton /></div>;
+        return <div className="h-full bg-background lg:bg-[#0F1E33] text-white"><PageSkeleton /></div>;
     }
     
     if (!property || error || property.status !== 'Activ') {
@@ -80,19 +81,20 @@ export default function PublicPropertyDetailPage() {
     }
 
     return (
-        <div className={cn("bg-background lg:bg-[#0F1E33] lg:text-white animated-glow")}>
-            <PublicPropertyHeader property={property} />
+        <div className={cn("bg-[#0F1E33] text-white animated-glow")}>
+             <div className="container mx-auto px-4 py-8">
+                <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <div className="col-span-12 lg:col-span-8 space-y-8">
+                        <PublicPropertyHeader property={property} />
+                        <MediaColumn property={property} />
+                        <PublicInfoColumn property={property} />
+                    </div>
 
-            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 py-6 lg:px-6">
-                <div className="col-span-12 lg:col-span-8 space-y-8">
-                    <MediaColumn property={property} />
-                    <PublicInfoColumn property={property} />
-                </div>
-
-                <div className="col-span-12 lg:col-span-4">
-                     <PublicActionsColumn property={property} agentProfile={agentProfile} />
-                </div>
-            </main>
+                    <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
+                         <PublicActionsColumn property={property} agentProfile={agentProfile} />
+                    </div>
+                </main>
+             </div>
         </div>
     );
 }

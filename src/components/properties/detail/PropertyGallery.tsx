@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -8,7 +9,6 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DialogHeader,
 } from "@/components/ui/dialog"
 import {
   Carousel,
@@ -18,24 +18,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid, Link as LinkIcon, Check } from "lucide-react"
+import { Grid } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { useAgency } from "@/context/AgencyContext"
-import { useToast } from "@/hooks/use-toast"
 
 export function PropertyGallery({ images, title, propertyId }: { images: string[]; title: string; propertyId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
-  const isMobile = useIsMobile()
-  const { agencyId } = useAgency();
-  const { toast } = useToast();
-  const [copied, setCopied] = React.useState(false);
-
 
   React.useEffect(() => {
-    if (!api || isMobile) return
+    if (!api) return
 
     if (open) {
       setTimeout(() => {
@@ -43,7 +35,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         api.scrollTo(activeIndex, true) 
       }, 100) 
     }
-  }, [open, api, activeIndex, isMobile])
+  }, [open, api, activeIndex])
 
   if (!images || images.length === 0) {
     return (
@@ -58,25 +50,9 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
     setOpen(true)
   }
 
-  const handleCopyLink = () => {
-    if (!agencyId || !propertyId) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu am putut genera link-ul public."
-      });
-      return;
-    }
-    const url = `${window.location.origin}/agencies/${agencyId}/properties/${propertyId}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    toast({ title: "Link copiat!" });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index]
-    if (!imageUrl) return <div className={cn("bg-muted rounded-lg", className)}></div>
+    if (!imageUrl) return <div className={cn("bg-slate-800/50 rounded-lg", className)}></div>
 
     return (
       <div
@@ -88,120 +64,68 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
           alt={`${title} image ${index + 1}`} 
           fill 
           className="object-cover transition-transform group-hover:scale-105"
-          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
+          sizes="(min-width: 1024px) 50vw, 100vw"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
       </div>
     )
   }
-  
-  const renderDialogContent = () => {
-    if (isMobile) {
-      return (
-        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 bg-[#0F1E33] text-white flex flex-col rounded-none data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom">
-            <DialogHeader className="p-4 border-b border-white/10 shrink-0">
-              <DialogTitle>Galerie Foto</DialogTitle>
-              <DialogDescription className="sr-only">
-                Listă de imagini pentru {title}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-2 px-2">
-                {images.map((src, index) => (
-                  <div key={index} className="relative w-full h-auto rounded-lg overflow-hidden bg-black/20">
-                    <Image
-                      src={src}
-                      alt={`${title} image ${index + 1}`}
-                      width={1200}
-                      height={800}
-                      className="w-full h-auto object-contain"
-                      sizes="100vw"
-                      priority={index < 2} // Prioritize loading the first couple of images
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-        </DialogContent>
-      )
-    }
-
-    // Desktop Carousel
-    return (
-      <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
-          <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            A carousel of {images.length} images for the property: {title}.
-          </DialogDescription>
-      
-          <Carousel
-            setApi={setApi}
-            className="w-full max-w-5xl"
-            opts={{ loop: true, startIndex: activeIndex }}
-          >
-            <CarouselContent>
-              {images.map((src, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative aspect-video">
-                    <Image
-                      src={src}
-                      alt={`${title} image ${index + 1}`}
-                      fill
-                      className="object-contain"
-                      sizes="90vw"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-            <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-          </Carousel>
-      </DialogContent>
-    )
-  }
 
   return (
     <>
-      {/* The main gallery container */}
       <div className="relative">
-        
-        {/* --- Desktop Grid Layout --- */}
-        <div className="hidden md:grid md:grid-cols-3 md:grid-rows-2 md:gap-2 h-[405px]">
-          <ImageItem index={0} className="col-span-2 row-span-2" />
-          <ImageItem index={1} className="col-span-1" />
-          <ImageItem index={2} className="col-span-1" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-[250px] md:h-[405px]">
+            {/* Main Image */}
+            <div className="col-span-1 h-full">
+                <ImageItem index={0} className="w-full h-full" />
+            </div>
+            {/* Side Images */}
+            <div className="hidden md:grid grid-rows-2 gap-2 h-full">
+                <ImageItem index={1} className="w-full h-full" />
+                <ImageItem index={2} className="w-full h-full" />
+            </div>
         </div>
-
-        {/* --- Mobile View (Single Image) --- */}
-        <div className="md:hidden aspect-video">
-            <ImageItem index={0} className="w-full h-full" />
-        </div>
-
-        {/* --- Buttons container --- */}
-        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-10 w-10"
-              onClick={handleCopyLink}
-              aria-label="Copiază link-ul public"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <LinkIcon className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => openDialog(0)}
-            >
-              <Grid className="mr-2 h-4 w-4" />
-              Vezi Fotografiile
-            </Button>
-        </div>
+        <Button
+          variant="secondary"
+          className="absolute bottom-4 right-4 z-10 bg-white/90 hover:bg-white text-black"
+          onClick={() => openDialog(0)}
+        >
+          <Grid className="mr-2 h-4 w-4" />
+          Vezi Fotografiile
+        </Button>
       </div>
 
-      {/* --- Dialog for the full-screen view --- */}
       <Dialog open={open} onOpenChange={setOpen}>
-        {renderDialogContent()}
+        <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
+            <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              A carousel of {images.length} images for the property: {title}.
+            </DialogDescription>
+        
+            <Carousel
+              setApi={setApi}
+              className="w-full max-w-5xl"
+              opts={{ loop: true, startIndex: activeIndex }}
+            >
+              <CarouselContent>
+                {images.map((src, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative aspect-video">
+                      <Image
+                        src={src}
+                        alt={`${title} image ${index + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="90vw"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+            </Carousel>
+        </DialogContent>
       </Dialog>
     </>
   )
