@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import type { Property } from '@/lib/types';
-import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Handshake, User, Phone, TrendingUp, Key, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Key, AlertTriangle, ArrowUpDown, Handshake } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -87,12 +87,6 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Bucătărie" value={property.kitchen} />
             <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Balcon/Terasă" value={property.balconyTerrace} />
             
-            <div className="col-span-1 sm:col-span-2 md:col-span-4 pt-2"> <Separator className="dark:bg-white/20" /> </div>
-            <SectionTitle>Informații Proprietar & Management</SectionTitle>
-            <InfoItem icon={<User className="h-5 w-5 text-primary" />} label="Nume Proprietar" value={property.ownerName} />
-            <InfoItem icon={<Phone className="h-5 w-5 text-primary" />} label="Telefon Proprietar" value={property.ownerPhone} />
-            <InfoItem icon={<TrendingUp className="h-5 w-5 text-primary" />} label="Potențial Vânzare" value={property.salesScore} />
-
             <div className="col-span-1 sm:col-span-2 md:col-span-4 pt-2">
                 <InfoItem icon={<Key className="h-5 w-5 text-primary" />} label="Caracteristici cheie" value={property.keyFeatures} />
             </div>
