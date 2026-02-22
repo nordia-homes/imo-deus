@@ -95,7 +95,7 @@ export default function PropertiesPage() {
             </Card>
              <div className="px-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                    <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
+                    <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
                         <Filter className="mr-2 h-4 w-4" /> Filtrează
                     </Button>
                 </PropertyFilters>
@@ -118,7 +118,7 @@ export default function PropertiesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                             <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white button-glow">
                                 <Filter className="mr-2 h-4 w-4" /> Filtrează
                               </Button>
                             </PropertyFilters>

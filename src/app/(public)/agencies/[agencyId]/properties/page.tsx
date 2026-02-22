@@ -56,7 +56,7 @@ export default function AgencyAllPropertiesPage() {
   }, [properties, filters]);
 
   return (
-    <div className={cn("space-y-6", isMobile ? "p-0" : "p-4 lg:p-6")}>
+    <div className={cn("space-y-6 bg-[#0F1E33] text-white", isMobile ? "p-0" : "p-4 lg:p-6")}>
       {/* Mobile & Tablet View */}
       <div className="lg:hidden space-y-4">
         <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
@@ -66,7 +66,7 @@ export default function AgencyAllPropertiesPage() {
         </Card>
         <div className="px-2">
           <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-            <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
+            <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
               <Filter className="mr-2 h-4 w-4" /> Filtrează
             </Button>
           </PropertyFilters>
@@ -89,7 +89,7 @@ export default function AgencyAllPropertiesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                  <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                  <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white button-glow">
                     <Filter className="mr-2 h-4 w-4" /> Filtrează
                   </Button>
                 </PropertyFilters>
