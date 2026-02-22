@@ -11,6 +11,7 @@ import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { PublicActionsColumn } from '@/components/public/PublicActionsColumn';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 
 const PageSkeleton = () => (
@@ -79,7 +80,7 @@ export default function PublicPropertyDetailPage() {
     }
 
     return (
-        <div className="bg-background lg:bg-[#0F1E33] lg:text-white">
+        <div className={cn("bg-background lg:bg-[#0F1E33] lg:text-white animated-glow")}>
             <PublicPropertyHeader property={property} />
 
             <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 py-6 lg:px-6">

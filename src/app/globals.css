@@ -70,3 +70,26 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
+
+@layer utilities {
+  @keyframes background-pan {
+    from {
+      background-position: 0% center;
+    }
+    to {
+      background-position: -200% center;
+    }
+  }
+  .animated-glow {
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% 120%,
+      hsl(var(--primary) / 0.15),
+      transparent
+    );
+    animation: background-pan 10s linear infinite;
+    background-size: 200% 100%;
+  }
+  .glow-card {
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2);
+  }
+}
