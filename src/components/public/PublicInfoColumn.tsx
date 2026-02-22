@@ -1,97 +1,101 @@
 'use client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
-import { Building, Calendar, MapPin, Compass, Layers, Maximize, BedDouble, Bath, Star, Paintbrush, Sofa, Thermometer, Car, Key, AlertTriangle, ArrowUpDown, Handshake } from 'lucide-react';
+import { Layers, BedDouble, Calendar, Ruler, Paintbrush, Sofa, Maximize, ArrowUpDown, Thermometer } from "lucide-react";
 import { Button } from "../ui/button";
+import { useState } from 'react';
 
-export function PublicInfoColumn({ property, isMobile }: { property: Property, isMobile: boolean }) {
 
-    const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
-        if (!value && value !== 0) return null;
+export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const TRUNCATION_LENGTH = 250;
+
+    const infoItems = [
+        { icon: <Layers className="h-5 w-5" />, label: 'Compartimentare', value: property.partitioning },
+        { icon: <BedDouble className="h-5 w-5" />, label: 'Nr. Camere', value: property.rooms },
+        { icon: <Calendar className="h-5 w-5" />, label: 'An Construcție', value: property.constructionYear },
+        { icon: <Layers className="h-5 w-5" />, label: 'Etaj', value: property.floor },
+        { icon: <Ruler className="h-5 w-5" />, label: 'Suprafață Utilă', value: property.squareFootage ? `${property.squareFootage} mp` : undefined },
+        { icon: <Ruler className="h-5 w-5" />, label: 'Suprafață cu Balcon', value: property.totalSurface ? `${property.totalSurface} mp` : undefined },
+        { icon: <Paintbrush className="h-5 w-5" />, label: 'Stare Interior', value: property.interiorState },
+        { icon: <Sofa className="h-5 w-5" />, label: 'Bucătărie', value: property.kitchen },
+        { icon: <Maximize className="h-5 w-5" />, label: 'Balcon/Terasă', value: property.balconyTerrace },
+        { icon: <ArrowUpDown className="h-5 w-5" />, label: 'Lift', value: property.lift },
+        { icon: <Thermometer className="h-5 w-5" />, label: 'Sistem Încălzire', value: property.heatingSystem },
+    ];
+
+    if (!isMobile) {
         return (
-             <Button variant="outline" className="w-full justify-between pointer-events-none h-16 bg-[#0F1E33] border-cyan-400/50 shadow-[0_0_15px_-10px_rgba(100,220,255,0.6)]">
-                <div className="flex items-center gap-3">
-                    {icon}
-                    <span className="text-white/70">{label}</span>
-                </div>
-                <span className="font-semibold">{value}</span>
-            </Button>
-        )
-    }
-
-    if (isMobile) {
-        return (
-            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                 <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-lg font-bold">Informații detaliate</CardTitle>
-                 </CardHeader>
-                 <CardContent className="p-4 pt-0 space-y-2">
-                    <InfoItem icon={<ArrowUpDown className="h-5 w-5 text-primary" />} label="Compartimentare" value={property.partitioning} />
-                    <InfoItem icon={<BedDouble className="h-5 w-5 text-primary" />} label="Nr. Camere" value={property.rooms} />
-                    <InfoItem icon={<Calendar className="h-5 w-5 text-primary" />} label="An Construcție" value={property.constructionYear} />
-                    <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Etaj" value={property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}` : property.floor || 'N/A'} />
-                    <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă" value={property.squareFootage ? `${property.squareFootage} mp` : undefined} />
-                    <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață cu Balcon" value={property.totalSurface ? `${property.totalSurface} mp` : undefined} />
-                    <InfoItem icon={<Paintbrush className="h-5 w-5 text-primary" />} label="Stare Interior" value={property.interiorState} />
-                    <InfoItem icon={<Sofa className="h-5 w-5 text-primary" />} label="Bucătărie" value={property.kitchen} />
-                    <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Balcon/Terasă" value={property.balconyTerrace} />
-                    <InfoItem icon={<ArrowUpDown className="h-5 w-5 text-primary" />} label="Lift" value={property.lift} />
-                    <InfoItem icon={<Thermometer className="h-5 w-5 text-primary" />} label="Sistem Încălzire" value={property.heatingSystem} />
-                 </CardContent>
-            </Card>
+            <div className="space-y-6">
+                <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                    <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
+                    <CardContent>
+                        <div>
+                            <p className="text-muted-foreground lg:text-white/70 whitespace-pre-wrap">
+                                {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
+                                    ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                                    : property.description || 'Nicio descriere adăugată.'
+                                }
+                            </p>
+                            {property.description && property.description.length > TRUNCATION_LENGTH && (
+                                <Button
+                                    variant="link"
+                                    className="p-0 h-auto mt-2 text-primary"
+                                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                >
+                                    {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         )
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
-            <CardHeader>
-                <CardTitle>Informații Detaliate</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Compartimentare:</span>
-                        <span className="font-semibold">{property.partitioning || '-'}</span>
+        <div className="space-y-4">
+             <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                <CardHeader className="p-4">
+                    <CardTitle className="font-semibold text-white">Descriere</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div>
+                        <p className="text-sm text-white/80 whitespace-pre-wrap">
+                            {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
+                                ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                                : property.description || 'Nicio descriere adăugată.'
+                            }
+                        </p>
+                        {property.description && property.description.length > TRUNCATION_LENGTH && (
+                            <Button
+                                variant="link"
+                                className="p-0 h-auto mt-2 text-primary"
+                                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                            >
+                                {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                            </Button>
+                        )}
                     </div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">An construcție:</span>
-                        <span className="font-semibold">{property.constructionYear || '-'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Suprafață utilă:</span>
-                        <span className="font-semibold">{property.squareFootage} mp</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Suprafață totală:</span>
-                        <span className="font-semibold">{property.totalSurface || '-'} mp</span>
-                    </div>
-                     <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Etaj:</span>
-                        <span className="font-semibold">{property.floor || '-'} / {property.totalFloors || '-'}</span>
-                    </div>
-                     <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Orientare:</span>
-                        <span className="font-semibold">{property.orientation || '-'}</span>
-                    </div>
-                     <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Stare interior:</span>
-                        <span className="font-semibold">{property.interiorState || '-'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Stare mobilier:</span>
-                        <span className="font-semibold">{property.furnishing || '-'}</span>
-                    </div>
-                     <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Sistem încălzire:</span>
-                        <span className="font-semibold">{property.heatingSystem || '-'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 rounded-md bg-muted lg:bg-white/10">
-                        <span className="text-muted-foreground lg:text-white/70">Parcare:</span>
-                        <span className="font-semibold">{property.parking || '-'}</span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+
+            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                <CardHeader className="p-4">
+                    <CardTitle className="font-semibold text-white">Informații detaliate</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-2">
+                    {infoItems.map(item => {
+                        if (!item.value && item.value !== 0) return null;
+                        return (
+                            <Button key={item.label} variant="outline" className="w-full justify-between pointer-events-none h-14 bg-[#0F1E33] border-cyan-400/50 shadow-[0_0_25px_-10px_rgba(100,220,255,0.6)]">
+                                <span className="text-white/70">{item.label}</span>
+                                <span className="font-bold">{item.value}</span>
+                            </Button>
+                        )
+                    })}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
