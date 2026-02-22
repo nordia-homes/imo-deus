@@ -1,13 +1,18 @@
+
 'use client';
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
-import type { Property } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import * as React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, Sparkles, TrendingUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Property } from "@/lib/types";
 import { generatePropertyInsights, type PropertyInsightsOutput } from '@/ai/flows/property-insights-generator';
-import { Badge } from '../ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface AiPriceEvaluationDialogProps {
   property: Property;
@@ -17,8 +22,8 @@ interface AiPriceEvaluationDialogProps {
 
 export function AiPriceEvaluationDialog({ property, isOpen, onOpenChange }: AiPriceEvaluationDialogProps) {
   const { toast } = useToast();
-  const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [insights, setInsights] = React.useState<PropertyInsightsOutput | null>(null);
+  const [isGenerating, setIsGenerating] = React.useState(false);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -35,12 +40,13 @@ export function AiPriceEvaluationDialog({ property, isOpen, onOpenChange }: AiPr
       });
       setInsights(result);
     } catch (error) {
-      console.error('Failed to generate insights:', error);
+      console.error("Failed to generate AI insights:", error);
       toast({
-        variant: 'destructive',
-        title: 'Eroare la generare',
-        description: 'Nu am putut genera evaluarea. Vă rugăm să reîncercați.',
+        variant: "destructive",
+        title: "A apărut o eroare",
+        description: "Nu am putut genera evaluarea. Vă rugăm să reîncercați.",
       });
+      onOpenChange(false);
     } finally {
       setIsGenerating(false);
     }
@@ -50,50 +56,53 @@ export function AiPriceEvaluationDialog({ property, isOpen, onOpenChange }: AiPr
     if (isOpen && !insights && !isGenerating) {
       handleGenerate();
     }
-    if (!isOpen) {
-      setInsights(null);
-      setIsGenerating(false);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0F1E33] border-none text-white">
+      <DialogContent className="sm:max-w-md bg-[#0F1E33] text-white border-white/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> Evaluare Preț ImoDeus.ai</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="text-primary" />
+            Evaluare Preț ImoDeus.ai
+          </DialogTitle>
           <DialogDescription className="text-white/70">
-            Analiză automată a prețului pentru "{property.title}" pe baza datelor de piață.
+            Analizăm datele proprietății pentru a oferi o perspectivă asupra prețului.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           {isGenerating && (
             <div className="flex flex-col items-center justify-center text-center space-y-3 h-40">
               <Loader2 className="h-10 w-10 text-primary animate-spin" />
-              <p className="font-semibold">AI-ul analizează piața...</p>
-              <p className="text-sm text-white/70">Acest proces poate dura câteva momente.</p>
+              <h3 className="font-semibold text-white">AI-ul analizează piața...</h3>
+              <p className="text-sm text-white/70">
+                Se calculează scorul de atractivitate și se compară prețul.
+              </p>
             </div>
           )}
-          {insights && (
+          {insights && !isGenerating && (
             <div className="space-y-4">
-               <Alert className="bg-white/5 border-primary/20 text-white">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-white">Feedback Preț</AlertTitle>
-                <AlertDescription className="text-white/90">
-                  {insights.pricingFeedback}
-                </AlertDescription>
-              </Alert>
-               <div className="text-center">
-                 <p className="text-sm text-white/70">Scor de Atractivitate</p>
-                 <p className="text-5xl font-bold text-primary">{insights.marketScore}/100</p>
-               </div>
-               <Alert className="bg-white/5 border-primary/20 text-white">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-white">Profil Cumpărător Ideal</AlertTitle>
-                <AlertDescription className="text-white/90">
-                    {insights.buyerProfile}
-                </AlertDescription>
-              </Alert>
+               <div className="flex items-center gap-6">
+                    <div className="flex flex-col items-center">
+                        <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary text-3xl font-bold">
+                            {insights.marketScore}
+                        </div>
+                        <p className="text-sm font-semibold mt-1">Scor Piață</p>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-start gap-3">
+                            <TrendingUp className="h-5 w-5 text-yellow-400 mt-0.5" />
+                            <p className="font-medium text-sm">
+                                <span className="text-white/70">Preț: </span>
+                                {insights.pricingFeedback}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="text-xs text-white/60 p-3 bg-white/5 rounded-lg">
+                    <span className="font-bold">Disclaimer:</span> Această evaluare este generată automat și are scop informativ. Nu reprezintă o evaluare oficială ANEVAR.
+                </div>
             </div>
           )}
         </div>
