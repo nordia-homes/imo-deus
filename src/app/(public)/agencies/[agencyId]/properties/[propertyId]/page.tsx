@@ -9,12 +9,11 @@ import { doc, getDoc } from 'firebase/firestore';
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
-import { PublicActionsColumn } from '@/components/public/PublicActionsColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bed, Ruler, Calendar, Layers, TrendingUp } from 'lucide-react';
+import { Bed, Ruler, Calendar, Layers, TrendingUp, Mail, Phone, Loader2 } from 'lucide-react';
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import {
   Dialog,
@@ -25,6 +24,165 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { scheduleViewing } from '@/ai/flows/schedule-viewing';
+import { useToast } from '@/hooks/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+
+// ----------- START OF INLINED/NEW COMPONENTS -----------
+
+// 1. AgentCard
+type AgentInfo = {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+}
+
+function AgentCard({ agent }: { agent: AgentInfo }) {
+    const getInitials = (name?: string | null) => {
+        if (!name) return 'A';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+    const sanitizedPhone = sanitizeForWhatsapp(agent.phone);
+
+    return (
+        <div className="p-4 flex items-center justify-between bg-white/5 rounded-lg border border-white/10">
+            <div className="flex items-center gap-3">
+                 <Avatar className="h-12 w-12">
+                    <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
+                    <AvatarFallback className="bg-white/20">{getInitials(agent.name)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="text-xs text-white/70">Agentul tău:</p>
+                    <p className="text-base font-semibold">{agent.name}</p>
+                    {agent.phone && <p className="text-sm text-white/70">{agent.phone}</p>}
+                </div>
+            </div>
+            <div className="flex items-center">
+                {agent.phone && (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                        <a href={`tel:${agent.phone}`} aria-label="Call agent">
+                            <Phone className="h-5 w-5" />
+                        </a>
+                    </Button>
+                )}
+                {sanitizedPhone && (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                        <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
+                            <WhatsappIcon className="h-5 w-5" />
+                        </a>
+                    </Button>
+                )}
+                {agent.email && (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                        <a href={`mailto:${agent.email}`} aria-label="Email agent">
+                            <Mail className="h-5 w-5" />
+                        </a>
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// 2. PublicScheduleViewingCard
+const scheduleSchema = z.object({
+  name: z.string().min(1, 'Numele este obligatoriu.'),
+  phone: z.string().min(1, 'Telefonul este obligatoriu.'),
+  email: z.string().email('Email invalid.'),
+  message: z.string().optional(),
+});
+
+function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { property: Property, agentProfile: UserProfile | null, agencyId: string }) {
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const form = useForm<z.infer<typeof scheduleSchema>>({
+        resolver: zodResolver(scheduleSchema),
+        defaultValues: { name: '', phone: '', email: '', message: '' },
+    });
+
+    async function onSubmit(values: z.infer<typeof scheduleSchema>) {
+        setIsSubmitting(true);
+        try {
+            const result = await scheduleViewing({
+                ...values,
+                propertyId: property.id,
+                agencyId,
+            });
+
+            if (result.success) {
+                toast({ title: 'Solicitare trimisă!', description: result.message });
+                form.reset();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.error('Scheduling viewing failed', error);
+            toast({
+                variant: 'destructive',
+                title: 'A apărut o eroare',
+                description: (error as Error).message || "Nu am putut trimite solicitarea. Încearcă din nou.",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    const agentForCard = {
+        name: agentProfile?.name || property.agentName || "Nealocat",
+        email: agentProfile?.email || null,
+        phone: agentProfile?.phone || null,
+        avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
+    };
+
+    return (
+        <Card className="rounded-2xl shadow-2xl bg-card lg:bg-[#152A47] lg:border-none lg:text-white">
+            <CardHeader>
+                <CardTitle className="text-xl">Programează o Vizionare</CardTitle>
+                <CardDescription className="lg:text-white/70">
+                    Completează formularul și un agent te va contacta în cel mai scurt timp.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <AgentCard agent={agentForCard} />
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii despre..." className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
+                        <Button type="submit" disabled={isSubmitting} className="w-full">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Trimite Solicitare
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ----------- END OF INLINED/NEW COMPONENTS -----------
 
 
 const PageSkeleton = () => (
@@ -121,7 +279,7 @@ export default function PublicPropertyDetailPage() {
                     <PriceStatusCard property={property} isMobile={isMobile}/>
                     
                     <PublicInfoColumn property={property} isMobile={true} />
-                    <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={true} />
+                    <PublicScheduleViewingCard property={property} agentProfile={agentProfile} agencyId={agencyId} />
                 </div>
             </div>
           </div>
@@ -139,7 +297,7 @@ export default function PublicPropertyDetailPage() {
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
-                         <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={false}/>
+                         <PublicScheduleViewingCard property={property} agentProfile={agentProfile} agencyId={agencyId} />
                     </div>
                 </main>
              </div>
