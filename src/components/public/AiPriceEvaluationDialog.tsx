@@ -29,8 +29,8 @@ export function AiPriceEvaluationDialog({ property }: { property: Property }) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                 <Button variant="outline" className="w-full justify-between lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
-                    <span>Evaluare Preț AI</span>
+                 <Button variant="outline" className="w-full justify-between lg:bg-white/10 lg:border-white/20 lg:text-[#67E8F9] lg:hover:bg-white/20">
+                    <span>Evalueaza Pretul cu ImoDeus.ai</span>
                     <Calculator className="h-4 w-4" />
                 </Button>
             </DialogTrigger>

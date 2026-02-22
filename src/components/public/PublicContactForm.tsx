@@ -66,7 +66,6 @@ export function PublicContactForm({ propertyId, agencyId }: PublicContactFormPro
 
   return (
     <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-center">Programează o Vizionare</h3>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Nume</FormLabel><FormControl><Input {...field} placeholder="Nume" className="bg-white/10 border-white/20" /></FormControl><FormMessage /></FormItem> )} />

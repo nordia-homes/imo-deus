@@ -52,7 +52,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
           "bg-[#0F1E33] text-white border-none",
           isMobile && "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33] text-white flex flex-col"
         )}>
-        <DialogHeader className={cn("shrink-0", isMobile && "border-b border-white/10")}>
+        <DialogHeader className={cn("shrink-0", isMobile && "border-b border-white/10 text-center")}>
           <DialogTitle className="truncate">{property.title}</DialogTitle>
           <DialogDescription className="whitespace-nowrap text-white/70">
             Toate detaliile proprietății într-un singur loc.
