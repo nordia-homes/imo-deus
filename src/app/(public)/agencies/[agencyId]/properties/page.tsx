@@ -56,17 +56,17 @@ export default function AgencyAllPropertiesPage() {
   }, [properties, filters]);
 
   return (
-    <div className={cn("space-y-6", isMobile ? "p-0" : "bg-background text-foreground p-4 lg:p-6")}>
+    <div className={cn("space-y-6", isMobile ? "p-0" : "p-4 lg:p-6")}>
       {/* Mobile & Tablet View */}
       <div className="lg:hidden space-y-4">
-        <Card className="bg-card text-card-foreground border-none rounded-b-2xl rounded-t-none">
+        <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
           <CardHeader>
-            <CardTitle className="text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
+            <CardTitle className="text-white text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
           </CardHeader>
         </Card>
         <div className="px-2">
           <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-            <Button variant="outline" className="w-full bg-card text-card-foreground">
+            <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10">
               <Filter className="mr-2 h-4 w-4" /> Filtrează
             </Button>
           </PropertyFilters>
@@ -78,18 +78,18 @@ export default function AgencyAllPropertiesPage() {
 
       {/* Desktop View */}
       <div className="hidden lg:block space-y-6 px-3">
-        <Card className="bg-card text-card-foreground border-none rounded-2xl">
+        <Card className="bg-[#152A47] text-white border-none rounded-2xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
-                <p className="text-muted-foreground">
+                <p className="text-white/70">
                   Explorează portofoliul de proprietăți.
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                  <Button variant="outline" className="bg-card text-card-foreground">
+                  <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                     <Filter className="mr-2 h-4 w-4" /> Filtrează
                   </Button>
                 </PropertyFilters>

@@ -92,7 +92,7 @@ export default function AgencyPublicLayout({
       return (
           <>
               <PublicHeader agency={null} isLoading={true} />
-               <main className="min-h-screen bg-background">
+               <main className="min-h-screen bg-[#0F1E33]">
                   <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
                       <div className="relative z-10 p-4">
                           <Skeleton className="h-16 w-96 mb-4" />
@@ -107,7 +107,7 @@ export default function AgencyPublicLayout({
   return (
     <PublicAgencyProvider value={providerValue}>
       <PublicHeader agency={agency} isLoading={isAgencyLoading} />
-      <main className="min-h-screen bg-background">{children}</main>
+      <main className="min-h-screen bg-[#0F1E33] text-white">{children}</main>
     </PublicAgencyProvider>
   );
 }
