@@ -1,59 +1,77 @@
 'use client';
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Info, BedDouble, Ruler, Calendar, Layers, Handshake, Building } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { ArrowUpDown, Bath, BedDouble, Building, Calendar, Compass, Key, Layers, Maximize, Paintbrush, Car, Star, Sofa, Thermometer, AlertTriangle, Handshake, Lift } from "lucide-react";
+import { Button } from "../ui/button";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Separator } from "../ui/separator";
 
 export function PublicInfoColumn({ property, isMobile }: { property: Property, isMobile?: boolean }) {
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const TRUNCATION_LENGTH = 250;
 
     const details = [
-        { label: 'Compartimentare', value: property.partitioning },
-        { label: 'Nr. Camere', value: property.rooms },
-        { label: 'An Construcție', value: property.constructionYear },
-        { label: 'Etaj', value: property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}` : property.floor || property.totalFloors || 'N/A' },
-        { label: 'Suprafață Utilă', value: property.squareFootage ? `${property.squareFootage} mp` : undefined },
-        { label: 'Suprafață cu Balcon', value: property.totalSurface ? `${property.totalSurface} mp` : undefined },
-        { label: 'Stare Interior', value: property.interiorState },
-        { label: 'Bucătărie', value: property.kitchen },
-        { label: 'Balcon/Terasă', value: property.balconyTerrace },
-        { label: 'Lift', value: property.lift },
-        { label: 'Sistem Încălzire', value: property.heatingSystem },
-    ];
+        { label: 'Compartimentare', value: property.partitioning, icon: <Layers className="h-5 w-5 text-primary" /> },
+        { label: 'Nr. camere', value: property.rooms, icon: <BedDouble className="h-5 w-5 text-primary" /> },
+        { label: 'An construcție', value: property.constructionYear, icon: <Calendar className="h-5 w-5 text-primary" /> },
+        { label: 'Etaj', value: property.floor && property.totalFloors ? `${property.floor} / ${property.totalFloors}`: property.floor || property.totalFloors, icon: <Layers className="h-5 w-5 text-primary" /> },
+        { label: 'Suprafață utilă', value: property.squareFootage ? `${property.squareFootage} mp` : null, icon: <Ruler className="h-5 w-5 text-primary" /> },
+        { label: 'Suprafață cu balcon', value: property.totalSurface ? `${property.totalSurface} mp`: null, icon: <Ruler className="h-5 w-5 text-primary" /> },
+        { label: 'Stare interior', value: property.interiorState, icon: <Building className="h-5 w-5 text-primary" /> },
+        { label: 'Bucătărie', value: property.kitchen, icon: <BedDouble className="h-5 w-5 text-primary" /> },
+        { label: 'Balcon/Terasă', value: property.balconyTerrace, icon: <BedDouble className="h-5 w-5 text-primary" /> },
+        { label: 'Lift', value: property.lift, icon: <Layers className="h-5 w-5 text-primary" /> },
+        { label: 'Sistem încălzire', value: property.heatingSystem, icon: <BedDouble className="h-5 w-5 text-primary" /> },
+    ].filter(item => item.value);
+
+    const cardClasses = isMobile 
+        ? "bg-[#152A47] text-white border-none rounded-2xl"
+        : "bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none";
     
-    const InfoItem = ({ label, value }: { label: string, value: string | number | undefined | null }) => {
-        if (!value && value !== 0) return null;
-        return (
-            <Button variant="outline" className="w-full justify-between pointer-events-none bg-white/10 border-white/20 text-white h-auto py-3">
-                <span className="text-white/70">{label}</span>
-                <span className="font-semibold text-base">{value}</span>
-            </Button>
-        )
-    };
+    const mutedTextClasses = isMobile 
+        ? "text-white/70"
+        : "text-muted-foreground lg:text-white/70";
 
     if (isMobile) {
         return (
-            <div className="space-y-4 px-2">
-                <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                    <CardHeader className="p-4 pb-2">
-                        <CardTitle className="text-xl font-bold">Descriere</CardTitle>
+            <div className="space-y-4">
+                 <Card className={cardClasses}>
+                    <CardHeader>
+                        <CardTitle>Descriere</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-white/80 whitespace-pre-wrap">
-                          {property.description || 'Nicio descriere adăugată.'}
-                        </p>
+                    <CardContent>
+                        <div>
+                            <p className={cn("whitespace-pre-wrap", mutedTextClasses)}>
+                                {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                                    ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                                    : property.description || 'Nicio descriere adăugată.'
+                                }
+                            </p>
+                            {property.description && property.description.length > TRUNCATION_LENGTH && (
+                                <Button 
+                                    variant="link" 
+                                    className="p-0 h-auto mt-2 text-primary"
+                                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                >
+                                    {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                                </Button>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
-                
-                <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                    <CardHeader className="p-4 pb-2">
-                        <CardTitle className="text-xl font-bold">Detalii Proprietate</CardTitle>
+                 <Card className={cardClasses}>
+                    <CardHeader>
+                        <CardTitle>Informații Detaliate</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 space-y-2">
+                    <CardContent className="space-y-2">
                         {details.map(item => (
-                            <InfoItem key={item.label} label={item.label} value={item.value} />
+                            <Button key={item.label} variant="outline" className="w-full justify-between pointer-events-none bg-white/10 border-white/20">
+                                <div className="flex items-center gap-2">
+                                    {item.icon}
+                                    <span className="text-white/80">{item.label}</span>
+                                </div>
+                                <span className="font-semibold text-white">{item.value}</span>
+                            </Button>
                         ))}
                     </CardContent>
                 </Card>
@@ -61,28 +79,29 @@ export function PublicInfoColumn({ property, isMobile }: { property: Property, i
         )
     }
 
-    // Desktop view remains unchanged
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+        <Card className={cardClasses}>
             <CardHeader>
                 <CardTitle>Descriere</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-white/80 whitespace-pre-wrap">
-                    {property.description || 'Nicio descriere adăugată.'}
-                </p>
-                {property.amenities && property.amenities.length > 0 && (
-                    <div className="mt-6">
-                        <h4 className="font-semibold mb-3">Dotări și Facilități</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {property.amenities.map(amenity => (
-                                <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-white/10 border-white/20">
-                                    {amenity}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <div>
+                    <p className={cn("whitespace-pre-wrap", mutedTextClasses)}>
+                        {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                            ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                            : property.description || 'Nicio descriere adăugată.'
+                        }
+                    </p>
+                    {property.description && property.description.length > TRUNCATION_LENGTH && (
+                        <Button 
+                            variant="link" 
+                            className="p-0 h-auto mt-2 text-primary"
+                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                        >
+                            {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                        </Button>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );

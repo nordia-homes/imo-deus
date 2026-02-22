@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +24,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const TRUNCATION_LENGTH = 500;
+    const TRUNCATION_LENGTH = 250;
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
     
