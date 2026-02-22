@@ -1,15 +1,16 @@
 'use client';
 
-import { useMemo, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
-import { Star, TrendingUp } from "lucide-react";
+import { Separator } from "../ui/separator";
+import { Phone, Star, TrendingUp } from "lucide-react";
 import type { Property, UserProfile } from "@/lib/types";
-import { PublicContactForm } from "@/components/public/PublicContactForm";
+import { PublicContactForm } from "../public/PublicContactForm";
 import Image from "next/image";
 import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { AiPriceEvaluationDialog } from "./AiPriceEvaluationDialog";
+import { useMemo } from 'react';
+import { WhatsappIcon } from "../icons/WhatsappIcon";
 
 
 export function PublicActionsColumn({ property, agentProfile }: { property: Property, agentProfile: UserProfile | null }) {
@@ -17,60 +18,79 @@ export function PublicActionsColumn({ property, agentProfile }: { property: Prop
 
     const agentForCard = {
         name: agentProfile?.name || property.agentName || "Nespecificat",
-        photoUrl: agentProfile?.photoUrl,
-        rating: 4.8,
-        reviews: 32,
-        sales: 12,
+        email: agentProfile?.email || null,
+        phone: agentProfile?.phone || null,
+        avatarUrl: agentProfile?.photoUrl,
     };
-
+    
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;
         return (property.price / property.squareFootage).toFixed(0);
     }, [property.price, property.squareFootage]);
 
+    const sanitizeForWhatsapp = (phone?: string | null) => {
+        if (!phone) return '';
+        let sanitized = phone.replace(/\D/g, '');
+        if (sanitized.length === 10 && sanitized.startsWith('07')) {
+            return `40${sanitized.substring(1)}`;
+        }
+        return sanitized;
+    };
+    const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
+
     return (
-        <Card className="shadow-2xl rounded-2xl bg-slate-900/40 border border-cyan-400/20 backdrop-blur-lg glow-card sticky top-24">
-            <CardContent className="p-6">
-                <div className="space-y-4">
-                    <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-bold text-white">€{property.price.toLocaleString()}</p>
-                        {pricePerSqm && (
-                            <span className="text-sm text-cyan-400 font-medium">(€{pricePerSqm}/m²)</span>
-                        )}
-                    </div>
+        <Card className="sticky top-24 shadow-2xl rounded-2xl bg-slate-900/50 border border-cyan-300/20 text-white backdrop-blur-md glow-card">
+            <CardContent className="p-4 space-y-4">
+                {/* Price section */}
+                <div className="text-center">
+                    <p className="text-3xl font-bold">€{property.price.toLocaleString()} <span className="text-base font-normal text-cyan-200/80">({pricePerSqm ? `€${pricePerSqm}/m²` : ''})</span></p>
+                    <AiPriceEvaluationDialog property={property} allProperties={[]} />
+                </div>
+                
+                <Separator className="my-4 bg-cyan-300/20" />
 
-                    <AiPriceEvaluationDialog property={property} />
-
-                    <div className="border-t border-cyan-400/20 my-4"></div>
-
-                    <div>
-                        <p className="text-sm font-semibold text-white/80 mb-3">Agent Imobiliar</p>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16 border-2 border-cyan-400/50">
-                                <AvatarImage src={agentForCard.photoUrl || `https://i.pravatar.cc/150?u=${agentForCard.name}`} />
-                                <AvatarFallback>{agentForCard.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <p className="font-bold text-white">{agentForCard.name}</p>
-                                <div className="flex items-center gap-1 text-xs text-amber-400">
-                                    <Star className="h-3 w-3 fill-amber-400" />
-                                    <span>{agentForCard.rating} ({agentForCard.reviews} recenzii)</span>
-                                </div>
-                                <div className="flex gap-2 mt-1 text-xs text-white/70">
-                                    <span>{agentForCard.sales} vânzări</span>
-                                    <span>•</span>
-                                    <span>Top 5%</span>
-                                </div>
-                            </div>
+                {/* Agent Section */}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <Image
+                            src={agentForCard.avatarUrl || 'https://i.pravatar.cc/150'}
+                            alt={agentForCard.name || 'Agent'}
+                            width={48}
+                            height={48}
+                            className="rounded-full border-2 border-cyan-400/50"
+                        />
+                        <div className="flex-1">
+                             <p className="text-sm text-cyan-200/80">Agentul tău dedicat</p>
+                            <p className="font-bold text-white">{agentForCard.name}</p>
                         </div>
                     </div>
+                     <div className="grid grid-cols-2 gap-2">
+                        {agentForCard.phone && (
+                            <Button asChild className="bg-cyan-400/10 text-cyan-200 hover:bg-cyan-400/20 border border-cyan-400/20">
+                                <a href={`tel:${agentForCard.phone}`}>
+                                    <Phone className="mr-2 h-4 w-4" />
+                                    Apelează
+                                </a>
+                            </Button>
+                        )}
+                        {sanitizedPhone && (
+                            <Button asChild className="bg-cyan-400/10 text-cyan-200 hover:bg-cyan-400/20 border border-cyan-400/20">
+                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
+                                    <WhatsappIcon className="mr-2 h-4 w-4" />
+                                    WhatsApp
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                </div>
 
-                    <div className="border-t border-cyan-400/20 my-4"></div>
+                <Separator className="my-4 bg-cyan-300/20" />
 
-                    <PublicContactForm propertyId={property.id} agencyId={agencyId!} />
-
+                {/* Contact Form Section */}
+                <div>
+                     <PublicContactForm agencyId={agencyId!} propertyId={property.id} />
                 </div>
             </CardContent>
         </Card>
-    );
+    )
 }
