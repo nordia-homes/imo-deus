@@ -3,8 +3,8 @@
 import { useParams, notFound } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import type { Property, UserProfile } from '@/lib/types';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
@@ -36,6 +36,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { SimilarProperties } from '@/components/public/SimilarProperties';
 
 
 // ----------- START OF INLINED/NEW COMPONENTS -----------
@@ -213,6 +214,35 @@ export default function PublicPropertyDetailPage() {
         return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
     }, [firestore, agencyId, propertyId]);
     const { data: property, isLoading: isPropertyLoading, error } = useDoc<Property>(propertyDocRef);
+    
+    // Fetch all active properties for the agency to find similar ones
+    const allPropertiesQuery = useMemoFirebase(() => {
+      if (!agencyId) return null;
+      return query(
+          collection(firestore, 'agencies', agencyId, 'properties'),
+          where('status', '==', 'Activ')
+      );
+    }, [firestore, agencyId]);
+    const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
+    
+    // Filter for similar properties
+    const similarProperties = useMemo(() => {
+        if (!property || !allProperties) return [];
+
+        const priceFlexibility = 0.25; // 25%
+        const minPrice = property.price * (1 - priceFlexibility);
+        const maxPrice = property.price * (1 + priceFlexibility);
+
+        return allProperties
+        .filter(p =>
+            p.id !== property.id &&
+            p.propertyType === property.propertyType &&
+            p.price >= minPrice &&
+            p.price <= maxPrice
+        )
+        .slice(0, 10);
+    }, [property, allProperties]);
+
 
     useEffect(() => {
         if (!property?.agentId || !firestore) {
@@ -241,7 +271,7 @@ export default function PublicPropertyDetailPage() {
         fetchAgent();
     }, [property, firestore]);
     
-    const isLoading = isPropertyLoading || isAgentLoading;
+    const isLoading = isPropertyLoading || isAgentLoading || areAllPropertiesLoading;
     
     if (isLoading) {
         return <div className="h-full bg-background lg:bg-[#0F1E33] text-white"><PageSkeleton /></div>;
@@ -312,6 +342,8 @@ export default function PublicPropertyDetailPage() {
                             <PropertiesMap properties={[property]} />
                         </CardContent>
                     </Card>
+
+                    <SimilarProperties properties={similarProperties} />
 
                 </div>
             </div>
