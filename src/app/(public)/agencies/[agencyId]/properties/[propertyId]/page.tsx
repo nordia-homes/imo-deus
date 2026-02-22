@@ -82,7 +82,7 @@ export default function PublicPropertyDetailPage() {
         <div className="bg-background lg:bg-[#0F1E33] lg:text-white">
             <PublicPropertyHeader property={property} />
 
-            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 py-6 lg:px-6">
+            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 py-6 lg:px-6">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     <MediaColumn property={property} />
                     <PublicInfoColumn property={property} />
