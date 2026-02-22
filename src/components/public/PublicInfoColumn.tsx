@@ -1,76 +1,102 @@
 'use client';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, MapPin, FileText, Sparkles, Info } from "lucide-react";
+import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight, Menu, Map, Car, Building } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { RlvTab } from "@/components/properties/detail/RlvTab";
+import { Button } from "@/components/ui/button";
+import { RlvTab } from "../properties/detail/RlvTab";
 import { useState } from "react";
-import { InfoDialog } from "@/components/properties/detail/InfoDialog";
-import { cn } from "@/lib/utils";
+import { InfoDialog } from "../properties/detail/InfoDialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 export function PublicInfoColumn({ property }: { property: Property }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     
-    const tabButtonStyle = "flex-1 bg-transparent border border-green-500/60 shadow-[0_0_15px_-5px_rgba(74,222,128,0.7)] text-green-300 hover:bg-green-500/10 hover:text-green-200 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-200 data-[state=active]:border-green-400";
-
     const menuItems = [
-      { value: "overview", label: "Prezentare generală", icon: <LayoutList className="h-4 w-4" /> },
-      { value: "location", label: "Vezi locația", icon: <MapPin className="h-4 w-4" /> },
-      { value: "rlv", label: "RLV", icon: <FileText className="h-4 w-4" /> },
-      { value: "features", label: "Caracteristici", icon: <Sparkles className="h-4 w-4" /> },
+      { value: "overview", label: "Prezentare generală", icon: <LayoutList className="mr-2 h-4 w-4" /> },
+      { value: "location", label: "Vezi locația", icon: <Map className="mr-2 h-4 w-4" /> },
+      { value: "rlv", label: "RLV", icon: <FileText className="mr-2 h-4 w-4" /> },
+      { value: "features", label: "Caracteristici", icon: <Building className="mr-2 h-4 w-4" /> },
     ];
-    
-    return (
-        <div className="space-y-6">
-            <Tabs defaultValue="overview">
-                <TabsList className="grid w-full grid-cols-5 gap-2 bg-transparent p-0">
-                    {menuItems.map(item => (
-                         <TabsTrigger key={item.value} value={item.value} className={cn(tabButtonStyle, "gap-2")}>
-                            {item.icon}
-                            <span className="hidden md:inline">{item.label}</span>
-                         </TabsTrigger>
-                    ))}
-                    <button
-                        onClick={() => setIsInfoDialogOpen(true)}
-                        className={cn(tabButtonStyle, "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-2")}
-                    >
-                        <Info className="h-4 w-4" />
-                        <span className="hidden md:inline">Informații</span>
-                    </button>
-                </TabsList>
 
-                <TabsContent value="overview" className="mt-6 text-white/80">
-                     <p className="whitespace-pre-wrap">{property.description || 'Nicio descriere adăugată.'}</p>
-                </TabsContent>
-                 <TabsContent value="location" className="mt-6">
-                    <div className="aspect-video w-full">
-                         <iframe
-                            className="w-full h-full rounded-lg border border-white/10"
+    const glowClasses = "border border-green-400/50 bg-transparent text-green-300 hover:bg-green-900/50 hover:text-green-200 hover:border-green-400 shadow-[0_0_10px_0] shadow-green-500/30 transition-all duration-300";
+
+    const renderTabsContent = () => (
+        <>
+            <TabsContent value="overview">
+                <Card className="bg-transparent border-none shadow-none">
+                    <CardContent className="text-white/80 whitespace-pre-wrap p-0 pt-6">
+                        {property.description || 'Nicio descriere adăugată.'}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="location">
+                 <Card className="bg-transparent border-none shadow-none">
+                    <CardContent className="p-0 pt-6">
+                        <iframe
+                            className="w-full aspect-video rounded-md border"
                             loading="lazy"
                             allowFullScreen
                             referrerPolicy="no-referrer-when-downgrade"
                             src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(property.address)}`}>
                         </iframe>
-                    </div>
-                </TabsContent>
-                <TabsContent value="rlv" className="mt-6">
-                    <RlvTab property={property} />
-                </TabsContent>
-                <TabsContent value="features" className="mt-6">
-                    {property.amenities && property.amenities.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {property.amenities.map(amenity => (
-                                <div key={amenity} className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/10">
-                                    <Sparkles className="h-4 w-4 text-primary"/>
-                                    <span className="text-sm text-white/90">{amenity}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-center text-white/70">Nu sunt specificate caracteristici speciale.</p>
-                    )}
-                </TabsContent>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="rlv">
+                <Card className="bg-transparent border-none shadow-none">
+                    <CardContent className="p-0 pt-6">
+                        <RlvTab property={property} />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="features">
+                 <Card className="bg-transparent border-none shadow-none">
+                    <CardContent className="p-0 pt-6">
+                        {property.amenities && property.amenities.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {property.amenities.map(amenity => (
+                                    <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-white/10 text-white border-white/20">
+                                        {amenity}
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : <p className="text-white/70">Nicio caracteristică specificată.</p>}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </>
+    )
+
+    return (
+        <div className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-transparent p-0 gap-2">
+                    {menuItems.map(item => (
+                         <TabsTrigger key={item.value} value={item.value} className={`${glowClasses} h-16`}>
+                            {item.icon}
+                            {item.label}
+                        </TabsTrigger>
+                    ))}
+                     <Button 
+                        onClick={() => setIsInfoDialogOpen(true)}
+                        className={`${glowClasses} h-16`}
+                    >
+                        <Info className="mr-2 h-4 w-4" />
+                        Informații
+                    </Button>
+                </TabsList>
+
+                {renderTabsContent()}
             </Tabs>
-             <InfoDialog 
+            <InfoDialog 
                 property={property}
                 isOpen={isInfoDialogOpen}
                 onOpenChange={setIsInfoDialogOpen}
