@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Property, UserProfile } from '@/lib/types';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
@@ -52,7 +53,7 @@ export default function PublicPropertyDetailPage() {
                 const agentDocRef = doc(firestore, 'users', property.agentId!);
                 const agentSnap = await getDoc(agentDocRef);
                 if (agentSnap.exists()) {
-                    setAgentProfile({ id: agentSnap.id, ...agentSnap.data() } as UserProfile);
+                    setAgentProfile({ id: agentSnap.id, ...docSnap.data() } as UserProfile);
                 } else {
                     setAgentProfile(null);
                 }
@@ -82,7 +83,7 @@ export default function PublicPropertyDetailPage() {
         <div className="h-full bg-white lg:bg-[#0F1E33] lg:-mt-6 lg:-mb-6 lg:px-3 lg:pt-6 lg:pb-6 text-card-foreground lg:text-white">
             <PublicPropertyHeader property={property} />
 
-            <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 lg:px-0">
+            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 lg:px-0">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     <MediaColumn property={property} />
                     <PublicInfoColumn property={property} />
