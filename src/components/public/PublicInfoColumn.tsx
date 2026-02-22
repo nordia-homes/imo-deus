@@ -1,158 +1,149 @@
 'use client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutList, Users, FileText, Info, Map, CheckSquare } from "lucide-react";
-import type { Property } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { RlvTab } from "./RlvTab";
-import { useState } from "react";
-import { InfoDialog } from "./InfoDialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Menu } from 'lucide-react';
-import { Separator } from "@/components/ui/separator";
 
-export function PublicInfoColumn({ property }: { property: Property }) {
+import { useState } from 'react';
+import type { Property } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { RlvTab } from '@/components/properties/detail/RlvTab';
+import { InfoDialog } from '@/components/properties/detail/InfoDialog';
+import { Info, LayoutList, Map, FileText, Star } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+
+export function PublicInfoColumn({ property, isMobile }: { property: Property, isMobile: boolean }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-    const [activeTab, setActiveTab] = useState("overview");
-    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const TRUNCATION_LENGTH = 500;
 
-    const handleTabChange = (tab: string) => {
-        setActiveTab(tab);
-        setIsSheetOpen(false);
-    };
+    const descriptionContent = (
+        <div>
+            <p className="text-sm text-white/80 whitespace-pre-wrap">
+                {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
+                    ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
+                    : property.description || 'Nicio descriere adăugată.'
+                }
+            </p>
+            {property.description && property.description.length > TRUNCATION_LENGTH && (
+                <Button 
+                    variant="link" 
+                    className="p-0 h-auto mt-2 text-primary"
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                >
+                    {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
+                </Button>
+            )}
+            {property.amenities && property.amenities.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                    {property.amenities.map(amenity => (
+                        <Badge key={amenity} variant="secondary" className="bg-white/10 text-white border-none">{amenity}</Badge>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 
-    const menuItems = [
-      { value: "overview", label: "Prezentare generală", icon: <LayoutList className="mr-2 h-4 w-4" /> },
-      { value: "location", label: "Vezi locația", icon: <Map className="mr-2 h-4 w-4" /> },
-      { value: "rlv", label: "RLV", icon: <FileText className="mr-2 h-4 w-4" /> },
-      { value: "features", label: "Caracteristici", icon: <CheckSquare className="mr-2 h-4 w-4" /> },
-    ];
+    if (isMobile) {
+        return (
+            <>
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                        <AccordionItem value="description" className="border-b-0">
+                            <AccordionTrigger className="p-4 hover:no-underline font-semibold">Descriere & Dotări</AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-0">
+                                {descriptionContent}
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Card>
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                        <AccordionItem value="info" className="border-b-0">
+                            <AccordionTrigger className="p-4 hover:no-underline font-semibold">Informații Detaliate</AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-0">
+                                <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Card>
+                    <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                        <AccordionItem value="rlv" className="border-b-0">
+                           <AccordionTrigger className="p-4 hover:no-underline font-semibold">Releveu Proprietate (RLV)</AccordionTrigger>
+                           <AccordionContent className="px-2 pb-2 pt-0">
+                               <RlvTab property={property} />
+                           </AccordionContent>
+                       </AccordionItem>
+                   </Card>
+                </Accordion>
+                <InfoDialog property={property} isOpen={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
+            </>
+        );
+    }
     
+    // Desktop View
     return (
         <div className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <div className="hidden md:grid h-auto grid-cols-5 gap-2 bg-transparent p-0">
-                    {menuItems.map(item => (
-                         <Button
-                            key={item.value}
-                            variant="outline"
-                            className="h-10 rounded-lg border-primary/50 text-primary bg-transparent hover:bg-primary/10 glow-card"
-                            onClick={() => handleTabChange(item.value)}
-                            data-state={activeTab === item.value ? 'active' : 'inactive'}
-                         >
-                            {item.icon}
-                            {item.label}
-                        </Button>
-                    ))}
-                    <Button 
-                        variant="outline"
-                        className="h-10 rounded-lg border-primary/50 text-primary bg-transparent hover:bg-primary/10 glow-card"
-                        onClick={() => setIsInfoDialogOpen(true)}
-                    >
-                        <Info className="mr-2 h-4 w-4" />
-                        Informații
+            <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-5 h-auto bg-transparent p-0 gap-2">
+                    <TabsTrigger value="overview" className="h-10 rounded-lg border-cyan-400/50 glow-card text-white bg-transparent hover:bg-cyan-400/10 data-[state=active]:bg-cyan-400/20 data-[state=active]:text-cyan-300 data-[state=active]:shadow-xl transition-all">
+                        <LayoutList className="mr-2 h-4 w-4" /> Prezentare generală
+                    </TabsTrigger>
+                    <TabsTrigger value="location" className="h-10 rounded-lg border-cyan-400/50 glow-card text-white bg-transparent hover:bg-cyan-400/10 data-[state=active]:bg-cyan-400/20 data-[state=active]:text-cyan-300 data-[state=active]:shadow-xl transition-all">
+                        <Map className="mr-2 h-4 w-4" /> Vezi locația
+                    </TabsTrigger>
+                     <TabsTrigger value="rlv" className="h-10 rounded-lg border-cyan-400/50 glow-card text-white bg-transparent hover:bg-cyan-400/10 data-[state=active]:bg-cyan-400/20 data-[state=active]:text-cyan-300 data-[state=active]:shadow-xl transition-all">
+                        <FileText className="mr-2 h-4 w-4" /> RLV
+                    </TabsTrigger>
+                     <TabsTrigger value="features" className="h-10 rounded-lg border-cyan-400/50 glow-card text-white bg-transparent hover:bg-cyan-400/10 data-[state=active]:bg-cyan-400/20 data-[state=active]:text-cyan-300 data-[state=active]:shadow-xl transition-all">
+                        <Star className="mr-2 h-4 w-4" /> Caracteristici
+                    </TabsTrigger>
+                    <Button onClick={() => setIsInfoDialogOpen(true)} className="h-10 rounded-lg border-cyan-400/50 glow-card text-white bg-transparent hover:bg-cyan-400/10 active:bg-cyan-400/20 transition-all">
+                        <Info className="mr-2 h-4 w-4" /> Informații
                     </Button>
-                </div>
-
-                {/* Mobile Menu Trigger */}
-                <div className="md:hidden">
-                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" className="w-full">
-                                <Menu className="mr-2 h-4 w-4" />
-                                Meniu Secțiune
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-2xl bg-[#f8f8f9] text-black p-0">
-                            <div className="flex flex-col gap-1 p-4">
-                                {menuItems.map(item => (
-                                     <Button key={item.value} variant={activeTab === item.value ? 'default' : 'ghost'} className="justify-start text-base py-6" onClick={() => handleTabChange(item.value)}>
-                                        {item.icon}
-                                        {item.label}
-                                    </Button>
-                                ))}
-                                <Separator className="my-2" />
-                                <Button variant='ghost' className="justify-start text-base py-6" onClick={() => { setIsInfoDialogOpen(true); setIsSheetOpen(false); }}>
-                                    <Info className="mr-2 h-4 w-4" />
-                                    Informații Detaliate
-                                </Button>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                </div>
-
-                <TabsContent value="overview" className="mt-6 space-y-6">
-                    <p className="text-muted-foreground lg:text-white/70 whitespace-pre-wrap">
-                        {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded) 
-                            ? `${'\'\'\''}${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                            : property.description || 'Nicio descriere adăugată.'
-                        }
-                    </p>
-                    {property.description && property.description.length > TRUNCATION_LENGTH && (
-                        <Button 
-                            variant="link" 
-                            className="p-0 h-auto mt-2 text-primary"
-                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                        >
-                            {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
-                        </Button>
-                    )}
+                </TabsList>
+                <TabsContent value="overview" className="mt-6">
+                    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+                        <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
+                        <CardContent>{descriptionContent}</CardContent>
+                    </Card>
                 </TabsContent>
                 <TabsContent value="location" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
-                        <CardHeader>
-                            <CardTitle>Locație pe Hartă</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {property.latitude && property.longitude ? (
+                        <CardHeader><CardTitle>Locație pe Hartă</CardTitle></CardHeader>
+                         <CardContent>
+                            {property.address && (
                                 <iframe
                                     className="w-full aspect-video rounded-md border"
                                     loading="lazy"
                                     allowFullScreen
                                     referrerPolicy="no-referrer-when-downgrade"
-                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude-0.01},${property.latitude-0.01},${property.longitude+0.01},${property.latitude+0.01}&layer=mapnik&marker=${property.latitude},${property.longitude}`}>
+                                    src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(property.address)}`}>
                                 </iframe>
-                            ) : (
-                                <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                                    <p className="text-sm text-muted-foreground">Coordonatele hărții nu sunt disponibile.</p>
-                                </div>
                             )}
-                        </CardContent>
+                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="rlv" className="mt-6">
-                    <RlvTab property={property} />
-                </TabsContent>
-                <TabsContent value="features" className="mt-6">
+                 <TabsContent value="rlv" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
-                        <CardHeader>
-                            <CardTitle>Caracteristici & Dotări</CardTitle>
-                        </CardHeader>
-                         {property.amenities && property.amenities.length > 0 && (
-                            <CardContent>
+                        <CardHeader><CardTitle>Releveu Proprietate (RLV)</CardTitle></CardHeader>
+                        <CardContent><RlvTab property={property} /></CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="features" className="mt-6">
+                     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+                         <CardHeader><CardTitle>Caracteristici & Dotări</CardTitle></CardHeader>
+                         <CardContent>
+                            {property.amenities && property.amenities.length > 0 ? (
                                  <div className="flex flex-wrap gap-2">
                                     {property.amenities.map(amenity => (
-                                        <Button key={amenity} variant="secondary" className="pointer-events-none cursor-default bg-white/10 border-none text-white">
-                                            {amenity}
-                                        </Button>
+                                        <Badge key={amenity} variant="secondary" className="bg-white/10 text-white border-none">{amenity}</Badge>
                                     ))}
                                 </div>
-                            </CardContent>
-                         )}
-                    </Card>
-                </TabsContent>
+                            ) : <p className="text-white/70">Nicio caracteristică specificată.</p>}
+                         </CardContent>
+                     </Card>
+                 </TabsContent>
             </Tabs>
-            <InfoDialog 
-                property={property}
-                isOpen={isInfoDialogOpen}
-                onOpenChange={setIsInfoDialogOpen}
-            />
+            <InfoDialog property={property} isOpen={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen} />
         </div>
-    )
+    );
 }

@@ -1,94 +1,101 @@
 'use client';
 
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Phone } from 'lucide-react';
-import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import { PublicContactForm } from './PublicContactForm';
-import { AiPriceEvaluationDialog } from './AiPriceEvaluationDialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { scheduleViewing } from '@/ai/flows/schedule-viewing';
 import type { Property, UserProfile } from '@/lib/types';
-import { useMemo } from 'react';
+import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
+import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { AiPriceEvaluationDialog } from './AiPriceEvaluationDialog';
 
-export function PublicActionsColumn({ property, agentProfile, agencyId }: { property: Property, agentProfile: UserProfile | null, agencyId: string }) {
+const contactFormSchema = z.object({
+  name: z.string().min(1, 'Numele este obligatoriu.'),
+  phone: z.string().min(1, 'Telefonul este obligatoriu.'),
+  email: z.string().email('Email invalid.'),
+  message: z.string().optional(),
+});
+
+export function PublicActionsColumn({ property, agentProfile, agencyId, isMobile }: { property: Property, agentProfile: UserProfile | null, agencyId: string, isMobile?: boolean }) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
     
-    const pricePerSqm = useMemo(() => {
-        if (!property.price || !property.squareFootage) return null;
-        return (property.price / property.squareFootage).toFixed(0);
-    }, [property.price, property.squareFootage]);
+    const agentForCard = {
+        name: agentProfile?.name || property.agentName,
+        email: agentProfile?.email || null,
+        phone: agentProfile?.phone || null,
+        avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
+    };
 
-    const getInitials = (name?: string | null) => {
-        if (!name) return 'A';
-        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const form = useForm<z.infer<typeof contactFormSchema>>({
+        resolver: zodResolver(contactFormSchema),
+        defaultValues: {
+            name: '',
+            phone: '',
+            email: '',
+            message: `Bună ziua, sunt interesat de proprietatea "${property.title}". Aș dori să programez o vizionare.`,
+        },
+    });
+
+    async function onSubmit(values: z.infer<typeof contactFormSchema>) {
+        setIsSubmitting(true);
+        try {
+            const result = await scheduleViewing({ ...values, propertyId: property.id, agencyId });
+            if (result.success) {
+                toast({ title: "Solicitare trimisă!", description: result.message });
+                form.reset();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error("Failed to schedule viewing:", error);
+            toast({ variant: 'destructive', title: 'Eroare', description: error.message || 'Nu am putut trimite solicitarea.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
-    const sanitizeForWhatsapp = (phone?: string | null) => {
-        if (!phone) return '';
-        let sanitized = phone.replace(/\D/g, '');
-        if (sanitized.length === 10 && sanitized.startsWith('07')) {
-            return `40${sanitized.substring(1)}`;
-        }
-        return sanitized;
-    };
-    const sanitizedPhone = sanitizeForWhatsapp(agentProfile?.phone);
-
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] border-none text-white">
-            <CardContent className="p-4 space-y-4">
-                {/* Price Section */}
-                <div className="text-center p-3 rounded-lg bg-black/20">
-                    <span className="text-2xl font-bold text-white">
-                        €{property.price.toLocaleString()}
-                    </span>
-                    {pricePerSqm && (
-                        <span className="text-base font-medium text-white/70">
-                            (€{pricePerSqm}/m²)
-                        </span>
-                    )}
-                </div>
-
-                {/* AI Evaluation */}
-                <AiPriceEvaluationDialog property={property} />
-                
-                <Separator className="bg-white/20" />
-
-                {/* Agent Section */}
-                <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-14 w-14">
-                            <AvatarImage src={agentProfile?.photoUrl || undefined} alt={agentProfile?.name || 'Agent'} />
-                            <AvatarFallback className="text-xl bg-white/20">{getInitials(agentProfile?.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="text-lg font-semibold">{agentProfile?.name || 'Contactează-ne'}</p>
-                            <p className="text-sm text-white/70">Agent Imobiliar</p>
-                        </div>
+        <div className={cn(!isMobile && "sticky top-28")}>
+            <Card className={cn(
+                "rounded-2xl shadow-2xl",
+                isMobile ? "bg-[#152A47] border-none p-4" : "bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white"
+            )}>
+                 <div className={cn("space-y-4", isMobile && "text-white")}>
+                    {agentForCard.name && <AgentCard agent={agentForCard} isMobile={isMobile} />}
+                    <OwnerCard property={property} isMobile={isMobile} />
+                    <Separator className={cn(isMobile ? "bg-white/20" : "")} />
+                    <div className={cn(isMobile && "text-center")}>
+                         <h3 className="text-lg font-semibold">Programează o Vizionare</h3>
+                         <p className={cn("text-sm", isMobile ? "text-white/70" : "text-muted-foreground lg:text-white/70")}>Agentul nostru te va contacta în cel mai scurt timp.</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                       {agentProfile?.phone && (
-                            <>
-                             <Button variant="outline" asChild className="bg-white/10 hover:bg-white/20 border-white/20">
-                                <a href={`tel:${agentProfile.phone}`}>
-                                <Phone className="mr-2 h-4 w-4" /> Apelează
-                                </a>
-                             </Button>
-                             <Button variant="outline" asChild className="bg-white/10 hover:bg-white/20 border-white/20">
-                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
-                                <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
-                                </a>
-                             </Button>
-                            </>
-                       )}
-                    </div>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Nume</FormLabel><FormControl><Input placeholder="Nume" {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Telefon</FormLabel><FormControl><Input placeholder="Telefon" {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Email</FormLabel><FormControl><Input placeholder="Email" {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="sr-only">Mesaj</FormLabel><FormControl><Textarea placeholder="Mesajul tău..." rows={3} {...field} className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Trimite Solicitarea
+                            </Button>
+                        </form>
+                    </Form>
                 </div>
-                
-                <Separator className="bg-white/20" />
-
-                {/* Contact Form Section */}
-                <PublicContactForm propertyId={property.id} agencyId={agencyId} />
-
-            </CardContent>
-        </Card>
+            </Card>
+             <div className="mt-4">
+                 <AiPriceEvaluationDialog property={property} />
+            </div>
+        </div>
     );
 }

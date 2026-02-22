@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -13,6 +12,9 @@ import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { PublicActionsColumn } from '@/components/public/PublicActionsColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent } from '@/components/ui/card';
+import { Bed, Ruler, Calendar, Layers } from 'lucide-react';
 
 
 const PageSkeleton = () => (
@@ -32,6 +34,7 @@ export default function PublicPropertyDetailPage() {
     const params = useParams();
     const { agencyId, propertyId } = params as { agencyId: string, propertyId: string };
     const firestore = useFirestore();
+    const isMobile = useIsMobile();
 
     const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
     const [isAgentLoading, setIsAgentLoading] = useState(true);
@@ -80,6 +83,34 @@ export default function PublicPropertyDetailPage() {
         return null;
     }
 
+    if (isMobile) {
+        return (
+          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen text-white">
+             <div className="space-y-4">
+                 <MediaColumn property={property} />
+
+                <div className="space-y-4 px-2">
+                    <Card className="bg-[#152A47] border-none rounded-2xl">
+                        <CardContent className="p-3">
+                            <div className="flex justify-around items-center text-sm">
+                                <div className="flex items-center gap-2"><Bed className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.rooms}</span></div>
+                                <div className="flex items-center gap-2"><Ruler className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.squareFootage} mp</span></div>
+                                {property.constructionYear && (<div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.constructionYear}</span></div>)}
+                                {property.floor && (<div className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.floor}</span></div>)}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div className="space-y-4">
+                        <PublicInfoColumn property={property} isMobile={true} />
+                        <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={true} />
+                    </div>
+                </div>
+            </div>
+          </div>
+        );
+    }
+
     return (
         <div className={cn("bg-[#0F1E33] text-white animated-glow")}>
              <div className="container mx-auto px-4 py-8">
@@ -87,11 +118,11 @@ export default function PublicPropertyDetailPage() {
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <PublicPropertyHeader property={property} />
                         <MediaColumn property={property} />
-                        <PublicInfoColumn property={property} />
+                        <PublicInfoColumn property={property} isMobile={false} />
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
-                         <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} />
+                         <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={false}/>
                     </div>
                 </main>
              </div>
