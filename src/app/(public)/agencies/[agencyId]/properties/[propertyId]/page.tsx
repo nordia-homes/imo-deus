@@ -110,16 +110,16 @@ export default function PublicPropertyDetailPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    
-                    <PriceStatusCard property={property} isMobile={isMobile}/>
-                    
+
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className="text-xl font-bold">{property.title}</CardTitle>
                             <CardDescription className="text-sm text-white/70">{property.address}</CardDescription>
                         </CardHeader>
                     </Card>
-
+                    
+                    <PriceStatusCard property={property} isMobile={isMobile}/>
+                    
                     <PublicInfoColumn property={property} isMobile={true} />
                     <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} isMobile={true} />
                 </div>
