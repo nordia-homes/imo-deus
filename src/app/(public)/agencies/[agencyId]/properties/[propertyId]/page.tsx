@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -108,7 +109,7 @@ export default function PublicPropertyDetailPage() {
                             <CardDescription className="text-sm text-white/70">{property.address}</CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
-                                <PriceStatusCard property={property} />
+                                <PriceStatusCard property={property} isMobile={isMobile}/>
                         </CardContent>
                     </Card>
 

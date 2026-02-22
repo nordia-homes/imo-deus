@@ -4,8 +4,9 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
+import { cn } from '@/lib/utils';
 
-export function PriceStatusCard({ property }: { property: Property }) {
+export function PriceStatusCard({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
 
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;
@@ -13,13 +14,24 @@ export function PriceStatusCard({ property }: { property: Property }) {
     }, [property.price, property.squareFootage]);
 
     return (
-        <Card className="rounded-2xl shadow-2xl border border-primary bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none">
+        <Card className={cn(
+            "rounded-2xl shadow-2xl",
+            isMobile 
+                ? "bg-[#0F1E33] border border-green-400/50 shadow-[0_0_25px_-5px_rgba(74,222,128,0.5)]" 
+                : "border border-primary bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none"
+        )}>
             <CardContent className="p-3 text-center flex items-baseline justify-center gap-2">
-                <span className="text-xl font-bold text-primary lg:text-white">
+                <span className={cn(
+                    "text-xl font-bold",
+                    isMobile ? "text-white" : "text-primary lg:text-white"
+                )}>
                     €{property.price.toLocaleString()}
                 </span>
                 {pricePerSqm && (
-                    <span className="text-sm font-medium text-muted-foreground lg:text-white/70">
+                    <span className={cn(
+                        "text-sm font-medium",
+                        isMobile ? "text-white/70" : "text-muted-foreground lg:text-white/70"
+                    )}>
                         (€{pricePerSqm}/m²)
                     </span>
                 )}
