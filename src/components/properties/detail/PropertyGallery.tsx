@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -18,13 +17,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid } from "lucide-react"
+import { Grid, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function PropertyGallery({ images, title, propertyId }: { images: string[]; title: string; propertyId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
+  const [isMobileGalleryOpen, setIsMobileGalleryOpen] = React.useState(false);
+  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     if (!api) return
@@ -45,10 +47,15 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
     )
   }
 
-  const openDialog = (index: number) => {
-    setActiveIndex(index)
-    setOpen(true)
-  }
+  const handleOpenGallery = (index: number) => {
+    setActiveIndex(index);
+    if (isMobile) {
+      setIsMobileGalleryOpen(true);
+    } else {
+      setOpen(true);
+    }
+  };
+
 
   const ImageItem = ({ index, className }: { index: number; className?: string }) => {
     const imageUrl = images[index]
@@ -57,7 +64,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
     return (
       <div
         className={cn("relative cursor-pointer group overflow-hidden rounded-lg", className)}
-        onClick={() => openDialog(index)}
+        onClick={() => handleOpenGallery(index)}
       >
         <Image 
           src={imageUrl} 
@@ -69,6 +76,33 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
       </div>
     )
+  }
+
+  // Mobile Gallery View
+  if (isMobileGalleryOpen) {
+    return (
+      <div className="fixed inset-0 bg-[#0F1E33] z-50 flex flex-col">
+        <header className="flex items-center justify-between p-2 border-b border-white/10 shrink-0">
+          <h2 className="text-lg font-semibold text-white ml-2">Galerie Foto</h2>
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-white">
+            <X className="h-6 w-6" />
+          </Button>
+        </header>
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {images.map((src, index) => (
+            <div key={index} className="relative aspect-video w-full rounded-lg overflow-hidden">
+              <Image
+                src={src}
+                alt={`${title} image ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -88,7 +122,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         <Button
           variant="secondary"
           className="absolute bottom-4 right-4 z-10 bg-white/90 hover:bg-white text-black"
-          onClick={() => openDialog(0)}
+          onClick={() => handleOpenGallery(0)}
         >
           <Grid className="mr-2 h-4 w-4" />
           Vezi Fotografiile
