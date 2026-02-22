@@ -1,84 +1,86 @@
 'use client';
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Star, TrendingUp } from "lucide-react";
 import type { Property, UserProfile } from "@/lib/types";
-import { PublicContactForm } from "../PublicContactForm";
+import { PublicContactForm } from "./PublicContactForm";
 import Image from "next/image";
 import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { AiPriceEvaluationDialog } from "./AiPriceEvaluationDialog";
+import { useMemo } from 'react';
+
 
 export function PublicActionsColumn({ property, agentProfile }: { property: Property, agentProfile: UserProfile | null }) {
     const { agencyId } = usePublicAgency();
 
-    const agentForCard = {
-        name: agentProfile?.name || property.agentName || "Nespecificat",
-        email: agentProfile?.email || "N/A",
-        phone: agentProfile?.phone || "N/A",
-        photoUrl: agentProfile?.photoUrl || 'https://i.pravatar.cc/150?u=agent',
-        rating: 4.9, // Placeholder
-        reviews: 120, // Placeholder
-        deals: 34, // Placeholder
-    };
+    const pricePerSqm = useMemo(() => {
+        if (!property.price || !property.squareFootage) return null;
+        return (property.price / property.squareFootage).toFixed(0);
+    }, [property.price, property.squareFootage]);
 
-    const pricePerSqm = property.squareFootage > 0 ? (property.price / property.squareFootage).toFixed(0) : 'N/A';
+    const getInitials = (name?: string | null) => {
+        if (!name) return 'A';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
 
     return (
-        <Card className="sticky top-28 shadow-2xl rounded-2xl bg-slate-900/40 border border-cyan-400/20 backdrop-blur-lg glow-card text-white">
-            <CardContent className="p-6 space-y-6">
-                {/* Price Section */}
-                <div className="space-y-3">
-                    <div className="flex justify-between items-baseline">
-                        <span className="text-4xl font-bold">€{property.price.toLocaleString()}</span>
-                        <span className="text-sm font-medium text-slate-300">€{pricePerSqm} / m²</span>
+        <div className="sticky top-28">
+            <Card className="bg-slate-900/40 text-white border border-cyan-400/20 shadow-2xl shadow-cyan-500/10 backdrop-blur-lg glow-card">
+                <CardContent className="p-6 space-y-6">
+                    {/* Price section */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-baseline">
+                            <p className="text-4xl font-bold">€{property.price.toLocaleString()}</p>
+                            {pricePerSqm && (
+                                <p className="text-base text-white/70">€{pricePerSqm}/m²</p>
+                            )}
+                        </div>
+                        <AiPriceEvaluationDialog property={property} />
                     </div>
-                    <div className="flex justify-end items-center text-sm">
-                        <AiPriceEvaluationDialog property={property}>
-                            <Button variant="link" className="p-0 h-auto text-cyan-400 font-semibold hover:text-cyan-300">
-                                <TrendingUp className="h-4 w-4 mr-2" />
-                                Evalueaza pretul cu ImoDeus.ai
-                            </Button>
-                        </AiPriceEvaluationDialog>
-                    </div>
-                </div>
 
-                <Separator className="bg-cyan-400/20" />
+                    <Separator className="bg-cyan-400/20" />
 
-                {/* Agent Info Section */}
-                <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16">
-                        <Image src={agentForCard.photoUrl} alt={agentForCard.name} fill className="rounded-full object-cover" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-bold text-lg">{agentForCard.name}</p>
-                        <div className="flex items-center gap-1.5 text-sm text-yellow-400">
-                            <Star className="h-4 w-4 fill-yellow-400" />
-                            <span className="font-bold">{agentForCard.rating}</span>
-                            <span className="text-slate-400">({agentForCard.reviews} recenzii)</span>
+                    {/* Agent section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                             <Avatar className="h-16 w-16 border-2 border-white/50">
+                                <AvatarImage src={agentProfile?.photoUrl || undefined} />
+                                <AvatarFallback className="text-2xl bg-white/10">{getInitials(agentProfile?.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <p className="font-bold text-lg">{agentProfile?.name || 'Agent Indisponibil'}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="border-cyan-400/50 bg-cyan-900/30 text-cyan-300">
+                                        <Star className="mr-1 h-3 w-3" /> 4.9
+                                    </Badge>
+                                    <p className="text-xs text-white/60">34 Recenzii</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-center">
+                            <div className="bg-white/10 rounded-lg p-2">
+                                <p className="text-lg font-bold">54</p>
+                                <p className="text-xs text-white/60">Vânzări</p>
+                            </div>
+                             <div className="bg-white/10 rounded-lg p-2">
+                                <p className="text-lg font-bold">7</p>
+                                <p className="text-xs text-white/60">ani exp.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="rounded-lg bg-cyan-900/30 p-2">
-                        <p className="text-xl font-bold">{agentForCard.deals}</p>
-                        <p className="text-xs text-cyan-300">Tranzacții</p>
-                    </div>
-                     <div className="rounded-lg bg-cyan-900/30 p-2">
-                        <p className="text-xl font-bold">5 ani</p>
-                        <p className="text-xs text-cyan-300">Experiență</p>
-                    </div>
-                </div>
 
-                 <Separator className="bg-cyan-400/20" />
+                    <Separator className="bg-cyan-400/20" />
 
-                {/* Contact Form Section */}
-                <div>
-                     <h3 className="font-semibold text-lg text-center mb-4">Programează o vizionare</h3>
-                     {agencyId && <PublicContactForm agencyId={agencyId} propertyId={property.id} />}
-                </div>
-            </CardContent>
-        </Card>
+                    {/* Contact Form */}
+                    <div className="space-y-4">
+                         <h3 className="text-lg font-semibold text-center">Programează o vizionare</h3>
+                         {agencyId && <PublicContactForm agencyId={agencyId} propertyId={property.id} />}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

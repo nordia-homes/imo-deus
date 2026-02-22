@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
+import { TrendingUp, Loader2, Lightbulb } from 'lucide-react';
 import { generatePropertyInsights, type PropertyInsightsOutput } from '@/ai/flows/property-insights-generator';
 import type { Property } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -18,18 +18,17 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface AiPriceEvaluationDialogProps {
   property: Property;
-  children: React.ReactNode;
 }
 
-export function AiPriceEvaluationDialog({ property, children }: AiPriceEvaluationDialogProps) {
+export function AiPriceEvaluationDialog({ property }: AiPriceEvaluationDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [insights, setInsights] = useState<PropertyInsightsOutput | null>(null);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    setIsLoading(true);
-    setInsights(null);
+    if (insights) return; // Don't re-generate if already present
+    setIsGenerating(true);
     try {
       const result = await generatePropertyInsights({
         propertyType: property.propertyType,
@@ -38,18 +37,18 @@ export function AiPriceEvaluationDialog({ property, children }: AiPriceEvaluatio
         rooms: property.rooms,
         squareFootage: property.squareFootage,
         constructionYear: property.constructionYear,
-        keyFeatures: property.keyFeatures || '',
+        keyFeatures: property.keyFeatures || property.amenities?.join(', ') || '',
       });
       setInsights(result);
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error("AI Insights failed", e);
       toast({
         variant: 'destructive',
-        title: 'A apărut o eroare',
-        description: 'Nu am putut genera evaluarea. Vă rugăm să reîncercați.',
+        title: "Eroare la generare",
+        description: "Nu am putut evalua prețul. Vă rugăm să reîncercați."
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -57,41 +56,55 @@ export function AiPriceEvaluationDialog({ property, children }: AiPriceEvaluatio
     setIsOpen(open);
     if (open) {
       handleGenerate();
+    } else {
+      // Reset state when closing
+      setInsights(null);
+      setIsGenerating(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-slate-900/80 text-white border-cyan-400/20 backdrop-blur-lg">
+      <DialogTrigger asChild>
+        <Button variant="ghost" className="text-sm p-0 h-auto font-semibold text-cyan-400 hover:text-cyan-300">
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Evalueaza pretul cu ImoDeus.ai
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-[#0F1E33] text-white border-cyan-400/20">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="text-cyan-400" />
-            Evaluare Preț ImoDeus.ai
-          </DialogTitle>
-          <DialogDescription className="text-slate-400">
-            Aceasta este o evaluare automată bazată pe datele proprietății și condițiile de piață.
+          <DialogTitle>Evaluare Preț AI</DialogTitle>
+          <DialogDescription className="text-white/70">
+            Analiză generată de ImoDeus.ai pentru proprietatea: <span className="font-bold">{property.title}</span>
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center text-center space-y-2 h-24">
-              <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
-              <p className="text-slate-300">AI-ul analizează piața...</p>
+          {isGenerating && (
+            <div className="flex flex-col items-center justify-center text-center space-y-3 min-h-[150px]">
+              <Loader2 className="h-10 w-10 text-cyan-400 animate-spin" />
+              <h3 className="font-semibold">AI-ul analizează piața...</h3>
+              <p className="text-sm text-white/70">
+                Se calculează scorul și se compară cu proprietăți similare.
+              </p>
             </div>
           )}
-          {!isLoading && insights && (
-            <Alert className="bg-cyan-900/30 border-cyan-500/50 text-white">
-              <TrendingUp className="h-4 w-4 !text-cyan-400" />
-              <AlertTitle className="font-bold text-cyan-300">Feedback Preț</AlertTitle>
-              <AlertDescription className="text-cyan-200">
-                {insights.pricingFeedback}
-              </AlertDescription>
-            </Alert>
-          )}
-           {!isLoading && !insights && (
-             <div className="flex flex-col items-center justify-center text-center space-y-2 h-24">
-              <p className="text-slate-400">Nu s-a putut genera evaluarea.</p>
+          {insights && !isGenerating && (
+             <div className="space-y-4">
+                <Alert className="bg-cyan-900/30 border-cyan-500/50 text-white">
+                    <Lightbulb className="h-4 w-4 text-cyan-400" />
+                    <AlertTitle className="font-bold text-cyan-300">Scor Piață: {insights.marketScore}/100</AlertTitle>
+                    <AlertDescription className="text-cyan-200">
+                        Acest scor indică atractivitatea proprietății pe piața curentă, bazat pe preț, locație și caracteristici.
+                    </AlertDescription>
+                </Alert>
+                <Alert className="bg-white/10 border-white/20">
+                    <AlertTitle>Feedback Preț</AlertTitle>
+                    <AlertDescription className="text-white/80">{insights.pricingFeedback}</AlertDescription>
+                </Alert>
+                <Alert className="bg-white/10 border-white/20">
+                    <AlertTitle>Profil Cumpărător Ideal</AlertTitle>
+                    <AlertDescription className="text-white/80">{insights.buyerProfile}</AlertDescription>
+                </Alert>
             </div>
           )}
         </div>
