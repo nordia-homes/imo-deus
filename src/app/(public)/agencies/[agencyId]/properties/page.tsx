@@ -1,15 +1,22 @@
 'use client';
-import { PublicPropertyList } from '@/components/properties/PropertyList';
+import { useMemo, useState } from 'react';
+import { PropertyList } from '@/components/properties/PropertyList';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import type { Property } from '@/lib/types';
-import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Filter } from 'lucide-react';
+import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function AgencyAllPropertiesPage() {
   const { agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
   const firestore = useFirestore();
+  const isMobile = useIsMobile();
+  const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
 
   // Fetch properties from Firestore
   const propertiesQuery = useMemoFirebase(() => {
@@ -23,28 +30,76 @@ export default function AgencyAllPropertiesPage() {
   const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
   const isLoading = isAgencyContextLoading || arePropertiesLoading;
 
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+    if (!filters) return properties;
+
+    return properties.filter(prop => {
+      if (filters.transactionType && filters.transactionType !== 'all' && prop.transactionType !== filters.transactionType) return false;
+      if (filters.rooms && filters.rooms !== 4 && prop.rooms !== filters.rooms) return false;
+      if (filters.rooms && filters.rooms === 4 && prop.rooms < 4) return false;
+      
+      if (filters.priceMin && prop.price < filters.priceMin) return false;
+      if (filters.priceMax && prop.price > filters.priceMax) return false;
+
+      if (filters.hasParking && (!prop.parking || prop.parking === 'Fără')) return false;
+      if (filters.heatingSystem && filters.heatingSystem !== 'all' && prop.heatingSystem !== filters.heatingSystem) return false;
+      if (filters.nearMetro && !prop.nearMetro) return false;
+      if (filters.minSurface && prop.squareFootage < filters.minSurface) return false;
+      if (filters.city && filters.city !== 'all' && prop.city !== filters.city) return false;
+      if (filters.zones && filters.zones.length > 0 && !filters.zones.includes(prop.zone || '')) return false;
+      if (filters.after1977 && prop.constructionYear && prop.constructionYear < 1977) return false;
+      if (filters.furnishing && filters.furnishing !== 'all' && prop.furnishing !== filters.furnishing) return false;
+      
+      return true;
+    });
+  }, [properties, filters]);
+
   return (
-    <div className="container mx-auto py-12 px-4">
-        <div className="text-center mb-12">
-             <h1 className="text-4xl font-bold">Toate Proprietățile</h1>
-             <p className="text-lg text-muted-foreground mt-2">Explorează portofoliul nostru complet.</p>
+    <div className={cn("space-y-6", isMobile ? "p-0" : "bg-background text-foreground p-4 lg:p-6")}>
+      {/* Mobile & Tablet View */}
+      <div className="lg:hidden space-y-4">
+        <Card className="bg-card text-card-foreground border-none rounded-b-2xl rounded-t-none">
+          <CardHeader>
+            <CardTitle className="text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
+          </CardHeader>
+        </Card>
+        <div className="px-2">
+          <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+            <Button variant="outline" className="w-full bg-card text-card-foreground">
+              <Filter className="mr-2 h-4 w-4" /> Filtrează
+            </Button>
+          </PropertyFilters>
         </div>
-        {isLoading ? (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
-                    {[...Array(8)].map((_, i) => (
-                        <div key={i} className="space-y-3">
-                            <Skeleton className="aspect-square w-full rounded-xl" />
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                            <Skeleton className="h-5 w-1/3" />
-                        </div>
-                    ))}
-                </div>
+        <div className="px-2">
+          <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden lg:block space-y-6 px-3">
+        <Card className="bg-card text-card-foreground border-none rounded-2xl">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
+                <p className="text-muted-foreground">
+                  Explorează portofoliul de proprietăți.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+                  <Button variant="outline" className="bg-card text-card-foreground">
+                    <Filter className="mr-2 h-4 w-4" /> Filtrează
+                  </Button>
+                </PropertyFilters>
+              </div>
             </div>
-        ) : (
-             <PublicPropertyList properties={properties || []} agencyId={agencyId!} />
-        )}
+          </CardHeader>
+        </Card>
+        
+        <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
+      </div>
     </div>
   );
 }
