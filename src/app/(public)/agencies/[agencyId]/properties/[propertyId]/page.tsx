@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
@@ -71,7 +70,7 @@ export default function PublicPropertyDetailPage() {
     const isLoading = isPropertyLoading || isAgentLoading;
     
     if (isLoading) {
-        return <div className="h-full bg-white lg:bg-[#0F1E33] lg:-mt-6 lg:-mb-6 lg:px-3 lg:pt-6 lg:pb-6 lg:text-white"><PageSkeleton /></div>;
+        return <div className="h-full bg-white lg:bg-[#0F1E33] text-white"><PageSkeleton /></div>;
     }
     
     if (!property || error || property.status !== 'Activ') {
@@ -80,10 +79,10 @@ export default function PublicPropertyDetailPage() {
     }
 
     return (
-        <div className="h-full bg-white lg:bg-[#0F1E33] lg:-mt-6 lg:-mb-6 lg:px-3 lg:pt-6 lg:pb-6 text-card-foreground lg:text-white">
+        <div className="bg-background lg:bg-[#0F1E33] lg:text-white">
             <PublicPropertyHeader property={property} />
 
-            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 lg:px-0">
+            <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start px-4 py-6 lg:px-6 lg:max-w-7xl lg:mx-auto">
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     <MediaColumn property={property} />
                     <PublicInfoColumn property={property} />
