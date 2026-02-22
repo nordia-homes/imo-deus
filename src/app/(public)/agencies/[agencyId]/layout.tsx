@@ -5,7 +5,6 @@ import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
 import { PublicHeader } from '@/components/public/PublicHeader';
-import { PublicFooter } from '@/components/public/PublicFooter';
 import { PublicAgencyProvider } from '@/context/PublicAgencyContext';
 import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -101,7 +100,6 @@ export default function AgencyPublicLayout({
                       </div>
                   </section>
               </main>
-              <PublicFooter agency={null} isLoading={true} />
           </>
       )
   }
@@ -110,7 +108,6 @@ export default function AgencyPublicLayout({
     <PublicAgencyProvider value={providerValue}>
       <PublicHeader agency={agency} isLoading={isAgencyLoading} />
       <main className="min-h-screen bg-background">{children}</main>
-      <PublicFooter agency={agency} isLoading={isAgencyLoading} />
     </PublicAgencyProvider>
   );
 }

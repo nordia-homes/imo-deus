@@ -1,5 +1,4 @@
 'use client';
-import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -99,7 +98,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                     <Skeleton className="h-[500px] w-full" />
                   </div>
                 </main>
-                <PublicFooter agency={null} isLoading={true} />
             </>
         )
     }
@@ -108,7 +106,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         <>
             <PublicHeader agency={agency} isLoading={isLoading} />
             <main className="min-h-screen bg-background">{children}</main>
-            <PublicFooter agency={agency} isLoading={isLoading} />
         </>
     );
 }
