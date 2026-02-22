@@ -54,7 +54,7 @@ export default function PublicPropertyDetailPage() {
                 const agentDocRef = doc(firestore, 'users', property.agentId!);
                 const agentSnap = await getDoc(agentDocRef);
                 if (agentSnap.exists()) {
-                    setAgentProfile({ id: agentSnap.id, ...docSnap.data() } as UserProfile);
+                    setAgentProfile({ id: agentSnap.id, ...agentSnap.data() } as UserProfile);
                 } else {
                     setAgentProfile(null);
                 }
@@ -91,7 +91,7 @@ export default function PublicPropertyDetailPage() {
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
-                         <PublicActionsColumn property={property} agentProfile={agentProfile} />
+                         <PublicActionsColumn property={property} agentProfile={agentProfile} agencyId={agencyId} />
                     </div>
                 </main>
              </div>

@@ -1,24 +1,23 @@
 'use client';
-import { Button } from "../ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Mail, Phone, Star, TrendingUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Star, TrendingUp, Phone, Mail } from "lucide-react";
 import type { Property, UserProfile } from "@/lib/types";
 import { PublicContactForm } from "./PublicContactForm";
 import Image from "next/image";
 import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { AiPriceEvaluationDialog } from "./AiPriceEvaluationDialog";
-import { WhatsappIcon } from "../icons/WhatsappIcon";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { WhatsappIcon } from "../icons/WhatsappIcon";
 
-export function PublicActionsColumn({ property, agentProfile }: { property: Property, agentProfile: UserProfile | null }) {
+export function PublicActionsColumn({ property, agentProfile, agencyId }: { property: Property, agentProfile: UserProfile | null, agencyId: string }) {
+    const [isPriceEvalOpen, setIsPriceEvalOpen] = useState(false);
 
-    const { agency } = usePublicAgency();
-
-    const pricePerSqm = (property.price / property.squareFootage).toFixed(0);
-
+    const pricePerSqm = (property.price && property.squareFootage)
+        ? (property.price / property.squareFootage).toFixed(0)
+        : null;
+        
     const getInitials = (name?: string | null) => {
         if (!name) return 'A';
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -32,56 +31,65 @@ export function PublicActionsColumn({ property, agentProfile }: { property: Prop
         }
         return sanitized;
     };
-
     const sanitizedPhone = sanitizeForWhatsapp(agentProfile?.phone);
 
     return (
-        <Card className="sticky top-24 bg-slate-900/80 backdrop-blur-lg border-cyan-400/20 text-white shadow-2xl shadow-cyan-500/10 glow-card">
-            <CardHeader>
-                <div className="flex items-baseline gap-2">
-                    <CardTitle className="text-4xl font-bold">€{property.price.toLocaleString()}</CardTitle>
-                    {pricePerSqm && <CardDescription className="text-slate-300 -mb-1">(€{pricePerSqm}/m²)</CardDescription>}
+        <>
+            <Card className="shadow-2xl rounded-2xl p-6 bg-black/30 border border-cyan-300/20 text-white backdrop-blur-xl glow-card space-y-6">
+                
+                {/* Price Section */}
+                <div>
+                    <p className="text-3xl font-bold">
+                        €{property.price.toLocaleString()}
+                        {pricePerSqm && <span className="text-lg font-normal text-white/70 ml-2">(€{pricePerSqm}/m²)</span>}
+                    </p>
+                    <Button variant="ghost" className="p-0 h-auto text-cyan-300 hover:text-cyan-200 mt-2" onClick={() => setIsPriceEvalOpen(true)}>
+                        <TrendingUp className="mr-2 h-4 w-4"/>
+                        Evalueaza pretul cu ImoDeus.ai
+                    </Button>
                 </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                    <AiPriceEvaluationDialog property={property} />
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-6">
-                    {/* Agent Section */}
-                    <div className="border-t border-cyan-400/20 pt-4">
-                         <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16">
-                                <AvatarImage src={agentProfile?.photoUrl || undefined} alt={agentProfile?.name || 'Agent'} />
-                                <AvatarFallback className="text-xl bg-slate-700">{getInitials(agentProfile?.name)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <p className="font-bold text-white text-lg">{agentProfile?.name || 'Agent Imobiliar'}</p>
-                                <p className="text-sm text-slate-300">Agent Imobiliar</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 mt-4">
-                            <Button variant="outline" asChild className="bg-white/10 border-white/20 text-white hover:bg-white/20" disabled={!agentProfile?.phone}>
-                                <a href={`tel:${agentProfile?.phone}`}>
-                                    <Phone className="mr-2" /> Apelează
-                                </a>
-                            </Button>
-                            <Button asChild className="bg-[#25D366] hover:bg-[#25D366]/90 text-white" disabled={!sanitizedPhone}>
-                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
-                                    <WhatsappIcon className="mr-2" /> WhatsApp
-                                </a>
-                            </Button>
+                
+                {/* Agent Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-white/50">
+                            <AvatarImage src={agentProfile?.photoUrl || undefined} alt={agentProfile?.name || 'Agent'} />
+                            <AvatarFallback className="text-2xl bg-white/20">{getInitials(agentProfile?.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-bold text-lg">{agentProfile?.name || 'Agent Imobiliar'}</p>
+                            <p className="text-sm text-white/80">Agent Imobiliar</p>
                         </div>
                     </div>
-
-                    {/* Contact Form Section */}
-                    <div className="border-t border-cyan-400/20 pt-4">
-                        <PublicContactForm propertyId={property.id} />
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" asChild className="bg-white/10 hover:bg-white/20 border-white/20" disabled={!agentProfile?.phone}>
+                            <a href={`tel:${agentProfile?.phone}`}>
+                                <Phone className="mr-2"/>
+                                Apelează
+                            </a>
+                        </Button>
+                        <Button variant="outline" asChild className="bg-white/10 hover:bg-white/20 border-white/20" disabled={!sanitizedPhone}>
+                            <a href={`https://wa.me/${sanitizedPhone}`} target="_blank">
+                                <WhatsappIcon className="mr-2" />
+                                WhatsApp
+                            </a>
+                        </Button>
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+
+                {/* Contact Form Section */}
+                <div>
+                    <p className="font-semibold text-center mb-4">Programează o Vizionare</p>
+                    <PublicContactForm propertyId={property.id} agencyId={agencyId} />
+                </div>
+
+            </Card>
+
+            <AiPriceEvaluationDialog 
+                property={property}
+                isOpen={isPriceEvalOpen}
+                onOpenChange={setIsPriceEvalOpen}
+            />
+        </>
     );
 }
