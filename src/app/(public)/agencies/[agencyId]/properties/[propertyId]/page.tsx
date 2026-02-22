@@ -113,26 +113,6 @@ export default function PublicPropertyDetailPage() {
                     
                     <PriceStatusCard property={property} isMobile={isMobile}/>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline"
-                          className="w-full bg-transparent border-cyan-400/50 text-cyan-300 shadow-[0_0_25px_-5px_rgba(100,220,255,0.6)] hover:bg-cyan-400/10 hover:text-cyan-200"
-                        >
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          Evalueaza Pretul cu ImoDeus.ai
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-[#0F1E33] text-white border-white/20">
-                          <DialogHeader>
-                              <DialogTitle>Evaluare Preț AI (Demo)</DialogTitle>
-                              <DialogDescription className="text-white/70">
-                                  Această funcționalitate este în curs de dezvoltare. Într-o versiune viitoare, aici veți vedea o analiză detaliată a prețului proprietății, comparat cu piața.
-                              </DialogDescription>
-                          </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
-                    
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className="text-xl font-bold">{property.title}</CardTitle>
