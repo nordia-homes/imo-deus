@@ -1,107 +1,88 @@
 'use client';
-
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { X } from "lucide-react";
 import Link from "next/link";
-import { Button } from "../ui/button";
-import type { Agency } from "@/lib/types";
-import { Building2, Globe, Menu, Users, Phone } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
-import { Skeleton } from "../ui/skeleton";
-import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import Image from 'next/image';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { Agency } from "@/lib/types";
+import Image from "next/image";
+import { ModernMenuIcon } from "../icons/ModernMenuIcon";
 
-interface PublicHeaderProps {
-  agency: Agency | null;
-  isLoading: boolean;
-}
+export function PublicHeader({ agency, isLoading }: { agency: Agency | null, isLoading: boolean }) {
+  const pathname = usePathname();
 
-export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
-    const pathname = usePathname();
+  const navLinks = [
+    { href: `/agencies/${agency?.id}`, label: 'Acasă' },
+    { href: `/agencies/${agency?.id}/properties`, label: 'Proprietăți' },
+    { href: `/agencies/${agency?.id}/about`, label: 'Despre Noi' },
+    { href: `/agencies/${agency?.id}/contact`, label: 'Contact' },
+  ];
 
-    const navLinks = [
-        { href: `/agencies/${agency?.id}`, label: 'Acasă', icon: Globe },
-        { href: `/agencies/${agency?.id}/properties`, label: 'Proprietăți', icon: Building2 },
-        { href: `/agencies/${agency?.id}/about`, label: 'Despre Noi', icon: Users },
-        { href: `/agencies/${agency?.id}/contact`, label: 'Contact', icon: Phone },
-    ];
-    
-    if (isLoading) {
-        return (
-             <header className="sticky top-0 z-40 w-full bg-[#0F1E33] text-white shadow-md animated-glow">
-                <div className="container mx-auto flex h-20 items-center justify-between px-4">
-                    <Skeleton className="h-10 w-40 bg-white/20" />
-                    <div className="hidden items-center gap-2 md:flex">
-                        <Skeleton className="h-9 w-24 bg-white/20" />
-                        <Skeleton className="h-9 w-24 bg-white/20" />
-                        <Skeleton className="h-9 w-24 bg-white/20" />
-                    </div>
-                    <Skeleton className="h-9 w-9 md:hidden bg-white/20" />
-                </div>
-            </header>
-        )
-    }
-
-    return (
-        <header className="sticky top-0 z-40 w-full bg-[#0F1E33] text-white shadow-md animated-glow">
-            <div className="container mx-auto flex h-20 items-center justify-between px-4">
-                <Link href={`/agencies/${agency?.id}`} className="flex items-center gap-2">
-                    {agency?.logoUrl ? (
-                        <div className="relative h-14 w-48">
-                             <Image
-                                src={agency.logoUrl}
-                                alt={`${agency.name} logo`}
-                                fill
-                                style={{ objectFit: 'contain' }}
-                                priority
-                            />
-                        </div>
+  return (
+    <header className="sticky top-0 z-50 w-full bg-[#0F1E33] animated-glow">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+        {/* Logo */}
+        <Link href={`/agencies/${agency?.id}`} className="flex items-center gap-2">
+            {agency?.logoUrl ? (
+                <Image src={agency.logoUrl} alt={agency.name} width={240} height={65} className="w-60 h-auto" />
+            ) : (
+                <span className="text-xl font-bold text-white">{agency?.name}</span>
+            )}
+        </Link>
+        
+        {/* Desktop Navigation */}
+        <nav className="hidden items-center gap-6 md:flex">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                pathname === link.href ? "text-primary" : "text-white/80"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        
+        {/* Mobile Menu Button */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
+              <ModernMenuIcon className="h-6 w-6" />
+              <span className="sr-only">Deschide meniul</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="bg-[#0F1E33] text-white p-0 border-r border-white/10 w-3/4">
+            <div className="p-6">
+                <Link href={`/agencies/${agency?.id}`} className="flex items-center gap-2 mb-8">
+                     {agency?.logoUrl ? (
+                        <Image src={agency.logoUrl} alt={agency.name} width={240} height={65} className="w-48 h-auto" />
                     ) : (
-                        <span className="text-2xl font-bold">{agency?.name || ''}</span>
+                        <span className="text-xl font-bold text-white">{agency?.name}</span>
                     )}
                 </Link>
-                
-                <nav className="hidden items-center gap-1 md:flex">
-                    {navLinks.map((link) => {
-                        const isActive = pathname === link.href;
-                        return (
-                            <Button key={link.label} asChild variant="ghost" className={cn("hover:bg-white/10", isActive && "bg-white/10 font-bold")}>
-                                <Link href={link.href}>
-                                     {link.label}
-                                </Link>
-                            </Button>
-                        )
-                    })}
+                <nav className="flex flex-col gap-4">
+                    {navLinks.map((link) => (
+                        <SheetClose asChild key={link.href}>
+                             <Link
+                                href={link.href}
+                                className={cn(
+                                    "text-lg font-medium transition-colors hover:text-primary p-2 rounded-md",
+                                    pathname === link.href ? "text-primary bg-white/5" : "text-white/80"
+                                )}
+                                >
+                                {link.label}
+                            </Link>
+                        </SheetClose>
+                    ))}
                 </nav>
-
-                <div className="md:hidden">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10">
-                                <Menu />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="w-64 bg-[#0F1E33] text-white border-r-white/20">
-                             <nav className="flex flex-col gap-4 pt-8">
-                                {navLinks.map((link) => (
-                                    <Button key={link.label} asChild variant="ghost" className="justify-start text-lg h-12 hover:bg-white/10">
-                                         <Link href={link.href}>
-                                            <link.icon className="mr-3 h-5 w-5" />
-                                            {link.label}
-                                        </Link>
-                                    </Button>
-                                ))}
-                            </nav>
-                        </SheetContent>
-                    </Sheet>
-                </div>
             </div>
-        </header>
-    )
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
+  );
 }
