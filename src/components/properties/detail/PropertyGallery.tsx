@@ -27,6 +27,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
   React.useEffect(() => {
     if (!api) return
@@ -81,16 +82,16 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   // Mobile Gallery View
   if (isMobileGalleryOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[linear-gradient(180deg,_#050505_0%,_#0b0b0d_40%,_#121214_100%)] text-stone-100">
-        <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#101113]/95 p-2 backdrop-blur-xl">
-          <h2 className="ml-2 text-lg font-semibold text-stone-50">Galerie foto</h2>
+      <div className="fixed inset-0 z-50 flex flex-col bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_22%),linear-gradient(180deg,_#050505_0%,_#0b0b0d_40%,_#121214_100%)] text-stone-100">
+        <header className={`${financeCardClassName} m-2 mb-0 flex shrink-0 items-center justify-between rounded-b-[1.25rem] rounded-t-[2rem] p-2 backdrop-blur-xl`}>
+          <h2 className="ml-2 text-lg font-semibold text-white">Galerie foto</h2>
           <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-stone-300 hover:bg-white/5 hover:text-white">
             <X className="h-6 w-6" />
           </Button>
         </header>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        <div className="flex-1 overflow-y-auto p-2 pt-3 space-y-3">
           {images.map((src, index) => (
-            <div key={index} className="relative w-full overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#101113] shadow-[0_28px_80px_-40px_rgba(0,0,0,0.82)]">
+            <div key={index} className={`relative w-full ${financeCardClassName}`}>
               <Image
                 src={src}
                 alt={`${title} image ${index + 1}`}
@@ -131,7 +132,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-none w-full h-full p-0 border-0 bg-black/90 flex items-center justify-center">
+        <DialogContent className="flex h-full w-full max-w-none items-center justify-center border-0 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.14),transparent_22%),linear-gradient(180deg,rgba(5,5,5,0.96)_0%,rgba(8,8,10,0.94)_100%)] p-0">
             <DialogTitle className="sr-only">Image gallery for {title}</DialogTitle>
             <DialogDescription className="sr-only">
               A carousel of {images.length} images for the property: {title}.
@@ -139,7 +140,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         
             <Carousel
               setApi={setApi}
-              className="w-full max-w-5xl"
+              className={`w-full max-w-5xl ${financeCardClassName}`}
               opts={{ loop: true, startIndex: activeIndex }}
             >
               <CarouselContent>
@@ -157,8 +158,8 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white border-white bg-black/50 hover:bg-black/70 hover:text-white" />
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 border-emerald-400/20 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 hover:text-white" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 border-emerald-400/20 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20 hover:text-white" />
             </Carousel>
         </DialogContent>
       </Dialog>

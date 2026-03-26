@@ -178,6 +178,8 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
 // ----------- END OF INLINED/NEW COMPONENTS -----------
 
 const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+const financeCardClassNameSoft = "overflow-hidden rounded-[2rem] border border-emerald-400/16 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+const financeCardClassNameMedium = "overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.14),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
 
 const PageSkeleton = () => (
@@ -305,7 +307,7 @@ export default function PublicPropertyDetailPage() {
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className={financeCardClassName}>
+                    <Card className={financeCardClassNameSoft}>
                         <CardContent className="p-3">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
@@ -319,7 +321,7 @@ export default function PublicPropertyDetailPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className={financeCardClassName}>
+                    <Card className={financeCardClassNameMedium}>
                         <CardHeader className="p-4 pb-2">
                             <CardTitle className="text-xl font-bold text-stone-50">{property.title}</CardTitle>
                             <CardDescription className="text-sm text-stone-400">{property.address}</CardDescription>

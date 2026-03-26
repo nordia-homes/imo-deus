@@ -9,6 +9,10 @@ import { useState } from 'react';
 export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const TRUNCATION_LENGTH = 250;
+    const rawDescription = property.description || 'Nicio descriere adăugată.';
+    const DESCRIPTION_HIGHLIGHT_CHARS = 140;
+    const descriptionHighlight = rawDescription.slice(0, DESCRIPTION_HIGHLIGHT_CHARS);
+    const descriptionRest = rawDescription.slice(DESCRIPTION_HIGHLIGHT_CHARS).trim();
 
     const infoItems = [
         { icon: <Layers className="h-5 w-5" />, label: 'Compartimentare', value: property.partitioning },
@@ -77,16 +81,25 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
             <div className="space-y-6">
                 <Card className={panelClassName}>
                     <CardHeader className={panelHeaderClassName}>
-                        <CardTitle className={panelTitleClassName}>Descriere</CardTitle>
+                        <CardTitle className="max-w-2xl text-2xl font-semibold tracking-tight text-white md:text-3xl">Descriere</CardTitle>
                     </CardHeader>
                     <CardContent className={panelBodyClassName}>
                         <div>
-                            <p className="whitespace-pre-wrap leading-7 text-stone-200/90">
-                                {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
-                                    ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                                    : property.description || 'Nicio descriere adăugată.'
-                                }
-                            </p>
+                            <div className="space-y-3">
+                                <p className="line-clamp-2 whitespace-pre-wrap text-base font-semibold leading-7 text-white md:text-lg">
+                                    {descriptionHighlight}
+                                </p>
+                                {(isDescriptionExpanded || !property.description || property.description.length <= TRUNCATION_LENGTH) && descriptionRest ? (
+                                    <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
+                                        {descriptionRest}
+                                    </p>
+                                ) : null}
+                                {!isDescriptionExpanded && property.description && property.description.length > TRUNCATION_LENGTH ? (
+                                    <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
+                                        {property.description.substring(DESCRIPTION_HIGHLIGHT_CHARS, TRUNCATION_LENGTH).trim()}...
+                                    </p>
+                                ) : null}
+                            </div>
                             {property.description && property.description.length > TRUNCATION_LENGTH && (
                                 <Button
                                     variant="link"
@@ -126,11 +139,11 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             if (!item.value && item.value !== 0) return null;
                             return (
                                 <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                    <span className="flex items-center gap-2 text-stone-400">
+                                    <span className="flex items-center gap-2 text-emerald-50/85">
                                         <span className="text-[#86efac]">{item.icon}</span>
                                         <span>{item.label}</span>
                                     </span>
-                                    <span className="font-bold text-stone-50">{item.value}</span>
+                                    <span className="font-bold text-white">{item.value}</span>
                                 </Button>
                             )
                         })}
@@ -144,16 +157,25 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         <div className="space-y-4">
              <Card className={panelClassName}>
                 <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-white">Descriere</CardTitle>
+                    <CardTitle className="text-2xl font-semibold tracking-tight text-white">Descriere</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <div>
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-stone-200/90">
-                            {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
-                                ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
-                                : property.description || 'Nicio descriere adăugată.'
-                            }
-                        </p>
+                        <div className="space-y-3">
+                            <p className="line-clamp-2 whitespace-pre-wrap text-base font-semibold leading-7 text-white">
+                                {descriptionHighlight}
+                            </p>
+                            {(isDescriptionExpanded || !property.description || property.description.length <= TRUNCATION_LENGTH) && descriptionRest ? (
+                                <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
+                                    {descriptionRest}
+                                </p>
+                            ) : null}
+                            {!isDescriptionExpanded && property.description && property.description.length > TRUNCATION_LENGTH ? (
+                                <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
+                                    {property.description.substring(DESCRIPTION_HIGHLIGHT_CHARS, TRUNCATION_LENGTH).trim()}...
+                                </p>
+                            ) : null}
+                        </div>
                         {property.description && property.description.length > TRUNCATION_LENGTH && (
                             <Button
                                 variant="link"
@@ -178,11 +200,11 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         if (!item.value && item.value !== 0) return null;
                         return (
                             <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                <span className="flex items-center gap-2 text-stone-400">
+                                <span className="flex items-center gap-2 text-emerald-50/85">
                                     <span className="text-[#86efac]">{item.icon}</span>
                                     <span>{item.label}</span>
                                 </span>
-                                <span className="font-bold text-stone-50">{item.value}</span>
+                                <span className="font-bold text-white">{item.value}</span>
                             </Button>
                         )
                     })}
