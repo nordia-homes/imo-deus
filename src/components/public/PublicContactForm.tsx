@@ -23,11 +23,11 @@ const contactSchema = z.object({
 });
 
 interface PublicContactFormProps {
-    propertyId: string;
+    propertyId?: string;
     agencyId: string;
 }
 
-export function PublicContactForm({ propertyId, agencyId }: PublicContactFormProps) {
+export function PublicContactForm({ propertyId = '', agencyId }: PublicContactFormProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isMobile = useIsMobile();
@@ -73,21 +73,21 @@ export function PublicContactForm({ propertyId, agencyId }: PublicContactFormPro
     
     return (
         <Card className={cn(
-            "shadow-2xl rounded-2xl",
-            isMobile ? "bg-[#152A47] border-none text-white" : "bg-card text-card-foreground"
+            "rounded-[1.75rem] border-slate-200/80 shadow-none",
+            isMobile ? "bg-white text-slate-900" : "bg-card text-card-foreground"
         )}>
             <CardHeader>
                 <CardTitle className="text-lg">Programează o Vizionare</CardTitle>
-                <CardDescription className={cn(isMobile && "text-white/70")}>Completează formularul și agentul te va contacta în cel mai scurt timp.</CardDescription>
+                <CardDescription className={cn(isMobile && "text-slate-600")}>Completează formularul și agentul te va contacta în cel mai scurt timp.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii..." className={cn(isMobile && "bg-white/10 border-white/20")} /></FormControl><FormMessage /></FormItem> )} />
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-slate-700")}>Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className={cn(isMobile && "border-slate-200 bg-slate-50")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-slate-700")}>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className={cn(isMobile && "border-slate-200 bg-slate-50")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-slate-700")}>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className={cn(isMobile && "border-slate-200 bg-slate-50")} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-slate-700")}>Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii..." className={cn(isMobile && "border-slate-200 bg-slate-50")} /></FormControl><FormMessage /></FormItem> )} />
+                        <Button type="submit" className="w-full rounded-full shadow-lg shadow-primary/20" disabled={isSubmitting}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             Trimite Solicitarea
                         </Button>

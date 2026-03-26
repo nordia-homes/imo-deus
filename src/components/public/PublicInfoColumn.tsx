@@ -27,11 +27,11 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     if (!isMobile) {
         return (
             <div className="space-y-6">
-                <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                <Card className="rounded-[2rem] border-slate-200/80 bg-white/90 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.32)]">
                     <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                     <CardContent>
                         <div>
-                            <p className="text-muted-foreground lg:text-white/70 whitespace-pre-wrap">
+                            <p className="whitespace-pre-wrap text-slate-600">
                                 {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
                                     ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
                                     : property.description || 'Nicio descriere adăugată.'
@@ -55,13 +55,13 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
     return (
         <div className="space-y-4">
-             <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+             <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
                 <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-white">Descriere</CardTitle>
+                    <CardTitle className="font-semibold text-slate-950">Descriere</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <div>
-                        <p className="text-sm text-white/80 whitespace-pre-wrap">
+                        <p className="whitespace-pre-wrap text-sm text-slate-600">
                             {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
                                 ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
                                 : property.description || 'Nicio descriere adăugată.'
@@ -80,17 +80,17 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                 </CardContent>
             </Card>
 
-            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+            <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
                 <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-white">Informații detaliate</CardTitle>
+                    <CardTitle className="font-semibold text-slate-950">Informații detaliate</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-2">
+                <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <Button key={item.label} variant="outline" className="w-full justify-between pointer-events-none h-14 bg-[#0F1E33] border-cyan-400/50 shadow-[0_0_25px_-10px_rgba(100,220,255,0.6)]">
-                                <span className="text-white/70">{item.label}</span>
-                                <span className="font-bold">{item.value}</span>
+                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-slate-200 bg-slate-50 px-4 py-4 shadow-none">
+                                <span className="text-slate-500">{item.label}</span>
+                                <span className="font-bold text-slate-950">{item.value}</span>
                             </Button>
                         )
                     })}

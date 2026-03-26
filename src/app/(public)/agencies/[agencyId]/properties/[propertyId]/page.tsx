@@ -10,19 +10,10 @@ import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bed, Ruler, Calendar, Layers, TrendingUp, Mail, Phone, Loader2 } from 'lucide-react';
+import { Bed, Ruler, Calendar, Layers, Mail, Phone, Loader2 } from 'lucide-react';
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -66,35 +57,35 @@ function AgentCard({ agent }: { agent: AgentInfo }) {
     const sanitizedPhone = sanitizeForWhatsapp(agent.phone);
 
     return (
-        <div className="p-4 flex items-center justify-between bg-white/5 rounded-lg border border-white/10">
+        <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-3">
                  <Avatar className="h-12 w-12">
                     <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                    <AvatarFallback className="bg-white/20">{getInitials(agent.name)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(agent.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="text-xs text-white/70">Agentul tău:</p>
-                    <p className="text-base font-semibold">{agent.name}</p>
-                    {agent.phone && <p className="text-sm text-white/70">{agent.phone}</p>}
+                    <p className="text-xs text-slate-500">Consultantul tău</p>
+                    <p className="text-base font-semibold text-slate-950">{agent.name}</p>
+                    {agent.phone && <p className="text-sm text-slate-500">{agent.phone}</p>}
                 </div>
             </div>
             <div className="flex items-center">
                 {agent.phone && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
                         <a href={`tel:${agent.phone}`} aria-label="Call agent">
                             <Phone className="h-5 w-5" />
                         </a>
                     </Button>
                 )}
                 {sanitizedPhone && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
                         <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
                             <WhatsappIcon className="h-5 w-5" />
                         </a>
                     </Button>
                 )}
                 {agent.email && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
                         <a href={`mailto:${agent.email}`} aria-label="Email agent">
                             <Mail className="h-5 w-5" />
                         </a>
@@ -157,10 +148,10 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
     };
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-card lg:bg-[#152A47] lg:border-none lg:text-white">
+        <Card className="rounded-[2rem] border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
             <CardHeader>
                 <CardTitle className="text-xl">Programează o Vizionare</CardTitle>
-                <CardDescription className="lg:text-white/70">
+                <CardDescription>
                     Completează formularul și un agent te va contacta în cel mai scurt timp.
                 </CardDescription>
             </CardHeader>
@@ -169,11 +160,11 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="lg:text-white/80">Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii despre..." className="bg-input lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem> )} />
-                        <Button type="submit" disabled={isSubmitting} className="w-full">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel>Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii despre..." className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
+                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-full shadow-lg shadow-primary/20">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Trimite Solicitare
                         </Button>
@@ -194,8 +185,8 @@ const PageSkeleton = () => (
             <div className="flex gap-2 w-full justify-start md:justify-end"><Skeleton className="h-10 w-32" /><Skeleton className="h-10 w-10" /></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6">
-             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[250px] md:h-[550px] bg-white/10" /> <Skeleton className="h-96 bg-white/10" /> </div>
-             <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-[700px] bg-white/10" /> </div>
+             <div className="lg:col-span-8 space-y-6"> <Skeleton className="h-[250px] md:h-[550px]" /> <Skeleton className="h-96" /> </div>
+             <div className="lg:col-span-4 space-y-4"> <Skeleton className="h-[700px]" /> </div>
         </div>
     </div>
 );
@@ -274,7 +265,7 @@ export default function PublicPropertyDetailPage() {
     const isLoading = isPropertyLoading || isAgentLoading || areAllPropertiesLoading;
     
     if (isLoading) {
-        return <div className="h-full bg-background lg:bg-[#0F1E33] text-white"><PageSkeleton /></div>;
+        return <div className="h-full bg-background"><PageSkeleton /></div>;
     }
     
     if (!property || error || property.status !== 'Activ') {
@@ -307,14 +298,14 @@ export default function PublicPropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 pb-24 min-h-screen text-white">
+          <div className="-mt-6 min-h-screen bg-transparent pb-24">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
                         <CardContent className="p-3">
-                            <div className="flex justify-around items-center text-sm">
+                            <div className="flex items-center justify-around text-sm text-slate-700">
                                 <div className="flex items-center gap-2"><Bed className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.rooms}</span></div>
                                 <div className="flex items-center gap-2"><Ruler className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.squareFootage} mp</span></div>
                                 {property.constructionYear && (<div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.constructionYear}</span></div>)}
@@ -323,10 +314,10 @@ export default function PublicPropertyDetailPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-xl font-bold">{property.title}</CardTitle>
-                            <CardDescription className="text-sm text-white/70">{property.address}</CardDescription>
+                            <CardTitle className="text-xl font-bold text-slate-950">{property.title}</CardTitle>
+                            <CardDescription className="text-sm text-slate-500">{property.address}</CardDescription>
                         </CardHeader>
                     </Card>
                     
@@ -334,9 +325,9 @@ export default function PublicPropertyDetailPage() {
                     
                     <PublicInfoColumn property={property} isMobile={true} />
 
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-lg font-bold">Localizare pe hartă</CardTitle>
+                            <CardTitle className="text-lg font-bold text-slate-950">Localizare pe hartă</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 h-80">
                             <PropertiesMap properties={[property]} />
@@ -347,21 +338,21 @@ export default function PublicPropertyDetailPage() {
 
                 </div>
             </div>
-             <div className="fixed bottom-0 left-0 right-0 bg-[#152A47] p-3 border-t border-white/10 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.4)] z-50">
+             <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11">
                             <AvatarImage src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
-                            <AvatarFallback className="bg-white/20">{getInitials(agentForCard.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary">{getInitials(agentForCard.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-xs text-white/70">Contactează agentul</p>
-                            <p className="text-base font-semibold">{agentForCard.name}</p>
+                            <p className="text-xs text-slate-500">Contactează agentul</p>
+                            <p className="text-base font-semibold text-slate-950">{agentForCard.name}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {agentForCard.phone && (
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full bg-white/10 border-white/20" asChild>
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-slate-200 bg-slate-50" asChild>
                                 <a href={`tel:${agentForCard.phone}`} aria-label="Apelează agentul">
                                     <Phone className="h-5 w-5" />
                                 </a>
@@ -382,7 +373,7 @@ export default function PublicPropertyDetailPage() {
     }
 
     return (
-        <div className={cn("bg-[#0F1E33] text-white animated-glow")}>
+        <div className="bg-transparent">
              <div className="container mx-auto px-4 py-8">
                 <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">

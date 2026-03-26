@@ -15,10 +15,15 @@ export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesP
   }
 
   return (
-    <section>
-      <div className="flex items-center gap-3 mb-6">
-        <Home className="h-8 w-8 text-primary" />
-        <h2 className="text-3xl font-bold">Proprietăți Recomandate</h2>
+    <section id="properties" className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Home className="h-6 w-6" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary/80">Selecție publică</p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950">Proprietăți recomandate</h2>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
         {properties.map((property) => (

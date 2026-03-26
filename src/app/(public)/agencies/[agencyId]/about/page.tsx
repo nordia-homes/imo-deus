@@ -69,39 +69,43 @@ export default function AgencyAboutPage() {
   }
 
   return (
-    <div className="bg-background">
-        <div className="container mx-auto py-12 px-4 space-y-16">
-            <section className="max-w-4xl mx-auto text-center">
-                <Building className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h1 className="text-4xl font-bold mb-4">Despre {agency?.name}</h1>
-                <p className="text-lg text-muted-foreground whitespace-pre-wrap">
+    <div className="bg-transparent">
+        <div className="container mx-auto space-y-16 px-4 py-12">
+            <section className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200/80 bg-white/90 px-8 py-12 text-center shadow-[0_28px_80px_-44px_rgba(15,23,42,0.38)]">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Building className="h-8 w-8" />
+                </div>
+                <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-950">Despre {agency?.name}</h1>
+                <p className="whitespace-pre-wrap text-lg text-slate-600">
                     {agency?.agencyDescription || 'Aflați mai multe despre misiunea și valorile noastre.'}
                 </p>
             </section>
             
             <section className="max-w-6xl mx-auto">
                  <div className="text-center mb-12">
-                    <Users className="mx-auto h-12 w-12 text-primary mb-4" />
-                    <h2 className="text-4xl font-bold">Echipa Noastră de Experți</h2>
-                    <p className="text-lg text-muted-foreground mt-2">Oamenii din spatele succesului clienților noștri.</p>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Users className="h-8 w-8" />
+                    </div>
+                    <h2 className="text-4xl font-bold tracking-tight text-slate-950">Echipa noastră de experți</h2>
+                    <p className="mt-2 text-lg text-slate-600">Oamenii din spatele succesului clienților noștri.</p>
                 </div>
                 
                 {agents.length > 0 ? (
                     <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
                         {agents.map(agent => (
-                            <div key={agent.id} className="text-center flex flex-col items-center">
+                            <div key={agent.id} className="flex flex-col items-center rounded-[1.75rem] border border-slate-200/80 bg-white/90 px-6 py-8 text-center shadow-[0_20px_60px_-38px_rgba(15,23,42,0.32)]">
                                 <div className="relative h-40 w-40 mb-4">
                                      <Image
                                         src={agent.photoUrl || `https://i.pravatar.cc/150?u=${agent.id}`}
                                         alt={agent.name}
                                         fill
                                         sizes="160px"
-                                        className="rounded-full object-cover border-4 border-background shadow-lg"
+                                        className="rounded-full object-cover border-4 border-white shadow-lg"
                                     />
                                 </div>
-                                <h3 className="text-xl font-semibold">{agent.name}</h3>
+                                <h3 className="text-xl font-semibold text-slate-950">{agent.name}</h3>
                                 <p className="text-primary font-medium">{agent.role === 'admin' ? 'Manager' : 'Agent Imobiliar'}</p>
-                                <p className="text-muted-foreground text-sm mt-2 min-h-[60px]">
+                                <p className="mt-2 min-h-[60px] text-sm text-slate-600">
                                     {agent.agentBio || 'Agent dedicat cu experiență în piața locală.'}
                                 </p>
                             </div>

@@ -16,7 +16,7 @@ function SimilarPropertyCard({ property }: { property: Property }) {
 
   return (
     <div className="p-1">
-      <Card className="rounded-2xl bg-[#152A47] border-none text-white overflow-hidden h-full flex flex-col">
+      <Card className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white text-slate-900 shadow-[0_22px_50px_-34px_rgba(15,23,42,0.35)]">
         <Link href={href} className="block group">
           <div className="relative aspect-video">
             <Image
@@ -31,10 +31,10 @@ function SimilarPropertyCard({ property }: { property: Property }) {
             <h3 className="font-semibold truncate group-hover:underline" title={property.title}>
               {property.title}
             </h3>
-            <p className="text-xs text-white/70 flex items-center gap-1">
+            <p className="flex items-center gap-1 text-xs text-slate-500">
               <MapPin className="h-3 w-3" /> {property.location}
             </p>
-            <div className="flex items-center gap-4 text-xs text-white/80 pt-1">
+            <div className="flex items-center gap-4 pt-1 text-xs text-slate-500">
               <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {property.rooms}</span>
               <span className="flex items-center gap-1"><Bath className="h-4 w-4" /> {property.bathrooms}</span>
               <span className="flex items-center gap-1"><Ruler className="h-4 w-4" /> {property.squareFootage} mp</span>
@@ -56,7 +56,7 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
 
   return (
     <div className="space-y-4 px-2">
-        <h2 className="text-xl font-bold text-center">Proprietăți Similare</h2>
+        <h2 className="text-xl font-bold text-center text-slate-950">Proprietăți similare</h2>
         <Carousel
             opts={{
                 align: "start",
@@ -73,8 +73,8 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
             </CarouselContent>
             {properties.length > 1 && (
                 <>
-                    <CarouselPrevious className="left-2 bg-white/20 border-white/30 text-white hover:bg-white/30" />
-                    <CarouselNext className="right-2 bg-white/20 border-white/30 text-white hover:bg-white/30" />
+                    <CarouselPrevious className="left-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50" />
+                    <CarouselNext className="right-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50" />
                 </>
             )}
         </Carousel>

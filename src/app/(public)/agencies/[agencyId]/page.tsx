@@ -59,10 +59,14 @@ export default function AgencyHomePage() {
   return (
     <>
       <Hero />
-      <div className="container mx-auto py-8 px-4 space-y-12">
+      <div className="container mx-auto space-y-12 px-4 py-10 md:py-14">
         <FeaturedProperties properties={featuredProperties} agencyId={agencyId!} />
-        <div className="text-center">
-            <Button asChild size="lg">
+        <div className="rounded-[2rem] border border-slate-200/80 bg-white/80 px-6 py-10 text-center shadow-[0_25px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-sm">
+            <h3 className="text-2xl font-semibold tracking-tight text-slate-950">Vrei să vezi întregul portofoliu?</h3>
+            <p className="mx-auto mt-3 max-w-2xl text-slate-600">
+              Explorează toate proprietățile publicate și filtrează rapid după buget, zonă și tip de tranzacție.
+            </p>
+            <Button asChild size="lg" className="mt-6 rounded-full px-7 shadow-lg shadow-primary/20">
                 <Link href={`/agencies/${agencyId}/properties`}>Vezi toate proprietățile</Link>
             </Button>
         </div>

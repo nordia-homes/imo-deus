@@ -1,6 +1,6 @@
 
 'use client';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, use, useEffect } from 'react';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Agency } from '@/lib/types';
@@ -43,10 +43,10 @@ export default function AgencyPublicLayout({
   params,
 }: {
   children: ReactNode;
-  params: { agencyId: string };
+  params: Promise<{ agencyId: string }>;
 }) {
   const firestore = useFirestore();
-  const { agencyId } = params;
+  const { agencyId } = use(params);
 
   const agencyDocRef = useMemoFirebase(() => {
       if (!agencyId) return null;
@@ -92,8 +92,8 @@ export default function AgencyPublicLayout({
       return (
           <>
               <PublicHeader agency={null} isLoading={true} />
-               <main className="min-h-screen bg-[#0F1E33]">
-                  <section className="relative h-[60vh] bg-muted flex items-center justify-center text-center">
+               <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_40%),linear-gradient(180deg,_#ffffff_0%,_#f8fafc_52%,_#eef4ff_100%)]">
+                  <section className="relative h-[60vh] flex items-center justify-center text-center">
                       <div className="relative z-10 p-4">
                           <Skeleton className="h-16 w-96 mb-4" />
                           <Skeleton className="h-8 w-80 mb-8" />
@@ -107,7 +107,7 @@ export default function AgencyPublicLayout({
   return (
     <PublicAgencyProvider value={providerValue}>
       <PublicHeader agency={agency} isLoading={isAgencyLoading} />
-      <main className="min-h-screen bg-[#0F1E33] text-white">{children}</main>
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_36%),linear-gradient(180deg,_#ffffff_0%,_#f8fafc_48%,_#eef4ff_100%)] text-slate-900">{children}</main>
     </PublicAgencyProvider>
   );
 }

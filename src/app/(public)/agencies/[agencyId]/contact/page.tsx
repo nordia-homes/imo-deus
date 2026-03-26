@@ -30,16 +30,16 @@ export default function AgencyContactPage() {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="container mx-auto px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-4">Contactați-ne</h1>
-        <p className="text-muted-foreground text-center mb-12">
+        <h1 className="mb-4 text-center text-4xl font-bold tracking-tight text-slate-950">Contactați-ne</h1>
+        <p className="mb-12 text-center text-slate-600">
           Avem o echipă pregătită să vă răspundă la orice întrebare.
         </p>
 
         <div className="grid md:grid-cols-2 gap-12">
           <div className="space-y-6">
-            <Card className="shadow-2xl rounded-2xl">
+            <Card className="rounded-[2rem] border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
               <CardHeader>
                 <CardTitle>Date de Contact</CardTitle>
               </CardHeader>
@@ -48,27 +48,27 @@ export default function AgencyContactPage() {
                   <Home className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Adresă Sediu</h3>
-                    <p className="text-muted-foreground">{agency.address || 'Nespecificată'}</p>
+                    <p className="text-slate-600">{agency.address || 'Nespecificată'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Phone className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Telefon</h3>
-                    <p className="text-muted-foreground">{agency.phone || 'Nespecificat'}</p>
+                    <p className="text-slate-600">{agency.phone || 'Nespecificat'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Mail className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Email</h3>
-                    <p className="text-muted-foreground">{agency.email || 'Nespecificat'}</p>
+                    <p className="text-slate-600">{agency.email || 'Nespecificat'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-             <Card className="shadow-2xl rounded-2xl">
+             <Card className="rounded-[2rem] border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
               <CardHeader>
                 <CardTitle>Locație pe Hartă</CardTitle>
               </CardHeader>
@@ -82,7 +82,7 @@ export default function AgencyContactPage() {
                         src={`https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(agency.address)}`}>
                     </iframe>
                 ) : (
-                    <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                    <div className="flex aspect-video items-center justify-center rounded-xl bg-slate-100">
                         <p className="text-sm text-muted-foreground">Adresa agenției nu este specificată.</p>
                     </div>
                 )}
@@ -90,7 +90,7 @@ export default function AgencyContactPage() {
             </Card>
           </div>
           <div>
-            <Card className="shadow-2xl rounded-2xl">
+            <Card className="rounded-[2rem] border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
                 <CardHeader>
                     <CardTitle>Trimite-ne un Mesaj</CardTitle>
                 </CardHeader>
