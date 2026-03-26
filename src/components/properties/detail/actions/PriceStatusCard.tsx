@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { TrendingUp } from 'lucide-react';
 
 export function PriceStatusCard({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
+    const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;
@@ -15,7 +16,7 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
 
     if (!isMobile) {
         return (
-            <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+            <Card className={financeCardClassName}>
                 <CardContent className="flex items-baseline justify-center gap-2 p-3 text-center">
                     <span className="text-xl font-bold text-[#4ade80]">
                         €{property.price.toLocaleString()}
@@ -32,7 +33,7 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
     
     return (
         <Dialog>
-            <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+            <Card className={financeCardClassName}>
                 <CardContent className="p-4 text-center flex flex-col items-center justify-center gap-1">
                      <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold text-[#4ade80]">
