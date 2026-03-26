@@ -66,7 +66,7 @@ export default function AgencyHomePage() {
             <p className="mx-auto mt-3 max-w-2xl text-stone-300">
               Explorează toate proprietățile publicate și filtrează rapid după buget, zonă și tip de tranzacție.
             </p>
-            <Button asChild size="lg" className="mt-6 rounded-full bg-[#d4af37] px-7 text-black hover:bg-[#e2be56]">
+            <Button asChild size="lg" className="mt-6 rounded-full bg-[#22c55e] px-7 text-black hover:bg-[#4ade80]">
                 <Link href={`/agencies/${agencyId}/properties`}>Vezi toate proprietățile</Link>
             </Button>
         </div>

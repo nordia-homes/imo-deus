@@ -78,7 +78,7 @@ export function PropertyCard({
               />
             </Link>
             <div className="absolute top-3 left-3">
-               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-[#d4af37]/25 bg-black/55 text-[#f2d27a]" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
+               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-[#22c55e]/25 bg-black/55 text-[#86efac]" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
             </div>
             <Button
               size="icon"
@@ -93,7 +93,7 @@ export function PropertyCard({
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <Link href={href} className="flex-1 min-w-0">
-                <h3 className={cn("truncate font-semibold transition-colors", isPublicCard ? "text-stone-100 group-hover:text-[#f2d27a]" : "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
+                <h3 className={cn("truncate font-semibold transition-colors", isPublicCard ? "text-stone-100 group-hover:text-[#86efac]" : "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
                 <p className={cn("truncate text-sm", isPublicCard ? "text-stone-400" : "text-white/70")} title={property.address}>{property.address}</p>
               </Link>
             </div>
@@ -120,7 +120,7 @@ export function PropertyCard({
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <p className={cn("text-xl font-bold", isPublicCard ? "text-[#f2d27a]" : "text-white")}>
+              <p className={cn("text-xl font-bold", isPublicCard ? "text-[#4ade80]" : "text-white")}>
                 €{property.price.toLocaleString()}
               </p>
               {!agencyId ? (

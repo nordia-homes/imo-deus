@@ -185,9 +185,9 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
               </div>
               
               <div className="grid grid-cols-2 gap-4 pt-2">
-                 <FormField control={form.control} name="hasParking" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#d4af37] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Parcare</FormLabel></FormItem>)} />
-                 <FormField control={form.control} name="nearMetro" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#d4af37] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Aproape de metrou</FormLabel></FormItem>)} />
-                 <FormField control={form.control} name="after1977" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#d4af37] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Construit dupa 1977</FormLabel></FormItem>)} />
+                 <FormField control={form.control} name="hasParking" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#22c55e] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Parcare</FormLabel></FormItem>)} />
+                 <FormField control={form.control} name="nearMetro" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#22c55e] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Aproape de metrou</FormLabel></FormItem>)} />
+                 <FormField control={form.control} name="after1977" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/20 data-[state=checked]:bg-[#22c55e] data-[state=checked]:text-black" /></FormControl><FormLabel className="font-normal text-stone-300">Construit dupa 1977</FormLabel></FormItem>)} />
               </div>
               
               <div className="space-y-4">
@@ -218,7 +218,7 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
                                           <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                                               <FormControl><Checkbox checked={field.value?.includes(zone)} onCheckedChange={(checked) => {
                                                   return checked ? field.onChange([...(field.value || []), zone]) : field.onChange(field.value?.filter((value) => value !== zone))
-                                              }} className="border-white/20 data-[state=checked]:bg-[#d4af37] data-[state=checked]:text-black" /></FormControl>
+                                              }} className="border-white/20 data-[state=checked]:bg-[#22c55e] data-[state=checked]:text-black" /></FormControl>
                                               <FormLabel className="font-normal cursor-pointer text-stone-300">{zone}</FormLabel>
                                           </FormItem>
                                       )} />
@@ -232,7 +232,7 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
             <SheetFooter className="shrink-0 border-t border-white/10 p-4">
               <div className="flex justify-end gap-2 w-full">
                   <Button type="button" variant="ghost" onClick={handleReset} className="text-stone-300 hover:bg-white/5 hover:text-stone-50">Reseteaza</Button>
-                  <Button type="submit" className="bg-[#d4af37] text-black hover:bg-[#e6c766]">Aplica Filtre</Button>
+                  <Button type="submit" className="bg-[#22c55e] text-black hover:bg-[#4ade80]">Aplica Filtre</Button>
               </div>
             </SheetFooter>
           </form>

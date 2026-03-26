@@ -42,15 +42,23 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)] backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
-        <Link href={`/agencies/${agencyId}`} className="flex min-w-0 items-center gap-2">
+        <Link href={`/agencies/${agencyId}`} className="flex min-w-0 items-center gap-3">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
-            agency?.logoUrl ? (
-              <div className="relative h-9 w-28 rounded-xl bg-[#18191d] px-1 md:h-12 md:w-60">
-                 <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
-              </div>
-            ) : (
-               <span className="truncate text-base font-semibold tracking-[0.02em] text-stone-100 md:text-xl">{agency?.name || 'Agentie Imobiliara'}</span>
-            )
+            <>
+              {agency?.logoUrl ? (
+                <div className="relative h-9 w-28 rounded-xl bg-[#18191d] px-1 md:h-12 md:w-60">
+                   <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
+                </div>
+              ) : (
+                 <span className="truncate text-base font-semibold tracking-[0.02em] text-stone-100 md:text-xl">{agency?.name || 'Agentie Imobiliara'}</span>
+              )}
+              <span
+                className="whitespace-nowrap pl-1 text-lg text-[#4ade80] md:pl-2 md:text-2xl"
+                style={{ fontFamily: '"Brush Script MT", "Segoe Script", cursive', lineHeight: 1 }}
+              >
+                Cautarea se opreste aici!
+              </span>
+            </>
           )}
         </Link>
 

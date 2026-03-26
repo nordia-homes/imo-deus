@@ -27,7 +27,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
         if (!value && value !== 0) return null;
         return (
              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#18191d] p-3 shadow-sm">
-                <div className="rounded-xl bg-[#0f0f10] p-2 text-[#f2d27a] shadow-sm">
+                <div className="rounded-xl bg-[#0f0f10] p-2 text-[#86efac] shadow-sm">
                     {icon}
                 </div>
                 <div>

@@ -79,7 +79,7 @@ export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormPro
                          <FormField control={form.control} name="message" render={({ field }) => (
                             <FormItem><FormLabel className="text-stone-300">Mesaj (Optional)</FormLabel><FormControl><Textarea placeholder="As dori sa aflu mai multe detalii..." {...field} className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <Button type="submit" className="w-full rounded-full bg-[#d4af37] text-black hover:bg-[#e6c766]" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Trimite Solicitarea
                         </Button>

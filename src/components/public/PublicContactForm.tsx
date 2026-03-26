@@ -87,7 +87,7 @@ export function PublicContactForm({ propertyId = '', agencyId }: PublicContactFo
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Mesaj (Optional)</FormLabel><FormControl><Textarea {...field} placeholder="As dori mai multe detalii..." className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
-                        <Button type="submit" className="w-full rounded-full bg-[#d4af37] text-black hover:bg-[#e6c766]" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]" disabled={isSubmitting}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             Trimite Solicitarea
                         </Button>

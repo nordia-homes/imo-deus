@@ -40,7 +40,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             {property.description && property.description.length > TRUNCATION_LENGTH && (
                                 <Button
                                     variant="link"
-                                    className="mt-2 h-auto p-0 text-[#d4af37] hover:text-[#f2d27a]"
+                                    className="mt-2 h-auto p-0 text-[#22c55e] hover:text-[#86efac]"
                                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                                 >
                                     {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -74,7 +74,10 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             if (!item.value && item.value !== 0) return null;
                             return (
                                 <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-[#18191d] px-4 py-4 shadow-none">
-                                    <span className="text-stone-400">{item.label}</span>
+                                    <span className="flex items-center gap-2 text-stone-400">
+                                        <span className="text-[#86efac]">{item.icon}</span>
+                                        <span>{item.label}</span>
+                                    </span>
                                     <span className="font-bold text-stone-50">{item.value}</span>
                                 </Button>
                             )
@@ -102,7 +105,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {property.description && property.description.length > TRUNCATION_LENGTH && (
                             <Button
                                 variant="link"
-                                className="mt-2 h-auto p-0 text-[#d4af37] hover:text-[#f2d27a]"
+                                className="mt-2 h-auto p-0 text-[#22c55e] hover:text-[#86efac]"
                                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                             >
                                 {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -121,7 +124,10 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         if (!item.value && item.value !== 0) return null;
                         return (
                             <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-[#18191d] px-4 py-4 shadow-none">
-                                <span className="text-stone-400">{item.label}</span>
+                                <span className="flex items-center gap-2 text-stone-400">
+                                    <span className="text-[#86efac]">{item.icon}</span>
+                                    <span>{item.label}</span>
+                                </span>
                                 <span className="font-bold text-stone-50">{item.value}</span>
                             </Button>
                         )

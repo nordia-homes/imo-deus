@@ -39,7 +39,7 @@ function SimilarPropertyCard({ property }: { property: Property }) {
               <span className="flex items-center gap-1"><Bath className="h-4 w-4" /> {property.bathrooms}</span>
               <span className="flex items-center gap-1"><Ruler className="h-4 w-4" /> {property.squareFootage} mp</span>
             </div>
-            <p className="pt-2 text-xl font-bold text-[#d4af37]">
+            <p className="pt-2 text-xl font-bold text-[#4ade80]">
               €{property.price.toLocaleString()}
             </p>
           </div>

@@ -17,11 +17,11 @@ export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesP
   return (
     <section id="properties" className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#d4af37]/25 bg-[#d4af37]/10 text-[#f2d27a]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#22c55e]/25 bg-[#22c55e]/10 text-[#86efac]">
           <Home className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#d4af37]/80">Selecție publică</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#22c55e]/80">Selecție publică</p>
           <h2 className="text-3xl font-bold tracking-tight text-stone-100">Proprietăți recomandate</h2>
         </div>
       </div>

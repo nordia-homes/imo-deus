@@ -72,7 +72,7 @@ export default function AgencyAboutPage() {
     <div className="bg-transparent">
         <div className="container mx-auto space-y-16 px-4 py-12">
             <section className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-white/[0.04] px-8 py-12 text-center shadow-[0_28px_80px_-44px_rgba(0,0,0,0.78)]">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/10 text-[#f2d27a]">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/10 text-[#86efac]">
                   <Building className="h-8 w-8" />
                 </div>
                 <h1 className="mb-4 text-4xl font-bold tracking-tight text-stone-100">Despre {agency?.name}</h1>
@@ -83,7 +83,7 @@ export default function AgencyAboutPage() {
             
             <section className="max-w-6xl mx-auto">
                  <div className="text-center mb-12">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/10 text-[#f2d27a]">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/10 text-[#86efac]">
                       <Users className="h-8 w-8" />
                     </div>
                     <h2 className="text-4xl font-bold tracking-tight text-stone-100">Echipa noastră de experți</h2>
@@ -104,7 +104,7 @@ export default function AgencyAboutPage() {
                                     />
                                 </div>
                                 <h3 className="text-xl font-semibold text-stone-100">{agent.name}</h3>
-                                <p className="font-medium text-[#f2d27a]">{agent.role === 'admin' ? 'Manager' : 'Agent Imobiliar'}</p>
+                                <p className="font-medium text-[#86efac]">{agent.role === 'admin' ? 'Manager' : 'Agent Imobiliar'}</p>
                                 <p className="mt-2 min-h-[60px] text-sm text-stone-300">
                                     {agent.agentBio || 'Agent dedicat cu experiență în piața locală.'}
                                 </p>

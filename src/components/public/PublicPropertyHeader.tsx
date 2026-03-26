@@ -19,7 +19,7 @@ export function PublicPropertyHeader({ property }: { property: Property }) {
 
   return (
     <header className="space-y-4 rounded-[2rem] border border-white/10 bg-[#101113]/95 p-6 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
-        <div className="inline-flex rounded-full border border-[#d4af37]/20 bg-[#d4af37]/10 px-4 py-1.5 text-sm font-semibold text-[#f2d27a]">
+        <div className="inline-flex rounded-full border border-[#22c55e]/20 bg-[#22c55e]/10 px-4 py-1.5 text-sm font-semibold text-[#86efac]">
             {property.transactionType}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-stone-50">{property.title}</h1>

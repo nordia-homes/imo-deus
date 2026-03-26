@@ -61,7 +61,7 @@ function AgentCard({ agent }: { agent: AgentInfo }) {
             <div className="flex items-center gap-3">
                  <Avatar className="h-12 w-12">
                     <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                    <AvatarFallback className="bg-[#d4af37]/15 text-[#f2d27a]">{getInitials(agent.name)}</AvatarFallback>
+                    <AvatarFallback className="bg-[#22c55e]/15 text-[#86efac]">{getInitials(agent.name)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="text-xs text-stone-500">Consultantul tau</p>
@@ -164,7 +164,7 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Mesaj (Optional)</FormLabel><FormControl><Textarea {...field} placeholder="As dori mai multe detalii despre..." className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
-                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-[#d4af37] text-black hover:bg-[#e6c766]">
+                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Trimite Solicitare
                         </Button>
@@ -307,11 +307,11 @@ export default function PublicPropertyDetailPage() {
                         <CardContent className="p-3">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
-                                {property.rooms && property.squareFootage ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {property.rooms && property.squareFootage ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.squareFootage ? <span className="whitespace-nowrap">{property.squareFootage} mp</span> : null}
-                                {(property.rooms || property.squareFootage) && property.constructionYear ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {(property.rooms || property.squareFootage) && property.constructionYear ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.constructionYear ? <span className="whitespace-nowrap">An {property.constructionYear}</span> : null}
-                                {(property.rooms || property.squareFootage || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {(property.rooms || property.squareFootage || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.floor ? <span className="whitespace-nowrap">Etaj {property.floor}</span> : null}
                             </div>
                         </CardContent>
@@ -346,7 +346,7 @@ export default function PublicPropertyDetailPage() {
                     <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11">
                             <AvatarImage src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
-                            <AvatarFallback className="bg-[#d4af37]/15 text-[#f2d27a]">{getInitials(agentForCard.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-[#22c55e]/15 text-[#86efac]">{getInitials(agentForCard.name)}</AvatarFallback>
                         </Avatar>
                         <div>
                             <p className="text-xs text-stone-500">Contacteaza agentul</p>
@@ -362,7 +362,7 @@ export default function PublicPropertyDetailPage() {
                             </Button>
                         )}
                         {sanitizedPhone && (
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-[#d4af37]/30 bg-[#d4af37]/10 text-[#f2d27a] hover:bg-[#d4af37]/20" asChild>
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20" asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
                                     <WhatsappIcon className="h-6 w-6" />
                                 </a>

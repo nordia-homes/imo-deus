@@ -17,7 +17,7 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
         return (
             <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                 <CardContent className="flex items-baseline justify-center gap-2 p-3 text-center">
-                    <span className="text-xl font-bold text-[#d4af37]">
+                    <span className="text-xl font-bold text-[#4ade80]">
                         €{property.price.toLocaleString()}
                     </span>
                     {pricePerSqm && (
@@ -35,7 +35,7 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
             <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                 <CardContent className="p-4 text-center flex flex-col items-center justify-center gap-1">
                      <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-bold text-[#d4af37]">
+                        <span className="text-xl font-bold text-[#4ade80]">
                             €{property.price.toLocaleString()}
                         </span>
                         {pricePerSqm && (
@@ -45,7 +45,7 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
                         )}
                     </div>
                      <DialogTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-1 text-[#f2d27a]">
+                        <div className="flex cursor-pointer items-center gap-1 text-[#86efac]">
                             <TrendingUp className="h-4 w-4" />
                             <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
                         </div>
