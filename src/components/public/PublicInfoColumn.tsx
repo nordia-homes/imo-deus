@@ -27,11 +27,11 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     if (!isMobile) {
         return (
             <div className="space-y-6">
-                <Card className="rounded-[2rem] border-slate-200/80 bg-white/90 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.32)]">
-                    <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
+                <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+                    <CardHeader><CardTitle className="text-stone-50">Descriere</CardTitle></CardHeader>
                     <CardContent>
                         <div>
-                            <p className="whitespace-pre-wrap text-slate-600">
+                            <p className="whitespace-pre-wrap text-stone-300">
                                 {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
                                     ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
                                     : property.description || 'Nicio descriere adăugată.'
@@ -40,7 +40,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             {property.description && property.description.length > TRUNCATION_LENGTH && (
                                 <Button
                                     variant="link"
-                                    className="p-0 h-auto mt-2 text-primary"
+                                    className="mt-2 h-auto p-0 text-[#d4af37] hover:text-[#f2d27a]"
                                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                                 >
                                     {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -49,19 +49,51 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         </div>
                     </CardContent>
                 </Card>
+
+                {property.amenities && property.amenities.length > 0 && (
+                    <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+                        <CardHeader>
+                            <CardTitle className="text-stone-50">Dotari</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-wrap gap-2">
+                            {property.amenities.map((amenity) => (
+                                <Button key={amenity} variant="outline" size="sm" className="pointer-events-none rounded-full border-white/10 bg-[#18191d] text-stone-200 shadow-none">
+                                    {amenity}
+                                </Button>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+
+                <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+                    <CardHeader>
+                        <CardTitle className="text-stone-50">Informatii detaliate</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {infoItems.map(item => {
+                            if (!item.value && item.value !== 0) return null;
+                            return (
+                                <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-[#18191d] px-4 py-4 shadow-none">
+                                    <span className="text-stone-400">{item.label}</span>
+                                    <span className="font-bold text-stone-50">{item.value}</span>
+                                </Button>
+                            )
+                        })}
+                    </CardContent>
+                </Card>
             </div>
         )
     }
 
     return (
         <div className="space-y-4">
-             <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
+             <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                 <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-slate-950">Descriere</CardTitle>
+                    <CardTitle className="font-semibold text-stone-50">Descriere</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <div>
-                        <p className="whitespace-pre-wrap text-sm text-slate-600">
+                        <p className="whitespace-pre-wrap text-sm text-stone-300">
                             {(property.description && property.description.length > TRUNCATION_LENGTH && !isDescriptionExpanded)
                                 ? `${property.description.substring(0, TRUNCATION_LENGTH)}...`
                                 : property.description || 'Nicio descriere adăugată.'
@@ -70,7 +102,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {property.description && property.description.length > TRUNCATION_LENGTH && (
                             <Button
                                 variant="link"
-                                className="p-0 h-auto mt-2 text-primary"
+                                className="mt-2 h-auto p-0 text-[#d4af37] hover:text-[#f2d27a]"
                                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                             >
                                 {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -80,17 +112,17 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                 </CardContent>
             </Card>
 
-            <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
+            <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                 <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-slate-950">Informații detaliate</CardTitle>
+                    <CardTitle className="font-semibold text-stone-50">Informatii detaliate</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-slate-200 bg-slate-50 px-4 py-4 shadow-none">
-                                <span className="text-slate-500">{item.label}</span>
-                                <span className="font-bold text-slate-950">{item.value}</span>
+                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-[#18191d] px-4 py-4 shadow-none">
+                                <span className="text-stone-400">{item.label}</span>
+                                <span className="font-bold text-stone-50">{item.value}</span>
                             </Button>
                         )
                     })}

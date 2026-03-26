@@ -92,7 +92,7 @@ export default function AgencyPublicLayout({
       return (
           <>
               <PublicHeader agency={null} isLoading={true} />
-               <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_40%),linear-gradient(180deg,_#ffffff_0%,_#f8fafc_52%,_#eef4ff_100%)]">
+               <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.12),_transparent_28%),linear-gradient(180deg,_#050505_0%,_#0b0b0d_42%,_#121214_100%)]">
                   <section className="relative h-[60vh] flex items-center justify-center text-center">
                       <div className="relative z-10 p-4">
                           <Skeleton className="h-16 w-96 mb-4" />
@@ -107,7 +107,7 @@ export default function AgencyPublicLayout({
   return (
     <PublicAgencyProvider value={providerValue}>
       <PublicHeader agency={agency} isLoading={isAgencyLoading} />
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_36%),linear-gradient(180deg,_#ffffff_0%,_#f8fafc_48%,_#eef4ff_100%)] text-slate-900">{children}</main>
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.12),_transparent_24%),linear-gradient(180deg,_#050505_0%,_#0b0b0d_42%,_#121214_100%)] text-stone-100">{children}</main>
     </PublicAgencyProvider>
   );
 }

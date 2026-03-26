@@ -63,7 +63,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
 
     return (
       <div
-        className={cn("relative cursor-pointer group overflow-hidden rounded-lg", className)}
+        className={cn("relative cursor-pointer group overflow-hidden rounded-b-[1.75rem] rounded-t-none md:rounded-lg", className)}
         onClick={() => handleOpenGallery(index)}
       >
         <Image 
@@ -81,16 +81,16 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   // Mobile Gallery View
   if (isMobileGalleryOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_52%,_#eef4ff_100%)]">
-        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white/90 p-2 backdrop-blur-xl">
-          <h2 className="ml-2 text-lg font-semibold text-slate-900">Galerie foto</h2>
-          <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+      <div className="fixed inset-0 z-50 flex flex-col bg-[linear-gradient(180deg,_#050505_0%,_#0b0b0d_40%,_#121214_100%)] text-stone-100">
+        <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#101113]/95 p-2 backdrop-blur-xl">
+          <h2 className="ml-2 text-lg font-semibold text-stone-50">Galerie foto</h2>
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-stone-300 hover:bg-white/5 hover:text-white">
             <X className="h-6 w-6" />
           </Button>
         </header>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {images.map((src, index) => (
-            <div key={index} className="relative w-full overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.25)]">
+            <div key={index} className="relative w-full overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#101113] shadow-[0_28px_80px_-40px_rgba(0,0,0,0.82)]">
               <Image
                 src={src}
                 alt={`${title} image ${index + 1}`}
@@ -109,10 +109,10 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   return (
     <>
       <div className="relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-[250px] md:h-[405px]">
+        <div className="grid grid-cols-1 gap-2 h-auto md:grid-cols-2 md:h-[405px]">
             {/* Main Image */}
-            <div className="col-span-1 h-full">
-                <ImageItem index={0} className="w-full h-full" />
+            <div className="col-span-1 aspect-square md:aspect-auto md:h-full">
+                <ImageItem index={0} className="h-full w-full" />
             </div>
             {/* Side Images */}
             <div className="hidden md:grid grid-rows-2 gap-2 h-full">
@@ -122,7 +122,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
         </div>
         <Button
           variant="secondary"
-          className="absolute bottom-4 right-4 z-10 bg-white/90 hover:bg-white text-black"
+          className="absolute bottom-4 right-4 z-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
           onClick={() => handleOpenGallery(0)}
         >
           <Grid className="mr-2 h-4 w-4" />

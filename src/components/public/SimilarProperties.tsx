@@ -16,7 +16,7 @@ function SimilarPropertyCard({ property }: { property: Property }) {
 
   return (
     <div className="p-1">
-      <Card className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white text-slate-900 shadow-[0_22px_50px_-34px_rgba(15,23,42,0.35)]">
+      <Card className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101113] text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.82)]">
         <Link href={href} className="block group">
           <div className="relative aspect-video">
             <Image
@@ -31,15 +31,15 @@ function SimilarPropertyCard({ property }: { property: Property }) {
             <h3 className="font-semibold truncate group-hover:underline" title={property.title}>
               {property.title}
             </h3>
-            <p className="flex items-center gap-1 text-xs text-slate-500">
+            <p className="flex items-center gap-1 text-xs text-stone-400">
               <MapPin className="h-3 w-3" /> {property.location}
             </p>
-            <div className="flex items-center gap-4 pt-1 text-xs text-slate-500">
+            <div className="flex items-center gap-4 pt-1 text-xs text-stone-400">
               <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {property.rooms}</span>
               <span className="flex items-center gap-1"><Bath className="h-4 w-4" /> {property.bathrooms}</span>
               <span className="flex items-center gap-1"><Ruler className="h-4 w-4" /> {property.squareFootage} mp</span>
             </div>
-            <p className="text-xl font-bold text-primary pt-2">
+            <p className="pt-2 text-xl font-bold text-[#d4af37]">
               €{property.price.toLocaleString()}
             </p>
           </div>
@@ -56,7 +56,7 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
 
   return (
     <div className="space-y-4 px-2">
-        <h2 className="text-xl font-bold text-center text-slate-950">Proprietăți similare</h2>
+        <h2 className="text-center text-xl font-bold text-stone-50">Proprietati similare</h2>
         <Carousel
             opts={{
                 align: "start",
@@ -73,8 +73,8 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
             </CarouselContent>
             {properties.length > 1 && (
                 <>
-                    <CarouselPrevious className="left-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50" />
-                    <CarouselNext className="right-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50" />
+                    <CarouselPrevious className="left-2 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
+                    <CarouselNext className="right-2 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
                 </>
             )}
         </Carousel>

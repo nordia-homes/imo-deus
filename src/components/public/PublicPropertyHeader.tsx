@@ -8,7 +8,7 @@ import { BedDouble, Ruler, Layers, Calendar, Car } from 'lucide-react';
 const DetailBadge = ({ icon, text }: { icon: React.ReactNode, text: string | number | undefined | null }) => {
     if (!text) return null;
     return (
-        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm">
+        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#18191d] px-3 py-1.5 text-sm font-medium text-stone-300 shadow-sm">
             {icon}
             <span>{text}</span>
         </div>
@@ -18,12 +18,12 @@ const DetailBadge = ({ icon, text }: { icon: React.ReactNode, text: string | num
 export function PublicPropertyHeader({ property }: { property: Property }) {
 
   return (
-    <header className="space-y-4 rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
-        <div className="inline-flex rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+    <header className="space-y-4 rounded-[2rem] border border-white/10 bg-[#101113]/95 p-6 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+        <div className="inline-flex rounded-full border border-[#d4af37]/20 bg-[#d4af37]/10 px-4 py-1.5 text-sm font-semibold text-[#f2d27a]">
             {property.transactionType}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">{property.title}</h1>
-        <p className="text-base text-slate-500">{property.address}</p>
+        <h1 className="text-3xl font-bold tracking-tight text-stone-50">{property.title}</h1>
+        <p className="text-base text-stone-400">{property.address}</p>
         <div className="flex flex-wrap items-center gap-2">
             <DetailBadge icon={<BedDouble />} text={`${property.rooms} Camere`} />
             <DetailBadge icon={<Ruler />} text={`${property.squareFootage} m²`} />

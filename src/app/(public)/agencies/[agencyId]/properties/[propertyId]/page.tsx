@@ -12,7 +12,7 @@ import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bed, Ruler, Calendar, Layers, Mail, Phone, Loader2 } from 'lucide-react';
+import { Mail, Phone, Loader2 } from 'lucide-react';
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import { Button } from '@/components/ui/button';
 
@@ -57,35 +57,35 @@ function AgentCard({ agent }: { agent: AgentInfo }) {
     const sanitizedPhone = sanitizeForWhatsapp(agent.phone);
 
     return (
-        <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+        <div className="flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-[#18191d] p-4">
             <div className="flex items-center gap-3">
                  <Avatar className="h-12 w-12">
                     <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(agent.name)}</AvatarFallback>
+                    <AvatarFallback className="bg-[#d4af37]/15 text-[#f2d27a]">{getInitials(agent.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="text-xs text-slate-500">Consultantul tău</p>
-                    <p className="text-base font-semibold text-slate-950">{agent.name}</p>
-                    {agent.phone && <p className="text-sm text-slate-500">{agent.phone}</p>}
+                    <p className="text-xs text-stone-500">Consultantul tau</p>
+                    <p className="text-base font-semibold text-stone-50">{agent.name}</p>
+                    {agent.phone && <p className="text-sm text-stone-400">{agent.phone}</p>}
                 </div>
             </div>
             <div className="flex items-center">
                 {agent.phone && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-stone-300 hover:bg-white/5 hover:text-stone-50" asChild>
                         <a href={`tel:${agent.phone}`} aria-label="Call agent">
                             <Phone className="h-5 w-5" />
                         </a>
                     </Button>
                 )}
                 {sanitizedPhone && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-stone-300 hover:bg-white/5 hover:text-stone-50" asChild>
                         <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
                             <WhatsappIcon className="h-5 w-5" />
                         </a>
                     </Button>
                 )}
                 {agent.email && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-500 hover:bg-white" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-stone-300 hover:bg-white/5 hover:text-stone-50" asChild>
                         <a href={`mailto:${agent.email}`} aria-label="Email agent">
                             <Mail className="h-5 w-5" />
                         </a>
@@ -148,10 +148,10 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
     };
 
     return (
-        <Card className="rounded-[2rem] border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
+        <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
             <CardHeader>
-                <CardTitle className="text-xl">Programează o Vizionare</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-stone-50">Programeaza o Vizionare</CardTitle>
+                <CardDescription className="text-stone-400">
                     Completează formularul și un agent te va contacta în cel mai scurt timp.
                 </CardDescription>
             </CardHeader>
@@ -160,11 +160,11 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tău" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel>Mesaj (Opțional)</FormLabel><FormControl><Textarea {...field} placeholder="Aș dori mai multe detalii despre..." className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem> )} />
-                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-full shadow-lg shadow-primary/20">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tau" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Mesaj (Optional)</FormLabel><FormControl><Textarea {...field} placeholder="As dori mai multe detalii despre..." className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
+                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-full bg-[#d4af37] text-black hover:bg-[#e6c766]">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Trimite Solicitare
                         </Button>
@@ -298,26 +298,29 @@ export default function PublicPropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="-mt-6 min-h-screen bg-transparent pb-24">
+          <div className="min-h-screen bg-transparent pb-24 text-stone-100">
              <div className="space-y-4">
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
+                    <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                         <CardContent className="p-3">
-                            <div className="flex items-center justify-around text-sm text-slate-700">
-                                <div className="flex items-center gap-2"><Bed className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.rooms}</span></div>
-                                <div className="flex items-center gap-2"><Ruler className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.squareFootage} mp</span></div>
-                                {property.constructionYear && (<div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.constructionYear}</span></div>)}
-                                {property.floor && (<div className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> <span className="font-semibold">{property.floor}</span></div>)}
+                            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
+                                {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
+                                {property.rooms && property.squareFootage ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {property.squareFootage ? <span className="whitespace-nowrap">{property.squareFootage} mp</span> : null}
+                                {(property.rooms || property.squareFootage) && property.constructionYear ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {property.constructionYear ? <span className="whitespace-nowrap">An {property.constructionYear}</span> : null}
+                                {(property.rooms || property.squareFootage || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37]" /> : null}
+                                {property.floor ? <span className="whitespace-nowrap">Etaj {property.floor}</span> : null}
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
+                    <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-xl font-bold text-slate-950">{property.title}</CardTitle>
-                            <CardDescription className="text-sm text-slate-500">{property.address}</CardDescription>
+                            <CardTitle className="text-xl font-bold text-stone-50">{property.title}</CardTitle>
+                            <CardDescription className="text-sm text-stone-400">{property.address}</CardDescription>
                         </CardHeader>
                     </Card>
                     
@@ -325,9 +328,9 @@ export default function PublicPropertyDetailPage() {
                     
                     <PublicInfoColumn property={property} isMobile={true} />
 
-                    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
+                    <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-lg font-bold text-slate-950">Localizare pe hartă</CardTitle>
+                            <CardTitle className="text-lg font-bold text-stone-50">Localizare pe harta</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 h-80">
                             <PropertiesMap properties={[property]} />
@@ -338,28 +341,28 @@ export default function PublicPropertyDetailPage() {
 
                 </div>
             </div>
-             <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
+             <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/88 p-3 shadow-[0_-12px_40px_-18px_rgba(0,0,0,0.7)] backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11">
                             <AvatarImage src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
-                            <AvatarFallback className="bg-primary/10 text-primary">{getInitials(agentForCard.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-[#d4af37]/15 text-[#f2d27a]">{getInitials(agentForCard.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-xs text-slate-500">Contactează agentul</p>
-                            <p className="text-base font-semibold text-slate-950">{agentForCard.name}</p>
+                            <p className="text-xs text-stone-500">Contacteaza agentul</p>
+                            <p className="text-base font-semibold text-stone-50">{agentForCard.name}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {agentForCard.phone && (
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-slate-200 bg-slate-50" asChild>
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-white/10 bg-white/5 text-stone-100 hover:bg-white/10" asChild>
                                 <a href={`tel:${agentForCard.phone}`} aria-label="Apelează agentul">
                                     <Phone className="h-5 w-5" />
                                 </a>
                             </Button>
                         )}
                         {sanitizedPhone && (
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full bg-green-500/20 border-green-500/50 text-green-400" asChild>
+                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-[#d4af37]/30 bg-[#d4af37]/10 text-[#f2d27a] hover:bg-[#d4af37]/20" asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
                                     <WhatsappIcon className="h-6 w-6" />
                                 </a>

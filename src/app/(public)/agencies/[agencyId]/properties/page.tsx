@@ -56,17 +56,17 @@ export default function AgencyAllPropertiesPage() {
   }, [properties, filters]);
 
   return (
-    <div className={cn("space-y-6 text-slate-900", isMobile ? "p-0" : "p-4 lg:p-6")}>
+    <div className={cn("space-y-6 text-stone-100", isMobile ? "p-0" : "p-4 lg:p-6")}>
       {/* Mobile & Tablet View */}
       <div className="lg:hidden space-y-4">
-        <Card className="rounded-b-[1.75rem] rounded-t-none border-x-0 border-t-0 border-b border-slate-200 bg-white/90 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)]">
+        <Card className="rounded-b-[1.75rem] rounded-t-none border-x-0 border-t-0 border-b border-white/10 bg-[#0d0d10]/90 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)]">
           <CardHeader>
-            <CardTitle className="text-xl tracking-tight text-slate-950">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
+            <CardTitle className="text-xl tracking-tight text-stone-100">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
           </CardHeader>
         </Card>
         <div className="px-2">
           <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-            <Button variant="outline" className="w-full rounded-full border-slate-300 bg-white/90 text-slate-700 shadow-sm hover:bg-slate-50">
+            <Button variant="outline" className="w-full rounded-full border-white/10 bg-white/[0.05] text-stone-100 shadow-sm hover:bg-white/[0.08]">
               <Filter className="mr-2 h-4 w-4" /> Filtrează
             </Button>
           </PropertyFilters>
@@ -78,18 +78,18 @@ export default function AgencyAllPropertiesPage() {
 
       {/* Desktop View */}
       <div className="hidden lg:block space-y-6 px-3">
-        <Card className="overflow-hidden rounded-[2rem] border-slate-200/80 bg-white/90 shadow-[0_30px_90px_-45px_rgba(15,23,42,0.42)]">
+        <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-white/[0.04] shadow-[0_30px_90px_-45px_rgba(0,0,0,0.85)]">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight text-slate-950">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
-                <p className="text-slate-600">
+                <h1 className="text-3xl font-headline font-bold tracking-tight text-stone-100">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
+                <p className="text-stone-300">
                   Explorează portofoliul de proprietăți.
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                  <Button variant="outline" className="rounded-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.05] text-stone-100 hover:bg-white/[0.08]">
                     <Filter className="mr-2 h-4 w-4" /> Filtrează
                   </Button>
                 </PropertyFilters>

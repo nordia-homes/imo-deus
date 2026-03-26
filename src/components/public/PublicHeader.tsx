@@ -32,7 +32,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
     const isActive = pathname === href;
     return (
       <SheetClose asChild>
-        <Link href={href} className={cn("flex items-center gap-4 rounded-2xl p-4 text-lg font-medium transition-colors", isActive ? "bg-primary/10 text-primary" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900")} onClick={onClick}>
+        <Link href={href} className={cn("flex items-center gap-4 rounded-2xl p-4 text-lg font-medium transition-colors", isActive ? "bg-white/10 text-white" : "text-stone-300 hover:bg-white/5 hover:text-white")} onClick={onClick}>
           {children}
         </Link>
       </SheetClose>
@@ -40,16 +40,16 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 text-slate-900 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.28)] backdrop-blur-xl">
-      <div className="container mx-auto flex h-20 items-center justify-between px-4">
-        <Link href={`/agencies/${agencyId}`} className="flex items-center gap-2">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)] backdrop-blur-xl">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
+        <Link href={`/agencies/${agencyId}`} className="flex min-w-0 items-center gap-2">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
             agency?.logoUrl ? (
-              <div className="relative h-12 w-40 md:w-60">
+              <div className="relative h-9 w-28 rounded-xl bg-[#18191d] px-1 md:h-12 md:w-60">
                  <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
               </div>
             ) : (
-               <span className="text-xl font-bold tracking-tight text-slate-900">{agency?.name || 'Agenție Imobiliară'}</span>
+               <span className="truncate text-base font-semibold tracking-[0.02em] text-stone-100 md:text-xl">{agency?.name || 'Agentie Imobiliara'}</span>
             )
           )}
         </Link>
@@ -64,7 +64,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
                 href={link.href}
                 className={cn(
                   'rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  isActive ? 'bg-white/10 text-white' : 'text-stone-300 hover:bg-white/5 hover:text-white'
                 )}
               >
                 {link.label}
@@ -77,20 +77,20 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
         <div className="md:hidden">
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-white/10 bg-[#18191d] text-stone-200 hover:bg-[#202126] hover:text-white">
                 <ModernMenuIcon className="h-7 w-7" />
                 <span className="sr-only">Deschide meniu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[80vw] border-r border-slate-200 bg-white/95 p-4 text-slate-900 backdrop-blur-xl">
+            <SheetContent side="left" className="w-[80vw] border-r border-white/10 bg-[#101113]/98 p-4 text-stone-100 backdrop-blur-xl">
                <div className="flex flex-col h-full">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-[#18191d] p-4">
                      {agency?.logoUrl ? (
-                        <div className="relative h-12 w-40">
+                        <div className="relative h-12 w-40 rounded-xl bg-[#111214] px-1">
                           <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
                         </div>
                       ) : (
-                        <span className="text-2xl font-bold tracking-tight">{agency?.name}</span>
+                        <span className="text-2xl font-bold tracking-tight text-stone-100">{agency?.name}</span>
                       )}
                   </div>
                  <nav className="mt-8 flex flex-col gap-2">

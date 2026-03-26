@@ -63,7 +63,7 @@ export function PropertyCard({
       <Card className={cn(
         "group overflow-hidden rounded-[1.75rem] transition-all duration-300 hover:-translate-y-1",
         isPublicCard
-          ? "border border-slate-200/80 bg-white text-slate-900 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.38)] hover:shadow-[0_30px_80px_-34px_rgba(15,23,42,0.32)]"
+          ? "border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]"
           : "border-none bg-[#152A47] text-white shadow-2xl hover:shadow-xl"
       )}>
         <CardContent className="p-0">
@@ -78,12 +78,12 @@ export function PropertyCard({
               />
             </Link>
             <div className="absolute top-3 left-3">
-               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-white/80 bg-white/85 text-slate-900" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
+               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-[#d4af37]/25 bg-black/55 text-[#f2d27a]" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
             </div>
             <Button
               size="icon"
               variant="secondary"
-              className={cn("absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? "bg-white/80 text-slate-700 hover:bg-white" : "bg-black/30 text-white hover:bg-black/50")}
+              className={cn("absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? "bg-black/45 text-stone-100 hover:bg-black/70" : "bg-black/30 text-white hover:bg-black/50")}
               onClick={() => setIsFavorite(!isFavorite)}
             >
               <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />
@@ -93,12 +93,12 @@ export function PropertyCard({
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <Link href={href} className="flex-1 min-w-0">
-                <h3 className={cn("truncate font-semibold transition-colors", isPublicCard ? "text-slate-950 group-hover:text-primary" : "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
-                <p className={cn("truncate text-sm", isPublicCard ? "text-slate-500" : "text-white/70")} title={property.address}>{property.address}</p>
+                <h3 className={cn("truncate font-semibold transition-colors", isPublicCard ? "text-stone-100 group-hover:text-[#f2d27a]" : "text-white group-hover:text-primary/90")} title={property.title}>{property.title}</h3>
+                <p className={cn("truncate text-sm", isPublicCard ? "text-stone-400" : "text-white/70")} title={property.address}>{property.address}</p>
               </Link>
             </div>
             
-            <div className={cn("flex flex-wrap items-center gap-4 text-sm", isPublicCard ? "text-slate-500" : "text-white/70")}>
+            <div className={cn("flex flex-wrap items-center gap-4 text-sm", isPublicCard ? "text-stone-400" : "text-white/70")}>
                 <div className="flex items-center gap-1.5">
                     <BedDouble className="h-4 w-4"/>
                     <span>{property.rooms}</span>
@@ -120,7 +120,7 @@ export function PropertyCard({
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <p className={cn("text-xl font-bold", isPublicCard ? "text-slate-950" : "text-white")}>
+              <p className={cn("text-xl font-bold", isPublicCard ? "text-[#f2d27a]" : "text-white")}>
                 €{property.price.toLocaleString()}
               </p>
               {!agencyId ? (
@@ -139,7 +139,7 @@ export function PropertyCard({
                     </Button>
                 </div>
               ) : (
-                <Button asChild size="sm" variant="outline" className="rounded-full border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100">
+                <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
                     <Link href={href}>Vezi Detalii</Link>
                 </Button>
               )}
