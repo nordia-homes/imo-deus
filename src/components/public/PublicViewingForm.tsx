@@ -59,27 +59,27 @@ export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormPro
     }
 
     return (
-        <Card className="shadow-2xl rounded-2xl bg-white lg:bg-[#152A47] lg:text-white lg:border-none">
+        <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.35)]">
             <CardHeader>
                 <CardTitle>Programează o Vizionare</CardTitle>
-                <CardDescription className="lg:text-white/70">Completați formularul și un agent vă va contacta în cel mai scurt timp.</CardDescription>
+                <CardDescription className="text-slate-600">Completați formularul și un agent vă va contacta în cel mai scurt timp.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField control={form.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Nume</FormLabel><FormControl><Input placeholder="Numele dvs." {...field} className="lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Nume</FormLabel><FormControl><Input placeholder="Numele dvs." {...field} className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="phone" render={({ field }) => (
-                            <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input placeholder="07xxxxxxxx" {...field} className="lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input placeholder="07xxxxxxxx" {...field} className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="email@exemplu.com" {...field} className="lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="email@exemplu.com" {...field} className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem>
                         )} />
                          <FormField control={form.control} name="message" render={({ field }) => (
-                            <FormItem><FormLabel>Mesaj (Opțional)</FormLabel><FormControl><Textarea placeholder="Aș dori să aflu mai multe detalii..." {...field} className="lg:bg-white/10 lg:border-white/20" /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Mesaj (Opțional)</FormLabel><FormControl><Textarea placeholder="Aș dori să aflu mai multe detalii..." {...field} className="border-slate-200 bg-slate-50" /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full rounded-full shadow-lg shadow-primary/20" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Trimite Solicitarea
                         </Button>

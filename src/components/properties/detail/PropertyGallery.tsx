@@ -81,16 +81,16 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   // Mobile Gallery View
   if (isMobileGalleryOpen) {
     return (
-      <div className="fixed inset-0 bg-[#0F1E33] z-50 flex flex-col">
-        <header className="flex items-center justify-between p-2 border-b border-white/10 shrink-0">
-          <h2 className="text-lg font-semibold text-white ml-2">Galerie Foto</h2>
-          <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-white">
+      <div className="fixed inset-0 z-50 flex flex-col bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_52%,_#eef4ff_100%)]">
+        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white/90 p-2 backdrop-blur-xl">
+          <h2 className="ml-2 text-lg font-semibold text-slate-900">Galerie foto</h2>
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileGalleryOpen(false)} className="text-slate-700 hover:bg-slate-100 hover:text-slate-900">
             <X className="h-6 w-6" />
           </Button>
         </header>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {images.map((src, index) => (
-            <div key={index} className="relative w-full rounded-lg overflow-hidden">
+            <div key={index} className="relative w-full overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.25)]">
               <Image
                 src={src}
                 alt={`${title} image ${index + 1}`}

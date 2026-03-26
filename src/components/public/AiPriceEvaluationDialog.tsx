@@ -16,10 +16,10 @@ export function AiPriceEvaluationDialog({ trigger }: { trigger: React.ReactNode 
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className={cn(isMobile && "bg-[#0F1E33] text-white border-none")}>
+            <DialogContent className={cn(isMobile && "border-none bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_52%,_#eef4ff_100%)] text-slate-900")}>
                 <DialogHeader>
                     <DialogTitle>Evaluare Preț AI</DialogTitle>
-                    <DialogDescription className={cn(isMobile && "text-white/70")}>
+                    <DialogDescription className={cn(isMobile && "text-slate-600")}>
                         Această funcționalitate este în curs de dezvoltare.
                     </DialogDescription>
                 </DialogHeader>
