@@ -24,6 +24,49 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         { icon: <Thermometer className="h-5 w-5" />, label: 'Sistem Încălzire', value: property.heatingSystem },
     ];
 
+    const CreditBrokerCard = () => (
+        <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]">
+            <CardContent className="p-0">
+                <div className="relative overflow-hidden p-6 md:p-7">
+                    <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(134,239,172,0.16),transparent_48%)]" />
+                    <div className="relative space-y-4">
+                        <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                            Finantare premium
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="max-w-2xl text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                                Proprietatea potrivita merita si finantarea potrivita.
+                            </h3>
+                            <p className="max-w-2xl text-sm leading-7 text-emerald-50/85 md:text-base">
+                                Iti oferim acces la servicii de broker de credite, astfel incat sa compari rapid variantele bancare,
+                                sa intelegi costul real al finantarii si sa alegi solutia care iti protejeaza bugetul pe termen lung.
+                            </p>
+                        </div>
+                        <div className="grid gap-3 text-sm text-emerald-100/90 md:grid-cols-3">
+                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                                Analiza gratuita a eligibilitatii
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                                Oferte comparate din mai multe banci
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                                Suport complet pana la semnare
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-1 md:flex-row md:items-center md:justify-between">
+                            <p className="max-w-xl text-sm text-stone-300">
+                                Daca vrei, te punem in legatura cu un partener de incredere care te poate ghida de la preaprobare pana la aprobare finala.
+                            </p>
+                            <div className="inline-flex items-center rounded-full border border-emerald-300/25 bg-emerald-400/12 px-5 py-2 text-sm font-semibold text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                                Cere consultanta financiara
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+
     if (!isMobile) {
         return (
             <div className="space-y-6">
@@ -49,6 +92,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         </div>
                     </CardContent>
                 </Card>
+
+                <CreditBrokerCard />
 
                 {property.amenities && property.amenities.length > 0 && (
                     <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
@@ -114,6 +159,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     </div>
                 </CardContent>
             </Card>
+
+            <CreditBrokerCard />
 
             <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
                 <CardHeader className="p-4">
