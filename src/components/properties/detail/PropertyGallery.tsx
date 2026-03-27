@@ -65,7 +65,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
 
     return (
       <div
-        className={cn("relative cursor-pointer group overflow-hidden rounded-b-[1.75rem] rounded-t-none md:rounded-lg", className)}
+        className={cn("relative cursor-pointer group overflow-hidden rounded-none md:rounded-lg", className)}
         onClick={() => handleOpenGallery(index)}
       >
         <Image 

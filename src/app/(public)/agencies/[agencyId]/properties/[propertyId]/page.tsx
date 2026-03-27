@@ -310,11 +310,11 @@ export default function PublicPropertyDetailPage() {
     if (isMobile) {
         return (
           <div className="min-h-screen bg-transparent pb-24 text-stone-100">
-             <div className="space-y-4">
+             <div className="space-y-0">
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className={financeCardClassNameMedium}>
+                    <Card className={`${financeCardClassNameMedium.replace('border border-emerald-400/18', 'border-0')} mx-[-0.5rem] rounded-t-none`}>
                         <CardContent className="space-y-3 p-4">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
