@@ -314,7 +314,7 @@ export default function PublicPropertyDetailPage() {
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className="mx-[-0.5rem] overflow-hidden rounded-b-[2rem] rounded-t-none border-0 bg-[linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-none">
+                    <Card className="mx-[-0.5rem] -mb-4 overflow-hidden rounded-b-[2rem] rounded-t-none border-0 bg-[#0b0f0d] shadow-none">
                         <CardContent className="space-y-3 p-4">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
