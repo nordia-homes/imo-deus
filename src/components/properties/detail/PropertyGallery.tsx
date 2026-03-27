@@ -17,7 +17,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid, X } from "lucide-react"
+import { Grid, Heart, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -26,6 +26,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = React.useState(false);
+  const [isLoved, setIsLoved] = React.useState(false);
   const isMobile = useIsMobile();
   const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
@@ -120,6 +121,20 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
                 <ImageItem index={1} className="w-full h-full" />
                 <ImageItem index={2} className="w-full h-full" />
             </div>
+        </div>
+        <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+          <span className="whitespace-nowrap text-sm font-medium leading-none text-white/92">Aceasta proprietate ti se potriveste?</span>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            aria-pressed={isLoved}
+            aria-label={isLoved ? "Scoate de la favorite" : "Adauga la favorite"}
+            className="h-9 w-9 rounded-full border border-white/18 bg-white/8 text-white hover:bg-white/14 hover:text-white"
+            onClick={() => setIsLoved((prev) => !prev)}
+          >
+            <Heart className={cn("h-4 w-4", isLoved && "fill-[#fb7185] text-[#fb7185]")} />
+          </Button>
         </div>
         <Button
           variant="secondary"

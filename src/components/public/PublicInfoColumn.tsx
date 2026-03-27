@@ -79,7 +79,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     if (!isMobile) {
         return (
             <div className="space-y-6">
-                <Card className={panelClassName}>
+                <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
                     <CardHeader className={panelHeaderClassName}>
                         <CardTitle className="max-w-2xl text-2xl font-semibold tracking-tight text-white md:text-3xl">Descriere</CardTitle>
                     </CardHeader>
@@ -138,12 +138,20 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                    <span className="flex items-center gap-2 text-emerald-50/85">
-                                        <span className="text-[#86efac]">{item.icon}</span>
-                                        <span>{item.label}</span>
+                                <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-start rounded-[1.6rem] border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                    <span className="flex w-full items-center gap-4">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
+                                            {item.icon}
+                                        </span>
+                                        <span className="flex min-w-0 flex-1 flex-col">
+                                            <span className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-100/55">
+                                                {item.label}
+                                            </span>
+                                            <span className="mt-1 text-base font-semibold text-white">
+                                                {item.value}
+                                            </span>
+                                        </span>
                                     </span>
-                                    <span className="font-bold text-white">{item.value}</span>
                                 </Button>
                             )
                         })}
@@ -191,7 +199,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
             <CreditBrokerCard />
 
-            <Card className={panelClassName}>
+            <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
                 <CardHeader className="p-4">
                     <CardTitle className="font-semibold text-white">Informatii detaliate</CardTitle>
                 </CardHeader>
@@ -199,12 +207,20 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-between rounded-2xl border-white/10 bg-white/5 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                <span className="flex items-center gap-2 text-emerald-50/85">
-                                    <span className="text-[#86efac]">{item.icon}</span>
-                                    <span>{item.label}</span>
+                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-start rounded-[1.45rem] border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                <span className="flex w-full items-center gap-4">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
+                                        {item.icon}
+                                    </span>
+                                    <span className="flex min-w-0 flex-1 flex-col">
+                                        <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/55">
+                                            {item.label}
+                                        </span>
+                                        <span className="mt-1 text-sm font-semibold text-white">
+                                            {item.value}
+                                        </span>
+                                    </span>
                                 </span>
-                                <span className="font-bold text-white">{item.value}</span>
                             </Button>
                         )
                     })}
