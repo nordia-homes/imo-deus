@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import type { Property, UserProfile } from '@/lib/types';
@@ -12,7 +13,7 @@ import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Phone, Loader2 } from 'lucide-react';
+import { ArrowRight, Mail, Phone, Loader2 } from 'lucide-react';
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
 import { Button } from '@/components/ui/button';
 
@@ -342,6 +343,30 @@ export default function PublicPropertyDetailPage() {
                     </Card>
 
                     <SimilarProperties properties={similarProperties} />
+
+                    <Card className={financeCardClassName}>
+                        <CardContent className="p-5">
+                            <div className="space-y-4">
+                                <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                    Mai multe optiuni
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-semibold tracking-tight text-white">
+                                        Continua cautarea in portofoliul complet al agentiei.
+                                    </h3>
+                                    <p className="text-sm leading-7 text-emerald-50/85 md:text-base">
+                                        Descopera toate proprietatile disponibile, compara stiluri, bugete si zone, apoi alege varianta care ti se potriveste cel mai bine.
+                                    </p>
+                                </div>
+                                <Button asChild className="w-full rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]">
+                                    <Link href={`/agencies/${agencyId}/properties`} className="inline-flex items-center justify-center gap-2">
+                                        Vezi toate proprietatile
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
 
                 </div>
             </div>
