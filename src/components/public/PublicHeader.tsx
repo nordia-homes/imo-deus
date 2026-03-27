@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/components/ui/sheet';
 import { Home, Building2, Info, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Agency } from '@/lib/types';
@@ -91,6 +91,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[80vw] border-r border-white/10 bg-[#101113]/98 p-4 text-stone-100 backdrop-blur-xl">
+               <SheetTitle className="sr-only">Meniu navigare</SheetTitle>
                <div className="flex flex-col h-full">
                   <div className="rounded-2xl border border-white/10 bg-[#18191d] p-4">
                      {agency?.logoUrl ? (

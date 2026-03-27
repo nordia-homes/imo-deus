@@ -53,7 +53,7 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
     const renderPropertyList = () => {
         if (isLoading) {
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-5">
                     {[...Array(6)].map((_, i) => (
                         <Card key={i}>
                             <Skeleton className="aspect-video w-full" />
@@ -77,7 +77,7 @@ export function PublicPropertyList({ agencyId }: { agencyId: string }) {
         }
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-5">
                 {filteredAndSortedProperties.map(property => (
                     <PublicPropertyCard key={property.id} property={property} agencyId={agencyId} />
                 ))}
