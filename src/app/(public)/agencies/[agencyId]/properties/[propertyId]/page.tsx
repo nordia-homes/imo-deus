@@ -103,15 +103,18 @@ const scheduleSchema = z.object({
   phone: z.string().min(1, 'Telefonul este obligatoriu.'),
   email: z.string().email('Email invalid.'),
   message: z.string().optional(),
+  website: z.string().max(0).optional(),
+  formStartedAt: z.number(),
 });
 
 function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { property: Property, agentProfile: UserProfile | null, agencyId: string }) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const formStartedAt = useMemo(() => Date.now(), []);
 
     const form = useForm<z.infer<typeof scheduleSchema>>({
         resolver: zodResolver(scheduleSchema),
-        defaultValues: { name: '', phone: '', email: '', message: '' },
+        defaultValues: { name: '', phone: '', email: '', message: '', website: '', formStartedAt },
     });
 
     async function onSubmit(values: z.infer<typeof scheduleSchema>) {
@@ -161,6 +164,9 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="hidden" aria-hidden="true">
+                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem tabIndex={-1}><FormLabel>Website</FormLabel><FormControl><Input {...field} autoComplete="off" className="hidden" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
                         <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Nume</FormLabel><FormControl><Input {...field} placeholder="Numele tau" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-stone-300">Email</FormLabel><FormControl><Input {...field} type="email" placeholder="email@exemplu.com" className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem> )} />

@@ -13,6 +13,8 @@ export const ScheduleViewingInputSchema = z.object({
   phone: z.string().min(1, 'Telefonul este obligatoriu.'),
   email: z.string().email('Email invalid.'),
   message: z.string().optional(),
+  website: z.string().optional(),
+  formStartedAt: z.number().optional(),
 });
 export type ScheduleViewingInput = z.infer<typeof ScheduleViewingInputSchema>;
 
@@ -32,8 +34,19 @@ const scheduleViewingFlow = ai.defineFlow(
     inputSchema: ScheduleViewingInputSchema,
     outputSchema: ScheduleViewingOutputSchema,
   },
-  async ({ propertyId, agencyId, name, email, phone, message }) => {
+  async ({ propertyId, agencyId, name, email, phone, message, website, formStartedAt }) => {
     try {
+        const now = Date.now();
+        const submittedTooFast = typeof formStartedAt === 'number' && now - formStartedAt < 3000;
+        const honeypotFilled = Boolean(website?.trim());
+        const messageText = message?.trim() || '';
+        const urlMatches = messageText.match(/https?:\/\//gi) || [];
+        const suspiciousMessage = urlMatches.length > 1 || /www\./i.test(messageText);
+
+        if (honeypotFilled || submittedTooFast || suspiciousMessage) {
+            return { success: true, message: 'Solicitarea a fost trimisă! Un agent vă va contacta în curând.' };
+        }
+
         const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId);
         const propertySnap = await propertyRef.get();
 

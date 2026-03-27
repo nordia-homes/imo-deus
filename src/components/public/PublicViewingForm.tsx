@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +22,7 @@ interface PublicViewingFormProps {
 export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const formStartedAt = useMemo(() => Date.now(), []);
 
     const form = useForm<z.infer<typeof ScheduleViewingInputSchema>>({
         resolver: zodResolver(ScheduleViewingInputSchema),
@@ -31,6 +33,8 @@ export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormPro
             phone: '',
             email: '',
             message: '',
+            website: '',
+            formStartedAt,
         },
     });
 
@@ -67,6 +71,11 @@ export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormPro
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="hidden" aria-hidden="true">
+                            <FormField control={form.control} name="website" render={({ field }) => (
+                                <FormItem tabIndex={-1}><FormLabel>Website</FormLabel><FormControl><Input placeholder="" {...field} autoComplete="off" /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem><FormLabel className="text-stone-300">Nume</FormLabel><FormControl><Input placeholder="Numele dvs." {...field} className="border-white/10 bg-[#18191d] text-stone-100 placeholder:text-stone-500" /></FormControl><FormMessage /></FormItem>
                         )} />
