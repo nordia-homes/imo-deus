@@ -206,7 +206,7 @@ export default function AgencyHomePage() {
           </div>
         </section>
 
-        <section className={`${sectionShellClassName} overflow-hidden p-6 md:p-8`}>
+        <section className="overflow-visible md:overflow-hidden md:rounded-[2rem] md:border md:border-emerald-400/15 md:bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] md:p-8 md:shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]">
