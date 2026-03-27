@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PropertyList } from '@/components/properties/PropertyList';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
@@ -7,7 +8,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter } from 'lucide-react';
+import { ArrowRight, Filter } from 'lucide-react';
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -56,7 +57,7 @@ export default function AgencyAllPropertiesPage() {
   }, [properties, filters]);
 
   return (
-    <div className={cn("space-y-6 text-stone-100", isMobile ? "p-0" : "p-4 lg:p-6")}>
+    <div className={cn("space-y-6 text-stone-100", isMobile ? "p-0 pb-4" : "p-4 pb-6 lg:p-6 lg:pb-8")}>
       <section className={cn(
         "overflow-hidden rounded-[2rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_28%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(10,11,12,0.98)_52%,rgba(15,24,18,0.96)_100%)] shadow-[0_28px_90px_-44px_rgba(0,0,0,0.86)]",
         isMobile ? "rounded-b-[1.9rem] rounded-t-none border-x-0 border-t-0 px-4 pb-6 pt-5" : "px-6 py-7 md:px-8"
@@ -91,6 +92,25 @@ export default function AgencyAllPropertiesPage() {
         <div className="px-1">
           <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
         </div>
+        <div className="px-2">
+          <Card className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] shadow-[0_26px_70px_-42px_rgba(0,0,0,0.86)]">
+            <CardHeader className="space-y-3 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200/75">Contact</p>
+              <CardTitle className="text-2xl font-semibold tracking-tight text-white">
+                Ai nevoie de ajutor cu selectia?
+              </CardTitle>
+              <p className="text-sm leading-7 text-stone-300">
+                Daca vrei sa restrangi mai repede optiunile, spune-ne ce cauti si te ghidam mai departe.
+              </p>
+              <Button asChild className="mx-auto mt-1 w-full rounded-full bg-white text-black hover:bg-stone-100">
+                <Link href={`/agencies/${agencyId}/contact`} className="inline-flex items-center justify-center gap-2 text-black no-underline">
+                  Contacteaza un consultant
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+          </Card>
+        </div>
       </div>
 
       {/* Desktop View */}
@@ -118,6 +138,27 @@ export default function AgencyAllPropertiesPage() {
         </Card>
         
         <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
+
+        <Card className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_28px_90px_-45px_rgba(0,0,0,0.85)]">
+          <CardHeader className="flex flex-row items-center justify-between gap-6">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200/75">Contact</p>
+              <CardTitle className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                Ai nevoie de ajutor cu selectia?
+              </CardTitle>
+              <p className="mt-3 text-sm leading-7 text-stone-300">
+                Daca vrei sa compari mai bine optiunile sau sa mergi direct spre ce are sens pentru bugetul tau, scrie-ne
+                si continuam de acolo.
+              </p>
+            </div>
+            <Button asChild className="rounded-full bg-white px-7 text-black hover:bg-stone-100">
+              <Link href={`/agencies/${agencyId}/contact`} className="inline-flex items-center justify-center gap-2 text-black no-underline">
+                Contacteaza un consultant
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+        </Card>
       </div>
     </div>
   );

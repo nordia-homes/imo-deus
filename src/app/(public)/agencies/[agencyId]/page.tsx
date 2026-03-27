@@ -111,7 +111,7 @@ export default function AgencyHomePage() {
   return (
     <>
       <Hero />
-      <div className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-12">
+      <div className="container mx-auto space-y-8 px-4 pb-5 pt-8 md:space-y-12 md:pb-8 md:pt-12">
         <section className="rounded-[1.9rem] border border-emerald-300/22 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(145deg,rgba(10,19,14,0.98)_0%,rgba(9,11,11,0.99)_55%,rgba(15,26,19,0.97)_100%)] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,0.9)] md:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-3xl">
