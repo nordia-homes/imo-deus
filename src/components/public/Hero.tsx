@@ -36,7 +36,7 @@ export function Hero() {
           <div className="max-w-3xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,17,18,0.78)_0%,rgba(11,13,14,0.88)_100%)] p-6 shadow-[0_32px_90px_-42px_rgba(0,0,0,0.82)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
               <Sparkles className="h-4 w-4" />
-              Proprietati atent alese
+              0% comision pentru cumparator
             </div>
 
             <h1 className="mt-5 max-w-2xl text-[clamp(2.1rem,5vw,4.75rem)] font-semibold tracking-[-0.04em] text-white">

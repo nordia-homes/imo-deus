@@ -112,6 +112,23 @@ export default function AgencyHomePage() {
     <>
       <Hero />
       <div className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-12">
+        <section className={`${highlightCardClassName} p-5 md:p-6`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Avantaj pentru cumparator</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                Cumperi cu sprijin profesionist, fara comision din partea ta
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-emerald-50/75 md:text-base">
+                Consultanta, selectie, vizionari si coordonare, fara comision perceput cumparatorului.
+              </p>
+            </div>
+            <div className="inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-5 py-2 text-sm font-semibold text-emerald-200">
+              Zero comision pentru cumparator
+            </div>
+          </div>
+        </section>
+
         <FeaturedProperties properties={featuredProperties} agencyId={agencyId!} />
 
         <section className={`${sectionShellClassName} p-6 md:p-8`}>
