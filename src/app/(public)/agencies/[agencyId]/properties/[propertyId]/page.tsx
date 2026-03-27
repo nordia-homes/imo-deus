@@ -314,8 +314,8 @@ export default function PublicPropertyDetailPage() {
                  <MediaColumn property={property} />
 
                 <div className="space-y-4 px-2">
-                    <Card className={financeCardClassNameSoft}>
-                        <CardContent className="p-3">
+                    <Card className={financeCardClassNameMedium}>
+                        <CardContent className="space-y-3 p-4">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
                                 {property.rooms && property.squareFootage ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
@@ -325,14 +325,12 @@ export default function PublicPropertyDetailPage() {
                                 {(property.rooms || property.squareFootage || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.floor ? <span className="whitespace-nowrap">Etaj {property.floor}</span> : null}
                             </div>
-                        </CardContent>
-                    </Card>
 
-                    <Card className={financeCardClassNameMedium}>
-                        <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-xl font-bold text-stone-50">{property.title}</CardTitle>
-                            <CardDescription className="text-sm text-stone-400">{property.address}</CardDescription>
-                        </CardHeader>
+                            <div className="space-y-1 border-t border-white/10 pt-3 text-center">
+                                <CardTitle className="text-xl font-bold text-stone-50">{property.title}</CardTitle>
+                                <CardDescription className="text-sm text-stone-400">{property.address}</CardDescription>
+                            </div>
+                        </CardContent>
                     </Card>
                     
                     <PriceStatusCard property={property} isMobile={isMobile}/>
