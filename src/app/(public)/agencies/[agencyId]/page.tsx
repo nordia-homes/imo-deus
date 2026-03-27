@@ -112,18 +112,18 @@ export default function AgencyHomePage() {
     <>
       <Hero />
       <div className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-12">
-        <section className={`${highlightCardClassName} p-5 md:p-6`}>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Avantaj pentru cumparator</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+        <section className="rounded-[1.9rem] border border-emerald-300/22 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(145deg,rgba(10,19,14,0.98)_0%,rgba(9,11,11,0.99)_55%,rgba(15,26,19,0.97)_100%)] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,0.9)] md:p-7">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-200/80">Avantaj pentru cumparator</p>
+              <h2 className="mt-3 text-[clamp(1.6rem,4vw,2.7rem)] font-semibold tracking-tight text-white">
                 Cumperi cu sprijin profesionist, fara comision din partea ta
               </h2>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/75 md:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-emerald-50/82 md:text-base">
                 Consultanta, selectie, vizionari si coordonare, fara comision perceput cumparatorului.
               </p>
             </div>
-            <div className="inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-5 py-2 text-sm font-semibold text-emerald-200">
+            <div className="inline-flex w-fit items-center rounded-full border border-emerald-200/20 bg-emerald-300/16 px-5 py-2.5 text-sm font-semibold text-emerald-50 shadow-[0_12px_30px_-18px_rgba(74,222,128,0.72)]">
               Zero comision pentru cumparator
             </div>
           </div>
@@ -263,43 +263,68 @@ export default function AgencyHomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {buyerServices.map((service) => (
+            {buyerServices.map((service, index) => (
               <article
                 key={service.title}
-                className={`${highlightCardClassName} p-6 ${
+                className={`p-6 ${
+                  index === 0
+                    ? 'rounded-[1.9rem] border border-emerald-300/25 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] md:col-span-2 xl:col-span-2'
+                    : highlightCardClassName
+                } ${
                   service.title === 'Suport post-achizitie' ? 'md:hidden' : ''
                 }`}
               >
-                <div className="inline-flex items-center rounded-full border border-emerald-400/15 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                <div
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                    index === 0
+                      ? 'border border-emerald-300/25 bg-emerald-400/14 text-emerald-100'
+                      : 'border border-emerald-400/15 bg-emerald-400/10 text-emerald-200'
+                  }`}
+                >
                   {service.badge}
                 </div>
-                <h3 className="mt-4 text-2xl font-semibold tracking-tight text-white">{service.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-emerald-50/72">{service.description}</p>
+                <h3
+                  className={`mt-4 font-semibold tracking-tight text-white ${
+                    index === 0 ? 'text-3xl md:max-w-xl' : 'text-2xl'
+                  }`}
+                >
+                  {service.title}
+                </h3>
+                <p
+                  className={`mt-3 leading-7 ${
+                    index === 0 ? 'max-w-2xl text-base text-emerald-50/82' : 'text-sm text-emerald-50/72'
+                  }`}
+                >
+                  {service.description}
+                </p>
               </article>
             ))}
           </div>
         </section>
 
-        <section>
-          <article className={`${highlightCardClassName} p-6 md:p-8`}>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Urmatorul pas</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Daca ai vazut ceva interesant, hai sa transformam cautarea intr-o alegere buna.
+        <section className="pt-2 md:pt-4">
+          <article className="rounded-[2rem] border border-emerald-300/20 bg-[radial-gradient(circle_at_top_right,rgba(74,222,128,0.16),transparent_30%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(12,22,16,0.98)_100%)] p-6 shadow-[0_34px_100px_-42px_rgba(0,0,0,0.92)] md:p-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/12 px-4 py-1.5 text-sm font-semibold text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <Sparkles className="h-4 w-4" />
+              Urmatorul pas
+            </div>
+            <h2 className="mt-5 max-w-3xl text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              Daca ai vazut ceva interesant, acum e momentul sa vorbim.
             </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/72">
-              Ne spui ce proprietate ti-a atras atentia sau ce cauti mai exact, iar noi te ajutam sa clarifici rapid
-              optiunile bune, pasii urmatori si varianta potrivita pentru tine.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/80 md:text-lg">
+              Spune-ne ce proprietate ti-a atras atentia sau ce cauti mai exact. Te ajutam sa separi rapid optiunile
+              bune de cele care nu merita timpul tau.
             </p>
 
-            <div className="mt-8 grid gap-3">
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
-                Discutam concret despre buget, zona si tipul de proprietate care are sens pentru tine.
+            <div className="mt-8 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Discutam concret despre buget, zona si tipul de proprietate care ti se potriveste.
               </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
-                Iti spunem direct ce merita urmarit, ce poate fi evitat si unde merita sa te opresti mai atent.
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Iti spunem ce merita urmarit, ce poate fi evitat si unde merita sa te opresti mai atent.
               </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
-                Daca vrei, mergem mai departe spre vizionare, finantare sau o selectie suplimentara mai bine tintita.
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Daca vrei, continuam mai departe cu vizionare, finantare sau selectie suplimentara.
               </div>
             </div>
 

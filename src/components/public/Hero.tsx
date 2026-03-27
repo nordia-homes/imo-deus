@@ -65,7 +65,7 @@ export function Hero() {
                 variant="outline"
                 className="rounded-full border-white/10 bg-white/[0.05] px-7 text-white hover:bg-white/[0.1]"
               >
-                <Link href={`/agencies/${agency?.id}/contact`}>Contacteaza agentia</Link>
+                <Link href={`/agencies/${agency?.id}/contact`}>Contacteaza un consultant</Link>
               </Button>
             </div>
           </div>
