@@ -5,13 +5,9 @@ import { useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 import {
   ArrowRight,
-  Building2,
-  CheckCircle2,
-  Clock3,
   MapPinned,
   PhoneCall,
   Sparkles,
-  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,14 +22,6 @@ const sectionShellClassName =
 
 const highlightCardClassName =
   'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
-
-function formatPrice(value: number) {
-  return new Intl.NumberFormat('ro-RO', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default function AgencyHomePage() {
   const { agency, agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
@@ -53,55 +41,48 @@ export default function AgencyHomePage() {
     return source.slice(0, 8);
   }, [properties]);
 
-  const overview = useMemo(() => {
-    const safeProperties = properties ?? [];
-    const activeCount = safeProperties.length;
-    const averagePrice = activeCount
-      ? Math.round(safeProperties.reduce((sum, property) => sum + (property.price || 0), 0) / activeCount)
-      : 0;
-    const saleCount = safeProperties.filter((property) =>
-      property.transactionType?.toLowerCase().includes('v')
-    ).length;
-    const rentCount = safeProperties.filter((property) =>
-      property.transactionType?.toLowerCase().includes('inch')
-    ).length;
-    const uniqueAreas = new Set(
-      safeProperties
-        .map((property) => property.zone || property.city || property.location || property.address)
-        .filter(Boolean)
-    ).size;
-
-    return {
-      activeCount,
-      averagePrice,
-      saleCount,
-      rentCount,
-      featuredCount: featuredProperties.length,
-      uniqueAreas,
-    };
-  }, [featuredProperties.length, properties]);
-
-  const spotlightItems = [
+  const buyerServices = [
     {
-      icon: CheckCircle2,
-      eyebrow: 'Claritate',
-      title: 'Anunturi usor de inteles',
+      badge: 'Consultanta',
+      title: 'Strategie de achizitie',
       description:
-        'Fiecare proprietate vine cu informatiile esentiale, ca sa iti dai seama repede daca merita atentia ta.',
+        'Definim impreuna ce merita urmarit si ce trebuie evitat, in functie de buget, obiectiv si prioritati reale.',
     },
     {
-      icon: Users,
-      eyebrow: 'Suport real',
-      title: 'Vorbesti cu noi cand ai nevoie',
+      badge: 'Precalificare',
+      title: 'Selectie relevanta',
       description:
-        'Daca ai intrebari sau vrei sa programezi o vizionare, nu trebuie sa cauti mult ca sa iei legatura cu agentia.',
+        'Reducem zgomotul din piata si aducem in fata ta doar proprietati care au sens.',
     },
     {
-      icon: Building2,
-      eyebrow: 'Mai multe optiuni',
-      title: 'Mai multe optiuni intr-un singur loc',
+      badge: 'Disponibilitate extinsa',
+      title: 'Vizionari flexibile',
       description:
-        'Incepi cu selectia de pe homepage, apoi continui usor spre portofoliul complet al agentiei.',
+        'Organizam vizionari in functie de programul tau, inclusiv seara sau in weekend, pentru ca procesul de cautare sa fie eficient si confortabil.',
+    },
+    {
+      badge: 'Analiza de piata',
+      title: 'Analiza de valoare',
+      description:
+        'Punem fiecare proprietate in contextul ei real de pret, pozitionare si potential.',
+    },
+    {
+      badge: 'Asistenta juridica',
+      title: 'Verificare si siguranta',
+      description:
+        'Identificam din timp aspectele sensibile si contribuim la o decizie mai clara si mai sigura.',
+    },
+    {
+      badge: 'Suntem cu tine',
+      title: 'Coordonare completa',
+      description:
+        'Ordonam intregul proces, de la selectie si negociere pana la finalizarea tranzactiei.',
+    },
+    {
+      badge: 'Tranzitie usoara',
+      title: 'Suport post-achizitie',
+      description:
+        'Ramanem alaturi de tine si dupa semnare, inclusiv cu sprijin in preluarea utilitatilor si in pasii practici necesari pentru transferul proprietatii.',
     },
   ];
 
@@ -112,11 +93,6 @@ export default function AgencyHomePage() {
       <>
         <Hero />
         <div className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-12">
-          <div className="grid gap-4 md:grid-cols-3">
-            {[...Array(3)].map((_, index) => (
-              <Skeleton key={index} className="h-36 rounded-[1.75rem]" />
-            ))}
-          </div>
           <Skeleton className="h-72 rounded-[2rem]" />
           <div className="space-y-6">
             <Skeleton className="h-10 w-72" />
@@ -163,46 +139,6 @@ export default function AgencyHomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-          </div>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className={`${highlightCardClassName} p-6`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Portofoliu activ</p>
-              <Building2 className="h-5 w-5 text-emerald-300" />
-            </div>
-            <p className="mt-5 text-4xl font-semibold tracking-tight text-white">{overview.activeCount}</p>
-            <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              proprietati sunt disponibile acum pe site, iar {overview.featuredCount} apar in selectia de pe homepage.
-            </p>
-          </div>
-          <div className={`${highlightCardClassName} p-6`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Vanzare si inchiriere</p>
-              <Sparkles className="h-5 w-5 text-emerald-300" />
-            </div>
-            <p className="mt-5 text-4xl font-semibold tracking-tight text-white">
-              {overview.saleCount}
-              <span className="ml-2 text-lg font-medium text-emerald-100/60">vanzare</span>
-            </p>
-            <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              In plus, ai {overview.rentCount} proprietati pentru inchiriere, raspandite in {overview.uniqueAreas || 1}{' '}
-              zone.
-            </p>
-          </div>
-          <div className={`${highlightCardClassName} p-6`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Pret mediu</p>
-              <Clock3 className="h-5 w-5 text-emerald-300" />
-            </div>
-            <p className="mt-5 text-4xl font-semibold tracking-tight text-white">
-              {overview.averagePrice ? formatPrice(overview.averagePrice) : 'La cerere'}
-            </p>
-            <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              Iti ofera un reper rapid despre nivelul portofoliului actual, fara sa inlocuiasca analiza fiecarei
-              proprietati.
-            </p>
           </div>
         </section>
 
@@ -257,7 +193,7 @@ export default function AgencyHomePage() {
                 </div>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="hidden gap-4 md:grid md:grid-cols-2">
               <div className={`${highlightCardClassName} p-5 sm:col-span-2`}>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Cum te poate ajuta brokerul</p>
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -293,121 +229,81 @@ export default function AgencyHomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          {spotlightItems.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <article key={item.title} className={`${highlightCardClassName} p-6`}>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">
-                  {item.eyebrow}
-                </p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-emerald-50/72">{item.description}</p>
-              </article>
-            );
-          })}
-        </section>
-
-        <section className={`${sectionShellClassName} p-6 md:p-8`}>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Un proces clar</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                Cum merg lucrurile mai departe.
+        <section className="space-y-8">
+          <div className={`${sectionShellClassName} p-6 md:p-8`}>
+            <div className="max-w-4xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Servicii pentru cumparatori</p>
+              <h2 className="mt-3 whitespace-nowrap text-[clamp(1.35rem,4.5vw,3rem)] font-semibold tracking-tight text-white">
+                Ce oferim Cumparatorilor?
               </h2>
-              <p className="mt-3 text-base leading-7 text-emerald-50/72">
-                Daca o proprietate iti place, pasii urmatori sunt simpli si usor de urmat.
+              <p className="mt-4 max-w-3xl text-base leading-7 text-emerald-50/78 md:text-lg">
+                La Nordia, rolul nostru nu este sa te expunem la cat mai multe optiuni, ci sa te conducem catre alegerea
+                potrivita. Filtram piata cu atentie, evaluam obiectiv fiecare oportunitate si reducem riscurile pe care
+                un cumparator fara experienta nu le poate anticipa. Pentru ca tu sa cumperi nu doar cu incredere, ci si
+                cu discernamant.
               </p>
             </div>
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-full border-emerald-400/20 bg-emerald-400/10 px-6 text-emerald-100 hover:bg-emerald-400/15"
-            >
-              <Link href={`/agencies/${agencyId}/about`}>Afla mai multe despre agentie</Link>
-            </Button>
           </div>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            <article className={`${highlightCardClassName} p-6`}>
-              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 1</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Te uiti peste selectie</h3>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Incepi cu cele 8 proprietati din homepage si vezi rapid ce merita deschis mai departe.
-              </p>
-            </article>
-            <article className={`${highlightCardClassName} p-6`}>
-              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 2</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Intri in detalii</h3>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Acolo gasesti fotografii, descriere, informatii utile, harta si alte proprietati asemanatoare.
-              </p>
-            </article>
-            <article className={`${highlightCardClassName} p-6`}>
-              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 3</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Ne contactezi</h3>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Cand esti gata, ne scrii sau programezi o vizionare si continuam de acolo.
-              </p>
-            </article>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {buyerServices.map((service) => (
+              <article
+                key={service.title}
+                className={`${highlightCardClassName} p-6 ${
+                  service.title === 'Suport post-achizitie' ? 'md:hidden' : ''
+                }`}
+              >
+                <div className="inline-flex items-center rounded-full border border-emerald-400/15 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                  {service.badge}
+                </div>
+                <h3 className="mt-4 text-2xl font-semibold tracking-tight text-white">{service.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-emerald-50/72">{service.description}</p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <article className={`${highlightCardClassName} p-6 md:p-7`}>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Date de contact</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Unde ne gasesti</h2>
-            <div className="mt-6 space-y-4 text-sm leading-7 text-emerald-50/72">
-              <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <p className="font-medium text-white">Agentie</p>
-                <p>{agency?.name || 'Agentie imobiliara'}</p>
-              </div>
-              <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <p className="font-medium text-white">Adresa</p>
-                <p>{agency?.address || 'Disponibila la cerere in pagina de contact.'}</p>
-              </div>
-              <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <p className="font-medium text-white">Telefon</p>
-                <p>{agency?.phone || 'Disponibil in pagina de contact.'}</p>
-              </div>
-              <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-                <p className="font-medium text-white">Email</p>
-                <p>{agency?.email || 'Trimite-ne un mesaj prin formularul public.'}</p>
-              </div>
-            </div>
-          </article>
-          <article className={`${sectionShellClassName} p-6 md:p-8`}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
-              <Sparkles className="h-4 w-4" />
-              Hai sa vorbim
-            </div>
-            <h2 className="mt-5 max-w-xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Nu esti sigur ce ti se potriveste?
+        <section>
+          <article className={`${highlightCardClassName} p-6 md:p-8`}>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Urmatorul pas</p>
+            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Daca ai vazut ceva interesant, hai sa transformam cautarea intr-o alegere buna.
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/72">
-              Spune-ne ce cauti si te ajutam sa restrangi optiunile. Uneori o discutie buna economiseste mult timp.
+              Ne spui ce proprietate ti-a atras atentia sau ce cauti mai exact, iar noi te ajutam sa clarifici rapid
+              optiunile bune, pasii urmatori si varianta potrivita pentru tine.
             </p>
+
+            <div className="mt-8 grid gap-3">
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
+                Discutam concret despre buget, zona si tipul de proprietate care are sens pentru tine.
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
+                Iti spunem direct ce merita urmarit, ce poate fi evitat si unde merita sa te opresti mai atent.
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-emerald-50/78">
+                Daca vrei, mergem mai departe spre vizionare, finantare sau o selectie suplimentara mai bine tintita.
+              </div>
+            </div>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
+              >
+                <Link href={`/agencies/${agencyId}/contact`}>
+                  Programeaza o discutie
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
                 className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]"
               >
-                <Link href={`/agencies/${agencyId}/contact`}>Ia legatura cu noi</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
-              >
-                <Link href={`/agencies/${agencyId}/about`}>
-                  Cine suntem
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                <Link href={`/agencies/${agencyId}/properties`}>Vezi din nou proprietatile</Link>
               </Button>
             </div>
           </article>

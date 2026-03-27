@@ -44,8 +44,8 @@ export function Hero() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-stone-200/88 md:text-lg">
-              Gasesti proprietati prezentate clar, cu fotografii bune, detalii utile si un mod simplu de a intra in
-              legatura cu noi atunci cand ceva iti atrage atentia.
+              Gasesti proprietati prezentate detaliat, cu fotografii clare, informatii utile si un mod simplu de a
+              intra in legatura cu noi atunci cand ceva iti atrage atentia.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
