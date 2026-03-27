@@ -9,11 +9,20 @@ import { useState } from 'react';
 export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const TRUNCATION_LENGTH = 250;
+    const DESCRIPTION_BOLD_CHARS = 60;
     const rawDescription = property.description || 'Nicio descriere adăugată.';
-    const DESCRIPTION_HIGHLIGHT_CHARS = 140;
-    const descriptionHighlight = rawDescription.slice(0, DESCRIPTION_HIGHLIGHT_CHARS);
-    const descriptionRest = rawDescription.slice(DESCRIPTION_HIGHLIGHT_CHARS).trim();
-
+    const previewDescription =
+        rawDescription.length > TRUNCATION_LENGTH
+            ? `${rawDescription.slice(0, TRUNCATION_LENGTH).trimEnd()}...`
+            : rawDescription;
+    const displayedDescription = isDescriptionExpanded ? rawDescription : previewDescription;
+    const boldCutIndex = (() => {
+        if (displayedDescription.length <= DESCRIPTION_BOLD_CHARS) return displayedDescription.length;
+        const nextSpaceIndex = displayedDescription.indexOf(' ', DESCRIPTION_BOLD_CHARS);
+        return nextSpaceIndex === -1 ? displayedDescription.length : nextSpaceIndex;
+    })();
+    const descriptionIntro = displayedDescription.slice(0, boldCutIndex).trimEnd();
+    const descriptionBody = displayedDescription.slice(boldCutIndex).trimStart();
     const infoItems = [
         { icon: <Layers className="h-5 w-5" />, label: 'Compartimentare', value: property.partitioning },
         { icon: <BedDouble className="h-5 w-5" />, label: 'Nr. Camere', value: property.rooms },
@@ -76,6 +85,13 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     const panelTitleClassName = "text-white";
     const panelBodyClassName = "px-4 pb-4 pt-0 md:px-6 md:pb-6";
 
+    const DescriptionText = ({ mobile = false }: { mobile?: boolean }) => (
+        <div className={`whitespace-pre-wrap leading-7 text-emerald-50/85 ${mobile ? 'text-sm' : 'text-sm md:text-base'}`}>
+            <span className="font-semibold text-white">{descriptionIntro}</span>
+            {descriptionBody ? ` ${descriptionBody}` : null}
+        </div>
+    );
+
     if (!isMobile) {
         return (
             <div className="space-y-6">
@@ -85,21 +101,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     </CardHeader>
                     <CardContent className={panelBodyClassName}>
                         <div>
-                            <div className="space-y-3">
-                                <p className="line-clamp-2 whitespace-pre-wrap text-base font-semibold leading-7 text-white md:text-lg">
-                                    {descriptionHighlight}
-                                </p>
-                                {(isDescriptionExpanded || !property.description || property.description.length <= TRUNCATION_LENGTH) && descriptionRest ? (
-                                    <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
-                                        {descriptionRest}
-                                    </p>
-                                ) : null}
-                                {!isDescriptionExpanded && property.description && property.description.length > TRUNCATION_LENGTH ? (
-                                    <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
-                                        {property.description.substring(DESCRIPTION_HIGHLIGHT_CHARS, TRUNCATION_LENGTH).trim()}...
-                                    </p>
-                                ) : null}
-                            </div>
+                            <DescriptionText />
                             {property.description && property.description.length > TRUNCATION_LENGTH && (
                                 <Button
                                     variant="link"
@@ -169,21 +171,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <div>
-                        <div className="space-y-3">
-                            <p className="line-clamp-2 whitespace-pre-wrap text-base font-semibold leading-7 text-white">
-                                {descriptionHighlight}
-                            </p>
-                            {(isDescriptionExpanded || !property.description || property.description.length <= TRUNCATION_LENGTH) && descriptionRest ? (
-                                <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
-                                    {descriptionRest}
-                                </p>
-                            ) : null}
-                            {!isDescriptionExpanded && property.description && property.description.length > TRUNCATION_LENGTH ? (
-                                <p className="whitespace-pre-wrap text-sm leading-7 text-emerald-50/85 md:text-base">
-                                    {property.description.substring(DESCRIPTION_HIGHLIGHT_CHARS, TRUNCATION_LENGTH).trim()}...
-                                </p>
-                            ) : null}
-                        </div>
+                        <DescriptionText mobile />
                         {property.description && property.description.length > TRUNCATION_LENGTH && (
                             <Button
                                 variant="link"
