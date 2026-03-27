@@ -49,8 +49,8 @@ export default function AgencyHomePage() {
   const featuredProperties = useMemo(() => {
     if (!properties) return [];
     const featured = properties.filter((property) => property.featured);
-    const source = featured.length >= 6 ? featured : properties;
-    return source.slice(0, 6);
+    const source = featured.length >= 8 ? featured : properties;
+    return source.slice(0, 8);
   }, [properties]);
 
   const overview = useMemo(() => {
@@ -244,7 +244,7 @@ export default function AgencyHomePage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">De pe homepage poti face imediat</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
-                    Vezi 6 proprietati
+                    Vezi 8 proprietati
                   </span>
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
                     Intri in detalii complete
@@ -319,7 +319,7 @@ export default function AgencyHomePage() {
               <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 1</span>
               <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Parcurgi selectia initiala</h3>
               <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Homepage-ul iti arata direct 6 proprietati, ca sa poti incepe repede fara scroll inutil.
+                Homepage-ul iti arata direct 8 proprietati, ca sa poti incepe repede fara scroll inutil.
               </p>
             </article>
             <article className={`${highlightCardClassName} p-6`}>

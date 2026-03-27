@@ -21,8 +21,10 @@ export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesP
           <Home className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#22c55e]/80">Selecție publică</p>
-          <h2 className="text-3xl font-bold tracking-tight text-stone-100">Proprietăți recomandate</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#22c55e]/80">Sugestiile noastre</p>
+          <h2 className="whitespace-nowrap text-[clamp(1.32rem,5.35vw,2.3rem)] leading-none font-bold tracking-tight text-stone-100">
+            Proprietati recomandate
+          </h2>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
