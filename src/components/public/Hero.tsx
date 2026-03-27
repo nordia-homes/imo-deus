@@ -36,7 +36,7 @@ export function Hero() {
           <div className="max-w-3xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,17,18,0.78)_0%,rgba(11,13,14,0.88)_100%)] p-6 shadow-[0_32px_90px_-42px_rgba(0,0,0,0.82)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
               <Sparkles className="h-4 w-4" />
-              Selectie imobiliara premium
+              Proprietati atent alese
             </div>
 
             <h1 className="mt-5 max-w-2xl text-[clamp(2.1rem,5vw,4.75rem)] font-semibold tracking-[-0.04em] text-white">
@@ -44,8 +44,8 @@ export function Hero() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-stone-200/88 md:text-lg">
-              Descopera proprietati atent prezentate, navigheaza rapid prin detalii relevante si continua natural spre
-              vizionare, consultanta sau oferta potrivita.
+              Gasesti proprietati prezentate clar, cu fotografii bune, detalii utile si un mod simplu de a intra in
+              legatura cu noi atunci cand ceva iti atrage atentia.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -78,7 +78,7 @@ export function Hero() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-stone-100">Portofoliu activ</p>
-                  <p className="text-sm text-stone-300">Proprietati selectate pentru prezentare publica</p>
+                  <p className="text-sm text-stone-300">Anunturi disponibile acum, pregatite sa fie descoperite</p>
                 </div>
               </div>
             </div>
@@ -90,7 +90,7 @@ export function Hero() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-stone-100">Zone relevante</p>
-                  <p className="text-sm text-stone-300">Navigare simpla catre proprietatile care merita vazute</p>
+                  <p className="text-sm text-stone-300">Proprietati din zone cautate, usor de comparat</p>
                 </div>
               </div>
             </div>
@@ -102,7 +102,7 @@ export function Hero() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-stone-100">Experienta curata</p>
-                  <p className="text-sm text-stone-300">Dark premium, lizibil si usor de parcurs pe orice dispozitiv</p>
+                  <p className="text-sm text-stone-300">Un site aerisit, gandit sa-ti arate repede ce conteaza</p>
                 </div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export function Hero() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-stone-100">Asistenta dedicata</p>
-                  <p className="text-sm text-stone-300">Sprijin rapid pentru intrebari, selectie si programarea vizionarilor</p>
+                  <p className="text-sm text-stone-300">Suntem aici pentru intrebari, recomandari si vizionari</p>
                 </div>
               </div>
             </div>

@@ -87,21 +87,21 @@ export default function AgencyHomePage() {
       eyebrow: 'Claritate',
       title: 'Anunturi usor de inteles',
       description:
-        'Vezi rapid pretul, zona, detaliile importante si fotografiile fara sa te pierzi in informatii inutile.',
+        'Fiecare proprietate vine cu informatiile esentiale, ca sa iti dai seama repede daca merita atentia ta.',
     },
     {
       icon: Users,
       eyebrow: 'Suport real',
-      title: 'Discuti direct cu oameni care te pot ajuta',
+      title: 'Vorbesti cu noi cand ai nevoie',
       description:
-        'Daca ai nevoie de recomandari sau de programarea unei vizionari, agentia este la un mesaj distanta.',
+        'Daca ai intrebari sau vrei sa programezi o vizionare, nu trebuie sa cauti mult ca sa iei legatura cu agentia.',
     },
     {
       icon: Building2,
       eyebrow: 'Mai multe optiuni',
-      title: 'Portofoliu activ pentru vanzare si inchiriere',
+      title: 'Mai multe optiuni intr-un singur loc',
       description:
-        'Poti incepe cu recomandarile de pe homepage, apoi continui simplu catre toate proprietatile disponibile.',
+        'Incepi cu selectia de pe homepage, apoi continui usor spre portofoliul complet al agentiei.',
     },
   ];
 
@@ -143,14 +143,14 @@ export default function AgencyHomePage() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
                 <Sparkles className="h-4 w-4" />
-                Mai multe optiuni
+                Nu te opri aici
               </div>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white">
-                Vrei sa vezi tot portofoliul disponibil?
+                Daca vrei sa vezi mai mult, portofoliul complet e la un click distanta.
               </h2>
               <p className="mt-3 max-w-xl text-base leading-7 text-emerald-50/72">
-                Ai vazut selectia de pe homepage. Continua direct spre toate proprietatile si filtreaza mai usor dupa
-                buget, zona si tipul de tranzactie.
+                Pe homepage am pastrat doar o selectie. In pagina de proprietati poti rasfoi mai multe anunturi si le
+                poti filtra mai usor dupa ce te intereseaza.
               </p>
             </div>
             <Button
@@ -174,12 +174,12 @@ export default function AgencyHomePage() {
             </div>
             <p className="mt-5 text-4xl font-semibold tracking-tight text-white">{overview.activeCount}</p>
             <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              proprietati active, dintre care {overview.featuredCount} sunt evidentiate ca recomandari publice.
+              proprietati sunt disponibile acum pe site, iar {overview.featuredCount} apar in selectia de pe homepage.
             </p>
           </div>
           <div className={`${highlightCardClassName} p-6`}>
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Mix de tranzactii</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Vanzare si inchiriere</p>
               <Sparkles className="h-5 w-5 text-emerald-300" />
             </div>
             <p className="mt-5 text-4xl font-semibold tracking-tight text-white">
@@ -187,7 +187,8 @@ export default function AgencyHomePage() {
               <span className="ml-2 text-lg font-medium text-emerald-100/60">vanzare</span>
             </p>
             <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              plus {overview.rentCount} optiuni pentru inchiriere, distribuite in {overview.uniqueAreas || 1} zone.
+              In plus, ai {overview.rentCount} proprietati pentru inchiriere, raspandite in {overview.uniqueAreas || 1}{' '}
+              zone.
             </p>
           </div>
           <div className={`${highlightCardClassName} p-6`}>
@@ -199,7 +200,8 @@ export default function AgencyHomePage() {
               {overview.averagePrice ? formatPrice(overview.averagePrice) : 'La cerere'}
             </p>
             <p className="mt-3 text-sm leading-6 text-emerald-100/75">
-              un reper rapid pentru portofoliul public actual, util ca punct de pornire in cautarea ta.
+              Iti ofera un reper rapid despre nivelul portofoliului actual, fara sa inlocuiasca analiza fiecarei
+              proprietati.
             </p>
           </div>
         </section>
@@ -207,68 +209,84 @@ export default function AgencyHomePage() {
         <section className={`${sectionShellClassName} overflow-hidden p-6 md:p-8`}>
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
-                <Sparkles className="h-4 w-4" />
-                Totul incepe simplu
-              </div>
-              <h2 className="mt-5 max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                Gaseste mai usor proprietatea potrivita, fara pasi complicati.
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/72 md:text-lg">
-                {agency?.agencyDescription ||
-                  'Aici vezi rapid proprietatile disponibile, intelegi ce ti se potriveste si poti intra imediat in legatura cu agentia.'}
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button
-                  asChild
-                  size="lg"
-                  className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_16px_40px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
-                >
-                  <Link href={`/agencies/${agencyId}/properties`}>
-                    Exploreaza proprietatile
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]"
-                >
-                  <Link href={`/agencies/${agencyId}/contact`}>Vorbeste cu un consultant</Link>
-                </Button>
+              <div className="overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]">
+                <div className="relative overflow-hidden p-6 md:p-7">
+                  <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(134,239,172,0.16),transparent_48%)]" />
+                  <div className="relative space-y-4">
+                    <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                      Finantare premium
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                        Proprietatea potrivita merita si finantarea potrivita.
+                      </h2>
+                      <p className="max-w-2xl text-sm leading-7 text-emerald-50/85 md:text-base">
+                        Iti oferim acces gratuit la servicii de broker de credite, astfel incat sa compari mai usor
+                        variantele bancare, sa intelegi costurile reale si sa alegi o solutie potrivita pentru bugetul
+                        tau.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 text-sm text-emerald-100/90 md:grid-cols-3">
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                        Analiza gratuita a eligibilitatii
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                        Oferte de la cele mai bune banci
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                        Suport complet pana la semnare
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3 pt-1 md:flex-row md:items-center md:justify-between">
+                      <p className="max-w-xl text-sm text-stone-300">
+                        Daca vrei, te punem in legatura cu un partener de incredere care te poate ghida de la
+                        preaprobare pana la aprobarea finala.
+                      </p>
+                      <Button
+                        asChild
+                        size="lg"
+                        className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
+                      >
+                        <Link href={`/agencies/${agencyId}/contact`}>
+                          Cere consultanta financiara
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className={`${highlightCardClassName} p-5 sm:col-span-2`}>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">De pe homepage poti face imediat</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Cum te poate ajuta brokerul</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
-                    Vezi 8 proprietati
+                    Verifici eligibilitatea
                   </span>
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
-                    Intri in detalii complete
+                    Compari oferte din banci
                   </span>
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
-                    Contactezi agentia
+                    Intelegi costurile reale
                   </span>
                   <span className="rounded-full border border-emerald-400/15 bg-white/[0.03] px-4 py-2 text-sm text-white/85">
-                    Mergi spre toate anunturile
+                    Mergi mai sigur spre aprobare
                   </span>
                 </div>
               </div>
               <div className={`${highlightCardClassName} p-5`}>
                 <MapPinned className="h-5 w-5 text-emerald-300" />
-                <h3 className="mt-4 text-xl font-semibold text-white">Zone si tipuri variate</h3>
+                <h3 className="mt-4 text-xl font-semibold text-white">Claritate financiara</h3>
                 <p className="mt-2 text-sm leading-6 text-emerald-100/72">
-                  Vezi optiuni diferite si compara rapid ce merita pastrat pe lista ta scurta.
+                  Afli din timp ce suma poti sustine si ce varianta de finantare are cel mai bun sens pentru tine.
                 </p>
               </div>
               <div className={`${highlightCardClassName} p-5`}>
                 <PhoneCall className="h-5 w-5 text-emerald-300" />
-                <h3 className="mt-4 text-xl font-semibold text-white">Ajutor rapid</h3>
+                <h3 className="mt-4 text-xl font-semibold text-white">Sprijin pana la capat</h3>
                 <p className="mt-2 text-sm leading-6 text-emerald-100/72">
-                  Cand o proprietate ti se pare potrivita, poti trece imediat la contact sau vizionare.
+                  Brokerul te poate ghida de la prima discutie pana la aprobarea finala, cu pasi mai simpli si mai clari.
                 </p>
               </div>
             </div>
@@ -299,11 +317,10 @@ export default function AgencyHomePage() {
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Un proces clar</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                Ce faci dupa ce ai gasit o proprietate care iti place.
+                Cum merg lucrurile mai departe.
               </h2>
               <p className="mt-3 text-base leading-7 text-emerald-50/72">
-                Am simplificat homepage-ul ca sa fie mai usor de parcurs: vezi selectie, intri in detalii, apoi faci
-                urmatorul pas fara blocaje.
+                Daca o proprietate iti place, pasii urmatori sunt simpli si usor de urmat.
               </p>
             </div>
             <Button
@@ -317,23 +334,23 @@ export default function AgencyHomePage() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <article className={`${highlightCardClassName} p-6`}>
               <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 1</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Parcurgi selectia initiala</h3>
+              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Te uiti peste selectie</h3>
               <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Homepage-ul iti arata direct 8 proprietati, ca sa poti incepe repede fara scroll inutil.
+                Incepi cu cele 8 proprietati din homepage si vezi rapid ce merita deschis mai departe.
               </p>
             </article>
             <article className={`${highlightCardClassName} p-6`}>
               <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 2</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Intri in pagina de detaliu</h3>
+              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Intri in detalii</h3>
               <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Acolo vezi fotografii, descriere, informatii detaliate, harta si proprietati similare.
+                Acolo gasesti fotografii, descriere, informatii utile, harta si alte proprietati asemanatoare.
               </p>
             </article>
             <article className={`${highlightCardClassName} p-6`}>
               <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300/70">Pasul 3</span>
-              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Contactezi agentia</h3>
+              <h3 className="mt-6 text-2xl font-semibold tracking-tight text-white">Ne contactezi</h3>
               <p className="mt-3 text-sm leading-7 text-emerald-50/72">
-                Cand esti pregatit, mergi direct spre contact, consultanta sau programarea unei vizionari.
+                Cand esti gata, ne scrii sau programezi o vizionare si continuam de acolo.
               </p>
             </article>
           </div>
@@ -341,8 +358,8 @@ export default function AgencyHomePage() {
 
         <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <article className={`${highlightCardClassName} p-6 md:p-7`}>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Date utile</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Tot ce ai nevoie pentru primul pas</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Date de contact</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Unde ne gasesti</h2>
             <div className="mt-6 space-y-4 text-sm leading-7 text-emerald-50/72">
               <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-4 py-3">
                 <p className="font-medium text-white">Agentie</p>
@@ -365,14 +382,13 @@ export default function AgencyHomePage() {
           <article className={`${sectionShellClassName} p-6 md:p-8`}>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
               <Sparkles className="h-4 w-4" />
-              Urmatorul pas
+              Hai sa vorbim
             </div>
             <h2 className="mt-5 max-w-xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Daca nu te-ai decis inca, hai sa discutam ce ti se potriveste.
+              Nu esti sigur ce ti se potriveste?
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/72">
-              Dupa ce ai parcurs homepage-ul si cateva pagini de detaliu, poti cere direct ajutorul agentiei pentru o
-              selectie mai buna si pentru programarea urmatorilor pasi.
+              Spune-ne ce cauti si te ajutam sa restrangi optiunile. Uneori o discutie buna economiseste mult timp.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
@@ -381,7 +397,7 @@ export default function AgencyHomePage() {
                 variant="outline"
                 className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]"
               >
-                <Link href={`/agencies/${agencyId}/contact`}>Solicita consultanta</Link>
+                <Link href={`/agencies/${agencyId}/contact`}>Ia legatura cu noi</Link>
               </Button>
               <Button
                 asChild
@@ -389,7 +405,7 @@ export default function AgencyHomePage() {
                 className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
               >
                 <Link href={`/agencies/${agencyId}/about`}>
-                  Despre agentie
+                  Cine suntem
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
