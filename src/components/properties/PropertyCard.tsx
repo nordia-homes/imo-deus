@@ -45,7 +45,9 @@ export function PropertyCard({
       : '';
   
   const href = agencyId
-    ? `${normalizedPublicBasePath || `/agencies/${agencyId}`}/properties/${property.id}`
+    ? publicBasePath !== undefined
+      ? `${normalizedPublicBasePath}/properties/${property.id}` || `/properties/${property.id}`
+      : `/agencies/${agencyId}/properties/${property.id}`
     : `/properties/${property.id}`;
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';

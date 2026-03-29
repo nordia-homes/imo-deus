@@ -313,9 +313,7 @@ export default function PublicPropertyDetailPage() {
         email: agentProfile?.email || agency?.email || null,
         phone: agentProfile?.phone || agency?.phone || null,
         avatarUrl:
-            agentProfile?.photoUrl ||
-            property.agent?.avatarUrl ||
-            `https://i.pravatar.cc/150?u=${property.agentId || agencyId || 'unassigned'}`,
+            agentProfile?.photoUrl || null,
     };
     const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
 

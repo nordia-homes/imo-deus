@@ -38,7 +38,15 @@ export function middleware(request: NextRequest) {
   }
 
   const rewriteUrl = request.nextUrl.clone();
-  rewriteUrl.pathname = `/domains/${hostname}${pathname}`;
+  const pathnameSegments = pathname.split('/').filter(Boolean);
+  const isLegacyAgencyPath = pathnameSegments[0] === 'agencies' && pathnameSegments.length >= 2;
+
+  if (isLegacyAgencyPath) {
+    const strippedPath = pathnameSegments.slice(2).join('/');
+    rewriteUrl.pathname = `/domains/${hostname}${strippedPath ? `/${strippedPath}` : ''}`;
+  } else {
+    rewriteUrl.pathname = `/domains/${hostname}${pathname}`;
+  }
   rewriteUrl.search = search;
 
   return NextResponse.rewrite(rewriteUrl);
