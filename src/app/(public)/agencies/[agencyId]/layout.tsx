@@ -82,6 +82,26 @@ async function getPublicDocument<T>(path: string): Promise<T | null> {
   return parseFirestoreDocument<T>(json);
 }
 
+async function getServerDocument<T>(path: string): Promise<T | null> {
+  try {
+    const { adminDb } = await import('@/firebase/admin');
+    const segments = path.split('/').filter(Boolean);
+    if (!segments.length || segments.length % 2 !== 0) {
+      return null;
+    }
+
+    let ref: any = adminDb.doc(`${segments[0]}/${segments[1]}`);
+    for (let index = 2; index < segments.length; index += 2) {
+      ref = ref.collection(segments[index]).doc(segments[index + 1]);
+    }
+
+    const snapshot = await ref.get();
+    return snapshot.exists ? (snapshot.data() as T) : null;
+  } catch {
+    return getPublicDocument<T>(path);
+  }
+}
+
 export default async function AgencyPublicLayout({
   children,
   params,
@@ -90,7 +110,7 @@ export default async function AgencyPublicLayout({
   params: Promise<{ agencyId: string }>;
 }) {
   const { agencyId } = await params;
-  const agencyData = await getPublicDocument<Omit<Agency, 'id'>>(`agencies/${agencyId}`);
+  const agencyData = await getServerDocument<Omit<Agency, 'id'>>(`agencies/${agencyId}`);
 
   if (!agencyData) {
     notFound();
