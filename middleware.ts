@@ -18,10 +18,22 @@ function shouldBypass(pathname: string) {
 
 export function middleware(request: NextRequest) {
   const hostHeader = request.headers.get('host');
-  const hostname = normalizeDomain(hostHeader);
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const requestHostname = normalizeDomain(request.nextUrl.hostname);
+  const hostname = normalizeDomain(forwardedHost || hostHeader || request.nextUrl.hostname);
   const { pathname, search } = request.nextUrl;
 
-  if (!hostname || shouldBypass(pathname) || isPlatformHost(hostname)) {
+  const isDefinitelyPlatformHost =
+    isPlatformHost(hostname) ||
+    isPlatformHost(requestHostname) ||
+    requestHostname.endsWith('.hosted.app') ||
+    requestHostname.endsWith('.web.app') ||
+    requestHostname.endsWith('.firebaseapp.com') ||
+    hostname.endsWith('.hosted.app') ||
+    hostname.endsWith('.web.app') ||
+    hostname.endsWith('.firebaseapp.com');
+
+  if (!hostname || shouldBypass(pathname) || isDefinitelyPlatformHost) {
     return NextResponse.next();
   }
 
