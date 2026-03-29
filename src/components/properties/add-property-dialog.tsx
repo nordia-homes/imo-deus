@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Upload, X } from 'lucide-react';
+import { Loader2, MapPin, Sparkles, Upload, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -43,6 +43,13 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent } from '../ui/card';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { PropertiesMap } from '../map/PropertiesMap';
+
+type AddressSuggestion = {
+  label: string;
+  latitude: number;
+  longitude: number;
+};
 
 
 const propertySchema = z.object({
@@ -187,6 +194,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+    const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+    const [isLoadingAddressSuggestions, setIsLoadingAddressSuggestions] = useState(false);
+    const [selectedCoordinates, setSelectedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [selectedAddressLabel, setSelectedAddressLabel] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const sensors = useSensors(
@@ -202,6 +213,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     });
 
     const watchedCity = form.watch('city') as City;
+    const watchedZone = form.watch('zone');
+    const watchedAddress = form.watch('address');
     const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
     const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
     
@@ -253,6 +266,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 commissionValue: propertyData.commissionValue ?? 2,
             });
             setImageSources(propertyData.images || []);
+            setSelectedCoordinates(
+              typeof propertyData.latitude === 'number' && typeof propertyData.longitude === 'number'
+                ? { latitude: propertyData.latitude, longitude: propertyData.longitude }
+                : null
+            );
+            setSelectedAddressLabel(propertyData.address || '');
         } else {
              form.reset({
                 title: '', propertyType: '', transactionType: 'Vânzare', address: '', city: 'Bucuresti-Ilfov', zone: '', price: 0,
@@ -266,6 +285,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 commissionValue: 2,
             });
             setImageSources([]);
+            setSelectedCoordinates(null);
+            setSelectedAddressLabel('');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -307,6 +328,81 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         }
         return () => { isMounted = false; };
     }, [agency, firestore]);
+
+    useEffect(() => {
+        if (!watchedAddress || watchedAddress.length < 6) {
+            setAddressSuggestions([]);
+            setIsLoadingAddressSuggestions(false);
+            return;
+        }
+
+        if (selectedAddressLabel && watchedAddress === selectedAddressLabel) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(async () => {
+            try {
+                setIsLoadingAddressSuggestions(true);
+                const searchUrl = new URL('/api/geocode-search', window.location.origin);
+                searchUrl.searchParams.set('address', watchedAddress);
+                if (watchedZone) {
+                    searchUrl.searchParams.set('zone', watchedZone);
+                }
+                if (watchedCity) {
+                    searchUrl.searchParams.set('city', watchedCity);
+                }
+
+                const response = await fetch(searchUrl.toString(), {
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
+                const payload = await response.json() as { suggestions?: AddressSuggestion[] };
+                setAddressSuggestions(payload.suggestions || []);
+            } catch (error) {
+                if ((error as Error).name !== 'AbortError') {
+                    console.error('Address suggestions failed:', error);
+                }
+            } finally {
+                setIsLoadingAddressSuggestions(false);
+            }
+        }, 350);
+
+        return () => {
+            controller.abort();
+            clearTimeout(timeoutId);
+        };
+    }, [selectedAddressLabel, watchedAddress, watchedCity, watchedZone]);
+
+    const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
+        form.setValue('address', suggestion.label, { shouldValidate: true, shouldDirty: true });
+        setSelectedCoordinates({
+            latitude: suggestion.latitude,
+            longitude: suggestion.longitude,
+        });
+        setSelectedAddressLabel(suggestion.label);
+        setAddressSuggestions([]);
+    };
+
+    const mapPreviewProperty = useMemo(() => {
+        if (!selectedCoordinates) return null;
+
+        return {
+            id: 'preview-location',
+            title: form.getValues('title') || 'Previzualizare locatie',
+            address: watchedAddress || selectedAddressLabel || 'Adresa selectata',
+            location: [watchedZone, watchedCity].filter(Boolean).join(', '),
+            price: 0,
+            rooms: 0,
+            bathrooms: 0,
+            squareFootage: 0,
+            images: [],
+            propertyType: 'Preview',
+            transactionType: 'Preview',
+            latitude: selectedCoordinates.latitude,
+            longitude: selectedCoordinates.longitude,
+        } as Property;
+    }, [form, selectedAddressLabel, selectedCoordinates, watchedAddress, watchedCity, watchedZone]);
 
     const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files;
@@ -410,9 +506,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
           const finalImages = [...existingImages, ...uploadedImageUrls];
           const selectedAgent = agents.find(agent => agent.id === values.agentId);
 
-          let latitude: number | null = null;
-          let longitude: number | null = null;
+          let latitude: number | null = selectedCoordinates?.latitude ?? null;
+          let longitude: number | null = selectedCoordinates?.longitude ?? null;
 
+          if (latitude == null || longitude == null) {
           try {
               const geocodeUrl = new URL('/api/geocode', window.location.origin);
               geocodeUrl.searchParams.set('address', values.address || '');
@@ -435,6 +532,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               }
           } catch (geocodeError) {
               console.error('Geocoding request failed:', geocodeError);
+          }
           }
 
           const propertyDataToSave = {
@@ -610,7 +708,64 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                          <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Zonă</FormLabel>
                                              <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Herăstrău" /></SelectTrigger></FormControl>
                                              <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                         <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Adresă *</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: Strada Pădurii, nr. 10" /></FormControl><FormMessage /></FormItem> )} />
+                                         <FormField control={form.control} name="address" render={({ field }) => (
+                                            <FormItem className="md:col-span-3">
+                                                <FormLabel className="text-white/80">Adresă *</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                                                        {...field}
+                                                        placeholder="Scrie strada si numarul, apoi alege adresa din lista"
+                                                        onChange={(event) => {
+                                                            field.onChange(event);
+                                                            setSelectedCoordinates(null);
+                                                            setSelectedAddressLabel('');
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                                {isLoadingAddressSuggestions ? (
+                                                    <div className="mt-2 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/70">
+                                                        Cautam adrese relevante...
+                                                    </div>
+                                                ) : null}
+                                                {addressSuggestions.length > 0 ? (
+                                                    <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#0f1e33]">
+                                                        {addressSuggestions.map((suggestion) => (
+                                                            <button
+                                                                key={`${suggestion.label}-${suggestion.latitude}-${suggestion.longitude}`}
+                                                                type="button"
+                                                                className="flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left text-sm text-white/85 transition-colors last:border-b-0 hover:bg-white/5"
+                                                                onClick={() => handleSelectAddressSuggestion(suggestion)}
+                                                            >
+                                                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                                                <span>{suggestion.label}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                ) : null}
+                                                <FormDescription className="text-white/55">
+                                                    Alege o adresa din lista pentru a fixa exact locatia pe harta.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                         )} />
+                                     </div>
+                                     <div className="space-y-3 pt-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="text-sm font-medium text-white/80">Previzualizare pe harta</p>
+                                            <p className="text-xs text-white/55">
+                                                {selectedCoordinates ? 'Locatia selectata va fi salvata exact asa.' : 'Selecteaza o adresa din lista pentru a vedea locatia exacta.'}
+                                            </p>
+                                        </div>
+                                        <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10">
+                                            {mapPreviewProperty ? (
+                                                <PropertiesMap properties={[mapPreviewProperty]} />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center bg-[#0f1e33] px-6 text-center text-sm text-white/60">
+                                                    Harta va afisa locatia exacta dupa ce selectezi o adresa din lista de sugestii.
+                                                </div>
+                                            )}
+                                        </div>
                                      </div>
                                      <div className="flex items-center space-x-2 pt-2">
                                          <FormField control={form.control} name="nearMetro" render={({ field }) => (
