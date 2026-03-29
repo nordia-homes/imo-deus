@@ -51,6 +51,82 @@ type AddressSuggestion = {
   longitude: number;
 };
 
+const PROPERTY_TYPE_OPTIONS = ['Apartament', 'Casă/Vilă', 'Garsonieră', 'Teren', 'Spațiu Comercial'] as const;
+const TRANSACTION_TYPE_OPTIONS = ['Vânzare', 'Închiriere'] as const;
+const PARTITIONING_OPTIONS = ['Decomandat', 'Semidecomandat', 'Circular', 'Nedecomandat'] as const;
+const COMFORT_OPTIONS = ['Lux', '1', '2', '3'] as const;
+const INTERIOR_STATE_OPTIONS = ['Nou', 'Renovat', 'Bună'] as const;
+const FURNISHING_OPTIONS = ['Complet', 'Parțial', 'Nemobilat'] as const;
+const HEATING_SYSTEM_OPTIONS = ['Centrală proprie', 'Termoficare', 'Încălzire în pardoseală'] as const;
+const PARKING_OPTIONS = ['Garaj', 'Loc exterior', 'Subteran', 'Fără'] as const;
+const BUILDING_STATE_OPTIONS = ['Nouă', 'Reabilitată', 'Bună', 'Necesită renovare'] as const;
+const SEISMIC_RISK_OPTIONS = ['Clasa 1', 'Clasa 2', 'Clasa 3', 'Clasa 4', 'Nespecificat'] as const;
+const BALCONY_OPTIONS = ['Balcon', 'Terasă', 'Balcon francez', 'Fără'] as const;
+const KITCHEN_OPTIONS = ['Deschisă', 'Închisă', 'Chicinetă'] as const;
+const LIFT_OPTIONS = ['Da', 'Nu'] as const;
+const ORIENTATION_OPTIONS = ['Nord', 'Sud', 'Est', 'Vest', 'NV', 'NE', 'SV', 'SE'] as const;
+const STATUS_OPTIONS = ['Activ', 'Inactiv', 'Rezervat', 'Vândut', 'Închiriat'] as const;
+const SALES_SCORE_OPTIONS = ['Scăzut', 'Mediu', 'Ridicată'] as const;
+const COMMISSION_TYPE_OPTIONS = ['percentage', 'fixed'] as const;
+
+const normalizeText = (value?: string | null) =>
+  (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '')
+    .toLowerCase()
+    .trim();
+
+const pickAllowedValue = (
+  value: string | null | undefined,
+  allowedValues: readonly string[],
+  aliases: Record<string, string> = {}
+) => {
+  if (!value) {
+    return '';
+  }
+
+  const normalizedValue = normalizeText(value);
+  if (!normalizedValue) {
+    return '';
+  }
+
+  const directMatch = allowedValues.find((option) => normalizeText(option) === normalizedValue);
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const aliasedOption = aliases[normalizedValue];
+  if (!aliasedOption) {
+    return '';
+  }
+
+  return allowedValues.find((option) => option === aliasedOption) || '';
+};
+
+const normalizeCityValue = (value?: string | null) =>
+  pickAllowedValue(value, Object.keys(locations) as City[], {
+    bucuresti: 'Bucuresti-Ilfov',
+    bucurestiilfov: 'Bucuresti-Ilfov',
+    bucurestiiflov: 'Bucuresti-Ilfov',
+    bucurestiifov: 'Bucuresti-Ilfov',
+  });
+
+const normalizeZoneValue = (value?: string | null, city?: string | null) => {
+  if (!value) {
+    return '';
+  }
+
+  const normalizedValue = normalizeText(value);
+  const cityKey = normalizeCityValue(city);
+  const zonesForCity = cityKey ? locations[cityKey as City] || [] : [];
+  const directZoneMatch =
+    zonesForCity.find((zone) => normalizeText(zone) === normalizedValue) ||
+    Object.values(locations).flat().find((zone) => normalizeText(zone) === normalizedValue);
+
+  return directZoneMatch || value;
+};
+
 
 const propertySchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
@@ -226,13 +302,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
 
     useEffect(() => {
         if (isEditMode && propertyData) {
+            const normalizedCity = normalizeCityValue(propertyData.city);
             form.reset({
                 title: propertyData.title || '',
-                propertyType: propertyData.propertyType || '',
-                transactionType: propertyData.transactionType || 'Vânzare',
+                propertyType: pickAllowedValue(propertyData.propertyType, PROPERTY_TYPE_OPTIONS, {
+                    casa: 'Casă/Vilă',
+                    vila: 'Casă/Vilă',
+                    casavila: 'Casă/Vilă',
+                    casavilă: 'Casă/Vilă',
+                    garsoniera: 'Garsonieră',
+                    spatiucomercial: 'Spațiu Comercial',
+                }),
+                transactionType: pickAllowedValue(propertyData.transactionType, TRANSACTION_TYPE_OPTIONS, {
+                    vanzare: 'Vânzare',
+                    inchiriere: 'Închiriere',
+                    chirie: 'Închiriere',
+                }) || 'Vânzare',
                 address: propertyData.address || '',
-                city: propertyData.city || '',
-                zone: propertyData.zone || '',
+                city: normalizedCity || '',
+                zone: normalizeZoneValue(propertyData.zone, normalizedCity || propertyData.city) || '',
                 price: propertyData.price || 0,
                 rooms: propertyData.rooms || 0,
                 bathrooms: propertyData.bathrooms || 0,
@@ -241,28 +329,74 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 constructionYear: propertyData.constructionYear || '',
                 floor: propertyData.floor || '',
                 totalFloors: propertyData.totalFloors || '',
-                orientation: propertyData.orientation || '',
-                comfort: propertyData.comfort || '',
-                interiorState: propertyData.interiorState || '',
-                furnishing: propertyData.furnishing || '',
-                heatingSystem: propertyData.heatingSystem || '',
-                parking: propertyData.parking || '',
+                orientation: pickAllowedValue(propertyData.orientation, ORIENTATION_OPTIONS),
+                comfort: pickAllowedValue(propertyData.comfort, COMFORT_OPTIONS),
+                interiorState: pickAllowedValue(propertyData.interiorState, INTERIOR_STATE_OPTIONS, {
+                    buna: 'Bună',
+                }),
+                furnishing: pickAllowedValue(propertyData.furnishing, FURNISHING_OPTIONS, {
+                    partial: 'Parțial',
+                    mobilatcomplet: 'Complet',
+                    completmobilat: 'Complet',
+                    fara: 'Nemobilat',
+                    nemobilata: 'Nemobilat',
+                    nemobilat: 'Nemobilat',
+                }),
+                heatingSystem: pickAllowedValue(propertyData.heatingSystem, HEATING_SYSTEM_OPTIONS, {
+                    centralaproprie: 'Centrală proprie',
+                    centrala: 'Centrală proprie',
+                    incalzireinpardoseala: 'Încălzire în pardoseală',
+                }),
+                parking: pickAllowedValue(propertyData.parking, PARKING_OPTIONS, {
+                    locexterior: 'Loc exterior',
+                    fara: 'Fără',
+                }),
                 keyFeatures: propertyData.keyFeatures || propertyData.amenities?.join(', ') || '',
                 description: propertyData.description || '',
-                status: propertyData.status || 'Activ',
+                status: pickAllowedValue(propertyData.status, STATUS_OPTIONS, {
+                    vandut: 'Vândut',
+                    inchiriat: 'Închiriat',
+                }) || 'Activ',
                 featured: propertyData.featured || false,
                 ownerName: propertyData.ownerName || '',
                 ownerPhone: propertyData.ownerPhone || '',
-                salesScore: propertyData.salesScore || 'Mediu',
+                salesScore: pickAllowedValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
+                    scazut: 'Scăzut',
+                    ridicat: 'Ridicată',
+                    ridicata: 'Ridicată',
+                    mare: 'Ridicată',
+                    mic: 'Scăzut',
+                }) || 'Mediu',
                 agentId: propertyData.agentId || user?.uid || 'unassigned',
-                buildingState: propertyData.buildingState || '',
-                seismicRisk: propertyData.seismicRisk || '',
-                balconyTerrace: propertyData.balconyTerrace || '',
-                partitioning: propertyData.partitioning || '',
-                kitchen: propertyData.kitchen || '',
-                lift: propertyData.lift || '',
+                buildingState: pickAllowedValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
+                    noua: 'Nouă',
+                    reabilitata: 'Reabilitată',
+                    buna: 'Bună',
+                    necesitarenovare: 'Necesită renovare',
+                }),
+                seismicRisk: pickAllowedValue(propertyData.seismicRisk, SEISMIC_RISK_OPTIONS, {
+                    clasai: 'Clasa 1',
+                    clasaii: 'Clasa 2',
+                    clasaiii: 'Clasa 3',
+                    clasaiv: 'Clasa 4',
+                }),
+                balconyTerrace: pickAllowedValue(propertyData.balconyTerrace, BALCONY_OPTIONS, {
+                    terasa: 'Terasă',
+                    fara: 'Fără',
+                }),
+                partitioning: pickAllowedValue(propertyData.partitioning, PARTITIONING_OPTIONS, {
+                    semi: 'Semidecomandat',
+                }),
+                kitchen: pickAllowedValue(propertyData.kitchen, KITCHEN_OPTIONS, {
+                    deschisa: 'Deschisă',
+                    inchisa: 'Închisă',
+                }),
+                lift: pickAllowedValue(propertyData.lift, LIFT_OPTIONS, {
+                    yes: 'Da',
+                    no: 'Nu',
+                }),
                 nearMetro: propertyData.nearMetro || false,
-                commissionType: propertyData.commissionType || 'percentage',
+                commissionType: pickAllowedValue(propertyData.commissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
                 commissionValue: propertyData.commissionValue ?? 2,
             });
             setImageSources(propertyData.images || []);
