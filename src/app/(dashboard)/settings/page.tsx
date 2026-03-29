@@ -34,6 +34,8 @@ const profileSchema = z.object({
 const agencySchema = z.object({
   name: z.string().min(1, 'Numele agenției este obligatoriu.'),
   agencyDescription: z.string().optional(),
+  termsAndConditions: z.string().optional(),
+  privacyPolicy: z.string().optional(),
   email: z.string().email('Adresă de email invalidă.').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -65,6 +67,8 @@ export default function SettingsPage() {
     defaultValues: { 
         name: '', 
         agencyDescription: '',
+        termsAndConditions: '',
+        privacyPolicy: '',
         email: '', 
         phone: '', 
         address: '', 
@@ -93,6 +97,8 @@ export default function SettingsPage() {
         agencyForm.reset({
             name: agency.name,
             agencyDescription: agency.agencyDescription || '',
+            termsAndConditions: agency.termsAndConditions || '',
+            privacyPolicy: agency.privacyPolicy || '',
             email: agency.email || '',
             phone: agency.phone || '',
             address: agency.address || '',
@@ -312,6 +318,11 @@ export default function SettingsPage() {
                         <CardContent className="space-y-4">
                             <FormField control={agencyForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Agenție</FormLabel><FormControl><Input {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
                             <FormField control={agencyForm.control} name="agencyDescription" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Descriere Agenție (Despre Noi)</FormLabel><FormControl><Textarea rows={5} {...field} placeholder="Povestea, misiunea și valorile agenției tale..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50"/></FormControl><FormDescription className="text-white/70">Acest text va apărea pe pagina publică "Despre Noi".</FormDescription><FormMessage /></FormItem> )}/>
+                            <Separator className="my-6 bg-white/10"/>
+
+                            <h4 className="text-lg font-semibold text-white">Pagini legale publice</h4>
+                            <FormField control={agencyForm.control} name="termsAndConditions" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Termeni si conditii</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Termeni si conditii..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Termeni si conditii" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
+                            <FormField control={agencyForm.control} name="privacyPolicy" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confidentialitate</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Confidentialitate..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Confidentialitate" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
                                 <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
