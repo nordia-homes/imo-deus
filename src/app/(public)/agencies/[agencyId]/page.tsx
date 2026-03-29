@@ -271,12 +271,14 @@ export default function AgencyHomePage() {
                     ? 'rounded-[1.9rem] border border-emerald-300/25 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] md:col-span-2 xl:col-span-2'
                     : highlightCardClassName
                 } ${
-                  service.title === 'Suport post-achizitie' ? 'md:hidden' : ''
+                  service.title === 'Suport post-achizitie'
+                    ? 'md:col-span-2 md:rounded-[1.9rem] md:border md:border-emerald-300/25 md:bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] md:shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] xl:col-span-2'
+                    : ''
                 }`}
               >
                 <div
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                    index === 0
+                    index === 0 || service.title === 'Suport post-achizitie'
                       ? 'border border-emerald-300/25 bg-emerald-400/14 text-emerald-100'
                       : 'border border-emerald-400/15 bg-emerald-400/10 text-emerald-200'
                   }`}
@@ -285,14 +287,14 @@ export default function AgencyHomePage() {
                 </div>
                 <h3
                   className={`mt-4 font-semibold tracking-tight text-white ${
-                    index === 0 ? 'text-3xl md:max-w-xl' : 'text-2xl'
+                    index === 0 || service.title === 'Suport post-achizitie' ? 'text-3xl md:max-w-xl' : 'text-2xl'
                   }`}
                 >
                   {service.title}
                 </h3>
                 <p
                   className={`mt-3 leading-7 ${
-                    index === 0 ? 'max-w-2xl text-base text-emerald-50/82' : 'text-sm text-emerald-50/72'
+                    index === 0 || service.title === 'Suport post-achizitie' ? 'max-w-2xl text-base text-emerald-50/82' : 'text-sm text-emerald-50/72'
                   }`}
                 >
                   {service.description}

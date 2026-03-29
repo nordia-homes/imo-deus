@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/components/ui/sheet';
-import { Home, Building2, Info, Mail } from 'lucide-react';
+import { Home, Building2, KeyRound, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Agency } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
@@ -24,7 +24,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const navLinks = [
     { href: `/agencies/${agencyId}`, label: 'Acasă', icon: <Home /> },
     { href: `/agencies/${agencyId}/properties`, label: 'Proprietăți', icon: <Building2 /> },
-    { href: `/agencies/${agencyId}/about`, label: 'Despre Noi', icon: <Info /> },
+    { href: `/agencies/${agencyId}/proprietari`, label: 'Proprietari', icon: <KeyRound /> },
     { href: `/agencies/${agencyId}/contact`, label: 'Contact', icon: <Mail /> },
   ];
 

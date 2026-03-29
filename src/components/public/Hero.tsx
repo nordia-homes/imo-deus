@@ -54,7 +54,7 @@ export function Hero() {
                 size="lg"
                 className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_42px_-16px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
               >
-                <Link href="#properties">
+                <Link href={`/agencies/${agency?.id}/properties`}>
                   Vezi proprietatile
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
