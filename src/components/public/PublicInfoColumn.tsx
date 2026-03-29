@@ -163,15 +163,22 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     </Card>
                 )}
 
-                <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.11),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(22,163,74,0.07),transparent_28%),linear-gradient(145deg,rgba(5,12,8,0.99)_0%,rgba(7,14,10,0.995)_52%,rgba(9,18,12,0.99)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
-                    <CardHeader className={panelHeaderClassName}>
-                        <CardTitle className={panelTitleClassName}>Informatii detaliate</CardTitle>
-                    </CardHeader>
-                    <CardContent className={`${panelBodyClassName} grid gap-3 sm:grid-cols-2 xl:grid-cols-3`}>
+                <Card className={panelClassName}>
+                    <CardContent className={`${panelBodyClassName} pt-6 md:pt-7`}>
+                        <div className="space-y-5">
+                            <div className="space-y-3">
+                                <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                    Informatii detaliate
+                                </div>
+                                <h3 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                                    Tot ce merita sa stii, dintr-o privire.
+                                </h3>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <div key={item.label} className="rounded-[1.6rem] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                <div key={item.label} className="rounded-[1.6rem] border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
                                     <div className="flex w-full items-start gap-4">
                                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                             {item.icon}
@@ -190,6 +197,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                                 </div>
                             )
                         })}
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -220,15 +229,22 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
             <CreditBrokerCard />
 
-            <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.11),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(22,163,74,0.07),transparent_28%),linear-gradient(145deg,rgba(5,12,8,0.99)_0%,rgba(7,14,10,0.995)_52%,rgba(9,18,12,0.99)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
-                <CardHeader className="p-4">
-                    <CardTitle className="font-semibold text-white">Informatii detaliate</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
+            <Card className={panelClassName}>
+                <CardContent className="p-4 pt-5">
+                    <div className="space-y-4">
+                        <div className="space-y-3">
+                            <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                Informatii detaliate
+                            </div>
+                            <h3 className="text-xl font-semibold tracking-tight text-white">
+                                Tot ce merita sa stii, dintr-o privire.
+                            </h3>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <div key={item.label} className="rounded-[1.45rem] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                            <div key={item.label} className="rounded-[1.45rem] border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
                                 <div className="flex w-full items-start gap-4">
                                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                         {item.icon}
@@ -247,6 +263,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             </div>
                         )
                     })}
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>

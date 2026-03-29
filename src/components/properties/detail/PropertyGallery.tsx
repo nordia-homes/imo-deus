@@ -130,10 +130,10 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
             variant="ghost"
             aria-pressed={isLoved}
             aria-label={isLoved ? "Scoate de la favorite" : "Adauga la favorite"}
-            className="h-9 w-9 rounded-full border border-white/18 bg-white/8 text-white hover:bg-white/14 hover:text-white"
+            className="h-9 w-9 rounded-full border border-[#e50700] bg-white/8 text-white hover:bg-white/14 hover:text-white"
             onClick={() => setIsLoved((prev) => !prev)}
           >
-            <Heart className={cn("h-4 w-4", isLoved && "fill-[#fb7185] text-[#fb7185]")} />
+            <Heart className={cn("h-4 w-4", isLoved && "fill-[#e50700] text-[#e50700]")} />
           </Button>
         </div>
         <Button

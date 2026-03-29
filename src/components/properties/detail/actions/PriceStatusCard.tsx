@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { TrendingUp } from 'lucide-react';
 
 export function PriceStatusCard({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
-    const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+    const financeCardClassName = "overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent ring-0 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.1),transparent_26%),linear-gradient(160deg,rgba(11,15,13,0.98)_0%,rgba(9,12,11,0.99)_52%,rgba(13,18,15,0.98)_100%)] shadow-[0_28px_80px_-40px_rgba(0,0,0,0.88)]";
 
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;

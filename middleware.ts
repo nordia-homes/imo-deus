@@ -43,10 +43,13 @@ export function middleware(request: NextRequest) {
 
   if (isLegacyAgencyPath) {
     const strippedPath = pathnameSegments.slice(2).join('/');
-    rewriteUrl.pathname = `/domains/${hostname}${strippedPath ? `/${strippedPath}` : ''}`;
-  } else {
-    rewriteUrl.pathname = `/domains/${hostname}${pathname}`;
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = strippedPath ? `/${strippedPath}` : '/';
+    redirectUrl.search = search;
+    return NextResponse.redirect(redirectUrl, 308);
   }
+  
+  rewriteUrl.pathname = `/domains/${hostname}${pathname}`;
   rewriteUrl.search = search;
 
   return NextResponse.rewrite(rewriteUrl);
