@@ -14,6 +14,8 @@ import {
   RefreshCw,
   ShieldCheck,
   Copy,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { getCanonicalCustomDomain } from '@/lib/domain-routing';
@@ -32,6 +34,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useFirestore, useStorage } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 const formSchema = z.object({
   customDomain: z.string().optional(),
@@ -169,9 +174,12 @@ function InstructionTable({ instructions }: { instructions: CustomDomainInstruct
 
 export default function CustomDomainPage() {
   const { agency, user, userProfile, isAgencyLoading } = useAgency();
+  const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUploadingShareImage, setIsUploadingShareImage] = useState(false);
   const [modalData, setModalData] = useState<CustomDomainApiResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -298,6 +306,36 @@ export default function CustomDomainPage() {
       });
     } finally {
       setIsRefreshing(false);
+    }
+  }
+
+  async function handleShareImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !agency?.id || userProfile?.role !== 'admin') return;
+
+    try {
+      setIsUploadingShareImage(true);
+      const shareImageRef = ref(storage, `agencies/${agency.id}/share/share-image-${Date.now()}`);
+      await uploadBytes(shareImageRef, file);
+      const downloadURL = await getDownloadURL(shareImageRef);
+      await updateDoc(doc(firestore, 'agencies', agency.id), {
+        shareImageUrl: downloadURL,
+      });
+
+      toast({
+        title: 'Imagine actualizata',
+        description: 'Imaginea reprezentativa pentru distribuirea website-ului public a fost salvata.',
+      });
+    } catch (error) {
+      console.error('Failed to upload share image:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload esuat',
+        description: 'Nu am putut salva imaginea reprezentativa.',
+      });
+    } finally {
+      setIsUploadingShareImage(false);
+      event.target.value = '';
     }
   }
 
@@ -435,6 +473,60 @@ export default function CustomDomainPage() {
                   <p className="font-semibold text-white">3. Reverifici SSL si ownership dintr-un click</p>
                   <p className="mt-2 text-sm leading-7 text-white/70">
                     Butonul de reverificare citeste din nou statusul din App Hosting si actualizeaza pagina cu cele mai noi cerinte DNS.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+              <CardHeader>
+                <CardTitle>Imagine reprezentativa la distribuire</CardTitle>
+                <CardDescription className="text-white/70">
+                  Aceasta imagine va fi folosita cand website-ul public al agentiei este distribuit pe social media sau in aplicatii de mesagerie.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                  {agency?.shareImageUrl ? (
+                    <img
+                      src={agency.shareImageUrl}
+                      alt="Imagine reprezentativa website public"
+                      className="h-52 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-52 items-center justify-center bg-[linear-gradient(160deg,rgba(8,20,14,0.98),rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96))] text-center text-white/60">
+                      Inca nu ai incarcat o imagine reprezentativa pentru distribuirea website-ului public.
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    disabled={isUploadingShareImage || userProfile?.role !== 'admin'}
+                    className="rounded-full bg-emerald-400 px-6 text-black hover:bg-emerald-300"
+                    onClick={() => document.getElementById('share-image-upload')?.click()}
+                  >
+                    {isUploadingShareImage ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Se incarca...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="mr-2 h-4 w-4" />
+                        Incarca imaginea
+                      </>
+                    )}
+                  </Button>
+                  <input
+                    id="share-image-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={handleShareImageUpload}
+                  />
+                  <p className="text-sm leading-7 text-white/65">
+                    Pentru paginile de detaliu proprietate, imaginea reprezentativa va fi prima poza din galeria proprietatii.
                   </p>
                 </div>
               </CardContent>

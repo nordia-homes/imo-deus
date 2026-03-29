@@ -3,12 +3,14 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BedDouble, Bath, Ruler } from "lucide-react";
 import type { Property } from "@/lib/types";
+import { usePublicPath } from "@/context/PublicAgencyContext";
 
 export function PublicPropertyCard({ property, agencyId }: { property: Property, agencyId: string }) {
   const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
+  const publicPath = usePublicPath();
   
   return (
-    <Link href={`/agencies/${agencyId}/properties/${property.id}`} className="group">
+    <Link href={publicPath(`/properties/${property.id}`)} className="group">
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
         <div className="relative aspect-[4/3]">
           <Image

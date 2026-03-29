@@ -105,6 +105,17 @@ service cloud.firestore {
       allow delete: if isUserAdminForAgency(resource.data.agencyId);
       allow list: if false;
     }
+
+    match /publicAgentProfiles/{userId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isSignedIn() &&
+        request.auth.uid == userId &&
+        (
+          !('agencyId' in request.resource.data) ||
+          request.resource.data.agencyId == getUserData(request.auth.uid).agencyId
+        );
+    }
     
     // --- Scraper Collection ---
     match /ownerListings/{listingId} {

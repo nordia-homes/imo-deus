@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useStorage } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, setDoc, writeBatch } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,7 @@ export default function SettingsPage() {
   const [isCreatingAgency, setIsCreatingAgency] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasSyncedPublicAgentRef = useRef(false);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -126,8 +127,39 @@ export default function SettingsPage() {
         });
     }
   }, [agency, agencyForm]);
+
+  useEffect(() => {
+    if (!user || !agency?.id || hasSyncedPublicAgentRef.current) return;
+    hasSyncedPublicAgentRef.current = true;
+
+    syncPublicAgentProfile({
+      name: userProfile?.name || user.displayName || '',
+      email: user.email || userProfile?.email || '',
+      phone: userProfile?.phone || user.phoneNumber || '',
+      photoUrl: userProfile?.photoUrl || user.photoURL || '',
+    }).catch((error) => {
+      console.error('Failed to sync public agent profile:', error);
+      hasSyncedPublicAgentRef.current = false;
+    });
+  }, [agency?.id, user, userProfile]);
+
+  const syncPublicAgentProfile = async (overrides?: Partial<UserProfile>) => {
+    if (!user || !agency?.id) return;
+
+    const publicAgentProfileRef = doc(firestore, 'publicAgentProfiles', user.uid);
+    const nextProfile = {
+      agencyId: agency.id,
+      name: overrides?.name ?? profileForm.getValues('name') ?? userProfile?.name ?? user.displayName ?? '',
+      email: overrides?.email ?? user.email ?? userProfile?.email ?? '',
+      phone: overrides?.phone ?? profileForm.getValues('phone') ?? userProfile?.phone ?? '',
+      photoUrl: overrides?.photoUrl ?? userProfile?.photoUrl ?? user.photoURL ?? '',
+      updatedAt: new Date().toISOString(),
+    };
+
+    await setDoc(publicAgentProfileRef, nextProfile, { merge: true });
+  };
   
-  const handleProfileSave = (values: z.infer<typeof profileSchema>) => {
+  const handleProfileSave = async (values: z.infer<typeof profileSchema>) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     const dataToSave = {
@@ -138,6 +170,12 @@ export default function SettingsPage() {
     if(user.displayName !== values.name) {
       updateProfile(user, { displayName: values.name });
     }
+    await syncPublicAgentProfile({
+      name: values.name,
+      email: user.email || undefined,
+      phone: values.phone,
+      photoUrl: userProfile?.photoUrl || user.photoURL || undefined,
+    });
     toast({ title: 'Profil salvat!', description: 'Informațiile profilului tău au fost actualizate.' });
   };
   
@@ -180,6 +218,7 @@ export default function SettingsPage() {
 
         const userDocRef = doc(firestore, 'users', user.uid);
         await updateDocumentNonBlocking(userDocRef, { photoUrl: photoURL });
+        await syncPublicAgentProfile({ photoUrl: photoURL });
 
         toast({ title: 'Fotografie actualizată!', description: 'Noua ta fotografie de profil a fost salvată.' });
     } catch (error) {
@@ -218,6 +257,7 @@ export default function SettingsPage() {
 
       const agenciesCollection = collection(firestore, 'agencies');
       const userDocRef = doc(firestore, 'users', user.uid);
+      const publicAgentProfileRef = doc(firestore, 'publicAgentProfiles', user.uid);
 
       try {
         const newAgencyRef = doc(agenciesCollection);
@@ -236,6 +276,14 @@ export default function SettingsPage() {
             agencyId: newAgencyRef.id, 
             role: 'admin',
             photoUrl: user.photoURL,
+        }, { merge: true });
+        batch.set(publicAgentProfileRef, {
+            agencyId: newAgencyRef.id,
+            name: user.displayName || user.email,
+            email: user.email,
+            phone: user.phoneNumber || '',
+            photoUrl: user.photoURL || '',
+            updatedAt: new Date().toISOString(),
         }, { merge: true });
 
         await batch.commit();

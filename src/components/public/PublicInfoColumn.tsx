@@ -163,7 +163,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     </Card>
                 )}
 
-                <Card className={panelClassName}>
+                <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.11),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(22,163,74,0.07),transparent_28%),linear-gradient(145deg,rgba(5,12,8,0.99)_0%,rgba(7,14,10,0.995)_52%,rgba(9,18,12,0.99)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
                     <CardHeader className={panelHeaderClassName}>
                         <CardTitle className={panelTitleClassName}>Informatii detaliate</CardTitle>
                     </CardHeader>
@@ -171,7 +171,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <div key={item.label} className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                <div key={item.label} className="rounded-[1.6rem] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
                                     <div className="flex w-full items-start gap-4">
                                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                             {item.icon}
@@ -179,6 +179,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                                         <span className="flex min-w-0 flex-1 flex-col">
                                             <span className="flex flex-wrap items-baseline gap-2 text-base font-semibold text-white">
                                                 <span className="text-white/95">{item.label}</span>
+                                                <span className="text-white/80">:</span>
                                                 <span className="text-white">{item.value}</span>
                                             </span>
                                             <span className="mt-2 text-sm leading-6 text-stone-300">
@@ -219,7 +220,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
             <CreditBrokerCard />
 
-            <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
+            <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.11),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(22,163,74,0.07),transparent_28%),linear-gradient(145deg,rgba(5,12,8,0.99)_0%,rgba(7,14,10,0.995)_52%,rgba(9,18,12,0.99)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
                 <CardHeader className="p-4">
                     <CardTitle className="font-semibold text-white">Informatii detaliate</CardTitle>
                 </CardHeader>
@@ -227,7 +228,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <div key={item.label} className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                            <div key={item.label} className="rounded-[1.45rem] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
                                 <div className="flex w-full items-start gap-4">
                                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                         {item.icon}
@@ -235,6 +236,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                                     <span className="flex min-w-0 flex-1 flex-col">
                                         <span className="flex flex-wrap items-baseline gap-2 text-sm font-semibold text-white">
                                             <span className="text-white/95">{item.label}</span>
+                                            <span className="text-white/80">:</span>
                                             <span className="text-white">{item.value}</span>
                                         </span>
                                         <span className="mt-2 text-xs leading-6 text-stone-300">

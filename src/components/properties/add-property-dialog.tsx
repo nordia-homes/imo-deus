@@ -449,6 +449,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               salesScore: values.salesScore as Property['salesScore'],
               agentId: values.agentId === 'unassigned' ? null : values.agentId,
               agentName: selectedAgent?.name || null,
+              agent: selectedAgent
+                ? {
+                    name: selectedAgent.name,
+                    avatarUrl: selectedAgent.photoUrl || '',
+                  }
+                : null,
               buildingState: values.buildingState || null,
               seismicRisk: values.seismicRisk || null,
               balconyTerrace: values.balconyTerrace || null,
