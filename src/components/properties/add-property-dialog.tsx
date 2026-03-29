@@ -409,9 +409,33 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
 
           const finalImages = [...existingImages, ...uploadedImageUrls];
           const selectedAgent = agents.find(agent => agent.id === values.agentId);
-          
-          const lat = 44.439663 + (Math.random() - 0.5) * 0.1;
-          const lon = 26.096306 + (Math.random() - 0.5) * 0.1;
+
+          let latitude: number | null = null;
+          let longitude: number | null = null;
+
+          try {
+              const geocodeUrl = new URL('/api/geocode', window.location.origin);
+              geocodeUrl.searchParams.set('address', values.address || '');
+              if (values.zone) {
+                  geocodeUrl.searchParams.set('zone', values.zone);
+              }
+              if (values.city) {
+                  geocodeUrl.searchParams.set('city', values.city);
+              }
+
+              const geocodeResponse = await fetch(geocodeUrl.toString(), { cache: 'no-store' });
+              if (geocodeResponse.ok) {
+                  const geocodeResult = await geocodeResponse.json() as { latitude?: number; longitude?: number };
+                  if (typeof geocodeResult.latitude === 'number' && typeof geocodeResult.longitude === 'number') {
+                      latitude = geocodeResult.latitude;
+                      longitude = geocodeResult.longitude;
+                  }
+              } else {
+                  console.warn('Geocoding failed for property address:', await geocodeResponse.text());
+              }
+          } catch (geocodeError) {
+              console.error('Geocoding request failed:', geocodeError);
+          }
 
           const propertyDataToSave = {
               title: values.title,
@@ -420,8 +444,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               address: values.address,
               city: values.city,
               zone: values.zone,
-              latitude: lat,
-              longitude: lon,
+              latitude,
+              longitude,
               location: [values.zone, values.city].filter(Boolean).join(', '),
               price: values.price,
               rooms: values.rooms,

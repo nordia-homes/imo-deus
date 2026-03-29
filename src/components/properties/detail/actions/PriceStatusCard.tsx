@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { TrendingUp } from 'lucide-react';
 
 export function PriceStatusCard({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
-    const financeCardClassName = "overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent ring-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.12),transparent_40%),linear-gradient(180deg,rgba(11,15,13,1)_0%,rgba(10,13,11,1)_100%)] shadow-none";
+    const financeCardClassName = "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d] shadow-none";
 
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;
@@ -17,7 +17,8 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
     if (!isMobile) {
         return (
             <Card className={financeCardClassName}>
-                <CardContent className="flex items-baseline justify-center gap-2 p-3 text-center">
+                <CardContent className="relative flex items-baseline justify-center gap-2 p-3 text-center">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]" />
                     <span className="text-xl font-bold text-[#4ade80]">
                         €{property.price.toLocaleString()}
                     </span>
@@ -34,7 +35,8 @@ export function PriceStatusCard({ property, isMobile = false }: { property: Prop
     return (
         <Dialog>
             <Card className={financeCardClassName}>
-                <CardContent className="p-4 text-center flex flex-col items-center justify-center gap-1">
+                <CardContent className="relative flex flex-col items-center justify-center gap-1 p-4 text-center">
+                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]" />
                      <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold text-[#4ade80]">
                             €{property.price.toLocaleString()}
