@@ -79,10 +79,8 @@ service cloud.firestore {
     }
 
     // --- Generic Rule for other Agency Subcollections ---
-    match /agencies/{agencyId}/{collection}/{docId} 
-      where collection != 'contacts' && collection != 'properties' {
-      allow get, write: if isUserInAgency(agencyId);
-      allow list: if isUserInAgency(agencyId);
+    match /agencies/{agencyId}/{document=**} {
+      allow read, write: if isUserInAgency(agencyId);
     }
 
     // --- Agency Top-Level Document ---

@@ -28,23 +28,38 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
+    function isPublicAgencyRead() {
+      return true;
+    }
+
+    function isPublicActivePropertyRead() {
+      return resource != null &&
+             'status' in resource.data &&
+             resource.data.status == 'Activ';
+    }
+
     // --- User Profiles ---
     match /users/{userId} {
       // A user can always read and write their own profile.
       // This is crucial for the helper functions above to work correctly.
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
+
+    match /agencies/{agencyId}/properties/{propertyId} {
+      allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
+      allow create, update, delete: if isUserInAgency(agencyId);
+    }
     
     // --- Agency Subcollections (Generic Rule) ---
     // Public updates are now handled by the Admin SDK, so we only need to
     // allow authenticated agency members to perform actions.
-    match /agencies/{agencyId}/{collection}/{docId} {
+    match /agencies/{agencyId}/{document=**} {
       allow read, write: if isUserInAgency(agencyId);
     }
 
     // --- Agency Top-Level Document ---
     match /agencies/{agencyId} {
-      allow get: if isUserInAgency(agencyId);
+      allow get: if isUserInAgency(agencyId) || isPublicAgencyRead();
       allow list: if isSignedIn();
       allow update: if isUserAdminForAgency(agencyId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
