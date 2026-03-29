@@ -23,6 +23,37 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     })();
     const descriptionIntro = displayedDescription.slice(0, boldCutIndex).trimEnd();
     const descriptionBody = displayedDescription.slice(boldCutIndex).trimStart();
+    const getInfoDescription = (label: string, value: unknown) => {
+        const textValue = value === undefined || value === null ? '' : String(value);
+
+        switch (label) {
+            case 'Compartimentare':
+                return `Arata modul in care este organizat spatiul interior, pentru un flux mai clar al camerelor.`;
+            case 'Nr. Camere':
+                return `Iti ofera rapid o imagine despre capacitatea si functionalitatea proprietatii in viata de zi cu zi.`;
+            case 'An Construcție':
+                return `Un reper util pentru stilul constructiei, standardele folosite si perceptia generala asupra imobilului.`;
+            case 'Etaj':
+                return `Conteaza atat pentru lumina si priveliste, cat si pentru nivelul de acces si confortul zilnic.`;
+            case 'Suprafață Utilă':
+                return `Suprafata pe care o folosesti efectiv in interior, esentiala pentru comparatia reala intre proprietati.`;
+            case 'Suprafață cu Balcon':
+                return `Include si zonele exterioare sau anexele relevante, oferind o imagine mai completa a spatiului total.`;
+            case 'Stare Interior':
+                return `Sugereaza cat de pregatita este proprietatea pentru mutare sau ce nivel de investitie mai poate necesita.`;
+            case 'Bucătărie':
+                return `Un detaliu important pentru confortul zilnic, mai ales daca pui accent pe functionalitate si organizare.`;
+            case 'Balcon/Terasă':
+                return `Adauga valoare prin spatiu exterior privat, util pentru relaxare, depozitare sau lumina suplimentara.`;
+            case 'Lift':
+                return `Poate influenta semnificativ confortul de zi cu zi, in special la etajele superioare.`;
+            case 'Sistem Încălzire':
+                return `Are impact direct asupra confortului termic, costurilor lunare si modului in care gestionezi consumul.`;
+            default:
+                return textValue ? `Un detaliu util care completeaza imaginea generala a proprietatii.` : '';
+        }
+    };
+
     const infoItems = [
         { icon: <Layers className="h-5 w-5" />, label: 'Compartimentare', value: property.partitioning },
         { icon: <BedDouble className="h-5 w-5" />, label: 'Nr. Camere', value: property.rooms },
@@ -140,21 +171,22 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-start rounded-[1.6rem] border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                    <span className="flex w-full items-center gap-4">
+                                <div key={item.label} className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                    <div className="flex w-full items-start gap-4">
                                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                             {item.icon}
                                         </span>
                                         <span className="flex min-w-0 flex-1 flex-col">
-                                            <span className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-100/55">
-                                                {item.label}
+                                            <span className="flex flex-wrap items-baseline gap-2 text-base font-semibold text-white">
+                                                <span className="text-white/95">{item.label}</span>
+                                                <span className="text-white">{item.value}</span>
                                             </span>
-                                            <span className="mt-1 text-base font-semibold text-white">
-                                                {item.value}
+                                            <span className="mt-2 text-sm leading-6 text-stone-300">
+                                                {getInfoDescription(item.label, item.value)}
                                             </span>
                                         </span>
-                                    </span>
-                                </Button>
+                                    </div>
+                                </div>
                             )
                         })}
                     </CardContent>
@@ -195,21 +227,22 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <Button key={item.label} variant="outline" className="h-auto w-full pointer-events-none justify-start rounded-[1.45rem] border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
-                                <span className="flex w-full items-center gap-4">
+                            <div key={item.label} className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                <div className="flex w-full items-start gap-4">
                                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
                                         {item.icon}
                                     </span>
                                     <span className="flex min-w-0 flex-1 flex-col">
-                                        <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/55">
-                                            {item.label}
+                                        <span className="flex flex-wrap items-baseline gap-2 text-sm font-semibold text-white">
+                                            <span className="text-white/95">{item.label}</span>
+                                            <span className="text-white">{item.value}</span>
                                         </span>
-                                        <span className="mt-1 text-sm font-semibold text-white">
-                                            {item.value}
+                                        <span className="mt-2 text-xs leading-6 text-stone-300">
+                                            {getInfoDescription(item.label, item.value)}
                                         </span>
                                     </span>
-                                </span>
-                            </Button>
+                                </div>
+                            </div>
                         )
                     })}
                 </CardContent>

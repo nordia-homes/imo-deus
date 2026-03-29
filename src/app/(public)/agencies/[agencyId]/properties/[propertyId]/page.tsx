@@ -108,7 +108,7 @@ const scheduleSchema = z.object({
   formStartedAt: z.number(),
 });
 
-function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { property: Property, agentProfile: UserProfile | null, agencyId: string }) {
+function PublicScheduleViewingCard({ property, agent, agencyId }: { property: Property, agent: AgentInfo, agencyId: string }) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const formStartedAt = useMemo(() => Date.now(), []);
@@ -145,13 +145,6 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
         }
     }
     
-    const agentForCard = {
-        name: agentProfile?.name || property.agentName || "Nealocat",
-        email: agentProfile?.email || null,
-        phone: agentProfile?.phone || null,
-        avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
-    };
-
     return (
         <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
             <CardHeader>
@@ -161,7 +154,7 @@ function PublicScheduleViewingCard({ property, agentProfile, agencyId }: { prope
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <AgentCard agent={agentForCard} />
+                <AgentCard agent={agent} />
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -313,7 +306,9 @@ export default function PublicPropertyDetailPage() {
         email: agentProfile?.email || agency?.email || null,
         phone: agentProfile?.phone || agency?.phone || null,
         avatarUrl:
-            agentProfile?.photoUrl || null,
+            agentProfile?.photoUrl ||
+            property.agent?.avatarUrl ||
+            null,
     };
     const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
 
@@ -389,7 +384,7 @@ export default function PublicPropertyDetailPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11">
-                            <AvatarImage src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
+                            <AvatarImage key={agentForCard.avatarUrl || agentForCard.name || 'agent-mobile'} src={agentForCard.avatarUrl || undefined} alt={agentForCard.name || 'Agent'}/>
                             <AvatarFallback className="bg-[#22c55e]/15 text-[#86efac]">{getInitials(agentForCard.name)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -430,7 +425,7 @@ export default function PublicPropertyDetailPage() {
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
-                         <PublicScheduleViewingCard property={property} agentProfile={agentProfile} agencyId={agencyId} />
+                         <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} />
                     </div>
                 </main>
              </div>
