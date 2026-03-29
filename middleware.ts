@@ -12,7 +12,7 @@ function shouldBypass(pathname: string) {
     pathname.startsWith('/manifest') ||
     pathname.startsWith('/icons') ||
     pathname.startsWith('/images') ||
-    pathname.startsWith('/__public')
+    pathname.startsWith('/domains')
   );
 }
 
@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
   }
 
   const rewriteUrl = request.nextUrl.clone();
-  rewriteUrl.pathname = `/__public/${hostname}${pathname}`;
+  rewriteUrl.pathname = `/domains/${hostname}${pathname}`;
   rewriteUrl.search = search;
 
   return NextResponse.rewrite(rewriteUrl);
