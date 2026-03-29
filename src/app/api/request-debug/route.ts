@@ -34,6 +34,13 @@ export async function GET(request: NextRequest) {
     restAgencyId: string | null;
   }> = [];
 
+  const agencyChecks: Array<{
+    agencyId: string;
+    adminFound: boolean;
+    restFound: boolean;
+    agencyName: string | null;
+  }> = [];
+
   for (const candidate of candidates) {
     let adminFound = false;
     let adminAgencyId: string | null = null;
@@ -74,6 +81,42 @@ export async function GET(request: NextRequest) {
       restFound,
       restAgencyId,
     });
+
+    const agencyId = adminAgencyId || restAgencyId;
+    if (agencyId && !agencyChecks.some((entry) => entry.agencyId === agencyId)) {
+      let agencyAdminFound = false;
+      let agencyRestFound = false;
+      let agencyName: string | null = null;
+
+      try {
+        const { adminDb } = await import('@/firebase/admin');
+        const snapshot = await adminDb.collection('agencies').doc(agencyId).get();
+        agencyAdminFound = snapshot.exists;
+        agencyName = snapshot.exists ? ((snapshot.data()?.name as string | undefined) || null) : null;
+      } catch {
+        agencyAdminFound = false;
+      }
+
+      try {
+        const { firebaseConfig } = await import('@/firebase/config');
+        const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/agencies/${agencyId}?key=${firebaseConfig.apiKey}`;
+        const response = await fetch(url, { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          agencyRestFound = true;
+          agencyName = agencyName || payload?.fields?.name?.stringValue || null;
+        }
+      } catch {
+        agencyRestFound = false;
+      }
+
+      agencyChecks.push({
+        agencyId,
+        adminFound: agencyAdminFound,
+        restFound: agencyRestFound,
+        agencyName,
+      });
+    }
   }
 
   return NextResponse.json({
@@ -84,5 +127,6 @@ export async function GET(request: NextRequest) {
     chosenHost,
     candidates,
     mappingChecks,
+    agencyChecks,
   });
 }
