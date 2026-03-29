@@ -35,6 +35,10 @@ const profileSchema = z.object({
 const agencySchema = z.object({
   name: z.string().min(1, 'Numele agenției este obligatoriu.'),
   agencyDescription: z.string().optional(),
+  legalCompanyName: z.string().optional(),
+  companyTaxId: z.string().optional(),
+  registeredOffice: z.string().optional(),
+  legalRepresentative: z.string().optional(),
   termsAndConditions: z.string().optional(),
   privacyPolicy: z.string().optional(),
   customDomain: z.string().optional(),
@@ -69,6 +73,10 @@ export default function SettingsPage() {
     defaultValues: { 
         name: '', 
         agencyDescription: '',
+        legalCompanyName: '',
+        companyTaxId: '',
+        registeredOffice: '',
+        legalRepresentative: '',
         termsAndConditions: '',
         privacyPolicy: '',
         customDomain: '',
@@ -100,6 +108,10 @@ export default function SettingsPage() {
         agencyForm.reset({
             name: agency.name,
             agencyDescription: agency.agencyDescription || '',
+            legalCompanyName: agency.legalCompanyName || '',
+            companyTaxId: agency.companyTaxId || '',
+            registeredOffice: agency.registeredOffice || '',
+            legalRepresentative: agency.legalRepresentative || '',
             termsAndConditions: agency.termsAndConditions || '',
             privacyPolicy: agency.privacyPolicy || '',
             customDomain: agency.customDomain || '',
@@ -340,6 +352,14 @@ export default function SettingsPage() {
                             <Separator className="my-6 bg-white/10"/>
 
                             <h4 className="text-lg font-semibold text-white">Pagini legale publice</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={agencyForm.control} name="legalCompanyName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Denumire legala</FormLabel><FormControl><Input {...field} placeholder="Ex: Nordia Homes SRL" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Va fi afisata automat in pagina publica de Confidentialitate.</FormDescription><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="companyTaxId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">CUI</FormLabel><FormControl><Input {...field} placeholder="Ex: RO12345678" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Codul unic de identificare al agentiei.</FormDescription><FormMessage /></FormItem> )}/>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={agencyForm.control} name="registeredOffice" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Sediu social</FormLabel><FormControl><Input {...field} placeholder="Ex: Str. Exemplu nr. 1, Bucuresti" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Adresa juridica ce va aparea in pagina de Confidentialitate.</FormDescription><FormMessage /></FormItem> )}/>
+                                <FormField control={agencyForm.control} name="legalRepresentative" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Reprezentant legal</FormLabel><FormControl><Input {...field} placeholder="Ex: Elena Popescu" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Numele reprezentantului legal al agentiei.</FormDescription><FormMessage /></FormItem> )}/>
+                            </div>
                             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                     <div className="space-y-2">
@@ -358,7 +378,7 @@ export default function SettingsPage() {
                             </div>
                             <FormField control={agencyForm.control} name="customDomain" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Domeniu custom website public</FormLabel><FormControl><Input {...field} disabled placeholder="example.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50 disabled:cursor-not-allowed disabled:opacity-70" /></FormControl><FormDescription className="text-white/70">Administrarea domeniului custom se face din pagina dedicata, unde poti vedea si instructiunile DNS exacte din Firebase App Hosting.</FormDescription><FormMessage /></FormItem> )}/>
                             <FormField control={agencyForm.control} name="termsAndConditions" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Termeni si conditii</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Termeni si conditii..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Termeni si conditii" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
-                            <FormField control={agencyForm.control} name="privacyPolicy" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confidentialitate</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Confidentialitate..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Confidentialitate" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
+                            <FormField control={agencyForm.control} name="privacyPolicy" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Clauze suplimentare pentru Confidentialitate</FormLabel><FormControl><Textarea rows={8} {...field} placeholder="Introdu eventuale mentiuni suplimentare pe care vrei sa le adaugi la finalul paginii de Confidentialitate..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Pagina de Confidentialitate este generata automat din datele agentiei. Acest camp adauga doar informatii suplimentare la final.</FormDescription><FormMessage /></FormItem> )}/>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email Contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
                                 <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>

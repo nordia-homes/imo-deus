@@ -30,7 +30,13 @@ export function PublicAgencyProvider({
 export const usePublicAgency = () => {
     const context = useContext(PublicAgencyContext);
     if (context === undefined) {
-        throw new Error('usePublicAgency must be used within a PublicAgencyProvider');
+        return {
+            agency: null,
+            agencyId: null,
+            isAgencyLoading: true,
+            siteBasePath: '',
+            isCustomDomain: false,
+        };
     }
     return context;
 };

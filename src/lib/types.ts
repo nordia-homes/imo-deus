@@ -189,6 +189,10 @@ export type Agency = {
   name: string;
   ownerId: string;
   agencyDescription?: string;
+  legalCompanyName?: string;
+  companyTaxId?: string;
+  registeredOffice?: string;
+  legalRepresentative?: string;
   termsAndConditions?: string;
   privacyPolicy?: string;
   customDomain?: string;
