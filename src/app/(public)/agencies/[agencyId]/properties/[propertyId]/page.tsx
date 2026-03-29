@@ -205,7 +205,7 @@ const PageSkeleton = () => (
 
 export default function PublicPropertyDetailPage() {
     const params = useParams();
-    const { agencyId: contextAgencyId } = usePublicAgency();
+    const { agencyId: contextAgencyId, agency } = usePublicAgency();
     const routeParams = params as { agencyId?: string, propertyId?: string };
     const agencyId = routeParams.agencyId || contextAgencyId || '';
     const propertyId = routeParams.propertyId || '';
@@ -304,10 +304,14 @@ export default function PublicPropertyDetailPage() {
     };
     
     const agentForCard = {
-        name: agentProfile?.name || property.agentName || "Nealocat",
-        email: agentProfile?.email || null,
-        phone: agentProfile?.phone || null,
-        avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
+        name: agentProfile?.name || property.agentName || property.agent?.name || agency?.name || "Consultant",
+        email: agentProfile?.email || agency?.email || null,
+        phone: agentProfile?.phone || agency?.phone || null,
+        avatarUrl:
+            agentProfile?.photoUrl ||
+            property.agent?.avatarUrl ||
+            agency?.logoUrl ||
+            `https://i.pravatar.cc/150?u=${property.agentId || agencyId || 'unassigned'}`,
     };
     const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
 
