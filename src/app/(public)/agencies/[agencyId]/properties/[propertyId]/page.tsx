@@ -5,7 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import type { Property, UserProfile } from '@/lib/types';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, getDoc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
@@ -260,10 +260,15 @@ export default function PublicPropertyDetailPage() {
         const fetchAgent = async () => {
             setIsAgentLoading(true);
             try {
-                const agentDocRef = doc(firestore, 'users', property.agentId!);
-                const agentSnap = await getDoc(agentDocRef);
-                if (agentSnap.exists()) {
-                    setAgentProfile({ id: agentSnap.id, ...agentSnap.data() } as UserProfile);
+                const response = await fetch(`/api/public-agent?agencyId=${encodeURIComponent(agencyId)}&agentId=${encodeURIComponent(property.agentId!)}`, {
+                    cache: 'no-store',
+                });
+                if (!response.ok) {
+                    throw new Error('Nu am putut incarca profilul public al agentului.');
+                }
+                const payload = await response.json();
+                if (payload?.agent) {
+                    setAgentProfile(payload.agent as UserProfile);
                 } else {
                     setAgentProfile(null);
                 }
@@ -310,7 +315,6 @@ export default function PublicPropertyDetailPage() {
         avatarUrl:
             agentProfile?.photoUrl ||
             property.agent?.avatarUrl ||
-            agency?.logoUrl ||
             `https://i.pravatar.cc/150?u=${property.agentId || agencyId || 'unassigned'}`,
     };
     const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);

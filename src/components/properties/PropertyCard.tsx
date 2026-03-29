@@ -37,9 +37,15 @@ export function PropertyCard({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
+  const normalizedPublicBasePath =
+    publicBasePath && publicBasePath !== '/'
+      ? publicBasePath.endsWith('/')
+        ? publicBasePath.slice(0, -1)
+        : publicBasePath
+      : '';
   
   const href = agencyId
-    ? `${publicBasePath || `/agencies/${agencyId}`}/properties/${property.id}`
+    ? `${normalizedPublicBasePath || `/agencies/${agencyId}`}/properties/${property.id}`
     : `/properties/${property.id}`;
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
