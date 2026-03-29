@@ -179,13 +179,13 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <div key={item.label} className="rounded-[1.6rem] bg-[#15181a] px-4 py-4 text-left shadow-none">
+                                <div key={item.label} className="rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                                     <div className="flex w-full items-start gap-4">
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.03] text-[#86efac]">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.025] text-[#86efac]">
                                             {item.icon}
                                         </span>
                                         <span className="flex min-w-0 flex-1 flex-col">
-                                            <span className="flex flex-wrap items-baseline gap-2 text-base font-semibold text-white">
+                                            <span className="flex flex-wrap items-baseline gap-2 text-[1.05rem] font-semibold text-white md:text-[1.08rem]">
                                                 <span className="text-white/95">{item.label}</span>
                                                 <span className="text-white/80">:</span>
                                                 <span className="text-white">{item.value}</span>
@@ -245,13 +245,13 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <div key={item.label} className="rounded-[1.45rem] bg-[#15181a] px-4 py-4 text-left shadow-none">
+                            <div key={item.label} className="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                                 <div className="flex w-full items-start gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.03] text-[#86efac]">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.025] text-[#86efac]">
                                         {item.icon}
                                     </span>
                                     <span className="flex min-w-0 flex-1 flex-col">
-                                        <span className="flex flex-wrap items-baseline gap-2 text-sm font-semibold text-white">
+                                        <span className="flex flex-wrap items-baseline gap-2 text-[0.98rem] font-semibold text-white">
                                             <span className="text-white/95">{item.label}</span>
                                             <span className="text-white/80">:</span>
                                             <span className="text-white">{item.value}</span>

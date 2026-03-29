@@ -104,6 +104,27 @@ const pickAllowedValue = (
   return allowedValues.find((option) => option === aliasedOption) || '';
 };
 
+const pickAllowedOrOriginalValue = (
+  value: string | null | undefined,
+  allowedValues: readonly string[],
+  aliases: Record<string, string> = {}
+) => {
+  const matched = pickAllowedValue(value, allowedValues, aliases);
+  if (matched) {
+    return matched;
+  }
+
+  return typeof value === 'string' ? value.trim() : '';
+};
+
+const needsLegacyOption = (value: string | null | undefined, allowedValues: readonly string[]) => {
+  if (!value) {
+    return false;
+  }
+
+  return !allowedValues.some((option) => option === value);
+};
+
 const normalizeCityValue = (value?: string | null) =>
   pickAllowedValue(value, Object.keys(locations) as City[], {
     bucuresti: 'Bucuresti-Ilfov',
@@ -127,6 +148,109 @@ const normalizeZoneValue = (value?: string | null, city?: string | null) => {
   return directZoneMatch || value;
 };
 
+const deriveCityZoneFromLocation = (location?: string | null) => {
+  if (!location) {
+    return { city: '', zone: '' };
+  }
+
+  const parts = location
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const detectedCity =
+    parts
+      .slice()
+      .reverse()
+      .map((part) => normalizeCityValue(part))
+      .find(Boolean) || '';
+
+  const detectedZone =
+    parts
+      .map((part) => normalizeZoneValue(part, detectedCity))
+      .find((part) => !!part && part !== detectedCity) || '';
+
+  return { city: detectedCity, zone: detectedZone };
+};
+
+const inferPropertyType = (propertyData: Property) => {
+  const record = propertyData as unknown as Record<string, unknown>;
+  const explicitValue =
+    (record.propertyType as string | undefined) ||
+    (record.type as string | undefined) ||
+    (record.category as string | undefined) ||
+    (record.propertyCategory as string | undefined);
+
+  const explicitMatch = pickAllowedValue(explicitValue, PROPERTY_TYPE_OPTIONS, {
+    casa: 'Casă/Vilă',
+    vila: 'Casă/Vilă',
+    casavila: 'Casă/Vilă',
+    garsoniera: 'Garsonieră',
+    spatiucomercial: 'Spațiu Comercial',
+  });
+
+  if (explicitMatch) {
+    return explicitMatch;
+  }
+
+  const searchable = [propertyData.title, propertyData.description, propertyData.tagline, propertyData.keyFeatures]
+    .filter(Boolean)
+    .join(' ');
+  const normalized = normalizeText(searchable);
+
+  if (normalized.includes('garsoniera') || normalized.includes('studio')) {
+    return 'Garsonieră';
+  }
+  if (normalized.includes('teren') || normalized.includes('lot')) {
+    return 'Teren';
+  }
+  if (normalized.includes('spatiucomercial') || normalized.includes('spatiubirouri') || normalized.includes('birou') || normalized.includes('comercial')) {
+    return 'Spațiu Comercial';
+  }
+  if (normalized.includes('casa') || normalized.includes('vila') || normalized.includes('duplex') || normalized.includes('triplex')) {
+    return 'Casă/Vilă';
+  }
+  if ((propertyData.rooms || 0) > 0) {
+    return 'Apartament';
+  }
+
+  return '';
+};
+
+const inferTransactionType = (propertyData: Property) => {
+  const record = propertyData as unknown as Record<string, unknown>;
+  const explicitValue =
+    (record.transactionType as string | undefined) ||
+    (record.listingType as string | undefined) ||
+    (record.transaction as string | undefined) ||
+    (record.offerType as string | undefined) ||
+    (record.contractType as string | undefined);
+
+  const explicitMatch = pickAllowedValue(explicitValue, TRANSACTION_TYPE_OPTIONS, {
+    vanzare: 'Vânzare',
+    inchiriere: 'Închiriere',
+    chirie: 'Închiriere',
+  });
+
+  if (explicitMatch) {
+    return explicitMatch;
+  }
+
+  if (propertyData.status === 'Închiriat') {
+    return 'Închiriere';
+  }
+
+  const searchable = [propertyData.title, propertyData.description, propertyData.tagline]
+    .filter(Boolean)
+    .join(' ');
+  const normalized = normalizeText(searchable);
+
+  if (normalized.includes('inchiri') || normalized.includes('chirie') || normalized.includes('deinchiriat')) {
+    return 'Închiriere';
+  }
+
+  return 'Vânzare';
+};
 
 const propertySchema = z.object({
   title: z.string().min(1, { message: "Titlul este obligatoriu." }),
@@ -173,6 +297,151 @@ const propertySchema = z.object({
   commissionType: z.string().optional(),
   commissionValue: z.coerce.number().optional(),
 });
+
+type PropertyFormValues = z.infer<typeof propertySchema>;
+
+const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
+  title: '',
+  propertyType: '',
+  transactionType: 'Vânzare',
+  address: '',
+  city: '',
+  zone: '',
+  price: 0,
+  rooms: 0,
+  bathrooms: 0,
+  squareFootage: 0,
+  totalSurface: '',
+  constructionYear: '',
+  floor: '',
+  totalFloors: '',
+  orientation: '',
+  comfort: '',
+  interiorState: '',
+  furnishing: '',
+  heatingSystem: '',
+  parking: '',
+  keyFeatures: '',
+  description: '',
+  status: 'Activ',
+  featured: false,
+  ownerName: '',
+  ownerPhone: '',
+  salesScore: 'Mediu',
+  agentId: userId || 'unassigned',
+  buildingState: '',
+  seismicRisk: '',
+  balconyTerrace: '',
+  partitioning: '',
+  kitchen: '',
+  lift: '',
+  nearMetro: false,
+  commissionType: 'percentage',
+  commissionValue: undefined,
+});
+
+const getPropertyFormValues = (propertyData: Property | null, userId?: string): PropertyFormValues => {
+  if (!propertyData) {
+    return getEmptyPropertyFormValues(userId);
+  }
+
+  const fallbackLocation = deriveCityZoneFromLocation(propertyData.location);
+  const normalizedCity = normalizeCityValue(propertyData.city) || fallbackLocation.city;
+  const normalizedZone =
+    normalizeZoneValue(propertyData.zone, normalizedCity || propertyData.city) || fallbackLocation.zone || '';
+
+  return {
+    title: propertyData.title || '',
+    propertyType: inferPropertyType(propertyData),
+    transactionType: inferTransactionType(propertyData),
+    address: propertyData.address || '',
+    city: normalizedCity || '',
+    zone: normalizedZone,
+    price: propertyData.price || 0,
+    rooms: propertyData.rooms || 0,
+    bathrooms: propertyData.bathrooms || 0,
+    squareFootage: propertyData.squareFootage || 0,
+    totalSurface: propertyData.totalSurface || '',
+    constructionYear: propertyData.constructionYear || '',
+    floor: propertyData.floor || '',
+    totalFloors: propertyData.totalFloors || '',
+    orientation: pickAllowedOrOriginalValue(propertyData.orientation, ORIENTATION_OPTIONS),
+    comfort: pickAllowedOrOriginalValue(propertyData.comfort, COMFORT_OPTIONS),
+    interiorState: pickAllowedOrOriginalValue(propertyData.interiorState, INTERIOR_STATE_OPTIONS, {
+      buna: 'Bună',
+    }),
+    furnishing: pickAllowedOrOriginalValue(propertyData.furnishing, FURNISHING_OPTIONS, {
+      partial: 'Parțial',
+      mobilatcomplet: 'Complet',
+      completmobilat: 'Complet',
+      fara: 'Nemobilat',
+      nemobilata: 'Nemobilat',
+      nemobilat: 'Nemobilat',
+    }),
+    heatingSystem: pickAllowedOrOriginalValue(propertyData.heatingSystem, HEATING_SYSTEM_OPTIONS, {
+      centralaproprie: 'Centrală proprie',
+      centrala: 'Centrală proprie',
+      incalzireinpardoseala: 'Încălzire în pardoseală',
+    }),
+    parking: pickAllowedOrOriginalValue(propertyData.parking, PARKING_OPTIONS, {
+      locexterior: 'Loc exterior',
+      fara: 'Fără',
+    }),
+    keyFeatures: propertyData.keyFeatures || propertyData.amenities?.join(', ') || '',
+    description: propertyData.description || '',
+    status:
+      pickAllowedOrOriginalValue(propertyData.status, STATUS_OPTIONS, {
+        vandut: 'Vândut',
+        inchiriat: 'Închiriat',
+      }) || 'Activ',
+    featured: propertyData.featured || false,
+    ownerName: propertyData.ownerName || '',
+    ownerPhone: propertyData.ownerPhone || '',
+    salesScore:
+      pickAllowedOrOriginalValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
+        scazut: 'Scăzut',
+        ridicat: 'Ridicată',
+        ridicata: 'Ridicată',
+        mare: 'Ridicată',
+        mic: 'Scăzut',
+      }) || 'Mediu',
+    agentId: propertyData.agentId || userId || 'unassigned',
+    buildingState: pickAllowedOrOriginalValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
+      noua: 'Nouă',
+      reabilitata: 'Reabilitată',
+      buna: 'Bună',
+      necesitarenovare: 'Necesită renovare',
+    }),
+    seismicRisk: pickAllowedOrOriginalValue(propertyData.seismicRisk, SEISMIC_RISK_OPTIONS, {
+      clasai: 'Clasa 1',
+      clasaii: 'Clasa 2',
+      clasaiii: 'Clasa 3',
+      clasaiv: 'Clasa 4',
+    }),
+    balconyTerrace: pickAllowedOrOriginalValue(propertyData.balconyTerrace, BALCONY_OPTIONS, {
+      terasa: 'Terasă',
+      fara: 'Fără',
+    }),
+    partitioning: pickAllowedOrOriginalValue(propertyData.partitioning, PARTITIONING_OPTIONS, {
+      semidecomandat: 'Semidecomandat',
+      nedecomandat: 'Nedecomandat',
+    }),
+    kitchen: pickAllowedOrOriginalValue(propertyData.kitchen, KITCHEN_OPTIONS, {
+      deschisa: 'Deschisă',
+      inchisa: 'Închisă',
+      chicineta: 'Chicinetă',
+    }),
+    lift: pickAllowedOrOriginalValue(propertyData.lift, LIFT_OPTIONS, {
+      yes: 'Da',
+      no: 'Nu',
+      true: 'Da',
+      false: 'Nu',
+    }),
+    nearMetro: propertyData.nearMetro || false,
+    commissionType: pickAllowedValue(propertyData.commissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
+    commissionValue: propertyData.commissionValue,
+  };
+};
 
 const resizeAndGetBlob = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -283,9 +552,15 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
 
     const isEditMode = !!propertyData;
 
-    const form = useForm<z.infer<typeof propertySchema>>({
+    const initialFormValues = useMemo(
+        () => getPropertyFormValues(propertyData ?? null, user?.uid),
+        [propertyData, user?.uid]
+    );
+
+    const form = useForm<PropertyFormValues>({
         resolver: zodResolver(propertySchema),
-        defaultValues: {},
+        defaultValues: initialFormValues,
+        values: initialFormValues,
     });
 
     const watchedCity = form.watch('city') as City;
@@ -295,32 +570,37 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
     
     useEffect(() => {
-        if (watchedCity && isEditMode && propertyData?.city !== watchedCity) {
+        if (!watchedCity || !isEditMode || !propertyData) {
+            return;
+        }
+
+        const fallbackLocation = deriveCityZoneFromLocation(propertyData.location);
+        const initialCity = normalizeCityValue(propertyData.city) || fallbackLocation.city;
+        if (initialCity && initialCity !== watchedCity) {
             form.setValue('zone', '');
         }
-    }, [watchedCity, form, isEditMode, propertyData?.city]);
+    }, [watchedCity, form, isEditMode, propertyData]);
+
+    useEffect(() => {
+        if (!isEditMode || !propertyData) {
+            return;
+        }
+
+        form.reset(initialFormValues);
+    }, [form, initialFormValues, isEditMode, propertyData]);
 
     useEffect(() => {
         if (isEditMode && propertyData) {
-            const normalizedCity = normalizeCityValue(propertyData.city);
+            const fallbackLocation = deriveCityZoneFromLocation(propertyData.location);
+            const normalizedCity = normalizeCityValue(propertyData.city) || fallbackLocation.city;
+            const normalizedZone = normalizeZoneValue(propertyData.zone, normalizedCity || propertyData.city) || fallbackLocation.zone || '';
             form.reset({
                 title: propertyData.title || '',
-                propertyType: pickAllowedValue(propertyData.propertyType, PROPERTY_TYPE_OPTIONS, {
-                    casa: 'Casă/Vilă',
-                    vila: 'Casă/Vilă',
-                    casavila: 'Casă/Vilă',
-                    casavilă: 'Casă/Vilă',
-                    garsoniera: 'Garsonieră',
-                    spatiucomercial: 'Spațiu Comercial',
-                }),
-                transactionType: pickAllowedValue(propertyData.transactionType, TRANSACTION_TYPE_OPTIONS, {
-                    vanzare: 'Vânzare',
-                    inchiriere: 'Închiriere',
-                    chirie: 'Închiriere',
-                }) || 'Vânzare',
+                propertyType: inferPropertyType(propertyData),
+                transactionType: inferTransactionType(propertyData),
                 address: propertyData.address || '',
                 city: normalizedCity || '',
-                zone: normalizeZoneValue(propertyData.zone, normalizedCity || propertyData.city) || '',
+                zone: normalizedZone,
                 price: propertyData.price || 0,
                 rooms: propertyData.rooms || 0,
                 bathrooms: propertyData.bathrooms || 0,
@@ -329,12 +609,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 constructionYear: propertyData.constructionYear || '',
                 floor: propertyData.floor || '',
                 totalFloors: propertyData.totalFloors || '',
-                orientation: pickAllowedValue(propertyData.orientation, ORIENTATION_OPTIONS),
-                comfort: pickAllowedValue(propertyData.comfort, COMFORT_OPTIONS),
-                interiorState: pickAllowedValue(propertyData.interiorState, INTERIOR_STATE_OPTIONS, {
+                orientation: pickAllowedOrOriginalValue(propertyData.orientation, ORIENTATION_OPTIONS),
+                comfort: pickAllowedOrOriginalValue(propertyData.comfort, COMFORT_OPTIONS),
+                interiorState: pickAllowedOrOriginalValue(propertyData.interiorState, INTERIOR_STATE_OPTIONS, {
                     buna: 'Bună',
                 }),
-                furnishing: pickAllowedValue(propertyData.furnishing, FURNISHING_OPTIONS, {
+                furnishing: pickAllowedOrOriginalValue(propertyData.furnishing, FURNISHING_OPTIONS, {
                     partial: 'Parțial',
                     mobilatcomplet: 'Complet',
                     completmobilat: 'Complet',
@@ -342,25 +622,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     nemobilata: 'Nemobilat',
                     nemobilat: 'Nemobilat',
                 }),
-                heatingSystem: pickAllowedValue(propertyData.heatingSystem, HEATING_SYSTEM_OPTIONS, {
+                heatingSystem: pickAllowedOrOriginalValue(propertyData.heatingSystem, HEATING_SYSTEM_OPTIONS, {
                     centralaproprie: 'Centrală proprie',
                     centrala: 'Centrală proprie',
                     incalzireinpardoseala: 'Încălzire în pardoseală',
                 }),
-                parking: pickAllowedValue(propertyData.parking, PARKING_OPTIONS, {
+                parking: pickAllowedOrOriginalValue(propertyData.parking, PARKING_OPTIONS, {
                     locexterior: 'Loc exterior',
                     fara: 'Fără',
                 }),
                 keyFeatures: propertyData.keyFeatures || propertyData.amenities?.join(', ') || '',
                 description: propertyData.description || '',
-                status: pickAllowedValue(propertyData.status, STATUS_OPTIONS, {
+                status: pickAllowedOrOriginalValue(propertyData.status, STATUS_OPTIONS, {
                     vandut: 'Vândut',
                     inchiriat: 'Închiriat',
                 }) || 'Activ',
                 featured: propertyData.featured || false,
                 ownerName: propertyData.ownerName || '',
                 ownerPhone: propertyData.ownerPhone || '',
-                salesScore: pickAllowedValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
+                salesScore: pickAllowedOrOriginalValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
                     scazut: 'Scăzut',
                     ridicat: 'Ridicată',
                     ridicata: 'Ridicată',
@@ -368,30 +648,30 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     mic: 'Scăzut',
                 }) || 'Mediu',
                 agentId: propertyData.agentId || user?.uid || 'unassigned',
-                buildingState: pickAllowedValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
+                buildingState: pickAllowedOrOriginalValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
                     noua: 'Nouă',
                     reabilitata: 'Reabilitată',
                     buna: 'Bună',
                     necesitarenovare: 'Necesită renovare',
                 }),
-                seismicRisk: pickAllowedValue(propertyData.seismicRisk, SEISMIC_RISK_OPTIONS, {
+                seismicRisk: pickAllowedOrOriginalValue(propertyData.seismicRisk, SEISMIC_RISK_OPTIONS, {
                     clasai: 'Clasa 1',
                     clasaii: 'Clasa 2',
                     clasaiii: 'Clasa 3',
                     clasaiv: 'Clasa 4',
                 }),
-                balconyTerrace: pickAllowedValue(propertyData.balconyTerrace, BALCONY_OPTIONS, {
+                balconyTerrace: pickAllowedOrOriginalValue(propertyData.balconyTerrace, BALCONY_OPTIONS, {
                     terasa: 'Terasă',
                     fara: 'Fără',
                 }),
-                partitioning: pickAllowedValue(propertyData.partitioning, PARTITIONING_OPTIONS, {
+                partitioning: pickAllowedOrOriginalValue(propertyData.partitioning, PARTITIONING_OPTIONS, {
                     semi: 'Semidecomandat',
                 }),
-                kitchen: pickAllowedValue(propertyData.kitchen, KITCHEN_OPTIONS, {
+                kitchen: pickAllowedOrOriginalValue(propertyData.kitchen, KITCHEN_OPTIONS, {
                     deschisa: 'Deschisă',
                     inchisa: 'Închisă',
                 }),
-                lift: pickAllowedValue(propertyData.lift, LIFT_OPTIONS, {
+                lift: pickAllowedOrOriginalValue(propertyData.lift, LIFT_OPTIONS, {
                     yes: 'Da',
                     no: 'Nu',
                 }),
@@ -422,8 +702,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             setSelectedCoordinates(null);
             setSelectedAddressLabel('');
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [form, isEditMode, propertyData, user?.uid]);
     
     const imageItems = useMemo(() => imageSources.map((source, index) => {
         const id = source instanceof File ? `${source.name}-${source.lastModified}-${index}` : source.url;
@@ -823,10 +1102,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Tip Proprietate *</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                            <SelectContent><SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                            <SelectContent>{needsLegacyOption(field.value, PROPERTY_TYPE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Apartament">Apartament</SelectItem><SelectItem value="Casă/Vilă">Casă/Vilă</SelectItem><SelectItem value="Garsonieră">Garsonieră</SelectItem><SelectItem value="Teren">Teren</SelectItem><SelectItem value="Spațiu Comercial">Spațiu Comercial</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                         <FormField control={form.control} name="transactionType" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Tip Tranzacție *</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                            <SelectContent><SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                            <SelectContent>{needsLegacyOption(field.value, TRANSACTION_TYPE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Vânzare">Vânzare</SelectItem><SelectItem value="Închiriere">Închiriere</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                         <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Preț (€) *</FormLabel><FormControl><Input type="number" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: 350000" /></FormControl><FormMessage /></FormItem> )} />
                                     </div>
                                 </CardContent>
@@ -838,10 +1117,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                          <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Oraș *</FormLabel>
                                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Bucuresti-Ilfov" /></SelectTrigger></FormControl>
-                                             <SelectContent>{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                             <SelectContent>{field.value && !Object.keys(locations).includes(field.value) && <SelectItem value={field.value}>{field.value}</SelectItem>}{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                                          <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Zonă</FormLabel>
                                              <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Herăstrău" /></SelectTrigger></FormControl>
-                                             <SelectContent>{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                            <SelectContent>{field.value && !availableZones.includes(field.value) && <SelectItem value={field.value}>{field.value}</SelectItem>}{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                                          <FormField control={form.control} name="address" render={({ field }) => (
                                             <FormItem className="md:col-span-3">
                                                 <FormLabel className="text-white/80">Adresă *</FormLabel>
@@ -963,7 +1242,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         <FormField control={form.control} name="totalFloors" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Total Etaje</FormLabel><FormControl><Input type="number" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: 10" /></FormControl><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="partitioning" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Compartimentare</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
-                                            <SelectContent><SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                            <SelectContent>{needsLegacyOption(field.value, PARTITIONING_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -972,17 +1251,17 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Dotări & Finisaje</h3>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confort</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Interior</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Mobilier</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Sistem Încălzire</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Încălzire în pardoseală">Încălzire în pardoseală</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Parcare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="buildingState" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Clădire</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Nouă">Nouă</SelectItem><SelectItem value="Reabilitată">Reabilitată</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="seismicRisk" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Risc Seismic</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Clasa 1">Clasa 1</SelectItem><SelectItem value="Clasa 2">Clasa 2</SelectItem><SelectItem value="Clasa 3">Clasa 3</SelectItem><SelectItem value="Clasa 4">Clasa 4</SelectItem><SelectItem value="Nespecificat">Nespecificat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="balconyTerrace" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Balcon/Terasă</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Balcon">Balcon</SelectItem><SelectItem value="Terasă">Terasă</SelectItem><SelectItem value="Balcon francez">Balcon francez</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="kitchen" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Bucătărie</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Deschisă">Deschisă</SelectItem><SelectItem value="Închisă">Închisă</SelectItem><SelectItem value="Chicinetă">Chicinetă</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Lift</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Orientare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Nord">Nord</SelectItem><SelectItem value="Sud">Sud</SelectItem><SelectItem value="Est">Est</SelectItem><SelectItem value="Vest">Vest</SelectItem><SelectItem value="NV">NV</SelectItem><SelectItem value="NE">NE</SelectItem><SelectItem value="SV">SV</SelectItem><SelectItem value="SE">SE</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="comfort" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confort</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, COMFORT_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Lux">Lux</SelectItem><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem><SelectItem value="3">3</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="interiorState" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Interior</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, INTERIOR_STATE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Nou">Nou</SelectItem><SelectItem value="Renovat">Renovat</SelectItem><SelectItem value="Bună">Bună</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="furnishing" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Mobilier</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, FURNISHING_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Complet">Complet</SelectItem><SelectItem value="Parțial">Parțial</SelectItem><SelectItem value="Nemobilat">Nemobilat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="heatingSystem" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Sistem Încălzire</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, HEATING_SYSTEM_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Centrală proprie">Centrală proprie</SelectItem><SelectItem value="Termoficare">Termoficare</SelectItem><SelectItem value="Încălzire în pardoseală">Încălzire în pardoseală</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="parking" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Parcare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, PARKING_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Garaj">Garaj</SelectItem><SelectItem value="Loc exterior">Loc exterior</SelectItem><SelectItem value="Subteran">Subteran</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="buildingState" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Stare Clădire</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, BUILDING_STATE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Nouă">Nouă</SelectItem><SelectItem value="Reabilitată">Reabilitată</SelectItem><SelectItem value="Bună">Bună</SelectItem><SelectItem value="Necesită renovare">Necesită renovare</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="seismicRisk" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Risc Seismic</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, SEISMIC_RISK_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Clasa 1">Clasa 1</SelectItem><SelectItem value="Clasa 2">Clasa 2</SelectItem><SelectItem value="Clasa 3">Clasa 3</SelectItem><SelectItem value="Clasa 4">Clasa 4</SelectItem><SelectItem value="Nespecificat">Nespecificat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="balconyTerrace" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Balcon/Terasă</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, BALCONY_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Balcon">Balcon</SelectItem><SelectItem value="Terasă">Terasă</SelectItem><SelectItem value="Balcon francez">Balcon francez</SelectItem><SelectItem value="Fără">Fără</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="kitchen" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Bucătărie</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, KITCHEN_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Deschisă">Deschisă</SelectItem><SelectItem value="Închisă">Închisă</SelectItem><SelectItem value="Chicinetă">Chicinetă</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="lift" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Lift</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, LIFT_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Da">Da</SelectItem><SelectItem value="Nu">Nu</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="orientation" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Orientare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, ORIENTATION_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Nord">Nord</SelectItem><SelectItem value="Sud">Sud</SelectItem><SelectItem value="Est">Est</SelectItem><SelectItem value="Vest">Vest</SelectItem><SelectItem value="NV">NV</SelectItem><SelectItem value="NE">NE</SelectItem><SelectItem value="SV">SV</SelectItem><SelectItem value="SE">SE</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -990,9 +1269,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, STATUS_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Agent</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Nealocat</SelectItem>{agents.map(agent => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, SALES_SCORE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
