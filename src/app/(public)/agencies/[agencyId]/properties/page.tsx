@@ -12,9 +12,11 @@ import { ArrowRight, Filter } from 'lucide-react';
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { usePublicPath } from '@/context/PublicAgencyContext';
 
 export default function AgencyAllPropertiesPage() {
   const { agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
+  const publicPath = usePublicPath();
   const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
@@ -90,7 +92,7 @@ export default function AgencyAllPropertiesPage() {
           </div>
         </div>
         <div className="px-1">
-          <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
+          <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} publicBasePath={publicPath()} />
         </div>
         <div className="px-2">
           <Card className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] shadow-[0_26px_70px_-42px_rgba(0,0,0,0.86)]">
@@ -103,7 +105,7 @@ export default function AgencyAllPropertiesPage() {
                 Daca vrei sa restrangi mai repede optiunile, spune-ne ce cauti si te ghidam mai departe.
               </p>
               <Button asChild className="mx-auto mt-1 w-full rounded-full bg-white text-black hover:bg-stone-100">
-                <Link href={`/agencies/${agencyId}/contact`} className="inline-flex items-center justify-center gap-2 text-black no-underline">
+                  <Link href={publicPath('/contact')} className="inline-flex items-center justify-center gap-2 text-black no-underline">
                   Contacteaza un consultant
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -137,7 +139,7 @@ export default function AgencyAllPropertiesPage() {
           </CardHeader>
         </Card>
         
-        <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} />
+        <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} publicBasePath={publicPath()} />
 
         <Card className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_28px_90px_-45px_rgba(0,0,0,0.85)]">
           <CardHeader className="flex flex-row items-center justify-between gap-6">
@@ -152,7 +154,7 @@ export default function AgencyAllPropertiesPage() {
               </p>
             </div>
             <Button asChild className="rounded-full bg-white px-7 text-black hover:bg-stone-100">
-              <Link href={`/agencies/${agencyId}/contact`} className="inline-flex items-center justify-center gap-2 text-black no-underline">
+              <Link href={publicPath('/contact')} className="inline-flex items-center justify-center gap-2 text-black no-underline">
                 Contacteaza un consultant
                 <ArrowRight className="h-4 w-4" />
               </Link>

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking, useStorage } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile, Agency } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, Globe } from 'lucide-react';
+import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ const agencySchema = z.object({
   agencyDescription: z.string().optional(),
   termsAndConditions: z.string().optional(),
   privacyPolicy: z.string().optional(),
+  customDomain: z.string().optional(),
   email: z.string().email('Adresă de email invalidă.').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -69,6 +71,7 @@ export default function SettingsPage() {
         agencyDescription: '',
         termsAndConditions: '',
         privacyPolicy: '',
+        customDomain: '',
         email: '', 
         phone: '', 
         address: '', 
@@ -99,6 +102,7 @@ export default function SettingsPage() {
             agencyDescription: agency.agencyDescription || '',
             termsAndConditions: agency.termsAndConditions || '',
             privacyPolicy: agency.privacyPolicy || '',
+            customDomain: agency.customDomain || '',
             email: agency.email || '',
             phone: agency.phone || '',
             address: agency.address || '',
@@ -174,11 +178,26 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAgencySave = (values: z.infer<typeof agencySchema>) => {
+  const handleAgencySave = async (values: z.infer<typeof agencySchema>) => {
     if (!agency?.id) return;
-    const agencyDocRef = doc(firestore, 'agencies', agency.id);
-    updateDocumentNonBlocking(agencyDocRef, values);
-    toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });
+    const nextValues = {
+      ...values,
+      customDomain: agency.customDomain || '',
+      customDomainStatus: agency.customDomainStatus,
+      customDomainAliases: agency.customDomainAliases || [],
+      customDomainResourceNames: agency.customDomainResourceNames || [],
+      customDomainLastCheckedAt: agency.customDomainLastCheckedAt,
+    };
+
+    try {
+      const agencyDocRef = doc(firestore, 'agencies', agency.id);
+      updateDocumentNonBlocking(agencyDocRef, nextValues);
+
+      toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });
+    } catch (error) {
+      console.error('Failed to save custom domain settings:', error);
+      toast({ variant: 'destructive', title: 'Eroare', description: 'Nu am putut salva setările domeniului custom.' });
+    }
   };
 
   const handleCreateAgency = async (values: z.infer<typeof agencySchema>) => {
@@ -321,6 +340,23 @@ export default function SettingsPage() {
                             <Separator className="my-6 bg-white/10"/>
 
                             <h4 className="text-lg font-semibold text-white">Pagini legale publice</h4>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                    <div className="space-y-2">
+                                        <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-200">
+                                            <Globe className="h-4 w-4" />
+                                            Domeniu custom website public
+                                        </div>
+                                        <p className="text-sm leading-7 text-white/70">
+                                            Configurarea completa a domeniului custom se face acum din pagina dedicata, unde ai status, instructiuni si configurare separata.
+                                        </p>
+                                    </div>
+                                    <Button asChild variant="outline" className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">
+                                        <Link href="/custom-domain">Deschide pagina dedicata</Link>
+                                    </Button>
+                                </div>
+                            </div>
+                            <FormField control={agencyForm.control} name="customDomain" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Domeniu custom website public</FormLabel><FormControl><Input {...field} disabled placeholder="example.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50 disabled:cursor-not-allowed disabled:opacity-70" /></FormControl><FormDescription className="text-white/70">Administrarea domeniului custom se face din pagina dedicata, unde poti vedea si instructiunile DNS exacte din Firebase App Hosting.</FormDescription><FormMessage /></FormItem> )}/>
                             <FormField control={agencyForm.control} name="termsAndConditions" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Termeni si conditii</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Termeni si conditii..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Termeni si conditii" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
                             <FormField control={agencyForm.control} name="privacyPolicy" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Confidentialitate</FormLabel><FormControl><Textarea rows={10} {...field} placeholder="Introdu textul pentru pagina publica Confidentialitate..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Acest text va fi afisat in pagina publica "Confidentialitate" a agentiei.</FormDescription><FormMessage /></FormItem> )}/>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

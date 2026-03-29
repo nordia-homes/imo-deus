@@ -191,6 +191,11 @@ export type Agency = {
   agencyDescription?: string;
   termsAndConditions?: string;
   privacyPolicy?: string;
+  customDomain?: string;
+  customDomainStatus?: 'pending' | 'connected' | 'error';
+  customDomainAliases?: string[];
+  customDomainResourceNames?: string[];
+  customDomainLastCheckedAt?: string;
   logoUrl?: string;
   primaryColor?: string;
   agentIds?: string[];
@@ -201,6 +206,31 @@ export type Agency = {
   instagramUrl?: string;
   linkedinUrl?: string;
 }
+
+export type CustomDomainInstructionRow = {
+  action: 'ADD' | 'REMOVE' | 'UNSPECIFIED';
+  type: string;
+  host: string;
+  value: string;
+};
+
+export type CustomDomainApiDomain = {
+  domainName: string;
+  resourceName: string;
+  hostState?: string;
+  ownershipState?: string;
+  certState?: string;
+  issues: string[];
+  instructions: CustomDomainInstructionRow[];
+};
+
+export type CustomDomainApiResult = {
+  primaryDomain: string;
+  aliases: string[];
+  agencyId: string;
+  overallStatus: 'pending' | 'connected' | 'error';
+  domains: CustomDomainApiDomain[];
+};
 
 export type UserProfile = {
   id: string;

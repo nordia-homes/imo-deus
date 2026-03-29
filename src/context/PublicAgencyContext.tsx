@@ -6,6 +6,8 @@ type PublicAgencyContextType = {
     agency: Agency | null;
     agencyId: string | null;
     isAgencyLoading: boolean;
+    siteBasePath: string;
+    isCustomDomain: boolean;
 };
 
 const PublicAgencyContext = createContext<PublicAgencyContextType | undefined>(undefined);
@@ -31,6 +33,25 @@ export const usePublicAgency = () => {
         throw new Error('usePublicAgency must be used within a PublicAgencyProvider');
     }
     return context;
+};
+
+export const usePublicPath = () => {
+    const context = useContext(PublicAgencyContext);
+    const siteBasePath = context?.siteBasePath || '';
+
+    return (path = '') => {
+        const normalizedPath = path
+            ? path.startsWith('/')
+                ? path
+                : `/${path}`
+            : '';
+
+        if (!siteBasePath) {
+            return normalizedPath || '/';
+        }
+
+        return `${siteBasePath}${normalizedPath}`;
+    };
 };
 
 /**

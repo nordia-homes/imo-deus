@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Bath, BedDouble, MapPin, Ruler } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import type { Property } from '@/lib/types';
+import { usePublicPath } from '@/context/PublicAgencyContext';
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('ro-RO', {
@@ -16,9 +17,10 @@ function formatPrice(price: number) {
 
 export function PublicPropertyCard({ property, agencyId }: { property: Property; agencyId: string }) {
   const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
+  const publicPath = usePublicPath();
 
   return (
-    <Link href={`/agencies/${agencyId}/properties/${property.id}`} className="group block h-full">
+    <Link href={publicPath(`/properties/${property.id}`)} className="group block h-full">
       <Card className="flex h-full flex-col overflow-hidden rounded-[1.9rem] border border-emerald-400/14 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.12),transparent_28%),linear-gradient(180deg,rgba(15,18,17,0.96)_0%,rgba(10,12,12,0.98)_100%)] shadow-[0_26px_80px_-42px_rgba(0,0,0,0.86)] transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/24 hover:shadow-[0_32px_90px_-38px_rgba(0,0,0,0.92)]">
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image

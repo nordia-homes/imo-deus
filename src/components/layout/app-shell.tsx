@@ -178,6 +178,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
              )}
              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Domeniu custom" asChild isActive={pathname === '/custom-domain'}>
+                    <Link href="/custom-domain">
+                        <Globe />
+                        <span>Domeniu custom</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Setări" asChild isActive={pathname === '/settings'}>
                     <Link href="/settings">
                         <Settings />

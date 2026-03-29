@@ -10,6 +10,7 @@ import type { Agency } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import Image from 'next/image';
 import { ModernMenuIcon } from '../icons/ModernMenuIcon';
+import { usePublicPath } from '@/context/PublicAgencyContext';
 
 interface PublicHeaderProps {
   agency: Agency | null;
@@ -18,18 +19,20 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const pathname = usePathname();
+  const displayPath = pathname.replace(/^\/__public\/[^/]+/, '') || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const agencyId = agency?.id;
+  const publicPath = usePublicPath();
 
   const navLinks = [
-    { href: `/agencies/${agencyId}`, label: 'Acasă', icon: <Home /> },
-    { href: `/agencies/${agencyId}/properties`, label: 'Proprietăți', icon: <Building2 /> },
-    { href: `/agencies/${agencyId}/proprietari`, label: 'Proprietari', icon: <KeyRound /> },
-    { href: `/agencies/${agencyId}/contact`, label: 'Contact', icon: <Mail /> },
+    { href: publicPath(), label: 'Acasă', icon: <Home /> },
+    { href: publicPath('/properties'), label: 'Proprietăți', icon: <Building2 /> },
+    { href: publicPath('/proprietari'), label: 'Proprietari', icon: <KeyRound /> },
+    { href: publicPath('/contact'), label: 'Contact', icon: <Mail /> },
   ];
 
   const MobileNavLink = ({ href, children, onClick }: { href: string; children: React.ReactNode; onClick: () => void; }) => {
-    const isActive = pathname === href;
+    const isActive = displayPath === href;
     return (
       <SheetClose asChild>
         <Link href={href} className={cn("flex items-center gap-4 rounded-2xl p-4 text-lg font-medium transition-colors", isActive ? "bg-white/10 text-white" : "text-stone-300 hover:bg-white/5 hover:text-white")} onClick={onClick}>
@@ -42,7 +45,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)] backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
-        <Link href={`/agencies/${agencyId}`} className="flex min-w-0 items-center gap-3">
+        <Link href={publicPath()} className="flex min-w-0 items-center gap-3">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
             <>
               {agency?.logoUrl ? (
@@ -65,7 +68,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 md:flex">
           {agencyId && navLinks.map(link => {
-            const isActive = pathname === link.href;
+            const isActive = displayPath === link.href;
             return (
               <Link
                 key={link.href}

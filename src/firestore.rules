@@ -97,6 +97,14 @@ service cloud.firestore {
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
       allow read, delete: if isSignedIn();
     }
+
+    match /publicDomains/{domainId} {
+      allow get: if true;
+      allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+      allow update: if isUserAdminForAgency(request.resource.data.agencyId);
+      allow delete: if isUserAdminForAgency(resource.data.agencyId);
+      allow list: if false;
+    }
     
     // --- Scraper Collection ---
     match /ownerListings/{listingId} {

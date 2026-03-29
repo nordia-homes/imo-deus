@@ -6,6 +6,7 @@
 // pentru astfel de sarcini.
 
 import { initializeApp, cert, getApps, App, ServiceAccount } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
 
@@ -67,3 +68,4 @@ if (!getApps().length) {
 // PAS 5: Exportăm instanța Firestore pentru Admin SDK.
 // Aceasta va fi folosită în fluxurile de pe server.
 export const adminDb = getFirestore(app);
+export const adminAuth = getAuth(app);

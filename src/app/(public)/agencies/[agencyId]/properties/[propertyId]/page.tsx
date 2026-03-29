@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertiesMap } from '@/components/map/PropertiesMap';
 import { SimilarProperties } from '@/components/public/SimilarProperties';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 
 
 // ----------- START OF INLINED/NEW COMPONENTS -----------
@@ -204,9 +205,13 @@ const PageSkeleton = () => (
 
 export default function PublicPropertyDetailPage() {
     const params = useParams();
-    const { agencyId, propertyId } = params as { agencyId: string, propertyId: string };
+    const { agencyId: contextAgencyId } = usePublicAgency();
+    const routeParams = params as { agencyId?: string, propertyId?: string };
+    const agencyId = routeParams.agencyId || contextAgencyId || '';
+    const propertyId = routeParams.propertyId || '';
     const firestore = useFirestore();
     const isMobile = useIsMobile();
+    const publicPath = usePublicPath();
 
     const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
     const [isAgentLoading, setIsAgentLoading] = useState(true);
@@ -363,7 +368,7 @@ export default function PublicPropertyDetailPage() {
                                     </p>
                                 </div>
                                 <Button asChild className="w-full rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]">
-                                    <Link href={`/agencies/${agencyId}/properties`} className="inline-flex items-center justify-center gap-2">
+                                    <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
                                         Vezi toate proprietatile
                                         <ArrowRight className="h-4 w-4" />
                                     </Link>

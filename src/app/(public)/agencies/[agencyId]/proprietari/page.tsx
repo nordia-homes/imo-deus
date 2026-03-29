@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 
 const sectionShellClassName =
   'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
@@ -16,6 +16,7 @@ const ownersIntroVideoUrl =
 
 export default function AgencyOwnersPage() {
   const { agency, agencyId } = usePublicAgency();
+  const publicPath = usePublicPath();
 
   const ownerServices = [
     {
@@ -109,13 +110,13 @@ export default function AgencyOwnersPage() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300">
-                <Link href={`/agencies/${agencyId}/contact`}>
+                <Link href={publicPath('/contact')}>
                   Discutam despre proprietatea ta
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="hidden rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08] sm:inline-flex">
-                <Link href={`/agencies/${agencyId}/properties`}>Vezi proprietatile active</Link>
+                <Link href={publicPath('/properties')}>Vezi proprietatile active</Link>
               </Button>
             </div>
 
@@ -201,7 +202,7 @@ export default function AgencyOwnersPage() {
               size="lg"
               className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
             >
-              <Link href={`/agencies/${agencyId}/contact`}>
+              <Link href={publicPath('/contact')}>
                 Cere o evaluare initiala
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -296,7 +297,7 @@ export default function AgencyOwnersPage() {
               size="lg"
               className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
             >
-              <Link href={`/agencies/${agencyId}/contact`}>
+              <Link href={publicPath('/contact')}>
                 Stabilim urmatorii pasi
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -307,7 +308,7 @@ export default function AgencyOwnersPage() {
               variant="outline"
               className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]"
             >
-              <Link href={`/agencies/${agencyId}`}>Inapoi la prima pagina</Link>
+              <Link href={publicPath()}>Inapoi la prima pagina</Link>
             </Button>
           </div>
         </article>

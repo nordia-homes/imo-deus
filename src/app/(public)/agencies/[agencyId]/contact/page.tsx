@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowRight, Mail, Phone } from 'lucide-react';
-import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PublicContactForm } from '@/components/public/PublicContactForm';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const softCardClassName =
 
 export default function AgencyContactPage() {
   const { agency, agencyId, isAgencyLoading } = usePublicAgency();
+  const publicPath = usePublicPath();
   const [isEmailVisible, setIsEmailVisible] = useState(false);
 
   if (isAgencyLoading || !agency || !agencyId) {
@@ -124,7 +125,7 @@ export default function AgencyContactPage() {
                 variant="outline"
                 className="h-12 w-full rounded-full border border-emerald-300/18 bg-emerald-400/8 px-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-emerald-400/12"
               >
-                <Link href={`/agencies/${agencyId}/properties`} className="inline-flex items-center justify-center gap-2">
+                <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
                   Vezi toate proprietatile
                   <ArrowRight className="h-4 w-4" />
                 </Link>

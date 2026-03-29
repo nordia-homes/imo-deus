@@ -7,12 +7,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BedDouble, Bath, Ruler, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { usePublicPath } from '@/context/PublicAgencyContext';
 
 
 function SimilarPropertyCard({ property }: { property: Property }) {
-  const { agencyId } = usePublicAgency();
-  const href = `/agencies/${agencyId}/properties/${property.id}`;
+  const publicPath = usePublicPath();
+  const href = publicPath(`/properties/${property.id}`);
   const financeCardClassName = "flex h-full flex-col overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] text-stone-100 shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
   return (

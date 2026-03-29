@@ -9,9 +9,10 @@ interface PropertyListProps {
     isLoading: boolean;
     onDeleteRequest?: (property: Property) => void;
     agencyId?: string;
+    publicBasePath?: string;
 }
 
-export function PropertyList({ properties, isLoading, onDeleteRequest, agencyId }: PropertyListProps) {
+export function PropertyList({ properties, isLoading, onDeleteRequest, agencyId, publicBasePath }: PropertyListProps) {
 
     const renderPropertyList = () => {
         if (isLoading) {
@@ -47,6 +48,7 @@ export function PropertyList({ properties, isLoading, onDeleteRequest, agencyId 
                         property={property}
                         onDeleteRequest={onDeleteRequest ? () => onDeleteRequest(property) : undefined}
                         agencyId={agencyId}
+                        publicBasePath={publicBasePath}
                     />
                 ))}
             </div>

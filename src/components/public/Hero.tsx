@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Building2, Headphones, MapPinned, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const statCardClassName =
@@ -12,6 +12,7 @@ const statCardClassName =
 
 export function Hero() {
   const { agency } = usePublicAgency();
+  const publicPath = usePublicPath();
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
 
   return (
@@ -54,7 +55,7 @@ export function Hero() {
                 size="lg"
                 className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_42px_-16px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
               >
-                <Link href={`/agencies/${agency?.id}/properties`}>
+                <Link href={publicPath('/properties')}>
                   Vezi proprietatile
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -65,7 +66,7 @@ export function Hero() {
                 variant="outline"
                 className="rounded-full border-white/10 bg-white/[0.05] px-7 text-white hover:bg-white/[0.1]"
               >
-                <Link href={`/agencies/${agency?.id}/contact`}>Contacteaza un consultant</Link>
+                <Link href={publicPath('/contact')}>Contacteaza un consultant</Link>
               </Button>
             </div>
           </div>

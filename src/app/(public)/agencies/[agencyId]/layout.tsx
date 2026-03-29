@@ -86,6 +86,8 @@ export default function AgencyPublicLayout({
     agency,
     agencyId,
     isAgencyLoading,
+    siteBasePath: `/agencies/${agencyId}`,
+    isCustomDomain: false,
   };
 
   // Render a loading shell while fetching agency data

@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { Copyright } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 
 export function PublicFooter() {
     const pathname = usePathname();
-    const isPropertyDetailPage = /^\/agencies\/[^/]+\/properties\/[^/]+$/.test(pathname);
+    const displayPath = pathname.replace(/^\/__public\/[^/]+/, '') || '/';
+    const isPropertyDetailPage = /^\/(?:agencies\/[^/]+\/)?properties\/[^/]+$/.test(displayPath);
     const { agencyId } = usePublicAgency();
+    const publicPath = usePublicPath();
 
     return (
         <footer className={`${isPropertyDetailPage ? 'hidden md:block' : 'block'} border-t border-emerald-400/12 bg-[linear-gradient(180deg,rgba(6,8,8,0.96)_0%,rgba(9,12,11,0.98)_100%)]`}>
@@ -19,14 +21,14 @@ export function PublicFooter() {
                     {agencyId ? (
                       <div className="flex items-center gap-2 text-sm text-white/65">
                         <Link
-                          href={`/agencies/${agencyId}/termeni-si-conditii`}
+                          href={publicPath('/termeni-si-conditii')}
                           className="transition-colors hover:text-emerald-200"
                         >
                           Termeni si conditii
                         </Link>
                         <span className="text-emerald-300/55">•</span>
                         <Link
-                          href={`/agencies/${agencyId}/confidentialitate`}
+                          href={publicPath('/confidentialitate')}
                           className="transition-colors hover:text-emerald-200"
                         >
                           Confidentialitate

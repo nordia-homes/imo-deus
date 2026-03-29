@@ -22,10 +22,12 @@ import { useToast } from "@/hooks/use-toast";
 export function PropertyCard({
   property,
   agencyId,
+  publicBasePath,
   onDeleteRequest,
 }: {
   property: Property;
   agencyId?: string;
+  publicBasePath?: string;
   onDeleteRequest?: () => void;
 }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -37,7 +39,7 @@ export function PropertyCard({
   const isPublicCard = Boolean(agencyId);
   
   const href = agencyId
-    ? `/agencies/${agencyId}/properties/${property.id}`
+    ? `${publicBasePath || `/agencies/${agencyId}`}/properties/${property.id}`
     : `/properties/${property.id}`;
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';

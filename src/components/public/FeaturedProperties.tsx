@@ -3,6 +3,7 @@
 import type { Property } from '@/lib/types';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import { Home } from 'lucide-react';
+import { usePublicPath } from '@/context/PublicAgencyContext';
 
 interface FeaturedPropertiesProps {
   properties: Property[];
@@ -10,6 +11,8 @@ interface FeaturedPropertiesProps {
 }
 
 export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesProps) {
+  const publicPath = usePublicPath();
+
   if (!properties || properties.length === 0) {
     return null;
   }
@@ -29,7 +32,7 @@ export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesP
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
         {properties.map((property) => (
-          <PropertyCard key={property.id} property={property} agencyId={agencyId} />
+          <PropertyCard key={property.id} property={property} agencyId={agencyId} publicBasePath={publicPath()} />
         ))}
       </div>
     </section>
