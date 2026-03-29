@@ -28,6 +28,16 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
+    function isPublicAgencyRead() {
+      return true;
+    }
+
+    function isPublicActivePropertyRead() {
+      return resource != null &&
+             'status' in resource.data &&
+             resource.data.status == 'Activ';
+    }
+
     function isPublicPreferencesUpdate(agencyId, contactId) {
       // Public form update must be unauthenticated
       if (request.auth != null) {
@@ -63,16 +73,21 @@ service cloud.firestore {
       allow update: if isUserInAgency(agencyId) || isPublicPreferencesUpdate(agencyId, contactId);
     }
 
+    match /agencies/{agencyId}/properties/{propertyId} {
+      allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
+      allow create, update, delete: if isUserInAgency(agencyId);
+    }
+
     // --- Generic Rule for other Agency Subcollections ---
     match /agencies/{agencyId}/{collection}/{docId} 
-      where collection != 'contacts' {
+      where collection != 'contacts' && collection != 'properties' {
       allow get, write: if isUserInAgency(agencyId);
       allow list: if isUserInAgency(agencyId);
     }
 
     // --- Agency Top-Level Document ---
     match /agencies/{agencyId} {
-      allow get: if isUserInAgency(agencyId);
+      allow get: if isUserInAgency(agencyId) || isPublicAgencyRead();
       allow list: if isSignedIn();
       allow update: if isUserAdminForAgency(agencyId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
