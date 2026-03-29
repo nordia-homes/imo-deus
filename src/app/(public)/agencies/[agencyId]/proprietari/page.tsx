@@ -40,6 +40,13 @@ export default function AgencyOwnersPage() {
         'Nu iti ocupam timpul cu discutii fara directie. Filtram interesul si programam doar interactiuni care au sens.',
     },
     {
+      icon: <BadgeCheck className="h-5 w-5" />,
+      badge: 'Relatie',
+      title: 'Comunicare clara pe tot parcursul colaborarii',
+      description:
+        'Ramai conectat la fiecare pas important, stii ce urmeaza si primesti feedback clar, astfel incat procesul sa nu para niciodata opac sau greu de urmarit.',
+    },
+    {
       icon: <Handshake className="h-5 w-5" />,
       badge: 'Negociere',
       title: 'Te reprezentam in fiecare discutie importanta',
@@ -59,13 +66,6 @@ export default function AgencyOwnersPage() {
       title: 'Mai putin stres, mai multa claritate',
       description:
         'Iti spunem din timp ce conteaza, ce riscuri trebuie evitate si unde merita sa fii atent in tranzactie.',
-    },
-    {
-      icon: <BadgeCheck className="h-5 w-5" />,
-      badge: 'Relatie',
-      title: 'Comunicare clara pe tot parcursul colaborarii',
-      description:
-        'Ramai conectat la fiecare pas important, stii ce urmeaza si primesti feedback clar, astfel incat procesul sa nu para niciodata opac sau greu de urmarit.',
     },
   ];
 
@@ -103,20 +103,32 @@ export default function AgencyOwnersPage() {
               Servicii dedicate proprietarilor care vor mai multa claritate si mai putin stres.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/78 md:text-lg">
-              Daca vrei sa vinzi sau sa inchiriezi cu o strategie coerenta, {agency?.name || 'echipa noastra'} te poate ajuta
-              sa iti pozitionezi corect proprietatea, sa atragi interes relevant si sa mergi mai sigur spre tranzactie.
+              Daca vrei sa vinzi sau sa inchiriezi, {agency?.name || 'echipa noastra'} te ajuta sa stabilesti corect pretul,
+              sa iti promovezi proprietatea relevant si sa mergi mai sigur spre clientul potrivit si spre tranzactie.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300">
                 <Link href={`/agencies/${agencyId}/contact`}>
-                  Discuta cu un consultant
+                  Discutam despre proprietatea ta
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]">
                 <Link href={`/agencies/${agencyId}/properties`}>Vezi proprietatile active</Link>
               </Button>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Pret stabilit in functie de piata, nu din presupuneri.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Promovare care atrage interes relevant, nu doar trafic.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+                Comunicare clara si pasii importanti explicati din timp.
+              </div>
             </div>
           </div>
 
@@ -134,7 +146,7 @@ export default function AgencyOwnersPage() {
         </div>
       </section>
 
-      <div className="container mx-auto space-y-8 px-4 pb-5 pt-8 md:space-y-12 md:pb-8 md:pt-12">
+      <div className="container mx-auto space-y-8 px-4 pb-5 pt-8 md:space-y-14 md:pb-8 md:pt-12">
       <section className="space-y-8">
         <div className={`${sectionShellClassName} p-6 md:p-8`}>
           <div className="max-w-4xl">
@@ -171,9 +183,64 @@ export default function AgencyOwnersPage() {
             </article>
           ))}
         </div>
+
+        <article className="rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">De ce proprietarii lucreaza cu noi</p>
+              <h3 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                Nu ne limitam la publicarea unui anunt.
+              </h3>
+              <p className="mt-3 text-base leading-7 text-emerald-50/76">
+                Construim un proces complet: pozitionare, prezentare, selectie de clienti, negociere si coordonare pana la semnare.
+              </p>
+            </div>
+
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
+            >
+              <Link href={`/agencies/${agencyId}/contact`}>
+                Cere o evaluare initiala
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </article>
+
+        <article className={`${sectionShellClassName} p-6 md:p-8`}>
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Intrebari frecvente ale proprietarilor</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+              Cele mai importante lucruri se clarifica de la inceput.
+            </h3>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <article className={`${highlightCardClassName} p-5`}>
+              <h4 className="text-lg font-semibold text-white">Cum stabilim pretul?</h4>
+              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+                Ne uitam la proprietate, la concurenta si la ritmul real al pietei, nu doar la preturile cerute in jur.
+              </p>
+            </article>
+            <article className={`${highlightCardClassName} p-5`}>
+              <h4 className="text-lg font-semibold text-white">Cum filtram interesul?</h4>
+              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+                Calificam discutiile si programam doar interactiuni care au sens, astfel incat sa nu iti consumi timpul inutil.
+              </p>
+            </article>
+            <article className={`${highlightCardClassName} p-5`}>
+              <h4 className="text-lg font-semibold text-white">Cum arata colaborarea?</h4>
+              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+                Clar, ordonat si cu pasi explicati din timp, de la promovare si vizionari pana la negociere si inchiderea tranzactiei.
+              </p>
+            </article>
+          </div>
+        </article>
       </section>
 
-      <section className={`${sectionShellClassName} p-6 md:p-8`}>
+      <section className="rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.12),transparent_32%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8">
         <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Cum lucram</p>
@@ -187,7 +254,7 @@ export default function AgencyOwnersPage() {
 
           <div className="grid gap-3">
             {ownerSteps.map((step, index) => (
-              <article key={step} className={`${highlightCardClassName} flex gap-4 p-4`}>
+              <article key={step} className="flex gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 shadow-[0_18px_48px_-38px_rgba(0,0,0,0.7)]">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-sm font-semibold text-emerald-200">
                   0{index + 1}
                 </div>
@@ -198,7 +265,7 @@ export default function AgencyOwnersPage() {
         </div>
       </section>
 
-      <section className="pt-2 md:pt-4">
+      <section className="pt-4 md:pt-6">
         <article className="rounded-[2rem] border border-emerald-300/20 bg-[radial-gradient(circle_at_top_right,rgba(74,222,128,0.16),transparent_30%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(12,22,16,0.98)_100%)] p-6 shadow-[0_34px_100px_-42px_rgba(0,0,0,0.92)] md:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/12 px-4 py-1.5 text-sm font-semibold text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
             <Sparkles className="h-4 w-4" />
@@ -230,7 +297,7 @@ export default function AgencyOwnersPage() {
               className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
             >
               <Link href={`/agencies/${agencyId}/contact`}>
-                Programeaza o discutie
+                Stabilim urmatorii pasi
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
