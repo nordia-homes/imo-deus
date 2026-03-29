@@ -112,6 +112,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     );
 
     const panelClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+    const detailsCardClassName = "overflow-hidden rounded-[2rem] border border-white/8 bg-[#0f1112] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.82)]";
     const panelHeaderClassName = "p-4 md:p-6";
     const panelTitleClassName = "text-white";
     const panelBodyClassName = "px-4 pb-4 pt-0 md:px-6 md:pb-6";
@@ -163,7 +164,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     </Card>
                 )}
 
-                <Card className={panelClassName}>
+                <Card className={detailsCardClassName}>
                     <CardContent className={`${panelBodyClassName} pt-6 md:pt-7`}>
                         <div className="space-y-5">
                             <div className="space-y-3">
@@ -178,9 +179,9 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <div key={item.label} className="rounded-[1.6rem] border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                                <div key={item.label} className="rounded-[1.6rem] bg-[#15181a] px-4 py-4 text-left shadow-none">
                                     <div className="flex w-full items-start gap-4">
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.03] text-[#86efac]">
                                             {item.icon}
                                         </span>
                                         <span className="flex min-w-0 flex-1 flex-col">
@@ -207,7 +208,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
     return (
         <div className="space-y-4">
-             <Card className={panelClassName}>
+                <Card className={detailsCardClassName}>
                 <CardHeader className="p-4">
                     <CardTitle className="text-2xl font-semibold tracking-tight text-white">Descriere</CardTitle>
                 </CardHeader>
@@ -244,9 +245,9 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <div key={item.label} className="rounded-[1.45rem] border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+                            <div key={item.label} className="rounded-[1.45rem] bg-[#15181a] px-4 py-4 text-left shadow-none">
                                 <div className="flex w-full items-start gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-[#86efac]">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.03] text-[#86efac]">
                                         {item.icon}
                                     </span>
                                     <span className="flex min-w-0 flex-1 flex-col">
