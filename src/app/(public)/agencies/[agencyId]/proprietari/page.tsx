@@ -114,19 +114,19 @@ export default function AgencyOwnersPage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]">
+              <Button asChild size="lg" variant="outline" className="hidden rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08] sm:inline-flex">
                 <Link href={`/agencies/${agencyId}/properties`}>Vezi proprietatile active</Link>
               </Button>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
                 Pret stabilit in functie de piata, nu din presupuneri.
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
                 Promovare care atrage interes relevant, nu doar trafic.
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
                 Comunicare clara si pasii importanti explicati din timp.
               </div>
             </div>
