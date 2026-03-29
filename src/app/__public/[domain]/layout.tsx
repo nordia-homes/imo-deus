@@ -5,6 +5,7 @@ import { firebaseConfig } from '@/firebase/config';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { PublicAgencyProvider } from '@/context/PublicAgencyContext';
+import { getCanonicalCustomDomain } from '@/lib/domain-routing';
 
 function hexToHsl(hex: string): string | null {
   if (!hex || !hex.startsWith('#')) return null;
@@ -100,6 +101,28 @@ async function getServerDocument<T>(path: string): Promise<T | null> {
   }
 }
 
+async function resolveAgencyIdForDomain(domain: string): Promise<string | null> {
+  const normalized = domain.trim().toLowerCase();
+  const canonical = getCanonicalCustomDomain(normalized);
+  const candidates = Array.from(
+    new Set([
+      normalized,
+      canonical,
+      canonical ? `www.${canonical}` : '',
+      normalized.startsWith('www.') ? normalized.slice(4) : '',
+    ].filter(Boolean))
+  );
+
+  for (const candidate of candidates) {
+    const mapping = await getServerDocument<{ agencyId?: string }>(`publicDomains/${candidate}`);
+    if (mapping?.agencyId) {
+      return mapping.agencyId;
+    }
+  }
+
+  return null;
+}
+
 export default async function PublicDomainLayout({
   children,
   params,
@@ -109,8 +132,7 @@ export default async function PublicDomainLayout({
 }) {
   const { domain } = await params;
 
-  const mapping = await getServerDocument<{ agencyId?: string }>(`publicDomains/${domain}`);
-  const agencyId = mapping?.agencyId;
+  const agencyId = await resolveAgencyIdForDomain(domain);
   if (!agencyId) {
     notFound();
   }

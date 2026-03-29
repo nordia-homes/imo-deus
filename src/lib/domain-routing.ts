@@ -4,9 +4,13 @@ export function normalizeDomain(input?: string | null): string {
   if (!input) return '';
 
   let value = input.trim().toLowerCase();
+  if (value.includes(',')) {
+    value = value.split(',')[0].trim();
+  }
   value = value.replace(/^https?:\/\//, '');
   value = value.replace(/\/.*$/, '');
   value = value.replace(/:\d+$/, '');
+  value = value.replace(/\.$/, '');
 
   return value;
 }
