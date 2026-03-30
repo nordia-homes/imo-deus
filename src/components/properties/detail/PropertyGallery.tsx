@@ -39,7 +39,7 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
     const shareUrl = window.location.href;
     const shareData = {
       title,
-      text: `Am gasit aceasta proprietate pe Nordia si pare interesanta: ${title}`,
+      text: `Aceasta proprietate este acum disponibila si poate fi vizionata: ${title}`,
       url: shareUrl,
     };
 
