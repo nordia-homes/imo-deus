@@ -76,7 +76,7 @@ const PageSkeleton = () => (
 export default function PropertyDetailPage() {
     const params = useParams();
     const propertyId = params.propertyId as string;
-    const { agencyId, userProfile, isAgencyLoading } = useAgency();
+    const { agencyId, agency, userProfile, isAgencyLoading } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -218,12 +218,17 @@ export default function PropertyDetailPage() {
     }
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+    const publicPropertyUrl = agencyId
+        ? agency?.customDomain
+            ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}/properties/${propertyId}`
+            : `https://studio--studio-652232171-42fb6.us-central1.hosted.app/agencies/${agencyId}/properties/${propertyId}`
+        : undefined;
 
     if (isMobile) {
         return (
           <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
              <div className="space-y-4">
-                 <MediaColumn property={property} />
+                 <MediaColumn property={property} shareUrl={publicPropertyUrl} />
 
                 <div className="space-y-4 px-2">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl">
@@ -256,15 +261,15 @@ export default function PropertyDetailPage() {
                     <div className="space-y-4">
                         <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                              <div>
-                                <div className="flex items-center justify-between">
-                                    <h1 className="text-xl font-bold">{property.title}</h1>
-                                    <Button size="icon" variant="ghost" className="text-white/70 hover:text-white h-8 w-8" onClick={() => setIsEditDialogOpen(true)}>
+                                <div className="relative flex items-center justify-center">
+                                    <h1 className="px-10 text-center text-xl font-bold">{property.title}</h1>
+                                    <Button size="icon" variant="ghost" className="absolute right-0 text-white/70 hover:text-white h-8 w-8" onClick={() => setIsEditDialogOpen(true)}>
                                         <Edit className="h-4 w-4" />
                                     </Button>
                                 </div>
-                                <p className="text-sm text-white/70">{property.address}</p>
+                                <p className="text-center text-sm text-white/70">{property.address}</p>
                             </div>
-                            <PriceStatusCard property={property} />
+                            <PriceStatusCard property={property} variant="admin" isMobile={true} />
                              <AgentCard agent={{
                                 name: agentProfile?.name || property.agentName,
                                 email: agentProfile?.email || null,
@@ -305,13 +310,23 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
-                                <AccordionItem value="info" className="border-b-0">
-                                    <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Informații Detaliate</AccordionTrigger>
-                                    <AccordionContent className="px-4 pb-4 pt-0">
-                                         <Button variant="outline" className="w-full mt-2 bg-white/10 border-white/20" onClick={() => setIsInfoDialogOpen(true)}>Vezi toate detaliile</Button>
-                                    </AccordionContent>
-                                </AccordionItem>
+                            <Card className="overflow-hidden rounded-2xl border border-primary/20 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.16),transparent_38%),linear-gradient(180deg,#193253_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_24px_60px_-28px_rgba(0,0,0,0.6)]">
+                                <CardContent className="space-y-4 p-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/90">
+                                            Informatii complete
+                                        </p>
+                                        <h3 className="text-lg font-semibold text-white">
+                                            Vezi toate detaliile
+                                        </h3>
+                                        <p className="text-sm text-white/70">
+                                            Deschide fisa completa a proprietatii cu toate informatiile tehnice.
+                                        </p>
+                                    </div>
+                                    <Button className="w-full rounded-full bg-primary text-white hover:bg-primary/90" onClick={() => setIsInfoDialogOpen(true)}>
+                                        Vezi Fisa Proprietatii
+                                    </Button>
+                                </CardContent>
                             </Card>
                              <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
                                  <AccordionItem value="rlv" className="border-b-0">
@@ -368,7 +383,7 @@ export default function PropertyDetailPage() {
 
                 <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
-                        <MediaColumn property={property} />
+                        <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
                     </div>
 

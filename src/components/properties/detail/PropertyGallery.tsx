@@ -21,7 +21,19 @@ import { Grid, Heart, Share2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-export function PropertyGallery({ images, title, propertyId }: { images: string[]; title: string; propertyId: string }) {
+export function PropertyGallery({
+  images,
+  title,
+  propertyId,
+  showMatchPrompt = true,
+  shareUrl,
+}: {
+  images: string[];
+  title: string;
+  propertyId: string;
+  showMatchPrompt?: boolean;
+  shareUrl?: string;
+}) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
@@ -36,11 +48,11 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
       return;
     }
 
-    const shareUrl = window.location.href;
+    const resolvedShareUrl = shareUrl || window.location.href;
     const shareData = {
       title,
       text: `Aceasta proprietate este acum disponibila si poate fi vizionata: ${title}`,
-      url: shareUrl,
+      url: resolvedShareUrl,
     };
 
     try {
@@ -50,14 +62,14 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
       }
 
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(resolvedShareUrl);
         setIsCopied(true);
         window.setTimeout(() => setIsCopied(false), 1800);
       }
     } catch (error) {
       console.error("Share failed:", error);
     }
-  }, [title]);
+  }, [shareUrl, title]);
 
   React.useEffect(() => {
     if (!api) return
@@ -151,20 +163,22 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
                 <ImageItem index={2} className="w-full h-full" />
             </div>
         </div>
-        <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-          <span className="whitespace-nowrap text-sm font-medium leading-none text-white/92">Aceasta proprietate ti se potriveste?</span>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            aria-pressed={isLoved}
-            aria-label={isLoved ? "Scoate de la favorite" : "Adauga la favorite"}
-            className="h-9 w-9 rounded-full border border-[#22c55e] bg-white/8 text-white hover:bg-white/14 hover:text-white"
-            onClick={() => setIsLoved((prev) => !prev)}
-          >
-            <Heart className={cn("h-4 w-4", isLoved && "fill-[#e50700] text-[#e50700]")} />
-          </Button>
-        </div>
+        {showMatchPrompt ? (
+          <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <span className="whitespace-nowrap text-sm font-medium leading-none text-white/92">Aceasta proprietate ti se potriveste?</span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-pressed={isLoved}
+              aria-label={isLoved ? "Scoate de la favorite" : "Adauga la favorite"}
+              className="h-9 w-9 rounded-full border border-[#22c55e] bg-white/8 text-white hover:bg-white/14 hover:text-white"
+              onClick={() => setIsLoved((prev) => !prev)}
+            >
+              <Heart className={cn("h-4 w-4", isLoved && "fill-[#e50700] text-[#e50700]")} />
+            </Button>
+          </div>
+        ) : null}
         <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
           <Button
             variant="secondary"

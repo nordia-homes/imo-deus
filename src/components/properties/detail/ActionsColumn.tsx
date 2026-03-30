@@ -24,7 +24,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
     
     return (
         <div className="space-y-4 sticky top-28">
-            <PriceStatusCard property={property} />
+            <PriceStatusCard property={property} variant="admin" />
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <ScheduledViewingsCard viewings={viewings} />

@@ -39,8 +39,13 @@ import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
 import { cn } from '@/lib/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { agencyId } = useAgency();
+  const { agencyId, agency } = useAgency();
   const pathname = usePathname();
+  const publicWebsiteHref = agency?.customDomain
+    ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`
+    : agencyId
+      ? `/agencies/${agencyId}`
+      : null;
   
   return (
     <SidebarProvider>
@@ -167,10 +172,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             {agencyId && (
+             {publicWebsiteHref && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Website Public" asChild>
-                        <Link href={`/agencies/${agencyId}`} target="_blank" rel="noopener noreferrer">
+                        <Link href={publicWebsiteHref} target="_blank" rel="noopener noreferrer">
                             <Globe />
                             <span>Website Public</span>
                         </Link>

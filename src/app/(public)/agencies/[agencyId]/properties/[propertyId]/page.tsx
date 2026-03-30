@@ -317,7 +317,7 @@ export default function PublicPropertyDetailPage() {
             ? window.location.href
             : propertyRelativePath;
     const whatsappMessage = encodeURIComponent(
-        `Buna! Sunt interesat(a) de aceasta proprietate: ${property.title}\n${propertyAbsoluteUrl}`
+        `Buna! Sunt interesat(a) de aceasta proprietate.\n${property.title}\n\n${propertyAbsoluteUrl}`
     );
     const whatsappHref = sanitizedPhone
         ? `https://wa.me/${sanitizedPhone}?text=${whatsappMessage}`
@@ -328,7 +328,7 @@ export default function PublicPropertyDetailPage() {
         return (
           <div className="min-h-screen bg-transparent pb-24 text-stone-100">
              <div className="space-y-0">
-                 <MediaColumn property={property} />
+                 <MediaColumn property={property} showMatchPrompt={true} />
 
                 <div className="space-y-4 px-2">
                     <Card className="mx-[-0.5rem] -mb-4 overflow-hidden rounded-b-none rounded-t-none border-0 bg-[#0b0f0d] shadow-none">
@@ -431,7 +431,7 @@ export default function PublicPropertyDetailPage() {
                 <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <PublicPropertyHeader property={property} />
-                        <MediaColumn property={property} />
+                        <MediaColumn property={property} showMatchPrompt={true} />
                         <PublicInfoColumn property={property} isMobile={false} />
                     </div>
 
