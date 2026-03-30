@@ -17,6 +17,16 @@ type GoogleAddressComponent = {
   types?: string[];
 };
 
+type GoogleGeocodeResult = {
+  formatted_address?: string;
+  geometry?: { location?: { lat?: number; lng?: number } };
+  address_components?: Array<{
+    long_name?: string;
+    short_name?: string;
+    types?: string[];
+  }>;
+};
+
 function normalizeAddressInput(address?: string | null) {
   return (address || '')
     .trim()
@@ -70,7 +80,7 @@ function buildQueries(address?: string | null, zone?: string | null, city?: stri
   queries.add([normalizedAddress, 'Romania'].filter(Boolean).join(', '));
   queries.add([baseStreetOnly, 'Romania'].filter(Boolean).join(', '));
 
-  return Array.from(queries).filter((query) => normalizeText(query).length >= 4);
+  return Array.from(queries).filter((query) => normalizeText(query).length >= 3);
 }
 
 function pickComponent(components: GoogleAddressComponent[] | undefined, acceptedTypes: string[]) {
@@ -108,6 +118,12 @@ function extractZoneFromGoogleComponents(components: GoogleAddressComponent[] | 
     pickComponent(components, ['route']) ||
     ''
   );
+}
+
+function extractStreetLineFromGoogleComponents(components: GoogleAddressComponent[] | undefined) {
+  const route = pickComponent(components, ['route']);
+  const streetNumber = pickComponent(components, ['street_number']);
+  return [route, streetNumber].filter(Boolean).join(' ').trim();
 }
 
 async function googlePlaceDetails(placeId: string, apiKey: string): Promise<AddressSuggestion | null> {
@@ -164,6 +180,8 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
   }
 
   const queries = buildQueries(address, zone, city);
+  const unique = new Map<string, AddressSuggestion>();
+
   for (const query of queries.slice(0, 4)) {
     const autocompleteResponse = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
       method: 'POST',
@@ -217,7 +235,6 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
       })
     );
 
-    const unique = new Map<string, AddressSuggestion>();
     for (const suggestion of detailedResults) {
       if (!suggestion) {
         continue;
@@ -227,10 +244,116 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
         unique.set(key, suggestion);
       }
     }
+  }
 
-    if (unique.size > 0) {
-      return Array.from(unique.values());
+  for (const query of queries.slice(0, 4)) {
+    const geocodeResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=ro&language=ro&key=${encodeURIComponent(apiKey)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!geocodeResponse.ok) {
+      continue;
     }
+
+    const geocodePayload = (await geocodeResponse.json()) as {
+      status?: string;
+      results?: GoogleGeocodeResult[];
+    };
+
+    if (geocodePayload.status !== 'OK') {
+      continue;
+    }
+
+    for (const result of geocodePayload.results || []) {
+      const latitude = result.geometry?.location?.lat;
+      const longitude = result.geometry?.location?.lng;
+      if (!latitude || !longitude || !result.formatted_address) {
+        continue;
+      }
+
+      const components = (result.address_components || []).map((component) => ({
+        longText: component.long_name,
+        shortText: component.short_name,
+        types: component.types,
+      }));
+
+      const suggestion: AddressSuggestion = {
+        label: result.formatted_address,
+        addressLine: extractStreetLineFromGoogleComponents(components) || result.formatted_address,
+        city: extractCityFromGoogleComponents(components),
+        zone: extractZoneFromGoogleComponents(components),
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+      };
+
+      const key = `${normalizeText(suggestion.addressLine || suggestion.label)}-${suggestion.latitude}-${suggestion.longitude}`;
+      if (!unique.has(key)) {
+        unique.set(key, suggestion);
+      }
+    }
+  }
+
+  for (const query of queries.slice(0, 4)) {
+    const textSearchResponse = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask':
+          'places.id,places.formattedAddress,places.shortFormattedAddress,places.location,places.addressComponents',
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        languageCode: 'ro',
+        regionCode: 'RO',
+        maxResultCount: 6,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!textSearchResponse.ok) {
+      continue;
+    }
+
+    const textSearchPayload = (await textSearchResponse.json()) as {
+      places?: Array<{
+        id?: string;
+        formattedAddress?: string;
+        shortFormattedAddress?: string;
+        location?: { latitude?: number; longitude?: number };
+        addressComponents?: GoogleAddressComponent[];
+      }>;
+    };
+
+    for (const place of textSearchPayload.places || []) {
+      const latitude = place.location?.latitude;
+      const longitude = place.location?.longitude;
+      if (!latitude || !longitude || !place.formattedAddress) {
+        continue;
+      }
+
+      const suggestion: AddressSuggestion = {
+        label: place.formattedAddress,
+        addressLine:
+          extractStreetLineFromGoogleComponents(place.addressComponents) ||
+          place.shortFormattedAddress ||
+          place.formattedAddress,
+        city: extractCityFromGoogleComponents(place.addressComponents),
+        zone: extractZoneFromGoogleComponents(place.addressComponents),
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+      };
+
+      const key = `${normalizeText(suggestion.addressLine || suggestion.label)}-${suggestion.latitude}-${suggestion.longitude}`;
+      if (!unique.has(key)) {
+        unique.set(key, suggestion);
+      }
+    }
+  }
+
+  if (unique.size > 0) {
+    return Array.from(unique.values());
   }
 
   return [];
@@ -348,13 +471,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const googleResults = await searchViaGoogle(address, zone, city);
-    if (googleResults && googleResults.length > 0) {
-      return NextResponse.json(googleResults);
-    }
-
     const queries = buildQueries(address, zone, city);
     const unique = new Map<string, AddressSuggestion>();
+
+    const googleResults = await searchViaGoogle(address, zone, city);
+    if (googleResults && googleResults.length > 0) {
+      for (const result of googleResults) {
+        const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
+        if (!unique.has(key)) {
+          unique.set(key, result);
+        }
+      }
+    }
 
     for (const query of queries.slice(0, 4)) {
       const results = await searchViaNominatim(query);
@@ -364,7 +492,7 @@ export async function GET(request: NextRequest) {
           unique.set(key, result);
         }
       }
-      if (unique.size >= 6) {
+      if (unique.size >= 8) {
         break;
       }
     }
@@ -378,7 +506,7 @@ export async function GET(request: NextRequest) {
             unique.set(key, result);
           }
         }
-        if (unique.size >= 6) {
+        if (unique.size >= 8) {
           break;
         }
       }

@@ -776,8 +776,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     cache: 'no-store',
                     signal: controller.signal,
                 });
-                const payload = await response.json() as { suggestions?: AddressSuggestion[] };
-                const normalizedSuggestions = (payload.suggestions || []).filter(
+                const payload = (await response.json()) as
+                    | AddressSuggestion[]
+                    | { suggestions?: AddressSuggestion[] };
+                const rawSuggestions = Array.isArray(payload) ? payload : payload.suggestions || [];
+                const normalizedSuggestions = rawSuggestions.filter(
                     (suggestion) =>
                         suggestion?.label &&
                         Number.isFinite(suggestion.latitude) &&
