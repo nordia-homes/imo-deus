@@ -317,7 +317,7 @@ export default function PublicPropertyDetailPage() {
             ? window.location.href
             : propertyRelativePath;
     const whatsappMessage = encodeURIComponent(
-        `${propertyAbsoluteUrl}\n\nAceasta proprietate este acum disponibila si poate fi vizionata: ${property.title}`
+        `${propertyAbsoluteUrl}\n\nAm descoperit aceasta proprietate si pare interesanta: ${property.title}`
     );
     const whatsappHref = sanitizedPhone
         ? `https://wa.me/${sanitizedPhone}?text=${whatsappMessage}`
