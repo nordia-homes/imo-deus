@@ -17,7 +17,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid, Heart, X } from "lucide-react"
+import { Grid, Heart, Share2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -27,8 +27,37 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = React.useState(false);
   const [isLoved, setIsLoved] = React.useState(false);
+  const [isCopied, setIsCopied] = React.useState(false);
   const isMobile = useIsMobile();
   const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+
+  const handleShare = React.useCallback(async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const shareUrl = window.location.href;
+    const shareData = {
+      title,
+      text: `Am gasit aceasta proprietate pe Nordia si pare interesanta: ${title}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        setIsCopied(true);
+        window.setTimeout(() => setIsCopied(false), 1800);
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+    }
+  }, [title]);
 
   React.useEffect(() => {
     if (!api) return
@@ -136,14 +165,24 @@ export function PropertyGallery({ images, title, propertyId }: { images: string[
             <Heart className={cn("h-4 w-4", isLoved && "fill-[#e50700] text-[#e50700]")} />
           </Button>
         </div>
-        <Button
-          variant="secondary"
-          className="absolute bottom-4 right-4 z-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
-          onClick={() => handleOpenGallery(0)}
-        >
-          <Grid className="mr-2 h-4 w-4" />
-          Vezi Fotografiile
-        </Button>
+        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+          <Button
+            variant="secondary"
+            className="rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
+            onClick={handleShare}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            {isCopied ? "Link copiat" : "Distribuie"}
+          </Button>
+          <Button
+            variant="secondary"
+            className="rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
+            onClick={() => handleOpenGallery(0)}
+          >
+            <Grid className="mr-2 h-4 w-4" />
+            Vezi Fotografiile
+          </Button>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

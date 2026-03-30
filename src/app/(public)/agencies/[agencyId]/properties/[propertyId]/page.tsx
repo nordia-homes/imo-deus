@@ -42,7 +42,7 @@ type AgentInfo = {
     avatarUrl?: string | null;
 }
 
-function AgentCard({ agent }: { agent: AgentInfo }) {
+function AgentCard({ agent, whatsappHref }: { agent: AgentInfo; whatsappHref?: string | null }) {
     const getInitials = (name?: string | null) => {
         if (!name) return 'A';
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -79,9 +79,9 @@ function AgentCard({ agent }: { agent: AgentInfo }) {
                         </a>
                     </Button>
                 )}
-                {sanitizedPhone && (
+                {sanitizedPhone && whatsappHref && (
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-stone-300 hover:bg-white/5 hover:text-stone-50" asChild>
-                        <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
+                        <a href={whatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
                             <WhatsappIcon className="h-5 w-5" />
                         </a>
                     </Button>
@@ -108,7 +108,7 @@ const scheduleSchema = z.object({
   formStartedAt: z.number(),
 });
 
-function PublicScheduleViewingCard({ property, agent, agencyId }: { property: Property, agent: AgentInfo, agencyId: string }) {
+function PublicScheduleViewingCard({ property, agent, agencyId, whatsappHref }: { property: Property, agent: AgentInfo, agencyId: string, whatsappHref?: string | null }) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const formStartedAt = useMemo(() => Date.now(), []);
@@ -154,7 +154,7 @@ function PublicScheduleViewingCard({ property, agent, agencyId }: { property: Pr
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <AgentCard agent={agent} />
+                <AgentCard agent={agent} whatsappHref={whatsappHref} />
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -311,6 +311,17 @@ export default function PublicPropertyDetailPage() {
             null,
     };
     const sanitizedPhone = sanitizeForWhatsapp(agentForCard.phone);
+    const propertyRelativePath = publicPath(`/properties/${property.id}`);
+    const propertyAbsoluteUrl =
+        typeof window !== 'undefined'
+            ? window.location.href
+            : propertyRelativePath;
+    const whatsappMessage = encodeURIComponent(
+        `Buna! Sunt interesat(a) de aceasta proprietate: ${property.title}\n${propertyAbsoluteUrl}`
+    );
+    const whatsappHref = sanitizedPhone
+        ? `https://wa.me/${sanitizedPhone}?text=${whatsappMessage}`
+        : null;
 
 
     if (isMobile) {
@@ -400,9 +411,9 @@ export default function PublicPropertyDetailPage() {
                                 </a>
                             </Button>
                         )}
-                        {sanitizedPhone && (
+                        {sanitizedPhone && whatsappHref && (
                             <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20" asChild>
-                                <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
+                                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
                                     <WhatsappIcon className="h-6 w-6" />
                                 </a>
                             </Button>
@@ -425,7 +436,7 @@ export default function PublicPropertyDetailPage() {
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
-                         <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} />
+                         <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} whatsappHref={whatsappHref} />
                     </div>
                 </main>
              </div>
