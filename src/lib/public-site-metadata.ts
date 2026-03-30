@@ -94,3 +94,21 @@ export async function getPropertyForAgency(agencyId: string, propertyId: string)
   if (!propertyData) return null;
   return { id: propertyId, ...propertyData } as Property;
 }
+
+export function getFirstPropertyImage(property?: Property | null): string | undefined {
+  if (!property?.images?.length) {
+    return undefined;
+  }
+
+  const firstImage = property.images[0] as unknown;
+  if (typeof firstImage === 'string') {
+    return firstImage;
+  }
+
+  if (firstImage && typeof firstImage === 'object' && 'url' in (firstImage as Record<string, unknown>)) {
+    const url = (firstImage as { url?: string }).url;
+    return typeof url === 'string' ? url : undefined;
+  }
+
+  return undefined;
+}

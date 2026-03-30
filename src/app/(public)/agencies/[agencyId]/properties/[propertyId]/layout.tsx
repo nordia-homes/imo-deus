@@ -1,17 +1,12 @@
 import type { Metadata } from 'next';
-import PublicDomainPropertyPage from '@/app/__public/[domain]/properties/[propertyId]/page';
-import { getAgencyById, getFirstPropertyImage, getPropertyForAgency, resolveAgencyIdForDomain } from '@/lib/public-site-metadata';
+import { getAgencyById, getFirstPropertyImage, getPropertyForAgency } from '@/lib/public-site-metadata';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ domain: string; propertyId: string }>;
+  params: Promise<{ agencyId: string; propertyId: string }>;
 }): Promise<Metadata> {
-  const { domain, propertyId } = await params;
-  const agencyId = await resolveAgencyIdForDomain(domain);
-  if (!agencyId) {
-    return {};
-  }
+  const { agencyId, propertyId } = await params;
 
   const [agency, property] = await Promise.all([
     getAgencyById(agencyId),
@@ -27,7 +22,9 @@ export async function generateMetadata({
   const description =
     property.description?.slice(0, 220) ||
     `${property.propertyType || 'Proprietate'} de ${property.transactionType || 'vanzare'} in ${property.address || agency.name}.`;
-  const url = `https://${domain}/properties/${propertyId}`;
+  const url = `https://${agency.customDomain || 'studio--studio-652232171-42fb6.us-central1.hosted.app'}${
+    agency.customDomain ? '' : `/agencies/${agencyId}`
+  }/properties/${propertyId}`;
 
   return {
     title,
@@ -49,4 +46,10 @@ export async function generateMetadata({
   };
 }
 
-export default PublicDomainPropertyPage;
+export default function PublicPropertyLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
+}
