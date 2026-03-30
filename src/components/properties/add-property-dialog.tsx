@@ -47,6 +47,9 @@ import { PropertiesMap } from '../map/PropertiesMap';
 
 type AddressSuggestion = {
   label: string;
+  addressLine?: string;
+  city?: string;
+  zone?: string;
   latitude: number;
   longitude: number;
 };
@@ -743,13 +746,16 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }, [agency, firestore]);
 
     useEffect(() => {
-        if (!watchedAddress || watchedAddress.length < 6) {
+        const normalizedAddress = (watchedAddress || '').trim();
+        const hasEnoughContext = normalizedAddress.length >= 4 && (!!watchedCity || !!watchedZone);
+
+        if (!normalizedAddress || (!hasEnoughContext && normalizedAddress.length < 6)) {
             setAddressSuggestions([]);
             setIsLoadingAddressSuggestions(false);
             return;
         }
 
-        if (selectedAddressLabel && watchedAddress === selectedAddressLabel) {
+        if (selectedAddressLabel && normalizedAddress === selectedAddressLabel) {
             return;
         }
 
@@ -758,7 +764,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             try {
                 setIsLoadingAddressSuggestions(true);
                 const searchUrl = new URL('/api/geocode-search', window.location.origin);
-                searchUrl.searchParams.set('address', watchedAddress);
+                searchUrl.searchParams.set('address', normalizedAddress);
                 if (watchedZone) {
                     searchUrl.searchParams.set('zone', watchedZone);
                 }
@@ -788,12 +794,22 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }, [selectedAddressLabel, watchedAddress, watchedCity, watchedZone]);
 
     const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
-        form.setValue('address', suggestion.label, { shouldValidate: true, shouldDirty: true });
+        const nextAddressValue = suggestion.addressLine || suggestion.label;
+        form.setValue('address', nextAddressValue, { shouldValidate: true, shouldDirty: true });
+        if (suggestion.city) {
+            const normalizedCity = normalizeCityValue(suggestion.city) || suggestion.city;
+            form.setValue('city', normalizedCity, { shouldValidate: true, shouldDirty: true });
+        }
+        if (suggestion.zone) {
+            const nextCity = suggestion.city || form.getValues('city');
+            const normalizedZone = normalizeZoneValue(suggestion.zone, nextCity) || suggestion.zone;
+            form.setValue('zone', normalizedZone, { shouldValidate: true, shouldDirty: true });
+        }
         setSelectedCoordinates({
             latitude: suggestion.latitude,
             longitude: suggestion.longitude,
         });
-        setSelectedAddressLabel(suggestion.label);
+        setSelectedAddressLabel(nextAddressValue);
         setAddressSuggestions([]);
     };
 
