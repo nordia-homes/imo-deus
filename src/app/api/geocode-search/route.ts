@@ -2,179 +2,252 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-type NominatimAddress = {
-  road?: string;
-  pedestrian?: string;
-  footway?: string;
-  house_number?: string;
-  neighbourhood?: string;
-  suburb?: string;
-  quarter?: string;
-  city_district?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  municipality?: string;
-  county?: string;
-  state_district?: string;
-  state?: string;
-};
-
-type NominatimResult = {
-  display_name?: string;
-  lat?: string;
-  lon?: string;
-  address?: NominatimAddress;
-};
-
-type PhotonFeature = {
-  properties?: {
-    name?: string;
-    street?: string;
-    housenumber?: string;
-    city?: string;
-    county?: string;
-    district?: string;
-    suburb?: string;
-    state?: string;
-    country?: string;
-  };
-  geometry?: {
-    coordinates?: [number, number];
-  };
-};
-
 type AddressSuggestion = {
   label: string;
-  addressLine: string;
+  addressLine?: string;
   city?: string;
   zone?: string;
   latitude: number;
   longitude: number;
 };
 
-const ADDRESS_PREFIX_EXPANSIONS: Array<[RegExp, string]> = [
-  [/^\s*str\.?\s+/i, 'Strada '],
-  [/^\s*bd\.?\s+/i, 'Bulevardul '],
-  [/^\s*b-dul\.?\s+/i, 'Bulevardul '],
-  [/^\s*sos\.?\s+/i, 'Soseaua '],
-  [/^\s*calea\s+/i, 'Calea '],
-  [/^\s*aleea\s+/i, 'Aleea '],
-  [/^\s*intr\.?\s+/i, 'Intrarea '],
-  [/^\s*piata\s+/i, 'Piata '],
-  [/^\s*splai\.?\s+/i, 'Splaiul '],
-];
+type GoogleAddressComponent = {
+  longText?: string;
+  shortText?: string;
+  types?: string[];
+};
 
 function normalizeAddressInput(address?: string | null) {
-  const raw = (address || '').trim();
-  if (!raw) return '';
-
-  return ADDRESS_PREFIX_EXPANSIONS.reduce((current, [pattern, replacement]) => {
-    if (pattern.test(current)) {
-      return current.replace(pattern, replacement);
-    }
-    return current;
-  }, raw).replace(/\s+/g, ' ');
+  return (address || '')
+    .trim()
+    .replace(/^\s*str\.?\s+/i, 'Strada ')
+    .replace(/^\s*bd\.?\s+/i, 'Bulevardul ')
+    .replace(/^\s*b-dul\.?\s+/i, 'Bulevardul ')
+    .replace(/^\s*sos\.?\s+/i, 'Soseaua ')
+    .replace(/\s+/g, ' ');
 }
 
 function cityAliases(city?: string | null) {
   const cleaned = (city || '').trim();
   if (!cleaned) return [];
   if (cleaned === 'Bucuresti-Ilfov') {
-    return ['Bucuresti', 'Ilfov', 'Bucuresti, Romania', 'Ilfov, Romania'];
+    return ['Bucuresti', 'Ilfov'];
   }
   return [cleaned];
 }
 
-function buildStreetVariants(address?: string | null) {
-  const normalized = normalizeAddressInput(address);
-  if (!normalized) return [];
-
-  const variants = new Set<string>([normalized]);
-  const shorter = normalized.replace(/\s+bl\.?.*$/i, '').replace(/\s+sc\.?.*$/i, '').replace(/\s+ap\.?.*$/i, '').trim();
-  if (shorter && shorter !== normalized) {
-    variants.add(shorter);
-  }
-
-  if (!/^strada\s/i.test(normalized) && !/^bulevardul\s/i.test(normalized) && !/^soseaua\s/i.test(normalized) && !/^calea\s/i.test(normalized)) {
-    variants.add(`Strada ${normalized}`);
-  }
-
-  return Array.from(variants);
+function normalizeText(value?: string | null) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
-function unique<T>(items: T[]) {
-  return Array.from(new Set(items));
+function stripStreetNumber(value?: string | null) {
+  return (value || '')
+    .replace(/\s+\d+[a-zA-Z\-\/]*\s*$/, '')
+    .trim();
 }
 
 function buildQueries(address?: string | null, zone?: string | null, city?: string | null) {
-  const streetVariants = buildStreetVariants(address);
-  const zoneValue = (zone || '').trim();
+  const normalizedAddress = normalizeAddressInput(address);
+  const baseStreetOnly = stripStreetNumber(normalizedAddress);
+  const normalizedZone = (zone || '').trim();
   const cities = cityAliases(city);
   const queries = new Set<string>();
 
-  for (const street of streetVariants) {
-    for (const cityVariant of cities.length ? cities : ['']) {
-      queries.add([street, zoneValue, cityVariant, 'Romania'].filter(Boolean).join(', '));
-      queries.add([street, cityVariant, 'Romania'].filter(Boolean).join(', '));
-      if (zoneValue) {
-        queries.add([street, zoneValue, 'Romania'].filter(Boolean).join(', '));
+  for (const currentCity of cities.length ? cities : ['']) {
+    queries.add([normalizedAddress, normalizedZone, currentCity, 'Romania'].filter(Boolean).join(', '));
+    queries.add([normalizedAddress, currentCity, 'Romania'].filter(Boolean).join(', '));
+    queries.add([baseStreetOnly, normalizedZone, currentCity, 'Romania'].filter(Boolean).join(', '));
+    queries.add([baseStreetOnly, currentCity, 'Romania'].filter(Boolean).join(', '));
+  }
+
+  queries.add([normalizedAddress, normalizedZone, 'Romania'].filter(Boolean).join(', '));
+  queries.add([baseStreetOnly, normalizedZone, 'Romania'].filter(Boolean).join(', '));
+  queries.add([normalizedAddress, 'Romania'].filter(Boolean).join(', '));
+  queries.add([baseStreetOnly, 'Romania'].filter(Boolean).join(', '));
+
+  return Array.from(queries).filter((query) => normalizeText(query).length >= 4);
+}
+
+function pickComponent(components: GoogleAddressComponent[] | undefined, acceptedTypes: string[]) {
+  if (!components?.length) {
+    return '';
+  }
+
+  for (const acceptedType of acceptedTypes) {
+    const found = components.find((component) => component.types?.includes(acceptedType));
+    if (found?.longText) {
+      return found.longText;
+    }
+    if (found?.shortText) {
+      return found.shortText;
+    }
+  }
+
+  return '';
+}
+
+function extractCityFromGoogleComponents(components: GoogleAddressComponent[] | undefined) {
+  return (
+    pickComponent(components, ['locality']) ||
+    pickComponent(components, ['administrative_area_level_2']) ||
+    pickComponent(components, ['administrative_area_level_1']) ||
+    ''
+  );
+}
+
+function extractZoneFromGoogleComponents(components: GoogleAddressComponent[] | undefined) {
+  return (
+    pickComponent(components, ['neighborhood']) ||
+    pickComponent(components, ['sublocality_level_1']) ||
+    pickComponent(components, ['sublocality']) ||
+    pickComponent(components, ['route']) ||
+    ''
+  );
+}
+
+async function googlePlaceDetails(placeId: string, apiKey: string): Promise<AddressSuggestion | null> {
+  const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask':
+        'id,displayName,formattedAddress,shortFormattedAddress,location,addressComponents',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as {
+    formattedAddress?: string;
+    shortFormattedAddress?: string;
+    displayName?: { text?: string };
+    location?: { latitude?: number; longitude?: number };
+    addressComponents?: GoogleAddressComponent[];
+  };
+
+  if (!payload.location?.latitude || !payload.location?.longitude) {
+    return null;
+  }
+
+  const label =
+    payload.formattedAddress ||
+    payload.shortFormattedAddress ||
+    payload.displayName?.text ||
+    '';
+
+  if (!label) {
+    return null;
+  }
+
+  return {
+    label,
+    addressLine: payload.shortFormattedAddress || payload.formattedAddress || label,
+    city: extractCityFromGoogleComponents(payload.addressComponents),
+    zone: extractZoneFromGoogleComponents(payload.addressComponents),
+    latitude: Number(payload.location.latitude),
+    longitude: Number(payload.location.longitude),
+  };
+}
+
+async function searchViaGoogle(address?: string | null, zone?: string | null, city?: string | null) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey || apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    return null;
+  }
+
+  const queries = buildQueries(address, zone, city);
+  for (const query of queries.slice(0, 4)) {
+    const autocompleteResponse = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask':
+          'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text.text',
+      },
+      body: JSON.stringify({
+        input: query,
+        languageCode: 'ro',
+        regionCode: 'RO',
+        includedRegionCodes: ['ro'],
+        includePureServiceAreaBusinesses: false,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!autocompleteResponse.ok) {
+      continue;
+    }
+
+    const autocompletePayload = (await autocompleteResponse.json()) as {
+      suggestions?: Array<{
+        placePrediction?: {
+          place?: string;
+          placeId?: string;
+          text?: { text?: string };
+        };
+      }>;
+    };
+
+    const candidates = autocompletePayload.suggestions
+      ?.map((entry) => entry.placePrediction)
+      .filter(Boolean)
+      .slice(0, 6) || [];
+
+    const detailedResults = await Promise.all(
+      candidates.map(async (prediction) => {
+        const placeId =
+          prediction?.placeId ||
+          prediction?.place?.replace(/^places\//, '') ||
+          '';
+
+        if (!placeId) {
+          return null;
+        }
+
+        return googlePlaceDetails(placeId, apiKey);
+      })
+    );
+
+    const unique = new Map<string, AddressSuggestion>();
+    for (const suggestion of detailedResults) {
+      if (!suggestion) {
+        continue;
+      }
+      const key = `${normalizeText(suggestion.addressLine || suggestion.label)}-${suggestion.latitude}-${suggestion.longitude}`;
+      if (!unique.has(key)) {
+        unique.set(key, suggestion);
       }
     }
 
-    queries.add([street, 'Romania'].filter(Boolean).join(', '));
+    if (unique.size > 0) {
+      return Array.from(unique.values());
+    }
   }
 
-  return Array.from(queries).filter((query) => query.length >= 6);
+  return [];
 }
 
-function pickSuggestionZone(address?: NominatimAddress | null) {
-  return (
-    address?.suburb ||
-    address?.neighbourhood ||
-    address?.quarter ||
-    address?.city_district ||
-    address?.state_district ||
-    ''
-  );
-}
-
-function pickSuggestionCity(address?: NominatimAddress | null) {
-  return (
-    address?.city ||
-    address?.town ||
-    address?.village ||
-    address?.municipality ||
-    address?.county ||
-    ''
-  );
-}
-
-function pickAddressLine(address?: NominatimAddress | null, fallbackLabel?: string) {
-  const street = address?.road || address?.pedestrian || address?.footway || '';
-  const houseNumber = address?.house_number || '';
-  const line = [street, houseNumber].filter(Boolean).join(' ').trim();
-  if (line) return line;
-  return fallbackLabel || '';
-}
-
-function buildReadableLabel(addressLine: string, zone?: string, city?: string, fallbackLabel?: string) {
-  const compact = [addressLine, zone, city, 'Romania'].filter(Boolean).join(', ').trim();
-  return compact || fallbackLabel || '';
-}
-
-async function fetchNominatimSuggestions(query: string): Promise<AddressSuggestion[]> {
+async function searchViaNominatim(query: string) {
   const url = new URL('https://nominatim.openstreetmap.org/search');
   url.searchParams.set('q', query);
   url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('limit', '8');
+  url.searchParams.set('limit', '6');
   url.searchParams.set('countrycodes', 'ro');
   url.searchParams.set('addressdetails', '1');
 
   const response = await fetch(url.toString(), {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'ImoDeus.ai/1.0 (property address search)',
+      'User-Agent': 'ImoDeus.ai/1.0 (property address autocomplete)',
     },
     cache: 'no-store',
   });
@@ -183,35 +256,50 @@ async function fetchNominatimSuggestions(query: string): Promise<AddressSuggesti
     return [];
   }
 
-  const results = (await response.json()) as NominatimResult[];
-  return results
-    .filter((item) => item.display_name && item.lat && item.lon)
-    .map((item) => {
-      const city = pickSuggestionCity(item.address);
-      const zone = pickSuggestionZone(item.address);
-      const addressLine = pickAddressLine(item.address, item.display_name);
+  const results = (await response.json()) as Array<{
+    display_name?: string;
+    lat?: string;
+    lon?: string;
+    address?: Record<string, string>;
+  }>;
 
-      return {
-        label: buildReadableLabel(addressLine, zone, city, item.display_name),
-        addressLine,
-        city,
-        zone,
-        latitude: Number(item.lat),
-        longitude: Number(item.lon),
-      };
-    });
+  return results
+    .filter((result) => result.display_name && result.lat && result.lon)
+    .map((result) => ({
+      label: result.display_name!,
+      addressLine:
+        [
+          result.address?.road,
+          result.address?.house_number,
+        ]
+          .filter(Boolean)
+          .join(' ') || result.display_name!,
+      city:
+        result.address?.city ||
+        result.address?.town ||
+        result.address?.municipality ||
+        result.address?.county ||
+        '',
+      zone:
+        result.address?.suburb ||
+        result.address?.neighbourhood ||
+        result.address?.quarter ||
+        '',
+      latitude: Number(result.lat),
+      longitude: Number(result.lon),
+    }));
 }
 
-async function fetchPhotonSuggestions(query: string): Promise<AddressSuggestion[]> {
+async function searchViaPhoton(query: string) {
   const url = new URL('https://photon.komoot.io/api/');
   url.searchParams.set('q', query);
   url.searchParams.set('lang', 'ro');
-  url.searchParams.set('limit', '8');
+  url.searchParams.set('limit', '6');
 
   const response = await fetch(url.toString(), {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'ImoDeus.ai/1.0 (property address search fallback)',
+      'User-Agent': 'ImoDeus.ai/1.0 (property address autocomplete fallback)',
     },
     cache: 'no-store',
   });
@@ -220,36 +308,33 @@ async function fetchPhotonSuggestions(query: string): Promise<AddressSuggestion[
     return [];
   }
 
-  const payload = (await response.json()) as { features?: PhotonFeature[] };
-  const features = payload.features || [];
+  const payload = (await response.json()) as {
+    features?: Array<{
+      properties?: Record<string, string>;
+      geometry?: { coordinates?: [number, number] };
+    }>;
+  };
 
-  return features
+  return (payload.features || [])
     .filter((feature) => feature.geometry?.coordinates?.length === 2)
     .map((feature) => {
       const props = feature.properties || {};
-      const addressLine = [props.street || props.name, props.housenumber].filter(Boolean).join(' ').trim() || props.name || '';
-      const city = props.city || props.county || '';
-      const zone = props.suburb || props.district || '';
+      const coords = feature.geometry!.coordinates!;
 
       return {
-        label: buildReadableLabel(addressLine, zone, city, props.name),
-        addressLine,
-        city,
-        zone,
-        latitude: Number(feature.geometry!.coordinates![1]),
-        longitude: Number(feature.geometry!.coordinates![0]),
+        label:
+          props.name ||
+          [props.street, props.city, props.county, 'Romania'].filter(Boolean).join(', '),
+        addressLine:
+          [props.street, props.housenumber].filter(Boolean).join(' ') ||
+          props.name ||
+          '',
+        city: props.city || props.county || '',
+        zone: props.district || props.suburb || props.neighbourhood || '',
+        latitude: Number(coords[1]),
+        longitude: Number(coords[0]),
       };
     });
-}
-
-function dedupeSuggestions(suggestions: AddressSuggestion[]) {
-  const seen = new Set<string>();
-  return suggestions.filter((suggestion) => {
-    const key = `${suggestion.latitude.toFixed(6)}-${suggestion.longitude.toFixed(6)}-${suggestion.addressLine.toLowerCase()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
 export async function GET(request: NextRequest) {
@@ -258,25 +343,50 @@ export async function GET(request: NextRequest) {
   const zone = searchParams.get('zone');
   const city = searchParams.get('city');
 
-  const queries = unique(buildQueries(address, zone, city)).slice(0, 6);
-  if (queries.length === 0) {
-    return NextResponse.json({ suggestions: [] });
+  if (!normalizeText(address)) {
+    return NextResponse.json([]);
   }
 
   try {
-    const nominatimResults = await Promise.all(queries.map((query) => fetchNominatimSuggestions(query)));
-    let suggestions = dedupeSuggestions(nominatimResults.flat());
-
-    if (suggestions.length < 6) {
-      const photonResults = await Promise.all(queries.slice(0, 3).map((query) => fetchPhotonSuggestions(query)));
-      suggestions = dedupeSuggestions([...suggestions, ...photonResults.flat()]);
+    const googleResults = await searchViaGoogle(address, zone, city);
+    if (googleResults && googleResults.length > 0) {
+      return NextResponse.json(googleResults);
     }
 
-    return NextResponse.json({
-      suggestions: suggestions.slice(0, 10),
-    });
+    const queries = buildQueries(address, zone, city);
+    const unique = new Map<string, AddressSuggestion>();
+
+    for (const query of queries.slice(0, 4)) {
+      const results = await searchViaNominatim(query);
+      for (const result of results) {
+        const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
+        if (!unique.has(key)) {
+          unique.set(key, result);
+        }
+      }
+      if (unique.size >= 6) {
+        break;
+      }
+    }
+
+    if (unique.size < 4) {
+      for (const query of queries.slice(0, 2)) {
+        const results = await searchViaPhoton(query);
+        for (const result of results) {
+          const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
+          if (!unique.has(key)) {
+            unique.set(key, result);
+          }
+        }
+        if (unique.size >= 6) {
+          break;
+        }
+      }
+    }
+
+    return NextResponse.json(Array.from(unique.values()).slice(0, 6));
   } catch (error) {
-    console.error('Address search failed:', error);
-    return NextResponse.json({ suggestions: [] }, { status: 200 });
+    console.error('Address suggestion search failed:', error);
+    return NextResponse.json([], { status: 200 });
   }
 }

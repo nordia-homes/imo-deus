@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+type GoogleAddressComponent = {
+  longText?: string;
+  shortText?: string;
+  types?: string[];
+};
+
 function normalizeAddressInput(address?: string | null) {
   return (address || '')
     .trim()
@@ -100,6 +106,44 @@ async function geocodeViaPhoton(query: string) {
   };
 }
 
+async function geocodeViaGoogle(address?: string | null, zone?: string | null, city?: string | null) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey || apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    return null;
+  }
+
+  const queries = buildQueries(address, zone, city);
+  for (const query of queries.slice(0, 4)) {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=ro&language=ro&key=${encodeURIComponent(apiKey)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) {
+      continue;
+    }
+
+    const payload = (await response.json()) as {
+      status?: string;
+      results?: Array<{
+        geometry?: { location?: { lat?: number; lng?: number } };
+        address_components?: Array<GoogleAddressComponent & { long_name?: string; short_name?: string; types?: string[] }>;
+      }>;
+    };
+
+    const first = payload.results?.[0];
+    const location = first?.geometry?.location;
+    if (payload.status === 'OK' && location?.lat && location?.lng) {
+      return {
+        latitude: Number(location.lat),
+        longitude: Number(location.lng),
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
@@ -112,6 +156,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const google = await geocodeViaGoogle(address, zone, city);
+    if (google) {
+      return NextResponse.json(google);
+    }
+
     for (const query of queries) {
       const nominatim = await geocodeViaNominatim(query);
       if (nominatim) {

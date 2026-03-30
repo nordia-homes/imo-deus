@@ -755,7 +755,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             return;
         }
 
-        if (selectedAddressLabel && normalizedAddress === selectedAddressLabel) {
+        if (selectedAddressLabel && normalizedAddress === selectedAddressLabel && selectedCoordinates) {
             return;
         }
 
@@ -777,7 +777,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     signal: controller.signal,
                 });
                 const payload = await response.json() as { suggestions?: AddressSuggestion[] };
-                setAddressSuggestions(payload.suggestions || []);
+                const normalizedSuggestions = (payload.suggestions || []).filter(
+                    (suggestion) =>
+                        suggestion?.label &&
+                        Number.isFinite(suggestion.latitude) &&
+                        Number.isFinite(suggestion.longitude)
+                );
+                setAddressSuggestions(normalizedSuggestions);
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
                     console.error('Address suggestions failed:', error);
@@ -791,7 +797,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             controller.abort();
             clearTimeout(timeoutId);
         };
-    }, [selectedAddressLabel, watchedAddress, watchedCity, watchedZone]);
+    }, [selectedAddressLabel, selectedCoordinates, watchedAddress, watchedCity, watchedZone]);
 
     const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
         const nextAddressValue = suggestion.addressLine || suggestion.label;
