@@ -27,12 +27,14 @@ export function PropertyGallery({
   propertyId,
   showMatchPrompt = true,
   shareUrl,
+  shareImageUrl,
 }: {
   images: string[];
   title: string;
   propertyId: string;
   showMatchPrompt?: boolean;
   shareUrl?: string;
+  shareImageUrl?: string;
 }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
@@ -49,13 +51,37 @@ export function PropertyGallery({
     }
 
     const resolvedShareUrl = shareUrl || window.location.href;
-    const shareData = {
+    const shareData: ShareData = {
       title,
       text: `Aceasta proprietate este acum disponibila si poate fi vizionata: ${title}`,
       url: resolvedShareUrl,
     };
 
     try {
+      const firstImageUrl = shareImageUrl || images[0];
+      if (firstImageUrl && navigator.share) {
+        try {
+          const response = await fetch(firstImageUrl, { cache: "no-store" });
+          if (response.ok) {
+            const blob = await response.blob();
+            const fileExtension = blob.type.split("/")[1] || "jpg";
+            const file = new File([blob], `proprietate-${propertyId}.${fileExtension}`, { type: blob.type || "image/jpeg" });
+            const shareDataWithFile: ShareData = {
+              files: [file],
+              title,
+              text: `${shareData.text}\n${resolvedShareUrl}`,
+            };
+
+            if (!navigator.canShare || navigator.canShare(shareDataWithFile)) {
+              await navigator.share(shareDataWithFile);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Image share fallback failed:", error);
+        }
+      }
+
       if (navigator.share) {
         await navigator.share(shareData);
         return;
@@ -69,7 +95,7 @@ export function PropertyGallery({
     } catch (error) {
       console.error("Share failed:", error);
     }
-  }, [shareUrl, title]);
+  }, [images, propertyId, shareImageUrl, shareUrl, title]);
 
   React.useEffect(() => {
     if (!api) return
