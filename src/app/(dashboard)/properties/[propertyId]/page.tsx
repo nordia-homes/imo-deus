@@ -34,7 +34,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit, Calculator, Facebook, Share2, Globe, StickyNote, Phone } from 'lucide-react';
+import { Menu, Info, Bed, Ruler, Calendar, Layers, Users, ArrowRight, Edit, Calculator, Facebook, Share2, Globe, StickyNote, Phone, MapPinned } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -337,9 +337,19 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            <div className="h-[240px] overflow-hidden rounded-2xl">
-                                <PropertiesMap properties={[property]} zoomMode="close" />
-                            </div>
+                            <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white">
+                                <CardHeader className="px-4 pb-2 pt-2">
+                                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
+                                        <MapPinned className="h-5 w-5 text-primary" />
+                                        <span>Locatia proprietatii pe harta</span>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="h-[240px] overflow-hidden">
+                                        <PropertiesMap properties={[property]} zoomMode="close" />
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">
