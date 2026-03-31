@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Sparkles, Upload, X } from 'lucide-react';
+import { Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -495,7 +495,28 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 
 type ImageSource = File | { url: string; alt: string };
 
-function SortableImage({ id, src, onRemove }: { id: string; src: string; onRemove: () => void; }) {
+function base64ToFile(base64: string, filename: string, mimeType: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], filename, { type: mimeType });
+}
+
+function SortableImage({
+  id,
+  src,
+  onRemove,
+  onEnhance,
+  isEnhancing,
+}: {
+  id: string;
+  src: string;
+  onRemove: () => void;
+  onEnhance: () => void;
+  isEnhancing: boolean;
+}) {
   const {
     attributes,
     listeners,
@@ -515,6 +536,20 @@ function SortableImage({ id, src, onRemove }: { id: string; src: string; onRemov
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative aspect-square group touch-none">
       <Image src={src} alt={`Preview`} fill sizes="128px" className="object-cover rounded-xl" />
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="absolute top-1.5 left-1.5 h-7 w-7 bg-black/65 text-emerald-100 opacity-100 backdrop-blur-sm transition hover:bg-black/80"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEnhance();
+        }}
+        disabled={isEnhancing}
+      >
+        {isEnhancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+      </Button>
       <Button
         type="button"
         variant="destructive"
@@ -542,6 +577,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+    const [enhancingImageIds, setEnhancingImageIds] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [isLoadingAddressSuggestions, setIsLoadingAddressSuggestions] = useState(false);
     const [selectedCoordinates, setSelectedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -861,6 +897,69 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         setImageSources((prev) => prev.filter((_, i) => i !== index));
     };
 
+    const handleEnhanceImage = async (index: number) => {
+        const source = imageSources[index];
+        const imageItem = imageItems[index];
+
+        if (!source || !imageItem) return;
+
+        setEnhancingImageIds((prev) => (prev.includes(imageItem.id) ? prev : [...prev, imageItem.id]));
+
+        try {
+            let response: Response;
+
+            if (source instanceof File) {
+                const formData = new FormData();
+                formData.append('image', source);
+                response = await fetch('/api/enhance-property-image', {
+                    method: 'POST',
+                    body: formData,
+                });
+            } else {
+                response = await fetch('/api/enhance-property-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ imageUrl: source.url }),
+                });
+            }
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || !payload?.imageBase64 || !payload?.mimeType) {
+                throw new Error(payload?.message || 'Nu am putut imbunatati fotografia cu AI.');
+            }
+
+            const extension = payload.mimeType === 'image/jpeg' ? 'jpg' : payload.mimeType === 'image/webp' ? 'webp' : 'png';
+            const enhancedFile = base64ToFile(
+                payload.imageBase64,
+                `enhanced-${Date.now()}-${index}.${extension}`,
+                payload.mimeType
+            );
+
+            setImageSources((prev) => prev.map((item, currentIndex) => (
+                currentIndex === index
+                    ? enhancedFile
+                    : item
+            )));
+
+            toast({
+                title: 'Fotografie imbunatatita',
+                description: 'Varianta imbunatatita cu AI a inlocuit imaginea curenta in formular.',
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Nu am putut imbunatati fotografia cu AI.';
+            toast({
+                variant: 'destructive',
+                title: 'A aparut o eroare',
+                description: message,
+            });
+        } finally {
+            setEnhancingImageIds((prev) => prev.filter((currentId) => currentId !== imageItem.id));
+        }
+    };
+
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
         if (over && active.id !== over.id) {
@@ -890,7 +989,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 rooms: values.rooms || 0,
                 bathrooms: values.bathrooms || 0,
                 squareFootage: values.squareFootage || 0,
+                totalSurface: values.totalSurface || undefined,
                 constructionYear: values.constructionYear ? Number(values.constructionYear) : undefined,
+                floor: values.floor,
+                totalFloors: values.totalFloors || undefined,
+                partitioning: values.partitioning,
+                comfort: values.comfort,
+                interiorState: values.interiorState,
+                furnishing: values.furnishing,
+                heatingSystem: values.heatingSystem,
+                parking: values.parking,
+                buildingState: values.buildingState,
+                seismicRisk: values.seismicRisk,
+                balconyTerrace: values.balconyTerrace,
+                kitchen: values.kitchen,
+                lift: values.lift,
+                orientation: values.orientation,
+                city: values.city,
+                zone: values.zone,
+                nearMetro: values.nearMetro,
                 keyFeatures: values.keyFeatures,
                 description: values.description,
             });
@@ -1064,7 +1181,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
                                                 {imageItems.map((item, index) => (
                                                     <div className="w-40 h-40" key={item.id}>
-                                                        <SortableImage id={item.id} src={item.url} onRemove={() => removeImage(index)} />
+                                                        <SortableImage
+                                                            id={item.id}
+                                                            src={item.url}
+                                                            onRemove={() => removeImage(index)}
+                                                            onEnhance={() => handleEnhanceImage(index)}
+                                                            isEnhancing={enhancingImageIds.includes(item.id)}
+                                                        />
                                                     </div>
                                                 ))}
                                             </SortableContext>
@@ -1097,7 +1220,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
                                                 {imageItems.map((item, index) => (
                                                     <div className="w-40 h-40" key={item.id}>
-                                                        <SortableImage id={item.id} src={item.url} onRemove={() => removeImage(index)} />
+                                                        <SortableImage
+                                                            id={item.id}
+                                                            src={item.url}
+                                                            onRemove={() => removeImage(index)}
+                                                            onEnhance={() => handleEnhanceImage(index)}
+                                                            isEnhancing={enhancingImageIds.includes(item.id)}
+                                                        />
                                                     </div>
                                                 ))}
                                             </SortableContext>

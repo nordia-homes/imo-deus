@@ -1,59 +1,90 @@
-
 'use server';
 
-/**
- * @fileOverview An AI agent to generate engaging property descriptions from key details.
- *
- * - generatePropertyDescription - A function that generates property descriptions.
- * - PropertyDescriptionInput - The input type for the generatePropertyDescription function.
- * - PropertyDescriptionOutput - The return type for the generatePropertyDescription function.
- */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
 import type { Property } from '@/lib/types';
 
-// The input is the full property object, wrapped for the flow.
-const PropertyDescriptionInputSchema = z.object({
-  property: z.custom<Property>().describe("The full property object as a JSON object.")
-});
-export type PropertyDescriptionInput = z.infer<typeof PropertyDescriptionInputSchema>;
+type PropertyDescriptionOutput = {
+  description: string;
+};
 
+function buildPrompt(property: Property) {
+  return `You are a premium Romanian real estate copywriter.
 
-const PropertyDescriptionOutputSchema = z.object({
-  description: z.string().describe('An engaging and detailed property description written in Romanian.'),
-});
-export type PropertyDescriptionOutput = z.infer<typeof PropertyDescriptionOutputSchema>;
+Use the following JSON object which contains all available information about the property:
+\`\`\`json
+${JSON.stringify(property, null, 2)}
+\`\`\`
 
-// The exported function now accepts the raw Property object for easier use by other flows/tools.
-export async function generatePropertyDescription(property: Property): Promise<PropertyDescriptionOutput> {
-  return propertyDescriptionFlow({ property });
+Your job:
+- Write a fluent, persuasive, natural property description in Romanian.
+- Carefully use all relevant information available in the data, especially:
+  - main details
+  - specifications
+  - finishes and amenities
+  - location details
+  - the text from "keyFeatures"
+  - the existing "description" if one already exists
+- If an existing description is present, do not ignore it. Rewrite, refine, and improve it into a better, more coherent final version.
+- If "keyFeatures" contains essential selling points, integrate them naturally into the final text.
+
+Writing rules:
+- Do not output bullet points.
+- Do not dump raw technical fields mechanically.
+- Turn the information into a readable narrative with a premium, sales-oriented tone.
+- Keep the text realistic and professional, not exaggerated or spammy.
+- Mention the location benefits naturally when possible.
+- Mention the price only if it fits naturally in the copy; do not force it awkwardly.
+- Focus on clarity, desirability, comfort, lifestyle, and decision-making value for a buyer or tenant.
+- If some fields are missing, do not mention that they are missing.
+- Never mention internal/admin-only information such as owner data, internal scores, assigned agent IDs, or internal status logic.
+
+Return only the final Romanian description text.`;
 }
 
-const prompt = ai.definePrompt({
-  name: 'propertyDescriptionPrompt',
-  input: {schema: PropertyDescriptionInputSchema},
-  output: {schema: PropertyDescriptionOutputSchema},
-  prompt: `You are a real estate expert, and will write a property description in Romanian to attract potential buyers.
+export async function generatePropertyDescription(property: Property): Promise<PropertyDescriptionOutput> {
+  const apiKey = process.env.OPENAI_API_KEY;
 
-  Use the following JSON object which contains all available information about the property to craft a compelling description:
-  \`\`\`json
-  {{{JSON.stringify(property, null, 2)}}}
-  \`\`\`
-
-  Write a description in Romanian that is engaging, highlights the key selling points, and appeals to a broad range of potential buyers.  Be sure to mention the price in the description. The tone should be professional, but also appealing and persuasive.
-  Do not just list the features from the JSON. Weave them into a compelling narrative that tells a story and focuses on the benefits for the buyer.
-  `,
-});
-
-const propertyDescriptionFlow = ai.defineFlow(
-  {
-    name: 'propertyDescriptionFlow',
-    inputSchema: PropertyDescriptionInputSchema,
-    outputSchema: PropertyDescriptionOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY nu este setata.');
   }
-);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
+      temperature: 0.7,
+      messages: [
+        {
+          role: 'developer',
+          content: 'You write premium Romanian real estate descriptions that are clear, natural, persuasive, and based strictly on the provided property data.',
+        },
+        {
+          role: 'user',
+          content: buildPrompt(property),
+        },
+      ],
+    }),
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message =
+      payload?.error?.message ||
+      payload?.message ||
+      'OpenAI nu a putut genera descrierea proprietatii.';
+
+    throw new Error(message);
+  }
+
+  const description = payload?.choices?.[0]?.message?.content?.trim();
+
+  if (!description) {
+    throw new Error('OpenAI nu a returnat o descriere valida.');
+  }
+
+  return { description };
+}

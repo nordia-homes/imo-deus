@@ -20,7 +20,7 @@ const CmaInputSchema = z.object({
   allProperties: z.array(z.custom<Property>()).describe("A list of all other properties in the portfolio to be used as potential comparables."),
   agencyId: z.string().describe("The ID of the agency performing the analysis.")
 });
-export type CmaInput = z.infer<typeof CmaInputSchema>;
+type CmaInput = z.infer<typeof CmaInputSchema>;
 
 const ComparablePropertySchema = z.object({
     id: z.string(),
@@ -50,7 +50,7 @@ const CmaOutputSchema = z.object({
   }).describe("The final estimated market value range for the subject property."),
   notes: z.string().describe("A summary of the market analysis, including commentary on the local market conditions and the rationale for the final valuation. Written in Romanian."),
 });
-export type CmaOutput = z.infer<typeof CmaOutputSchema>;
+type CmaOutput = z.infer<typeof CmaOutputSchema>;
 
 
 // Main exported function

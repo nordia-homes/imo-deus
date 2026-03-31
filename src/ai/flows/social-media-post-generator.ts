@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const SocialMediaPostInputSchema = z.object({
+const SocialMediaPostInputSchema = z.object({
   title: z.string().describe("The title of the property listing."),
   price: z.number().describe("The price of the property."),
   transactionType: z.string().describe("The type of transaction ('Vânzare' or 'Închiriere')."),
@@ -18,12 +18,12 @@ export const SocialMediaPostInputSchema = z.object({
   rooms: z.number().describe("The number of rooms."),
   squareFootage: z.number().describe("The square footage."),
 });
-export type SocialMediaPostInput = z.infer<typeof SocialMediaPostInputSchema>;
+type SocialMediaPostInput = z.infer<typeof SocialMediaPostInputSchema>;
 
-export const SocialMediaPostOutputSchema = z.object({
+const SocialMediaPostOutputSchema = z.object({
   post: z.string().describe('The generated social media post content, including emojis and hashtags.'),
 });
-export type SocialMediaPostOutput = z.infer<typeof SocialMediaPostOutputSchema>;
+type SocialMediaPostOutput = z.infer<typeof SocialMediaPostOutputSchema>;
 
 
 export async function generateSocialMediaPost(input: SocialMediaPostInput): Promise<SocialMediaPostOutput> {
