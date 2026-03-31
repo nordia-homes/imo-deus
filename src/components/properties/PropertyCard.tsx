@@ -2,12 +2,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, MoreHorizontal, Edit, Trash2, Calendar, Link as LinkIcon, Check } from "lucide-react";
+import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -41,7 +41,7 @@ export function PropertyCard({
     publicBasePath && publicBasePath !== '/'
       ? publicBasePath.endsWith('/')
         ? publicBasePath.slice(0, -1)
-        : publicBasePath
+      : publicBasePath
       : '';
   
   const href = agencyId
@@ -49,6 +49,9 @@ export function PropertyCard({
       ? `${normalizedPublicBasePath}/properties/${property.id}` || `/properties/${property.id}`
       : `/agencies/${agencyId}/properties/${property.id}`
     : `/properties/${property.id}`;
+  const shareImageUrl = agencyId
+    ? `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`
+    : undefined;
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
 
@@ -67,6 +70,56 @@ export function PropertyCard({
     toast({ title: "Link copiat!" });
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleShare = useCallback(async () => {
+    if (typeof window === "undefined" || !agencyId) return;
+
+    const absoluteUrl = new URL(href, window.location.origin).toString();
+    const shareData: ShareData = {
+      title: property.title,
+      text: `Aceasta proprietate este acum disponibila si poate fi vizionata: ${property.title}`,
+      url: absoluteUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        try {
+          if (shareImageUrl) {
+            const imageResponse = await fetch(shareImageUrl, { cache: 'no-store' });
+            if (imageResponse.ok) {
+              const blob = await imageResponse.blob();
+              const fileExtension = blob.type.split('/')[1] || 'jpg';
+              const file = new File([blob], `proprietate-${property.id}.${fileExtension}`, {
+                type: blob.type || 'image/jpeg',
+              });
+              const shareDataWithFile: ShareData = {
+                files: [file],
+                title: property.title,
+                text: `${shareData.text}\n${absoluteUrl}`,
+              };
+
+              if (!navigator.canShare || navigator.canShare(shareDataWithFile)) {
+                await navigator.share(shareDataWithFile);
+                return;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Public property card image share failed:', error);
+        }
+
+        await navigator.share(shareData);
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(absoluteUrl);
+        toast({ title: "Link copiat!" });
+      }
+    } catch (error) {
+      console.error('Public property card share failed:', error);
+    }
+  }, [agencyId, href, property.id, property.title, shareImageUrl, toast]);
 
   return (
     <>
@@ -149,9 +202,23 @@ export function PropertyCard({
                     </Button>
                 </div>
               ) : (
-                <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
-                    <Link href={href}>Vezi Detalii</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    title="Distribuie proprietatea"
+                    aria-label="Distribuie proprietatea"
+                    onClick={handleShare}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-stone-100 transition-colors hover:bg-white/[0.12] hover:text-white"
+                  >
+                    <Share2 className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                  <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
+                      <Link href={href} className="inline-flex items-center gap-2">
+                        Vezi Detalii
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                  </Button>
+                </div>
               )}
             </div>
           </div>
