@@ -50,7 +50,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
   return (
     <>
-        <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:mx-0 px-4 md:px-6 lg:px-0 py-4 border-b lg:bg-transparent lg:border-white/10 lg:mb-4">
+        <header className="px-4 md:px-6 lg:px-0 py-4 border-b bg-background/95 backdrop-blur-sm lg:bg-transparent lg:border-white/10 lg:mb-2">
             <div className="flex h-full flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
                 <div className="min-w-0 lg:col-span-8">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2 flex-wrap">

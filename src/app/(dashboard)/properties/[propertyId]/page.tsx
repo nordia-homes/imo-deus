@@ -310,20 +310,20 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            <Card className="overflow-hidden rounded-2xl border border-primary/20 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.16),transparent_38%),linear-gradient(180deg,#193253_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_24px_60px_-28px_rgba(0,0,0,0.6)]">
-                                <CardContent className="space-y-4 p-4">
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/90">
+                            <Card className="overflow-hidden rounded-2xl border border-primary/22 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.14),transparent_40%),linear-gradient(180deg,#132844_0%,#0f2036_56%,#0b1727_100%)] text-white shadow-[0_28px_80px_-34px_rgba(0,0,0,0.82)]">
+                                <CardContent className="space-y-4 p-5">
+                                    <div className="space-y-1 text-center">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                                             Informatii complete
                                         </p>
-                                        <h3 className="text-lg font-semibold text-white">
+                                        <h3 className="text-xl font-semibold text-white">
                                             Vezi toate detaliile
                                         </h3>
-                                        <p className="text-sm text-white/70">
+                                        <p className="text-sm text-white/78">
                                             Deschide fisa completa a proprietatii cu toate informatiile tehnice.
                                         </p>
                                     </div>
-                                    <Button className="w-full rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14" onClick={() => setIsInfoDialogOpen(true)}>
+                                    <Button className="w-full rounded-full border border-emerald-300/28 bg-emerald-400/20 text-emerald-50 shadow-[0_18px_40px_-18px_rgba(34,197,94,0.55)] hover:bg-emerald-400/24" onClick={() => setIsInfoDialogOpen(true)}>
                                         Vezi Fisa Proprietatii
                                     </Button>
                                 </CardContent>
@@ -381,7 +381,7 @@ export default function PropertyDetailPage() {
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                 />
 
-                <main className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <main className="pt-3 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
