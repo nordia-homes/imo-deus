@@ -4,7 +4,13 @@ import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from '@/lib/types';
 
-export function PropertiesMap({ properties }: { properties: Property[] }) {
+export function PropertiesMap({
+    properties,
+    zoomMode = 'default',
+}: {
+    properties: Property[];
+    zoomMode?: 'default' | 'close';
+}) {
 
     const validProperties = useMemo(() => {
         return properties.filter(p => p.latitude != null && p.longitude != null);
@@ -29,9 +35,11 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
         const minLon = Math.min(...longitudes);
         const maxLon = Math.max(...longitudes);
         
-        // Add some padding to the bounds
-        const latPadding = (maxLat - minLat) * 0.1 || 0.01;
-        const lonPadding = (maxLon - minLon) * 0.1 || 0.01;
+        // Use tighter bounds when we want a closer zoom around a single property.
+        const paddingFactor = zoomMode === 'close' ? 0.04 : 0.1;
+        const minimumPadding = zoomMode === 'close' ? 0.0025 : 0.01;
+        const latPadding = (maxLat - minLat) * paddingFactor || minimumPadding;
+        const lonPadding = (maxLon - minLon) * paddingFactor || minimumPadding;
 
         return {
             minLat: minLat - latPadding,
@@ -39,7 +47,7 @@ export function PropertiesMap({ properties }: { properties: Property[] }) {
             minLon: minLon - lonPadding,
             maxLon: maxLon + lonPadding,
         };
-    }, [validProperties]);
+    }, [validProperties, zoomMode]);
 
     const mapEmbedUrl = useMemo(() => {
         const { minLon, minLat, maxLon, maxLat } = bounds;

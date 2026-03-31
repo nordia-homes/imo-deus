@@ -607,7 +607,15 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedAddress = form.watch('address');
     const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
     const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
-    
+    const watchedTitle = form.watch('title');
+    const watchedPropertyType = form.watch('propertyType');
+    const watchedTransactionType = form.watch('transactionType');
+    const watchedPrice = form.watch('price');
+    const watchedRooms = form.watch('rooms');
+    const watchedBathrooms = form.watch('bathrooms');
+    const watchedSquareFootage = form.watch('squareFootage');
+    const watchedConstructionYear = form.watch('constructionYear');
+
     useEffect(() => {
         if (!watchedCity || !isEditMode || !propertyData) {
             return;
@@ -748,6 +756,15 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         const url = source instanceof File ? URL.createObjectURL(source) : source.url;
         return { id, url };
     }), [imageSources]);
+
+    const previewImageUrl = imageItems[0]?.url || null;
+    const previewLocation = [watchedZone, watchedCity].filter(Boolean).join(', ');
+    const formattedPreviewPrice =
+        typeof watchedPrice === 'number' && Number.isFinite(watchedPrice)
+            ? new Intl.NumberFormat('ro-RO').format(watchedPrice)
+            : watchedPrice
+                ? new Intl.NumberFormat('ro-RO').format(Number(watchedPrice))
+                : null;
 
     useEffect(() => {
         return () => {
@@ -1247,8 +1264,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                         </Card>
                     )}
 
-                    <div className={cn("grid grid-cols-1 gap-8", !isMobile && "md:grid-cols-2")}>
-                         <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
+                    <div className={cn("grid grid-cols-1 gap-8", !isMobile && "md:grid-cols-2 md:items-stretch")}>
+                         <div className={cn(isMobile ? "space-y-6" : "space-y-8 md:flex md:h-full md:flex-col")}>
                              <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
@@ -1293,7 +1310,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         </Button>
                                         </FormLabel>
                                         <FormControl>
-                                        <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50 lg:h-[454px]" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                        <Textarea className="min-h-[360px] bg-white/10 border-white/20 text-white placeholder:text-white/50 md:min-h-[460px] lg:h-[620px]" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -1302,7 +1319,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                             </CardContent>
                          </Card>
 
-                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
+                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white", !isMobile && "md:mt-auto")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Locație</h3>
                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1382,7 +1399,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                  </CardContent>
                              </Card>
                         </div>
-                        <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
+                        <div className={cn(isMobile ? "space-y-6" : "space-y-8 md:flex md:h-full md:flex-col")}>
                              <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Specificații</h3>
@@ -1434,7 +1451,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
                                 </CardContent>
                             </Card>
-                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
+                            <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Comision</h3>
                                     <FormField
@@ -1482,6 +1499,77 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </FormItem>
                                         )}
                                     />
+                                </CardContent>
+                            </Card>
+                            <Card className={cn("shadow-xl rounded-2xl overflow-hidden", "bg-[#152A47] border-none text-white", !isMobile && "md:mt-auto md:h-full")}>
+                                <CardContent className={cn("space-y-4", "p-4 pt-6", !isMobile && "md:flex md:h-full md:flex-col")}>
+                                    <div className="space-y-1 text-center">
+                                        <h3 className="text-lg font-semibold text-primary">Previzualizare anunt</h3>
+                                        <p className="text-sm text-white/65">
+                                            Cardul se actualizeaza automat pe masura ce completezi proprietatea.
+                                        </p>
+                                    </div>
+
+                                    <div className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] md:mt-auto">
+                                        <div className="relative aspect-[16/10] overflow-hidden rounded-t-[1.75rem] bg-[#0c1727]">
+                                            {previewImageUrl ? (
+                                                <Image
+                                                    src={previewImageUrl}
+                                                    alt={watchedTitle || 'Previzualizare proprietate'}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 420px"
+                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/45">
+                                                    Prima fotografie incarcata va aparea aici.
+                                                </div>
+                                            )}
+                                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                        </div>
+
+                                        <div className="space-y-4 p-4">
+                                            <div className="space-y-2">
+                                                <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.18em] text-emerald-200/90">
+                                                    {watchedPropertyType ? (
+                                                        <span className="rounded-full border border-emerald-300/14 bg-emerald-400/10 px-2.5 py-1">
+                                                            {watchedPropertyType}
+                                                        </span>
+                                                    ) : null}
+                                                    {watchedTransactionType ? (
+                                                        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-white/70">
+                                                            {watchedTransactionType}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                <h4 className="text-lg font-semibold leading-tight text-white">
+                                                    {watchedTitle || 'Titlul proprietatii va aparea aici'}
+                                                </h4>
+                                                <p className="text-sm text-white/60">
+                                                    {watchedAddress || previewLocation || 'Adresa si zona vor aparea aici'}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/80">
+                                                {watchedRooms ? <span>{watchedRooms} camere</span> : null}
+                                                {watchedBathrooms ? <span>{watchedBathrooms} bai</span> : null}
+                                                {watchedSquareFootage ? <span>{watchedSquareFootage} mp</span> : null}
+                                                {watchedConstructionYear ? <span>An {watchedConstructionYear}</span> : null}
+                                            </div>
+
+                                            <div className="flex items-end justify-between gap-4 border-t border-white/8 pt-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-xs uppercase tracking-[0.18em] text-white/40">Pret afisat</p>
+                                                    <p className="text-2xl font-bold text-white">
+                                                        {formattedPreviewPrice ? `€${formattedPreviewPrice}` : '€0'}
+                                                    </p>
+                                                </div>
+                                                <div className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-100">
+                                                    Vezi detalii
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>

@@ -359,7 +359,7 @@ export default function PublicPropertyDetailPage() {
                             <CardTitle className="text-lg font-bold text-stone-50">Localizare pe harta</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 h-80">
-                            <PropertiesMap properties={[property]} />
+                            <PropertiesMap properties={[property]} zoomMode="close" />
                         </CardContent>
                     </Card>
 
@@ -438,7 +438,7 @@ export default function PublicPropertyDetailPage() {
                                 <CardTitle className="text-xl font-bold text-stone-50">Localizare pe harta</CardTitle>
                             </CardHeader>
                             <CardContent className="h-80 p-5 pt-0">
-                                <PropertiesMap properties={[property]} />
+                                <PropertiesMap properties={[property]} zoomMode="close" />
                             </CardContent>
                         </Card>
 

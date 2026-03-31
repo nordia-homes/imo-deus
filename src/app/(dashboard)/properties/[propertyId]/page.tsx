@@ -57,6 +57,7 @@ import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
+import { PropertiesMap } from '@/components/map/PropertiesMap';
 
 
 
@@ -336,6 +337,9 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
+                            <div className="h-[240px] overflow-hidden rounded-2xl">
+                                <PropertiesMap properties={[property]} zoomMode="close" />
+                            </div>
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
+import { PropertiesMap } from "@/components/map/PropertiesMap";
 
 export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
@@ -120,9 +121,12 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                                         ))}
                                     </div>
                                 </div>
-                             )}
+                            )}
                         </CardContent>
                     </Card>
+                    <div className="hidden lg:block h-[320px]">
+                        <PropertiesMap properties={[property]} zoomMode="close" />
+                    </div>
                     <div className="hidden lg:block">
                         <PropertyNotesCard property={property} />
                     </div>
@@ -160,17 +164,22 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     </Card>
                 </TabsContent>
                 <TabsContent value="documents" className="mt-6">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
-                      <CardHeader>
-                        <CardTitle>Releveu Proprietate (RLV)</CardTitle>
-                        <CardDescription className="lg:text-white/70">
-                          Vizualizează sau încarcă releveul pentru această proprietate. Fișierul poate fi PDF sau imagine (JPG, PNG).
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <RlvTab property={property} />
-                      </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                          <CardHeader>
+                            <CardTitle>Releveu Proprietate (RLV)</CardTitle>
+                            <CardDescription className="lg:text-white/70">
+                              Vizualizează sau încarcă releveul pentru această proprietate. Fișierul poate fi PDF sau imagine (JPG, PNG).
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <RlvTab property={property} />
+                          </CardContent>
+                        </Card>
+                        <div className="h-[320px] lg:hidden">
+                            <PropertiesMap properties={[property]} zoomMode="close" />
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
             <InfoDialog 
