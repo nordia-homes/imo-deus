@@ -45,14 +45,18 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="hidden md:grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
                     {menuItems.map(item => (
-                         <TabsTrigger key={item.value} value={item.value} className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl lg:bg-[#152A47] lg:text-white lg:border-white/10 lg:data-[state=active]:bg-primary">
+                         <TabsTrigger
+                            key={item.value}
+                            value={item.value}
+                            className="h-12 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 shadow-none transition-colors hover:bg-emerald-400/14 hover:text-emerald-100 data-[state=active]:bg-emerald-400/18 data-[state=active]:text-white data-[state=active]:shadow-none"
+                         >
                             {item.icon}
                             {item.label}
                         </TabsTrigger>
                     ))}
                     <div 
                         onClick={() => setIsInfoDialogOpen(true)}
-                        className="h-12 rounded-lg border bg-card text-card-foreground shadow-lg inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-accent hover:shadow-xl transition-all lg:bg-[#152A47] lg:text-white lg:border-white/10 lg:hover:bg-white/5"
+                        className="inline-flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1.5 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-400/14 hover:text-emerald-100"
                     >
                         <Info className="mr-2 h-4 w-4" />
                         Informații

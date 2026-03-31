@@ -1136,9 +1136,46 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 </CardContent>
                             </Card>
                             
+                            <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
+                           <CardContent className={cn("space-y-4", "p-4 pt-6")}>
+                               <h3 className="text-lg font-semibold text-primary">Descriere</h3>
+                               <FormField
+                                    control={form.control}
+                                    name="keyFeatures"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-white/80">Caracteristici Cheie pentru AI *</FormLabel>
+                                        <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
+                                        <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center justify-between text-white/80">
+                                        <span>Descriere Anunț</span>
+                                        <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
+                                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                            Generează cu AI
+                                        </Button>
+                                        </FormLabel>
+                                        <FormControl>
+                                        <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50 lg:h-[454px]" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                         </Card>
+
                              <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
-                                     <h3 className="text-lg font-semibold text-primary">Locație</h3>
+                                    <h3 className="text-lg font-semibold text-primary">Locație</h3>
                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                          <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Oraș *</FormLabel>
                                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Bucuresti-Ilfov" /></SelectTrigger></FormControl>
@@ -1215,43 +1252,6 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                      </div>
                                  </CardContent>
                              </Card>
-                            <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
-                               <CardContent className={cn("space-y-4", "p-4 pt-6")}>
-                                   <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                                   <FormField
-                                        control={form.control}
-                                        name="keyFeatures"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white/80">Caracteristici Cheie pentru AI *</FormLabel>
-                                            <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
-                                            <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center justify-between text-white/80">
-                                            <span>Descriere Anunț</span>
-                                            <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
-                                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                                Generează cu AI
-                                            </Button>
-                                            </FormLabel>
-                                            <FormControl>
-                                            <Textarea className="bg-white/10 border-white/20 text-white placeholder:text-white/50 lg:h-[454px]" {...field} placeholder="Descrieți proprietatea în detaliu sau lăsați AI-ul să o facă pentru dumneavoastră..." />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                             </Card>
-                             
                         </div>
                         <div className={cn(isMobile ? "space-y-6" : "space-y-8")}>
                              <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>

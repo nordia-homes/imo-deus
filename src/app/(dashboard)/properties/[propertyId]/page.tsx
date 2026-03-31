@@ -277,7 +277,7 @@ export default function PropertyDetailPage() {
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
                             }} isMobile={true} />
                             <OwnerCard property={property} isMobile={true} />
-                            <Button className="w-full bg-primary hover:bg-primary/90 text-white" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
+                            <Button className="w-full rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                         </Card>
 
                         <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
@@ -323,7 +323,7 @@ export default function PropertyDetailPage() {
                                             Deschide fisa completa a proprietatii cu toate informatiile tehnice.
                                         </p>
                                     </div>
-                                    <Button className="w-full rounded-full bg-primary text-white hover:bg-primary/90" onClick={() => setIsInfoDialogOpen(true)}>
+                                    <Button className="w-full rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14" onClick={() => setIsInfoDialogOpen(true)}>
                                         Vezi Fisa Proprietatii
                                     </Button>
                                 </CardContent>
