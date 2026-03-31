@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import PublicDomainPropertyPage from '@/app/__public/[domain]/properties/[propertyId]/page';
-import { getAgencyById, getFirstPropertyImage, getPropertyForAgency, resolveAgencyIdForDomain } from '@/lib/public-site-metadata';
+import { buildPublicPropertyImageUrl, getAgencyById, getFirstPropertyImage, getPropertyForAgency, resolveAgencyIdForDomain } from '@/lib/public-site-metadata';
 
 export async function generateMetadata({
   params,
@@ -22,12 +22,16 @@ export async function generateMetadata({
     return {};
   }
 
-  const image = getFirstPropertyImage(property) || agency.shareImageUrl || agency.logoUrl || undefined;
   const title = property.title;
   const description =
     property.description?.slice(0, 220) ||
     `${property.propertyType || 'Proprietate'} de ${property.transactionType || 'vanzare'} in ${property.address || agency.name}.`;
-  const url = `https://${domain}/properties/${propertyId}`;
+  const baseUrl = `https://${domain}`;
+  const url = `${baseUrl}/properties/${propertyId}`;
+  const image =
+    getFirstPropertyImage(property)
+      ? buildPublicPropertyImageUrl(baseUrl, agencyId, propertyId)
+      : agency.shareImageUrl || agency.logoUrl || undefined;
 
   return {
     title,

@@ -95,6 +95,10 @@ export async function getPropertyForAgency(agencyId: string, propertyId: string)
   return { id: propertyId, ...propertyData } as Property;
 }
 
+export function buildPublicPropertyImageUrl(baseUrl: string, agencyId: string, propertyId: string): string {
+  return `${baseUrl.replace(/\/$/, '')}/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(propertyId)}`;
+}
+
 export function getFirstPropertyImage(property?: Property | null): string | undefined {
   if (!property?.images?.length) {
     return undefined;
