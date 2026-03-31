@@ -62,27 +62,27 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                         </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground lg:text-white/70">
-                        <Badge variant="outline" className="font-normal lg:rounded-full lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
-                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
-                        <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                        <Badge variant="outline" className="font-normal lg:rounded-full lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
+                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
+                        <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                             {property.location}
                         </Badge>
-                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                             {property.rooms} camere
                         </Badge>
-                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                             {property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}
                         </Badge>
-                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                        <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                             {property.squareFootage} mp
                         </Badge>
                         {property.constructionYear && (
-                            <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                            <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                                 {property.constructionYear}
                             </Badge>
                         )}
                         {property.floor && (
-                            <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:text-emerald-100">
+                            <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
                                 Et. {property.floor}
                             </Badge>
                         )}

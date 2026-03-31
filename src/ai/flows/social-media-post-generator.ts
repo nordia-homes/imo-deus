@@ -1,14 +1,6 @@
 'use server';
-/**
- * @fileOverview An AI agent to generate social media posts for properties.
- *
- * - generateSocialMediaPost - A function that generates the post.
- * - SocialMediaPostInput - The input type for the function.
- * - SocialMediaPostOutput - The return type for the function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
 
 const SocialMediaPostInputSchema = z.object({
   title: z.string().describe("The title of the property listing."),
@@ -25,43 +17,76 @@ const SocialMediaPostOutputSchema = z.object({
 });
 type SocialMediaPostOutput = z.infer<typeof SocialMediaPostOutputSchema>;
 
+function buildPrompt(input: SocialMediaPostInput) {
+  return `You are a creative real estate marketing expert for the Romanian market.
+Write a short, engaging, and professional social media post in Romanian for Facebook or Instagram.
 
-export async function generateSocialMediaPost(input: SocialMediaPostInput): Promise<SocialMediaPostOutput> {
-  return socialMediaPostFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'generateSocialMediaPostPrompt',
-  input: {schema: SocialMediaPostInputSchema},
-  output: {schema: SocialMediaPostOutputSchema},
-  prompt: `You are a creative real estate marketing expert for the Romanian market.
-Your task is to write a short, engaging, and professional social media post (for Facebook or Instagram) to promote a property.
-
-Use the following details:
-- Titlu: {{{title}}}
-- Preț: €{{{price}}}
-- Tip: {{{transactionType}}}
-- Locație: {{{location}}}
-- Camere: {{{rooms}}}
-- Suprafață: {{{squareFootage}}} mp
+Property details:
+- Titlu: ${input.title}
+- Pret: €${input.price}
+- Tip tranzactie: ${input.transactionType}
+- Locatie: ${input.location}
+- Camere: ${input.rooms}
+- Suprafata: ${input.squareFootage} mp
 
 Instructions:
-1.  Start with a strong, attention-grabbing hook.
-2.  Highlight the best features in a concise way. Use emojis like 🏠, ✨, 🔑, 💰, 📍 to make the post visually appealing.
-3.  Include the price and a clear call to action (e.g., "Contactează-ne pentru detalii!" or "Programează o vizionare!").
-4.  End with 3-5 relevant hashtags. Include generic ones like #imobiliare, #realestate, #agentieimobiliara, and specific ones based on the location (e.g., #imobiliareBucuresti, #ClujNapoca).
-5.  The entire post must be in Romanian. The tone should be enthusiastic but professional.
-`,
-});
+- Start with a strong, attention-grabbing hook.
+- Highlight the best features concisely.
+- Use emojis like 🏠 ✨ 🔑 💰 📍 in a tasteful way.
+- Include the price naturally and add a clear call to action.
+- End with 3-5 relevant hashtags for Romanian real estate and the location.
+- Keep the tone enthusiastic but professional.
 
-const socialMediaPostFlow = ai.defineFlow(
-  {
-    name: 'socialMediaPostFlow',
-    inputSchema: SocialMediaPostInputSchema,
-    outputSchema: SocialMediaPostOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+Return only the final post text in Romanian.`;
+}
+
+export async function generateSocialMediaPost(input: SocialMediaPostInput): Promise<SocialMediaPostOutput> {
+  const parsedInput = SocialMediaPostInputSchema.parse(input);
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY nu este setata.');
   }
-);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
+      temperature: 0.8,
+      messages: [
+        {
+          role: 'developer',
+          content:
+            'You write short Romanian social media posts for real estate listings. Keep them polished, human, and ready to publish.',
+        },
+        {
+          role: 'user',
+          content: buildPrompt(parsedInput),
+        },
+      ],
+    }),
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message =
+      payload?.error?.message ||
+      payload?.message ||
+      'OpenAI nu a putut genera postarea social media.';
+
+    throw new Error(message);
+  }
+
+  const post = payload?.choices?.[0]?.message?.content?.trim();
+
+  if (!post) {
+    throw new Error('OpenAI nu a returnat o postare valida.');
+  }
+
+  return SocialMediaPostOutputSchema.parse({ post });
+}

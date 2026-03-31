@@ -73,38 +73,38 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 flex items-center bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white">
-            <CardContent className="p-2 w-full">
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
+        <Card className="overflow-hidden rounded-2xl border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.1),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] p-0 text-white shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)]">
+            <CardContent className="w-full p-4">
+                 <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 ring-1 ring-emerald-300/18">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                            <AvatarFallback className="bg-muted">{getInitials(agent.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-white/10 text-emerald-100">{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
-                        <div>
-                             <p className="text-xs text-muted-foreground lg:text-white/70">Agent:</p>
-                             <p className="font-semibold text-sm leading-tight">{agent.name}</p>
-                             {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
+                        <div className="space-y-1">
+                             <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-200/70">Agent dedicat</p>
+                             <p className="text-base font-semibold leading-tight text-white">{agent.name || 'Agent nealocat'}</p>
+                             {agent.phone && <p className="text-sm text-white/65">{agent.phone}</p>}
                         </div>
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                         {agent.phone && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 lg:text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100" asChild>
                                 <a href={`tel:${agent.phone}`} aria-label="Call agent">
                                     <Phone className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                          {sanitizedPhone && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 lg:text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100" asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
                                     <WhatsappIcon className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                         {agent.email && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 lg:text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100" asChild>
                                 <a href={`mailto:${agent.email}`} aria-label="Email agent">
                                     <Mail className="h-4 w-4" />
                                 </a>

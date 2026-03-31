@@ -67,13 +67,31 @@ export function SocialMediaCard({ property }: { property: Property }) {
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                 <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center cursor-pointer transition-colors bg-[#152A47] text-white border-none hover:bg-[#152A47]/90">
+                 <Card
+                    className={cn(
+                        "overflow-hidden rounded-2xl border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.1),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] p-0 cursor-pointer text-white transition-colors shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.13),transparent_34%),linear-gradient(180deg,#1b3558_0%,#162c4b_58%,#13253e_100%)]"
+                    )}
+                 >
                     <CardContent className="p-2 flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                            <Share2 className="h-4 w-4 text-orange-500" />
-                            <span className="font-semibold text-sm">Marketing Social Media</span>
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "flex items-center justify-center rounded-full",
+                                "h-10 w-10 border border-emerald-300/16 bg-emerald-400/10 text-emerald-200"
+                            )}>
+                                <Share2 className="h-4 w-4 text-emerald-200" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-base font-semibold text-white">
+                                    Promovare Social Media
+                                </p>
+                                <p className="text-xs text-white/60">
+                                    Genereaza rapid continut pentru social media.
+                                </p>
+                            </div>
                         </div>
-                        <Rocket className="h-4 w-4 text-white/70" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
+                            <Rocket className="h-4 w-4 text-emerald-200" />
+                        </div>
                     </CardContent>
                 </Card>
             </DialogTrigger>

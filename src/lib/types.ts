@@ -189,6 +189,7 @@ export type Agency = {
   name: string;
   ownerId: string;
   agencyDescription?: string;
+  facebookGroups?: { name: string; url: string }[];
   shareImageUrl?: string;
   legalCompanyName?: string;
   companyTaxId?: string;

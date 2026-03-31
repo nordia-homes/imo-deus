@@ -395,7 +395,7 @@ export default function PropertyDetailPage() {
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                 />
 
-                <main className="pt-3 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <main className="grid grid-cols-1 items-start gap-8 pt-3 pb-8 lg:grid-cols-12">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
