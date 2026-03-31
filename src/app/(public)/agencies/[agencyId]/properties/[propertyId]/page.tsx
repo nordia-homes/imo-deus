@@ -147,13 +147,10 @@ function PublicScheduleViewingCard({ property, agent, agencyId, whatsappHref }: 
     
     return (
         <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
-            <CardHeader>
-                <CardTitle className="text-xl text-stone-50">Programeaza o Vizionare</CardTitle>
-                <CardDescription className="text-stone-400">
-                    Completează formularul și un agent te va contacta în cel mai scurt timp.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-5">
+                <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0b0f0d]">
+                    <PriceStatusCard property={property} isMobile={false} />
+                </div>
                 <AgentCard agent={agent} whatsappHref={whatsappHref} />
 
                 <Form {...form}>
@@ -436,9 +433,43 @@ export default function PublicPropertyDetailPage() {
                         <PublicPropertyHeader property={property} />
                         <MediaColumn property={property} showMatchPrompt={true} shareImageUrl={propertyShareImageUrl} />
                         <PublicInfoColumn property={property} isMobile={false} />
+                        <Card className={financeCardClassName}>
+                            <CardHeader className="p-5 pb-3">
+                                <CardTitle className="text-xl font-bold text-stone-50">Localizare pe harta</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-80 p-5 pt-0">
+                                <PropertiesMap properties={[property]} />
+                            </CardContent>
+                        </Card>
+
+                        <SimilarProperties properties={similarProperties} />
+
+                        <Card className={financeCardClassName}>
+                            <CardContent className="p-6">
+                                <div className="space-y-4">
+                                    <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                        Mai multe optiuni
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-2xl font-semibold tracking-tight text-white">
+                                            Continua cautarea in portofoliul complet al agentiei.
+                                        </h3>
+                                        <p className="text-sm leading-7 text-emerald-50/85 md:text-base">
+                                            Descopera toate proprietatile disponibile, compara stiluri, bugete si zone, apoi alege varianta care ti se potriveste cel mai bine.
+                                        </p>
+                                    </div>
+                                    <Button asChild className="rounded-full bg-[#22c55e] text-black hover:bg-[#4ade80]">
+                                        <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
+                                            Vezi toate proprietatile
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="col-span-12 lg:col-span-4 lg:sticky top-24">
+                    <div className="col-span-12 lg:col-span-4 lg:sticky top-24 space-y-4">
                          <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} whatsappHref={whatsappHref} />
                     </div>
                 </main>

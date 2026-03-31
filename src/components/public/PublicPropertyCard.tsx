@@ -15,9 +15,21 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
-export function PublicPropertyCard({ property, agencyId }: { property: Property; agencyId: string }) {
+export function PublicPropertyCard({
+  property,
+  agencyId,
+  variant = 'default',
+}: {
+  property: Property;
+  agencyId: string;
+  variant?: 'default' | 'compact';
+}) {
   const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
   const publicPath = usePublicPath();
+  const priceClassName =
+    variant === 'compact'
+      ? 'text-xl font-semibold tracking-tight text-white md:text-[1.45rem]'
+      : 'text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]';
 
   return (
     <Link href={publicPath(`/properties/${property.id}`)} className="group block h-full">
@@ -40,7 +52,7 @@ export function PublicPropertyCard({ property, agencyId }: { property: Property;
             </div>
           </div>
           <div className="absolute bottom-4 left-4 right-4">
-            <p className="text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]">
+            <p className={priceClassName}>
               {formatPrice(property.price)}
             </p>
           </div>

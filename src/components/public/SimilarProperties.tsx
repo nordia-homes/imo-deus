@@ -7,7 +7,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BedDouble, Bath, Ruler, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePublicPath } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { PublicPropertyCard } from './PublicPropertyCard';
 
 
 function SimilarPropertyCard({ property }: { property: Property }) {
@@ -51,8 +53,42 @@ function SimilarPropertyCard({ property }: { property: Property }) {
 }
 
 export function SimilarProperties({ properties }: { properties: Property[] }) {
+  const { agencyId } = usePublicAgency();
+  const isMobile = useIsMobile();
+
   if (properties.length === 0) {
     return null;
+  }
+
+  if (!isMobile && agencyId) {
+    return (
+      <div className="space-y-5">
+        <h2 className="text-center text-2xl font-bold text-stone-50">Proprietati similare</h2>
+        <Carousel
+          opts={{
+            align: 'start',
+            loop: properties.length > 3,
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-4">
+            {properties.map((prop) => (
+              <CarouselItem key={prop.id} className="pl-4 md:basis-1/2 xl:basis-1/3">
+                <div className="h-full">
+                  <PublicPropertyCard property={prop} agencyId={agencyId} variant="compact" />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          {properties.length > 3 && (
+            <>
+              <CarouselPrevious className="-left-4 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
+              <CarouselNext className="-right-4 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
+            </>
+          )}
+        </Carousel>
+      </div>
+    );
   }
 
   return (

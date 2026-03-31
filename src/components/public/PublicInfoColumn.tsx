@@ -149,21 +149,6 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
                 <CreditBrokerCard />
 
-                {property.amenities && property.amenities.length > 0 && (
-                    <Card className="rounded-[2rem] border border-white/10 bg-[#101113]/95 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
-                        <CardHeader>
-                            <CardTitle className="text-stone-50">Dotari</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-wrap gap-2">
-                            {property.amenities.map((amenity) => (
-                                <Button key={amenity} variant="outline" size="sm" className="pointer-events-none rounded-full border-white/10 bg-[#18191d] text-stone-200 shadow-none">
-                                    {amenity}
-                                </Button>
-                            ))}
-                        </CardContent>
-                    </Card>
-                )}
-
                 <Card className={detailsCardClassName}>
                     <CardContent className={`${panelBodyClassName} pt-6 md:pt-7`}>
                         <div className="space-y-5">
@@ -175,7 +160,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                                     Tot ce merita sa stii, dintr-o privire.
                                 </h3>
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid gap-3 md:grid-cols-2">
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
