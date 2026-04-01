@@ -13,7 +13,7 @@ import { PlusCircle } from 'lucide-react';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
 import { ViewingList } from '@/components/viewings/ViewingList';
-import { parseISO, isSameDay } from 'date-fns';
+import { parseISO, addDays, startOfDay } from 'date-fns';
 import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
 import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
 
@@ -53,10 +53,12 @@ export default function ViewingsPage() {
             return { upcomingViewings: [], pastViewings: [] };
         }
         const now = new Date();
+        const tomorrowStart = startOfDay(addDays(now, 1));
+        const sevenDaysLimit = startOfDay(addDays(now, 8));
         const upcoming = viewings
             .filter(v => {
                 const viewingDate = parseISO(v.viewingDate);
-                return viewingDate >= now && !isSameDay(viewingDate, now);
+                return viewingDate >= tomorrowStart && viewingDate < sevenDaysLimit;
             })
             .sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
         
@@ -165,13 +167,15 @@ export default function ViewingsPage() {
 
             <div className="mt-8 space-y-6">
                 <ViewingList 
-                    title="Vizionări Programate" 
+                    title="Vizionări Următoarele 7 Zile" 
                     viewings={upcomingViewings} 
                     agents={agents}
                     properties={properties}
                     contacts={contacts}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
+                    collapsible
+                    defaultOpen={false}
                 />
                 <ViewingList 
                     title="Istoric Vizionări" 
@@ -181,6 +185,8 @@ export default function ViewingsPage() {
                     contacts={contacts}
                     onEdit={setEditingViewing}
                     onDelete={setDeletingViewing}
+                    collapsible
+                    defaultOpen={false}
                 />
             </div>
             

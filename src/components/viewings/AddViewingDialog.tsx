@@ -31,6 +31,7 @@ const viewingSchema = z.object({
   contactId: z.string().optional(),
   viewingDate: z.date({ required_error: "Selectează data vizionării." }),
   viewingTime: z.string({ required_error: "Selectează ora vizionării."}),
+  duration: z.number().min(15),
   notes: z.string().optional(),
   // New contact fields
   newContactName: z.string().optional(),
@@ -78,6 +79,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
       form.reset({
         propertyId: defaultPropertyId,
         contactId: defaultContactId,
+        duration: 30,
         newContactName: '',
         newContactEmail: '',
         newContactPhone: '',
@@ -89,7 +91,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
   const timeSlots = useMemo(() => {
       const slots = [];
       for (let h = 8; h < 22; h++) {
-          for (let m = 0; m < 60; m += 30) {
+          for (let m = 0; m < 60; m += 15) {
               const hour = h.toString().padStart(2, '0');
               const minute = m.toString().padStart(2, '0');
               slots.push(`${hour}:${minute}`);
@@ -97,6 +99,15 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
       }
       return slots;
   }, []);
+
+  const durationOptions = useMemo(() => ([
+      { value: 15, label: '15 minute' },
+      { value: 30, label: '30 minute' },
+      { value: 45, label: '45 minute' },
+      { value: 60, label: '1 oră' },
+      { value: 90, label: '1 oră 30 min' },
+      { value: 120, label: '2 ore' },
+  ]), []);
 
   async function onSubmit(values: z.infer<typeof viewingSchema>) {
     setIsSubmitting(true);
@@ -149,6 +160,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
             contactId: contactIdToUse!,
             contactName: contactNameToUse,
             viewingDate: viewingDateTime.toISOString(),
+            duration: values.duration,
             notes: values.notes || '',
         });
 
@@ -259,6 +271,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                 />
                                 <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             </div>
+                            <FormField control={form.control} name="duration" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Durată</FormLabel><Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value ?? 30)}><FormControl><SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Alege durata" /></SelectTrigger></FormControl><SelectContent>{durationOptions.map(option => <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                     

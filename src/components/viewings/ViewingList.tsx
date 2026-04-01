@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { Viewing, UserProfile, Property, Contact } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { WhatsappIcon } from '../icons/WhatsappIcon';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
 
 interface ViewingListProps {
     title: string;
@@ -28,6 +30,8 @@ interface ViewingListProps {
     contacts?: Contact[];
     onEdit: (viewing: Viewing) => void;
     onDelete: (viewing: Viewing) => void;
+    collapsible?: boolean;
+    defaultOpen?: boolean;
 }
 
 const getStatusVariant = (status: Viewing['status']) => {
@@ -44,7 +48,8 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
-export function ViewingList({ title, viewings, agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingListProps) {
+export function ViewingList({ title, viewings, agents = [], properties = [], contacts = [], onEdit, onDelete, collapsible = false, defaultOpen = true }: ViewingListProps) {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     
     const sanitizeForWhatsapp = (phone?: string | null) => {
         if (!phone) return '';
@@ -56,6 +61,27 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
     };
 
     if (!viewings || viewings.length === 0) {
+        if (collapsible) {
+            return (
+                <div className="min-w-0 w-full max-w-full overflow-x-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen((current) => !current)}
+                        className="group flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                    >
+                        <span className="text-xl font-semibold text-white">{title} (0)</span>
+                        <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isOpen && "rotate-180")} />
+                    </button>
+                    {isOpen && (
+                        <Card className="mt-4 rounded-2xl border-none bg-[#152A47] text-white shadow-2xl backdrop-blur-sm">
+                            <CardContent className="p-6">
+                                <p className="py-4 text-center text-white/70">Nicio vizionare de afișat în această categorie.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            );
+        }
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
                 <CardHeader>
@@ -68,9 +94,8 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
         );
     }
 
-    return (
-        <div className="min-w-0 w-full max-w-full space-y-6 overflow-x-hidden">
-             <h2 className="text-xl font-semibold text-white px-2 text-center">{title} ({viewings.length})</h2>
+    const content = (
+        <div className="space-y-6 pt-4">
             {viewings.map(viewing => {
                 const agent = getAgentForViewing(viewing, agents);
                 const property = properties?.find(p => p.id === viewing.propertyId);
@@ -205,6 +230,29 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                     </Card>
                 );
             })}
+        </div>
+    );
+
+    if (collapsible) {
+        return (
+            <div className="min-w-0 w-full max-w-full overflow-x-hidden">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen((current) => !current)}
+                    className="group flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                >
+                    <span className="text-xl font-semibold text-white">{title} ({viewings.length})</span>
+                    <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isOpen && "rotate-180")} />
+                </button>
+                {isOpen && content}
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-w-0 w-full max-w-full space-y-6 overflow-x-hidden">
+             <h2 className="px-2 text-center text-xl font-semibold text-white">{title} ({viewings.length})</h2>
+             {content}
         </div>
     );
 }

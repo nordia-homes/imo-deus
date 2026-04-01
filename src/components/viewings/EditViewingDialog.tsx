@@ -23,6 +23,7 @@ const viewingSchema = z.object({
   contactId: z.string().min(1, 'Selectează un client.'),
   viewingDate: z.date({ required_error: "Selectează data vizionării." }),
   viewingTime: z.string({ required_error: "Selectează ora vizionării."}),
+  duration: z.number().min(15),
   status: z.enum(['scheduled', 'completed', 'cancelled']),
   notes: z.string().optional(),
 });
@@ -53,6 +54,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
             contactId: viewing.contactId,
             viewingDate: viewingDate,
             viewingTime: format(viewingDate, 'HH:mm'),
+            duration: viewing.duration ?? 30,
             status: viewing.status,
             notes: viewing.notes,
         });
@@ -62,7 +64,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
   const timeSlots = useMemo(() => {
       const slots = [];
       for (let h = 8; h < 22; h++) {
-          for (let m = 0; m < 60; m += 30) {
+          for (let m = 0; m < 60; m += 15) {
               const hour = h.toString().padStart(2, '0');
               const minute = m.toString().padStart(2, '0');
               slots.push(`${hour}:${minute}`);
@@ -70,6 +72,15 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
       }
       return slots;
   }, []);
+
+  const durationOptions = useMemo(() => ([
+      { value: 15, label: '15 minute' },
+      { value: 30, label: '30 minute' },
+      { value: 45, label: '45 minute' },
+      { value: 60, label: '1 oră' },
+      { value: 90, label: '1 oră 30 min' },
+      { value: 120, label: '2 ore' },
+  ]), []);
 
   function onSubmit(values: z.infer<typeof viewingSchema>) {
     if (!viewing) return;
@@ -90,6 +101,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
         contactId: values.contactId,
         contactName: selectedContact.name,
         viewingDate: viewingDateTime.toISOString(),
+        duration: values.duration,
         notes: values.notes,
         status: values.status,
     });
@@ -151,6 +163,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
                 />
                 <FormField control={form.control} name="viewingTime" render={({ field }) => ( <FormItem><FormLabel>Ora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Alege ora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               </div>
+              <FormField control={form.control} name="duration" render={({ field }) => ( <FormItem><FormLabel>Durată</FormLabel><Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value ?? 30)}><FormControl><SelectTrigger><SelectValue placeholder="Alege durata" /></SelectTrigger></FormControl><SelectContent>{durationOptions.map(option => <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField
                   control={form.control}
                   name="status"

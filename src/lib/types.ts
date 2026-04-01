@@ -284,6 +284,7 @@ export type Viewing = {
   agentId: string;
   agentName?: string;
   viewingDate: string; // ISO string
+  duration?: number;
   notes?: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   createdAt: string;
