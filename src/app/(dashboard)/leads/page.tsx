@@ -149,30 +149,45 @@ export default function LeadsPage() {
 
         {/* Desktop View */}
         <div className="hidden lg:block space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-headline font-bold text-white">Cumpărători ({filteredContacts.length})</h1>
-                        <p className="text-white/70">
-                            Gestionează și prioritizează potențialii clienți.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                         <Button variant="outline" onClick={() => setIsFilterOpen(true)} className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
-                            <Filter className="mr-2 h-4 w-4" />
-                            Filtrare Preferinte si Buget
-                        </Button>
-                        <AddLeadDialog 
-                            properties={properties || []}
-                            isOpen={isAddLeadOpen}
-                            onOpenChange={setIsAddLeadOpen}
-                        >
-                            <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adaugă Cumpărător
+            <Card className="overflow-hidden border-white/10 bg-[#152A47] text-white shadow-xl">
+                <CardContent className="p-0">
+                    <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-start gap-4">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-inset ring-white/10">
+                                <Users className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-3xl font-headline font-bold text-white">Cumpărători</h1>
+                                    <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
+                                        {filteredContacts.length}
+                                    </span>
+                                </div>
+                                <p className="max-w-2xl text-sm leading-6 text-white/70">
+                                    Vezi rapid cumpărătorii activi, filtrează după preferințe și prioritizează lead-urile cu cel mai bun potențial.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                             <Button variant="outline" onClick={() => setIsFilterOpen(true)} className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filtrare Preferinte si Buget
                             </Button>
-                        </AddLeadDialog>
+                            <AddLeadDialog 
+                                properties={properties || []}
+                                isOpen={isAddLeadOpen}
+                                onOpenChange={setIsAddLeadOpen}
+                            >
+                                <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adaugă Cumpărător
+                                </Button>
+                            </AddLeadDialog>
+                        </div>
                     </div>
-                </div>
+                </CardContent>
+            </Card>
                 
                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
                     {isLoading ? (
@@ -185,7 +200,7 @@ export default function LeadsPage() {
                         <>
                             <StatCard className="bg-[#152A47] border-none text-white" title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
                             <StatCard className="bg-[#152A47] border-none text-white" title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
-                            <StatCard className="bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} period="calculat pentru cumpărătorii cu scor" icon={<BarChart />} />
+                            <StatCard className="bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} icon={<BarChart />} segmentedScore={averageAiScore} />
                         </>
                     )}
                 </div>

@@ -11,6 +11,7 @@ interface StatCardProps {
   className?: string;
   progress?: number;
   period?: string;
+  segmentedScore?: number;
 }
 
 export function StatCard({
@@ -20,6 +21,7 @@ export function StatCard({
   className,
   progress,
   period,
+  segmentedScore,
 }: StatCardProps) {
     
     if (progress !== undefined) {
@@ -53,12 +55,36 @@ export function StatCard({
                 <div className="p-3 bg-primary/10 text-primary rounded-lg shrink-0">
                     {icon}
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
                     </div>
                     <p className="text-lg font-bold">{value}</p>
                     {period && <p className="text-xs text-muted-foreground mt-0.5">{period}</p>}
+                    {typeof segmentedScore === 'number' && (
+                      <div className="mt-3 flex items-center gap-1.5">
+                        {[0, 1, 2, 3, 4].map((index) => {
+                          const threshold = (index + 1) * 20;
+                          const isActive = segmentedScore >= threshold;
+
+                          return (
+                            <span
+                              key={index}
+                              className={cn(
+                                "h-1.5 flex-1 rounded-full transition-colors",
+                                isActive
+                                  ? segmentedScore > 85
+                                    ? "bg-emerald-400"
+                                    : segmentedScore > 60
+                                      ? "bg-amber-400"
+                                      : "bg-rose-400"
+                                  : "bg-white/10"
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
