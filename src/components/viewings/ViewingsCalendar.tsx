@@ -85,6 +85,20 @@ const getDayBoundary = (day: Date, hour: number) => {
 
 const formatFreeTimeRange = (start: Date, end: Date) => `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
 const VIEWING_DAY_TOTAL_MINUTES = (VIEWING_DAY_END_HOUR - VIEWING_DAY_START_HOUR) * 60;
+const formatAvailabilityDuration = (minutes: number) => {
+    if (minutes < 60) {
+        return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (remainingMinutes === 0) {
+        return `${hours}h`;
+    }
+
+    return `${hours}h ${remainingMinutes}m`;
+};
 
 export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingsCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
@@ -188,9 +202,109 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     return entries;
   }, [selectedDay, selectedDayViewings]);
 
+  const daySummaryViewings = useMemo(() => {
+    return selectedDayViewings.map((viewing) => {
+      const start = parseISO(viewing.viewingDate);
+      const end = addMinutes(start, viewing.duration ?? 30);
+      const startMinutes = start.getHours() * 60 + start.getMinutes();
+      const endMinutes = end.getHours() * 60 + end.getMinutes();
+      const offsetMinutes = startMinutes - VIEWING_DAY_START_HOUR * 60;
+      const durationMinutes = Math.max(15, endMinutes - startMinutes);
+
+      return {
+        id: viewing.id,
+        start,
+        end,
+        label: formatViewingTimeRange(viewing.viewingDate, viewing.duration),
+        title: viewing.propertyTitle,
+        leftPercent: Math.max(0, Math.min(100, (offsetMinutes / VIEWING_DAY_TOTAL_MINUTES) * 100)),
+        widthPercent: Math.max(2.5, Math.min(100, (durationMinutes / VIEWING_DAY_TOTAL_MINUTES) * 100)),
+      };
+    });
+  }, [selectedDayViewings]);
+
+  const daySummaryItems = useMemo(() => {
+    const items: Array<
+      | {
+          type: 'free';
+          key: string;
+          label: string;
+          minutes: number;
+        }
+      | {
+          type: 'viewing';
+          key: string;
+          label: string;
+          title: string;
+        }
+    > = [];
+
+    const dayStart = getDayBoundary(selectedDay, VIEWING_DAY_START_HOUR);
+    const dayEnd = getDayBoundary(selectedDay, VIEWING_DAY_END_HOUR);
+    let cursor = dayStart;
+
+    for (const viewing of selectedDayViewings) {
+      const start = parseISO(viewing.viewingDate);
+      const end = addMinutes(start, viewing.duration ?? 30);
+
+      if (start > cursor) {
+        const freeMinutes = Math.round((start.getTime() - cursor.getTime()) / 60000);
+        if (freeMinutes > 0) {
+          items.push({
+            type: 'free',
+            key: `summary-free-${cursor.toISOString()}-${start.toISOString()}`,
+            label: formatFreeTimeRange(cursor, start),
+            minutes: freeMinutes,
+          });
+        }
+      }
+
+      items.push({
+        type: 'viewing',
+        key: viewing.id,
+        label: formatViewingTimeRange(viewing.viewingDate, viewing.duration),
+        title: viewing.propertyTitle,
+      });
+
+      if (end > cursor) {
+        cursor = end;
+      }
+    }
+
+    if (cursor < dayEnd) {
+      const freeMinutes = Math.round((dayEnd.getTime() - cursor.getTime()) / 60000);
+      if (freeMinutes > 0) {
+        items.push({
+          type: 'free',
+          key: `summary-free-end-${cursor.toISOString()}`,
+          label: formatFreeTimeRange(cursor, dayEnd),
+          minutes: freeMinutes,
+        });
+      }
+    }
+
+    if (items.length === 0) {
+      items.push({
+        type: 'free',
+        key: `summary-free-full-${format(selectedDay, 'yyyy-MM-dd')}`,
+        label: formatFreeTimeRange(dayStart, dayEnd),
+        minutes: VIEWING_DAY_TOTAL_MINUTES,
+      });
+    }
+
+    return items;
+  }, [selectedDay, selectedDayViewings]);
+
   const navigateWeek = (direction: 'prev' | 'next') => {
     const amount = direction === 'prev' ? -7 : 7;
     setSelectedDay(current => addDays(current, amount));
+  };
+
+  const scrollToViewingCard = (viewingId: string) => {
+    const element = document.getElementById(`viewing-card-${viewingId}`);
+    if (!element) return;
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -200,7 +314,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         <header className="mb-4 grid w-full max-w-full grid-cols-[auto,minmax(0,1fr)] items-center gap-2 overflow-hidden px-1">
           <div className="flex min-w-0 items-center gap-1.5 overflow-hidden sm:gap-2">
             <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="h-11 shrink-0 bg-white/10 px-4 text-base text-white border-white/20 hover:bg-white/20">
-              Astăzi
+              Astăzi ({selectedDayViewings.length})
             </Button>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <Button
@@ -269,6 +383,92 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
             );
           })}
         </div>
+
+        <div className="mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Rezumat Ore Vizionări</p>
+              <p className="text-xs text-white/55">Programul zilei între 08:00 și 21:00</p>
+            </div>
+            <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/75">
+              {selectedDayViewings.length} vizionări
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="relative h-14 rounded-2xl border border-white/10 bg-[#0F1E33]/90 px-2">
+              <div className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/10" />
+              {daySummaryViewings.map((viewing) => (
+                <div
+                  key={viewing.id}
+                  className="absolute top-1/2 -translate-y-1/2"
+                  style={{
+                    left: `calc(${viewing.leftPercent}% + 0.5rem)`,
+                    width: `calc(${viewing.widthPercent}% - 0.25rem)`,
+                  }}
+                >
+                  <div className="h-3 rounded-full bg-primary shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(34,197,94,0.35)]" />
+                </div>
+              ))}
+              {daySummaryViewings.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-white/45">
+                  Nicio vizionare în ziua selectată
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.14em] text-white/45">
+              <span>08:00</span>
+              <span>11:00</span>
+              <span>14:00</span>
+              <span>17:00</span>
+              <span>21:00</span>
+            </div>
+
+            {daySummaryItems.length > 0 && (
+              <div className="mt-4 grid grid-cols-1 gap-2">
+                {daySummaryItems.map((item) =>
+                  item.type === 'viewing' ? (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => scrollToViewingCard(item.key)}
+                      className="flex w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-white/80 transition-colors hover:bg-white/10"
+                    >
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                      <span className="shrink-0 font-medium text-white">{item.label}</span>
+                      <span className="min-w-0 truncate text-white/55">{item.title}</span>
+                    </button>
+                  ) : (
+                    <div key={item.key} className="w-full px-1 py-1.5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200/80">Timp liber</span>
+                        <div className="h-px flex-1 bg-white/10">
+                          <div
+                            className="h-px bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
+                            style={{ width: `${Math.max(12, Math.min(100, (item.minutes / VIEWING_DAY_TOTAL_MINUTES) * 100))}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-white/45">{item.label}</span>
+                      </div>
+                      <div className="mt-1 text-right text-[11px] text-emerald-200/70">{formatAvailabilityDuration(item.minutes)}</div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-r from-[#132840] via-[#17304d] to-[#132840] px-5 py-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/45">Următorul Nivel</p>
+              <h3 className="mt-1 text-xl font-semibold text-white">Vizualizare detaliată</h3>
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
+          </div>
+        </div>
         
         {/* Timeline for selected day */}
         <div className="min-w-0 w-full max-w-full">
@@ -331,7 +531,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
 
                 return (
-                    <Card key={entry.key} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
+                    <Card id={`viewing-card-${viewing.id}`} key={entry.key} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
                         <div className="flex flex-col md:flex-row">
                             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-[26px] md:aspect-[16/10] md:h-auto md:w-[320px] md:shrink-0 md:rounded-l-[26px] md:rounded-r-none">
                                 {property?.images?.[0]?.url ? (
