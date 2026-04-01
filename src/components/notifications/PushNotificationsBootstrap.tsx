@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect } from 'react';
-import { doc, setDoc, arrayUnion } from 'firebase/firestore';
-import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { useFirestore, useUser, useFirebaseApp } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+import { attachForegroundPushListener, canUsePushNotifications, registerPushNotifications } from '@/lib/push-notifications';
 
 export function PushNotificationsBootstrap() {
   const { user } = useUser();
@@ -19,55 +16,29 @@ export function PushNotificationsBootstrap() {
       return;
     }
 
-    if (!VAPID_KEY) {
-      console.warn('NEXT_PUBLIC_FIREBASE_VAPID_KEY is missing. Push notifications are disabled.');
-      return;
-    }
-
     let unsubscribe: (() => void) | undefined;
 
     const setupPushNotifications = async () => {
       try {
-        const supported = await isSupported();
+        const supported = await canUsePushNotifications();
         if (!supported) {
           return;
         }
 
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-        let permission = Notification.permission;
-        if (permission === 'default') {
-          permission = await Notification.requestPermission();
-        }
-
-        if (permission !== 'granted') {
+        if (Notification.permission !== 'granted') {
           return;
         }
 
-        const messaging = getMessaging(firebaseApp);
-        const token = await getToken(messaging, {
-          vapidKey: VAPID_KEY,
-          serviceWorkerRegistration: registration,
+        await registerPushNotifications({
+          firebaseApp,
+          firestore,
+          userId: user.uid,
         });
 
-        if (!token) {
-          return;
-        }
-
-        await setDoc(
-          doc(firestore, 'users', user.uid),
-          {
-            pushTokens: arrayUnion(token),
-            pushNotificationsEnabled: true,
-            pushNotificationsUpdatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-
-        unsubscribe = onMessage(messaging, (payload) => {
+        unsubscribe = attachForegroundPushListener(firebaseApp, (payload) => {
           toast({
-            title: payload.notification?.title || 'Notificare nouă',
-            description: payload.notification?.body || 'Ai o actualizare nouă.',
+            title: payload.title || 'Notificare nouă',
+            description: payload.body || 'Ai o actualizare nouă.',
           });
         });
       } catch (error) {

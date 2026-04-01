@@ -39,6 +39,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
 import { cn } from '@/lib/utils';
+import { PushNotificationsBanner } from '@/components/notifications/PushNotificationsBanner';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
@@ -211,6 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <Topbar />
         <main className="flex-1 bg-[#0F1E33] pb-20 lg:pb-0">
+            <PushNotificationsBanner />
             {children}
         </main>
         <footer className="hidden border-t border-white/8 bg-[#0F1E33] px-6 py-4 text-sm text-white/65 lg:block">
