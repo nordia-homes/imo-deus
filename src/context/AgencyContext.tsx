@@ -17,6 +17,22 @@ const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
 export function AgencyProvider({ children }: { children: ReactNode }) {
     const { user, isUserLoading: isUserAuthLoading } = useUser();
     const firestore = useFirestore();
+    const [persistedAgencyId, setPersistedAgencyId] = React.useState<string | null>(null);
+    const [hasLoadedPersistedAgencyId, setHasLoadedPersistedAgencyId] = React.useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        try {
+            const storedAgencyId = window.localStorage.getItem('imodeus:lastAgencyId');
+            setPersistedAgencyId(storedAgencyId || null);
+        } catch (error) {
+            console.warn('Could not read persisted agencyId from localStorage:', error);
+            setPersistedAgencyId(null);
+        } finally {
+            setHasLoadedPersistedAgencyId(true);
+        }
+    }, []);
 
     // 1. Get current user's profile to find their agencyId
     const userDocRef = useMemoFirebase(() => {
@@ -24,7 +40,18 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
-    const agencyId = userProfile?.agencyId || null;
+    const agencyId = userProfile?.agencyId || persistedAgencyId || null;
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !userProfile?.agencyId) return;
+
+        try {
+            window.localStorage.setItem('imodeus:lastAgencyId', userProfile.agencyId);
+            setPersistedAgencyId(userProfile.agencyId);
+        } catch (error) {
+            console.warn('Could not persist agencyId to localStorage:', error);
+        }
+    }, [userProfile?.agencyId]);
 
     // 2. Get the full agency document using the agencyId
     const agencyDocRef = useMemoFirebase(() => {
@@ -33,7 +60,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     }, [firestore, agencyId]);
     const { data: agency, isLoading: isAgencyDocLoading } = useDoc<Agency>(agencyDocRef);
     
-    const isAgencyLoading = isUserAuthLoading || isProfileLoading || isAgencyDocLoading;
+    const isAgencyLoading = isUserAuthLoading || !hasLoadedPersistedAgencyId || isProfileLoading || (agencyId ? isAgencyDocLoading : false);
 
     // Self-healing mechanisms
     useEffect(() => {

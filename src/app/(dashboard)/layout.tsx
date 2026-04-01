@@ -58,7 +58,7 @@ function hexToHsl(hex: string): string | null {
 }
 
 function DashboardRoot({ children }: { children: React.ReactNode }) {
-    const { agency, userProfile, isAgencyLoading } = useAgency();
+    const { agency, agencyId, userProfile, isAgencyLoading } = useAgency();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -91,10 +91,10 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // We redirect if loading is finished, and we can determine there is no agency.
         // The best way to know is to check if the loaded user profile has an agencyId.
-        if (!isAgencyLoading && !userProfile?.agencyId && pathname !== '/settings') {
+        if (!isAgencyLoading && !agencyId && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [isAgencyLoading, userProfile, pathname, router]);
+    }, [agencyId, isAgencyLoading, pathname, router]);
 
     // We show the loader if ANY data is still loading.
     if (isAgencyLoading) {
@@ -103,13 +103,13 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     
     // After loading, if the user has no agency ID and is not on the settings page, keep showing the loader
     // until the redirect from the useEffect happens.
-    if (!userProfile?.agencyId && pathname !== '/settings') {
+    if (!agencyId && pathname !== '/settings') {
         return <FullScreenLoader />;
     }
 
     // Also, if the user profile has an agency ID, but the agency data itself hasn't arrived yet
     // (or is null, indicating an invalid ID), we should also wait.
-    if (userProfile?.agencyId && !agency && pathname !== '/settings') {
+    if (agencyId && !agency && pathname !== '/settings') {
         return <FullScreenLoader />;
     }
 
