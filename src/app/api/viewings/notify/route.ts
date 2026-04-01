@@ -62,12 +62,35 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const failures = response.responses
+      .filter((item) => !item.success)
+      .map((item) => item.error?.message || item.error?.code || 'Unknown messaging error')
+      .filter(Boolean);
+
+    if (response.successCount === 0 && failures.length > 0) {
+      return NextResponse.json(
+        {
+          message: failures[0],
+          successCount: response.successCount,
+          failureCount: response.failureCount,
+          failures,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       successCount: response.successCount,
       failureCount: response.failureCount,
+      failures,
     });
   } catch (error) {
     console.error('Viewing notification send failed:', error);
-    return NextResponse.json({ message: 'Failed to send viewing notification.' }, { status: 500 });
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to send viewing notification.',
+      },
+      { status: 500 }
+    );
   }
 }
