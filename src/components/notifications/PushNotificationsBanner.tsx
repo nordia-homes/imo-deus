@@ -16,11 +16,13 @@ export function PushNotificationsBanner() {
   const { toast } = useToast();
   const [isEnabling, setIsEnabling] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const tokenCount = userProfile?.pushTokens?.filter(Boolean).length || 0;
 
   const shouldShow = useMemo(() => {
     if (!user || !userProfile || isDismissed) return false;
-    return !userProfile.pushNotificationsEnabled && Notification.permission !== 'granted';
-  }, [isDismissed, user, userProfile]);
+    if (typeof window === 'undefined' || !('Notification' in window)) return false;
+    return tokenCount === 0 || (!userProfile.pushNotificationsEnabled && Notification.permission !== 'granted');
+  }, [isDismissed, tokenCount, user, userProfile]);
 
   if (!shouldShow) {
     return null;

@@ -36,6 +36,12 @@ export function PushNotificationsBootstrap() {
         });
 
         unsubscribe = attachForegroundPushListener(firebaseApp, (payload) => {
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification(payload.title || 'Notificare nouă', {
+              body: payload.body || 'Ai o actualizare nouă.',
+            });
+          }
+
           toast({
             title: payload.title || 'Notificare nouă',
             description: payload.body || 'Ai o actualizare nouă.',
