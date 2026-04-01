@@ -608,19 +608,19 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                     <Separator className="bg-white/10" />
 
                                     <div className={cn("grid max-w-full gap-3", property?.ownerName ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2")}>
-                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
-                                            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
+                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                            <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
                                                 <UserRound className="h-3.5 w-3.5" />
                                                 Client
                                             </div>
-                                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words font-medium text-white/90 hover:underline">{viewing.contactName}</Link>
+                                            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
                                                 {contactPhone && (
-                                                    <div className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-white/[0.04] px-1.5 py-1">
-                                                        <a href={`tel:${contact?.phone}`} className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200">
+                                                    <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <a href={`tel:${contact?.phone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10">
                                                             <Phone className="h-4 w-4" />
                                                         </a>
-                                                        <a href={`https://wa.me/${contactPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200">
+                                                        <a href={`https://wa.me/${contactPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10">
                                                             <WhatsappIcon className="h-4 w-4" />
                                                         </a>
                                                     </div>
@@ -629,16 +629,16 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                         </div>
 
                                         {property?.ownerName && (
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
-                                                <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">Proprietar</div>
-                                                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                                                    <p className="min-w-0 max-w-full flex-1 break-words font-medium text-white/90">{property.ownerName}</p>
+                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                                <div className="mb-0.5 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">Proprietar</div>
+                                                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                                                    <p className="min-w-0 max-w-full break-words text-[15px] font-medium leading-tight text-white/90 sm:text-base">{property.ownerName}</p>
                                                     {ownerPhone && (
-                                                        <div className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-white/[0.04] px-1.5 py-1">
-                                                            <a href={`tel:${property?.ownerPhone}`} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white">
+                                                        <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                            <a href={`tel:${property?.ownerPhone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10">
                                                                 <Phone className="h-4 w-4" />
                                                             </a>
-                                                            <a href={`https://wa.me/${ownerPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white">
+                                                            <a href={`https://wa.me/${ownerPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10">
                                                                 <WhatsappIcon className="h-4 w-4" />
                                                             </a>
                                                         </div>
