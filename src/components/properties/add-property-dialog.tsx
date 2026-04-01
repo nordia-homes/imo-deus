@@ -591,6 +591,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [enhancingImageIds, setEnhancingImageIds] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [isLoadingAddressSuggestions, setIsLoadingAddressSuggestions] = useState(false);
+    const [addressSuggestionsError, setAddressSuggestionsError] = useState('');
     const [selectedCoordinates, setSelectedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
     const [selectedAddressLabel, setSelectedAddressLabel] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -816,6 +817,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         if (!normalizedAddress || (!hasEnoughContext && normalizedAddress.length < 6)) {
             setAddressSuggestions([]);
             setIsLoadingAddressSuggestions(false);
+            setAddressSuggestionsError('');
             return;
         }
 
@@ -827,6 +829,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         const timeoutId = setTimeout(async () => {
             try {
                 setIsLoadingAddressSuggestions(true);
+                setAddressSuggestionsError('');
                 const searchUrl = new URL('/api/geocode-search', window.location.origin);
                 searchUrl.searchParams.set('address', normalizedAddress);
                 if (watchedZone) {
@@ -840,6 +843,16 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     cache: 'no-store',
                     signal: controller.signal,
                 });
+                if (!response.ok) {
+                    const errorPayload = await response.json().catch(() => ({ message: '' }));
+                    setAddressSuggestions([]);
+                    setAddressSuggestionsError(
+                        typeof errorPayload?.message === 'string' && errorPayload.message
+                            ? errorPayload.message
+                            : 'Sugestiile de adresă nu sunt disponibile momentan.'
+                    );
+                    return;
+                }
                 const payload = (await response.json()) as
                     | AddressSuggestion[]
                     | { suggestions?: AddressSuggestion[] };
@@ -869,6 +882,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
                     console.error('Address suggestions failed:', error);
+                    setAddressSuggestionsError('Sugestiile de adresă nu sunt disponibile momentan.');
                 }
             } finally {
                 setIsLoadingAddressSuggestions(false);
@@ -899,6 +913,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         });
         setSelectedAddressLabel(nextAddressValue);
         setAddressSuggestions([]);
+        setAddressSuggestionsError('');
     };
 
     const mapPreviewProperty = useMemo(() => {
@@ -1295,7 +1310,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                              <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Principale</h3>
-                                    <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Titlu Anunț *</FormLabel><FormControl><Input className="text-base md:text-sm bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Titlu Anunț *</FormLabel><FormControl><Textarea rows={2} className="min-h-[84px] resize-none text-base leading-snug md:min-h-10 md:text-sm bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: Vilă superbă cu piscină în Pipera" /></FormControl><FormMessage /></FormItem> )} />
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <FormField control={form.control} name="propertyType" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Tip Proprietate *</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
@@ -1373,6 +1388,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                 {isLoadingAddressSuggestions ? (
                                                     <div className="mt-2 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/70">
                                                         Cautam adrese relevante...
+                                                    </div>
+                                                ) : null}
+                                                {!isLoadingAddressSuggestions && addressSuggestionsError ? (
+                                                    <div className="mt-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+                                                        {addressSuggestionsError}
                                                     </div>
                                                 ) : null}
                                                 {addressSuggestions.length > 0 ? (

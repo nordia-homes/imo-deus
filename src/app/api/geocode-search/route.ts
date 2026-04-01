@@ -248,7 +248,7 @@ async function googlePlaceDetails(placeId: string, apiKey: string): Promise<Addr
 async function searchViaGoogle(address?: string | null, zone?: string | null, city?: string | null) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey || apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
-    return null;
+    throw new Error('GOOGLE_MAPS_API_KEY is missing on the server.');
   }
 
   const queries = buildQueries(address, zone, city);
@@ -571,6 +571,9 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('Address suggestion search failed:', error);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json(
+      { message: 'Sugestiile de adresă nu sunt disponibile momentan. Verifică GOOGLE_MAPS_API_KEY în mediul de producție.' },
+      { status: 503 }
+    );
   }
 }
