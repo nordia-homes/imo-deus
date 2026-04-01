@@ -175,7 +175,7 @@ export default function ViewingsPage() {
                         onClick={() => setIsUpcomingOpen((current) => !current)}
                         className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
                     >
-                        <span className="text-xl font-semibold text-white">Vizionări Următoarele 7 Zile ({upcomingViewings.length})</span>
+                        <span className="text-lg font-semibold text-white sm:text-xl">Vizionări Următoarele 7 Zile ({upcomingViewings.length})</span>
                         <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isUpcomingOpen && "rotate-180")} />
                     </button>
                     {isUpcomingOpen && (
@@ -197,7 +197,7 @@ export default function ViewingsPage() {
                         onClick={() => setIsPastOpen((current) => !current)}
                         className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
                     >
-                        <span className="text-xl font-semibold text-white">Istoric Vizionări ({pastViewings.length})</span>
+                        <span className="text-lg font-semibold text-white sm:text-xl">Istoric Vizionări ({pastViewings.length})</span>
                         <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isPastOpen && "rotate-180")} />
                     </button>
                     {isPastOpen && (
