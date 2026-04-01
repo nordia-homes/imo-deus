@@ -12,9 +12,18 @@ function normalizeAddressInput(address?: string | null) {
   return (address || '')
     .trim()
     .replace(/^\s*str\.?\s+/i, 'Strada ')
+    .replace(/^\s*strada\s+/i, 'Strada ')
     .replace(/^\s*bd\.?\s+/i, 'Bulevardul ')
     .replace(/^\s*b-dul\.?\s+/i, 'Bulevardul ')
+    .replace(/^\s*blvd\.?\s+/i, 'Bulevardul ')
     .replace(/^\s*sos\.?\s+/i, 'Soseaua ')
+    .replace(/^\s*șos\.?\s+/i, 'Soseaua ')
+    .replace(/^\s*calea\s+/i, 'Calea ')
+    .replace(/^\s*alee?a\.?\s+/i, 'Aleea ')
+    .replace(/^\s*piata\s+/i, 'Piata ')
+    .replace(/^\s*piața\s+/i, 'Piata ')
+    .replace(/^\s*dr\.?\s+/i, 'Drumul ')
+    .replace(/^\s*drumul\s+/i, 'Drumul ')
     .replace(/\s+/g, ' ');
 }
 
@@ -22,13 +31,20 @@ function cityAliases(city?: string | null) {
   const cleaned = (city || '').trim();
   if (!cleaned) return [];
   if (cleaned === 'Bucuresti-Ilfov') {
-    return ['Bucuresti', 'Ilfov'];
+    return ['București', 'Bucuresti', 'Ilfov', 'Sector 1 București', 'Sector 1 Bucuresti'];
   }
   return [cleaned];
 }
 
+function stripStreetNumber(value?: string | null) {
+  return (value || '')
+    .replace(/\s+\d+[a-zA-Z\-\/]*\s*$/, '')
+    .trim();
+}
+
 function buildQueries(address?: string | null, zone?: string | null, city?: string | null) {
   const normalizedAddress = normalizeAddressInput(address);
+  const baseStreetOnly = stripStreetNumber(normalizedAddress);
   const normalizedZone = (zone || '').trim();
   const cities = cityAliases(city);
   const queries = new Set<string>();
@@ -36,12 +52,16 @@ function buildQueries(address?: string | null, zone?: string | null, city?: stri
   for (const currentCity of cities.length ? cities : ['']) {
     queries.add([normalizedAddress, normalizedZone, currentCity, 'Romania'].filter(Boolean).join(', '));
     queries.add([normalizedAddress, currentCity, 'Romania'].filter(Boolean).join(', '));
-    queries.add([normalizedAddress, normalizedZone, 'Romania'].filter(Boolean).join(', '));
+    queries.add([baseStreetOnly, normalizedZone, currentCity, 'Romania'].filter(Boolean).join(', '));
+    queries.add([baseStreetOnly, currentCity, 'Romania'].filter(Boolean).join(', '));
   }
 
+  queries.add([normalizedAddress, normalizedZone, 'Romania'].filter(Boolean).join(', '));
+  queries.add([baseStreetOnly, normalizedZone, 'Romania'].filter(Boolean).join(', '));
   queries.add([normalizedAddress, 'Romania'].filter(Boolean).join(', '));
+  queries.add([baseStreetOnly, 'Romania'].filter(Boolean).join(', '));
 
-  return Array.from(queries).filter((query) => query.length >= 6);
+  return Array.from(queries).filter((query) => query.length >= 3);
 }
 
 async function geocodeViaNominatim(query: string) {

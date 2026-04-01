@@ -80,6 +80,17 @@ const normalizeText = (value?: string | null) =>
     .toLowerCase()
     .trim();
 
+const fixRomanianDiacritics = (value?: string | null) =>
+  (value ?? '')
+    .replace(/\bBucuresti\b/gi, 'București')
+    .replace(/\bBrasov\b/gi, 'Brașov')
+    .replace(/\bIasi\b/gi, 'Iași')
+    .replace(/\bTimisoara\b/gi, 'Timișoara')
+    .replace(/\bSoseaua\b/gi, 'Șoseaua')
+    .replace(/\bPiata\b/gi, 'Piața')
+    .replace(/\bRomania\b/gi, 'România')
+    .trim();
+
 const pickAllowedValue = (
   value: string | null | undefined,
   allowedValues: readonly string[],
@@ -833,12 +844,27 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     | AddressSuggestion[]
                     | { suggestions?: AddressSuggestion[] };
                 const rawSuggestions = Array.isArray(payload) ? payload : payload.suggestions || [];
-                const normalizedSuggestions = rawSuggestions.filter(
-                    (suggestion) =>
-                        suggestion?.label &&
-                        Number.isFinite(suggestion.latitude) &&
-                        Number.isFinite(suggestion.longitude)
-                );
+                const normalizedSuggestions = rawSuggestions
+                    .filter(
+                        (suggestion) =>
+                            suggestion?.label &&
+                            Number.isFinite(suggestion.latitude) &&
+                            Number.isFinite(suggestion.longitude)
+                    )
+                    .map((suggestion) => {
+                        const normalizedCity = normalizeCityValue(suggestion.city) || fixRomanianDiacritics(suggestion.city);
+                        const normalizedZone =
+                            normalizeZoneValue(fixRomanianDiacritics(suggestion.zone), normalizedCity || watchedCity) ||
+                            fixRomanianDiacritics(suggestion.zone);
+
+                        return {
+                            ...suggestion,
+                            label: fixRomanianDiacritics(suggestion.label),
+                            addressLine: fixRomanianDiacritics(suggestion.addressLine || suggestion.label),
+                            city: normalizedCity,
+                            zone: normalizedZone,
+                        };
+                    });
                 setAddressSuggestions(normalizedSuggestions);
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
@@ -856,15 +882,15 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }, [selectedAddressLabel, selectedCoordinates, watchedAddress, watchedCity, watchedZone]);
 
     const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
-        const nextAddressValue = suggestion.addressLine || suggestion.label;
+        const nextAddressValue = fixRomanianDiacritics(suggestion.addressLine || suggestion.label);
         form.setValue('address', nextAddressValue, { shouldValidate: true, shouldDirty: true });
         if (suggestion.city) {
-            const normalizedCity = normalizeCityValue(suggestion.city) || suggestion.city;
+            const normalizedCity = normalizeCityValue(suggestion.city) || fixRomanianDiacritics(suggestion.city);
             form.setValue('city', normalizedCity, { shouldValidate: true, shouldDirty: true });
         }
         if (suggestion.zone) {
             const nextCity = suggestion.city || form.getValues('city');
-            const normalizedZone = normalizeZoneValue(suggestion.zone, nextCity) || suggestion.zone;
+            const normalizedZone = normalizeZoneValue(suggestion.zone, nextCity) || fixRomanianDiacritics(suggestion.zone);
             form.setValue('zone', normalizedZone, { shouldValidate: true, shouldDirty: true });
         }
         setSelectedCoordinates({

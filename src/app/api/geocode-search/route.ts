@@ -31,9 +31,18 @@ function normalizeAddressInput(address?: string | null) {
   return (address || '')
     .trim()
     .replace(/^\s*str\.?\s+/i, 'Strada ')
+    .replace(/^\s*strada\s+/i, 'Strada ')
     .replace(/^\s*bd\.?\s+/i, 'Bulevardul ')
     .replace(/^\s*b-dul\.?\s+/i, 'Bulevardul ')
+    .replace(/^\s*blvd\.?\s+/i, 'Bulevardul ')
     .replace(/^\s*sos\.?\s+/i, 'Soseaua ')
+    .replace(/^\s*șos\.?\s+/i, 'Soseaua ')
+    .replace(/^\s*calea\s+/i, 'Calea ')
+    .replace(/^\s*alee?a\.?\s+/i, 'Aleea ')
+    .replace(/^\s*piata\s+/i, 'Piata ')
+    .replace(/^\s*piața\s+/i, 'Piata ')
+    .replace(/^\s*dr\.?\s+/i, 'Drumul ')
+    .replace(/^\s*drumul\s+/i, 'Drumul ')
     .replace(/\s+/g, ' ');
 }
 
@@ -41,9 +50,15 @@ function cityAliases(city?: string | null) {
   const cleaned = (city || '').trim();
   if (!cleaned) return [];
   if (cleaned === 'Bucuresti-Ilfov') {
-    return ['Bucuresti', 'Ilfov'];
+    return ['București', 'Bucuresti', 'Ilfov', 'Sector 1 București', 'Sector 1 Bucuresti'];
   }
-  return [cleaned];
+  const normalized = normalizeText(cleaned);
+  const variants = new Set([cleaned]);
+  if (normalized === 'iasi') variants.add('Iași');
+  if (normalized === 'brasov') variants.add('Brașov');
+  if (normalized === 'timisoara') variants.add('Timișoara');
+  if (normalized === 'clujnapoca') variants.add('Cluj-Napoca');
+  return Array.from(variants);
 }
 
 function normalizeText(value?: string | null) {
@@ -115,7 +130,6 @@ function extractZoneFromGoogleComponents(components: GoogleAddressComponent[] | 
     pickComponent(components, ['neighborhood']) ||
     pickComponent(components, ['sublocality_level_1']) ||
     pickComponent(components, ['sublocality']) ||
-    pickComponent(components, ['route']) ||
     ''
   );
 }
@@ -124,6 +138,49 @@ function extractStreetLineFromGoogleComponents(components: GoogleAddressComponen
   const route = pickComponent(components, ['route']);
   const streetNumber = pickComponent(components, ['street_number']);
   return [route, streetNumber].filter(Boolean).join(' ').trim();
+}
+
+function fixRomanianDiacritics(value?: string | null) {
+  return (value || '')
+    .replace(/\bBucuresti\b/gi, 'București')
+    .replace(/\bBrasov\b/gi, 'Brașov')
+    .replace(/\bIasi\b/gi, 'Iași')
+    .replace(/\bTimisoara\b/gi, 'Timișoara')
+    .replace(/\bSoseaua\b/gi, 'Șoseaua')
+    .replace(/\bPiata\b/gi, 'Piața')
+    .replace(/\bRomania\b/gi, 'România')
+    .trim();
+}
+
+function scoreSuggestion(
+  suggestion: AddressSuggestion,
+  address?: string | null,
+  zone?: string | null,
+  city?: string | null
+) {
+  const normalizedNeedle = normalizeText(address);
+  const normalizedZone = normalizeText(zone);
+  const normalizedCity = normalizeText(city);
+  const normalizedAddressLine = normalizeText(suggestion.addressLine || suggestion.label);
+  const normalizedLabel = normalizeText(suggestion.label);
+  const normalizedSuggestionZone = normalizeText(suggestion.zone);
+  const normalizedSuggestionCity = normalizeText(suggestion.city);
+
+  let score = 0;
+
+  if (normalizedNeedle && normalizedAddressLine.startsWith(normalizedNeedle)) score += 80;
+  else if (normalizedNeedle && normalizedAddressLine.includes(normalizedNeedle)) score += 55;
+  else if (normalizedNeedle && normalizedLabel.includes(normalizedNeedle)) score += 35;
+
+  if (normalizedZone && normalizedSuggestionZone === normalizedZone) score += 30;
+  else if (normalizedZone && normalizedSuggestionZone.includes(normalizedZone)) score += 15;
+
+  if (normalizedCity && normalizedSuggestionCity === normalizedCity) score += 40;
+  else if (normalizedCity && normalizedLabel.includes(normalizedCity)) score += 20;
+
+  if (normalizedLabel.includes('romania')) score += 5;
+
+  return score;
 }
 
 async function googlePlaceDetails(placeId: string, apiKey: string): Promise<AddressSuggestion | null> {
@@ -164,10 +221,10 @@ async function googlePlaceDetails(placeId: string, apiKey: string): Promise<Addr
   }
 
   return {
-    label,
-    addressLine: payload.shortFormattedAddress || payload.formattedAddress || label,
-    city: extractCityFromGoogleComponents(payload.addressComponents),
-    zone: extractZoneFromGoogleComponents(payload.addressComponents),
+    label: fixRomanianDiacritics(label),
+    addressLine: fixRomanianDiacritics(payload.shortFormattedAddress || payload.formattedAddress || label),
+    city: fixRomanianDiacritics(extractCityFromGoogleComponents(payload.addressComponents)),
+    zone: fixRomanianDiacritics(extractZoneFromGoogleComponents(payload.addressComponents)),
     latitude: Number(payload.location.latitude),
     longitude: Number(payload.location.longitude),
   };
@@ -279,10 +336,10 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
       }));
 
       const suggestion: AddressSuggestion = {
-        label: result.formatted_address,
-        addressLine: extractStreetLineFromGoogleComponents(components) || result.formatted_address,
-        city: extractCityFromGoogleComponents(components),
-        zone: extractZoneFromGoogleComponents(components),
+        label: fixRomanianDiacritics(result.formatted_address),
+        addressLine: fixRomanianDiacritics(extractStreetLineFromGoogleComponents(components) || result.formatted_address),
+        city: fixRomanianDiacritics(extractCityFromGoogleComponents(components)),
+        zone: fixRomanianDiacritics(extractZoneFromGoogleComponents(components)),
         latitude: Number(latitude),
         longitude: Number(longitude),
       };
@@ -334,13 +391,15 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
       }
 
       const suggestion: AddressSuggestion = {
-        label: place.formattedAddress,
+        label: fixRomanianDiacritics(place.formattedAddress),
         addressLine:
-          extractStreetLineFromGoogleComponents(place.addressComponents) ||
-          place.shortFormattedAddress ||
-          place.formattedAddress,
-        city: extractCityFromGoogleComponents(place.addressComponents),
-        zone: extractZoneFromGoogleComponents(place.addressComponents),
+          fixRomanianDiacritics(
+            extractStreetLineFromGoogleComponents(place.addressComponents) ||
+              place.shortFormattedAddress ||
+              place.formattedAddress
+          ),
+        city: fixRomanianDiacritics(extractCityFromGoogleComponents(place.addressComponents)),
+        zone: fixRomanianDiacritics(extractZoneFromGoogleComponents(place.addressComponents)),
         latitude: Number(latitude),
         longitude: Number(longitude),
       };
@@ -389,25 +448,31 @@ async function searchViaNominatim(query: string) {
   return results
     .filter((result) => result.display_name && result.lat && result.lon)
     .map((result) => ({
-      label: result.display_name!,
+      label: fixRomanianDiacritics(result.display_name!),
       addressLine:
-        [
-          result.address?.road,
-          result.address?.house_number,
-        ]
-          .filter(Boolean)
-          .join(' ') || result.display_name!,
+        fixRomanianDiacritics(
+          [
+            result.address?.road,
+            result.address?.house_number,
+          ]
+            .filter(Boolean)
+            .join(' ') || result.display_name!
+        ),
       city:
-        result.address?.city ||
-        result.address?.town ||
-        result.address?.municipality ||
-        result.address?.county ||
-        '',
+        fixRomanianDiacritics(
+          result.address?.city ||
+            result.address?.town ||
+            result.address?.municipality ||
+            result.address?.county ||
+            ''
+        ),
       zone:
-        result.address?.suburb ||
-        result.address?.neighbourhood ||
-        result.address?.quarter ||
-        '',
+        fixRomanianDiacritics(
+          result.address?.suburb ||
+            result.address?.neighbourhood ||
+            result.address?.quarter ||
+            ''
+        ),
       latitude: Number(result.lat),
       longitude: Number(result.lon),
     }));
@@ -445,15 +510,18 @@ async function searchViaPhoton(query: string) {
       const coords = feature.geometry!.coordinates!;
 
       return {
-        label:
+        label: fixRomanianDiacritics(
           props.name ||
-          [props.street, props.city, props.county, 'Romania'].filter(Boolean).join(', '),
+            [props.street, props.city, props.county, 'Romania'].filter(Boolean).join(', ')
+        ),
         addressLine:
-          [props.street, props.housenumber].filter(Boolean).join(' ') ||
-          props.name ||
-          '',
-        city: props.city || props.county || '',
-        zone: props.district || props.suburb || props.neighbourhood || '',
+          fixRomanianDiacritics(
+            [props.street, props.housenumber].filter(Boolean).join(' ') ||
+              props.name ||
+              ''
+          ),
+        city: fixRomanianDiacritics(props.city || props.county || ''),
+        zone: fixRomanianDiacritics(props.district || props.suburb || props.neighbourhood || ''),
         latitude: Number(coords[1]),
         longitude: Number(coords[0]),
       };
@@ -512,7 +580,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(Array.from(unique.values()).slice(0, 6));
+    return NextResponse.json(
+      Array.from(unique.values())
+        .sort((a, b) => scoreSuggestion(b, address, zone, city) - scoreSuggestion(a, address, zone, city))
+        .slice(0, 6)
+    );
   } catch (error) {
     console.error('Address suggestion search failed:', error);
     return NextResponse.json([], { status: 200 });
