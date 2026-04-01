@@ -109,8 +109,8 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     <Card className="min-w-0 w-full max-w-full overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
       <CardContent className="min-w-0 w-full max-w-full overflow-x-hidden p-2 sm:p-4">
         {/* Header */}
-        <header className="mb-4 flex w-full max-w-full flex-col gap-3 overflow-hidden px-1 md:flex-row md:items-center md:justify-between">
-          <div className="flex w-full min-w-0 items-center gap-3 overflow-hidden md:w-auto">
+        <header className="mb-4 flex w-full max-w-full items-center justify-between gap-2 overflow-hidden px-1">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 overflow-hidden">
             <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
               Astăzi
             </Button>
@@ -133,7 +133,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
               </Button>
             </div>
           </div>
-          <h2 className="w-full max-w-full overflow-hidden truncate whitespace-nowrap text-right text-lg font-semibold capitalize text-white sm:text-xl md:w-auto">
+          <h2 className="min-w-0 flex-1 truncate whitespace-nowrap text-right text-lg font-semibold capitalize text-white sm:text-xl">
             {format(selectedDay, 'MMMM yyyy', { locale: ro })}
           </h2>
         </header>

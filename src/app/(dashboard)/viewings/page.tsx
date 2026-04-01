@@ -9,13 +9,14 @@ import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, ChevronDown } from 'lucide-react';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
 import { ViewingList } from '@/components/viewings/ViewingList';
 import { parseISO, addDays, startOfDay } from 'date-fns';
 import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
 import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
+import { cn } from '@/lib/utils';
 
 export default function ViewingsPage() {
     const { agencyId, agency, userProfile } = useAgency();
@@ -28,6 +29,8 @@ export default function ViewingsPage() {
     const [editingViewing, setEditingViewing] = useState<Viewing | null>(null);
     const [deletingViewing, setDeletingViewing] = useState<Viewing | null>(null);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
+    const [isUpcomingOpen, setIsUpcomingOpen] = useState(false);
+    const [isPastOpen, setIsPastOpen] = useState(false);
 
     // Data fetching
     const propertiesQuery = useMemoFirebase(() => {
@@ -166,28 +169,49 @@ export default function ViewingsPage() {
             />
 
             <div className="mt-8 space-y-6">
-                <ViewingList 
-                    title="Vizionări Următoarele 7 Zile" 
-                    viewings={upcomingViewings} 
-                    agents={agents}
-                    properties={properties}
-                    contacts={contacts}
-                    onEdit={setEditingViewing}
-                    onDelete={setDeletingViewing}
-                    collapsible
-                    defaultOpen={false}
-                />
-                <ViewingList 
-                    title="Istoric Vizionări" 
-                    viewings={pastViewings} 
-                    agents={agents}
-                    properties={properties}
-                    contacts={contacts}
-                    onEdit={setEditingViewing}
-                    onDelete={setDeletingViewing}
-                    collapsible
-                    defaultOpen={false}
-                />
+                <div className="space-y-4">
+                    <button
+                        type="button"
+                        onClick={() => setIsUpcomingOpen((current) => !current)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                    >
+                        <span className="text-xl font-semibold text-white">Vizionări Următoarele 7 Zile ({upcomingViewings.length})</span>
+                        <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isUpcomingOpen && "rotate-180")} />
+                    </button>
+                    {isUpcomingOpen && (
+                        <ViewingList 
+                            title="Vizionări Următoarele 7 Zile" 
+                            viewings={upcomingViewings} 
+                            agents={agents}
+                            properties={properties}
+                            contacts={contacts}
+                            onEdit={setEditingViewing}
+                            onDelete={setDeletingViewing}
+                        />
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    <button
+                        type="button"
+                        onClick={() => setIsPastOpen((current) => !current)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                    >
+                        <span className="text-xl font-semibold text-white">Istoric Vizionări ({pastViewings.length})</span>
+                        <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isPastOpen && "rotate-180")} />
+                    </button>
+                    {isPastOpen && (
+                        <ViewingList 
+                            title="Istoric Vizionări" 
+                            viewings={pastViewings} 
+                            agents={agents}
+                            properties={properties}
+                            contacts={contacts}
+                            onEdit={setEditingViewing}
+                            onDelete={setDeletingViewing}
+                        />
+                    )}
+                </div>
             </div>
             
             <AddViewingDialog
