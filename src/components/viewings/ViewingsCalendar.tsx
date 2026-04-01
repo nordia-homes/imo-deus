@@ -433,7 +433,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                       key={item.key}
                       type="button"
                       onClick={() => scrollToViewingCard(item.key)}
-                      className="flex w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-white/80 transition-colors hover:bg-white/10"
+                      className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-xs text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
                     >
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
                       <span className="shrink-0 font-medium text-white">{item.label}</span>
