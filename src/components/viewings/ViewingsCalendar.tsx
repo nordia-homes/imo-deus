@@ -74,6 +74,18 @@ const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
     return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
 };
 
+const VIEWING_DAY_START_HOUR = 8;
+const VIEWING_DAY_END_HOUR = 21;
+
+const getDayBoundary = (day: Date, hour: number) => {
+    const boundary = new Date(day);
+    boundary.setHours(hour, 0, 0, 0);
+    return boundary;
+};
+
+const formatFreeTimeRange = (start: Date, end: Date) => `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+const VIEWING_DAY_TOTAL_MINUTES = (VIEWING_DAY_END_HOUR - VIEWING_DAY_START_HOUR) * 60;
+
 export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingsCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
 
@@ -111,6 +123,70 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
       parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime()
     );
   }, [selectedDay, viewingsByDay, properties, contacts, agents]);
+
+  const timelineEntries = useMemo(() => {
+    const dayStart = getDayBoundary(selectedDay, VIEWING_DAY_START_HOUR);
+    const dayEnd = getDayBoundary(selectedDay, VIEWING_DAY_END_HOUR);
+    const entries: Array<
+      | { type: 'free'; key: string; start: Date; end: Date; minutes: number }
+      | { type: 'viewing'; key: string; viewing: (typeof selectedDayViewings)[number] }
+    > = [];
+
+    let cursor = dayStart;
+
+    for (const viewing of selectedDayViewings) {
+      const start = parseISO(viewing.viewingDate);
+      const end = addMinutes(start, viewing.duration ?? 30);
+
+      if (start > cursor) {
+        const freeMinutes = Math.max(0, Math.round((start.getTime() - cursor.getTime()) / 60000));
+        if (freeMinutes > 0) {
+          entries.push({
+            type: 'free',
+            key: `free-before-${viewing.id}-${cursor.toISOString()}`,
+            start: cursor,
+            end: start,
+            minutes: freeMinutes,
+          });
+        }
+      }
+
+      entries.push({
+        type: 'viewing',
+        key: viewing.id,
+        viewing,
+      });
+
+      if (end > cursor) {
+        cursor = end;
+      }
+    }
+
+    if (cursor < dayEnd) {
+      const freeMinutes = Math.max(0, Math.round((dayEnd.getTime() - cursor.getTime()) / 60000));
+      if (freeMinutes > 0) {
+        entries.push({
+          type: 'free',
+          key: `free-end-${cursor.toISOString()}`,
+          start: cursor,
+          end: dayEnd,
+          minutes: freeMinutes,
+        });
+      }
+    }
+
+    if (entries.length === 0) {
+      entries.push({
+        type: 'free',
+        key: `free-full-${format(selectedDay, 'yyyy-MM-dd')}`,
+        start: dayStart,
+        end: dayEnd,
+        minutes: Math.round((dayEnd.getTime() - dayStart.getTime()) / 60000),
+      });
+    }
+
+    return entries;
+  }, [selectedDay, selectedDayViewings]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const amount = direction === 'prev' ? -7 : 7;
@@ -196,16 +272,66 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         
         {/* Timeline for selected day */}
         <div className="min-w-0 w-full max-w-full">
-          {selectedDayViewings.length > 0 ? (
             <div className="min-w-0 w-full max-w-full space-y-4">
-              {selectedDayViewings.map((viewing) => {
+              {timelineEntries.map((entry) => {
+                if (entry.type === 'free') {
+                  const heightClass =
+                    entry.minutes >= 180
+                      ? 'min-h-[104px]'
+                      : entry.minutes >= 90
+                        ? 'min-h-[84px]'
+                        : 'min-h-[68px]';
+
+                  return (
+                    <div
+                      key={entry.key}
+                      className={cn(
+                        'overflow-hidden rounded-[24px] border border-dashed border-emerald-400/25 bg-emerald-500/[0.08] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
+                        heightClass
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/18 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-emerald-200">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          Timp disponibil
+                        </div>
+                        <span className="text-xs font-medium text-emerald-200/80">
+                          {Math.floor(entry.minutes / 60)}h {entry.minutes % 60}m
+                        </span>
+                      </div>
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#0F1E33]/85">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
+                          style={{
+                            width: `${Math.max(12, Math.min(100, (entry.minutes / VIEWING_DAY_TOTAL_MINUTES) * 100))}%`,
+                            marginLeft: `${Math.max(
+                              0,
+                              Math.min(
+                                100,
+                                ((entry.start.getHours() * 60 + entry.start.getMinutes() - VIEWING_DAY_START_HOUR * 60) /
+                                  VIEWING_DAY_TOTAL_MINUTES) *
+                                  100
+                              )
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3 text-sm text-white/70">
+                        <span>{formatFreeTimeRange(entry.start, entry.end)}</span>
+                        <span>Liber pentru programare</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const viewing = entry.viewing;
                 const { property, contact, agent } = viewing;
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
 
                 return (
-                    <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
+                    <Card key={entry.key} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
                         <div className="flex flex-col md:flex-row">
                             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-[26px] md:aspect-[16/10] md:h-auto md:w-[320px] md:shrink-0 md:rounded-l-[26px] md:rounded-r-none">
                                 {property?.images?.[0]?.url ? (
@@ -342,11 +468,6 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 )
               })}
             </div>
-          ) : (
-            <div className="text-center py-8 text-white/70">
-              Nicio vizionare programată pentru această zi.
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
