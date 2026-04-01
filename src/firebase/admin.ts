@@ -9,13 +9,6 @@ import { initializeApp, cert, getApps, App, ServiceAccount } from 'firebase-admi
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
-import { config } from 'dotenv';
-
-// Încarcă variabilele de mediu din fișierul .env
-// Acest pas este esențial pentru a asigura că `process.env` are valorile corecte
-// atunci când codul de server este executat.
-config();
-
 let app: App;
 
 // PAS 1: Verificăm dacă aplicația a fost deja inițializată.
@@ -30,14 +23,14 @@ if (!getApps().length) {
   // PAS 2: Validăm proactiv fiecare variabilă de mediu.
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
-      'Variabilele de mediu Firebase (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) nu sunt setate corect în fișierul .env. Vă rugăm să urmați instrucțiunile din acel fișier.'
+      'Variabilele de mediu Firebase (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) nu sunt setate corect în environment variables ale aplicației.'
     );
   }
   
   // Validare suplimentară pentru formatul cheii private.
-  if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
+  if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
      throw new Error(
-      'Cheia privată (FIREBASE_PRIVATE_KEY) din fișierul .env pare a fi invalidă. Asigurați-vă că ați copiat întreaga cheie, inclusiv "-----BEGIN PRIVATE KEY-----" și "-----END PRIVATE KEY-----", și ați încadrat-o în ghilimele duble.'
+      'Cheia privată FIREBASE_PRIVATE_KEY din environment variables pare a fi invalidă. Asigurați-vă că ați copiat întreaga cheie, inclusiv "-----BEGIN PRIVATE KEY-----" și "-----END PRIVATE KEY-----", exact cum apare în Service Account.'
     );
   }
 
@@ -57,7 +50,7 @@ if (!getApps().length) {
     console.error("Eroare la inițializarea Firebase Admin SDK:", e.message);
     // Această eroare apare de obicei dacă valorile, deși prezente, sunt incorecte (ex: projectId greșit).
     throw new Error(
-      'A apărut o eroare la inițializarea Firebase Admin. Verificați corectitudinea credențialelor din fișierul .env.'
+      'A apărut o eroare la inițializarea Firebase Admin. Verificați corectitudinea credențialelor din environment variables.'
     );
   }
 
