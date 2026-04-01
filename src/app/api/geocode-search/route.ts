@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+const REQUEST_TIMEOUT_MS = 4500;
 
 type AddressSuggestion = {
   label: string;
@@ -26,6 +27,20 @@ type GoogleGeocodeResult = {
     types?: string[];
   }>;
 };
+
+async function fetchWithTimeout(input: string | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function normalizeAddressInput(address?: string | null) {
   return (address || '')
@@ -184,7 +199,7 @@ function scoreSuggestion(
 }
 
 async function googlePlaceDetails(placeId: string, apiKey: string): Promise<AddressSuggestion | null> {
-  const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+  const response = await fetchWithTimeout(`https://places.googleapis.com/v1/places/${placeId}`, {
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': apiKey,
@@ -240,7 +255,7 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
   const unique = new Map<string, AddressSuggestion>();
 
   for (const query of queries.slice(0, 4)) {
-    const autocompleteResponse = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+    const autocompleteResponse = await fetchWithTimeout('https://places.googleapis.com/v1/places:autocomplete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -304,7 +319,7 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
   }
 
   for (const query of queries.slice(0, 4)) {
-    const geocodeResponse = await fetch(
+    const geocodeResponse = await fetchWithTimeout(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=ro&language=ro&key=${encodeURIComponent(apiKey)}`,
       { cache: 'no-store' }
     );
@@ -352,7 +367,7 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
   }
 
   for (const query of queries.slice(0, 4)) {
-    const textSearchResponse = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    const textSearchResponse = await fetchWithTimeout('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -426,7 +441,7 @@ async function searchViaNominatim(query: string) {
   url.searchParams.set('countrycodes', 'ro');
   url.searchParams.set('addressdetails', '1');
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithTimeout(url.toString(), {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'ImoDeus.ai/1.0 (property address autocomplete)',
@@ -484,7 +499,7 @@ async function searchViaPhoton(query: string) {
   url.searchParams.set('lang', 'ro');
   url.searchParams.set('limit', '6');
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithTimeout(url.toString(), {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'ImoDeus.ai/1.0 (property address autocomplete fallback)',
@@ -539,44 +554,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const queries = buildQueries(address, zone, city);
     const unique = new Map<string, AddressSuggestion>();
-
     const googleResults = await searchViaGoogle(address, zone, city);
-    if (googleResults && googleResults.length > 0) {
-      for (const result of googleResults) {
-        const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
-        if (!unique.has(key)) {
-          unique.set(key, result);
-        }
-      }
-    }
 
-    for (const query of queries.slice(0, 4)) {
-      const results = await searchViaNominatim(query);
-      for (const result of results) {
-        const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
-        if (!unique.has(key)) {
-          unique.set(key, result);
-        }
-      }
-      if (unique.size >= 8) {
-        break;
-      }
-    }
-
-    if (unique.size < 4) {
-      for (const query of queries.slice(0, 2)) {
-        const results = await searchViaPhoton(query);
-        for (const result of results) {
-          const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
-          if (!unique.has(key)) {
-            unique.set(key, result);
-          }
-        }
-        if (unique.size >= 8) {
-          break;
-        }
+    for (const result of googleResults || []) {
+      const key = `${normalizeText(result.addressLine || result.label)}-${result.latitude}-${result.longitude}`;
+      if (!unique.has(key)) {
+        unique.set(key, result);
       }
     }
 
