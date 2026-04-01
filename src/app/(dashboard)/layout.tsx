@@ -5,6 +5,7 @@ import React, { useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { AgencyProvider, useAgency } from '@/context/AgencyContext';
 import { cn } from '@/lib/utils';
+import { PushNotificationsBootstrap } from '@/components/notifications/PushNotificationsBootstrap';
 
 
 // A simple skeleton loader
@@ -139,6 +140,7 @@ export default function DashboardLayout({
 
   return (
     <AgencyProvider>
+        <PushNotificationsBootstrap />
         <DashboardRoot>
             {children}
         </DashboardRoot>

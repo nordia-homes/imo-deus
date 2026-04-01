@@ -8,6 +8,7 @@
 import { initializeApp, cert, getApps, App, ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 import { config } from 'dotenv';
 
 // Încarcă variabilele de mediu din fișierul .env
@@ -69,3 +70,4 @@ if (!getApps().length) {
 // Aceasta va fi folosită în fluxurile de pe server.
 export const adminDb = getFirestore(app);
 export const adminAuth = getAuth(app);
+export const adminMessaging = getMessaging(app);

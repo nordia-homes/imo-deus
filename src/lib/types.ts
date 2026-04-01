@@ -247,6 +247,9 @@ export type UserProfile = {
   agentBio?: string;
   agencyId?: string;
   role?: 'admin' | 'agent';
+  pushTokens?: string[];
+  pushNotificationsEnabled?: boolean;
+  pushNotificationsUpdatedAt?: string;
 };
 
 export type Invite = {

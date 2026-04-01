@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, getDoc, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, getDoc, doc, addDoc } from 'firebase/firestore';
 import type { Property, Contact, Viewing, UserProfile } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
@@ -97,7 +97,7 @@ export default function ViewingsPage() {
         fetchAgents();
     }, [agency, firestore]);
 
-    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+    const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agencyId || !user) return;
 
         const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
@@ -115,10 +115,29 @@ export default function ViewingsPage() {
             agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
-        
-        addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
 
-        toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
+        try {
+            await addDoc(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+
+            await fetch('/api/viewings/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agencyId,
+                    agentId: viewingToAdd.agentId,
+                    contactName: viewingToAdd.contactName,
+                    propertyTitle: viewingToAdd.propertyTitle,
+                    viewingDate: viewingToAdd.viewingDate,
+                }),
+            }).catch((error) => {
+                console.error('Viewing push notification request failed:', error);
+            });
+
+            toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
+        } catch (error) {
+            console.error('Failed to add viewing:', error);
+            toast({ variant: 'destructive', title: 'Eroare', description: 'Vizionarea nu a putut fi salvată.' });
+        }
     };
 
     const handleUpdateViewing = (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
