@@ -140,7 +140,7 @@ export default function ViewingsPage() {
 
     if (isLoading) {
         return (
-             <div className="space-y-6 bg-[#0F1E33] p-2">
+             <div className="min-w-0 w-full max-w-full overflow-x-hidden space-y-6 bg-[#0F1E33] px-2 py-2 sm:p-2">
                 <Skeleton className="h-12 w-full bg-white/10"/>
                 <Skeleton className="h-[70vh] w-full bg-white/10"/>
              </div>
@@ -148,7 +148,7 @@ export default function ViewingsPage() {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col bg-[#0F1E33] text-white p-2">
+        <div className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-x-hidden bg-[#0F1E33] px-2 py-2 text-white sm:gap-6 sm:p-2">
             <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
                 <PlusCircle className="mr-2 h-4 w-4"/>
                 Programează Vizionare
