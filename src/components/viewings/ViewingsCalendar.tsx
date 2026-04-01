@@ -6,6 +6,7 @@ import {
   format,
   startOfWeek,
   addDays,
+  addMinutes,
   isToday,
   isSameMonth,
   parseISO,
@@ -15,7 +16,7 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { WhatsappIcon } from '../icons/WhatsappIcon';
@@ -60,6 +61,17 @@ const sanitizeForWhatsapp = (phone?: string | null) => {
         return `40${sanitized.substring(1)}`;
     }
     return sanitized;
+};
+
+const buildWazeUrl = (address?: string | null) => {
+    if (!address?.trim()) return null;
+    return `https://www.waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
+};
+
+const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
+    const start = parseISO(viewingDate);
+    const end = addMinutes(start, duration ?? 30);
+    return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
 };
 
 export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingsCalendarProps) {
@@ -109,17 +121,17 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     <Card className="min-w-0 w-full max-w-full overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
       <CardContent className="min-w-0 w-full max-w-full overflow-x-hidden p-2 sm:p-4">
         {/* Header */}
-        <header className="mb-4 flex w-full max-w-full items-center justify-between gap-2 overflow-hidden px-1">
-          <div className="flex min-w-0 shrink-0 items-center gap-2 overflow-hidden">
-            <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+        <header className="mb-4 grid w-full max-w-full grid-cols-[auto,minmax(0,1fr)] items-center gap-2 overflow-hidden px-1">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-hidden sm:gap-2">
+            <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="h-11 shrink-0 bg-white/10 px-4 text-base text-white border-white/20 hover:bg-white/20">
               Astăzi
             </Button>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('prev')}
-                className="hover:bg-white/10"
+                className="h-10 w-10 shrink-0 hover:bg-white/10"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
@@ -127,13 +139,13 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('next')}
-                className="hover:bg-white/10"
+                className="h-10 w-10 shrink-0 hover:bg-white/10"
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
-          <h2 className="min-w-0 flex-1 truncate whitespace-nowrap text-right text-lg font-semibold capitalize text-white sm:text-xl">
+          <h2 className="min-w-0 justify-self-end truncate whitespace-nowrap text-right text-base font-semibold capitalize text-white sm:text-xl">
             {format(selectedDay, 'MMMM yyyy', { locale: ro })}
           </h2>
         </header>
@@ -190,6 +202,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 const { property, contact, agent } = viewing;
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
+                const wazeUrl = buildWazeUrl(viewing.propertyAddress);
 
                 return (
                     <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
@@ -209,7 +222,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F1E33]/55 via-transparent to-transparent" />
-                                <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                                <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-3">
                                     <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -227,11 +240,22 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-                                <div className="absolute bottom-4 left-4 right-4">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0F1E33]/80 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                                        <Clock3 className="h-4 w-4 text-sky-300" />
-                                        {format(parseISO(viewing.viewingDate), 'd MMM, HH:mm', { locale: ro })}
+                                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
+                                        <Clock3 className="h-4 w-4 text-white" />
+                                        {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
                                     </div>
+                                    {wazeUrl && (
+                                        <a
+                                            href={wazeUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={`Deschide directii Waze pentru ${viewing.propertyAddress}`}
+                                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/20 bg-[#0F1E33]/80 text-sky-300 backdrop-blur-sm transition-colors hover:bg-[#0F1E33] hover:text-sky-200"
+                                        >
+                                            <Navigation className="h-4 w-4" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 

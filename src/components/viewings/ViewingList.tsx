@@ -3,10 +3,10 @@ import type { Viewing, UserProfile, Property, Contact } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
+import { addMinutes, format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Edit, Trash2, MoreVertical, Phone, MapPin, UserRound, Clock3, Building2 } from 'lucide-react';
+import { Calendar, Edit, Trash2, MoreVertical, Phone, MapPin, UserRound, Clock3, Building2, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -54,6 +54,17 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
         return sanitized;
     };
 
+    const buildWazeUrl = (address?: string | null) => {
+        if (!address?.trim()) return null;
+        return `https://www.waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
+    };
+
+    const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
+        const start = parseISO(viewingDate);
+        const end = addMinutes(start, duration ?? 30);
+        return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+    };
+
     if (!viewings || viewings.length === 0) {
         return (
             <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none backdrop-blur-sm">
@@ -76,6 +87,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
 
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
+                const wazeUrl = buildWazeUrl(viewing.propertyAddress);
 
                 return (
                     <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
@@ -95,7 +107,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F1E33]/55 via-transparent to-transparent" />
-                                <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                                <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-3">
                                     <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -113,11 +125,22 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-                                <div className="absolute bottom-4 left-4 right-4">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0F1E33]/80 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                                        <Clock3 className="h-4 w-4 text-sky-300" />
-                                        {format(parseISO(viewing.viewingDate), 'd MMM, HH:mm', { locale: ro })}
+                                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
+                                        <Clock3 className="h-4 w-4 text-white" />
+                                        {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
                                     </div>
+                                    {wazeUrl && (
+                                        <a
+                                            href={wazeUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={`Deschide directii Waze pentru ${viewing.propertyAddress}`}
+                                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/20 bg-[#0F1E33]/80 text-sky-300 backdrop-blur-sm transition-colors hover:bg-[#0F1E33] hover:text-sky-200"
+                                        >
+                                            <Navigation className="h-4 w-4" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 
