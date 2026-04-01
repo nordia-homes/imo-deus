@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminMessaging } from '@/firebase/admin';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +12,7 @@ type NotifyViewingPayload = {
 
 export async function POST(request: NextRequest) {
   try {
+    const { adminDb, adminMessaging } = await import('@/firebase/admin');
     const body = (await request.json()) as NotifyViewingPayload;
     const { agentId, contactName, propertyTitle, viewingDate } = body;
 
