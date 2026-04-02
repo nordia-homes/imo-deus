@@ -103,6 +103,12 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                                     </div>
                                 )
                             })}
+                            <Button
+                                asChild
+                                className="mt-3 h-11 w-full rounded-xl border border-white/10 bg-white/10 text-white hover:bg-white/20"
+                            >
+                                <Link href="/viewings">Vezi toate vizionările</Link>
+                            </Button>
                         </div>
                     )}
                 </div>
