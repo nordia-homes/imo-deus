@@ -7,6 +7,7 @@ const api = {
   markFacebookRunnerPosted: () => ipcRenderer.invoke('facebook-runner:mark-posted'),
   skipFacebookRunnerGroup: () => ipcRenderer.invoke('facebook-runner:skip-group'),
   stopFacebookRunner: () => ipcRenderer.invoke('facebook-runner:stop'),
+  resetFacebookRunnerProfile: () => ipcRenderer.invoke('facebook-runner:reset-profile'),
   getFacebookRunnerStatus: () => ipcRenderer.invoke('facebook-runner:get-status'),
   saveFacebookRunnerSessionFile: (input) => ipcRenderer.invoke('facebook-runner:save-session-file', input),
   onFacebookRunnerStatusChanged: (callback) => {

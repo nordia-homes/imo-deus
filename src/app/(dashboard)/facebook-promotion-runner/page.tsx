@@ -13,6 +13,7 @@ import {
   Laptop,
   Loader2,
   LogIn,
+  RefreshCcw,
   Rocket,
   SkipForward,
   TerminalSquare,
@@ -147,6 +148,28 @@ export default function FacebookPromotionRunnerPage() {
       toast({
         variant: 'destructive',
         title: 'Nu am putut relua grupul curent',
+        description: error instanceof Error ? error.message : 'Încearcă din nou.',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const resetDesktopRunnerProfile = async () => {
+    if (!window.imodeusDesktop) return;
+
+    try {
+      setIsUpdating(true);
+      const status = await window.imodeusDesktop.resetFacebookRunnerProfile();
+      setDesktopStatus(status);
+      toast({
+        title: 'Profil runner resetat',
+        description: 'Profilul local Playwright/Facebook a fost șters. Poți porni din nou runner-ul desktop.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Nu am putut reseta profilul runner-ului',
         description: error instanceof Error ? error.message : 'Încearcă din nou.',
       });
     } finally {
@@ -489,15 +512,21 @@ export default function FacebookPromotionRunnerPage() {
                 ) : null}
 
                 <div className="flex flex-wrap gap-3">
-                  {isDesktop ? (
-                    <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
+                {isDesktop ? (
+                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
                       <LogIn className="mr-2 h-4 w-4" />
                       Reia grupul curent
-                    </Button>
-                  ) : null}
-                  <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Am publicat în grup
+                  </Button>
+                ) : null}
+                {isDesktop ? (
+                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={resetDesktopRunnerProfile} disabled={isUpdating}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Resetează profilul runner
+                  </Button>
+                ) : null}
+                <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Am publicat în grup
                   </Button>
                   <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
                     <SkipForward className="mr-2 h-4 w-4" />

@@ -14,6 +14,7 @@ declare global {
       markFacebookRunnerPosted: () => Promise<DesktopFacebookRunnerActionResult>;
       skipFacebookRunnerGroup: () => Promise<DesktopFacebookRunnerActionResult>;
       stopFacebookRunner: () => Promise<DesktopFacebookRunnerStatus>;
+      resetFacebookRunnerProfile: () => Promise<DesktopFacebookRunnerStatus>;
       getFacebookRunnerStatus: () => Promise<DesktopFacebookRunnerStatus>;
       saveFacebookRunnerSessionFile: (input: SaveFacebookRunnerSessionInput) => Promise<{ canceled: boolean; filePath?: string | null }>;
       onFacebookRunnerStatusChanged: (callback: (status: DesktopFacebookRunnerStatus) => void) => () => void;

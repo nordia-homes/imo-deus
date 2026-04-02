@@ -7,6 +7,7 @@ export const FACEBOOK_PROMOTION_CHANNELS = {
   markPosted: 'facebook-runner:mark-posted',
   skipGroup: 'facebook-runner:skip-group',
   stopRunner: 'facebook-runner:stop',
+  resetProfile: 'facebook-runner:reset-profile',
   getStatus: 'facebook-runner:get-status',
   saveSessionFile: 'facebook-runner:save-session-file',
   onStatusChanged: 'facebook-runner:status-changed',

@@ -142,8 +142,11 @@ const ChartTooltipContent = React.forwardRef<
   (
     {
       active,
+      animationDuration,
+      animationEasing,
       payload,
       className,
+      contentStyle,
       cursor,
       allowEscapeViewBox,
       accessibilityLayer,
@@ -161,7 +164,10 @@ const ChartTooltipContent = React.forwardRef<
       colorKey = "fill",
       nameKey = "name",
       position,
+      reverseDirection,
       separator,
+      shared,
+      trigger,
       viewBox,
       wrapperStyle,
       itemSorter,

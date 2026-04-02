@@ -3,11 +3,10 @@
 import { Laptop } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+
+const DESKTOP_DOWNLOAD_URL = "https://studio-652232171-42fb6.web.app";
 
 export function DesktopAppCard() {
-  const { toast } = useToast();
-
   return (
     <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
       <CardHeader className="space-y-3">
@@ -27,12 +26,7 @@ export function DesktopAppCard() {
         <Button
           type="button"
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-          onClick={() =>
-            toast({
-              title: "Aplicația desktop",
-              description: "Linkul de instalare va fi conectat în pasul următor.",
-            })
-          }
+          onClick={() => window.open(DESKTOP_DOWNLOAD_URL, "_blank", "noopener,noreferrer")}
         >
           Instalează aplicația desktop
         </Button>

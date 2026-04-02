@@ -1,6 +1,6 @@
 {
   "name": "nextn",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ImoDeus.ai CRM desktop companion",
   "author": "ImoDeus.ai",
   "private": true,
@@ -112,7 +112,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://downloads.imodeus.ai/desktop"
+        "url": "https://studio-652232171-42fb6.web.app"
       }
     ]
   }

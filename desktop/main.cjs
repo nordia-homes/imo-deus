@@ -18,6 +18,10 @@ let runnerStatus = {
 };
 let currentSession = null;
 
+function getRunnerProfileDir() {
+  return path.join(app.getPath('userData'), 'facebook-profile');
+}
+
 function getStartUrl() {
   if (process.env.ELECTRON_START_URL) {
     return process.env.ELECTRON_START_URL;
@@ -83,7 +87,7 @@ function startRunnerProcess(sessionPath) {
   }
 
   const workerPath = path.join(__dirname, 'automation', 'facebook-worker.mjs');
-  const profileDir = path.join(app.getPath('userData'), 'facebook-profile');
+  const profileDir = getRunnerProfileDir();
 
   runnerProcess = spawn(process.execPath, [workerPath, '--session', sessionPath, '--profile-dir', profileDir], {
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -217,6 +221,31 @@ ipcMain.handle('facebook-runner:stop', async () => {
   setRunnerStatus({
     state: 'stopped',
     message: 'Runner-ul desktop a fost oprit.',
+  });
+
+  return runnerStatus;
+});
+
+ipcMain.handle('facebook-runner:reset-profile', async () => {
+  if (runnerProcess) {
+    try {
+      sendWorkerCommand('stop');
+    } catch {
+      // Ignore if the worker is already shutting down.
+    }
+    runnerProcess.kill();
+    runnerProcess = null;
+  }
+
+  await fs.rm(getRunnerProfileDir(), { recursive: true, force: true });
+
+  setRunnerStatus({
+    state: 'idle',
+    message: 'Profilul local al runner-ului Facebook a fost resetat. Pornește din nou runner-ul desktop.',
+    currentGroupIndex: currentSession?.currentGroupIndex,
+    currentGroupName: currentSession?.groups?.[currentSession?.currentGroupIndex || 0]?.name || null,
+    completedCount: currentSession?.groups?.filter((group) => group.status === 'posted' || group.status === 'skipped').length || 0,
+    totalCount: currentSession?.groups?.length || 0,
   });
 
   return runnerStatus;
