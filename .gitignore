@@ -43,3 +43,12 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# desktop build artifacts
+dist-desktop/
+desktop-dist-app/
+
+# desktop release files published separately
+desktop-downloads/*.exe
+desktop-downloads/*.blockmap
+desktop-downloads/latest.yml
