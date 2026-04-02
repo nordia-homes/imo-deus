@@ -7,6 +7,34 @@ export type PromotionStatus = {
   views?: number;
 }
 
+export type FacebookGroup = {
+  name: string;
+  url: string;
+};
+
+export type FacebookPromotionJob = {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyDescription: string;
+  propertyImages: { url: string; alt: string }[];
+  createdAt: string;
+  createdBy: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  groups: Array<FacebookGroup & { status: 'pending' | 'opened' | 'posted' | 'skipped' }>;
+};
+
+export type FacebookPromotionSession = {
+  jobId: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyDescription: string;
+  propertyImages: { url: string; alt: string }[];
+  groups: Array<FacebookGroup & { status: 'pending' | 'opened' | 'posted' | 'skipped' }>;
+  currentGroupIndex: number;
+  startedAt: string;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -189,7 +217,7 @@ export type Agency = {
   name: string;
   ownerId: string;
   agencyDescription?: string;
-  facebookGroups?: { name: string; url: string }[];
+  facebookGroups?: FacebookGroup[];
   shareImageUrl?: string;
   legalCompanyName?: string;
   companyTaxId?: string;

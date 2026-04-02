@@ -18,6 +18,7 @@ import { Loader2, Camera, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
+import { DesktopAppCard } from '@/components/settings/DesktopAppCard';
 import { PushNotificationsCard } from '@/components/settings/PushNotificationsCard';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -389,6 +390,7 @@ export default function SettingsPage() {
                     </form>
                     </Form>
                 </Card>
+                <DesktopAppCard />
                 <PushNotificationsCard />
             </div>
             <div className="xl:col-span-2">

@@ -12,24 +12,7 @@ import { useFirestore, updateDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-
-const defaultFacebookGroups = [
-    "https://www.facebook.com/groups/proprietardirect/",
-    "https://www.facebook.com/groups/direct.proprietar.bucuresti",
-    "https://www.facebook.com/groups/1641351206103083/",
-    "https://www.facebook.com/groups/258889259180994/",
-    "https://www.facebook.com/groups/1730657617186760/",
-    "https://www.facebook.com/groups/713711863981114/",
-    "https://www.facebook.com/groups/118204592204043/",
-    "https://www.facebook.com/groups/358979851113612/",
-    "https://www.facebook.com/groups/3188029944804073/",
-    "https://www.facebook.com/groups/5730550950403049/",
-    "https://www.facebook.com/groups/269598638382777/",
-    "https://www.facebook.com/groups/imobiliare.particulari/"
-].map((url, index) => ({
-    name: `Grup Facebook ${index + 1}`,
-    url,
-}));
+import { defaultFacebookGroups, getAgencyFacebookGroups } from "@/lib/facebook-groups";
 
 export function FacebookPromotionCard() {
     const isMobile = useIsMobile();
@@ -203,7 +186,7 @@ export function FacebookPromotionCard() {
                                 </div>
                             </div>
                         ) : null}
-                        {!isEditing && (agency?.facebookGroups?.length ? agency.facebookGroups : defaultFacebookGroups).map((group, index) => (
+                        {!isEditing && getAgencyFacebookGroups(agency).map((group, index) => (
                             <Button
                                 asChild
                                 key={`${group.url}-${index}`}
