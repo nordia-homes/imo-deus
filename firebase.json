@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "desktop-downloads",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

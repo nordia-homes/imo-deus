@@ -27,7 +27,7 @@ function getStartUrl() {
     return 'http://localhost:3000';
   }
 
-  return 'http://localhost:3000';
+  return 'https://studio--studio-652232171-42fb6.us-central1.hosted.app';
 }
 
 function emitRunnerStatus() {

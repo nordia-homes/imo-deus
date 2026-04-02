@@ -282,11 +282,13 @@ async function launchContext(profileDir) {
       headless: false,
       channel: 'chrome',
       viewport: null,
+      args: ['--no-first-run', '--no-default-browser-check'],
     });
   } catch {
     return chromium.launchPersistentContext(profileDir, {
       headless: false,
       viewport: null,
+      args: ['--no-first-run', '--no-default-browser-check'],
     });
   }
 }
@@ -322,7 +324,18 @@ async function run() {
   const files = await downloadImages(session.propertyImages || [], downloadDir);
 
   const context = await launchContext(profileDir);
-  const page = await context.newPage();
+  const existingPages = context.pages();
+  const page = existingPages[0] ?? (await context.newPage());
+
+  await Promise.all(
+    existingPages
+      .slice(1)
+      .map((extraPage) =>
+        extraPage.close().catch(() => {
+          // Ignore close failures for stray startup tabs.
+        }),
+      ),
+  );
   let isStopped = false;
   let isBusy = false;
 
