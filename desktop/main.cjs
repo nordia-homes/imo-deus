@@ -18,6 +18,24 @@ let runnerStatus = {
 };
 let currentSession = null;
 
+function isIgnorableRunnerStderr(message) {
+  const normalized = message.toLowerCase();
+  return [
+    'failed to reset the quota database',
+    'service_worker_storage.cc',
+    'quota_database.cc',
+    'database io error',
+    'devtools listening on',
+    'unable to create cache',
+    'unable to move the cache',
+    'gpu cache creation failed',
+    'disk_cache.cc',
+    'gpu_disk_cache.cc',
+    'cache_util_win.cc',
+    'access is denied. (0x5)',
+  ].some((pattern) => normalized.includes(pattern));
+}
+
 function getRunnerProfileDir() {
   return path.join(app.getPath('userData'), 'facebook-profile');
 }
@@ -91,6 +109,10 @@ function startRunnerProcess(sessionPath) {
 
   runnerProcess = spawn(process.execPath, [workerPath, '--session', sessionPath, '--profile-dir', profileDir], {
     stdio: ['pipe', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+    },
   });
 
   runnerProcess.stdout.on('data', async (chunk) => {
@@ -113,6 +135,10 @@ function startRunnerProcess(sessionPath) {
   runnerProcess.stderr.on('data', (chunk) => {
     const message = chunk.toString().trim();
     if (!message) return;
+    if (isIgnorableRunnerStderr(message)) {
+      return;
+    }
+
     setRunnerStatus({
       state: 'error',
       message,
@@ -120,7 +146,12 @@ function startRunnerProcess(sessionPath) {
   });
 
   runnerProcess.on('exit', (code) => {
-    if (runnerStatus.state !== 'completed' && runnerStatus.state !== 'stopped' && code !== 0) {
+    if (
+      runnerStatus.state !== 'completed' &&
+      runnerStatus.state !== 'stopped' &&
+      runnerStatus.state !== 'error' &&
+      code !== 0
+    ) {
       setRunnerStatus({
         state: 'error',
         message: `Worker-ul Facebook runner s-a închis cu codul ${code ?? 'necunoscut'}.`,

@@ -277,20 +277,46 @@ function isFacebookLoginUrl(url) {
 }
 
 async function launchContext(profileDir) {
-  try {
-    return await chromium.launchPersistentContext(profileDir, {
-      headless: false,
-      channel: 'chrome',
-      viewport: null,
-      args: ['--no-first-run', '--no-default-browser-check'],
-    });
-  } catch {
-    return chromium.launchPersistentContext(profileDir, {
-      headless: false,
-      viewport: null,
-      args: ['--no-first-run', '--no-default-browser-check'],
-    });
+  const cacheDir = path.join(profileDir, 'playwright-cache');
+
+  await ensureDir(cacheDir);
+
+  const sharedOptions = {
+    headless: false,
+    viewport: null,
+    ignoreDefaultArgs: ['--enable-automation'],
+    args: [
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-session-crashed-bubble',
+      '--disable-features=Translate,OptimizationHints,MediaRouter',
+      '--disable-gpu-shader-disk-cache',
+      '--disable-application-cache',
+      '--disable-features=MediaRouter,OptimizationHints,Translate',
+      `--disk-cache-dir=${cacheDir}`,
+      '--start-maximized',
+    ],
+  };
+
+  const attempts = [
+    { label: 'chrome', options: { ...sharedOptions, channel: 'chrome' } },
+    { label: 'msedge', options: { ...sharedOptions, channel: 'msedge' } },
+    { label: 'bundled-chromium', options: sharedOptions },
+  ];
+
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      return await chromium.launchPersistentContext(profileDir, attempt.options);
+    } catch (error) {
+      errors.push(
+        `${attempt.label}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
+
+  throw new Error(`Nu am putut porni browserul pentru runner. ${errors.join(' | ')}`);
 }
 
 function buildStatus(session, state, message) {
@@ -324,8 +350,8 @@ async function run() {
   const files = await downloadImages(session.propertyImages || [], downloadDir);
 
   const context = await launchContext(profileDir);
-  await pageCleanup(context);
-  const page = await context.newPage();
+  const page = await getRunnerPage(context);
+  await page.bringToFront().catch(() => {});
   let isStopped = false;
   let isBusy = false;
 
@@ -351,6 +377,7 @@ async function run() {
       emit('status', buildStatus(session, 'running', `Pregătesc grupul ${group.name}...`).status);
 
       await page.goto(group.url, { waitUntil: 'domcontentloaded' });
+      await page.bringToFront().catch(() => {});
       await page.waitForTimeout(3000);
 
       if (isFacebookLoginUrl(page.url())) {
@@ -437,15 +464,26 @@ async function run() {
   await prepareCurrentGroup();
 }
 
-async function pageCleanup(context) {
-  const existingPages = context.pages();
+async function getRunnerPage(context) {
+  const existingPages = context.pages().filter((page) => !page.isClosed());
+  const page = existingPages[0] || (await context.newPage());
+
+  const extraPages = existingPages.slice(1);
   await Promise.all(
-    existingPages.map((existingPage) =>
+    extraPages.map((existingPage) =>
       existingPage.close().catch(() => {
         // Ignore close failures for stray startup or restored tabs.
       }),
     ),
   );
+
+  try {
+    await page.goto('about:blank', { waitUntil: 'domcontentloaded' });
+  } catch {
+    // If about:blank fails, we'll still try to reuse the page for Facebook.
+  }
+
+  return page;
 }
 
 run().catch((error) => {
