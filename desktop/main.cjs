@@ -114,8 +114,9 @@ function startRunnerProcess(sessionPath) {
       ELECTRON_RUN_AS_NODE: '1',
     },
   });
+  const childProcess = runnerProcess;
 
-  runnerProcess.stdout.on('data', async (chunk) => {
+  childProcess.stdout.on('data', async (chunk) => {
     const lines = chunk.toString().split(/\r?\n/).filter(Boolean);
     for (const line of lines) {
       try {
@@ -132,7 +133,7 @@ function startRunnerProcess(sessionPath) {
     }
   });
 
-  runnerProcess.stderr.on('data', (chunk) => {
+  childProcess.stderr.on('data', (chunk) => {
     const message = chunk.toString().trim();
     if (!message) return;
     if (isIgnorableRunnerStderr(message)) {
@@ -145,7 +146,11 @@ function startRunnerProcess(sessionPath) {
     });
   });
 
-  runnerProcess.on('exit', (code) => {
+  childProcess.on('exit', (code) => {
+    if (runnerProcess === childProcess) {
+      runnerProcess = null;
+    }
+
     if (
       runnerStatus.state === 'waiting_for_publish'
     ) {
@@ -164,7 +169,6 @@ function startRunnerProcess(sessionPath) {
         message: `Worker-ul Facebook runner s-a închis cu codul ${code ?? 'necunoscut'}.`,
       });
     }
-    runnerProcess = null;
   });
 }
 
@@ -174,6 +178,38 @@ function sendWorkerCommand(command) {
   }
 
   runnerProcess.stdin.write(`${JSON.stringify({ command })}\n`);
+}
+
+async function shutdownRunnerProcess() {
+  if (!runnerProcess) return;
+
+  const processToStop = runnerProcess;
+
+  try {
+    if (processToStop.stdin?.writable) {
+      processToStop.stdin.write(`${JSON.stringify({ command: 'stop' })}\n`);
+    }
+  } catch {
+    // Ignore stop command failures during shutdown.
+  }
+
+  runnerProcess = null;
+
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      try {
+        processToStop.kill();
+      } catch {
+        // Ignore kill failure.
+      }
+      resolve();
+    }, 1500);
+
+    processToStop.once('exit', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
 }
 
 async function advanceDesktopSession(nextStatus) {
@@ -306,20 +342,12 @@ ipcMain.handle('facebook-runner:retry-current-group', async () => {
 });
 
 ipcMain.handle('facebook-runner:mark-posted', async () => {
-  if (runnerProcess && runnerProcess.stdin.writable) {
-    sendWorkerCommand('mark-posted');
-    return { status: runnerStatus, session: currentSession };
-  }
-
+  await shutdownRunnerProcess();
   return advanceDesktopSession('posted');
 });
 
 ipcMain.handle('facebook-runner:skip-group', async () => {
-  if (runnerProcess && runnerProcess.stdin.writable) {
-    sendWorkerCommand('skip-group');
-    return { status: runnerStatus, session: currentSession };
-  }
-
+  await shutdownRunnerProcess();
   return advanceDesktopSession('skipped');
 });
 

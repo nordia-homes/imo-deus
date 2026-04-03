@@ -427,7 +427,7 @@ export default function FacebookPromotionRunnerPage() {
               {isDesktop ? (
                 <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={startDesktopRunner} disabled={isUpdating}>
                   <Laptop className="mr-2 h-4 w-4" />
-                  Pornește runner desktop
+                  Publică în primul grup
                 </Button>
               ) : (
                 <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={copyHelperCommand}>
@@ -467,7 +467,7 @@ export default function FacebookPromotionRunnerPage() {
               )}
               <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Am publicat în grup
+                Publică în următorul grup
               </Button>
               <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
                 <SkipForward className="mr-2 h-4 w-4" />
