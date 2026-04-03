@@ -1,0 +1,5347 @@
+metadata:
+  name: "Bucharest-Ilfov Real Estate Zone Ontology"
+  version: "1.0.0"
+  generated_on: "2026-04-03"
+  region: "Bucuresti-Ilfov"
+  notes:
+    - "Ontology optimized for real-estate matching, not only for administrative reporting."
+    - "Some cartiere and micro-zones are commercial/operational labels used in the market."
+    - "Adjacency includes both strict neighbor relations and commercial soft-neighbor relations."
+macro_areas:
+  -
+    code: "ULTRACENTRAL"
+    name: "Ultracentral"
+  -
+    code: "CENTRU"
+    name: "Centru"
+  -
+    code: "CENTRU_NORD"
+    name: "Centru-Nord"
+  -
+    code: "NORD"
+    name: "Nord"
+  -
+    code: "NORD_EST"
+    name: "Nord-Est"
+  -
+    code: "EST"
+    name: "Est"
+  -
+    code: "SUD_EST"
+    name: "Sud-Est"
+  -
+    code: "SUD"
+    name: "Sud"
+  -
+    code: "SUD_VEST"
+    name: "Sud-Vest"
+  -
+    code: "VEST"
+    name: "Vest"
+  -
+    code: "NORD_VEST"
+    name: "Nord-Vest"
+  -
+    code: "ILFOV_NORD"
+    name: "Ilfov Nord"
+  -
+    code: "ILFOV_EST"
+    name: "Ilfov Est"
+  -
+    code: "ILFOV_SUD"
+    name: "Ilfov Sud"
+  -
+    code: "ILFOV_VEST"
+    name: "Ilfov Vest"
+zones:
+  -
+    zone_id: "bucuresti::bucuresti::sector-1"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 1"
+    slug: "sector-1"
+    parent: "Bucuresti"
+    sector: 1
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::sector-2"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 2"
+    slug: "sector-2"
+    parent: "Bucuresti"
+    sector: 2
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::sector-3"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 3"
+    slug: "sector-3"
+    parent: "Bucuresti"
+    sector: 3
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::sector-4"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 4"
+    slug: "sector-4"
+    parent: "Bucuresti"
+    sector: 4
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::sector-5"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 5"
+    slug: "sector-5"
+    parent: "Bucuresti"
+    sector: 5
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::sector-6"
+    zone_type: "sector"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sector 6"
+    slug: "sector-6"
+    parent: "Bucuresti"
+    sector: 6
+    macro_area:
+      - "Bucuresti"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "bucuresti::bucuresti::1-mai"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "1 Mai"
+    slug: "1-mai"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ion Mihalache"
+      - "1 Mai Ion Mihalache"
+    adjacent_zones:
+      - "Domenii"
+      - "Grivita"
+      - "Piata Victoriei"
+    micro_zones:
+      - "Turda"
+      - "Clucerului"
+    commercial_clusters:
+      - "Domenii-1 Mai-Grivita"
+  -
+    zone_id: "bucuresti::bucuresti::aeroport-baneasa"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Aeroport Baneasa"
+    slug: "aeroport-baneasa"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Aeroportul Baneasa"
+    adjacent_zones:
+      - "Baneasa"
+      - "Casa Presei"
+    micro_zones:
+      - "Aeroport"
+      - "Gara Baneasa"
+    commercial_clusters:
+      - "Baneasa-Sisesti-Jandarmeriei"
+  -
+    zone_id: "bucuresti::bucuresti::aviatorilor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Aviatorilor"
+    slug: "aviatorilor"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Aviatorilor Kiseleff"
+      - "Kiseleff"
+    adjacent_zones:
+      - "Dorobanti"
+      - "Primaverii"
+      - "Herastrau"
+      - "Piata Victoriei"
+    micro_zones:
+      - "Arcul de Triumf"
+      - "Kiseleff"
+      - "Charles de Gaulle"
+    commercial_clusters:
+      - "Herastrau-Aviatorilor-Primaverii"
+  -
+    zone_id: "bucuresti::bucuresti::aviatiei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Aviatiei"
+    slug: "aviatiei"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Aurel Vlaicu"
+      - "Promenada"
+      - "Caramfil"
+      - "Nordului business"
+    adjacent_zones:
+      - "Floreasca"
+      - "Baneasa"
+      - "Pipera Sud"
+      - "Pipera Voluntari"
+    micro_zones:
+      - "Aurel Vlaicu"
+      - "Caramfil"
+      - "Barbu Vacarescu Nord"
+      - "Promenada"
+    commercial_clusters:
+      - "Aviatiei-Aurel Vlaicu-Promenada"
+  -
+    zone_id: "bucuresti::bucuresti::baneasa"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Baneasa"
+    slug: "baneasa"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Baneasa Mall"
+      - "Baneasa Shopping City"
+    adjacent_zones:
+      - "Aviatiei"
+      - "Pajura"
+      - "Sisesti"
+      - "Otopeni"
+      - "Voluntari"
+    micro_zones:
+      - "Jandarmeriei"
+      - "Sisesti Sud"
+      - "Mall Baneasa"
+    commercial_clusters:
+      - "Baneasa-Sisesti-Jandarmeriei"
+  -
+    zone_id: "bucuresti::bucuresti::bucurestii-noi"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Bucurestii Noi"
+    slug: "bucurestii-noi"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Bucurestii Noi Jiului"
+    adjacent_zones:
+      - "Jiului"
+      - "Pajura"
+      - "Damoaia"
+      - "Straulesti"
+      - "Chitila"
+    micro_zones:
+      - "Laminorului"
+      - "Jiului"
+      - "Laromet"
+    commercial_clusters:
+      - "Bucurestii Noi-Jiului-Straulesti"
+  -
+    zone_id: "bucuresti::bucuresti::casa-presei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Casa Presei"
+    slug: "casa-presei"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Presei"
+      - "Casa Scanteii"
+    adjacent_zones:
+      - "Baneasa"
+      - "Romexpo Expozitiei"
+      - "Pajura"
+    micro_zones:
+      - "Romexpo"
+      - "Bd Expozitiei"
+    commercial_clusters:
+      - "Baneasa-Expozitiei-Casa Presei"
+  -
+    zone_id: "bucuresti::bucuresti::calea-grivitei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Calea Grivitei"
+    slug: "calea-grivitei"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Grivitei"
+    adjacent_zones:
+      - "Grivita"
+      - "Domenii"
+      - "Piata Victoriei"
+    micro_zones:
+      - "Pod Constanta"
+    commercial_clusters:
+      - "Domenii-1 Mai-Grivita"
+  -
+    zone_id: "bucuresti::bucuresti::dorobanti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Dorobanti"
+    slug: "dorobanti"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Capitale"
+      - "Perla"
+    adjacent_zones:
+      - "Aviatorilor"
+      - "Primaverii"
+      - "Floreasca"
+      - "Piata Victoriei"
+    micro_zones:
+      - "Capitale"
+      - "Dorobanti Floreasca"
+    commercial_clusters:
+      - "Dorobanti-Floreasca-Primaverii"
+  -
+    zone_id: "bucuresti::bucuresti::damaroaia"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Damaroaia"
+    slug: "damaroaia"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Damaroaia"
+    adjacent_zones:
+      - "Bucurestii Noi"
+      - "Jiului"
+      - "Pajura"
+    micro_zones:
+      - "Izbiceni"
+    commercial_clusters:
+      - "Bucurestii Noi-Jiului-Straulesti"
+  -
+    zone_id: "bucuresti::bucuresti::domenii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Domenii"
+    slug: "domenii"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Domenii 1 Mai"
+    adjacent_zones:
+      - "1 Mai"
+      - "Grivita"
+      - "Piata Victoriei"
+      - "Pajura"
+    micro_zones:
+      - "Agronomie prox"
+      - "Turda"
+    commercial_clusters:
+      - "Domenii-1 Mai-Grivita"
+  -
+    zone_id: "bucuresti::bucuresti::grivita"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Grivita"
+    slug: "grivita"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Gara de Nord Nord-Vest"
+    adjacent_zones:
+      - "Domenii"
+      - "1 Mai"
+      - "Giulesti"
+      - "Chitila"
+    micro_zones:
+      - "Pod Constanta"
+      - "Calea Grivitei"
+    commercial_clusters:
+      - "Domenii-1 Mai-Grivita"
+  -
+    zone_id: "bucuresti::bucuresti::herastrau"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Herastrau"
+    slug: "herastrau"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Parcul Herastrau"
+      - "Herastrau Park"
+    adjacent_zones:
+      - "Aviatorilor"
+      - "Primaverii"
+      - "Aviatiei"
+      - "Baneasa"
+    micro_zones:
+      - "Soseaua Nordului"
+    commercial_clusters:
+      - "Herastrau-Aviatorilor-Primaverii"
+  -
+    zone_id: "bucuresti::bucuresti::jiului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Jiului"
+    slug: "jiului"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Jiului Bucurestii Noi"
+    adjacent_zones:
+      - "Bucurestii Noi"
+      - "Damaroaia"
+      - "Pajura"
+      - "Straulesti"
+    micro_zones:
+      - "Jiului Metro"
+    commercial_clusters:
+      - "Bucurestii Noi-Jiului-Straulesti"
+  -
+    zone_id: "bucuresti::bucuresti::pajura"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Pajura"
+    slug: "pajura"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pajura Domenii"
+    adjacent_zones:
+      - "Baneasa"
+      - "Bucurestii Noi"
+      - "Jiului"
+      - "Domenii"
+      - "Casa Presei"
+    micro_zones:
+      - "Pajura Metro"
+    commercial_clusters:
+      - "Baneasa-Expozitiei-Casa Presei"
+  -
+    zone_id: "bucuresti::bucuresti::piata-victoriei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Piata Victoriei"
+    slug: "piata-victoriei"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Victoriei"
+    adjacent_zones:
+      - "Aviatorilor"
+      - "Dorobanti"
+      - "1 Mai"
+      - "Domenii"
+      - "Gara de Nord"
+    micro_zones:
+      - "Banu Manta"
+      - "Titulescu"
+    commercial_clusters:
+      - "Victoriei-Dorobanti"
+  -
+    zone_id: "bucuresti::bucuresti::primaverii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Primaverii"
+    slug: "primaverii"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Primaverii Herastrau"
+    adjacent_zones:
+      - "Aviatorilor"
+      - "Dorobanti"
+      - "Floreasca"
+      - "Herastrau"
+    micro_zones:
+      - "Charles de Gaulle"
+    commercial_clusters:
+      - "Herastrau-Aviatorilor-Primaverii"
+  -
+    zone_id: "bucuresti::bucuresti::romexpo-expozitiei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Romexpo Expozitiei"
+    slug: "romexpo-expozitiei"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Romexpo"
+      - "Expozitiei"
+      - "Bd Expozitiei"
+    adjacent_zones:
+      - "Casa Presei"
+      - "Baneasa"
+      - "Pajura"
+    micro_zones:
+      - "Piata Montreal"
+      - "Romexpo"
+    commercial_clusters:
+      - "Baneasa-Expozitiei-Casa Presei"
+  -
+    zone_id: "bucuresti::bucuresti::straulesti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Straulesti"
+    slug: "straulesti"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Straulesti Bucurestii Noi"
+    adjacent_zones:
+      - "Bucurestii Noi"
+      - "Jiului"
+      - "Chitila"
+      - "Mogosoaia"
+    micro_zones:
+      - "Petrom City prox"
+    commercial_clusters:
+      - "Bucurestii Noi-Jiului-Straulesti"
+  -
+    zone_id: "bucuresti::bucuresti::sisesti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sisesti"
+    slug: "sisesti"
+    parent: "Sector 1"
+    sector: 1
+    macro_area:
+      - "CENTRU_NORD"
+      - "NORD"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sisesti Baneasa"
+    adjacent_zones:
+      - "Baneasa"
+      - "Mogosoaia"
+      - "Otopeni"
+    micro_zones:
+      - "Jandarmeriei"
+      - "Greenfield access"
+    commercial_clusters:
+      - "Baneasa-Sisesti-Jandarmeriei"
+  -
+    zone_id: "bucuresti::bucuresti::andronache"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Andronache"
+    slug: "andronache"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Andronache Case"
+    adjacent_zones:
+      - "Colentina"
+      - "Fundeni"
+      - "Voluntari"
+    micro_zones:
+      - "Andronache Vechi"
+    commercial_clusters:
+      - "Colentina-Fundeni-Andronache"
+  -
+    zone_id: "bucuresti::bucuresti::baicului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Baicului"
+    slug: "baicului"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Baicului Pantelimon"
+    adjacent_zones:
+      - "Pantelimon"
+      - "Obor"
+      - "Iancului"
+    micro_zones:
+      - "Morarilor"
+      - "Baicului Sud"
+    commercial_clusters:
+      - "Pantelimon-Morarilor-Baicului"
+  -
+    zone_id: "bucuresti::bucuresti::colentina"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Colentina"
+    slug: "colentina"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sos Colentina"
+    adjacent_zones:
+      - "Andronache"
+      - "Fundeni"
+      - "Obor"
+      - "Tei"
+    micro_zones:
+      - "Soseaua Colentina"
+      - "Plumbuita"
+    commercial_clusters:
+      - "Colentina-Fundeni-Andronache"
+  -
+    zone_id: "bucuresti::bucuresti::fundeni"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Fundeni"
+    slug: "fundeni"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Spital Fundeni"
+      - "Fundeni Dobroiesti"
+    adjacent_zones:
+      - "Colentina"
+      - "Andronache"
+      - "Dobroesti"
+      - "Pantelimon Ilfov"
+    micro_zones:
+      - "Soseaua Fundeni"
+    commercial_clusters:
+      - "Colentina-Fundeni-Andronache"
+  -
+    zone_id: "bucuresti::bucuresti::iancului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Iancului"
+    slug: "iancului"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Iancului"
+    adjacent_zones:
+      - "Obor"
+      - "Pantelimon"
+      - "Muncii"
+    micro_zones:
+      - "Mihai Bravu Iancului"
+    commercial_clusters:
+      - "Obor-Iancului-Ferdinand"
+  -
+    zone_id: "bucuresti::bucuresti::ion-creanga"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Ion Creanga"
+    slug: "ion-creanga"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ion Creanga Obor"
+    adjacent_zones:
+      - "Obor"
+      - "Pantelimon"
+    micro_zones:
+      - "Baicului prox"
+    commercial_clusters:
+      - "Obor-Iancului-Ferdinand"
+  -
+    zone_id: "bucuresti::bucuresti::mosilor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Mosilor"
+    slug: "mosilor"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Calea Mosilor"
+    adjacent_zones:
+      - "Obor"
+      - "Foisorul de Foc"
+      - "Armenesc"
+      - "Unirii"
+    micro_zones:
+      - "Mosilor Vechi"
+      - "Mosilor Nou"
+    commercial_clusters:
+      - "Mosilor-Armeneasca-Rosetti"
+  -
+    zone_id: "bucuresti::bucuresti::obor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Obor"
+    slug: "obor"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Bucur Obor"
+    adjacent_zones:
+      - "Iancului"
+      - "Mosilor"
+      - "Colentina"
+      - "Pantelimon"
+    micro_zones:
+      - "Bucur Obor"
+      - "Mihai Bravu Obor"
+    commercial_clusters:
+      - "Obor-Iancului-Ferdinand"
+  -
+    zone_id: "bucuresti::bucuresti::pantelimon"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Pantelimon"
+    slug: "pantelimon"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pantelimon Bucuresti"
+    adjacent_zones:
+      - "Obor"
+      - "Iancului"
+      - "Baicului"
+      - "Titan"
+      - "Pantelimon Ilfov"
+    micro_zones:
+      - "Morarilor"
+      - "Arena Nationala"
+    commercial_clusters:
+      - "Pantelimon-Morarilor-Baicului"
+  -
+    zone_id: "bucuresti::bucuresti::pipera-sud"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Pipera Sud"
+    slug: "pipera-sud"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Fabrica de Glucoza"
+      - "Petricani"
+      - "Barbu Vacarescu Est"
+    adjacent_zones:
+      - "Aviatiei"
+      - "Floreasca"
+      - "Tei"
+      - "Pipera Voluntari"
+    micro_zones:
+      - "Fabrica de Glucoza"
+      - "Petricani"
+    commercial_clusters:
+      - "Pipera Sud-Fabrica de Glucoza-Barbu Vacarescu"
+  -
+    zone_id: "bucuresti::bucuresti::tei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Tei"
+    slug: "tei"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Lacul Tei"
+      - "Teiul Doamnei"
+    adjacent_zones:
+      - "Floreasca"
+      - "Colentina"
+      - "Obor"
+      - "Pipera Sud"
+    micro_zones:
+      - "Lacul Tei"
+      - "Teiul Doamnei"
+      - "Plumbuita"
+    commercial_clusters:
+      - "Tei-Lacul Tei-Plumbuita"
+  -
+    zone_id: "bucuresti::bucuresti::stefan-cel-mare"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Stefan cel Mare"
+    slug: "stefan-cel-mare"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Stefan cel Mare Bucuresti"
+    adjacent_zones:
+      - "Floreasca"
+      - "Obor"
+      - "Dorobanti"
+      - "Mosilor"
+    micro_zones:
+      - "Dinamo prox"
+    commercial_clusters:
+      - "Stefan cel Mare-Dorobanti"
+  -
+    zone_id: "bucuresti::bucuresti::ferdinand"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Ferdinand"
+    slug: "ferdinand"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Bd Ferdinand"
+    adjacent_zones:
+      - "Iancului"
+      - "Obor"
+      - "Foisorul de Foc"
+    micro_zones:
+      - "Pache Protopopescu Est"
+    commercial_clusters:
+      - "Obor-Iancului-Ferdinand"
+  -
+    zone_id: "bucuresti::bucuresti::foisorul-de-foc"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Foisorul de Foc"
+    slug: "foisorul-de-foc"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Foișorul de Foc"
+      - "Foisor"
+    adjacent_zones:
+      - "Mosilor"
+      - "Ferdinand"
+      - "Armenesc"
+    micro_zones:
+      - "Traian"
+    commercial_clusters:
+      - "Mosilor-Armeneasca-Rosetti"
+  -
+    zone_id: "bucuresti::bucuresti::armenesc"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Armenesc"
+    slug: "armenesc"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Armeneasca"
+    adjacent_zones:
+      - "Mosilor"
+      - "Rosetti"
+      - "Foisorul de Foc"
+    micro_zones:
+      - "Biserica Armeneasca"
+    commercial_clusters:
+      - "Mosilor-Armeneasca-Rosetti"
+  -
+    zone_id: "bucuresti::bucuresti::rosetti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Rosetti"
+    slug: "rosetti"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Rosetti Universitate"
+    adjacent_zones:
+      - "Armenesc"
+      - "Mosilor"
+      - "Universitate"
+    micro_zones:
+      - "Hristo Botev"
+    commercial_clusters:
+      - "Mosilor-Armeneasca-Rosetti"
+  -
+    zone_id: "bucuresti::bucuresti::doamna-ghica"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Doamna Ghica"
+    slug: "doamna-ghica"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Doamna Ghica Colentina"
+    adjacent_zones:
+      - "Colentina"
+      - "Tei"
+      - "Pantelimon"
+    micro_zones:
+      - "Plumbuita"
+    commercial_clusters:
+      - "Tei-Lacul Tei-Plumbuita"
+  -
+    zone_id: "bucuresti::bucuresti::plumbuita"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Plumbuita"
+    slug: "plumbuita"
+    parent: "Sector 2"
+    sector: 2
+    macro_area:
+      - "CENTRU"
+      - "CENTRU_NORD"
+      - "NORD_EST"
+      - "EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Parcul Plumbuita"
+    adjacent_zones:
+      - "Tei"
+      - "Colentina"
+      - "Doamna Ghica"
+    micro_zones:
+      - "Parc Plumbuita"
+    commercial_clusters:
+      - "Tei-Lacul Tei-Plumbuita"
+  -
+    zone_id: "bucuresti::bucuresti::balta-alba"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Balta Alba"
+    slug: "balta-alba"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Balta Albă"
+    adjacent_zones:
+      - "Titan"
+      - "Salajan"
+      - "Dristor"
+    micro_zones:
+      - "Campia Libertatii"
+    commercial_clusters:
+      - "Titan-IOR-Liviu Rebreanu"
+  -
+    zone_id: "bucuresti::bucuresti::basarabia"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Basarabia"
+    slug: "basarabia"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Basarabia National Arena"
+    adjacent_zones:
+      - "Titan"
+      - "Pantelimon"
+      - "Muncii"
+    micro_zones:
+      - "Arena Nationala"
+    commercial_clusters:
+      - "Basarabia-Muncii-Pantelimon"
+  -
+    zone_id: "bucuresti::bucuresti::centrul-civic"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Centrul Civic"
+    slug: "centrul-civic"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Unirii Est"
+      - "Centrul Civic Bucuresti"
+    adjacent_zones:
+      - "Unirii"
+      - "Vitan"
+      - "Decebal"
+    micro_zones:
+      - "Bulevardul Unirii"
+    commercial_clusters:
+      - "Decebal-Alba Iulia-Unirii Est"
+  -
+    zone_id: "bucuresti::bucuresti::dristor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Dristor"
+    slug: "dristor"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dristor Baba Novac"
+    adjacent_zones:
+      - "Titan"
+      - "Vitan"
+      - "Muncii"
+      - "Dudesti"
+    micro_zones:
+      - "Baba Novac"
+      - "Rm Sarat"
+    commercial_clusters:
+      - "Dristor-Baba Novac-Muncii"
+  -
+    zone_id: "bucuresti::bucuresti::dudesti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Dudesti"
+    slug: "dudesti"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dudesti Vitan"
+    adjacent_zones:
+      - "Vitan"
+      - "Dristor"
+      - "Unirii"
+      - "Timpuri Noi"
+    micro_zones:
+      - "Nerva Traian"
+      - "Vitan Dudesti"
+    commercial_clusters:
+      - "Vitan-Dudesti-Mall Vitan"
+  -
+    zone_id: "bucuresti::bucuresti::lipscani"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Lipscani"
+    slug: "lipscani"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Centrul Vechi"
+    adjacent_zones:
+      - "Unirii"
+      - "Universitate"
+    micro_zones:
+      - "Piata Sf Gheorghe"
+    commercial_clusters:
+      - "Lipscani-Unirii-Centrul Vechi"
+  -
+    zone_id: "bucuresti::bucuresti::muncii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Muncii"
+    slug: "muncii"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Muncii"
+    adjacent_zones:
+      - "Iancului"
+      - "Dristor"
+      - "Basarabia"
+      - "Decebal"
+    micro_zones:
+      - "Delea Veche"
+      - "Delea Noua"
+    commercial_clusters:
+      - "Dristor-Baba Novac-Muncii"
+  -
+    zone_id: "bucuresti::bucuresti::ozana"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Ozana"
+    slug: "ozana"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ozana Titan"
+    adjacent_zones:
+      - "Titan"
+      - "Salajan"
+      - "Pallady"
+    micro_zones:
+      - "1 Decembrie"
+    commercial_clusters:
+      - "Pallady-Nicolae Grigorescu-1 Decembrie"
+  -
+    zone_id: "bucuresti::bucuresti::salajan"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Salajan"
+    slug: "salajan"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Salajan Titan"
+    adjacent_zones:
+      - "Titan"
+      - "Ozana"
+      - "Nicolae Grigorescu"
+    micro_zones:
+      - "Liviu Rebreanu"
+    commercial_clusters:
+      - "Titan-IOR-Liviu Rebreanu"
+  -
+    zone_id: "bucuresti::bucuresti::titan"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Titan"
+    slug: "titan"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "IOR"
+      - "Parcul IOR"
+    adjacent_zones:
+      - "Balta Alba"
+      - "Salajan"
+      - "Dristor"
+      - "Nicolae Grigorescu"
+      - "Pallady"
+    micro_zones:
+      - "ParkLake"
+      - "Liviu Rebreanu"
+      - "IOR"
+    commercial_clusters:
+      - "Titan-IOR-Liviu Rebreanu"
+  -
+    zone_id: "bucuresti::bucuresti::vitan"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Vitan"
+    slug: "vitan"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Vitan Mall"
+    adjacent_zones:
+      - "Dudesti"
+      - "Dristor"
+      - "Timpuri Noi"
+      - "Unirii"
+    micro_zones:
+      - "Mall Vitan"
+      - "Vitan Barzesti"
+    commercial_clusters:
+      - "Vitan-Dudesti-Mall Vitan"
+  -
+    zone_id: "bucuresti::bucuresti::theodor-pallady"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Theodor Pallady"
+    slug: "theodor-pallady"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pallady"
+    adjacent_zones:
+      - "Ozana"
+      - "Nicolae Grigorescu"
+      - "1 Decembrie"
+      - "Glina"
+    micro_zones:
+      - "Ikea Pallady"
+      - "Metrou Nicolae Teclu"
+    commercial_clusters:
+      - "Pallady-Nicolae Grigorescu-1 Decembrie"
+  -
+    zone_id: "bucuresti::bucuresti::23-august"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "23 August"
+    slug: "23-august"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Republica 23 August"
+    adjacent_zones:
+      - "Pantelimon"
+      - "Pallady"
+      - "Republica"
+    micro_zones:
+      - "Bd Basarabia Est"
+    commercial_clusters:
+      - "23 August-Republica-Industriilor"
+  -
+    zone_id: "bucuresti::bucuresti::industriilor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Industriilor"
+    slug: "industriilor"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Republica"
+      - "Hala Laminor"
+    adjacent_zones:
+      - "23 August"
+      - "Pallady"
+    micro_zones:
+      - "Republica Metro"
+      - "Hala Laminor"
+    commercial_clusters:
+      - "23 August-Republica-Industriilor"
+  -
+    zone_id: "bucuresti::bucuresti::nicolae-grigorescu"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Nicolae Grigorescu"
+    slug: "nicolae-grigorescu"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "N Grigorescu"
+    adjacent_zones:
+      - "Titan"
+      - "Salajan"
+      - "Ozana"
+      - "Pallady"
+    micro_zones:
+      - "Parc IOR Est"
+    commercial_clusters:
+      - "Pallady-Nicolae Grigorescu-1 Decembrie"
+  -
+    zone_id: "bucuresti::bucuresti::decebal"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Decebal"
+    slug: "decebal"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Alba Iulia"
+      - "Burebista"
+    adjacent_zones:
+      - "Muncii"
+      - "Unirii"
+      - "Vitan"
+    micro_zones:
+      - "Alba Iulia"
+      - "Burebista"
+    commercial_clusters:
+      - "Decebal-Alba Iulia-Unirii Est"
+  -
+    zone_id: "bucuresti::bucuresti::alba-iulia"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Alba Iulia"
+    slug: "alba-iulia"
+    parent: "Sector 3"
+    sector: 3
+    macro_area:
+      - "CENTRU"
+      - "EST"
+      - "SUD_EST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Alba Iulia"
+    adjacent_zones:
+      - "Decebal"
+      - "Unirii"
+      - "Muncii"
+    micro_zones:
+      - "Bulevardul Unirii"
+    commercial_clusters:
+      - "Decebal-Alba Iulia-Unirii Est"
+  -
+    zone_id: "bucuresti::bucuresti::aparatorii-patriei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Aparatorii Patriei"
+    slug: "aparatorii-patriei"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Aparatorii"
+      - "Aparatorii Patriei Metro"
+    adjacent_zones:
+      - "Berceni"
+      - "Oltenitei"
+      - "Popesti-Leordeni"
+    micro_zones:
+      - "Aparatori Metro"
+    commercial_clusters:
+      - "Berceni-Aparatorii-Oltenitei"
+  -
+    zone_id: "bucuresti::bucuresti::berceni"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Berceni"
+    slug: "berceni"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Berceni Sector 4"
+    adjacent_zones:
+      - "Brancoveanu"
+      - "Oltenitei"
+      - "Aparatorii Patriei"
+      - "Metalurgiei"
+      - "Popesti-Leordeni"
+    micro_zones:
+      - "Piata Sudului"
+      - "Soseaua Berceni"
+    commercial_clusters:
+      - "Berceni-Aparatorii-Oltenitei"
+  -
+    zone_id: "bucuresti::bucuresti::brancoveanu"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Brancoveanu"
+    slug: "brancoveanu"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Constantin Brancoveanu"
+    adjacent_zones:
+      - "Berceni"
+      - "Tineretului"
+      - "Piata Sudului"
+    micro_zones:
+      - "Oraselul Copiilor"
+    commercial_clusters:
+      - "Brancoveanu-Piata Sudului-Oraselul Copiilor"
+  -
+    zone_id: "bucuresti::bucuresti::carol"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Carol"
+    slug: "carol"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Parcul Carol"
+    adjacent_zones:
+      - "Tineretului"
+      - "Unirii"
+      - "Eroii Revolutiei"
+    micro_zones:
+      - "Filaret"
+    commercial_clusters:
+      - "Tineretului-Timpuri Noi-Sincai"
+  -
+    zone_id: "bucuresti::bucuresti::eroii-revolutiei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Eroii Revolutiei"
+    slug: "eroii-revolutiei"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Eroii"
+    adjacent_zones:
+      - "Carol"
+      - "Berceni"
+      - "Giurgiului"
+    micro_zones:
+      - "Pieptanari"
+    commercial_clusters:
+      - "Eroii-Giurgiului-Progresul"
+  -
+    zone_id: "bucuresti::bucuresti::oltenitei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Oltenitei"
+    slug: "oltenitei"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sos Oltenitei"
+    adjacent_zones:
+      - "Berceni"
+      - "Aparatorii Patriei"
+      - "Popesti-Leordeni"
+    micro_zones:
+      - "Big Berceni"
+    commercial_clusters:
+      - "Berceni-Aparatorii-Oltenitei"
+  -
+    zone_id: "bucuresti::bucuresti::pieptanari"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Pieptanari"
+    slug: "pieptanari"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Pieptanari"
+    adjacent_zones:
+      - "Eroii Revolutiei"
+      - "Giurgiului"
+      - "Progresul"
+    micro_zones:
+      - "Cimitir Bellu prox"
+    commercial_clusters:
+      - "Eroii-Giurgiului-Progresul"
+  -
+    zone_id: "bucuresti::bucuresti::progresul"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Progresul"
+    slug: "progresul"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Progresul"
+    adjacent_zones:
+      - "Giurgiului"
+      - "Jilava"
+      - "Pieptanari"
+    micro_zones:
+      - "Piata Progresul"
+    commercial_clusters:
+      - "Eroii-Giurgiului-Progresul"
+  -
+    zone_id: "bucuresti::bucuresti::timpuri-noi"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Timpuri Noi"
+    slug: "timpuri-noi"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Timpuri Noi Offices"
+    adjacent_zones:
+      - "Tineretului"
+      - "Vitan"
+      - "Dudesti"
+      - "Unirii"
+    micro_zones:
+      - "Nerva Traian"
+    commercial_clusters:
+      - "Tineretului-Timpuri Noi-Sincai"
+  -
+    zone_id: "bucuresti::bucuresti::tineretului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Tineretului"
+    slug: "tineretului"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Parcul Tineretului"
+    adjacent_zones:
+      - "Carol"
+      - "Timpuri Noi"
+      - "Brancoveanu"
+      - "Unirii"
+    micro_zones:
+      - "Sincai"
+      - "Cantemir Sud"
+    commercial_clusters:
+      - "Tineretului-Timpuri Noi-Sincai"
+  -
+    zone_id: "bucuresti::bucuresti::vacaresti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Vacaresti"
+    slug: "vacaresti"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Delta Vacaresti"
+      - "Lacul Vacaresti"
+    adjacent_zones:
+      - "Tineretului"
+      - "Vitan"
+      - "Brancoveanu"
+      - "Berceni"
+    micro_zones:
+      - "Delta Vacaresti"
+    commercial_clusters:
+      - "Brancoveanu-Piata Sudului-Oraselul Copiilor"
+  -
+    zone_id: "bucuresti::bucuresti::metalurgiei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Metalurgiei"
+    slug: "metalurgiei"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Aleea Metalurgiei"
+      - "Grand Arena"
+    adjacent_zones:
+      - "Berceni"
+      - "IMGB"
+      - "Vidra"
+      - "Popesti-Leordeni"
+    micro_zones:
+      - "Grand Arena"
+    commercial_clusters:
+      - "Metalurgiei-IMGB-Grand Arena"
+  -
+    zone_id: "bucuresti::bucuresti::imgb"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "IMGB"
+    slug: "imgb"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "IMGB Berceni"
+    adjacent_zones:
+      - "Metalurgiei"
+      - "Berceni"
+      - "Vidra"
+    micro_zones:
+      - "Soseaua Berceni Sud"
+    commercial_clusters:
+      - "Metalurgiei-IMGB-Grand Arena"
+  -
+    zone_id: "bucuresti::bucuresti::sincai"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sincai"
+    slug: "sincai"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sincai Cantemir"
+    adjacent_zones:
+      - "Tineretului"
+      - "Unirii"
+      - "Timpuri Noi"
+    micro_zones:
+      - "Cantemir"
+    commercial_clusters:
+      - "Tineretului-Timpuri Noi-Sincai"
+  -
+    zone_id: "bucuresti::bucuresti::piata-sudului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Piata Sudului"
+    slug: "piata-sudului"
+    parent: "Sector 4"
+    sector: 4
+    macro_area:
+      - "CENTRU"
+      - "SUD_EST"
+      - "SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sun Plaza"
+      - "Big Berceni"
+    adjacent_zones:
+      - "Berceni"
+      - "Brancoveanu"
+      - "Oltenitei"
+    micro_zones:
+      - "Sun Plaza"
+    commercial_clusters:
+      - "Brancoveanu-Piata Sudului-Oraselul Copiilor"
+  -
+    zone_id: "bucuresti::bucuresti::13-septembrie"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "13 Septembrie"
+    slug: "13-septembrie"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "13 Septembrie Marriott"
+    adjacent_zones:
+      - "Cotroceni"
+      - "Panduri"
+      - "Rahova"
+      - "Dealul Spirii"
+    micro_zones:
+      - "Marriott"
+      - "Parlament"
+    commercial_clusters:
+      - "13 Septembrie-Marriott-Dealul Spirii"
+  -
+    zone_id: "bucuresti::bucuresti::cotroceni"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Cotroceni"
+    slug: "cotroceni"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cotroceni Eroii Sanitari"
+    adjacent_zones:
+      - "Panduri"
+      - "Politehnica"
+      - "Grozavesti"
+      - "13 Septembrie"
+    micro_zones:
+      - "Eroii Sanitari"
+      - "Academia Militara"
+    commercial_clusters:
+      - "Cotroceni-Panduri-Eroii Sanitari"
+  -
+    zone_id: "bucuresti::bucuresti::dealul-spirii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Dealul Spirii"
+    slug: "dealul-spirii"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Spirii"
+    adjacent_zones:
+      - "13 Septembrie"
+      - "Izvor"
+      - "Rahova"
+    micro_zones:
+      - "Palatul Parlamentului"
+    commercial_clusters:
+      - "13 Septembrie-Marriott-Dealul Spirii"
+  -
+    zone_id: "bucuresti::bucuresti::ferentari"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Ferentari"
+    slug: "ferentari"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ferentari Rahova"
+    adjacent_zones:
+      - "Rahova"
+      - "Giurgiului"
+    micro_zones:
+      - "Zabrauti"
+    commercial_clusters:
+      - "Rahova-Sebastian-Chirigiu"
+  -
+    zone_id: "bucuresti::bucuresti::giurgiului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Giurgiului"
+    slug: "giurgiului"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sos Giurgiului"
+    adjacent_zones:
+      - "Eroii Revolutiei"
+      - "Progresul"
+      - "Jilava"
+      - "Ferentari"
+    micro_zones:
+      - "Luica Sud"
+      - "Toporasi"
+    commercial_clusters:
+      - "Eroii-Giurgiului-Progresul"
+  -
+    zone_id: "bucuresti::bucuresti::izvor"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Izvor"
+    slug: "izvor"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Izvor Parlament"
+    adjacent_zones:
+      - "Unirii"
+      - "Cotroceni"
+      - "Uranus"
+    micro_zones:
+      - "Kogalniceanu"
+    commercial_clusters:
+      - "Izvor-Uranus-Kogalniceanu"
+  -
+    zone_id: "bucuresti::bucuresti::panduri"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Panduri"
+    slug: "panduri"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Panduri Cotroceni"
+    adjacent_zones:
+      - "Cotroceni"
+      - "13 Septembrie"
+      - "Razoare"
+    micro_zones:
+      - "Academia Militara"
+    commercial_clusters:
+      - "Cotroceni-Panduri-Eroii Sanitari"
+  -
+    zone_id: "bucuresti::bucuresti::rahova"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Rahova"
+    slug: "rahova"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Rahova"
+    adjacent_zones:
+      - "13 Septembrie"
+      - "Sebastian"
+      - "Ferentari"
+      - "Bragadiru"
+    micro_zones:
+      - "Alexandriei"
+      - "Piata Rahova"
+    commercial_clusters:
+      - "Rahova-Sebastian-Chirigiu"
+  -
+    zone_id: "bucuresti::bucuresti::sebastian"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Sebastian"
+    slug: "sebastian"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Prosper Sebastian"
+    adjacent_zones:
+      - "Rahova"
+      - "13 Septembrie"
+      - "Chirigiu"
+    micro_zones:
+      - "Prosper"
+    commercial_clusters:
+      - "Rahova-Sebastian-Chirigiu"
+  -
+    zone_id: "bucuresti::bucuresti::uranus"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Uranus"
+    slug: "uranus"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Uranus Izvor"
+    adjacent_zones:
+      - "Izvor"
+      - "13 Septembrie"
+    micro_zones:
+      - "Catedrala Mantuirii"
+    commercial_clusters:
+      - "Izvor-Uranus-Kogalniceanu"
+  -
+    zone_id: "bucuresti::bucuresti::antiaeriana"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Antiaeriana"
+    slug: "antiaeriana"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Antiaeriana Rahova"
+    adjacent_zones:
+      - "Rahova"
+      - "Alexandriei"
+    micro_zones:
+      - "Soseaua Alexandriei"
+    commercial_clusters:
+      - "Rahova-Sebastian-Chirigiu"
+  -
+    zone_id: "bucuresti::bucuresti::chirigiu"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Chirigiu"
+    slug: "chirigiu"
+    parent: "Sector 5"
+    sector: 5
+    macro_area:
+      - "CENTRU"
+      - "SUD_VEST"
+      - "ULTRACENTRAL"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Piata Chirigiu"
+    adjacent_zones:
+      - "Sebastian"
+      - "Rahova"
+      - "Unirii"
+    micro_zones:
+      - "Piata Chirigiu"
+    commercial_clusters:
+      - "Rahova-Sebastian-Chirigiu"
+  -
+    zone_id: "bucuresti::bucuresti::crangasi"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Crangasi"
+    slug: "crangasi"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Crangasi Virtutii"
+    adjacent_zones:
+      - "Giulesti"
+      - "Regie"
+      - "Militari"
+      - "Grozavesti"
+    micro_zones:
+      - "Virtutii"
+    commercial_clusters:
+      - "Crangasi-Virtutii-Giulesti"
+  -
+    zone_id: "bucuresti::bucuresti::drumul-taberei"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Drumul Taberei"
+    slug: "drumul-taberei"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "DT"
+      - "Dr Taberei"
+    adjacent_zones:
+      - "Ghencea"
+      - "Brancusi"
+      - "Valea Oltului"
+      - "Militari"
+    micro_zones:
+      - "Favorit"
+      - "Orizont"
+      - "Valea Ialomitei"
+    commercial_clusters:
+      - "Drumul Taberei-Favorit-Orizont"
+  -
+    zone_id: "bucuresti::bucuresti::ghencea"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Ghencea"
+    slug: "ghencea"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ghencea Stadion"
+    adjacent_zones:
+      - "Drumul Taberei"
+      - "Prelungirea Ghencea"
+      - "Bragadiru"
+    micro_zones:
+      - "Ghencea Stadion"
+    commercial_clusters:
+      - "Ghencea-Brancusi-Prelungirea Ghencea"
+  -
+    zone_id: "bucuresti::bucuresti::giulesti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Giulesti"
+    slug: "giulesti"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Giulesti Sarbi"
+    adjacent_zones:
+      - "Crangasi"
+      - "Grivita"
+      - "Chitila"
+    micro_zones:
+      - "Giulesti Sarbi"
+    commercial_clusters:
+      - "Crangasi-Virtutii-Giulesti"
+  -
+    zone_id: "bucuresti::bucuresti::grozavesti"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Grozavesti"
+    slug: "grozavesti"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Orhideea"
+      - "Grozavesti Orhideea"
+    adjacent_zones:
+      - "Politehnica"
+      - "Cotroceni"
+      - "Crangasi"
+      - "Regie"
+    micro_zones:
+      - "Carrefour Orhideea"
+    commercial_clusters:
+      - "Politehnica-Regie-Grozavesti-Orhideea"
+  -
+    zone_id: "bucuresti::bucuresti::militari"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Militari"
+    slug: "militari"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Militari Urban"
+    adjacent_zones:
+      - "Lujerului"
+      - "Gorjului"
+      - "Pacii"
+      - "Politehnica"
+      - "Crangasi"
+      - "Chiajna"
+    micro_zones:
+      - "Uverturii"
+    commercial_clusters:
+      - "Militari-Lujerului-Gorjului-Pacii"
+  -
+    zone_id: "bucuresti::bucuresti::politehnica"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Politehnica"
+    slug: "politehnica"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Poli"
+    adjacent_zones:
+      - "Grozavesti"
+      - "Regie"
+      - "Militari"
+      - "Cotroceni"
+    micro_zones:
+      - "AFI Cotroceni prox"
+    commercial_clusters:
+      - "Politehnica-Regie-Grozavesti-Orhideea"
+  -
+    zone_id: "bucuresti::bucuresti::regie"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Regie"
+    slug: "regie"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Campus Regie"
+    adjacent_zones:
+      - "Politehnica"
+      - "Grozavesti"
+      - "Crangasi"
+    micro_zones:
+      - "Camine Regie"
+    commercial_clusters:
+      - "Politehnica-Regie-Grozavesti-Orhideea"
+  -
+    zone_id: "bucuresti::bucuresti::lujerului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Lujerului"
+    slug: "lujerului"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Lujerului Militari"
+    adjacent_zones:
+      - "Militari"
+      - "Gorjului"
+      - "Politehnica"
+    micro_zones:
+      - "Plaza Romania"
+    commercial_clusters:
+      - "Militari-Lujerului-Gorjului-Pacii"
+  -
+    zone_id: "bucuresti::bucuresti::gorjului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Gorjului"
+    slug: "gorjului"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Gorjului Militari"
+    adjacent_zones:
+      - "Militari"
+      - "Lujerului"
+      - "Pacii"
+    micro_zones:
+      - "Veteranilor"
+    commercial_clusters:
+      - "Militari-Lujerului-Gorjului-Pacii"
+  -
+    zone_id: "bucuresti::bucuresti::apusului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Apusului"
+    slug: "apusului"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Apusului Pacii"
+    adjacent_zones:
+      - "Pacii"
+      - "Militari"
+    micro_zones:
+      - "Uverturii Vest"
+    commercial_clusters:
+      - "Militari-Lujerului-Gorjului-Pacii"
+  -
+    zone_id: "bucuresti::bucuresti::pacii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Pacii"
+    slug: "pacii"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pacii Militari"
+    adjacent_zones:
+      - "Gorjului"
+      - "Apusului"
+      - "Militari"
+      - "Chiajna"
+    micro_zones:
+      - "Metro Pacii"
+    commercial_clusters:
+      - "Militari-Lujerului-Gorjului-Pacii"
+  -
+    zone_id: "bucuresti::bucuresti::valea-oltului"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Valea Oltului"
+    slug: "valea-oltului"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Valea Oltului DT"
+    adjacent_zones:
+      - "Drumul Taberei"
+      - "Brancusi"
+      - "Prelungirea Ghencea"
+    micro_zones:
+      - "Valea Oltului Metro prox"
+    commercial_clusters:
+      - "Ghencea-Brancusi-Prelungirea Ghencea"
+  -
+    zone_id: "bucuresti::bucuresti::brancusi"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Brancusi"
+    slug: "brancusi"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cartier Brancusi"
+    adjacent_zones:
+      - "Drumul Taberei"
+      - "Valea Oltului"
+      - "Ghencea"
+    micro_zones:
+      - "ANL Brancusi"
+    commercial_clusters:
+      - "Ghencea-Brancusi-Prelungirea Ghencea"
+  -
+    zone_id: "bucuresti::bucuresti::prelungirea-ghencea"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Prelungirea Ghencea"
+    slug: "prelungirea-ghencea"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Prel Ghencea"
+    adjacent_zones:
+      - "Ghencea"
+      - "Bragadiru"
+      - "Domnesti"
+      - "Valea Oltului"
+    micro_zones:
+      - "Cartierul Latin prox"
+    commercial_clusters:
+      - "Ghencea-Brancusi-Prelungirea Ghencea"
+  -
+    zone_id: "bucuresti::bucuresti::virtutii"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Virtutii"
+    slug: "virtutii"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Lacul Morii Virtutii"
+    adjacent_zones:
+      - "Crangasi"
+      - "Militari"
+    micro_zones:
+      - "Lacul Morii"
+    commercial_clusters:
+      - "Crangasi-Virtutii-Giulesti"
+  -
+    zone_id: "bucuresti::bucuresti::orizont"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Orizont"
+    slug: "orizont"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Orizont DT"
+    adjacent_zones:
+      - "Drumul Taberei"
+      - "Favorit"
+    micro_zones:
+      - "Orizont Metro"
+    commercial_clusters:
+      - "Drumul Taberei-Favorit-Orizont"
+  -
+    zone_id: "bucuresti::bucuresti::favorit"
+    zone_type: "cartier"
+    county: "Bucuresti"
+    locality: "Bucuresti"
+    name: "Favorit"
+    slug: "favorit"
+    parent: "Sector 6"
+    sector: 6
+    macro_area:
+      - "VEST"
+      - "NORD_VEST"
+      - "CENTRU"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Favorit DT"
+    adjacent_zones:
+      - "Drumul Taberei"
+      - "Orizont"
+    micro_zones:
+      - "Favorit Metro"
+    commercial_clusters:
+      - "Drumul Taberei-Favorit-Orizont"
+  -
+    zone_id: "ilfov::bragadiru::bragadiru"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Bragadiru"
+    name: "Bragadiru"
+    slug: "bragadiru"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::buftea::buftea"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Buftea"
+    name: "Buftea"
+    slug: "buftea"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::chitila::chitila"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Chitila"
+    name: "Chitila"
+    slug: "chitila"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::magurele::magurele"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Magurele"
+    name: "Magurele"
+    slug: "magurele"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::otopeni::otopeni"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Otopeni"
+    name: "Otopeni"
+    slug: "otopeni"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::pantelimon::pantelimon"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Pantelimon"
+    name: "Pantelimon"
+    slug: "pantelimon"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::popesti-leordeni::popesti-leordeni"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Popesti-Leordeni"
+    name: "Popesti-Leordeni"
+    slug: "popesti-leordeni"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::voluntari::voluntari"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Voluntari"
+    name: "Voluntari"
+    slug: "voluntari"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::1-decembrie::1-decembrie"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "1 Decembrie"
+    name: "1 Decembrie"
+    slug: "1-decembrie"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::afumati::afumati"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Afumati"
+    name: "Afumati"
+    slug: "afumati"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::balotesti::balotesti"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Balotesti"
+    name: "Balotesti"
+    slug: "balotesti"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::berceni::berceni"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Berceni"
+    name: "Berceni"
+    slug: "berceni"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::branesti::branesti"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Branesti"
+    name: "Branesti"
+    slug: "branesti"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::cernica::cernica"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Cernica"
+    name: "Cernica"
+    slug: "cernica"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::chiajna::chiajna"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Chiajna"
+    name: "Chiajna"
+    slug: "chiajna"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::ciolpani::ciolpani"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Ciolpani"
+    name: "Ciolpani"
+    slug: "ciolpani"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::ciorogarla::ciorogarla"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Ciorogarla"
+    name: "Ciorogarla"
+    slug: "ciorogarla"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::clinceni::clinceni"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Clinceni"
+    name: "Clinceni"
+    slug: "clinceni"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::copaceni::copaceni"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Copaceni"
+    name: "Copaceni"
+    slug: "copaceni"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::corbeanca::corbeanca"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Corbeanca"
+    name: "Corbeanca"
+    slug: "corbeanca"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::cornetu::cornetu"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Cornetu"
+    name: "Cornetu"
+    slug: "cornetu"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::darasti-ilfov::darasti-ilfov"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Darasti-Ilfov"
+    name: "Darasti-Ilfov"
+    slug: "darasti-ilfov"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::dascalu::dascalu"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Dascalu"
+    name: "Dascalu"
+    slug: "dascalu"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::dobroesti::dobroesti"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Dobroesti"
+    name: "Dobroesti"
+    slug: "dobroesti"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::domnesti::domnesti"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Domnesti"
+    name: "Domnesti"
+    slug: "domnesti"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::dragomiresti-vale::dragomiresti-vale"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Dragomiresti-Vale"
+    name: "Dragomiresti-Vale"
+    slug: "dragomiresti-vale"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::ganesa::ganesa"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Ganesa"
+    name: "Ganesa"
+    slug: "ganesa"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::glina::glina"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Glina"
+    name: "Glina"
+    slug: "glina"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::gradistea::gradistea"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Gradistea"
+    name: "Gradistea"
+    slug: "gradistea"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::gruiu::gruiu"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Gruiu"
+    name: "Gruiu"
+    slug: "gruiu"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::jilava::jilava"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Jilava"
+    name: "Jilava"
+    slug: "jilava"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::moara-vlasiei::moara-vlasiei"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Moara Vlasiei"
+    name: "Moara Vlasiei"
+    slug: "moara-vlasiei"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::mogosoaia::mogosoaia"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Mogosoaia"
+    name: "Mogosoaia"
+    slug: "mogosoaia"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::nuci::nuci"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Nuci"
+    name: "Nuci"
+    slug: "nuci"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::peris::peris"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Peris"
+    name: "Peris"
+    slug: "peris"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::petrachioaia::petrachioaia"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Petrachioaia"
+    name: "Petrachioaia"
+    slug: "petrachioaia"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::snagov::snagov"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Snagov"
+    name: "Snagov"
+    slug: "snagov"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::stefanestii-de-jos::stefanestii-de-jos"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Stefanestii de Jos"
+    name: "Stefanestii de Jos"
+    slug: "stefanestii-de-jos"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::tunari::tunari"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Tunari"
+    name: "Tunari"
+    slug: "tunari"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::vidra::vidra"
+    zone_type: "locality"
+    county: "Ilfov"
+    locality: "Vidra"
+    name: "Vidra"
+    slug: "vidra"
+    parent: "Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV"
+    is_official: true
+    is_commercial: false
+    aliases:
+
+    adjacent_zones:
+
+    micro_zones:
+
+    commercial_clusters:
+
+  -
+    zone_id: "ilfov::otopeni::otopeni-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Otopeni"
+    name: "Otopeni Central"
+    slug: "otopeni-central"
+    parent: "Otopeni"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Otopeni"
+    adjacent_zones:
+      - "Odai"
+      - "Tunari"
+      - "Baneasa"
+      - "Corbeanca"
+    micro_zones:
+      - "DN1"
+      - "Patinoar"
+    commercial_clusters:
+      - "Otopeni-DN1-Aeroport"
+  -
+    zone_id: "ilfov::otopeni::odai"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Otopeni"
+    name: "Odai"
+    slug: "odai"
+    parent: "Otopeni"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Odai Otopeni"
+    adjacent_zones:
+      - "Otopeni Central"
+      - "Baneasa"
+      - "Tunari"
+    micro_zones:
+      - "Aeroport"
+    commercial_clusters:
+      - "Otopeni-DN1-Aeroport"
+  -
+    zone_id: "ilfov::otopeni::aeroport"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Otopeni"
+    name: "Aeroport"
+    slug: "aeroport"
+    parent: "Otopeni"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Henri Coanda"
+      - "Aeroport Otopeni"
+    adjacent_zones:
+      - "Odai"
+      - "Tunari"
+      - "Baneasa"
+    micro_zones:
+      - "Terminal"
+    commercial_clusters:
+      - "Otopeni-DN1-Aeroport"
+  -
+    zone_id: "ilfov::voluntari::voluntari-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Voluntari"
+    name: "Voluntari Central"
+    slug: "voluntari-central"
+    parent: "Voluntari"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Voluntari"
+    adjacent_zones:
+      - "Pipera Voluntari"
+      - "Andronache Voluntari"
+      - "Dobroesti"
+    micro_zones:
+      - "Bd Voluntari"
+    commercial_clusters:
+      - "Voluntari-Pipera-Iancu Nicolae"
+  -
+    zone_id: "ilfov::voluntari::pipera-voluntari"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Voluntari"
+    name: "Pipera Voluntari"
+    slug: "pipera-voluntari"
+    parent: "Voluntari"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pipera"
+      - "Pipera Nord"
+    adjacent_zones:
+      - "Aviatiei"
+      - "Pipera Sud"
+      - "Iancu Nicolae"
+      - "Tunari"
+      - "Stefanestii de Jos"
+    micro_zones:
+      - "Bd Pipera"
+      - "OMV Pipera"
+    commercial_clusters:
+      - "Voluntari-Pipera-Iancu Nicolae"
+  -
+    zone_id: "ilfov::voluntari::iancu-nicolae"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Voluntari"
+    name: "Iancu Nicolae"
+    slug: "iancu-nicolae"
+    parent: "Voluntari"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Erou Iancu Nicolae"
+      - "American School"
+    adjacent_zones:
+      - "Pipera Voluntari"
+      - "Baneasa"
+      - "Tunari"
+    micro_zones:
+      - "Cambridge School"
+      - "Jolie Ville"
+    commercial_clusters:
+      - "Voluntari-Pipera-Iancu Nicolae"
+  -
+    zone_id: "ilfov::voluntari::andronache-voluntari"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Voluntari"
+    name: "Andronache Voluntari"
+    slug: "andronache-voluntari"
+    parent: "Voluntari"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Voluntari Andronache"
+    adjacent_zones:
+      - "Andronache"
+      - "Voluntari Central"
+      - "Dobroesti"
+    micro_zones:
+      - "Soseaua Andronache"
+    commercial_clusters:
+      - "Voluntari-Pipera-Iancu Nicolae"
+  -
+    zone_id: "ilfov::tunari::tunari-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Tunari"
+    name: "Tunari Central"
+    slug: "tunari-central"
+    parent: "Tunari"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Tunari"
+    adjacent_zones:
+      - "Otopeni"
+      - "Pipera Voluntari"
+      - "Iancu Nicolae"
+      - "Stefanestii de Jos"
+    micro_zones:
+      - "Centru Tunari"
+    commercial_clusters:
+      - "Tunari-Otopeni-Voluntari"
+  -
+    zone_id: "ilfov::tunari::dimieni"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Tunari"
+    name: "Dimieni"
+    slug: "dimieni"
+    parent: "Tunari"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dimieni Tunari"
+    adjacent_zones:
+      - "Tunari Central"
+      - "Balotesti"
+    micro_zones:
+      - "Dimieni"
+    commercial_clusters:
+      - "Tunari-Otopeni-Voluntari"
+  -
+    zone_id: "ilfov::balotesti::balotesti-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Balotesti"
+    name: "Balotesti Central"
+    slug: "balotesti-central"
+    parent: "Balotesti"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Balotesti"
+    adjacent_zones:
+      - "Saftica"
+      - "Tunari"
+      - "Corbeanca"
+      - "Snagov"
+    micro_zones:
+      - "DN1"
+    commercial_clusters:
+      - "Balotesti-Saftica"
+  -
+    zone_id: "ilfov::balotesti::saftica"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Balotesti"
+    name: "Saftica"
+    slug: "saftica"
+    parent: "Balotesti"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Saftica Balotesti"
+    adjacent_zones:
+      - "Balotesti Central"
+      - "Otopeni"
+      - "Snagov"
+    micro_zones:
+      - "Lac"
+    commercial_clusters:
+      - "Balotesti-Saftica"
+  -
+    zone_id: "ilfov::corbeanca::corbeanca-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Corbeanca"
+    name: "Corbeanca Central"
+    slug: "corbeanca-central"
+    parent: "Corbeanca"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Corbeanca"
+    adjacent_zones:
+      - "Ostratu"
+      - "Otopeni"
+      - "Balotesti"
+      - "Mogosoaia"
+      - "Buftea"
+    micro_zones:
+      - "Petresti"
+    commercial_clusters:
+      - "Corbeanca-Ostratu-Paradisul Verde"
+  -
+    zone_id: "ilfov::corbeanca::ostratu"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Corbeanca"
+    name: "Ostratu"
+    slug: "ostratu"
+    parent: "Corbeanca"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Paradisul Verde"
+      - "Ostratu Corbeanca"
+    adjacent_zones:
+      - "Corbeanca Central"
+    micro_zones:
+      - "Paradisul Verde"
+    commercial_clusters:
+      - "Corbeanca-Ostratu-Paradisul Verde"
+  -
+    zone_id: "ilfov::snagov::snagov-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Snagov"
+    name: "Snagov Central"
+    slug: "snagov-central"
+    parent: "Snagov"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Snagov"
+    adjacent_zones:
+      - "Tancabesti"
+      - "Ghermanesti"
+      - "Balotesti"
+      - "Ciolpani"
+    micro_zones:
+      - "Lac Snagov"
+    commercial_clusters:
+      - "Snagov-Lac"
+  -
+    zone_id: "ilfov::snagov::tancabesti"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Snagov"
+    name: "Tancabesti"
+    slug: "tancabesti"
+    parent: "Snagov"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Tancabesti Snagov"
+    adjacent_zones:
+      - "Snagov Central"
+      - "Balotesti"
+    micro_zones:
+      - "DN1"
+    commercial_clusters:
+      - "Snagov-Lac"
+  -
+    zone_id: "ilfov::snagov::ghermanesti"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Snagov"
+    name: "Ghermanesti"
+    slug: "ghermanesti"
+    parent: "Snagov"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ghermanesti Snagov"
+    adjacent_zones:
+      - "Snagov Central"
+    micro_zones:
+      - "Lac"
+    commercial_clusters:
+      - "Snagov-Lac"
+  -
+    zone_id: "ilfov::peris::peris-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Peris"
+    name: "Peris Central"
+    slug: "peris-central"
+    parent: "Peris"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Peris"
+    adjacent_zones:
+      - "Scrovistea"
+      - "Ciolpani"
+      - "Moara Vlasiei"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Peris-Scrovistea"
+  -
+    zone_id: "ilfov::peris::scrovistea"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Peris"
+    name: "Scrovistea"
+    slug: "scrovistea"
+    parent: "Peris"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Scrovistea Peris"
+    adjacent_zones:
+      - "Peris Central"
+    micro_zones:
+      - "Padure"
+    commercial_clusters:
+      - "Peris-Scrovistea"
+  -
+    zone_id: "ilfov::moara-vlasiei::moara-vlasiei-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Moara Vlasiei"
+    name: "Moara Vlasiei Central"
+    slug: "moara-vlasiei-central"
+    parent: "Moara Vlasiei"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Moara Vlasiei"
+    adjacent_zones:
+      - "Caciulati"
+      - "Balotesti"
+      - "Snagov"
+      - "Dascalu"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Moara Vlasiei-Caciulati"
+  -
+    zone_id: "ilfov::moara-vlasiei::caciulati"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Moara Vlasiei"
+    name: "Caciulati"
+    slug: "caciulati"
+    parent: "Moara Vlasiei"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Caciulati"
+    adjacent_zones:
+      - "Moara Vlasiei Central"
+      - "Stefanestii de Jos"
+    micro_zones:
+      - "DN1"
+    commercial_clusters:
+      - "Moara Vlasiei-Caciulati"
+  -
+    zone_id: "ilfov::ciolpani::ciolpani-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Ciolpani"
+    name: "Ciolpani Central"
+    slug: "ciolpani-central"
+    parent: "Ciolpani"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ciolpani"
+    adjacent_zones:
+      - "Izvorani"
+      - "Snagov"
+      - "Peris"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Ciolpani-Izvorani"
+  -
+    zone_id: "ilfov::ciolpani::izvorani"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Ciolpani"
+    name: "Izvorani"
+    slug: "izvorani"
+    parent: "Ciolpani"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Izvorani Ciolpani"
+    adjacent_zones:
+      - "Ciolpani Central"
+    micro_zones:
+      - "Lac"
+    commercial_clusters:
+      - "Ciolpani-Izvorani"
+  -
+    zone_id: "ilfov::gruiu::gruiu-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Gruiu"
+    name: "Gruiu Central"
+    slug: "gruiu-central"
+    parent: "Gruiu"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Gruiu"
+    adjacent_zones:
+      - "Snagov"
+      - "Nuci"
+    micro_zones:
+      - "Lipia"
+    commercial_clusters:
+      - "Gruiu-Lipia"
+  -
+    zone_id: "ilfov::gruiu::lipia"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Gruiu"
+    name: "Lipia"
+    slug: "lipia"
+    parent: "Gruiu"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Lipia Gruiu"
+    adjacent_zones:
+      - "Gruiu Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Gruiu-Lipia"
+  -
+    zone_id: "ilfov::nuci::nuci-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Nuci"
+    name: "Nuci Central"
+    slug: "nuci-central"
+    parent: "Nuci"
+    sector: null
+    macro_area:
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Nuci"
+    adjacent_zones:
+      - "Gradistea"
+      - "Gruiu"
+    micro_zones:
+      - "Merii Petchii"
+    commercial_clusters:
+      - "Nuci-Gradistea"
+  -
+    zone_id: "ilfov::pantelimon::pantelimon-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Pantelimon"
+    name: "Pantelimon Central"
+    slug: "pantelimon-central"
+    parent: "Pantelimon"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pantelimon Ilfov"
+    adjacent_zones:
+      - "Pantelimon"
+      - "Dobroesti"
+      - "Cernica"
+    micro_zones:
+      - "Lac Pantelimon"
+    commercial_clusters:
+      - "Pantelimon-IF-Cernica"
+  -
+    zone_id: "ilfov::pantelimon::lac-pantelimon"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Pantelimon"
+    name: "Lac Pantelimon"
+    slug: "lac-pantelimon"
+    parent: "Pantelimon"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Lacul Pantelimon"
+    adjacent_zones:
+      - "Pantelimon Central"
+    micro_zones:
+      - "Lac"
+    commercial_clusters:
+      - "Pantelimon-IF-Cernica"
+  -
+    zone_id: "ilfov::dobroesti::dobroesti-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Dobroesti"
+    name: "Dobroesti Central"
+    slug: "dobroesti-central"
+    parent: "Dobroesti"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+      - "NORD_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dobroesti"
+    adjacent_zones:
+      - "Fundeni"
+      - "Pantelimon Central"
+      - "Voluntari Central"
+      - "Ganesa"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Dobroesti-Fundeni"
+  -
+    zone_id: "ilfov::afumati::afumati-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Afumati"
+    name: "Afumati Central"
+    slug: "afumati-central"
+    parent: "Afumati"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Afumati"
+    adjacent_zones:
+      - "Stefanestii de Jos"
+      - "Voluntari"
+      - "Ganesa"
+    micro_zones:
+      - "DN2"
+    commercial_clusters:
+      - "Afumati-DN2"
+  -
+    zone_id: "ilfov::stefanestii-de-jos::stefanestii-de-jos-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Stefanestii de Jos"
+    name: "Stefanestii de Jos Central"
+    slug: "stefanestii-de-jos-central"
+    parent: "Stefanestii de Jos"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Stefanestii de Jos"
+    adjacent_zones:
+      - "Pipera Voluntari"
+      - "Tunari"
+      - "Afumati"
+      - "Moara Vlasiei"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Stefanestii-Cosmopolis"
+  -
+    zone_id: "ilfov::stefanestii-de-jos::cosmopolis"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Stefanestii de Jos"
+    name: "Cosmopolis"
+    slug: "cosmopolis"
+    parent: "Stefanestii de Jos"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cosmopolis Stefanestii"
+    adjacent_zones:
+      - "Stefanestii de Jos Central"
+      - "Pipera Voluntari"
+    micro_zones:
+      - "Access A3"
+    commercial_clusters:
+      - "Stefanestii-Cosmopolis"
+  -
+    zone_id: "ilfov::ganesa::ganesa-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Ganesa"
+    name: "Ganesa Central"
+    slug: "ganesa-central"
+    parent: "Ganesa"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ganesa"
+    adjacent_zones:
+      - "Dobroesti"
+      - "Afumati"
+      - "Pantelimon Central"
+      - "Branesti"
+    micro_zones:
+      - "Moara Domneasca"
+    commercial_clusters:
+      - "Ganesa-Moara Domneasca"
+  -
+    zone_id: "ilfov::cernica::cernica-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Cernica"
+    name: "Cernica Central"
+    slug: "cernica-central"
+    parent: "Cernica"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cernica"
+    adjacent_zones:
+      - "Pantelimon Central"
+      - "Glina"
+      - "Branesti"
+    micro_zones:
+      - "Manastirea Cernica"
+    commercial_clusters:
+      - "Cernica-Lac"
+  -
+    zone_id: "ilfov::cernica::balaceanca"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Cernica"
+    name: "Balaceanca"
+    slug: "balaceanca"
+    parent: "Cernica"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Balaceanca Cernica"
+    adjacent_zones:
+      - "Cernica Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Cernica-Lac"
+  -
+    zone_id: "ilfov::branesti::branesti-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Branesti"
+    name: "Branesti Central"
+    slug: "branesti-central"
+    parent: "Branesti"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Branesti"
+    adjacent_zones:
+      - "Cernica"
+      - "Ganesa"
+      - "Petrichioaia"
+    micro_zones:
+      - "Pasarea"
+    commercial_clusters:
+      - "Branesti-Pasarea"
+  -
+    zone_id: "ilfov::branesti::pasarea"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Branesti"
+    name: "Pasarea"
+    slug: "pasarea"
+    parent: "Branesti"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Pasarea Branesti"
+    adjacent_zones:
+      - "Branesti Central"
+    micro_zones:
+      - "Manastire"
+    commercial_clusters:
+      - "Branesti-Pasarea"
+  -
+    zone_id: "ilfov::petrachioaia::petrachioaia-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Petrachioaia"
+    name: "Petrachioaia Central"
+    slug: "petrachioaia-central"
+    parent: "Petrachioaia"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Petrachioaia"
+    adjacent_zones:
+      - "Afumati"
+      - "Ganesa"
+      - "Branesti"
+      - "Dascalu"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Petrachioaia-Est"
+  -
+    zone_id: "ilfov::dascalu::dascalu-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Dascalu"
+    name: "Dascalu Central"
+    slug: "dascalu-central"
+    parent: "Dascalu"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+      - "ILFOV_NORD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dascalu"
+    adjacent_zones:
+      - "Stefanestii de Jos"
+      - "Afumati"
+      - "Moara Vlasiei"
+      - "Petrachioaia"
+    micro_zones:
+      - "Gagu"
+    commercial_clusters:
+      - "Dascalu-Gagu"
+  -
+    zone_id: "ilfov::gradistea::gradistea-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Gradistea"
+    name: "Gradistea Central"
+    slug: "gradistea-central"
+    parent: "Gradistea"
+    sector: null
+    macro_area:
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Gradistea"
+    adjacent_zones:
+      - "Nuci"
+      - "Dascalu"
+    micro_zones:
+      - "Sitaru"
+    commercial_clusters:
+      - "Gradistea-Sitaru"
+  -
+    zone_id: "ilfov::popesti-leordeni::popesti-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Popesti-Leordeni"
+    name: "Popesti Central"
+    slug: "popesti-central"
+    parent: "Popesti-Leordeni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+      - "SUD_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Popesti"
+      - "Leordeni"
+    adjacent_zones:
+      - "Dimitrie Leonida"
+      - "Berceni"
+      - "Glina"
+    micro_zones:
+      - "Primarie"
+    commercial_clusters:
+      - "Popesti-Dimitrie Leonida-Drumul Fermei"
+  -
+    zone_id: "ilfov::popesti-leordeni::dimitrie-leonida"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Popesti-Leordeni"
+    name: "Dimitrie Leonida"
+    slug: "dimitrie-leonida"
+    parent: "Popesti-Leordeni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+      - "SUD_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Leonida"
+      - "Metro Dimitrie Leonida"
+    adjacent_zones:
+      - "Popesti Central"
+      - "Aparatorii Patriei"
+      - "Oltenitei"
+    micro_zones:
+      - "Metrou Leonida"
+    commercial_clusters:
+      - "Popesti-Dimitrie Leonida-Drumul Fermei"
+  -
+    zone_id: "ilfov::popesti-leordeni::drumul-fermei"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Popesti-Leordeni"
+    name: "Drumul Fermei"
+    slug: "drumul-fermei"
+    parent: "Popesti-Leordeni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Drumul Fermei Popesti"
+    adjacent_zones:
+      - "Popesti Central"
+      - "Biruintei"
+    micro_zones:
+      - "Metrou Berceni prox"
+    commercial_clusters:
+      - "Popesti-Dimitrie Leonida-Drumul Fermei"
+  -
+    zone_id: "ilfov::popesti-leordeni::biruintei"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Popesti-Leordeni"
+    name: "Biruintei"
+    slug: "biruintei"
+    parent: "Popesti-Leordeni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Biruintei Popesti"
+    adjacent_zones:
+      - "Drumul Fermei"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Popesti-Dimitrie Leonida-Drumul Fermei"
+  -
+    zone_id: "ilfov::berceni::berceni-ilfov-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Berceni"
+    name: "Berceni Ilfov Central"
+    slug: "berceni-ilfov-central"
+    parent: "Berceni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Berceni Ilfov"
+    adjacent_zones:
+      - "Popesti Central"
+      - "Vidra"
+      - "Copaceni"
+    micro_zones:
+      - "DJ401"
+    commercial_clusters:
+      - "Berceni-IF-Vidra"
+  -
+    zone_id: "ilfov::vidra::vidra-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Vidra"
+    name: "Vidra Central"
+    slug: "vidra-central"
+    parent: "Vidra"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Vidra"
+    adjacent_zones:
+      - "Berceni Ilfov Central"
+      - "Copaceni"
+      - "1 Decembrie"
+      - "Jilava"
+      - "Glina"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Vidra-Sintesti"
+  -
+    zone_id: "ilfov::vidra::sintesti"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Vidra"
+    name: "Sintesti"
+    slug: "sintesti"
+    parent: "Vidra"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Sintesti Vidra"
+    adjacent_zones:
+      - "Vidra Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Vidra-Sintesti"
+  -
+    zone_id: "ilfov::glina::glina-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Glina"
+    name: "Glina Central"
+    slug: "glina-central"
+    parent: "Glina"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+      - "ILFOV_EST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Glina"
+    adjacent_zones:
+      - "Popesti Central"
+      - "Cernica"
+      - "1 Decembrie"
+      - "Pallady"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Glina-Catelu"
+  -
+    zone_id: "ilfov::glina::catelu"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Glina"
+    name: "Catelu"
+    slug: "catelu"
+    parent: "Glina"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Catelu Glina"
+    adjacent_zones:
+      - "Glina Central"
+      - "Pallady"
+    micro_zones:
+      - "Centura"
+    commercial_clusters:
+      - "Glina-Catelu"
+  -
+    zone_id: "ilfov::jilava::jilava-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Jilava"
+    name: "Jilava Central"
+    slug: "jilava-central"
+    parent: "Jilava"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Jilava"
+    adjacent_zones:
+      - "Giurgiului"
+      - "1 Decembrie"
+      - "Vidra"
+      - "Magurele"
+    micro_zones:
+      - "Fortul 13"
+    commercial_clusters:
+      - "Jilava-DN5"
+  -
+    zone_id: "ilfov::1-decembrie::1-decembrie-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "1 Decembrie"
+    name: "1 Decembrie Central"
+    slug: "1-decembrie-central"
+    parent: "1 Decembrie"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "1 Decembrie Ilfov"
+    adjacent_zones:
+      - "Jilava"
+      - "Vidra"
+      - "Copaceni"
+      - "Glina"
+    micro_zones:
+      - "DN5"
+    commercial_clusters:
+      - "1 Decembrie-DN5"
+  -
+    zone_id: "ilfov::copaceni::copaceni-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Copaceni"
+    name: "Copaceni Central"
+    slug: "copaceni-central"
+    parent: "Copaceni"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Copaceni"
+    adjacent_zones:
+      - "1 Decembrie Central"
+      - "Vidra Central"
+      - "Berceni Ilfov Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Copaceni-Sud"
+  -
+    zone_id: "ilfov::cornetu::cornetu-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Cornetu"
+    name: "Cornetu Central"
+    slug: "cornetu-central"
+    parent: "Cornetu"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cornetu"
+    adjacent_zones:
+      - "Magurele"
+      - "Bragadiru"
+      - "Darasti-Ilfov"
+      - "Domnesti"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Cornetu-Vest"
+  -
+    zone_id: "ilfov::darasti-ilfov::darasti-ilfov-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Darasti-Ilfov"
+    name: "Darasti-Ilfov Central"
+    slug: "darasti-ilfov-central"
+    parent: "Darasti-Ilfov"
+    sector: null
+    macro_area:
+      - "ILFOV_SUD"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Darasti"
+    adjacent_zones:
+      - "Cornetu"
+      - "1 Decembrie Central"
+      - "Copaceni Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Darasti-Sud"
+  -
+    zone_id: "ilfov::chiajna::chiajna-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Chiajna"
+    name: "Chiajna Central"
+    slug: "chiajna-central"
+    parent: "Chiajna"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Chiajna"
+    adjacent_zones:
+      - "Rosu"
+      - "Dudu"
+      - "Militari"
+      - "Pacii"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Chiajna-Rosu-Dudu-Militari Residence"
+  -
+    zone_id: "ilfov::chiajna::rosu"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Chiajna"
+    name: "Rosu"
+    slug: "rosu"
+    parent: "Chiajna"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Rosu Chiajna"
+    adjacent_zones:
+      - "Chiajna Central"
+      - "Dudu"
+      - "Militari"
+      - "Pacii"
+    micro_zones:
+      - "Lacul Morii Vest"
+    commercial_clusters:
+      - "Chiajna-Rosu-Dudu-Militari Residence"
+  -
+    zone_id: "ilfov::chiajna::dudu"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Chiajna"
+    name: "Dudu"
+    slug: "dudu"
+    parent: "Chiajna"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dudu Chiajna"
+    adjacent_zones:
+      - "Chiajna Central"
+      - "Rosu"
+      - "Militari Residence"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Chiajna-Rosu-Dudu-Militari Residence"
+  -
+    zone_id: "ilfov::chiajna::militari-residence"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Chiajna"
+    name: "Militari Residence"
+    slug: "militari-residence"
+    parent: "Chiajna"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Militari Rezidence"
+      - "MR Chiajna"
+    adjacent_zones:
+      - "Rosu"
+      - "Dudu"
+      - "Militari"
+      - "Pacii"
+    micro_zones:
+      - "Tineretului Chiajna"
+    commercial_clusters:
+      - "Chiajna-Rosu-Dudu-Militari Residence"
+  -
+    zone_id: "ilfov::mogosoaia::mogosoaia-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Mogosoaia"
+    name: "Mogosoaia Central"
+    slug: "mogosoaia-central"
+    parent: "Mogosoaia"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Mogosoaia"
+    adjacent_zones:
+      - "Bucurestii Noi"
+      - "Chitila"
+      - "Buftea"
+      - "Corbeanca"
+      - "Otopeni"
+    micro_zones:
+      - "Palat Mogosoaia"
+    commercial_clusters:
+      - "Mogosoaia-Chitila-Buftea"
+  -
+    zone_id: "ilfov::chitila::chitila-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Chitila"
+    name: "Chitila Central"
+    slug: "chitila-central"
+    parent: "Chitila"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Chitila"
+    adjacent_zones:
+      - "Straulesti"
+      - "Bucurestii Noi"
+      - "Mogosoaia"
+      - "Buftea"
+    micro_zones:
+      - "Rudeni"
+    commercial_clusters:
+      - "Mogosoaia-Chitila-Buftea"
+  -
+    zone_id: "ilfov::buftea::buftea-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Buftea"
+    name: "Buftea Central"
+    slug: "buftea-central"
+    parent: "Buftea"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "NORD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Buftea"
+    adjacent_zones:
+      - "Chitila"
+      - "Mogosoaia"
+      - "Corbeanca"
+      - "Dragomiresti-Vale"
+    micro_zones:
+      - "Studiourile Buftea"
+    commercial_clusters:
+      - "Mogosoaia-Chitila-Buftea"
+  -
+    zone_id: "ilfov::dragomiresti-vale::dragomiresti-vale-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Dragomiresti-Vale"
+    name: "Dragomiresti-Vale Central"
+    slug: "dragomiresti-vale-central"
+    parent: "Dragomiresti-Vale"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Dragomiresti"
+    adjacent_zones:
+      - "Chiajna"
+      - "Buftea"
+      - "Mogosoaia"
+      - "Ciorogarla"
+    micro_zones:
+      - "Dragomiresti Deal"
+    commercial_clusters:
+      - "Dragomiresti-Chiajna"
+  -
+    zone_id: "ilfov::domnesti::domnesti-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Domnesti"
+    name: "Domnesti Central"
+    slug: "domnesti-central"
+    parent: "Domnesti"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Domnesti"
+    adjacent_zones:
+      - "Prelungirea Ghencea"
+      - "Bragadiru"
+      - "Cornetu"
+      - "Clinceni"
+      - "Chiajna"
+    micro_zones:
+      - "Teges"
+    commercial_clusters:
+      - "Domnesti-Prelungirea Ghencea"
+  -
+    zone_id: "ilfov::bragadiru::bragadiru-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Bragadiru"
+    name: "Bragadiru Central"
+    slug: "bragadiru-central"
+    parent: "Bragadiru"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Bragadiru"
+    adjacent_zones:
+      - "Rahova"
+      - "Ghencea"
+      - "Domnesti"
+      - "Cornetu"
+      - "Clinceni"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Bragadiru-Cartierul Latin"
+  -
+    zone_id: "ilfov::bragadiru::cartierul-latin"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Bragadiru"
+    name: "Cartierul Latin"
+    slug: "cartierul-latin"
+    parent: "Bragadiru"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Cartier Latin"
+    adjacent_zones:
+      - "Bragadiru Central"
+      - "Prelungirea Ghencea"
+    micro_zones:
+      - "Leroy Merlin prox"
+    commercial_clusters:
+      - "Bragadiru-Cartierul Latin"
+  -
+    zone_id: "ilfov::clinceni::clinceni-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Clinceni"
+    name: "Clinceni Central"
+    slug: "clinceni-central"
+    parent: "Clinceni"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Clinceni"
+    adjacent_zones:
+      - "Bragadiru"
+      - "Domnesti"
+      - "Magurele"
+      - "Cornetu"
+    micro_zones:
+      - "Olteni"
+    commercial_clusters:
+      - "Clinceni-Vest"
+  -
+    zone_id: "ilfov::ciorogarla::ciorogarla-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Ciorogarla"
+    name: "Ciorogarla Central"
+    slug: "ciorogarla-central"
+    parent: "Ciorogarla"
+    sector: null
+    macro_area:
+      - "ILFOV_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Ciorogarla"
+    adjacent_zones:
+      - "Chiajna"
+      - "Dragomiresti-Vale"
+    micro_zones:
+      - "Darvari"
+    commercial_clusters:
+      - "Ciorogarla-Vest"
+  -
+    zone_id: "ilfov::magurele::magurele-central"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Magurele"
+    name: "Magurele Central"
+    slug: "magurele-central"
+    parent: "Magurele"
+    sector: null
+    macro_area:
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Magurele"
+    adjacent_zones:
+      - "Jilava"
+      - "Cornetu"
+      - "Clinceni"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Magurele-Laser Valley"
+  -
+    zone_id: "ilfov::magurele::varteju"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Magurele"
+    name: "Varteju"
+    slug: "varteju"
+    parent: "Magurele"
+    sector: null
+    macro_area:
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "Varteju Magurele"
+    adjacent_zones:
+      - "Magurele Central"
+    micro_zones:
+      - "Centru"
+    commercial_clusters:
+      - "Magurele-Laser Valley"
+  -
+    zone_id: "ilfov::magurele::laser-valley"
+    zone_type: "subzone"
+    county: "Ilfov"
+    locality: "Magurele"
+    name: "Laser Valley"
+    slug: "laser-valley"
+    parent: "Magurele"
+    sector: null
+    macro_area:
+      - "SUD_VEST"
+    is_official: false
+    is_commercial: true
+    aliases:
+      - "ELI-NP"
+      - "Laser Valley Magurele"
+    adjacent_zones:
+      - "Magurele Central"
+    micro_zones:
+      - "Institut"
+    commercial_clusters:
+      - "Magurele-Laser Valley"
+normalization_rules:
+  ambiguous_terms:
+    pipera:
+      candidates:
+        - "Pipera Sud"
+        - "Pipera Voluntari"
+        - "Iancu Nicolae"
+      disambiguation_hints:
+        - "office"
+        - "promenada"
+        - "fabrica de glucoza"
+        - "voluntari"
+        - "american school"
+        - "omt"
+        - "omv"
+    militari:
+      candidates:
+        - "Militari"
+        - "Lujerului"
+        - "Gorjului"
+        - "Pacii"
+        - "Militari Residence"
+      disambiguation_hints:
+        - "residence"
+        - "chiajna"
+        - "urban"
+        - "pacii"
+        - "metrou"
+    baneasa:
+      candidates:
+        - "Baneasa"
+        - "Sisesti"
+        - "Aeroport Baneasa"
+        - "Otopeni Central"
+      disambiguation_hints:
+        - "mall"
+        - "jandarmeriei"
+        - "greenfield"
+        - "airport"
+    berceni:
+      candidates:
+        - "Berceni"
+        - "Aparatorii Patriei"
+        - "Metalurgiei"
+        - "Berceni Ilfov Central"
+        - "Dimitrie Leonida"
+      disambiguation_hints:
+        - "sector 4"
+        - "ilfov"
+        - "metalurgiei"
+        - "leonida"
+        - "popesti"
+    popesti:
+      candidates:
+        - "Popesti Central"
+        - "Dimitrie Leonida"
+        - "Drumul Fermei"
+        - "Biruintei"
+      disambiguation_hints:
+        - "leordeni"
+        - "metrou"
+        - "drumul fermei"
+        - "biruintei"

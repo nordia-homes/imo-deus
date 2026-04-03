@@ -3,11 +3,13 @@
 import type { Contact, ContactPreferences, MatchedBuyer, MatchedProperty, Property } from '@/lib/types';
 import {
   derivePreferencesFromContact,
+  deriveZonePreferencesFromContact,
   getDeterministicMatchedBuyers,
   getDeterministicMatchedProperties,
   scoreBuyerForProperty,
   scorePropertyForPreferences,
 } from '@/lib/matching-engine';
+import { buildPropertyZoneFact } from '@/lib/zones/matching';
 
 export type PropertyMatcherInput = {
   clientPreferences: ContactPreferences;
@@ -35,6 +37,14 @@ type OpenAIRankedItem = {
   id: string;
   matchScore: number;
   reasoning: string;
+  zoneReasoning?: string;
+  zoneDebug?: {
+    exact: number;
+    adjacent: number;
+    cluster: number;
+    macro: number;
+    penalty: number;
+  };
 };
 
 function normalizeProperties(input: PropertyMatcherInput) {
@@ -66,7 +76,21 @@ function extractResponseText(payload: any) {
   return '';
 }
 
-async function rankWithOpenAI<T extends { id: string; matchScore: number; reasoning: string }>(args: {
+async function rankWithOpenAI<
+  T extends {
+    id: string;
+    matchScore: number;
+    reasoning: string;
+    zoneReasoning?: string;
+    zoneDebug?: {
+      exact: number;
+      adjacent: number;
+      cluster: number;
+      macro: number;
+      penalty: number;
+    } | null;
+  }
+>(args: {
   schemaName: string;
   taskLabel: string;
   context: Record<string, unknown>;
@@ -88,6 +112,7 @@ async function rankWithOpenAI<T extends { id: string; matchScore: number; reason
     `- Prefer hard constraints first: budget, area, rooms, location, property type.`,
     `- Then refine for softer fit: features, trade-offs, overall desirability.`,
     `- Reasoning must be short, in Romanian, one sentence per item.`,
+    `- Preserve zoneDebug as the deterministic zone breakdown; do not invent or alter its structure.`,
     `- Do not invent missing facts.`,
     JSON.stringify(
       {
@@ -127,8 +152,21 @@ async function rankWithOpenAI<T extends { id: string; matchScore: number; reason
                     id: { type: 'string' },
                     matchScore: { type: 'integer', minimum: 0, maximum: 100 },
                     reasoning: { type: 'string' },
+                    zoneReasoning: { type: 'string' },
+                    zoneDebug: {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        exact: { type: 'number' },
+                        adjacent: { type: 'number' },
+                        cluster: { type: 'number' },
+                        macro: { type: 'number' },
+                        penalty: { type: 'number' },
+                      },
+                      required: ['exact', 'adjacent', 'cluster', 'macro', 'penalty'],
+                    },
                   },
-                  required: ['id', 'matchScore', 'reasoning'],
+                  required: ['id', 'matchScore', 'reasoning', 'zoneReasoning', 'zoneDebug'],
                 },
               },
             },
@@ -164,6 +202,8 @@ async function rankWithOpenAI<T extends { id: string; matchScore: number; reason
         ...original,
         matchScore: Math.max(0, Math.min(100, Math.round(item.matchScore))),
         reasoning: item.reasoning?.trim() || original.reasoning,
+        zoneReasoning: item.zoneReasoning?.trim() || original.zoneReasoning,
+        zoneDebug: item.zoneDebug || original.zoneDebug,
       };
     })
     .filter(Boolean) as T[];
@@ -171,6 +211,8 @@ async function rankWithOpenAI<T extends { id: string; matchScore: number; reason
 
 export async function propertyMatcher(input: PropertyMatcherInput): Promise<PropertyMatcherOutput> {
   const properties = normalizeProperties(input);
+  const zonePreferences =
+    input.contact ? deriveZonePreferencesFromContact(input.contact, input.clientPreferences) : [];
   const fallback = properties
     .map((property) => ({
       ...property,
@@ -186,9 +228,19 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
     .slice(0, 12) as MatchedProperty[];
 
   const deterministicTop = fallback.slice(0, 8).map((property) => ({
+    ...buildPropertyZoneFact({
+      propertyId: property.id,
+      rawZoneText: [property.zone, property.location, property.address, property.city].filter(Boolean).join(' '),
+      locality: property.city,
+      address: property.address,
+      title: property.title,
+      description: property.description,
+    }),
     id: property.id,
     matchScore: property.matchScore,
     reasoning: property.reasoning,
+    zoneReasoning: property.zoneReasoning || '',
+    zoneDebug: property.zoneDebug || { exact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
     title: property.title,
     price: property.price,
     rooms: property.rooms,
@@ -204,6 +256,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
       taskLabel: 'Match one buyer profile with the best property candidates',
       context: {
         buyerPreferences: input.clientPreferences,
+        buyerZonePreferences: zonePreferences,
         buyer: input.contact
           ? {
               id: input.contact.id,
@@ -211,6 +264,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
               budget: input.contact.budget,
               city: input.contact.city,
               zones: input.contact.zones,
+              generalZone: input.contact.generalZone,
               desiredFeatures: input.contact.preferences?.desiredFeatures,
             }
           : null,
@@ -234,6 +288,8 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
           ...original,
           matchScore: item.matchScore,
           reasoning: item.reasoning,
+          zoneReasoning: item.zoneReasoning || original.zoneReasoning,
+          zoneDebug: item.zoneDebug || original.zoneDebug,
         };
       })
       .filter(Boolean)
@@ -248,10 +304,22 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
 
 export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatcherOutput> {
   const fallback = getDeterministicMatchedBuyers(input.property, input.contacts, 12);
+  const propertyZoneFact = buildPropertyZoneFact({
+    propertyId: input.property.id,
+    rawZoneText: [input.property.zone, input.property.location, input.property.address, input.property.city]
+      .filter(Boolean)
+      .join(' '),
+    locality: input.property.city,
+    address: input.property.address,
+    title: input.property.title,
+    description: input.property.description,
+  });
   const deterministicTop = fallback.slice(0, 8).map((buyer) => ({
     id: buyer.id,
     matchScore: buyer.matchScore,
     reasoning: buyer.reasoning,
+    zoneReasoning: buyer.zoneReasoning || '',
+    zoneDebug: buyer.zoneDebug || { exact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
     name: buyer.name,
     budget: buyer.budget || 0,
     city: buyer.city || '',
@@ -261,6 +329,7 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
     desiredSquareFootageMin: buyer.preferences?.desiredSquareFootageMin || 0,
     desiredPriceRangeMax: buyer.preferences?.desiredPriceRangeMax || buyer.budget || 0,
     desiredFeatures: buyer.preferences?.desiredFeatures || '',
+    zonePreferences: deriveZonePreferencesFromContact(buyer, derivePreferencesFromContact(buyer)),
   }));
 
   try {
@@ -270,6 +339,7 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
       context: {
         property: {
           id: input.property.id,
+          zoneFact: propertyZoneFact,
           title: input.property.title,
           price: input.property.price,
           rooms: input.property.rooms,
@@ -301,6 +371,8 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
           ...original,
           matchScore: item.matchScore,
           reasoning: item.reasoning,
+          zoneReasoning: item.zoneReasoning || original.zoneReasoning,
+          zoneDebug: item.zoneDebug || original.zoneDebug,
         };
       })
       .filter(Boolean)

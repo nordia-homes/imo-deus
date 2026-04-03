@@ -19,6 +19,19 @@ interface MatchedLeadsTabProps {
   matchedBuyers: MatchedBuyer[];
 }
 
+const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty', value: number) => {
+  if (label === 'penalty') {
+    if (value <= 0.35) return 'text-rose-300';
+    if (value < 1) return 'text-amber-300';
+    return 'text-emerald-300';
+  }
+
+  if (value >= 0.95) return 'text-emerald-300';
+  if (value >= 0.55) return 'text-sky-300';
+  if (value > 0) return 'text-violet-300';
+  return 'text-white/45';
+};
+
 export function MatchedLeadsTab({ matchedBuyers }: MatchedLeadsTabProps) {
   if (matchedBuyers.length === 0) {
     return (
@@ -49,6 +62,18 @@ export function MatchedLeadsTab({ matchedBuyers }: MatchedLeadsTabProps) {
                 <TableCell className="font-medium lg:text-white">
                   <div>
                     <p>{lead.name}</p>
+                    {lead.zoneReasoning && (
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-300/90">{lead.zoneReasoning}</p>
+                    )}
+                    {lead.zoneDebug && (
+                      <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-white/55">
+                        <span className={toneClass('exact', lead.zoneDebug.exact)}>E {lead.zoneDebug.exact}</span>
+                        <span className={toneClass('adjacent', lead.zoneDebug.adjacent)}>A {lead.zoneDebug.adjacent}</span>
+                        <span className={toneClass('cluster', lead.zoneDebug.cluster)}>C {lead.zoneDebug.cluster}</span>
+                        <span className={toneClass('macro', lead.zoneDebug.macro)}>M {lead.zoneDebug.macro}</span>
+                        <span className={toneClass('penalty', lead.zoneDebug.penalty)}>P {lead.zoneDebug.penalty}</span>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground lg:text-white/60">{lead.reasoning}</p>
                   </div>
                 </TableCell>

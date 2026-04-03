@@ -1,4 +1,7 @@
 import type { Contact, ContactPreferences, MatchedBuyer, MatchedProperty, Property } from '@/lib/types';
+import { buildPropertyZoneFact, scorePropertyAgainstZonePreferences } from '@/lib/zones/matching';
+import { normalizeZoneInput } from '@/lib/zones/normalization';
+import type { ClientZonePreference } from '@/lib/zones/types';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -19,6 +22,14 @@ const unique = <T>(items: T[]) => Array.from(new Set(items));
 const joinDefined = (parts: Array<string | undefined | null>) => parts.filter(Boolean).join(' ');
 
 const roundScore = (value: number) => Math.round(clamp(value, 0, 100));
+
+const GENERAL_ZONE_TO_MACRO_AREAS: Record<string, string[]> = {
+  nord: ['NORD', 'CENTRU_NORD', 'NORD_VEST', 'NORD_EST', 'ILFOV_NORD'],
+  sud: ['SUD', 'SUD_EST', 'SUD_VEST', 'ILFOV_SUD'],
+  est: ['EST', 'NORD_EST', 'SUD_EST', 'ILFOV_EST'],
+  vest: ['VEST', 'NORD_VEST', 'SUD_VEST', 'ILFOV_VEST'],
+  central: ['CENTRU', 'ULTRACENTRAL', 'CENTRU_NORD'],
+};
 
 const formatReasoning = (positives: string[], caution?: string) => {
   const parts = unique(positives).slice(0, 3);
@@ -107,6 +118,83 @@ function contactText(contact: Contact) {
   ]);
 }
 
+const splitZoneFragments = (value?: string | null) =>
+  (value || '')
+    .split(/[,;/|]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+export function deriveZonePreferencesFromContact(contact: Contact, preferences: ContactPreferences): ClientZonePreference[] {
+  const collected: ClientZonePreference[] = [];
+  const seen = new Set<string>();
+
+  const pushPreference = (preference: ClientZonePreference) => {
+    const key = [
+      preference.preference,
+      preference.scope,
+      preference.zoneId || '',
+      preference.locality || '',
+      preference.macroAreaCode || '',
+    ].join('::');
+
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    collected.push(preference);
+  };
+
+  const addZoneTextAsPreference = (value: string, preferenceKind: ClientZonePreference['preference']) => {
+    const normalization = normalizeZoneInput(value, {
+      locality: contact.city,
+      description: contact.description,
+      clientIntent: preferences.locationPreferences,
+    });
+
+    if (normalization.matched_zone_id && normalization.confidence >= 0.55) {
+      pushPreference({
+        scope: 'zone',
+        preference: preferenceKind,
+        zoneId: normalization.matched_zone_id,
+        sourceText: value,
+        weight: normalization.confidence >= 0.9 ? 1 : 0.85,
+      });
+    }
+  };
+
+  for (const zone of contact.zones || []) {
+    addZoneTextAsPreference(zone, 'preferred');
+  }
+
+  for (const fragment of splitZoneFragments(preferences.locationPreferences)) {
+    addZoneTextAsPreference(fragment, 'preferred');
+  }
+
+  if (contact.city) {
+    pushPreference({
+      scope: 'locality',
+      preference: 'acceptable',
+      locality: contact.city,
+      sourceText: contact.city,
+      weight: 0.8,
+    });
+  }
+
+  const generalZoneKey = normalize(contact.generalZone || '');
+  for (const macroAreaCode of GENERAL_ZONE_TO_MACRO_AREAS[generalZoneKey] || []) {
+    pushPreference({
+      scope: 'macro_area',
+      preference: 'acceptable',
+      macroAreaCode,
+      sourceText: contact.generalZone || undefined,
+      weight: 0.7,
+    });
+  }
+
+  return collected;
+}
+
 function scoreTokenOverlap(source: string, target: string, weight: number) {
   const sourceTokens = unique(tokenize(source));
   const targetTokens = unique(tokenize(target));
@@ -123,6 +211,16 @@ function scoreTokenOverlap(source: string, target: string, weight: number) {
 function locationScore(property: Property, preferences: ContactPreferences, contact?: Contact) {
   let score = 0;
   const positives: string[] = [];
+  const zoneReasons: string[] = [];
+  let zoneDebug:
+    | {
+        exact: number;
+        adjacent: number;
+        cluster: number;
+        macro: number;
+        penalty: number;
+      }
+    | null = null;
 
   const desiredLocation = preferences.locationPreferences || contact?.city || '';
   const propertyLocationBlob = joinDefined([property.location, property.address, property.city, property.zone]);
@@ -146,7 +244,58 @@ function locationScore(property: Property, preferences: ContactPreferences, cont
     positives.push('zona preferata este acoperita');
   }
 
-  return { score: clamp(score, 0, 24), positives };
+  if (contact) {
+    const propertyFact = buildPropertyZoneFact({
+      propertyId: property.id,
+      rawZoneText: joinDefined([property.zone, property.location, property.address, property.city]),
+      locality: property.city || property.location.split(',')[0],
+      address: property.address,
+      title: property.title,
+      description: property.description,
+    });
+
+    const zonePreferences = deriveZonePreferencesFromContact(contact, preferences);
+    const zoneMatch = scorePropertyAgainstZonePreferences({
+      propertyFact,
+      preferences: zonePreferences,
+    });
+    zoneDebug = {
+      exact: zoneMatch.breakdown.exact_or_alias_fit,
+      adjacent: zoneMatch.breakdown.adjacency_fit,
+      cluster: zoneMatch.breakdown.cluster_fit,
+      macro: zoneMatch.breakdown.macro_fit,
+      penalty: zoneMatch.breakdown.penalty_component,
+    };
+
+    const zonePoints = Math.round((zoneMatch.zoneScore / 100) * 18);
+    score += zonePoints;
+
+    if (zoneMatch.breakdown.exact_or_alias_fit > 0) {
+      positives.push('zona se potrivește direct cu preferințele clientului');
+      zoneReasons.push('zonă exactă');
+    } else if (zoneMatch.breakdown.adjacency_fit > 0) {
+      positives.push('zona este adiacentă unei preferințe importante');
+      zoneReasons.push('zonă adiacentă');
+    }
+
+    if (zoneMatch.breakdown.cluster_fit > 0) {
+      positives.push('zona este în același cluster comercial căutat');
+      zoneReasons.push('același cluster');
+    }
+
+    if (zoneMatch.breakdown.macro_fit > 0 && zoneMatch.breakdown.exact_or_alias_fit === 0) {
+      positives.push('macro-zona este compatibilă cu căutarea');
+      zoneReasons.push('macro-zonă compatibilă');
+    }
+
+    if (!zoneMatch.explanation.accepted) {
+      score = Math.max(0, score - 14);
+    } else if (zoneMatch.breakdown.penalty_component < 1) {
+      score = Math.max(0, score - Math.round((1 - zoneMatch.breakdown.penalty_component) * 6));
+    }
+  }
+
+  return { score: clamp(score, 0, 24), positives, zoneReasons: unique(zoneReasons), zoneDebug };
 }
 
 function featureScore(property: Property, preferences: ContactPreferences) {
@@ -198,6 +347,8 @@ export function scorePropertyForPreferences(property: Property, preferences: Con
   return {
     score,
     reasoning: formatReasoning(positives, caution),
+    zoneReasoning: location.zoneReasons.length > 0 ? location.zoneReasons.join(' · ') : null,
+    zoneDebug: location.zoneDebug,
   };
 }
 
@@ -216,6 +367,8 @@ export function getDeterministicMatchedProperties(
         ...property,
         matchScore: scored.score,
         reasoning: scored.reasoning || 'Compatibilitate buna pe criteriile esentiale.',
+        zoneReasoning: scored.zoneReasoning,
+        zoneDebug: scored.zoneDebug,
       };
     })
     .filter((property) => property.matchScore >= 40)
@@ -242,6 +395,8 @@ export function getDeterministicMatchedBuyers(
         ...contact,
         matchScore: scored.score,
         reasoning: scored.reasoning || 'Compatibilitate buna pe criteriile esentiale.',
+        zoneReasoning: scored.zoneReasoning,
+        zoneDebug: scored.zoneDebug,
       };
     })
     .filter((contact) => contact.matchScore >= 40)

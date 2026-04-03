@@ -10,6 +10,19 @@ interface PotentialBuyersCardProps {
   matchedBuyers: MatchedBuyer[];
 }
 
+const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty', value: number) => {
+  if (label === 'penalty') {
+    if (value <= 0.35) return 'text-rose-300';
+    if (value < 1) return 'text-amber-300';
+    return 'text-emerald-300';
+  }
+
+  if (value >= 0.95) return 'text-emerald-300';
+  if (value >= 0.55) return 'text-sky-300';
+  if (value > 0) return 'text-violet-300';
+  return 'text-white/40';
+};
+
 export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps) {
   return (
     <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
@@ -32,6 +45,16 @@ export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps)
                 <div className="min-w-0">
                   <p className="font-semibold text-sm group-hover:text-primary truncate">{lead.name}</p>
                   <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()} · Scor {lead.matchScore}/100</p>
+                  {lead.zoneReasoning && <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-300/90 truncate">{lead.zoneReasoning}</p>}
+                  {lead.zoneDebug && (
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] truncate">
+                      <span className={toneClass('exact', lead.zoneDebug.exact)}>E {lead.zoneDebug.exact}</span>
+                      <span className={toneClass('adjacent', lead.zoneDebug.adjacent)}>A {lead.zoneDebug.adjacent}</span>
+                      <span className={toneClass('cluster', lead.zoneDebug.cluster)}>C {lead.zoneDebug.cluster}</span>
+                      <span className={toneClass('macro', lead.zoneDebug.macro)}>M {lead.zoneDebug.macro}</span>
+                      <span className={toneClass('penalty', lead.zoneDebug.penalty)}>P {lead.zoneDebug.penalty}</span>
+                    </div>
+                  )}
                   <p className="text-xs text-white/60 truncate">{lead.reasoning}</p>
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-white/70 group-hover:translate-x-1 transition-transform" />

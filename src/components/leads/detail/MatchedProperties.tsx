@@ -38,12 +38,11 @@ const sanitizeForWhatsapp = (phone?: string | null) => {
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
   const constructionYear = property.constructionYear;
-  const scoreTone =
-    property.matchScore >= 85
-      ? 'from-emerald-300 to-emerald-500 text-emerald-950'
-      : property.matchScore >= 70
-        ? 'from-sky-300 to-cyan-500 text-slate-950'
-        : 'from-amber-200 to-orange-400 text-amber-950';
+  const scoreColor = (() => {
+    const clamped = Math.max(0, Math.min(100, property.matchScore || 0));
+    const hue = Math.round((clamped / 100) * 120);
+    return `hsl(${hue} 78% 60%)`;
+  })();
   
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,6 +73,13 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               sizes="(max-width: 768px) 100vw, 50vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#09111b] via-[#09111b]/45 to-transparent" />
+          <div className="absolute right-4 top-4 shrink-0 rounded-2xl bg-[#08111bcc] px-3 py-2 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D7CCBC]/72">Scor</p>
+            <p className="mt-0.5 text-base font-black leading-none" style={{ color: scoreColor }}>
+              {property.matchScore}
+              <span className="text-[11px] font-semibold text-[#D7CCBC]/82">/100</span>
+            </p>
+          </div>
           <div className="absolute bottom-4 left-4 right-4">
             <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs text-white/92 backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
@@ -83,13 +89,10 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
       </div>
       <div className="flex flex-col gap-3 p-4 lg:gap-3.5">
         <div className="space-y-1.5">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
             <Link href={`/properties/${property.id}`} className="block min-w-0 flex-1">
-              <h4 className="line-clamp-2 text-lg font-semibold leading-tight text-white transition-colors group-hover:text-emerald-200">{property.title}</h4>
+              <h4 className="truncate text-lg font-semibold leading-tight text-white transition-colors group-hover:text-emerald-200">{property.title}</h4>
             </Link>
-            <div className={`shrink-0 rounded-full bg-gradient-to-r px-3 py-1.5 text-sm font-black shadow-lg ${scoreTone}`}>
-              {property.matchScore}/100
-            </div>
           </div>
           <p className="flex items-center gap-2 text-sm text-slate-300">
             <MapPin className="h-4 w-4 text-slate-400" />
@@ -105,8 +108,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             </p>
           </div>
           <div className="rounded-xl border border-white/8 bg-white/6 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-sm font-semibold leading-none text-white">
-              <Ruler className="h-3 w-3 text-white/60" />
+            <p className="flex items-center justify-center text-sm font-semibold leading-none text-white">
               <span>{property.squareFootage || '-'} mp</span>
             </p>
           </div>
@@ -126,8 +128,23 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 
         <div className="rounded-2xl border border-emerald-300/12 bg-emerald-400/8 p-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">De ce se potriveste</p>
+          {property.zoneReasoning && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {property.zoneReasoning.split('·').map((item) => (
+                <Badge
+                  key={item}
+                  variant="outline"
+                  className="rounded-full border-emerald-300/16 bg-emerald-300/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-emerald-100"
+                >
+                  {item.trim()}
+                </Badge>
+              ))}
+            </div>
+          )}
           <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-white/88">{property.reasoning}</p>
         </div>
+
+        <ZoneDebugPanel zoneDebug={property.zoneDebug} />
 
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -145,6 +162,48 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ZoneDebugPanel = ({
+  zoneDebug,
+}: {
+  zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+}) => {
+  if (!zoneDebug) return null;
+
+  const toneForValue = (label: string, value: number) => {
+    if (label === 'Penalty') {
+      if (value <= 0.35) return 'border-rose-400/30 bg-rose-400/16 text-rose-100';
+      if (value < 1) return 'border-amber-300/30 bg-amber-300/14 text-amber-100';
+      return 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100';
+    }
+
+    if (value >= 0.95) return 'border-emerald-300/30 bg-emerald-400/16 text-emerald-100';
+    if (value >= 0.55) return 'border-sky-300/30 bg-sky-400/14 text-sky-100';
+    if (value > 0) return 'border-violet-300/30 bg-violet-400/14 text-violet-100';
+    return 'border-white/8 bg-white/5 text-white/55';
+  };
+
+  const items = [
+    { label: 'Exact', value: zoneDebug.exact },
+    { label: 'Adjacent', value: zoneDebug.adjacent },
+    { label: 'Macro', value: zoneDebug.macro },
+    { label: 'Penalty', value: zoneDebug.penalty },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-[#07101a]/72 p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Debug zone</p>
+      <div className="mt-2 grid grid-cols-[0.9fr_1.15fr_0.9fr_0.9fr] gap-2">
+        {items.map((item) => (
+          <div key={item.label} className={`rounded-xl border px-2 py-2 text-center ${toneForValue(item.label, item.value)}`}>
+            <p className="text-[9px] uppercase tracking-[0.14em] opacity-70">{item.label}</p>
+            <p className="mt-1 text-xs font-bold">{item.value}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -267,29 +326,19 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
 
   return (
     <Card className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] text-white shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)] mx-2 lg:mx-0">
-        <div className="lg:hidden p-4 flex flex-row items-center justify-between">
+        <div className="lg:hidden p-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selecție AI</p>
               <h3 className="font-semibold text-white text-base">Proprietăți Potrivite</h3>
             </div>
-            <Button variant="link" size="sm" asChild className="text-emerald-100">
-              <Link href="/matching">
-                  Cautare aprofundata
-              </Link>
-            </Button>
         </div>
         
         <CardContent className="px-4 pb-4 lg:p-0 relative">
-             <div className="hidden lg:flex absolute top-5 left-5 right-5 z-10 justify-between items-start">
+             <div className="hidden lg:flex absolute top-5 left-5 z-10 items-start">
                 <div className="rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Selecție AI</p>
                   <p className="mt-1 text-sm font-semibold text-white">Proprietăți Potrivite</p>
                 </div>
-                <Button variant="secondary" asChild className="rounded-full border border-white/10 bg-black/28 text-white backdrop-blur-md hover:bg-black/40">
-                  <Link href="/matching">
-                      Cautare aprofundata
-                  </Link>
-                </Button>
             </div>
 
             {singleProperty ? (

@@ -102,8 +102,26 @@ export type Property = {
   commissionValue?: number;
 };
 
-export type MatchedProperty = Property & { matchScore: number; reasoning: string };
-export type MatchedBuyer = Contact & { matchScore: number; reasoning: string };
+export type ZoneDebugBreakdown = {
+  exact: number;
+  adjacent: number;
+  cluster: number;
+  macro: number;
+  penalty: number;
+};
+
+export type MatchedProperty = Property & {
+  matchScore: number;
+  reasoning: string;
+  zoneReasoning?: string | null;
+  zoneDebug?: ZoneDebugBreakdown | null;
+};
+export type MatchedBuyer = Contact & {
+  matchScore: number;
+  reasoning: string;
+  zoneReasoning?: string | null;
+  zoneDebug?: ZoneDebugBreakdown | null;
+};
 
 export type ContactPreferences = {
     desiredPriceRangeMin: number;
