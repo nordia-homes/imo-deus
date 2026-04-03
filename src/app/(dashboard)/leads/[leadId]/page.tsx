@@ -794,6 +794,14 @@ export default function LeadDetailPage() {
                             onUpdateOffer={handleUpdateOffer}
                             onDeleteOffer={handleDeleteOffer}
                         />
+                        <LeadTimeline 
+                            interactions={contact.interactionHistory || []} 
+                            tasks={tasks || []}
+                            onAddInteraction={handleAddInteraction}
+                            onAddTask={handleAddTask}
+                            contacts={[contact]}
+                            onToggleTask={handleToggleTask}
+                        />
                     </div>
 
                     <div className="lg:col-span-9 space-y-6">
@@ -807,14 +815,6 @@ export default function LeadDetailPage() {
                         <PreferencesFormCard contact={contact} agency={agency} />
                         <ScheduledViewingsCard viewings={scheduledViewings} />
                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                        <LeadTimeline 
-                            interactions={contact.interactionHistory || []} 
-                            tasks={tasks || []}
-                            onAddInteraction={handleAddInteraction}
-                            onAddTask={handleAddTask}
-                            contacts={[contact]}
-                            onToggleTask={handleToggleTask}
-                        />
                         <SimilarLeadsCard leads={similarCumparatori} />
                         <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
                     </div>

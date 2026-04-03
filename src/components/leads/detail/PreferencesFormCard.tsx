@@ -93,7 +93,7 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
               </Button>
           </>
         ) : (
-          <Button onClick={handleGenerateLink} disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white">
+          <Button onClick={handleGenerateLink} disabled={isLoading} className="h-11 w-full rounded-full bg-[#1f4b7a] text-white hover:bg-[#24588f]">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Generează Link Formular
           </Button>

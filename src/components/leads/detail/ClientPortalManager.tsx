@@ -106,7 +106,7 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
             </div>
           </>
         ) : (
-          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white">
+          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading} className="h-11 w-full rounded-full bg-[#1f4b7a] text-white hover:bg-[#24588f]">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
             Activează Portalul
           </Button>

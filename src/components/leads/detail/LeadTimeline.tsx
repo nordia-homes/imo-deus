@@ -1,12 +1,12 @@
 
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Interaction, Task } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Phone, Mail, FileText, CheckSquare, Activity, Users, Eye } from 'lucide-react';
-import React, { useMemo } from 'react';
+import { Phone, Mail, FileText, CheckSquare, Activity, Users } from 'lucide-react';
+import React from 'react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { AddInteractionPopover } from './AddInteractionPopover';
 import { Button } from '@/components/ui/button';
@@ -85,8 +85,8 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
     }
 
     return (
-        <div className="flex gap-3">
-             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+        <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/6 p-3">
+             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0f2036] ring-1 ring-white/10">
                 {isTask ? (
                     <Checkbox
                         checked={isCompleted}
@@ -99,38 +99,41 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
                 )}
             </div>
             <div className="flex-1">
-                <div className="flex items-baseline justify-between text-sm">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
                     <p className={cn("font-semibold text-white", isCompleted && "line-through text-white/50")}>{title}</p>
                     <p className="text-xs text-white/70">
                         {formatDistanceToNow(dateToShow, { addSuffix: true, locale: ro })}
                     </p>
                 </div>
-                 <p className="text-xs text-white/70 whitespace-pre-wrap">{details}</p>
+                 <p className="mt-1 text-xs leading-5 text-white/70 whitespace-pre-wrap">{details}</p>
             </div>
         </div>
     );
 };
 
   return (
-    <Card className="rounded-2xl shadow-2xl flex flex-col bg-[#152A47] border-none text-white">
-      <CardHeader className="p-4 space-y-3">
-        <CardTitle className="text-base text-white">Cronologie</CardTitle>
+    <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
+      <CardHeader className="p-5 space-y-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Activitate</p>
+          <CardTitle className="text-lg text-white">Cronologie</CardTitle>
+        </div>
         <div className="grid grid-cols-2 gap-2">
             <AddInteractionPopover type="Apel telefonic" onSave={(notes) => handleInteractionSave('Apel telefonic', notes)}>
-                <Button variant="outline" size="sm" className="w-full bg-white/10 border-white/20 hover:bg-white/20"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
+                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
             </AddInteractionPopover>
             <AddInteractionPopover type="WhatsApp" onSave={(notes) => handleInteractionSave('WhatsApp', notes)}>
-                <Button variant="outline" size="sm" className="w-full bg-white/10 border-white/20 hover:bg-white/20"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
             </AddInteractionPopover>
             <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
-                <Button variant="outline" size="sm" className="w-full bg-white/10 border-white/20 hover:bg-white/20"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
+                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
             </AddInteractionPopover>
             <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
-                 <Button variant="outline" size="sm" className="w-full bg-white/10 border-white/20 hover:bg-white/20"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
+                 <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
             </AddTaskDialog>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-[500px] overflow-y-auto flex-1 p-4 pt-0">
+      <CardContent className="flex-1 space-y-3 max-h-[500px] overflow-y-auto p-5 pt-0">
         {timelineItems.length > 0 ? (
           timelineItems.map((item, index) => <TimelineItem key={`${item.itemKind}-${item.id || index}`} item={item} />)
         ) : (

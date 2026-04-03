@@ -95,7 +95,7 @@ export function AiLeadScoreCard({
             <p className="text-sm text-white/78">Scorul nu este generat încă.</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-            <Button onClick={handleGenerateScore} className="h-11 rounded-full bg-primary px-4 text-primary-foreground hover:bg-primary/90">
+            <Button onClick={handleGenerateScore} className="h-11 w-full rounded-full bg-[#1f4b7a] px-4 text-white hover:bg-[#24588f]">
               <Sparkles className="mr-2 h-4 w-4" />
               Generează Scor
             </Button>
