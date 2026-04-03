@@ -3,7 +3,7 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
@@ -161,11 +161,19 @@ export default function LeadDetailPage() {
         if (!agency?.id || !cumparatorId) return null;
         return query(
             collection(firestore, 'agencies', agency.id, 'viewings'),
-            where('contactId', '==', cumparatorId),
-            orderBy('viewingDate', 'asc')
+            where('contactId', '==', cumparatorId)
         );
     }, [firestore, agency?.id, cumparatorId]);
-    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+    const { data: viewingsById, isLoading: areViewingsByIdLoading } = useCollection<Viewing>(viewingsQuery);
+
+    const viewingsByNameQuery = useMemoFirebase(() => {
+        if (!agency?.id || !contact?.name) return null;
+        return query(
+            collection(firestore, 'agencies', agency.id, 'viewings'),
+            where('contactName', '==', contact.name)
+        );
+    }, [firestore, agency?.id, contact?.name]);
+    const { data: viewingsByName, isLoading: areViewingsByNameLoading } = useCollection<Viewing>(viewingsByNameQuery);
 
 
     const propertiesQuery = useMemoFirebase(() => {
@@ -194,6 +202,21 @@ export default function LeadDetailPage() {
     }, [contact?.recommendationHistory]);
     const areRecsLoading = isContactLoading; // Loading is now tied to the contact loading
 
+    const viewings = useMemo(() => {
+        const sortViewings = (items: Viewing[] | null) =>
+            (items || []).slice().sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+
+        if (viewingsById && viewingsById.length > 0) {
+            return sortViewings(viewingsById);
+        }
+
+        if (viewingsByName && viewingsByName.length > 0) {
+            return sortViewings(viewingsByName);
+        }
+
+        return sortViewings(viewingsById || viewingsByName || []);
+    }, [viewingsById, viewingsByName]);
+
 
     // --- Side Effects & Memoization ---
     useEffect(() => {
@@ -221,6 +244,53 @@ export default function LeadDetailPage() {
 
         fetchAgents();
     }, [agency, firestore, toast]);
+
+    useEffect(() => {
+        if (!contactDocRef || !contact || !properties || viewings.length === 0) {
+            return;
+        }
+
+        const sortedViewings = [...viewings].sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+        const firstViewing = sortedViewings[0];
+        const firstViewingProperty = properties.find((property) => property.id === firstViewing.propertyId);
+        const updates: Partial<Omit<Contact, 'id'>> = {};
+
+        if (!contact.sourcePropertyId && firstViewing.propertyId) {
+            updates.sourcePropertyId = firstViewing.propertyId;
+        }
+
+        if (contact.budget == null && typeof firstViewingProperty?.price === 'number') {
+            updates.budget = firstViewingProperty.price;
+        }
+
+        if (!contact.city && typeof firstViewingProperty?.city === 'string' && firstViewingProperty.city.trim().length > 0) {
+            updates.city = firstViewingProperty.city.trim();
+        }
+
+        if (
+            (!contact.zones || contact.zones.length === 0) &&
+            typeof firstViewingProperty?.zone === 'string' &&
+            firstViewingProperty.zone.trim().length > 0
+        ) {
+            updates.zones = [firstViewingProperty.zone.trim()];
+        }
+
+        const autoDescription = firstViewingProperty?.title
+            ? `Notita automata: client adaugat pentru vizionarea proprietatii ${firstViewingProperty.title}`
+            : null;
+        const canAutoFillDescription =
+            !contact.description ||
+            contact.description.trim().length === 0 ||
+            contact.description.startsWith('Notita automata: client adaugat pentru vizionarea proprietatii');
+
+        if (autoDescription && canAutoFillDescription && contact.description !== autoDescription) {
+            updates.description = autoDescription;
+        }
+
+        if (Object.keys(updates).length > 0) {
+            updateDocumentNonBlocking(contactDocRef, updates);
+        }
+    }, [contactDocRef, contact, properties, viewings]);
 
     useEffect(() => {
         if (properties && contact) {
@@ -405,13 +475,12 @@ export default function LeadDetailPage() {
         toast({ title: "Task adăugat!" });
     };
     
-    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+    const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agency?.id || !user) return;
 
         const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
         if (!selectedProperty) return;
         
-        const viewingsCollection = collection(firestore, 'agencies', agency.id, 'viewings');
         const viewingToAdd: Omit<Viewing, 'id'> = {
             ...viewingData,
             propertyTitle: selectedProperty.title,
@@ -421,8 +490,19 @@ export default function LeadDetailPage() {
             agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
-        addDocumentNonBlocking(viewingsCollection, viewingToAdd);
-        toast({ title: "Vizionare programată!" });
+
+        try {
+            await addDoc(collection(firestore, 'agencies', agency.id, 'viewings'), viewingToAdd);
+            toast({ title: "Vizionare programată!" });
+        } catch (error) {
+            console.error('Failed to add viewing from lead detail page:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Eroare',
+                description: 'Vizionarea nu a putut fi salvată.',
+            });
+            throw error;
+        }
     };
 
     const handleAddInteraction = async (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
@@ -538,6 +618,12 @@ export default function LeadDetailPage() {
         return properties.find(p => p.id === upcomingViewing.propertyId);
     }, [upcomingViewing, properties]);
 
+    const fallbackSourceProperty = useMemo(() => {
+        if (sourceProperty || !properties || viewings.length === 0) return sourceProperty;
+        const firstViewing = [...viewings].sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime())[0];
+        return properties.find((property) => property.id === firstViewing?.propertyId) || null;
+    }, [sourceProperty, properties, viewings]);
+
 
     const timelineItems = useMemo(() => {
         if (!tasks && !contact?.interactionHistory) return [];
@@ -552,7 +638,7 @@ export default function LeadDetailPage() {
     }, [tasks, contact?.interactionHistory]);
 
 
-    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsLoading || isSourcePropertyLoading || areAllContactsLoading || areRecsLoading;
+    const isLoading = isContactLoading || isContextLoading || areAgentsLoading || areTasksLoading || arePropertiesLoading || areViewingsByIdLoading || areViewingsByNameLoading || isSourcePropertyLoading || areAllContactsLoading || areRecsLoading;
 
     if (isLoading) {
         return <PageSkeleton />;
@@ -666,7 +752,7 @@ export default function LeadDetailPage() {
 
                     <div className="pt-4">
                       <SourcePropertyCard 
-                          property={sourceProperty} 
+                          property={fallbackSourceProperty} 
                           isLoading={isSourcePropertyLoading}
                           allProperties={properties || []}
                           onUpdateContact={handleUpdateContact}
@@ -752,7 +838,7 @@ export default function LeadDetailPage() {
                             contact={contact}
                             onEdit={() => setIsEditDialogOpen(true)}
                             onUpdateContact={handleUpdateContact}
-                            sourceProperty={sourceProperty}
+                            sourceProperty={fallbackSourceProperty}
                             isSourcePropertyLoading={isSourcePropertyLoading}
                             allProperties={properties || []}
                         />

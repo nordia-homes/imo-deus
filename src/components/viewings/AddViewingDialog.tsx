@@ -39,11 +39,17 @@ const viewingSchema = z.object({
   newContactEmail: z.string().email({ message: 'Adresă de email invalidă.'}).optional().or(z.literal('')),
 });
 
-type PropertyStub = { id: string; title: string; };
+type PropertyStub = {
+  id: string;
+  title: string;
+  price?: number;
+  city?: string;
+  zone?: string;
+};
 type ContactStub = { id: string; name: string; };
 
 type AddViewingDialogProps = {
-    onAddViewing: (viewing: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => void;
+    onAddViewing: (viewing: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => Promise<void>;
     properties: PropertyStub[];
     contacts: ContactStub[];
     isOpen: boolean;
@@ -125,17 +131,25 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                 return; // Early exit, finally will still run
             }
 
+            const selectedProperty = properties.find((property) => property.id === values.propertyId);
             const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
             const newContactData: Omit<Contact, 'id'> = {
                 name: values.newContactName,
                 phone: values.newContactPhone,
                 email: values.newContactEmail,
+                description: selectedProperty
+                    ? `Notita automata: client adaugat pentru vizionarea proprietatii ${selectedProperty.title}`
+                    : undefined,
                 source: 'Contact direct',
                 status: 'Nou',
                 contactType: 'Cumparator',
                 createdAt: new Date().toISOString(),
                 agentId: user.uid,
                 agentName: user.displayName || user.email,
+                sourcePropertyId: selectedProperty?.id,
+                budget: selectedProperty?.price,
+                city: selectedProperty?.city,
+                zones: selectedProperty?.zone ? [selectedProperty.zone] : [],
             };
             const newContactRef = await addDoc(contactsCollection, newContactData);
             contactIdToUse = newContactRef.id;
@@ -155,7 +169,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
         const viewingDateTime = new Date(values.viewingDate);
         viewingDateTime.setHours(hours, minutes);
 
-        onAddViewing({
+        await onAddViewing({
             propertyId: values.propertyId!,
             contactId: contactIdToUse!,
             contactName: contactNameToUse,
