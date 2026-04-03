@@ -401,12 +401,12 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         </div>
 
         <div className="mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
               <p className="text-sm text-white/55 sm:text-base">Programul zilei între 08:00 și 21:00</p>
             </div>
-            <div className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
+            <div className="mt-0.5 shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
               {selectedDayViewings.length} vizionări
             </div>
           </div>

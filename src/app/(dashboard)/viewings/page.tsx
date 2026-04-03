@@ -192,10 +192,20 @@ export default function ViewingsPage() {
                     <button
                         type="button"
                         onClick={() => setIsUpcomingOpen((current) => !current)}
-                        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                        className="group flex w-full items-center justify-between rounded-[26px] border border-white/10 bg-gradient-to-r from-[#152A47] via-[#183252] to-[#132A44] px-5 py-5 text-left shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]"
                     >
-                        <span className="text-lg font-semibold text-white sm:text-xl">Vizionări Următoarele 7 Zile ({upcomingViewings.length})</span>
-                        <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isUpcomingOpen && "rotate-180")} />
+                        <div className="min-w-0 flex-1 pr-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Program viitor</p>
+                            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
+                                <span className="text-lg font-semibold leading-tight text-white sm:text-2xl">Vizionări Următoarele 7 Zile</span>
+                                <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/75">
+                                    {upcomingViewings.length}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors group-hover:bg-white/10">
+                            <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isUpcomingOpen && "rotate-180")} />
+                        </div>
                     </button>
                     {isUpcomingOpen && (
                         <ViewingList 
@@ -214,10 +224,20 @@ export default function ViewingsPage() {
                     <button
                         type="button"
                         onClick={() => setIsPastOpen((current) => !current)}
-                        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#152A47] px-4 py-4 text-left transition-colors hover:bg-[#19304f]"
+                        className="group flex w-full items-center justify-between rounded-[26px] border border-white/10 bg-gradient-to-r from-[#152A47] via-[#183252] to-[#132A44] px-5 py-5 text-left shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]"
                     >
-                        <span className="text-lg font-semibold text-white sm:text-xl">Istoric Vizionări ({pastViewings.length})</span>
-                        <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isPastOpen && "rotate-180")} />
+                        <div className="min-w-0 flex-1 pr-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Arhivă</p>
+                            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
+                                <span className="text-lg font-semibold leading-tight text-white sm:text-2xl">Istoric Vizionări</span>
+                                <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/75">
+                                    {pastViewings.length}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors group-hover:bg-white/10">
+                            <ChevronDown className={cn("h-5 w-5 text-white/70 transition-transform duration-200", isPastOpen && "rotate-180")} />
+                        </div>
                     </button>
                     {isPastOpen && (
                         <ViewingList 
