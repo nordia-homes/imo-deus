@@ -269,25 +269,25 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
     <Card className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] text-white shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)] mx-2 lg:mx-0">
         <div className="lg:hidden p-4 flex flex-row items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-200/70">Matching AI</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selecție AI</p>
               <h3 className="font-semibold text-white text-base">Proprietăți Potrivite</h3>
             </div>
             <Button variant="link" size="sm" asChild className="text-emerald-100">
               <Link href="/matching">
-                  Vezi toate
+                  Cautare aprofundata
               </Link>
             </Button>
         </div>
         
         <CardContent className="px-4 pb-4 lg:p-0 relative">
              <div className="hidden lg:flex absolute top-5 left-5 right-5 z-10 justify-between items-start">
-                <div className="rounded-full border border-white/10 bg-black/28 px-4 py-2 backdrop-blur-md">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-200/72">Matching AI</p>
-                  <p className="text-sm font-semibold text-white">Proprietăți Potrivite</p>
+                <div className="rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Selecție AI</p>
+                  <p className="mt-1 text-sm font-semibold text-white">Proprietăți Potrivite</p>
                 </div>
                 <Button variant="secondary" asChild className="rounded-full border border-white/10 bg-black/28 text-white backdrop-blur-md hover:bg-black/40">
                   <Link href="/matching">
-                      Vezi toate
+                      Cautare aprofundata
                   </Link>
                 </Button>
             </div>
@@ -311,8 +311,8 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-3 top-[34%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
-                  <CarouselNext className="right-3 top-[34%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
+                  <CarouselPrevious className="left-3 top-[30%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
+                  <CarouselNext className="right-3 top-[30%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
                 </Carousel>
             )}
         </CardContent>

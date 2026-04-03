@@ -29,14 +29,14 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
   const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
 
   return (
-    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-6 py-3 lg:py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
+    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-0 py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 h-full">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-              <div className="inline-flex h-auto items-center justify-start whitespace-nowrap rounded-md px-4 py-2 text-2xl font-bold ring-offset-background transition-colors border border-primary pointer-events-none bg-primary/10 text-white">
-                {contact.name}
+              <div className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,#173255_0%,#10233b_100%)] px-5 py-2.5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)]">
+                <h1 className="text-3xl font-bold tracking-tight text-white">{contact.name}</h1>
               </div>
-              <Badge variant="outline" className="lg:bg-white/10 lg:border-none">{contact.status}</Badge>
+              <Badge variant="outline" className="rounded-full border-white/10 bg-white/8 px-3 py-1 lg:text-white">{contact.status}</Badge>
             </div>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-wrap">

@@ -25,7 +25,7 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
     }
 
     return (
-        <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#142c4a_0%,#0f2036_62%,#0c1828_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
+        <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
             <CardHeader className="p-5 pb-3">
                 <CardTitle className="text-base text-white">Setări Cumpărător</CardTitle>
             </CardHeader>
