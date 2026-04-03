@@ -72,6 +72,55 @@ function scoreRange(value: number, min: number, max: number, weight: number) {
   return { score: Math.round(score), label: '' };
 }
 
+function scoreBudgetFit(propertyPrice: number, buyerBudgetMax: number, weight: number) {
+  if (!propertyPrice || !buyerBudgetMax) {
+    return {
+      weightedScore: Math.round(weight * 0.45),
+      budgetScore: 45,
+      isRejected: false,
+    };
+  }
+
+  if (propertyPrice <= buyerBudgetMax) {
+    return {
+      weightedScore: weight,
+      budgetScore: 100,
+      isRejected: false,
+    };
+  }
+
+  const hardLimit = buyerBudgetMax * 1.15;
+  if (propertyPrice > hardLimit) {
+    return {
+      weightedScore: 0,
+      budgetScore: 0,
+      isRejected: true,
+    };
+  }
+
+  const overflowRatio = (propertyPrice - buyerBudgetMax) / Math.max(hardLimit - buyerBudgetMax, 1);
+  const budgetScore = Math.round(Math.max(0, 100 * (1 - overflowRatio)));
+
+  return {
+    weightedScore: Math.round(weight * (budgetScore / 100)),
+    budgetScore,
+    isRejected: false,
+  };
+}
+
+function formatBudgetDelta(propertyPrice: number, buyerBudgetMax: number) {
+  if (!propertyPrice || !buyerBudgetMax) {
+    return '';
+  }
+
+  if (propertyPrice <= buyerBudgetMax) {
+    return 'in buget';
+  }
+
+  const overPercentage = Math.round(((propertyPrice - buyerBudgetMax) / buyerBudgetMax) * 100);
+  return `+${overPercentage}% peste buget`;
+}
+
 function scoreTarget(value: number, target: number, weight: number) {
   if (!target || !value) {
     return Math.round(weight * 0.45);
@@ -310,11 +359,14 @@ export function scorePropertyForPreferences(property: Property, preferences: Con
   const positives: string[] = [];
   let caution: string | undefined;
 
-  const price = scoreRange(property.price || 0, preferences.desiredPriceRangeMin || 0, preferences.desiredPriceRangeMax || 0, 28).score;
-  if (price >= 22) {
-    positives.push('pretul este in intervalul dorit');
-  } else if (property.price && preferences.desiredPriceRangeMax && property.price > preferences.desiredPriceRangeMax) {
-    caution = 'pretul este peste plafonul dorit';
+  const priceFit = scoreBudgetFit(property.price || 0, preferences.desiredPriceRangeMax || 0, 28);
+  const price = priceFit.weightedScore;
+  if (priceFit.budgetScore === 100) {
+    positives.push(formatBudgetDelta(property.price || 0, preferences.desiredPriceRangeMax || 0));
+  } else if (priceFit.budgetScore > 0 && property.price && preferences.desiredPriceRangeMax && property.price > preferences.desiredPriceRangeMax) {
+    caution = formatBudgetDelta(property.price, preferences.desiredPriceRangeMax);
+  } else if (priceFit.isRejected) {
+    caution = `respins: ${formatBudgetDelta(property.price || 0, preferences.desiredPriceRangeMax || 0)}`;
   }
 
   const rooms = scoreTarget(property.rooms || 0, preferences.desiredRooms || 0, 16);
@@ -345,6 +397,8 @@ export function scorePropertyForPreferences(property: Property, preferences: Con
 
   const score = roundScore(price + rooms + bathrooms + area + location.score + features.score + 8);
   return {
+    isRejected: priceFit.isRejected,
+    budgetScore: priceFit.budgetScore,
     score,
     reasoning: formatReasoning(positives, caution),
     zoneReasoning: location.zoneReasons.length > 0 ? location.zoneReasons.join(' · ') : null,
@@ -365,12 +419,14 @@ export function getDeterministicMatchedProperties(
       const scored = scorePropertyForPreferences(property, preferences, contact);
       return {
         ...property,
+        isRejected: scored.isRejected,
         matchScore: scored.score,
         reasoning: scored.reasoning || 'Compatibilitate buna pe criteriile esentiale.',
         zoneReasoning: scored.zoneReasoning,
         zoneDebug: scored.zoneDebug,
       };
     })
+    .filter((property) => !property.isRejected)
     .filter((property) => property.matchScore >= 40)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, limit);
@@ -393,12 +449,14 @@ export function getDeterministicMatchedBuyers(
       const scored = scoreBuyerForProperty(contact, property);
       return {
         ...contact,
+        isRejected: scored.isRejected,
         matchScore: scored.score,
         reasoning: scored.reasoning || 'Compatibilitate buna pe criteriile esentiale.',
         zoneReasoning: scored.zoneReasoning,
         zoneDebug: scored.zoneDebug,
       };
     })
+    .filter((contact) => !contact.isRejected)
     .filter((contact) => contact.matchScore >= 40)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, limit);

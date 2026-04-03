@@ -360,8 +360,8 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-3 top-[30%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
-                  <CarouselNext className="right-3 top-[30%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
+                  <CarouselPrevious className="left-3 top-[26%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
+                  <CarouselNext className="right-3 top-[26%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
                 </Carousel>
             )}
         </CardContent>

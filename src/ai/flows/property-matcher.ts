@@ -218,6 +218,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
       ...property,
       ...scorePropertyForPreferences(property, input.clientPreferences, input.contact || undefined),
     }))
+    .filter((property) => !property.isRejected)
     .map((property) => ({
       ...property,
       matchScore: property.score,
