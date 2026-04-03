@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutList, Users, FileText, Info, CalendarCheck, ArrowRight, Menu } from "lucide-react";
-import type { Property, Contact, Viewing } from "@/lib/types";
+import type { Property, MatchedBuyer, Viewing } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { MatchedLeadsTab } from "./MatchedLeadsTab";
 import { format, parseISO } from "date-fns";
@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 import { PropertiesMap } from "@/components/map/PropertiesMap";
 
-export function InfoColumn({ property, allContacts, viewings }: { property: Property, allContacts: Contact[], viewings: Viewing[] }) {
+export function InfoColumn({ property, matchedBuyers, viewings }: { property: Property, matchedBuyers: MatchedBuyer[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
@@ -132,7 +132,7 @@ export function InfoColumn({ property, allContacts, viewings }: { property: Prop
                     </div>
                 </TabsContent>
                 <TabsContent value="leads" className="mt-6">
-                    <MatchedLeadsTab property={property} allContacts={allContacts} />
+                    <MatchedLeadsTab matchedBuyers={matchedBuyers} />
                 </TabsContent>
                 <TabsContent value="viewings" className="mt-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">

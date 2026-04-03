@@ -1,6 +1,6 @@
 'use client';
 
-import type { Property, Viewing, UserProfile, Contact } from "@/lib/types";
+import type { MatchedBuyer, Property, Viewing, UserProfile } from "@/lib/types";
 import { PriceStatusCard } from "./actions/PriceStatusCard";
 import { AgentCard } from "./actions/AgentCard";
 import { PublishCard } from "./actions/PublishCard";
@@ -14,7 +14,7 @@ import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
 
-export function ActionsColumn({ property, allProperties, viewings, agentProfile, allContacts }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, allContacts: Contact[] }) {
+export function ActionsColumn({ property, allProperties, viewings, agentProfile, matchedBuyers }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, matchedBuyers: MatchedBuyer[] }) {
     
     const agentForCard = {
         name: agentProfile?.name || property.agentName || "Nealocat",
@@ -29,7 +29,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <ScheduledViewingsCard viewings={viewings} />
-            <PotentialBuyersCard property={property} allContacts={allContacts} />
+            <PotentialBuyersCard matchedBuyers={matchedBuyers} />
             <CmaCard property={property} allProperties={allProperties} />
             <PublishCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />

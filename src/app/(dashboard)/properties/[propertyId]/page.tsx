@@ -3,8 +3,9 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing, UserProfile, Contact } from "@/lib/types";
+import type { Property, Viewing, UserProfile, Contact, MatchedBuyer } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
+import { buyerMatcherFromProperty } from '@/ai/flows/property-matcher';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -86,6 +87,7 @@ export default function PropertyDetailPage() {
     const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
     const [isAgentLoading, setIsAgentLoading] = useState(true);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
+    const [matchedBuyers, setMatchedBuyers] = useState<MatchedBuyer[]>([]);
     const isMobile = useIsMobile();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
@@ -116,54 +118,6 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId]);
     const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
 
-    const matchedCumparatori = useMemo(() => {
-        if (!allContacts || allContacts.length === 0 || !property) {
-            return [];
-        }
-
-        return allContacts.filter(contact => {
-            if (contact.status === 'Câștigat' || contact.status === 'Pierdut') {
-                return false;
-            }
-
-            let score = 0;
-
-            const contactBudget = contact.budget || 0;
-            if (contactBudget > 0) {
-                const lowerBound = contactBudget * 0.8;
-                const upperBound = contactBudget * 1.5;
-                if (property.price >= lowerBound && property.price <= upperBound) {
-                    score += 50;
-                }
-            }
-
-            const contactRooms = contact.preferences?.desiredRooms || 0;
-            if (contactRooms > 0) {
-                if (property.rooms === contactRooms) {
-                    score += 30;
-                } else if (Math.abs(property.rooms - contactRooms) === 1) {
-                    score += 15;
-                }
-            }
-            
-            const contactCity = contact.city?.toLowerCase();
-            const propertyCity = property.location.split(',')[0]?.trim().toLowerCase();
-            if (contactCity && propertyCity && propertyCity.includes(contactCity)) {
-                score += 20;
-            }
-
-            if (contact.zones && contact.zones.length > 0) {
-                const propertyLocationLower = property.location.toLowerCase();
-                if (contact.zones.some(zone => propertyLocationLower.includes(zone.toLowerCase()))) {
-                    score += 25;
-                }
-            }
-
-            return score > 40;
-        }).sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
-
-    }, [property, allContacts]);
-
     useEffect(() => {
         if (!property?.agentId || !firestore) {
             setIsAgentLoading(false);
@@ -190,8 +144,23 @@ export default function PropertyDetailPage() {
 
         fetchAgent();
     }, [property, firestore]);
+
+    useEffect(() => {
+        if (!property || !allContacts) {
+            return;
+        }
+
+        buyerMatcherFromProperty(property, allContacts)
+            .then((result) => {
+                setMatchedBuyers(result.matchedBuyers || []);
+            })
+            .catch((error) => {
+                console.error('Automatic OpenAI buyer matching failed:', error);
+                setMatchedBuyers([]);
+            });
+    }, [property, allContacts]);
     
-    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+    const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agencyId || !user || !property) return;
         
         const viewingsCollection = collection(firestore, 'agencies', agencyId, 'viewings');
@@ -361,7 +330,7 @@ export default function PropertyDetailPage() {
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
                             <PropertyNotesCard property={property} />
-                             <PotentialBuyersCard property={property} allContacts={allContacts || []} />
+                             <PotentialBuyersCard matchedBuyers={matchedBuyers} />
                              <ScheduledViewingsCard viewings={viewings || []} />
                         </div>
                     </div>
@@ -400,11 +369,11 @@ export default function PropertyDetailPage() {
                 <main className="grid grid-cols-1 items-start gap-8 pt-3 pb-8 lg:grid-cols-12">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
-                        <InfoColumn property={property} allContacts={allContacts || []} viewings={viewings || []} />
+                        <InfoColumn property={property} matchedBuyers={matchedBuyers} viewings={viewings || []} />
                     </div>
 
                     <div className="col-span-12 lg:col-span-4">
-                         <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} allContacts={allContacts || []} />
+                         <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} matchedBuyers={matchedBuyers} />
                     </div>
                 </main>
             </div>

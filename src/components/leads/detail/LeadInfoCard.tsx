@@ -1,8 +1,7 @@
 'use client';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Contact, Property } from '@/lib/types';
-import { Calendar, Clock, MapPin, Edit, DollarSign, User, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, FileText, MapPinned } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,6 +9,8 @@ import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SourcePropertyCard } from './SourcePropertyCard';
 import { Separator } from '@/components/ui/separator';
+import { AiLeadScoreCard } from './AiLeadScoreCard';
+import type { PortalRecommendation, Task, Viewing } from '@/lib/types';
 
 type LeadInfoCardProps = {
   contact: Contact;
@@ -18,9 +19,12 @@ type LeadInfoCardProps = {
   sourceProperty: Property | null;
   isSourcePropertyLoading: boolean;
   allProperties: Property[];
+  viewings?: Viewing[] | null;
+  tasks?: Task[] | null;
+  recommendations?: PortalRecommendation[] | null;
 };
 
-export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty, isSourcePropertyLoading, allProperties }: LeadInfoCardProps) {
+export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty, isSourcePropertyLoading, allProperties, viewings, tasks, recommendations }: LeadInfoCardProps) {
     const creationDate = contact.createdAt ? new Date(contact.createdAt) : new Date(); // Fallback for demo
     const ageInDays = differenceInDays(new Date(), creationDate);
 
@@ -55,48 +59,55 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl relative bg-[#152A47] border-none text-white">
-             <Button variant="ghost" size="icon" onClick={onEdit} className="absolute top-3 right-3 z-10 h-8 w-8 text-white/70 hover:text-white hover:bg-white/10">
+        <Card className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#173255_0%,#10233b_58%,#0c1828_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
+            <Button variant="ghost" size="icon" onClick={onEdit} className="absolute top-3 right-3 z-10 h-8 w-8 text-white/70 hover:text-white hover:bg-white/10">
                 <Edit className="h-4 w-4" />
             </Button>
-            <CardContent className="space-y-4 pt-6">
-                 <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start pointer-events-none text-base font-semibold h-auto py-2 bg-white/10 border-white/20 text-white">
-                        <User className="mr-3 h-4 w-4 text-white/70" />
-                        {contact.name}
-                    </Button>
-                    {contact.budget ? (
-                        <Button variant="outline" className="w-full justify-start border-primary pointer-events-none text-white bg-primary/10">
-                            <DollarSign className="mr-2 h-4 w-4" />
-                            Buget: €{contact.budget.toLocaleString()}
-                        </Button>
-                    ) : null}
-                    {contact.city ? (
-                        <p className="text-sm text-white/70 pt-1 pl-1 flex items-center">
-                            <MapPin className="mr-2 h-4 w-4" />
-                            {contact.city}
-                        </p>
-                    ) : null}
+            <CardContent className="space-y-5 p-5 pt-6">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55">Profil cumpărător</p>
+                    <div className="mt-4 space-y-4">
+                        <div>
+                            <p className="text-xs text-white/55">Buget</p>
+                            <p className="mt-1 text-4xl font-black leading-none text-white">
+                                {contact.budget ? `€${contact.budget.toLocaleString()}` : 'Nespecificat'}
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-2xl border border-white/10 bg-[#122844] px-3 py-3">
+                                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    Adăugat
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-white">{new Date(creationDate).toLocaleDateString('ro-RO')}</p>
+                            </div>
+                            <div className={cn(
+                                "rounded-2xl border px-3 py-3",
+                                ageBadgeVariant === 'success' && 'border-green-500/20 bg-green-500/8',
+                                ageBadgeVariant === 'warning' && 'border-yellow-500/20 bg-yellow-500/8',
+                                ageBadgeVariant === 'destructive' && 'border-red-500/20 bg-red-500/8'
+                            )}>
+                                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    Vechime
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-white">{ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</p>
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-[#122844] px-3 py-3">
+                            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                                <MapPinned className="h-3.5 w-3.5" />
+                                Oraș
+                            </p>
+                            <p className="mt-2 truncate whitespace-nowrap text-sm font-semibold text-white">{contact.city || 'N/A'}</p>
+                        </div>
+                    </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="w-full justify-start pointer-events-none text-white bg-primary/10 border-primary">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {new Date(creationDate).toLocaleDateString('ro-RO')}
-                    </Button>
-                    <Button variant="outline" className={cn(
-                        "w-full justify-start pointer-events-none text-white",
-                        ageBadgeVariant === 'success' && 'bg-green-500/10 border-green-500',
-                        ageBadgeVariant === 'warning' && 'bg-yellow-500/10 border-yellow-500',
-                        ageBadgeVariant === 'destructive' && 'bg-red-500/10 border-red-500'
-                    )}>
-                        <Clock className="mr-2 h-4 w-4" />
-                        {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}
-                    </Button>
-                </div>
+
                 <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-white/72">
                         <FileText className="h-4 w-4" />
-                        Descriere
+                        Observații
                     </h4>
                     <Textarea
                         ref={textareaRef}
@@ -104,30 +115,42 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
                         onChange={(e) => setDescription(e.target.value)}
                         onBlur={handleBlur}
                         placeholder="Adaugă o descriere detaliată a cumpărătorului, preferințe, cerințe speciale, etc."
-                        className="text-sm resize-none overflow-hidden bg-white/10 border-white/20 text-white"
+                        className="min-h-[104px] resize-none overflow-hidden rounded-2xl border-white/10 bg-white/6 text-sm text-white"
                         rows={4}
                     />
                 </div>
-                 {contact.zones && contact.zones.length > 0 && (
+
+                {contact.zones && contact.zones.length > 0 && (
                     <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-white/70">Zone Preferate</h4>
-                        <div className="space-y-1">
+                        <h4 className="flex items-center gap-2 text-sm font-semibold text-white/72">
+                            <MapPin className="h-4 w-4" />
+                            Zone preferate
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
                             {contact.zones.map(zone => (
-                                <Button 
+                                <div
                                     key={zone} 
-                                    variant="outline"
-                                    className="pointer-events-none cursor-default bg-white/10 border-white/20 text-white w-full justify-start"
+                                    className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-sm text-white"
                                 >
-                                    <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <MapPin className="mr-1.5 inline h-3.5 w-3.5 text-white/60" />
                                     {zone}
-                                </Button>
+                                </div>
                             ))}
                         </div>
                     </div>
                 )}
+                <AiLeadScoreCard
+                    contact={contact}
+                    viewings={viewings}
+                    tasks={tasks}
+                    sourceProperty={sourceProperty}
+                    recommendations={recommendations}
+                    onUpdateContact={onUpdateContact}
+                    variant="embedded"
+                />
             </CardContent>
-             <div className="hidden lg:block px-4 pb-4">
-              <Separator className="mt-0 mb-4 bg-white/10" />
+             <div className="hidden lg:block px-5 pb-5">
+              <Separator className="mb-5 mt-0 bg-white/10" />
               <SourcePropertyCard 
                   property={sourceProperty} 
                   isLoading={isSourcePropertyLoading}

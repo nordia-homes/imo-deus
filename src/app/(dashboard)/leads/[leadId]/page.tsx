@@ -7,7 +7,7 @@ import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
-import { propertyMatcher } from '@/ai/flows/property-matcher';
+import { propertyMatcher, propertyMatcherFromContact } from '@/ai/flows/property-matcher';
 
 import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus, ContactPreferences } from '@/lib/types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -28,11 +28,8 @@ import { LeadDescriptionCard } from '@/components/leads/detail/LeadDescriptionCa
 import { ScheduledViewingsCard } from '@/components/leads/detail/ScheduledViewingsCard';
 import { SourcePropertyCard } from '@/components/leads/detail/SourcePropertyCard';
 import { SimilarLeadsCard } from '@/components/leads/detail/SimilarLeadsCard';
-import { AiLeadScoreCard } from '@/components/leads/detail/AiLeadScoreCard';
-import { FinancialStatusCard } from '@/components/leads/detail/FinancialStatusCard';
-import { PreferencesCard } from '@/components/leads/detail/PreferencesCard';
 import { EditLeadDialog } from '@/components/leads/detail/EditLeadDialog';
-import { OfferManagementCard } from '@/components/leads/detail/OfferManagementCard';
+import { BuyerFinanceAndOffersCard } from '@/components/leads/detail/BuyerFinanceAndOffersCard';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -228,7 +225,7 @@ export default function LeadDetailPage() {
         const fetchAgents = async () => {
             setAreAgentsLoading(true);
             try {
-                const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
+                const agentPromises = (agency.agentIds ?? []).map(id => getDoc(doc(firestore, 'users', id)));
                 const agentDocs = await Promise.all(agentPromises);
                 const agentProfiles = agentDocs
                     .filter(docSnap => docSnap.exists())
@@ -293,59 +290,18 @@ export default function LeadDetailPage() {
     }, [contactDocRef, contact, properties, viewings]);
 
     useEffect(() => {
-        if (properties && contact) {
-            const matcherProperties = properties.map(p => ({
-                ...p,
-                address: p.address || p.location || '',
-                price: p.price || 0,
-                rooms: p.rooms || 0,
-                bathrooms: p.bathrooms || 0,
-                squareFootage: p.squareFootage || 0,
-                description: p.description || p.title || '',
-                image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
-            }));
-            const clientPrefs = contact.preferences || {
-                desiredPriceRangeMin: (contact.budget || 0) * 0.8,
-                desiredPriceRangeMax: (contact.budget || 0) * 1.2,
-                desiredRooms: 2,
-                desiredBathrooms: 1,
-                desiredSquareFootageMin: 50,
-                desiredSquareFootageMax: 100,
-                desiredFeatures: '',
-                locationPreferences: contact.city || '',
-            };
-            // Ensure required fields are present
-            const fullClientPrefs = {
-                ...{
-                    desiredRooms: 0,
-                    desiredBathrooms: 0,
-                    desiredSquareFootageMin: 0,
-                    desiredSquareFootageMax: 99999,
-                    desiredFeatures: '',
-                    locationPreferences: '',
-                    desiredPriceRangeMin: 0,
-                    desiredPriceRangeMax: 9999999,
-                },
-                ...clientPrefs
-            };
-            propertyMatcher({
-                clientPreferences: fullClientPrefs,
-                properties: matcherProperties,
-            }).then(result => {
-                if (result.matchedProperties && properties) {
-                  const enrichedMatchedProperties = result.matchedProperties.map(matchedProp => {
-                    const originalProperty = properties.find(p => p.id === (matchedProp as any).id);
-                    return {
-                      ...originalProperty, // This has the full 'images' array
-                      ...matchedProp,     // This adds matchScore, reasoning, etc.
-                    };
-                  });
-                  setMatchedProperties(enrichedMatchedProperties as MatchedProperty[]);
-                } else {
-                  setMatchedProperties([]);
-                }
-            });
+        if (!properties || !contact) {
+            return;
         }
+
+        propertyMatcherFromContact(contact, properties)
+            .then((result) => {
+                setMatchedProperties(result.matchedProperties || []);
+            })
+            .catch((error) => {
+                console.error('Automatic OpenAI property matching failed:', error);
+                setMatchedProperties([]);
+            });
     }, [properties, contact]);
     
     // --- MUTATION HANDLERS ---
@@ -418,31 +374,14 @@ export default function LeadDetailPage() {
 
         setIsMatching(true);
         
-        const matcherProperties = properties.map(p => ({
-            ...p,
-            address: p.address || p.location || '',
-            price: p.price || 0,
-            rooms: p.rooms || 0,
-            bathrooms: p.bathrooms || 0,
-            squareFootage: p.squareFootage || 0,
-            description: p.description || p.title || '',
-            image: p.images?.[0]?.url || `https://picsum.photos/seed/${p.id}/400/300`,
-        }));
-
         try {
             const result = await propertyMatcher({
                 clientPreferences: preferences,
-                properties: matcherProperties,
+                properties,
+                contact,
             });
-            if (result.matchedProperties && properties) {
-              const enrichedMatchedProperties = result.matchedProperties.map(matchedProp => {
-                const originalProperty = properties.find(p => p.id === (matchedProp as any).id);
-                return {
-                  ...originalProperty,
-                  ...matchedProp,
-                };
-              });
-              setMatchedProperties(enrichedMatchedProperties as MatchedProperty[]);
+            if (result.matchedProperties) {
+              setMatchedProperties(result.matchedProperties as MatchedProperty[]);
             } else {
               setMatchedProperties([]);
             }
@@ -626,10 +565,13 @@ export default function LeadDetailPage() {
 
 
     const timelineItems = useMemo(() => {
-        if (!tasks && !contact?.interactionHistory) return [];
-        const combined: ({ type: 'task' } & Task | { type: 'interaction' } & Interaction)[] = [];
-        (tasks || []).forEach(t => combined.push({ ...t, type: 'task' }));
-        (contact?.interactionHistory || []).forEach(i => combined.push({ ...i, type: 'interaction' }));
+        const taskItems = (tasks || []).map((task) => ({ ...task, type: 'task' as const }));
+        const interactionItems = (contact?.interactionHistory || []).map((interaction) => ({
+            ...interaction,
+            type: 'interaction' as const,
+        }));
+        const combined = [...taskItems, ...interactionItems];
+
         return combined.sort((a, b) => {
             const dateA = new Date(a.type === 'task' ? a.dueDate : a.date);
             const dateB = new Date(b.type === 'task' ? b.dueDate : b.date);
@@ -759,18 +701,14 @@ export default function LeadDetailPage() {
                       />
                     </div>
                     
-                    <div className="pt-4 space-y-4">
-                        <FinancialStatusCard 
-                            contact={contact} 
+                    <div className="pt-4">
+                        <BuyerFinanceAndOffersCard
+                            contact={contact}
                             onUpdateContact={handleUpdateContact}
                             recommendations={recommendations}
                             properties={properties}
                             portalId={contact.portalId || null}
                             onUpdateRecommendation={handleUpdateRecommendation}
-                        />
-                        <OfferManagementCard
-                            contact={contact}
-                            properties={properties || []}
                             onAddOffer={handleAddOffer}
                             onUpdateOffer={handleUpdateOffer}
                             onDeleteOffer={handleDeleteOffer}
@@ -841,7 +779,34 @@ export default function LeadDetailPage() {
                             sourceProperty={fallbackSourceProperty}
                             isSourcePropertyLoading={isSourcePropertyLoading}
                             allProperties={properties || []}
+                            viewings={viewings}
+                            tasks={tasks}
+                            recommendations={recommendations}
                         />
+                        <BuyerFinanceAndOffersCard
+                            contact={contact}
+                            onUpdateContact={handleUpdateContact}
+                            recommendations={recommendations}
+                            properties={properties}
+                            portalId={contact.portalId || null}
+                            onUpdateRecommendation={handleUpdateRecommendation}
+                            onAddOffer={handleAddOffer}
+                            onUpdateOffer={handleUpdateOffer}
+                            onDeleteOffer={handleDeleteOffer}
+                        />
+                    </div>
+
+                    <div className="lg:col-span-9 space-y-6">
+                        <MatchedProperties
+                            properties={matchedProperties}
+                            onAddRecommendation={handleAddRecommendation}
+                            agency={agency}
+                            contact={contact}
+                        />
+                        <ClientPortalManager contact={contact} agency={agency} />
+                        <PreferencesFormCard contact={contact} agency={agency} />
+                        <ScheduledViewingsCard viewings={scheduledViewings} />
+                        <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
                         <LeadTimeline 
                             interactions={contact.interactionHistory || []} 
                             tasks={tasks || []}
@@ -850,40 +815,8 @@ export default function LeadDetailPage() {
                             contacts={[contact]}
                             onToggleTask={handleToggleTask}
                         />
-                    </div>
-
-                    <div className="lg:col-span-6 space-y-6">
-                        <MatchedProperties
-                            properties={matchedProperties}
-                            onAddRecommendation={handleAddRecommendation}
-                            agency={agency}
-                            contact={contact}
-                            showPortalManager={true}
-                        />
-                        <ScheduledViewingsCard viewings={scheduledViewings} />
                         <SimilarLeadsCard leads={similarCumparatori} />
                         <PreferencesChatHistoryCard history={contact.preferencesChatHistory} />
-                    </div>
-
-                    <div className="lg:col-span-3 space-y-6">
-                        <AiLeadScoreCard contact={contact} onUpdateContact={handleUpdateContact} />
-                        <PreferencesFormCard contact={contact} agency={agency} />
-                        <FinancialStatusCard 
-                            contact={contact} 
-                            onUpdateContact={handleUpdateContact}
-                            recommendations={recommendations}
-                            properties={properties}
-                            portalId={contact.portalId || null}
-                            onUpdateRecommendation={handleUpdateRecommendation}
-                        />
-                         <LeadSettingsCard contact={contact} agents={agents} onUpdateContact={handleUpdateContact} />
-                         <OfferManagementCard
-                            contact={contact}
-                            properties={properties || []}
-                            onAddOffer={handleAddOffer}
-                            onUpdateOffer={handleUpdateOffer}
-                            onDeleteOffer={handleDeleteOffer}
-                        />
                     </div>
                 </main>
             </div>
