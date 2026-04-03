@@ -37,14 +37,6 @@ type OpenAIRankedItem = {
   id: string;
   matchScore: number;
   reasoning: string;
-  zoneReasoning?: string;
-  zoneDebug?: {
-    exact: number;
-    adjacent: number;
-    cluster: number;
-    macro: number;
-    penalty: number;
-  };
 };
 
 function normalizeProperties(input: PropertyMatcherInput) {
@@ -112,7 +104,7 @@ async function rankWithOpenAI<
     `- Prefer hard constraints first: budget, area, rooms, location, property type.`,
     `- Then refine for softer fit: features, trade-offs, overall desirability.`,
     `- Reasoning must be short, in Romanian, one sentence per item.`,
-    `- Preserve zoneDebug as the deterministic zone breakdown; do not invent or alter its structure.`,
+    `- Do not modify deterministic zone reasoning or zone debug.`,
     `- Do not invent missing facts.`,
     JSON.stringify(
       {
@@ -152,21 +144,8 @@ async function rankWithOpenAI<
                     id: { type: 'string' },
                     matchScore: { type: 'integer', minimum: 0, maximum: 100 },
                     reasoning: { type: 'string' },
-                    zoneReasoning: { type: 'string' },
-                    zoneDebug: {
-                      type: 'object',
-                      additionalProperties: false,
-                      properties: {
-                        exact: { type: 'number' },
-                        adjacent: { type: 'number' },
-                        cluster: { type: 'number' },
-                        macro: { type: 'number' },
-                        penalty: { type: 'number' },
-                      },
-                      required: ['exact', 'adjacent', 'cluster', 'macro', 'penalty'],
-                    },
                   },
-                  required: ['id', 'matchScore', 'reasoning', 'zoneReasoning', 'zoneDebug'],
+                  required: ['id', 'matchScore', 'reasoning'],
                 },
               },
             },
@@ -202,8 +181,6 @@ async function rankWithOpenAI<
         ...original,
         matchScore: Math.max(0, Math.min(100, Math.round(item.matchScore))),
         reasoning: item.reasoning?.trim() || original.reasoning,
-        zoneReasoning: item.zoneReasoning?.trim() || original.zoneReasoning,
-        zoneDebug: item.zoneDebug || original.zoneDebug,
       };
     })
     .filter(Boolean) as T[];
@@ -289,8 +266,6 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
           ...original,
           matchScore: item.matchScore,
           reasoning: item.reasoning,
-          zoneReasoning: item.zoneReasoning || original.zoneReasoning,
-          zoneDebug: item.zoneDebug || original.zoneDebug,
         };
       })
       .filter(Boolean)
@@ -372,8 +347,6 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
           ...original,
           matchScore: item.matchScore,
           reasoning: item.reasoning,
-          zoneReasoning: item.zoneReasoning || original.zoneReasoning,
-          zoneDebug: item.zoneDebug || original.zoneDebug,
         };
       })
       .filter(Boolean)

@@ -211,19 +211,6 @@ const ambiguousMatch = (normalizedText: string, tokens: string[]) => {
       };
     }
 
-    const canonicalCandidate = rule.candidates
-      .map((candidateName) => getZoneByName(candidateName))
-      .find((zone) => zone?.normalizedName === term);
-
-    if (canonicalCandidate && normalizedText === term) {
-      return {
-        zone: canonicalCandidate,
-        matchType: 'fuzzy' as const,
-        confidence: 0.84,
-        alternatives: [],
-      };
-    }
-
     const ranked = rule.candidates
       .map((candidateName) => {
         const zone = getZoneByName(candidateName);

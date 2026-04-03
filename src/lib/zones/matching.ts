@@ -1,7 +1,6 @@
 import {
   getAdjacentZones,
   getClusterPeers,
-  getMacroAreaPeers,
   normalizeRomanianText,
   preparedBucurestiIlfovOntology,
 } from './ontology';
@@ -134,33 +133,16 @@ function getClusterFit(propertyFact: PropertyZoneFact, preferences: ClientZonePr
     return 1;
   }
 
-  const macroAccepted = preferences.some(
-    (preference) =>
-      preference.preference !== 'excluded' &&
-      preference.scope === 'macro_area' &&
-      preference.macroAreaCode &&
-      propertyFact.macroAreas.includes(preference.macroAreaCode)
-  );
-
-  return macroAccepted ? 0.55 : 0;
+  return 0;
 }
 
 function getMacroFit(propertyFact: PropertyZoneFact, preferences: ClientZonePreference[]) {
-  const zoneMacroPeers = propertyFact.zoneId
-    ? new Set(getMacroAreaPeers(propertyFact.zoneId).map((zone) => zone.zone_id))
-    : new Set<string>();
-
-  const macroPreferences = preferences.filter((preference) => preference.preference !== 'excluded');
-
-  const explicitMacroFit = macroPreferences
+  const explicitMacroFit = preferences
+    .filter((preference) => preference.preference !== 'excluded')
     .filter((preference) => matchesPreferenceMacroArea(propertyFact.macroAreas, preference))
     .map(preferenceWeight);
 
-  const indirectMacroFit = macroPreferences
-    .filter((preference) => preference.scope === 'zone' && preference.zoneId && zoneMacroPeers.has(preference.zoneId))
-    .map((preference) => preferenceWeight(preference) * 0.7);
-
-  return clamp(Math.max(0, ...explicitMacroFit, ...indirectMacroFit), 0, 1);
+  return clamp(Math.max(0, ...explicitMacroFit), 0, 1);
 }
 
 function getBehavioralFit(propertyFact: PropertyZoneFact, signals: ZoneBehaviorSignal[]) {

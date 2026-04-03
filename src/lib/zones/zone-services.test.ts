@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 
 import { buildPropertyZoneFact, scorePropertyAgainstZonePreferences } from './matching';
 import { normalizeZoneInput } from './normalization';
+import { getAdjacentZones, getZoneByName } from './ontology';
 import type { ClientZonePreference } from './types';
 
 const tests: Array<{ name: string; run: () => void }> = [];
 const test = (name: string, run: () => void) => tests.push({ name, run });
 
-test('exact Baneasa resolves directly', () => {
+test('Baneasa without context remains ambiguous', () => {
   const result = normalizeZoneInput('Băneasa');
-  assert.equal(result.matched_zone_name, 'Baneasa');
-  assert.ok(result.match_type === 'exact' || result.match_type === 'fuzzy');
+  assert.equal(result.match_type, 'ambiguous');
+  assert.ok((result.alternatives?.length ?? 0) > 0);
 });
 
 test('Piata Presei resolves by alias to Casa Presei', () => {
@@ -75,6 +76,12 @@ test('Berceni Ilfov resolves to Berceni Ilfov Central', () => {
   assert.equal(result.matched_zone_name, 'Berceni Ilfov Central');
 });
 
+test('Berceni without context remains ambiguous', () => {
+  const result = normalizeZoneInput('Berceni');
+  assert.equal(result.match_type, 'ambiguous');
+  assert.ok((result.alternatives?.length ?? 0) > 0);
+});
+
 test('Leonida beats generic Berceni when context exists', () => {
   const result = normalizeZoneInput('Berceni', { description: 'leonida si popesti' });
   assert.equal(result.matched_zone_name, 'Dimitrie Leonida');
@@ -88,10 +95,22 @@ test('preferred exact zone yields high score', () => {
 });
 
 test('adjacent preferred zone gets adjacency credit', () => {
-  const propertyFact = buildPropertyZoneFact({ propertyId: 'p-2', rawZoneText: 'Baneasa' });
-  const preferences: ClientZonePreference[] = [{ scope: 'zone', preference: 'preferred', zoneId: 'bucuresti::bucuresti::aviatiei' }];
-  const score = scorePropertyAgainstZonePreferences({ propertyFact, preferences });
-  assert.ok(score.breakdown.adjacency_fit > 0);
+  const aviatiei = getZoneByName('Aviatiei');
+  assert.ok(aviatiei);
+  const adjacentZone = getAdjacentZones(aviatiei.zone_id)[0];
+  assert.ok(adjacentZone);
+
+  const forward = scorePropertyAgainstZonePreferences({
+    propertyFact: buildPropertyZoneFact({ propertyId: 'p-2', rawZoneText: adjacentZone.name }),
+    preferences: [{ scope: 'zone', preference: 'preferred', zoneId: aviatiei.zone_id }],
+  });
+
+  const reverse = scorePropertyAgainstZonePreferences({
+    propertyFact: buildPropertyZoneFact({ propertyId: 'p-2b', rawZoneText: aviatiei.name }),
+    preferences: [{ scope: 'zone', preference: 'preferred', zoneId: adjacentZone.zone_id }],
+  });
+
+  assert.ok(forward.breakdown.adjacency_fit > 0 || reverse.breakdown.adjacency_fit > 0);
 });
 
 test('same commercial cluster gets cluster credit', () => {
@@ -106,6 +125,17 @@ test('same macro area but not direct match still scores', () => {
   const preferences: ClientZonePreference[] = [{ scope: 'macro_area', preference: 'preferred', macroAreaCode: 'NORD_VEST' }];
   const score = scorePropertyAgainstZonePreferences({ propertyFact, preferences });
   assert.ok(score.breakdown.macro_fit > 0);
+});
+
+test('zone preferences alone do not grant macro fit for broad unrelated areas', () => {
+  const propertyFact = buildPropertyZoneFact({ propertyId: 'p-4b', rawZoneText: 'Pipera Sud' });
+  const preferences: ClientZonePreference[] = [
+    { scope: 'zone', preference: 'preferred', zoneId: 'bucuresti::bucuresti::militari' },
+    { scope: 'zone', preference: 'preferred', zoneId: 'bucuresti::bucuresti::drumul-taberei' },
+  ];
+  const score = scorePropertyAgainstZonePreferences({ propertyFact, preferences });
+  assert.equal(score.breakdown.macro_fit, 0);
+  assert.equal(score.breakdown.cluster_fit, 0);
 });
 
 test('excluded zone is a hard reject', () => {
