@@ -147,6 +147,13 @@ function startRunnerProcess(sessionPath) {
 
   runnerProcess.on('exit', (code) => {
     if (
+      runnerStatus.state === 'waiting_for_publish'
+    ) {
+      setRunnerStatus({
+        state: 'waiting_for_publish',
+        message: runnerStatus.message || 'Draftul este pregătit. Publică în Facebook, apoi apasă `Am publicat în grup`.',
+      });
+    } else if (
       runnerStatus.state !== 'completed' &&
       runnerStatus.state !== 'stopped' &&
       runnerStatus.state !== 'error' &&
@@ -167,6 +174,72 @@ function sendWorkerCommand(command) {
   }
 
   runnerProcess.stdin.write(`${JSON.stringify({ command })}\n`);
+}
+
+async function advanceDesktopSession(nextStatus) {
+  const sessionPath = runnerStatus.sessionPath;
+  if (!sessionPath) {
+    throw new Error('Nu există o sesiune desktop activă.');
+  }
+
+  const session = await readSessionFromDisk(sessionPath);
+  const currentGroup = session.groups?.[session.currentGroupIndex];
+
+  if (!currentGroup) {
+    setRunnerStatus({
+      state: 'completed',
+      message: 'Nu mai există grupuri de procesat.',
+      currentGroupIndex: session.currentGroupIndex,
+      currentGroupName: null,
+      completedCount: session.groups.filter((group) => group.status === 'posted' || group.status === 'skipped').length,
+      totalCount: session.groups.length,
+    });
+    currentSession = session;
+    return { status: runnerStatus, session };
+  }
+
+  currentGroup.status = nextStatus;
+  const nextIndex = session.groups.findIndex((group, index) => index > session.currentGroupIndex && group.status === 'pending');
+  if (nextIndex >= 0) {
+    session.currentGroupIndex = nextIndex;
+  }
+
+  await writeSessionToDisk(session);
+  currentSession = session;
+
+  const completedCount = session.groups.filter((group) => group.status === 'posted' || group.status === 'skipped').length;
+  const nextGroup = nextIndex >= 0 ? session.groups[nextIndex] : null;
+
+  if (nextGroup) {
+    setRunnerStatus({
+      state: 'starting',
+      message:
+        nextStatus === 'posted'
+          ? `Grupul a fost marcat ca publicat. Pregătesc ${nextGroup.name}...`
+          : `Grupul a fost sărit. Pregătesc ${nextGroup.name}...`,
+      currentGroupIndex: session.currentGroupIndex,
+      currentGroupName: nextGroup.name,
+      completedCount,
+      totalCount: session.groups.length,
+      sessionPath,
+    });
+    startRunnerProcess(sessionPath);
+  } else {
+    setRunnerStatus({
+      state: 'completed',
+      message:
+        nextStatus === 'posted'
+          ? 'Toate grupurile au fost parcurse. Ultimul grup a fost marcat ca publicat.'
+          : 'Toate grupurile au fost parcurse. Ultimul grup a fost sărit.',
+      currentGroupIndex: session.currentGroupIndex,
+      currentGroupName: currentGroup.name || null,
+      completedCount,
+      totalCount: session.groups.length,
+      sessionPath,
+    });
+  }
+
+  return { status: runnerStatus, session };
 }
 
 app.whenReady().then(() => {
@@ -233,13 +306,21 @@ ipcMain.handle('facebook-runner:retry-current-group', async () => {
 });
 
 ipcMain.handle('facebook-runner:mark-posted', async () => {
-  sendWorkerCommand('mark-posted');
-  return { status: runnerStatus, session: currentSession };
+  if (runnerProcess && runnerProcess.stdin.writable) {
+    sendWorkerCommand('mark-posted');
+    return { status: runnerStatus, session: currentSession };
+  }
+
+  return advanceDesktopSession('posted');
 });
 
 ipcMain.handle('facebook-runner:skip-group', async () => {
-  sendWorkerCommand('skip-group');
-  return { status: runnerStatus, session: currentSession };
+  if (runnerProcess && runnerProcess.stdin.writable) {
+    sendWorkerCommand('skip-group');
+    return { status: runnerStatus, session: currentSession };
+  }
+
+  return advanceDesktopSession('skipped');
 });
 
 ipcMain.handle('facebook-runner:stop', async () => {

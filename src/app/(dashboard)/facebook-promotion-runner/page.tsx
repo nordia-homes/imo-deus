@@ -404,39 +404,77 @@ export default function FacebookPromotionRunnerPage() {
                 Runner-ul păstrează sesiunea și te duce grup cu grup. Descrierea este copiată automat la fiecare pas, iar tu te oprești înainte de butonul `Publică`.
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div />
+          </div>
+
+          {currentGroup ? (
+            <div className="grid gap-3 lg:grid-cols-4">
               <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => router.push(`/properties/${session.propertyId}`)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Înapoi la proprietate
               </Button>
               {isDesktop ? (
-                <>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={saveDesktopSessionFile}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Exportă sesiunea
-                  </Button>
-                  <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={startDesktopRunner} disabled={isUpdating}>
-                    <Laptop className="mr-2 h-4 w-4" />
-                    Pornește runner desktop
-                  </Button>
-                </>
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={saveDesktopSessionFile}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Exportă sesiunea
+                </Button>
               ) : (
-                <>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={downloadSessionFile}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Descarcă sesiunea JSON
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={copyHelperCommand}>
-                    <TerminalSquare className="mr-2 h-4 w-4" />
-                    Copiază comanda helper
-                  </Button>
-                </>
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={downloadSessionFile}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Descarcă sesiunea JSON
+                </Button>
+              )}
+              {isDesktop ? (
+                <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={startDesktopRunner} disabled={isUpdating}>
+                  <Laptop className="mr-2 h-4 w-4" />
+                  Pornește runner desktop
+                </Button>
+              ) : (
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={copyHelperCommand}>
+                  <TerminalSquare className="mr-2 h-4 w-4" />
+                  Copiază comanda helper
+                </Button>
               )}
               <Button variant="ghost" className="rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white" onClick={clearSession}>
                 Închide sesiunea
               </Button>
             </div>
-          </div>
+          ) : null}
+
+          {currentGroup ? (
+            <div className="grid gap-3 lg:grid-cols-4">
+              {isDesktop ? (
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Reia grupul curent
+                </Button>
+              ) : (
+                <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={openCurrentGroup} disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
+                  Deschide grupul curent
+                </Button>
+              )}
+              {isDesktop ? (
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={resetDesktopRunnerProfile} disabled={isUpdating}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Resetează profilul runner
+                </Button>
+              ) : (
+                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={openAllImages}>
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Deschide toate pozele
+                </Button>
+              )}
+              <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Am publicat în grup
+              </Button>
+              <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
+                <SkipForward className="mr-2 h-4 w-4" />
+                Sari peste acest grup
+              </Button>
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm text-white/70">
@@ -473,25 +511,6 @@ export default function FacebookPromotionRunnerPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={openCurrentGroup} disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
-                    Deschide grupul curent
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={openAllImages}>
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Deschide toate pozele
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => navigator.clipboard.writeText(session.propertyDescription)}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copiază descrierea
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => window.open(currentGroup.url, '_blank', 'noopener,noreferrer')}>
-                    <Rocket className="mr-2 h-4 w-4" />
-                    Reia tabul Facebook
-                  </Button>
-                </div>
-
                 <div className="rounded-2xl border border-emerald-300/16 bg-emerald-400/10 p-4 text-sm text-emerald-50">
                   <p className="font-semibold">Ce face runner-ul acum</p>
                   <p className="mt-2 leading-7 text-emerald-50/90">
@@ -511,27 +530,21 @@ export default function FacebookPromotionRunnerPage() {
                   </div>
                 ) : null}
 
-                <div className="flex flex-wrap gap-3">
-                {isDesktop ? (
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Reia grupul curent
-                  </Button>
-                ) : null}
-                {isDesktop ? (
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={resetDesktopRunnerProfile} disabled={isUpdating}>
-                    <RefreshCcw className="mr-2 h-4 w-4" />
-                    Resetează profilul runner
-                  </Button>
-                ) : null}
-                <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Am publicat în grup
-                  </Button>
-                  <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
-                    <SkipForward className="mr-2 h-4 w-4" />
-                    Sari peste acest grup
-                  </Button>
+                <div className="rounded-2xl border border-white/10 bg-[#10233b] p-4">
+                  <p className="font-semibold text-white">Stare grupuri</p>
+                  <div className="mt-4 space-y-2">
+                    {session.groups.map((group, index) => (
+                      <div key={`${group.url}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-[#0e2138] px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{group.name}</p>
+                          <p className="truncate text-xs text-white/55">{group.url}</p>
+                        </div>
+                        <Badge className={group.status === 'posted' ? 'bg-emerald-500/20 text-emerald-100' : group.status === 'opened' ? 'bg-blue-500/20 text-blue-100' : group.status === 'skipped' ? 'bg-amber-500/20 text-amber-100' : 'bg-white/10 text-white/80'}>
+                          {group.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             ) : (
@@ -621,25 +634,6 @@ export default function FacebookPromotionRunnerPage() {
               {session.propertyImages.length > 6 ? (
                 <p className="text-xs text-white/55">Sunt afișate primele 6 poze. Butonul `Deschide toate pozele` le deschide pe toate.</p>
               ) : null}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
-            <CardHeader>
-              <CardTitle className="text-white">Stare grupuri</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {session.groups.map((group, index) => (
-                <div key={`${group.url}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-[#10233b] px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">{group.name}</p>
-                    <p className="truncate text-xs text-white/55">{group.url}</p>
-                  </div>
-                  <Badge className={group.status === 'posted' ? 'bg-emerald-500/20 text-emerald-100' : group.status === 'opened' ? 'bg-blue-500/20 text-blue-100' : group.status === 'skipped' ? 'bg-amber-500/20 text-amber-100' : 'bg-white/10 text-white/80'}>
-                    {group.status}
-                  </Badge>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </div>
