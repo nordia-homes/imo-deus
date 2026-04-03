@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { addMinutes, format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Edit, Trash2, MoreVertical, Phone, MapPin, UserRound, Clock3, Building2, Navigation } from 'lucide-react';
+import { Calendar, Edit, Trash2, MoreVertical, Phone, MapPin, UserRound, Clock3, Building2, Navigation, MessageSquareText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -59,6 +59,17 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
         return `https://www.waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
     };
 
+    const getStreetAndNumber = (address?: string | null) => {
+        if (!address?.trim()) return '';
+        return address.split(',')[0]?.trim() || address.trim();
+    };
+
+    const buildViewingConfirmationText = (viewing: Viewing) => {
+        const hour = format(parseISO(viewing.viewingDate), 'HH:mm');
+        const shortAddress = getStreetAndNumber(viewing.propertyAddress);
+        return `Buna ziua! Numele meu este Ramona Ciolac si va contactez pentru a confirma vizionarea de astazi de la ora ${hour} pentru apartamentul din ${shortAddress}. Daca totul este in regula si pentru dvs., va astept la adresa si va rog sa ma sunati sau sa imi scrieti cand ajungeti. Multumesc, ne vedem mai tarziu!`;
+    };
+
     const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
         const start = parseISO(viewingDate);
         const end = addMinutes(start, duration ?? 30);
@@ -88,9 +99,10 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
+                const viewingConfirmationText = encodeURIComponent(buildViewingConfirmationText(viewing));
 
                 return (
-                    <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
+                <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
                         <div className="flex flex-col md:flex-row">
                             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-[26px] md:aspect-[16/10] md:h-auto md:w-[320px] md:shrink-0 md:rounded-l-[26px] md:rounded-r-none">
                                 {property?.images?.[0]?.url ? (
@@ -108,7 +120,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F1E33]/55 via-transparent to-transparent" />
                                 <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-3">
-                                    <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
+                                    <Badge variant={getStatusVariant(viewing.status)} className="text-sm">{viewing.status}</Badge>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-black/25 text-white/85 backdrop-blur-sm hover:bg-black/40 hover:text-white">
@@ -126,9 +138,14 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                     </DropdownMenu>
                                 </div>
                                 <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
-                                        <Clock3 className="h-4 w-4 text-white" />
-                                        {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
+                                    <div className="rounded-2xl border border-white/20 bg-[#0B1728]/96 px-3 py-2.5 text-white shadow-[0_14px_30px_rgba(0,0,0,0.38)] backdrop-blur-md">
+                                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">
+                                            <Clock3 className="h-3.5 w-3.5 text-primary" />
+                                            Ora vizionării
+                                        </div>
+                                        <div className="mt-1 text-lg font-semibold leading-none text-white sm:text-xl">
+                                            {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
+                                        </div>
                                     </div>
                                     {wazeUrl && (
                                         <a
@@ -147,7 +164,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                             <CardContent className="min-w-0 w-full max-w-full flex-1 overflow-hidden p-4 sm:p-6">
                                 <div className="min-w-0 space-y-4 sm:space-y-5">
                                     <div className="min-w-0 space-y-2.5 sm:space-y-3">
-                                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/75">
+                                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white/75">
                                             <Calendar className="h-3.5 w-3.5" />
                                             {format(parseISO(viewing.viewingDate), 'EEEE, d MMMM', { locale: ro })}
                                         </div>
@@ -155,7 +172,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                             {viewing.propertyTitle}
                                         </Link>
                                         {viewing.propertyAddress && (
-                                            <div className="flex w-full min-w-0 max-w-full items-center gap-2 overflow-hidden text-sm text-white/65">
+                                            <div className="flex w-full min-w-0 max-w-full items-center gap-2 overflow-hidden text-base text-white/65">
                                                 <MapPin className="h-4 w-4 shrink-0" />
                                                 <span className="block min-w-0 max-w-full flex-1 truncate whitespace-nowrap">
                                                     {viewing.propertyAddress}
@@ -168,14 +185,17 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
 
                                     <div className={cn("grid max-w-full gap-3", property?.ownerName ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2")}>
                                         <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                            <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                                            <div className="mb-0.5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">
                                                 <UserRound className="h-3.5 w-3.5" />
                                                 Client
                                             </div>
                                             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
+                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-base font-medium leading-tight text-white/90 hover:underline sm:text-lg">{viewing.contactName}</Link>
                                                 {contactPhone && (
                                                     <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
+                                                            <MessageSquareText className="h-4 w-4" />
+                                                        </a>
                                                         <a href={`tel:${contact?.phone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10">
                                                             <Phone className="h-4 w-4" />
                                                         </a>
@@ -189,9 +209,9 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
 
                                         {property?.ownerName && (
                                             <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                <div className="mb-0.5 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">Proprietar</div>
+                                                <div className="mb-0.5 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">Proprietar</div>
                                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                    <p className="min-w-0 max-w-full break-words text-[15px] font-medium leading-tight text-white/90 sm:text-base">{property.ownerName}</p>
+                                                    <p className="min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
                                                     {ownerPhone && (
                                                         <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                             <a href={`tel:${property?.ownerPhone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10">
@@ -207,11 +227,11 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                         )}
 
                                         <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
-                                            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
+                                            <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/45 sm:mb-3 sm:text-sm">
                                                 <Building2 className="h-3.5 w-3.5" />
                                                 Agent
                                             </div>
-                                            <div className="flex min-w-0 max-w-full items-center gap-3 text-sm text-white/80">
+                                            <div className="flex min-w-0 max-w-full items-center gap-3 text-base text-white/80">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={agent?.photoUrl || undefined} />
                                                     <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>

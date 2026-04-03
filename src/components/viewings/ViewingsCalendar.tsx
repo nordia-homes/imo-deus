@@ -16,7 +16,7 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, Navigation } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, Navigation, MessageSquareText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { WhatsappIcon } from '../icons/WhatsappIcon';
@@ -68,10 +68,21 @@ const buildWazeUrl = (address?: string | null) => {
     return `https://www.waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
 };
 
+const getStreetAndNumber = (address?: string | null) => {
+    if (!address?.trim()) return '';
+    return address.split(',')[0]?.trim() || address.trim();
+};
+
 const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
     const start = parseISO(viewingDate);
     const end = addMinutes(start, duration ?? 30);
     return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+};
+
+const buildViewingConfirmationText = (viewing: Viewing) => {
+    const hour = format(parseISO(viewing.viewingDate), 'HH:mm');
+    const shortAddress = getStreetAndNumber(viewing.propertyAddress);
+    return `Buna ziua! Numele meu este Ramona Ciolac si va contactez pentru a confirma vizionarea de astazi de la ora ${hour} pentru apartamentul din ${shortAddress}. Daca totul este in regula si pentru dvs., va astept la adresa si va rog sa ma sunati sau sa imi scrieti cand ajungeti. Multumesc, ne vedem mai tarziu!`;
 };
 
 const VIEWING_DAY_START_HOUR = 8;
@@ -387,10 +398,10 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         <div className="mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-white">Rezumat Ore Vizionări</p>
-              <p className="text-xs text-white/55">Programul zilei între 08:00 și 21:00</p>
+              <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
+              <p className="text-sm text-white/55 sm:text-base">Programul zilei între 08:00 și 21:00</p>
             </div>
-            <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/75">
+            <div className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
               {selectedDayViewings.length} vizionări
             </div>
           </div>
@@ -417,7 +428,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
               )}
             </div>
 
-            <div className="mt-3 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.14em] text-white/45">
+            <div className="mt-3 flex items-center justify-between text-xs font-medium uppercase tracking-[0.14em] text-white/45 sm:text-sm">
               <span>08:00</span>
               <span>11:00</span>
               <span>14:00</span>
@@ -433,25 +444,25 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                       key={item.key}
                       type="button"
                       onClick={() => scrollToViewingCard(item.key)}
-                      className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-xs text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
+                      className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
                     >
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
-                      <span className="shrink-0 font-medium text-white">{item.label}</span>
-                      <span className="min-w-0 truncate text-white/55">{item.title}</span>
+                      <span className="shrink-0 font-medium text-white sm:text-base">{item.label}</span>
+                      <span className="min-w-0 truncate text-white/55 sm:text-base">{item.title}</span>
                     </button>
                   ) : (
                     <div key={item.key} className="w-full px-1 py-1.5">
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200/80">Timp liber</span>
+                        <span className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/80 sm:text-sm">Timp liber</span>
                         <div className="h-px flex-1 bg-white/10">
                           <div
                             className="h-px bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
                             style={{ width: `${Math.max(12, Math.min(100, (item.minutes / VIEWING_DAY_TOTAL_MINUTES) * 100))}%` }}
                           />
                         </div>
-                        <span className="text-[11px] text-white/45">{item.label}</span>
+                        <span className="text-xs text-white/45 sm:text-sm">{item.label}</span>
                       </div>
-                      <div className="mt-1 text-right text-[11px] text-emerald-200/70">{formatAvailabilityDuration(item.minutes)}</div>
+                      <div className="mt-1 text-right text-xs text-emerald-200/70 sm:text-sm">{formatAvailabilityDuration(item.minutes)}</div>
                     </div>
                   )
                 )}
@@ -529,6 +540,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
+                const viewingConfirmationText = encodeURIComponent(buildViewingConfirmationText(viewing));
 
                 return (
                     <Card id={`viewing-card-${viewing.id}`} key={entry.key} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
@@ -567,9 +579,14 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                     </DropdownMenu>
                                 </div>
                                 <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-2">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
-                                        <Clock3 className="h-4 w-4 text-white" />
-                                        {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
+                                    <div className="rounded-2xl border border-white/20 bg-[#0B1728]/96 px-3 py-2.5 text-white shadow-[0_14px_30px_rgba(0,0,0,0.38)] backdrop-blur-md">
+                                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">
+                                            <Clock3 className="h-3.5 w-3.5 text-primary" />
+                                            Ora vizionării
+                                        </div>
+                                        <div className="mt-1 text-lg font-semibold leading-none text-white sm:text-xl">
+                                            {formatViewingTimeRange(viewing.viewingDate, viewing.duration)}
+                                        </div>
                                     </div>
                                     {wazeUrl && (
                                         <a
@@ -617,6 +634,9 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                                 <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
                                                 {contactPhone && (
                                                     <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
+                                                            <MessageSquareText className="h-4 w-4" />
+                                                        </a>
                                                         <a href={`tel:${contact?.phone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10">
                                                             <Phone className="h-4 w-4" />
                                                         </a>
