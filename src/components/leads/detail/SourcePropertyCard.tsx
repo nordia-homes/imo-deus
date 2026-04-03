@@ -102,21 +102,21 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                         sizes="(max-width: 1023px) 100vw, 25vw"
                                     />
-                                    <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-2">
-                                        <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
-                                            <BedDouble className="mr-1.5 h-4 w-4" /> {property.rooms} camere
+                                    <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-1.5">
+                                        <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                            <BedDouble className="mr-1 h-4 w-4" /> {property.rooms}
                                         </Button>
-                                        <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
-                                            <Ruler className="mr-1.5 h-4 w-4" /> {property.squareFootage} mp
+                                        <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                            <Ruler className="mr-1 h-4 w-4" /> {property.squareFootage} mp
                                         </Button>
                                         {property.floor && (
-                                            <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
-                                                <Layers className="mr-1.5 h-4 w-4" /> Et. {property.floor}
+                                            <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                <Layers className="mr-1 h-4 w-4" /> Et. {property.floor}
                                             </Button>
                                         )}
                                         {property.constructionYear && (
-                                            <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
-                                                <Calendar className="mr-1.5 h-4 w-4" /> {property.constructionYear}
+                                            <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto whitespace-nowrap py-1 px-3 text-xs bg-black/50 text-white hover:bg-black/70">
+                                                <Calendar className="mr-1 h-4 w-4" /> {property.constructionYear}
                                             </Button>
                                         )}
                                     </div>
