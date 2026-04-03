@@ -401,7 +401,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
               <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
               <p className="text-sm text-white/55 sm:text-base">Programul zilei între 08:00 și 21:00</p>
             </div>
-            <div className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
+            <div className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
               {selectedDayViewings.length} vizionări
             </div>
           </div>
