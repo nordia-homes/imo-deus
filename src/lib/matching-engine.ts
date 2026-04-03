@@ -51,11 +51,58 @@ const formatReasoning = (positives: string[], caution?: string) => {
   return parts.join('. ');
 };
 
+const getZonePriority = (item: {
+  zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+}) => {
+  const debug = item.zoneDebug;
+  if (!debug) return 0;
+  if (debug.exact > 0) return 4;
+  if (debug.adjacent > 0) return 3;
+  if (debug.cluster > 0) return 2;
+  if (debug.macro > 0) return 1;
+  return 0;
+};
+
+export function compareMatchedItemsByZonePriority<
+  T extends {
+    matchScore: number;
+    price?: number;
+    budgetScore?: number;
+    zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+  }
+>(left: T, right: T) {
+  const priorityDelta = getZonePriority(right) - getZonePriority(left);
+  if (priorityDelta !== 0) {
+    return priorityDelta;
+  }
+
+  const budgetDelta = (right.budgetScore || 0) - (left.budgetScore || 0);
+  if (budgetDelta !== 0) {
+    return budgetDelta;
+  }
+
+  const scoreDelta = right.matchScore - left.matchScore;
+  if (scoreDelta !== 0) {
+    return scoreDelta;
+  }
+
+  return (left.price || 0) - (right.price || 0);
+}
+
 export function derivePreferencesFromContact(contact: Contact): ContactPreferences {
-  const priceMax = contact.preferences?.desiredPriceRangeMax ?? contact.budget ?? 999999;
+  const explicitBudgetMax =
+    typeof contact.preferences?.desiredPriceRangeMax === 'number' && contact.preferences.desiredPriceRangeMax > 0
+      ? contact.preferences.desiredPriceRangeMax
+      : undefined;
+  const contactBudget =
+    typeof contact.budget === 'number' && contact.budget > 0
+      ? contact.budget
+      : undefined;
+  const priceMaxCandidates = [explicitBudgetMax, contactBudget].filter((value): value is number => typeof value === 'number');
+  const priceMax = priceMaxCandidates.length > 0 ? Math.min(...priceMaxCandidates) : 999999;
   const priceMin =
     contact.preferences?.desiredPriceRangeMin ??
-    (contact.budget ? Math.round(contact.budget * 0.8) : 0);
+    (priceMaxCandidates.length > 0 ? Math.round(priceMax * 0.8) : 0);
 
   return {
     desiredPriceRangeMin: Math.max(0, priceMin),
@@ -515,15 +562,23 @@ function featureScore(property: Property, preferences: ContactPreferences) {
 export function scorePropertyForPreferences(property: Property, preferences: ContactPreferences, contact?: Contact) {
   const positives: string[] = [];
   let caution: string | undefined;
+  let budgetReasoning: string | undefined;
+  const effectiveBudgetMax =
+    contact?.budget && contact.budget > 0
+      ? Math.min(preferences.desiredPriceRangeMax || contact.budget, contact.budget)
+      : preferences.desiredPriceRangeMax || 0;
 
-  const priceFit = scoreBudgetFit(property.price || 0, preferences.desiredPriceRangeMax || 0, 28);
+  const priceFit = scoreBudgetFit(property.price || 0, effectiveBudgetMax, 28);
   const price = priceFit.weightedScore;
   if (priceFit.budgetScore === 100) {
-    positives.push(formatBudgetDelta(property.price || 0, preferences.desiredPriceRangeMax || 0));
-  } else if (priceFit.budgetScore > 0 && property.price && preferences.desiredPriceRangeMax && property.price > preferences.desiredPriceRangeMax) {
-    caution = formatBudgetDelta(property.price, preferences.desiredPriceRangeMax);
+    budgetReasoning = formatBudgetDelta(property.price || 0, effectiveBudgetMax);
+    positives.push(budgetReasoning);
+  } else if (priceFit.budgetScore > 0 && property.price && effectiveBudgetMax && property.price > effectiveBudgetMax) {
+    budgetReasoning = formatBudgetDelta(property.price, effectiveBudgetMax);
+    caution = budgetReasoning;
   } else if (priceFit.isRejected) {
-    caution = `respins: ${formatBudgetDelta(property.price || 0, preferences.desiredPriceRangeMax || 0)}`;
+    budgetReasoning = `respins: ${formatBudgetDelta(property.price || 0, effectiveBudgetMax)}`;
+    caution = budgetReasoning;
   }
 
   const rooms = scoreTarget(property.rooms || 0, preferences.desiredRooms || 0, 16);
@@ -556,6 +611,7 @@ export function scorePropertyForPreferences(property: Property, preferences: Con
   return {
     isRejected: priceFit.isRejected,
     budgetScore: priceFit.budgetScore,
+    budgetReasoning,
     score,
     reasoning: formatReasoning(positives, caution),
     zoneReasoning: location.zoneReasons.length > 0 ? location.zoneReasons.join(' · ') : null,
@@ -585,7 +641,7 @@ export function getDeterministicMatchedProperties(
     })
     .filter((property) => !property.isRejected)
     .filter((property) => property.matchScore >= 40)
-    .sort((a, b) => b.matchScore - a.matchScore)
+    .sort(compareMatchedItemsByZonePriority)
     .slice(0, limit);
 }
 
@@ -615,6 +671,6 @@ export function getDeterministicMatchedBuyers(
     })
     .filter((contact) => !contact.isRejected)
     .filter((contact) => contact.matchScore >= 40)
-    .sort((a, b) => b.matchScore - a.matchScore)
+    .sort(compareMatchedItemsByZonePriority)
     .slice(0, limit);
 }

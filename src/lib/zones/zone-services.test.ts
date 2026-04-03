@@ -87,6 +87,19 @@ test('Leonida beats generic Berceni when context exists', () => {
   assert.equal(result.matched_zone_name, 'Dimitrie Leonida');
 });
 
+test('composite Tei / Doamna Ghica string resolves to Tei', () => {
+  const result = normalizeZoneInput('Tei / Doamna Ghica / Complet renovat');
+  assert.equal(result.matched_zone_name, 'Tei');
+});
+
+test('Ion Berindei address hint resolves to Tei', () => {
+  const result = normalizeZoneInput('Strada Ion Berindei 12', {
+    title: 'Apartament 2 camere',
+    locality: 'Bucuresti',
+  });
+  assert.equal(result.matched_zone_name, 'Tei');
+});
+
 test('preferred exact zone yields high score', () => {
   const propertyFact = buildPropertyZoneFact({ propertyId: 'p-1', rawZoneText: 'Aviatiei' });
   const preferences: ClientZonePreference[] = [{ scope: 'zone', preference: 'preferred', zoneId: 'bucuresti::bucuresti::aviatiei' }];

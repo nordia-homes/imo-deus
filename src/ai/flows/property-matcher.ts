@@ -2,6 +2,7 @@
 
 import type { Contact, ContactPreferences, MatchedBuyer, MatchedProperty, Property } from '@/lib/types';
 import {
+  compareMatchedItemsByZonePriority,
   derivePreferencesFromContact,
   deriveZonePreferencesFromContact,
   getDeterministicMatchedBuyers,
@@ -38,6 +39,26 @@ type OpenAIRankedItem = {
   matchScore: number;
   reasoning: string;
 };
+
+function mergeDeterministicBudgetReasoning(reasoning: string, budgetReasoning?: string) {
+  const normalizedReasoning = (reasoning || '').trim();
+  if (!budgetReasoning) {
+    return normalizedReasoning;
+  }
+
+  if (normalizedReasoning.toLowerCase().includes(budgetReasoning.toLowerCase())) {
+    return normalizedReasoning;
+  }
+
+  const stripped = normalizedReasoning
+    .replace(/\brespins:\s*\+\d+% peste buget\b/gi, '')
+    .replace(/\b\+\d+% peste buget\b/gi, '')
+    .replace(/\bin buget\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[\s.,;:-]+|[\s.,;:-]+$/g, '');
+
+  return stripped ? `${budgetReasoning}. ${stripped}` : budgetReasoning;
+}
 
 function normalizeProperties(input: PropertyMatcherInput) {
   return input.properties.map((property) => ({
@@ -202,7 +223,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
       reasoning: property.reasoning || 'Compatibilitate buna pe criteriile esentiale.',
     }))
     .filter((property) => property.matchScore >= 40)
-    .sort((a, b) => b.matchScore - a.matchScore)
+    .sort(compareMatchedItemsByZonePriority)
     .slice(0, 12) as MatchedProperty[];
 
   const deterministicTop = fallback.slice(0, 8).map((property) => ({
@@ -265,11 +286,11 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
         return {
           ...original,
           matchScore: item.matchScore,
-          reasoning: item.reasoning,
+          reasoning: mergeDeterministicBudgetReasoning(item.reasoning, (original as typeof original & { budgetReasoning?: string }).budgetReasoning),
         };
       })
       .filter(Boolean)
-      .sort((a, b) => b!.matchScore - a!.matchScore) as MatchedProperty[];
+      .sort(compareMatchedItemsByZonePriority) as MatchedProperty[];
 
     return { matchedProperties };
   } catch (error) {
@@ -346,11 +367,11 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
         return {
           ...original,
           matchScore: item.matchScore,
-          reasoning: item.reasoning,
+          reasoning: mergeDeterministicBudgetReasoning(item.reasoning, (original as typeof original & { budgetReasoning?: string }).budgetReasoning),
         };
       })
       .filter(Boolean)
-      .sort((a, b) => b!.matchScore - a!.matchScore) as MatchedBuyer[];
+      .sort(compareMatchedItemsByZonePriority) as MatchedBuyer[];
 
     return { matchedBuyers };
   } catch (error) {

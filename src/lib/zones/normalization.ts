@@ -65,6 +65,87 @@ const toAlternatives = (items: Array<{ zone: PreparedZone; confidence: number }>
     confidence: Number(confidence.toFixed(2)),
   }));
 
+const containsPhrase = (haystack: string, phrase: string) => {
+  if (!haystack || !phrase) {
+    return false;
+  }
+
+  return haystack === phrase || haystack.includes(`${phrase} `) || haystack.includes(` ${phrase}`) || haystack.includes(` ${phrase} `);
+};
+
+const embeddedMatch = (
+  normalizedInput: string,
+  normalizedText: string
+): { zone: PreparedZone; matchType: 'exact' | 'alias' | 'fuzzy'; confidence: number; alternatives: ZoneAlternative[] } | null => {
+  const ranked = preparedBucurestiIlfovOntology.zones
+    .map((zone) => {
+      let score = -1;
+
+      if (containsPhrase(normalizedInput, zone.normalizedName)) {
+        score = Math.max(score, 100);
+      }
+
+      if (zone.normalizedAliases.some((alias) => containsPhrase(normalizedInput, alias))) {
+        score = Math.max(score, 92);
+      }
+
+      if (zone.normalizedMicroZones.some((microZone) => containsPhrase(normalizedText, microZone))) {
+        score = Math.max(score, 88);
+      }
+
+      if (zone.normalizedClusters.some((cluster) => containsPhrase(normalizedText, cluster))) {
+        score = Math.max(score, 80);
+      }
+
+      const canonicalIndex = normalizedInput.indexOf(zone.normalizedName);
+      if (canonicalIndex >= 0) {
+        score += Math.max(0, 8 - canonicalIndex);
+      }
+
+      return { zone, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score);
+
+  if (!ranked.length) {
+    return null;
+  }
+
+  const [top, runnerUp] = ranked;
+  if (runnerUp && top.score - runnerUp.score <= 4) {
+    return {
+      zone: top.zone,
+      matchType: 'fuzzy',
+      confidence: 0.7,
+      alternatives: toAlternatives(
+        ranked.slice(0, 5).map((entry) => ({
+          zone: entry.zone,
+          confidence: clamp(entry.score / 100, 0.6, 0.9),
+        }))
+      ),
+    };
+  }
+
+  const matchType =
+    containsPhrase(normalizedInput, top.zone.normalizedName)
+      ? 'exact'
+      : top.zone.normalizedAliases.some((alias) => containsPhrase(normalizedInput, alias))
+        ? 'alias'
+        : 'fuzzy';
+
+  return {
+    zone: top.zone,
+    matchType,
+    confidence: clamp(top.score / 100, 0.82, 0.98),
+    alternatives: toAlternatives(
+      ranked.slice(1, 5).map((entry) => ({
+        zone: entry.zone,
+        confidence: clamp(entry.score / 100, 0.55, 0.9),
+      }))
+    ),
+  };
+};
+
 const exactMatch = (
   normalizedInput: string
 ): { zone: PreparedZone; matchType: 'exact' | 'alias'; confidence: number } | null => {
@@ -324,6 +405,17 @@ export function normalizeZoneInput(input: string, context?: ZoneNormalizationCon
       match_type: exact.matchType,
       confidence: exact.confidence,
       alternatives: [],
+    };
+  }
+
+  const embedded = embeddedMatch(normalizedInput, normalizedText);
+  if (embedded) {
+    return {
+      matched_zone_id: embedded.zone.zone_id,
+      matched_zone_name: embedded.zone.name,
+      match_type: embedded.matchType,
+      confidence: Number(embedded.confidence.toFixed(2)),
+      alternatives: embedded.alternatives,
     };
   }
 
