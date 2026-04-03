@@ -70,6 +70,11 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
         return `Buna ziua! Numele meu este Ramona Ciolac si va contactez pentru a confirma vizionarea de astazi de la ora ${hour} pentru apartamentul din ${shortAddress}. Daca totul este in regula si pentru dvs., va astept la adresa si va rog sa ma sunati sau sa imi scrieti cand ajungeti. Multumesc, ne vedem mai tarziu!`;
     };
 
+    const buildOwnerConfirmationText = (viewing: Viewing) => {
+        const hour = format(parseISO(viewing.viewingDate), 'HH:mm');
+        return `Buna ziua! Numele meu este Ramona Ciolac de la Nordia si ati vorbit cu colega mea Mirela pentru colaborarea cu agentia noastra. Va contactez pentru a confirma vizionarea de astazi de la ora ${hour}. Daca totul este in regula si pentru dvs., ne vedem la adresa si va sun sau va scriu cand ajung. Multumesc!`;
+    };
+
     const formatViewingTimeRange = (viewingDate: string, duration?: number) => {
         const start = parseISO(viewingDate);
         const end = addMinutes(start, duration ?? 30);
@@ -100,6 +105,7 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
                 const viewingConfirmationText = encodeURIComponent(buildViewingConfirmationText(viewing));
+                const ownerConfirmationText = encodeURIComponent(buildOwnerConfirmationText(viewing));
 
                 return (
                 <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
@@ -214,6 +220,9 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                                     <p className="min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
                                                     {ownerPhone && (
                                                         <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                            <a href={`https://wa.me/${ownerPhone}?text=${ownerConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare proprietarului pe WhatsApp">
+                                                                <MessageSquareText className="h-4 w-4" />
+                                                            </a>
                                                             <a href={`tel:${property?.ownerPhone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10">
                                                                 <Phone className="h-4 w-4" />
                                                             </a>
