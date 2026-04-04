@@ -186,6 +186,8 @@ export type Contact = {
     preferencesLinkId?: string;
     preferencesChatHistory?: { role: 'user' | 'model'; content: string; }[];
     generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
+    archivedAt?: string | null;
+    archivedByAge?: boolean;
 };
 
 export type SalesData = {

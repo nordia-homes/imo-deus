@@ -5,7 +5,17 @@ import { Skeleton } from "../ui/skeleton";
 import type { Contact } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 
-export function LeadList({ contacts, isLoading }: { contacts: Contact[] | null, isLoading: boolean }) {
+export function LeadList({
+    contacts,
+    isLoading,
+    onUnarchive,
+    showArchivedState = false,
+}: {
+    contacts: Contact[] | null,
+    isLoading: boolean,
+    onUnarchive?: (lead: Contact) => void,
+    showArchivedState?: boolean,
+}) {
 
     if (isLoading) {
         return (
@@ -30,7 +40,12 @@ export function LeadList({ contacts, isLoading }: { contacts: Contact[] | null, 
     return (
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {contacts.map(cumparator => (
-                <LeadCard key={cumparator.id} lead={cumparator} />
+                <LeadCard
+                    key={cumparator.id}
+                    lead={cumparator}
+                    onUnarchive={onUnarchive}
+                    showArchivedState={showArchivedState}
+                />
             ))}
         </div>
     );

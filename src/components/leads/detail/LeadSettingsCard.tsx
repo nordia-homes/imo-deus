@@ -45,17 +45,6 @@ export function LeadSettingsCard({ contact, agents, onUpdateContact }: LeadSetti
                     </Select>
                  </div>
                  <div>
-                    <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Probabilitate</Label>
-                    <Select defaultValue={contact.priority} onValueChange={(value: Contact['priority']) => onUpdateContact({ priority: value })}>
-                        <SelectTrigger className="mt-2 h-11 rounded-2xl border-white/10 bg-white/6"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Scăzută">Scăzută</SelectItem>
-                            <SelectItem value="Medie">Medie</SelectItem>
-                            <SelectItem value="Ridicată">Ridicată</SelectItem>
-                        </SelectContent>
-                    </Select>
-                 </div>
-                 <div>
                     <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Agent</Label>
                      <Select defaultValue={contact.agentId || 'unassigned'} onValueChange={handleAgentChange}>
                         <SelectTrigger className="mt-2 h-11 rounded-2xl border-white/10 bg-white/6">

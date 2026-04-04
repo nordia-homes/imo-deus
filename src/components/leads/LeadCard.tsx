@@ -1,48 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '../ui/badge';
-import { ArrowRight, User, Wand2, Calendar, MapPin, Phone, Wallet, Sparkles } from 'lucide-react';
+import { ArchiveRestore, ArrowRight, Clock3, User, Wand2, Calendar, MapPin, Phone, Wallet, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Contact } from '@/lib/types';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-
-function getScoreBadgeVariant(score: number) {
-    if (score > 85) return 'success';
-    if (score > 60) return 'warning';
-    return 'destructive';
-}
-
-function getPriorityBadgeVariant(priority: Contact['priority']) {
-    switch (priority) {
-        case 'Ridicată': return 'destructive';
-        case 'Medie': return 'warning';
-        case 'Scăzută': return 'secondary';
-        default: return 'outline';
-    }
-}
-
-function getStatusTone(status: Contact['status']) {
-    switch (status) {
-        case 'Nou':
-            return 'bg-sky-400/15 text-sky-100 ring-1 ring-inset ring-sky-300/25';
-        case 'Contactat':
-            return 'bg-indigo-400/15 text-indigo-100 ring-1 ring-inset ring-indigo-300/25';
-        case 'Vizionare':
-            return 'bg-amber-400/15 text-amber-100 ring-1 ring-inset ring-amber-300/25';
-        case 'În negociere':
-            return 'bg-fuchsia-400/15 text-fuchsia-100 ring-1 ring-inset ring-fuchsia-300/25';
-        case 'Câștigat':
-            return 'bg-emerald-400/15 text-emerald-100 ring-1 ring-inset ring-emerald-300/25';
-        case 'Pierdut':
-            return 'bg-rose-400/15 text-rose-100 ring-1 ring-inset ring-rose-300/25';
-        default:
-            return 'bg-white/10 text-white ring-1 ring-inset ring-white/10';
-    }
-}
+import { getContactAgeInDays, getContactFreshnessTone, isArchivedContact } from '@/lib/contact-aging';
 
 function formatBudget(value?: number) {
     return typeof value === 'number' ? `€${value.toLocaleString('ro-RO')}` : 'Buget necompletat';
@@ -62,18 +28,48 @@ function sanitizeForWhatsapp(phone?: string | null) {
     return sanitized;
 }
 
-export function LeadCard({ lead: cumparator }: { lead: Contact }) {
+function getAgeToneClasses(tone: ReturnType<typeof getContactFreshnessTone>) {
+  switch (tone) {
+    case 'green':
+      return 'bg-emerald-500/15 text-emerald-200 ring-emerald-300/25';
+    case 'orange':
+      return 'bg-amber-500/15 text-amber-200 ring-amber-300/25';
+    case 'red':
+      return 'bg-rose-500/15 text-rose-200 ring-rose-300/25';
+    case 'archived':
+      return 'bg-white/10 text-white/70 ring-white/10';
+    default:
+      return 'bg-white/10 text-white/70 ring-white/10';
+  }
+}
+
+export function LeadCard({
+  lead: cumparator,
+  onUnarchive,
+  showArchivedState = false,
+}: {
+  lead: Contact;
+  onUnarchive?: (lead: Contact) => void;
+  showArchivedState?: boolean;
+}) {
   const zonesPreview = cumparator.zones?.slice(0, 2) ?? [];
   const whatsappPhone = sanitizeForWhatsapp(cumparator.phone);
   const normalizedLeadScore = typeof cumparator.leadScore === 'number'
     ? Math.min(100, Math.max(0, cumparator.leadScore))
     : null;
+  const scoreValue = normalizedLeadScore ?? 0;
   const locationLabel = cumparator.city && zonesPreview.length > 0
     ? `${cumparator.city} - ${zonesPreview[0]}`
     : cumparator.city || zonesPreview[0] || 'Nespecificat';
+  const ageInDays = getContactAgeInDays(cumparator.createdAt);
+  const freshnessTone = getContactFreshnessTone(cumparator);
+  const archived = isArchivedContact(cumparator);
 
   return (
-    <Card className="group overflow-hidden rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-[0_10px_26px_rgba(2,8,18,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#19304f] hover:shadow-[0_16px_40px_rgba(2,8,18,0.22)]">
+    <Card className={cn(
+      "group overflow-hidden rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-[0_10px_26px_rgba(2,8,18,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#19304f] hover:shadow-[0_16px_40px_rgba(2,8,18,0.22)]",
+      archived && "bg-[#112238] opacity-95"
+    )}>
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
@@ -84,14 +80,17 @@ export function LeadCard({ lead: cumparator }: { lead: Contact }) {
                     {cumparator.name}
                   </h3>
                 </Link>
-                <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium", getStatusTone(cumparator.status))}>
-                  {cumparator.status}
+                <span className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset",
+                  getAgeToneClasses(freshnessTone)
+                )}>
+                  <Clock3 className="h-3 w-3" />
+                  {archived
+                    ? 'Arhivat'
+                    : ageInDays === null
+                      ? 'Nou'
+                      : `${ageInDays} zile`}
                 </span>
-                {cumparator.priority && (
-                  <Badge variant={getPriorityBadgeVariant(cumparator.priority)} className="px-2 py-0.5 text-[10px]">
-                    {cumparator.priority}
-                  </Badge>
-                )}
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/62">
                 <span className="inline-flex items-center gap-1.5">
@@ -108,6 +107,18 @@ export function LeadCard({ lead: cumparator }: { lead: Contact }) {
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
+              {showArchivedState && archived && onUnarchive && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full border-white/15 bg-white/5 px-3 text-xs text-white hover:bg-white/10"
+                  onClick={() => onUnarchive(cumparator)}
+                >
+                  <ArchiveRestore className="mr-1.5 h-3.5 w-3.5" />
+                  Dezarhivează
+                </Button>
+              )}
               {cumparator.phone && (
                 <>
                   <a
@@ -158,13 +169,13 @@ export function LeadCard({ lead: cumparator }: { lead: Contact }) {
                     <p className="text-2xl font-semibold leading-none text-white">{cumparator.leadScore}</p>
                     <span className={cn(
                       "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                      cumparator.leadScore > 85
+                      scoreValue > 85
                         ? "bg-emerald-500/15 text-emerald-200"
-                        : cumparator.leadScore > 60
+                        : scoreValue > 60
                           ? "bg-amber-500/15 text-amber-200"
                           : "bg-rose-500/15 text-rose-200"
                     )}>
-                      {cumparator.leadScore > 85 ? 'Ridicat' : cumparator.leadScore > 60 ? 'Mediu' : 'Scăzut'}
+                      {scoreValue > 85 ? 'Ridicat' : scoreValue > 60 ? 'Mediu' : 'Scăzut'}
                     </span>
                   </div>
                   <div className="mt-2 flex items-center gap-1">
@@ -178,9 +189,9 @@ export function LeadCard({ lead: cumparator }: { lead: Contact }) {
                           className={cn(
                             "h-1.5 flex-1 rounded-full transition-colors",
                             isActive
-                              ? cumparator.leadScore > 85
+                              ? scoreValue > 85
                                 ? "bg-emerald-300"
-                                : cumparator.leadScore > 60
+                                : scoreValue > 60
                                   ? "bg-amber-300"
                                   : "bg-rose-300"
                               : "bg-white/10"

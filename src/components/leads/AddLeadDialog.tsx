@@ -28,17 +28,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
-import type { UserProfile, Property } from '@/lib/types';
+import type { UserProfile, Property, Contact } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { Card, CardContent } from '../ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { ArchiveRestore, AlertTriangle } from 'lucide-react';
 
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -56,12 +57,26 @@ const cumparatorSchema = z.object({
 
 interface AddLeadDialogProps {
   properties: Property[];
+  contacts?: Contact[];
   children?: ReactNode;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: AddLeadDialogProps) {
+function normalizeText(value?: string | null) {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizePhone(value?: string | null) {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+export function AddLeadDialog({ properties, contacts = [], children, isOpen, onOpenChange }: AddLeadDialogProps) {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
@@ -113,6 +128,25 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
   });
 
   const watchedCity = form.watch('city') as City;
+  const watchedName = form.watch('name');
+  const watchedPhone = form.watch('phone');
+  const watchedEmail = form.watch('email');
+
+  const duplicateContact = useMemo(() => {
+    const normalizedName = normalizeText(watchedName);
+    const normalizedPhone = normalizePhone(watchedPhone);
+    const normalizedEmail = normalizeText(watchedEmail);
+
+    if (!normalizedName && !normalizedPhone && !normalizedEmail) return null;
+
+    return contacts.find((contact) => {
+      const samePhone = normalizedPhone && normalizePhone(contact.phone) === normalizedPhone;
+      const sameEmail = normalizedEmail && normalizeText(contact.email) === normalizedEmail;
+      const sameName = normalizedName && normalizeText(contact.name) === normalizedName;
+
+      return samePhone || sameEmail || (sameName && (samePhone || sameEmail));
+    }) ?? null;
+  }, [contacts, watchedEmail, watchedName, watchedPhone]);
 
   useEffect(() => {
     setSelectedZones([]);
@@ -133,6 +167,17 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
             description: "Nu am putut identifica agenția. Reîncearcă.",
         });
         return;
+    }
+
+    if (duplicateContact) {
+      toast({
+        variant: "destructive",
+        title: duplicateContact.archivedAt ? "Cumpărător arhivat găsit" : "Cumpărător existent",
+        description: duplicateContact.archivedAt
+          ? "Acest cumpărător există deja în arhivă. Folosește butonul de dezarhivare din dialog."
+          : "Acest cumpărător există deja în listă.",
+      });
+      return;
     }
 
     const contactsCollection = collection(firestore, 'agencies', agency.id, 'contacts');
@@ -180,6 +225,23 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
     }
   };
 
+  const handleUnarchiveDuplicate = () => {
+    if (!agency?.id || !duplicateContact) return;
+
+    const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', duplicateContact.id);
+    updateDocumentNonBlocking(contactRef, {
+      archivedAt: null,
+      archivedByAge: false,
+    });
+
+    toast({
+      title: 'Cumpărător dezarhivat',
+      description: `${duplicateContact.name} a fost dezarhivat și readus în lista activă.`,
+    });
+
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {children && (
@@ -200,6 +262,36 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                     <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                         <CardContent className="pt-6 space-y-4">
                             <h3 className="text-lg font-semibold text-primary">Detalii Contact</h3>
+                            {duplicateContact && (
+                              <div className={cn(
+                                "rounded-2xl border px-4 py-3",
+                                duplicateContact.archivedAt
+                                  ? "border-amber-400/25 bg-amber-500/10"
+                                  : "border-rose-400/25 bg-rose-500/10"
+                              )}>
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                  <div className="space-y-1">
+                                    <p className={cn("flex items-center gap-2 text-sm font-semibold", isMobile ? "text-white" : "text-slate-900")}>
+                                      <AlertTriangle className="h-4 w-4" />
+                                      {duplicateContact.archivedAt
+                                        ? 'Cumpărător existent în arhivă'
+                                        : 'Cumpărător deja existent'}
+                                    </p>
+                                    <p className={cn("text-sm", isMobile ? "text-white/80" : "text-slate-700")}>
+                                      {duplicateContact.archivedAt
+                                        ? `${duplicateContact.name} există deja și este arhivat. Îl poți dezarhiva direct de aici.`
+                                        : `${duplicateContact.name} există deja în lista activă și nu va fi adăugat din nou.`}
+                                    </p>
+                                  </div>
+                                  {duplicateContact.archivedAt && (
+                                    <Button type="button" onClick={handleUnarchiveDuplicate} className="shrink-0">
+                                      <ArchiveRestore className="mr-2 h-4 w-4" />
+                                      Dezarhivează
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
@@ -309,7 +401,7 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                                         <Label className={cn(isMobile && "text-white/80")}>Zone de interes</Label>
                                         <div className={cn("max-h-60 overflow-y-auto rounded-md border p-4", isMobile && "border-white/20")}>
                                             <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                {locations[watchedCity].sort().map((zone) => (
+                                                {[...locations[watchedCity]].sort().map((zone: string) => (
                                                     <div key={zone} className="flex items-center gap-2">
                                                         <Checkbox
                                                             id={`zone-${zone}`}
@@ -400,7 +492,9 @@ export function AddLeadDialog({ properties, children, isOpen, onOpenChange }: Ad
                 <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
                     <div className="flex justify-end gap-2 w-full">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
-                        <Button type="submit">Salvează Cumpărător</Button>
+                        <Button type="submit" disabled={Boolean(duplicateContact)}>
+                          {duplicateContact?.archivedAt ? 'Folosește dezarhivarea' : duplicateContact ? 'Cumpărător existent' : 'Salvează Cumpărător'}
+                        </Button>
                     </div>
                 </DialogFooter>
             </form>

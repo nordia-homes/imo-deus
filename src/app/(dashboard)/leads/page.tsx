@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Users, Target, BarChart, PlusCircle, Filter } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
@@ -15,14 +15,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFiltersDialog';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { isArchivedContact, shouldAutoArchiveContact } from '@/lib/contact-aging';
 
 export default function LeadsPage() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
     const [filters, setFilters] = useState<LeadFilters | null>(null);
     const isMobile = useIsMobile();
+    const archivedInSessionRef = useRef<Set<string>>(new Set());
 
     const contactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -38,21 +41,53 @@ export default function LeadsPage() {
 
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
 
+    const buyerContacts = useMemo(
+        () => (contacts ?? []).filter((contact) => contact.contactType === 'Cumparator'),
+        [contacts]
+    );
+
+    useEffect(() => {
+        if (!agencyId || !buyerContacts) return;
+
+        const nowIso = new Date().toISOString();
+
+        buyerContacts.forEach((contact) => {
+            if (!contact.id || archivedInSessionRef.current.has(contact.id)) return;
+            if (!shouldAutoArchiveContact(contact)) return;
+
+            archivedInSessionRef.current.add(contact.id);
+            updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'contacts', contact.id), {
+                archivedAt: nowIso,
+                archivedByAge: true,
+            });
+        });
+    }, [agencyId, buyerContacts, firestore]);
+
+    const activeContacts = useMemo(
+        () => buyerContacts.filter((contact) => !isArchivedContact(contact)),
+        [buyerContacts]
+    );
+
+    const archivedContacts = useMemo(
+        () => buyerContacts.filter((contact) => isArchivedContact(contact)),
+        [buyerContacts]
+    );
+
     const { newBuyersCount, totalBudget, averageAiScore } = useMemo(() => {
-        if (!contacts) {
+        if (!activeContacts) {
             return { newBuyersCount: 0, totalBudget: 0, averageAiScore: 0 };
         }
 
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        const newLeads = contacts.filter(contact => 
+        const newLeads = activeContacts.filter(contact => 
             contact.createdAt && new Date(contact.createdAt) > oneWeekAgo
         );
 
-        const totalBudget = contacts.reduce((sum, contact) => sum + (contact.budget || 0), 0);
+        const totalBudget = activeContacts.reduce((sum, contact) => sum + (contact.budget || 0), 0);
         
-        const buyersWithScores = contacts.filter(contact => typeof contact.leadScore === 'number');
+        const buyersWithScores = activeContacts.filter(contact => typeof contact.leadScore === 'number');
         const totalScore = buyersWithScores.reduce((sum, contact) => sum + (contact.leadScore!), 0);
         const averageAiScore = buyersWithScores.length > 0 ? Math.round(totalScore / buyersWithScores.length) : 0;
 
@@ -61,13 +96,13 @@ export default function LeadsPage() {
             totalBudget,
             averageAiScore
         };
-    }, [contacts]);
+    }, [activeContacts]);
 
     const filteredContacts = useMemo(() => {
-        if (!contacts) return [];
-        if (!filters) return contacts;
+        const sourceContacts = showArchived ? archivedContacts : activeContacts;
+        if (!filters) return sourceContacts;
 
-        return contacts.filter(contact => {
+        return sourceContacts.filter(contact => {
             const { budgetMin, budgetMax, rooms, zones, city } = filters;
 
             if (budgetMin && (contact.budget || 0) < budgetMin) return false;
@@ -85,7 +120,16 @@ export default function LeadsPage() {
 
             return true;
         });
-    }, [contacts, filters]);
+    }, [activeContacts, archivedContacts, filters, showArchived]);
+
+    const handleUnarchive = (contact: Contact) => {
+        if (!agencyId) return;
+
+        updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'contacts', contact.id), {
+            archivedAt: null,
+            archivedByAge: false,
+        });
+    };
 
     const formatBudget = (num: number) => {
         if (num >= 1000000) {
@@ -110,9 +154,21 @@ export default function LeadsPage() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Cumpărători ({filteredContacts.length})</CardTitle>
-                        <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
-                            <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white"><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
-                        </AddLeadDialog>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="border-white/15 bg-white/10 text-white hover:bg-white/20"
+                                onClick={() => setShowArchived((current) => !current)}
+                            >
+                                {showArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                                {showArchived ? `Active (${activeContacts.length})` : `Arhiva (${archivedContacts.length})`}
+                            </Button>
+                            <AddLeadDialog properties={properties || []} contacts={buyerContacts} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
+                                <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white"><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
+                            </AddLeadDialog>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -137,13 +193,23 @@ export default function LeadsPage() {
                 </CardContent>
             </Card>
             <div className="mt-4 px-2">
-                <Button variant="outline" className="w-full" onClick={() => setIsFilterOpen(true)}>
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtrare Preferinte si Buget
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" className="w-full" onClick={() => setIsFilterOpen(true)}>
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filtrare Preferinte si Buget
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="shrink-0"
+                        onClick={() => setShowArchived((current) => !current)}
+                    >
+                        {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                    </Button>
+                </div>
             </div>
             <div className="px-2">
-              <LeadList contacts={filteredContacts} isLoading={isLoading} />
+              <LeadList contacts={filteredContacts} isLoading={isLoading} onUnarchive={handleUnarchive} showArchivedState={showArchived} />
             </div>
         </div>
 
@@ -162,20 +228,32 @@ export default function LeadsPage() {
                                     <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
                                         {filteredContacts.length}
                                     </span>
+                                    <span className="rounded-full bg-white/5 px-3 py-1 text-sm font-medium text-white/65 ring-1 ring-inset ring-white/10">
+                                        {showArchived ? `Arhiva ${archivedContacts.length}` : `Activi ${activeContacts.length}`}
+                                    </span>
                                 </div>
                                 <p className="max-w-2xl text-sm leading-6 text-white/70">
-                                    Vezi rapid cumpărătorii activi, filtrează după preferințe și prioritizează lead-urile cu cel mai bun potențial.
+                                    Vezi rapid cumpărătorii activi, filtrează după preferințe, urmărește vechimea lead-urilor și intră rapid în arhivă când ai nevoie.
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
+                             <Button
+                                variant="outline"
+                                onClick={() => setShowArchived((current) => !current)}
+                                className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                            >
+                                {showArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                                {showArchived ? `Vezi activi (${activeContacts.length})` : `Vezi arhiva (${archivedContacts.length})`}
+                            </Button>
                              <Button variant="outline" onClick={() => setIsFilterOpen(true)} className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                                 <Filter className="mr-2 h-4 w-4" />
                                 Filtrare Preferinte si Buget
                             </Button>
                             <AddLeadDialog 
                                 properties={properties || []}
+                                contacts={buyerContacts}
                                 isOpen={isAddLeadOpen}
                                 onOpenChange={setIsAddLeadOpen}
                             >
@@ -205,7 +283,7 @@ export default function LeadsPage() {
                     )}
                 </div>
 
-                <LeadList contacts={filteredContacts} isLoading={isLoading} />
+                <LeadList contacts={filteredContacts} isLoading={isLoading} onUnarchive={handleUnarchive} showArchivedState={showArchived} />
             </div>
         <LeadFiltersDialog
             isOpen={isFilterOpen}
