@@ -124,7 +124,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                             )}
                         </CardContent>
                     </Card>
-                    <div className="hidden lg:block h-[320px]">
+                    <div className="hidden lg:block h-[448px]">
                         <PropertiesMap properties={[property]} zoomMode="close" />
                     </div>
                     <div className="hidden lg:block">

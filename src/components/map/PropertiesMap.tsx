@@ -1,10 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, ChevronDown, Layers3, MapPinned, Minus, Navigation, Plus, Route, TriangleAlert, X } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Camera, ChevronDown, Layers3, MapPinned, Minus, Plus, Route, TriangleAlert } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Property } from '@/lib/types';
 import { useGoogleMapsApi } from './useGoogleMapsApi';
@@ -95,10 +94,6 @@ function buildPropertyPath(propertyId: string) {
   return `/properties/${propertyId}`;
 }
 
-function getPrimaryImage(property: Property) {
-  return property.images?.[0]?.url || 'https://placehold.co/1200x800';
-}
-
 export function PropertiesMap({
   properties,
   zoomMode = 'default',
@@ -125,8 +120,7 @@ export function PropertiesMap({
   );
   const [streetViewStatus, setStreetViewStatus] = useState<'idle' | 'ready' | 'unavailable'>('idle');
   const [mapType, setMapType] = useState<'roadmap' | 'satellite'>('roadmap');
-  const [streetViewVisible, setStreetViewVisible] = useState(true);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(layoutMode !== 'map-only');
+  const [isStreetViewOpen, setIsStreetViewOpen] = useState(false);
   const [streetViewHostReady, setStreetViewHostReady] = useState(false);
   const [streetViewElement, setStreetViewElement] = useState<HTMLDivElement | null>(null);
   const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
@@ -216,9 +210,6 @@ export function PropertiesMap({
 
       marker.addListener('click', () => {
         setSelectedPropertyId(property.id);
-        if (layoutMode === 'map-only') {
-          setIsDetailsOpen(true);
-        }
       });
 
       markersRef.current.push(marker);
@@ -237,7 +228,7 @@ export function PropertiesMap({
   }, [isLoaded, layoutMode, mapType, selectedProperty, validProperties, zoomMode]);
 
   useEffect(() => {
-    if (!isLoaded || !streetViewElement || !selectedProperty) {
+    if (!isLoaded || !isStreetViewOpen || !streetViewElement || !selectedProperty) {
       return;
     }
 
@@ -276,7 +267,7 @@ export function PropertiesMap({
       panoramaRef.current = null;
       setStreetViewHostReady(false);
     };
-  }, [isLoaded, selectedProperty, streetViewElement]);
+  }, [isLoaded, isStreetViewOpen, selectedProperty, streetViewElement]);
 
   useEffect(() => {
     if (!mapInstanceRef.current) {
@@ -292,14 +283,42 @@ export function PropertiesMap({
   }, [mapType]);
 
   useEffect(() => {
+    if (!isLoaded || !mapInstanceRef.current || !selectedProperty) {
+      return;
+    }
+
+    const googleMaps = (window as GoogleMapsWindow).google?.maps;
+    if (!googleMaps) {
+      return;
+    }
+
+    const position = {
+      lat: selectedProperty.latitude as number,
+      lng: selectedProperty.longitude as number,
+    };
+
+    const resizeTimer = window.setTimeout(() => {
+      googleMaps.event.trigger(mapInstanceRef.current, 'resize');
+      mapInstanceRef.current.setCenter(position);
+      if (validProperties.length === 1) {
+        mapInstanceRef.current.setZoom(zoomMode === 'close' ? 17 : 15);
+      }
+    }, 120);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+    };
+  }, [isLoaded, layoutMode, selectedProperty, validProperties.length, zoomMode]);
+
+  useEffect(() => {
     if (
       !isLoaded ||
       !selectedProperty ||
       !mapInstanceRef.current ||
       !infoWindowRef.current ||
+      !isStreetViewOpen ||
       !panoramaRef.current ||
-      !streetViewHostReady ||
-      (layoutMode === 'map-only' && !isDetailsOpen)
+      !streetViewHostReady
     ) {
       return;
     }
@@ -353,7 +372,7 @@ export function PropertiesMap({
         panoramaRef.current.setZoom(1);
         panoramaRef.current.setPosition(position);
         googleMaps.event.trigger(panoramaRef.current, 'resize');
-        panoramaRef.current.setVisible(streetViewVisible);
+        panoramaRef.current.setVisible(true);
         setStreetViewStatus('ready');
         return;
       }
@@ -361,15 +380,13 @@ export function PropertiesMap({
       panoramaRef.current.setVisible(false);
       setStreetViewStatus('unavailable');
     });
-  }, [isDetailsOpen, isLoaded, layoutMode, selectedProperty, streetViewHostReady, streetViewVisible, validProperties.length, zoomMode]);
+  }, [isLoaded, isStreetViewOpen, layoutMode, selectedProperty, streetViewHostReady, validProperties.length, zoomMode]);
 
   useEffect(() => {
-    if (!panoramaRef.current) {
-      return;
+    if (!isStreetViewOpen) {
+      setStreetViewStatus('idle');
     }
-
-    panoramaRef.current.setVisible(streetViewVisible && streetViewStatus === 'ready');
-  }, [streetViewStatus, streetViewVisible]);
+  }, [isStreetViewOpen]);
 
   function handleZoomIn() {
     if (!mapInstanceRef.current) {
@@ -402,8 +419,8 @@ export function PropertiesMap({
     mapInstanceRef.current.setZoom(17);
   }
 
-  const detailsPanel = selectedProperty ? (
-    <div className="flex h-[min(91vh,1080px)] min-h-0 flex-col gap-3">
+  const streetViewPanel = selectedProperty ? (
+    <div className="flex h-[min(86vh,820px)] min-h-0 flex-col gap-3">
       <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(145deg,rgba(18,24,38,0.98),rgba(11,16,28,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)]">
         <div className="border-b border-white/6 px-4 py-3">
           <div className="flex items-start justify-between gap-4">
@@ -455,27 +472,16 @@ export function PropertiesMap({
             size="sm"
             variant="secondary"
             className="h-9 rounded-full border border-white/10 bg-white/[0.06] px-4 text-white hover:bg-white/[0.12]"
-            onClick={() => setStreetViewVisible((current) => !current)}
-            disabled={streetViewStatus === 'unavailable'}
+            onClick={() => setIsStreetViewOpen(false)}
           >
             <Camera className="mr-2 h-4 w-4" />
-            {streetViewVisible ? 'Ascunde exteriorul' : 'Arata exteriorul'}
+            Inchide Street View
           </Button>
         </div>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
-        <div ref={setStreetViewElement} className="h-full min-h-[560px] w-full" />
-        {streetViewStatus === 'ready' && !streetViewVisible ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 p-6 text-center">
-            <div className="max-w-xs space-y-2">
-              <p className="font-semibold text-white">Exteriorul este ascuns momentan.</p>
-              <p className="text-sm text-white/70">
-                Foloseste butonul din card pentru a reda din nou panorama Street View.
-              </p>
-            </div>
-          </div>
-        ) : null}
+        <div ref={setStreetViewElement} className="h-[360px] w-full sm:h-[420px] lg:h-full" />
         {streetViewStatus === 'unavailable' ? (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/85 p-6 text-center">
             <div className="max-w-xs space-y-2">
@@ -537,7 +543,7 @@ export function PropertiesMap({
     return (
       <>
         <div className="relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#10233b] shadow-2xl">
-          <div ref={mapRef} className="h-full min-h-[560px] w-full" />
+          <div ref={mapRef} className="h-full min-h-[440px] w-full" />
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
             <Popover open={isPropertyPickerOpen} onOpenChange={setIsPropertyPickerOpen}>
               <PopoverTrigger asChild>
@@ -621,72 +627,15 @@ export function PropertiesMap({
               </Button>
             </div>
           </div>
-          {selectedProperty ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-4 lg:bottom-6 lg:justify-start">
-              <div className="pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-[28px] border border-white/10 bg-[#152A47]/95 shadow-2xl backdrop-blur">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={getPrimaryImage(selectedProperty)}
-                    alt={selectedProperty.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#152A47]/55 via-[#152A47]/12 to-transparent" />
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPropertyId(null)}
-                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/50"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="space-y-4 p-4">
-                  <div className="space-y-2">
-                    <div className="text-lg font-semibold text-white">{selectedProperty.title}</div>
-                    <div className="text-sm text-white/65">{selectedProperty.address || selectedProperty.location}</div>
-                    <div className="flex flex-wrap gap-3 text-xs text-white/70">
-                      <span>{formatCurrency(selectedProperty.price)}</span>
-                      <span>{selectedProperty.rooms ?? '-'} camere</span>
-                      <span>{selectedProperty.squareFootage ?? '-'} mp</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="bg-emerald-500 text-white hover:bg-emerald-400"
-                      onClick={() => setIsDetailsOpen(true)}
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Street View
-                    </Button>
-                    <Button asChild size="sm" variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
-                      <Link href={buildPropertyPath(selectedProperty.id)}>Detalii</Link>
-                    </Button>
-                    <Button asChild size="sm" variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${selectedProperty.latitude},${selectedProperty.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Route className="mr-2 h-4 w-4" />
-                        Traseu
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
 
-        <Dialog open={isDetailsOpen && !!selectedProperty} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[94vw] rounded-[30px] border border-white/6 bg-[radial-gradient(circle_at_top,rgba(26,36,58,0.55),rgba(6,10,18,0.98)_58%)] p-3 text-white shadow-[0_40px_140px_rgba(0,0,0,0.58)] sm:w-[calc(100vw-3rem)] sm:max-w-[760px] sm:p-4 lg:left-auto lg:right-4 lg:top-1/2 lg:h-[min(95vh,1120px)] lg:w-[min(46vw,780px)] lg:max-w-[780px] lg:translate-x-0 lg:-translate-y-1/2 lg:p-4">
+        <Dialog open={isStreetViewOpen && !!selectedProperty} onOpenChange={setIsStreetViewOpen}>
+          <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[94vw] rounded-[30px] border border-white/6 bg-[radial-gradient(circle_at_top,rgba(26,36,58,0.55),rgba(6,10,18,0.98)_58%)] p-3 text-white shadow-[0_40px_140px_rgba(0,0,0,0.58)] sm:w-[calc(100vw-3rem)] sm:max-w-[760px] sm:p-4 lg:left-auto lg:right-4 lg:top-1/2 lg:h-[min(88vh,920px)] lg:w-[min(44vw,720px)] lg:max-w-[720px] lg:translate-x-0 lg:-translate-y-1/2 lg:p-4">
             <DialogTitle className="sr-only">Detalii proprietate si Street View</DialogTitle>
             <DialogDescription className="sr-only">
               Panou cu detalii rapide ale proprietatii selectate si Street View exterior.
             </DialogDescription>
-            {detailsPanel}
+            {streetViewPanel}
           </DialogContent>
         </Dialog>
       </>
@@ -694,60 +643,10 @@ export function PropertiesMap({
   }
 
   return (
-    <Card className="h-full rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
-      <CardHeader className="space-y-3 pb-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle>Harta interactiva Google Maps</CardTitle>
-            <CardDescription className="text-white/70">
-              Selecteaza un marker pentru detalii rapide si vedere Street View din exterior.
-            </CardDescription>
-          </div>
-          {selectedProperty ? (
-            <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm" variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
-                <Link href={buildPropertyPath(selectedProperty.id)}>Deschide proprietatea</Link>
-              </Button>
-              <Button asChild size="sm" variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${selectedProperty.latitude},${selectedProperty.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Navigation className="mr-2 h-4 w-4" />
-                  Google Maps
-                </a>
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        {validProperties.length > 1 ? (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {validProperties.map((property) => {
-              const isActive = property.id === selectedProperty?.id;
-              return (
-                <button
-                  key={property.id}
-                  type="button"
-                  onClick={() => setSelectedPropertyId(property.id)}
-                  className={`min-w-[220px] rounded-xl border px-4 py-3 text-left transition-colors ${
-                    isActive
-                      ? 'border-emerald-300/60 bg-emerald-400/15 text-white'
-                      : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="truncate text-sm font-semibold">{property.title}</div>
-                  <div className="mt-1 line-clamp-2 text-xs text-white/60">{property.address || property.location}</div>
-                  <div className="mt-2 text-xs font-medium text-emerald-200">{formatCurrency(property.price)}</div>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </CardHeader>
-      <CardContent className="grid h-full min-h-[480px] gap-4 pb-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#10233b]">
-          <div ref={mapRef} className="h-[360px] w-full lg:h-full" />
+    <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+      <CardContent className="p-0">
+        <div className="relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]">
+          <div ref={mapRef} className="h-full w-full" />
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
             <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0f2239]/85 px-3 py-2 text-xs font-medium text-white shadow-xl backdrop-blur">
               <MapPinned className="h-4 w-4 text-emerald-300" />
@@ -798,7 +697,6 @@ export function PropertiesMap({
             </div>
           </div>
         </div>
-        {detailsPanel}
       </CardContent>
     </Card>
   );
