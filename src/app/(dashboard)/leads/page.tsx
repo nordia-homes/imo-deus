@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -33,9 +35,21 @@ const AGE_BUCKET_OPTIONS: Array<{ value: ContactAgeBucket; label: string }> = [
     { value: '30-40', label: 'Vechime 30-40 zile' },
 ];
 
+const REPORT_PRESET_LABELS: Record<string, string> = {
+    'followup-delayed': 'Filtru din Rapoarte: Follow-up intarziat',
+    'contacted-no-viewing': 'Filtru din Rapoarte: Contactati fara vizionare',
+    'negotiation-stalled': 'Filtru din Rapoarte: Negocieri stagnante',
+    'weak-sources': 'Filtru din Rapoarte: Surse cu progres slab',
+    'high-risk': 'Filtru din Rapoarte: Lead-uri cu risc ridicat',
+    'missing-created-at': 'Filtru din Rapoarte: Lead-uri fara data crearii',
+    'new-this-period': 'Filtru din Rapoarte: Lead-uri noi in perioada curenta',
+    'won-or-lost': 'Filtru din Rapoarte: Lead-uri castigate sau pierdute',
+};
+
 export default function LeadsPage() {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
+    const searchParams = useSearchParams();
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
@@ -117,7 +131,7 @@ export default function LeadsPage() {
 
     const filteredContacts = useMemo(() => {
         const sourceContacts = showArchived ? archivedContacts : activeContacts;
-        const filtered = !filters ? sourceContacts : sourceContacts.filter(contact => {
+        const filteredByDialog = !filters ? sourceContacts : sourceContacts.filter(contact => {
             const { budgetMin, budgetMax, rooms, zones, city } = filters;
 
             if (budgetMin && (contact.budget || 0) < budgetMin) return false;
@@ -131,6 +145,61 @@ export default function LeadsPage() {
                 if (!contact.zones || contact.zones.length === 0) return false;
                 const hasZoneMatch = zones.some(filterZone => contact.zones?.includes(filterZone));
                 if (!hasZoneMatch) return false;
+            }
+
+            return true;
+        });
+
+        const reportPreset = searchParams.get('reportPreset');
+        const filtered = filteredByDialog.filter((contact) => {
+            const history = contact.interactionHistory || [];
+            const latestInteractionTime = history.length > 0
+                ? Math.max(...history.map((item) => new Date(item.date).getTime()))
+                : null;
+            const createdAtTime = contact.createdAt ? new Date(contact.createdAt).getTime() : null;
+            const referenceTime = latestInteractionTime || createdAtTime;
+            const now = Date.now();
+
+            if (reportPreset === 'followup-delayed') {
+                if (contact.status === 'Câștigat' || contact.status === 'Pierdut') return false;
+                return referenceTime ? now - referenceTime > 1000 * 60 * 60 * 24 * 3 : true;
+            }
+
+            if (reportPreset === 'contacted-no-viewing') {
+                if (contact.status !== 'Contactat') return false;
+                return createdAtTime ? now - createdAtTime > 1000 * 60 * 60 * 24 * 7 : false;
+            }
+
+            if (reportPreset === 'negotiation-stalled') {
+                if (contact.status !== 'În negociere') return false;
+                return referenceTime ? now - referenceTime > 1000 * 60 * 60 * 24 * 7 : false;
+            }
+
+            if (reportPreset === 'weak-sources') {
+                const source = contact.source?.trim() || 'Necunoscută';
+                const sourceContacts = filteredByDialog.filter((item) => (item.source?.trim() || 'Necunoscută') === source);
+                const progressed = sourceContacts.filter((item) => ['Vizionare', 'În negociere', 'Câștigat'].includes(item.status)).length;
+                const pipelineRate = sourceContacts.length > 0 ? (progressed / sourceContacts.length) * 100 : 0;
+                return sourceContacts.length >= 3 && pipelineRate < 25;
+            }
+
+            if (reportPreset === 'high-risk') {
+                if (contact.status === 'Câștigat' || contact.status === 'Pierdut') return false;
+                const weakQualification = !contact.budget || contact.budget <= 0;
+                const isStale = referenceTime ? now - referenceTime > 1000 * 60 * 60 * 24 * 7 : true;
+                return weakQualification || isStale;
+            }
+
+            if (reportPreset === 'missing-created-at') {
+                return !contact.createdAt;
+            }
+
+            if (reportPreset === 'new-this-period') {
+                return createdAtTime ? now - createdAtTime <= 1000 * 60 * 60 * 24 * 30 : false;
+            }
+
+            if (reportPreset === 'won-or-lost') {
+                return contact.status === 'Câștigat' || contact.status === 'Pierdut';
             }
 
             return true;
@@ -159,7 +228,7 @@ export default function LeadsPage() {
             const rightAge = getContactAgeInDays(right.createdAt) ?? 0;
             return leftAge - rightAge;
         });
-    }, [activeContacts, ageSortBucket, archivedContacts, filters, showArchived]);
+    }, [activeContacts, ageSortBucket, archivedContacts, filters, searchParams, showArchived]);
 
     const handleUnarchive = (contact: Contact) => {
         if (!agencyId) return;
@@ -182,6 +251,8 @@ export default function LeadsPage() {
 
     const isLoading = areContactsLoading || arePropertiesLoading;
     const activeAgeSortLabel = AGE_BUCKET_OPTIONS.find((option) => option.value === ageSortBucket)?.label ?? 'Ordonează după vechime';
+    const reportPreset = searchParams.get('reportPreset');
+    const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
 
   return (
     <div className={cn(
@@ -190,6 +261,16 @@ export default function LeadsPage() {
     )}>
         {/* Mobile & Tablet View */}
         <div className="lg:hidden space-y-4">
+            {reportPresetLabel && (
+                <div className="px-2">
+                    <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                        <p className="text-sm text-white/90">{reportPresetLabel}</p>
+                        <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
+                            <Link href="/leads">Reseteaza</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
             <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
                 <CardHeader>
                     <div className="space-y-4">
@@ -280,6 +361,16 @@ export default function LeadsPage() {
 
         {/* Desktop View */}
         <div className="hidden lg:block space-y-6">
+            {reportPresetLabel && (
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                    <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm text-white/90">{reportPresetLabel}</p>
+                        <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
+                            <Link href="/leads">Reseteaza filtrul</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
             <Card className="overflow-hidden border-white/10 bg-[#152A47] text-white shadow-xl">
                 <CardContent className="p-0">
                     <div className="grid gap-6 p-6">
