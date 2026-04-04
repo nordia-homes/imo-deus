@@ -89,6 +89,8 @@ export async function generateAssistantWelcome(input: AssistantWelcomeInput): Pr
     'The suggestions must push toward action on leads, viewings, negotiations, follow-up, and active properties.',
     'The suggestions must work only from the CRM context, without inventing facts.',
     'Do not make the suggestions generic. They should feel commercially sharp and execution-oriented.',
+    'Think like a genius of residential sales who understands timing, urgency, follow-up windows before and after viewings, negotiations, buyer psychology, and property positioning.',
+    'Make the suggestions feel like a senior operator who sees exactly where money can move fastest today.',
     'Do not use markdown, bullets, labels, quotes, or emojis.',
     'Do not mention AI in every line.',
     'Do not start with "Bună dimineața" unless it genuinely sounds natural.',

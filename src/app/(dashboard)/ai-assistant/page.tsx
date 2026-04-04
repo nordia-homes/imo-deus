@@ -186,7 +186,7 @@ export default function AiAssistantPage() {
                           </p>
                         </div>
                       ) : (
-                        <div className="mx-auto flex max-w-4xl flex-col gap-5">
+                        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
                           {messages.map((message, index) => (
                             <div key={`${message.role}-${index}`} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                               {message.role === 'model' ? (
@@ -196,10 +196,10 @@ export default function AiAssistantPage() {
                               ) : null}
 
                               <div
-                                className={`prose prose-sm max-w-[92%] break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:max-w-[84%] lg:prose-base ${
+                                className={`prose prose-sm max-w-none break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:prose-base ${
                                   message.role === 'model'
-                                    ? 'border border-white/10 bg-white/[0.055] text-white'
-                                    : 'bg-sky-400 text-slate-950'
+                                    ? 'w-full border border-white/10 bg-transparent text-white shadow-none'
+                                    : 'max-w-[88%] bg-sky-400 text-slate-950'
                                 }`}
                               >
                                 <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
@@ -236,21 +236,23 @@ export default function AiAssistantPage() {
                     <div className="px-3 py-3 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
                       <div className="mx-auto max-w-4xl">
                         <div className="rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(56,189,248,0.06),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                          <div className="grid grid-cols-1 gap-2 border-b border-white/8 px-2 pb-3 pt-1 sm:grid-cols-2">
-                            {STARTER_PROMPTS.map((prompt) => (
-                              <button
-                                key={prompt}
-                                type="button"
-                                onClick={() => setInput(prompt)}
-                                className="truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
-                                title={prompt}
-                              >
-                                <span className="block truncate">{prompt}</span>
-                              </button>
-                            ))}
-                          </div>
+                          {messages.length === 0 ? (
+                            <div className="grid grid-cols-1 gap-2 border-b border-white/8 px-2 pb-3 pt-1 sm:grid-cols-2">
+                              {STARTER_PROMPTS.map((prompt) => (
+                                <button
+                                  key={prompt}
+                                  type="button"
+                                  onClick={() => setInput(prompt)}
+                                  className="truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
+                                  title={prompt}
+                                >
+                                  <span className="block truncate">{prompt}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
 
-                          <div className="flex items-end gap-2 pt-2">
+                          <div className={`flex items-end gap-2 ${messages.length === 0 ? 'pt-2' : 'pt-0'}`}>
                             <div className="flex h-14 w-11 shrink-0 items-center justify-center text-white/38 sm:w-12">
                               <Mic className="h-4 w-4" />
                             </div>
