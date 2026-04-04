@@ -3,8 +3,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { collection, orderBy, query } from 'firebase/firestore';
 import { addDocumentNonBlocking, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { chat } from '@/ai/flows/chat';
-import { generateAssistantWelcome } from '@/ai/flows/assistant-welcome';
 import type { Contact, Property, Viewing } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -76,13 +74,23 @@ export default function AiAssistantPage() {
 
     welcomeRequestedRef.current = agencyId;
 
-    generateAssistantWelcome({
-      contacts,
-      properties,
-      viewings,
-      agency,
-      user: userProfile,
+    fetch('/api/ai-assistant/welcome', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contacts,
+        properties,
+        viewings,
+        agency,
+        user: userProfile,
+      }),
     })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Welcome route failed with status ${response.status}`);
+        return response.json();
+      })
       .then((result) => {
         setWelcome(result);
       })
@@ -100,18 +108,28 @@ export default function AiAssistantPage() {
     setChatLoading(true);
 
     try {
-      const result = await chat({
-        history: messages.map((message) => ({
-          role: message.role,
-          content: [{ text: message.text }],
-        })),
-        prompt,
-        contacts: contacts || [],
-        properties: properties || [],
-        viewings: viewings || [],
-        agency,
-        user: userProfile,
+      const response = await fetch('/api/ai-assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          history: messages.map((message) => ({
+            role: message.role,
+            content: [{ text: message.text }],
+          })),
+          prompt,
+          contacts: contacts || [],
+          properties: properties || [],
+          viewings: viewings || [],
+          agency,
+          user: userProfile,
+        }),
       });
+      if (!response.ok) {
+        throw new Error(`Chat route failed with status ${response.status}`);
+      }
+      const result = await response.json();
 
       setMessages((prev) => [...prev, { role: 'model', text: result.response }]);
 
