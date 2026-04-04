@@ -9,10 +9,10 @@ export function LeadList({ contacts, isLoading }: { contacts: Contact[] | null, 
 
     if (isLoading) {
         return (
-            <div className="space-y-4 mt-4">
-                <Skeleton className="h-32 w-full rounded-2xl" />
-                <Skeleton className="h-32 w-full rounded-2xl" />
-                <Skeleton className="h-32 w-full rounded-2xl" />
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <Skeleton className="h-56 w-full rounded-2xl" />
+                <Skeleton className="h-56 w-full rounded-2xl" />
+                <Skeleton className="h-56 w-full rounded-2xl" />
             </div>
         );
     }
@@ -28,7 +28,7 @@ export function LeadList({ contacts, isLoading }: { contacts: Contact[] | null, 
     }
   
     return (
-        <div className="space-y-4 mt-4">
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {contacts.map(cumparator => (
                 <LeadCard key={cumparator.id} lead={cumparator} />
             ))}
