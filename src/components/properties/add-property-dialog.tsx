@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
+import { ChevronDown, Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -44,6 +44,7 @@ import { Card, CardContent } from '../ui/card';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 type AddressSuggestion = {
   label: string;
@@ -617,7 +618,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedCity = form.watch('city') as City;
     const watchedZone = form.watch('zone');
     const watchedAddress = form.watch('address');
-    const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
+    const availableZones = (watchedCity && locations[watchedCity]) ? [...locations[watchedCity]].sort() : [];
     const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
     const watchedTitle = form.watch('title');
     const watchedPropertyType = form.watch('propertyType');
@@ -1368,8 +1369,33 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Bucuresti-Ilfov" /></SelectTrigger></FormControl>
                                              <SelectContent>{field.value && !Object.keys(locations).includes(field.value) && <SelectItem value={field.value}>{field.value}</SelectItem>}{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                                          <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Zonă</FormLabel>
-                                             <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCity}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Herăstrău" /></SelectTrigger></FormControl>
-                                            <SelectContent>{field.value && !availableZones.includes(field.value) && <SelectItem value={field.value}>{field.value}</SelectItem>}{availableZones.map(zone => <SelectItem key={zone} value={zone}>{zone}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                             <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        disabled={!watchedCity}
+                                                        className="w-full justify-between border-white/20 bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+                                                    >
+                                                        <span className="truncate">{field.value || 'ex: Herăstrău'}</span>
+                                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-white/60" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="start" className="max-h-80 w-[320px] overflow-y-auto border-white/10 bg-[#132844] text-white">
+                                                    <DropdownMenuRadioGroup value={field.value || ''} onValueChange={field.onChange}>
+                                                        {field.value && !availableZones.includes(field.value) && (
+                                                            <DropdownMenuRadioItem value={field.value} className="focus:bg-white/10 focus:text-white">
+                                                                {field.value}
+                                                            </DropdownMenuRadioItem>
+                                                        )}
+                                                        {availableZones.map(zone => (
+                                                            <DropdownMenuRadioItem key={zone} value={zone} className="focus:bg-white/10 focus:text-white">
+                                                                {zone}
+                                                            </DropdownMenuRadioItem>
+                                                        ))}
+                                                    </DropdownMenuRadioGroup>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu><FormMessage /></FormItem>)} />
                                          <FormField control={form.control} name="address" render={({ field }) => (
                                             <FormItem className="md:col-span-3">
                                                 <FormLabel className="text-white/80">Adresă *</FormLabel>

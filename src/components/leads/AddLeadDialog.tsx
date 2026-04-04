@@ -31,20 +31,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '../ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
 import type { UserProfile, Property, Contact } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { Card, CardContent } from '../ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { ArchiveRestore, AlertTriangle } from 'lucide-react';
+import { ArchiveRestore, AlertTriangle, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
   phone: z.string().min(1, { message: "Telefonul este obligatoriu." }),
-  email: z.string().email({ message: "Adresă de email invalidă." }),
+  email: z.string().optional().refine((value) => !value || z.string().email().safeParse(value).success, {
+    message: "Adresă de email invalidă.",
+  }),
   source: z.string().min(1, { message: "Sursa este obligatorie." }),
   budget: z.coerce.number().positive({ message: "Bugetul trebuie să fie un număr pozitiv." }),
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
@@ -242,6 +243,16 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
     onOpenChange(false);
   };
 
+  const panelClassName = "rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#152A47_0%,#12263f_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]";
+  const inputClassName = "border-white/15 bg-white/10 text-white placeholder:text-white/40";
+  const selectClassName = "border-white/15 bg-white/10 text-white";
+  const availableZones = watchedCity && locations[watchedCity] ? [...locations[watchedCity]].sort() : [];
+  const selectedZonesLabel = selectedZones.length === 0
+    ? 'Selectează zonele de interes'
+    : selectedZones.length <= 2
+      ? selectedZones.join(', ')
+      : `${selectedZones.slice(0, 2).join(', ')} +${selectedZones.length - 2}`;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {children && (
@@ -249,19 +260,24 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
           {children}
         </DialogTrigger>
       )}
-      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-3xl h-[90vh]")}>
-        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
-            <DialogTitle className={cn("text-xl text-center", isMobile ? "text-white/90" : "text-foreground/90")}>Adaugă Cumpărător Nou</DialogTitle>
+      <DialogContent className={cn(
+        "flex flex-col overflow-hidden p-0",
+        isMobile
+          ? "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33]"
+          : "h-[90vh] border-white/10 bg-[#0F1E33] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)] sm:max-w-4xl"
+      )}>
+        <DialogHeader className="relative z-10 shrink-0 border-b border-white/10 bg-[#132844] px-4 py-4 md:px-6">
+            <DialogTitle className="text-xl text-white">Adaugă Cumpărător Nou</DialogTitle>
         </DialogHeader>
 
         {isOpen && (
             <Form {...form}>
             <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                <div className={cn("flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6", isMobile && 'bg-[#0F1E33]')}>
+                <div className="flex-1 overflow-y-auto space-y-6 bg-[#0F1E33] px-4 py-5 md:px-6">
                     
-                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+                    <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">Detalii Contact</h3>
+                            <h3 className="text-lg font-semibold text-white">Detalii Contact</h3>
                             {duplicateContact && (
                               <div className={cn(
                                 "rounded-2xl border px-4 py-3",
@@ -293,18 +309,18 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                               </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Nume</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Telefon</FormLabel><FormControl><Input className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Email</FormLabel><FormControl><Input type="email" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input className={inputClassName} {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input className={inputClassName} {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email</FormLabel><FormControl><Input type="email" className={inputClassName} {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="source"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel className={cn(isMobile && "text-white/80")}>Sursă</FormLabel>
+                                        <FormLabel className="text-white/80">Sursă</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
+                                            <SelectTrigger className={selectClassName}><SelectValue placeholder="Selectează sursa" /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Website">Website</SelectItem>
@@ -322,20 +338,20 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                         </CardContent>
                     </Card>
                     
-                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+                    <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">Detalii Căutare</h3>
+                            <h3 className="text-lg font-semibold text-white">Detalii Căutare</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Buget (€)</FormLabel><FormControl><Input type="number" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} {...field} placeholder="150000" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="budget" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Buget (€)</FormLabel><FormControl><Input type="number" className={inputClassName} {...field} placeholder="150000" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="status"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel className={cn(isMobile && "text-white/80")}>Status</FormLabel>
+                                        <FormLabel className="text-white/80">Status</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
+                                            <SelectTrigger className={selectClassName}><SelectValue placeholder="Selectează statusul" /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Nou">Nou</SelectItem>
@@ -353,10 +369,10 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                                     name="priority"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel className={cn(isMobile && "text-white/80")}>Prioritate</FormLabel>
+                                        <FormLabel className="text-white/80">Prioritate</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className={selectClassName}><SelectValue /></SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                             <SelectItem value="Scăzută">Scăzută</SelectItem>
@@ -372,18 +388,18 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                         </CardContent>
                     </Card>
 
-                     <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+                     <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">Locație</h3>
+                            <h3 className="text-lg font-semibold text-white">Locație</h3>
                             <FormField
                                 control={form.control}
                                 name="city"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className={cn(isMobile && "text-white/80")}>Oraș de interes</FormLabel>
+                                    <FormLabel className="text-white/80">Oraș de interes</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
+                                        <SelectTrigger className={selectClassName}><SelectValue placeholder="Selectează orașul" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
                                         {Object.keys(locations).map(city => (
@@ -398,46 +414,48 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                                 
                                 {watchedCity && locations[watchedCity] && (
                                 <div className="space-y-2">
-                                        <Label className={cn(isMobile && "text-white/80")}>Zone de interes</Label>
-                                        <div className={cn("max-h-60 overflow-y-auto rounded-md border p-4", isMobile && "border-white/20")}>
-                                            <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                {[...locations[watchedCity]].sort().map((zone: string) => (
-                                                    <div key={zone} className="flex items-center gap-2">
-                                                        <Checkbox
-                                                            id={`zone-${zone}`}
-                                                            checked={selectedZones.includes(zone)}
-                                                            onCheckedChange={(checked) => {
-                                                                handleZoneToggle(zone, !!checked);
-                                                            }}
-                                                            className={cn(isMobile && "border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground")}
-                                                        />
-                                                        <Label
-                                                            htmlFor={`zone-${zone}`}
-                                                            className={cn("font-normal cursor-pointer", isMobile && "text-white/80")}
-                                                        >
-                                                            {zone}
-                                                        </Label>
-                                                    </div>
+                                        <Label className="text-white/80">Zone de interes</Label>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="w-full justify-between border-white/15 bg-white/10 text-white hover:bg-white/15"
+                                                >
+                                                    <span className="truncate">{selectedZonesLabel}</span>
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-white/60" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="max-h-80 w-[320px] overflow-y-auto border-white/10 bg-[#132844] text-white">
+                                                {availableZones.map((zone) => (
+                                                    <DropdownMenuCheckboxItem
+                                                        key={zone}
+                                                        checked={selectedZones.includes(zone)}
+                                                        onCheckedChange={(checked) => handleZoneToggle(zone, Boolean(checked))}
+                                                        className="focus:bg-white/10 focus:text-white"
+                                                    >
+                                                        {zone}
+                                                    </DropdownMenuCheckboxItem>
                                                 ))}
-                                            </div>
-                                        </div>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 )}
                         </CardContent>
                     </Card>
                     
-                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+                    <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                             <h3 className="text-lg font-semibold text-primary">Asociere (Opțional)</h3>
+                             <h3 className="text-lg font-semibold text-white">Asociere (Opțional)</h3>
                             <FormField
                                 control={form.control}
                                 name="sourcePropertyId"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className={cn(isMobile && "text-white/80")}>Proprietate de Interes</FormLabel>
+                                    <FormLabel className="text-white/80">Proprietate de Interes</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}>
+                                        <SelectTrigger className={selectClassName}>
                                             <SelectValue placeholder="Selectează proprietatea care a generat cumpărătorul" />
                                         </SelectTrigger>
                                         </FormControl>
@@ -450,7 +468,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                                         ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription className={cn(isMobile && "text-white/70")}>
+                                    <FormDescription className="text-white/70">
                                         Asociază cumpărătorul cu anunțul de pe care a venit.
                                     </FormDescription>
                                     <FormMessage />
@@ -462,10 +480,10 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                                 name="agentId"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className={cn(isMobile && "text-white/80")}>Alocă Agent</FormLabel>
+                                    <FormLabel className="text-white/80">Alocă Agent</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                        <SelectTrigger className={cn(isMobile && "bg-white/10 border-white/20 text-white")}><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
+                                        <SelectTrigger className={selectClassName}><SelectValue placeholder="Selectează un agent" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
                                         <SelectItem value="unassigned">Nealocat</SelectItem>
@@ -481,17 +499,17 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                         </CardContent>
                      </Card>
 
-                    <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+                    <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Descriere Cumpărător</FormLabel><FormControl><Textarea className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
+                            <h3 className="text-lg font-semibold text-white">Descriere</h3>
+                            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Descriere Cumpărător</FormLabel><FormControl><Textarea className={inputClassName} rows={3} {...field} placeholder="Adaugă o descriere completă a cumpărătorului, preferințe, cerințe speciale, etc." /></FormControl><FormMessage /></FormItem> )} />
                         </CardContent>
                     </Card>
                 </div>
 
-                <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+                <DialogFooter className="shrink-0 border-t border-white/10 bg-[#132844] p-3 shadow-md md:px-6 md:py-4">
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-white/80 hover:bg-white/10 hover:text-white/90">Anulează</Button>
                         <Button type="submit" disabled={Boolean(duplicateContact)}>
                           {duplicateContact?.archivedAt ? 'Folosește dezarhivarea' : duplicateContact ? 'Cumpărător existent' : 'Salvează Cumpărător'}
                         </Button>

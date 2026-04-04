@@ -1,6 +1,7 @@
 export const locations = {
   'Bucuresti-Ilfov': [
     '13 Septembrie',
+    '1 Decembrie',
     '1 Mai',
     'Andronache',
     'Apărătorii Patriei',
@@ -31,6 +32,7 @@ export const locations = {
     'Diham',
     'Domenii',
     'Dorobanti',
+    'Doamna Ghica',
     'Dristor',
     'Drumul Sarii',
     'Drumul Taberei',
@@ -46,6 +48,7 @@ export const locations = {
     'Giurgiului',
     'Gorjului',
     'Grivita',
+    'Grand Arena',
     'Herastrau',
     'Iancu Nicolae',
     'Iancului',

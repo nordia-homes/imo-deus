@@ -1,6 +1,7 @@
 import type { Contact } from '@/lib/types';
 
 export type ContactFreshnessTone = 'green' | 'orange' | 'red' | 'archived';
+export type ContactAgeBucket = 'all' | '0-7' | '7-14' | '14-21' | '21-30' | '30-40';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -30,4 +31,17 @@ export function getContactFreshnessTone(contact: Pick<Contact, 'createdAt' | 'ar
 
 export function shouldAutoArchiveContact(contact: Pick<Contact, 'createdAt' | 'archivedAt'>, now = new Date()) {
   return !isArchivedContact(contact) && getContactAgeInDays(contact.createdAt, now) !== null && getContactAgeInDays(contact.createdAt, now)! > 40;
+}
+
+export function getContactAgeBucket(contact: Pick<Contact, 'createdAt' | 'archivedAt'>, now = new Date()): ContactAgeBucket | 'archived' {
+  if (isArchivedContact(contact)) return 'archived';
+
+  const ageInDays = getContactAgeInDays(contact.createdAt, now);
+  if (ageInDays === null) return '0-7';
+  if (ageInDays <= 7) return '0-7';
+  if (ageInDays <= 14) return '7-14';
+  if (ageInDays <= 21) return '14-21';
+  if (ageInDays <= 30) return '21-30';
+  if (ageInDays <= 40) return '30-40';
+  return 'archived';
 }

@@ -27,7 +27,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAgency } from '@/context/AgencyContext';
 import type { UserProfile, Property, Contact } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
@@ -35,6 +34,8 @@ import { Card, CardContent } from '../../ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { DialogFooter } from '../../ui/dialog';
+import { ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -108,6 +109,12 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
   });
 
   const watchedCity = form.watch('city') as City;
+  const availableZones = watchedCity && locations[watchedCity] ? [...locations[watchedCity]].sort() : [];
+  const selectedZonesLabel = selectedZones.length === 0
+    ? 'Selectează zonele de interes'
+    : selectedZones.length <= 2
+      ? selectedZones.join(', ')
+      : `${selectedZones.slice(0, 2).join(', ')} +${selectedZones.length - 2}`;
 
   useEffect(() => {
     if (isOpen) {
@@ -287,27 +294,25 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
                                 {watchedCity && locations[watchedCity] && (
                                 <div className="space-y-2">
                                         <Label>Zone de interes</Label>
-                                        <div className="max-h-60 overflow-y-auto rounded-md border p-4">
-                                            <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                {locations[watchedCity].sort().map((zone) => (
-                                                    <div key={zone} className="flex items-center gap-2">
-                                                        <Checkbox
-                                                            id={`zone-${zone}`}
-                                                            checked={selectedZones.includes(zone)}
-                                                            onCheckedChange={(checked) => {
-                                                                handleZoneToggle(zone, !!checked);
-                                                            }}
-                                                        />
-                                                        <Label
-                                                            htmlFor={`zone-${zone}`}
-                                                            className="font-normal cursor-pointer"
-                                                        >
-                                                            {zone}
-                                                        </Label>
-                                                    </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button type="button" variant="outline" className="w-full justify-between">
+                                                    <span className="truncate">{selectedZonesLabel}</span>
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="max-h-80 w-[320px] overflow-y-auto">
+                                                {availableZones.map((zone) => (
+                                                    <DropdownMenuCheckboxItem
+                                                        key={zone}
+                                                        checked={selectedZones.includes(zone)}
+                                                        onCheckedChange={(checked) => handleZoneToggle(zone, Boolean(checked))}
+                                                    >
+                                                        {zone}
+                                                    </DropdownMenuCheckboxItem>
                                                 ))}
-                                            </div>
-                                        </div>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 )}
                         </CardContent>
