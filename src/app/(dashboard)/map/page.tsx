@@ -24,7 +24,7 @@ export default function MapPage() {
             {isLoading ? (
                 <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
             ) : (
-                <PropertiesMap properties={properties || []} />
+                <PropertiesMap properties={properties || []} layoutMode="map-only" />
             )}
         </div>
     );
