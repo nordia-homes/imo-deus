@@ -405,6 +405,19 @@ export type BriefingProperty = {
   image?: string | null;
 };
 
+export type BriefingWhatsappDraft = {
+  contactName: string;
+  reason: string;
+  message: string;
+};
+
+export type BriefingNextStepPlan = {
+  contactName: string;
+  step: string;
+  reason: string;
+  expectedOutcome: string;
+};
+
 export type Briefing = {
   summary: BriefingSummaryItem[];
   priorities: BriefingPriority[];
@@ -413,6 +426,12 @@ export type Briefing = {
   propertiesToOptimize: BriefingProperty[];
   urgentClientsAnalysis: string;
   propertiesToReviewAnalysis: string;
+  executiveSummary?: string;
+  dailyFocus?: string;
+  opportunities?: string[];
+  suggestedPrompts?: string[];
+  whatsAppDrafts?: BriefingWhatsappDraft[];
+  nextStepPlans?: BriefingNextStepPlan[];
 };
 
 export type BuyerPreferencesLink = {

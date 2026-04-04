@@ -1,383 +1,334 @@
-
 'use client';
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { generateBriefing } from '@/ai/flows/briefing-generator';
-import { chat, type Message } from '@/ai/flows/chat';
-import { useToast } from '@/hooks/use-toast';
 
-import type { Contact, Property, Viewing, Briefing } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { collection, orderBy, query } from 'firebase/firestore';
+import { addDocumentNonBlocking, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { chat } from '@/ai/flows/chat';
+import { generateAssistantWelcome } from '@/ai/flows/assistant-welcome';
+import type { Contact, Property, Viewing } from '@/lib/types';
+import { useAgency } from '@/context/AgencyContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ArrowRight, Bot, Camera, Check, Clock, Eye, Loader2, Send, User } from 'lucide-react';
-import { useAgency } from '@/context/AgencyContext';
-
+import {
+  Bot,
+  Loader2,
+  MessageSquareText,
+  Mic,
+  Send,
+  Sparkles,
+  User,
+} from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Helper to get initials from a name
-const getInitials = (name?: string | null) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-}
+type ChatHistoryMessage = { role: 'user' | 'model'; text: string };
 
-// The main component for the AI Assistant page
+const STARTER_PROMPTS = [
+  'Spune-mi primele 3 lead-uri pe care trebuie să le sun azi și de ce.',
+  'Scrie-mi un mesaj WhatsApp care mută lead-ul cel mai bun spre vizionare.',
+  'Arată-mi unde pierdem acum în pipeline și ce fac azi.',
+  'Spune-mi ce proprietăți active trebuie optimizate urgent pentru a genera mai multe vizionări.',
+];
+
 export default function AiAssistantPage() {
   const { agencyId, agency, userProfile, user } = useAgency();
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  // --- Data Fetching ---
-  const contactsQuery = useMemoFirebase(() => agencyId ? query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc')) : null, [firestore, agencyId]);
-  const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
+  const contactsQuery = useMemoFirebase(
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc')) : null),
+    [firestore, agencyId]
+  );
+  const propertiesQuery = useMemoFirebase(
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'properties')) : null),
+    [firestore, agencyId]
+  );
+  const viewingsQuery = useMemoFirebase(
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc')) : null),
+    [firestore, agencyId]
+  );
 
-  const propertiesQuery = useMemoFirebase(() => agencyId ? query(collection(firestore, 'agencies', agencyId, 'properties')) : null, [firestore, agencyId]);
-  const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+  const { data: contacts } = useCollection<Contact>(contactsQuery);
+  const { data: properties } = useCollection<Property>(propertiesQuery);
+  const { data: viewings } = useCollection<Viewing>(viewingsQuery);
 
-  const viewingsQuery = useMemoFirebase(() => agencyId ? query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc')) : null, [firestore, agencyId]);
-  const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
-
-  const [briefing, setBriefing] = useState<Briefing | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const isLoading = areContactsLoading || arePropertiesLoading || areViewingsLoading;
-
-  useEffect(() => {
-    // Only run when data is loaded
-    if (!isLoading && contacts && properties && viewings) {
-      setBriefing(null); // Reset previous briefing
-      setError(null);
-      generateBriefing({ contacts, properties, viewings })
-        .then(setBriefing)
-        .catch(err => {
-          console.error("Error generating briefing:", err);
-          setError("Asistentul AI nu a putut genera sumarul. Vă rugăm să reîncărcați pagina sau să încercați mai târziu.");
-        });
-    }
-  }, [isLoading, contacts, properties, viewings]);
-
-  // --- Chat State & Logic ---
-  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string; }[]>([]);
+  const [messages, setMessages] = useState<ChatHistoryMessage[]>([]);
   const [input, setInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  
-  const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
-    if (!agencyId || !user) return;
+  const [welcome, setWelcome] = useState<{ title: string; subtitle: string; suggestions: string[] } | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const welcomeRequestedRef = useRef<string | null>(null);
 
-    const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
-    if (!selectedProperty) {
-        toast({ variant: 'destructive', title: 'Proprietate invalidă.' });
-        return;
-    };
-    
-    const viewingToAdd: Omit<Viewing, 'id'> = {
-        ...viewingData,
-        propertyTitle: selectedProperty.title,
-        propertyAddress: selectedProperty.address,
-        status: 'scheduled',
-        agentId: user.uid,
-        agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
-        createdAt: new Date().toISOString(),
-    };
-    
-    addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+  useEffect(() => {
+    const container = chatScrollRef.current;
+    if (!container) return;
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [messages, chatLoading]);
 
-    toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
-  };
+  useEffect(() => {
+    if (!agencyId || !contacts || !properties || !viewings) return;
+    if (welcomeRequestedRef.current === agencyId) return;
 
+    welcomeRequestedRef.current = agencyId;
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+    generateAssistantWelcome({
+      contacts,
+      properties,
+      viewings,
+      agency,
+      user: userProfile,
+    })
+      .then((result) => {
+        setWelcome(result);
+      })
+      .catch((error) => {
+        console.error('Assistant welcome generation failed', error);
+      });
+  }, [agency, agencyId, contacts, properties, userProfile, viewings]);
 
-    const currentInput = input;
-    const userMessage = { role: 'user' as const, text: currentInput };
-    setMessages(prev => [...prev, userMessage]);
+  async function handleSend(promptOverride?: string) {
+    const prompt = (promptOverride || input).trim();
+    if (!prompt) return;
+
+    setMessages((prev) => [...prev, { role: 'user', text: prompt }]);
     setInput('');
     setChatLoading(true);
 
     try {
-        const history: Message[] = messages.map(msg => ({
-            role: msg.role,
-            content: [{ text: msg.text }]
-        }));
+      const result = await chat({
+        history: messages.map((message) => ({
+          role: message.role,
+          content: [{ text: message.text }],
+        })),
+        prompt,
+        contacts: contacts || [],
+        properties: properties || [],
+        viewings: viewings || [],
+        agency,
+        user: userProfile,
+      });
 
-        const result = await chat({
-            history: history,
-            prompt: currentInput,
-            contacts: contacts || [],
-            properties: properties || [],
-            viewings: viewings || [],
-            agency,
-            user: userProfile,
-        });
+      setMessages((prev) => [...prev, { role: 'model', text: result.response }]);
 
-        const aiMessage = { role: 'model' as const, text: result.response };
-        setMessages(prev => [...prev, aiMessage]);
+      const actionMatch = result.response.match(/\[ACTION:scheduleViewing\]([\s\S]*?)\[\/ACTION\]/);
+      if (actionMatch?.[1] && agencyId && user) {
+        const params = JSON.parse(actionMatch[1]);
+        const property = properties?.find((item) => item.title === params.propertyTitle);
+        const contact = contacts?.find((item) => item.name === params.contactName);
 
-        // Post-processing for actions
-        const actionRegex = /\[ACTION:scheduleViewing\]([\s\S]*?)\[\/ACTION\]/;
-        const match = result.response.match(actionRegex);
+        if (property && contact) {
+          addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), {
+            propertyId: property.id,
+            propertyTitle: property.title,
+            propertyAddress: property.address,
+            contactId: contact.id,
+            contactName: contact.name,
+            viewingDate: params.isoDateTime,
+            notes: 'Programat din AI Assistant.',
+            status: 'scheduled',
+            agentId: user.uid,
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
+            createdAt: new Date().toISOString(),
+          });
 
-        if (match && match[1]) {
-            try {
-                const params = JSON.parse(match[1]);
-                const property = properties?.find(p => p.title === params.propertyTitle);
-                const contact = contacts?.find(c => c.name === params.contactName);
-
-                if (property && contact) {
-                    handleAddViewing({
-                        propertyId: property.id,
-                        contactId: contact.id,
-                        contactName: contact.name,
-                        viewingDate: params.isoDateTime,
-                        notes: `Programat de Asistentul AI.`,
-                    });
-                } else {
-                     toast({ variant: 'destructive', title: 'Nu am putut programa', description: 'Proprietatea sau contactul nu au fost găsite în CRM.' });
-                }
-            } catch (e) {
-                console.error("Failed to parse or execute AI action", e);
-                toast({ variant: 'destructive', title: 'Eroare acțiune AI', description: 'Am primit o comandă invalidă de la asistent.' });
-            }
+          toast({ title: 'Vizionare programată!' });
         }
-
+      }
     } catch (error) {
-        console.error("AI chat failed", error);
-        toast({
-            variant: "destructive",
-            title: "A apărut o eroare",
-            description: "Nu am putut comunica cu asistentul AI. Încearcă din nou.",
-        });
-        setMessages(prev => prev.filter(m => m !== userMessage));
+      console.error('AI chat failed', error);
+      toast({
+        variant: 'destructive',
+        title: 'Nu am putut comunica cu asistentul AI.',
+      });
     } finally {
-        setChatLoading(false);
+      setChatLoading(false);
     }
-  };
-
-
-  useEffect(() => {
-    chatContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-
-  // --- Render Functions for different sections ---
-
-  const renderSummary = () => {
-    if (!briefing && !error) return <Card className="p-4 grid grid-cols-4 gap-4"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></Card>;
-    if (error) return null;
-    return (
-      <Card className="p-2 shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-        <CardContent className="p-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {briefing?.summary.map(item => (
-                    <div key={item.label} className="p-3 rounded-lg text-center bg-white/10 border border-white/20">
-                        <p className="text-3xl font-bold">{item.value}</p>
-                        <p className="text-xs text-white/70">{item.label}</p>
-                    </div>
-                ))}
-            </div>
-        </CardContent>
-      </Card>
-    );
-  };
-  
-  const renderPriorities = () => {
-    if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-4/5" /><Skeleton className="h-5 w-full" /></div></Card>;
-    if (error) return null;
-    return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-            <CardHeader>
-                <CardTitle>Prioritățile tale azi</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-3">
-                    {briefing?.priorities.map((item, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                <Check className="h-4 w-4" />
-                            </div>
-                            <span className="font-medium">{item.text}</span>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-        </Card>
-    );
-  };
-
-  const renderUpcomingViewings = () => {
-    if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
-    if (error) return null;
-    return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-            <CardHeader>
-                <CardTitle>Vizionări Programate Astăzi</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {briefing?.upcomingViewings.length === 0 ? (
-                    <p className="text-white/70 text-center py-4">Nicio vizionare azi. Bucură-te de timp liber!</p>
-                ) : (
-                    <div className="space-y-2">
-                        {briefing?.upcomingViewings.map(v => (
-                            <div key={v.id} className="flex items-center justify-between p-2 rounded-md border border-white/20">
-                                <div>
-                                    <p className="font-semibold text-sm">{v.title}</p>
-                                    <p className="text-xs text-white/70">cu {v.contact}</p>
-                                </div>
-                                <div className="font-bold text-sm flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {v.time}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    )
   }
 
-  const renderUrgentClients = () => {
-    if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
-    if (error) return null;
-    return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-            <CardHeader>
-                <CardTitle>Clienți de Urgență</CardTitle>
-                <CardDescription className="text-white/70">{briefing?.urgentClientsAnalysis}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {briefing?.urgentClients.length === 0 ? (
-                    <p className="text-white/70 text-center py-4">Niciun client nu necesită atenție urgentă.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {briefing?.urgentClients.map(c => (
-                            <div key={c.id} className="flex items-center gap-3 p-2 border border-white/20 rounded-md">
-                                <Avatar>
-                                    <AvatarImage src={c.avatar || `https://i.pravatar.cc/150?u=${c.id}`} />
-                                    <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-sm">{c.name}</p>
-                                    <p className="text-xs text-destructive">{c.reason}</p>
-                                </div>
-                                <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
-                                    <Link href={`/leads/${c.id}`}><ArrowRight/></Link>
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-  };
-  
-  const renderPropertiesToOptimize = () => {
-    if (!briefing && !error) return <Card className="p-6"><Skeleton className="h-6 w-1/3 mb-4" /><div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></Card>;
-    if (error) return null;
-    return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-            <CardHeader>
-                <CardTitle>Proprietăți de Optimizat</CardTitle>
-                <CardDescription className="text-white/70">{briefing?.propertiesToReviewAnalysis}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {briefing?.propertiesToOptimize.length === 0 ? (
-                    <p className="text-white/70 text-center py-4">Toate proprietățile sunt optimizate.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {briefing?.propertiesToOptimize.map(p => (
-                             <div key={p.id} className="flex items-center gap-3 p-2 border border-white/20 rounded-md">
-                                <div className="relative h-12 w-12 shrink-0">
-                                    <Image src={p.image || `https://picsum.photos/seed/${p.id}/200`} alt={p.name} fill sizes="48px" className="rounded-md object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-sm truncate" title={p.name}>{p.name.length > 25 ? `${p.name.substring(0, 25)}...` : p.name}</p>
-                                    <p className="text-xs text-destructive flex items-center gap-1"><Camera className="h-3 w-3" />{p.reason}</p>
-                                </div>
-                                <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
-                                    <Link href={`/properties/${p.id}`}><ArrowRight/></Link>
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-  };
-
-
   return (
-    <div className="space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
-        {error && (
-            <Alert variant="destructive">
-                <AlertTitle>Eroare la generarea briefing-ului</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-            </Alert>
-        )}
-        {renderSummary()}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {renderPriorities()}
-            {renderUpcomingViewings()}
-        </div>
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {renderUrgentClients()}
-            {renderPropertiesToOptimize()}
-        </div>
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
-            <CardHeader>
-                <CardTitle>Chat Rapid</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4 max-h-[400px] overflow-y-auto mb-4 pr-4">
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`flex items-start gap-4 ${msg.role === 'model' ? 'justify-start' : 'justify-end'}`}>
-                            {msg.role === 'model' && <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>}
-                            <div className={`prose prose-sm max-w-full rounded-lg p-4 shadow-sm lg:prose-base dark:prose-invert ${msg.role === 'model' ? 'bg-white/10 text-white' : 'bg-primary text-primary-foreground'}`}>
-                                <Markdown remarkPlugins={[remarkGfm]}>{msg.text}</Markdown>
-                            </div>
-                            {msg.role === 'user' && <div className="p-2 rounded-full bg-secondary"><User className="h-5 w-5" /></div>}
+    <div className="h-[calc(100vh-4rem)] overflow-hidden bg-[#07111f] text-white lg:h-[calc(100vh-5rem)]">
+      <div className="relative h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_82%_12%,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_50%_100%,rgba(37,99,235,0.16),transparent_34%),linear-gradient(180deg,#12253f_0%,#0c1a30_14%,#081322_34%,#07111f_100%)]" />
+        <div className="pointer-events-none absolute left-[-8rem] top-24 h-80 w-80 rounded-full bg-sky-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-blue-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-8rem] left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+
+        <div className="relative mx-auto flex h-full w-full max-w-[1540px] flex-col px-2 py-2 sm:px-3 sm:py-3 lg:px-6 lg:py-4">
+          <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pt-3 pb-3 sm:px-3 sm:pt-3 sm:pb-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5 lg:px-4 lg:pt-4 lg:pb-4">
+                <div className="min-h-0 overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.012))]">
+                  <div className="flex min-h-0 h-full flex-col overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
+                      <div className="flex items-center gap-2 text-sky-200/80">
+                        <Bot className="h-4 w-4" />
+                        <span className="text-sm">Asistent AI</span>
+                      </div>
+                    </div>
+                    <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                      {messages.length === 0 ? (
+                        <div className="mx-auto flex h-full max-h-full max-w-4xl flex-col items-center justify-center overflow-hidden px-3 py-4 text-center sm:px-4 sm:py-6 lg:px-6 lg:py-8">
+                          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-300/8 text-sky-300 shadow-[0_0_90px_rgba(56,189,248,0.16)] sm:h-18 sm:w-18 lg:h-20 lg:w-20">
+                            <Sparkles className="h-8 w-8 lg:h-9 lg:w-9" />
+                          </div>
+
+                          <h1 className="max-w-3xl text-balance text-[2rem] font-semibold tracking-tight sm:text-[2.35rem] sm:leading-[1.1] lg:text-[2.75rem] lg:leading-[1.06]">
+                            {welcome?.title || 'Asistentul tău analizează CRM-ul și pregătește direcția zilei.'}
+                          </h1>
+
+                          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 sm:text-[0.98rem] sm:leading-7 lg:mt-4 lg:text-[1.02rem] lg:leading-8">
+                            {welcome?.subtitle || 'Spune-mi direct ce vrei să prioritizăm, să scriem, să confirmăm sau să împingem mai departe.'}
+                          </p>
                         </div>
-                    ))}
-                    {chatLoading && (
-                        <div className="flex items-start gap-4 justify-start">
-                            <div className="p-2 rounded-full bg-primary/10 text-primary"><Bot className="h-5 w-5" /></div>
-                            <div className="p-4 rounded-lg max-w-2xl shadow-sm bg-white/10">
+                      ) : (
+                        <div className="mx-auto flex max-w-4xl flex-col gap-5">
+                          {messages.map((message, index) => (
+                            <div key={`${message.role}-${index}`} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              {message.role === 'model' ? (
+                                <MessageAvatar variant="model">
+                                  <Bot className="h-5 w-5" />
+                                </MessageAvatar>
+                              ) : null}
+
+                              <div
+                                className={`prose prose-sm max-w-[92%] break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:max-w-[84%] lg:prose-base ${
+                                  message.role === 'model'
+                                    ? 'border border-white/10 bg-white/[0.055] text-white'
+                                    : 'bg-sky-400 text-slate-950'
+                                }`}
+                              >
+                                <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
+                              </div>
+
+                              {message.role === 'user' ? (
+                                <MessageAvatar variant="user">
+                                  <User className="h-5 w-5" />
+                                </MessageAvatar>
+                              ) : null}
+                            </div>
+                          ))}
+
+                          {chatLoading ? (
+                            <div className="flex gap-3">
+                              <MessageAvatar variant="model">
+                                <Bot className="h-5 w-5" />
+                              </MessageAvatar>
+                              <div className="rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-4">
                                 <div className="flex items-center gap-2">
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300" />
+                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300 [animation-delay:0.15s]" />
+                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300 [animation-delay:0.3s]" />
                                 </div>
+                              </div>
                             </div>
+                          ) : null}
+
+                          <div ref={chatEndRef} />
                         </div>
-                    )}
-                    <div ref={chatContainerRef} />
+                      )}
+                    </div>
+
+                    <div className="px-3 py-3 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+                      <div className="mx-auto max-w-4xl">
+                        <div className="rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(56,189,248,0.06),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                          <div className="grid grid-cols-1 gap-2 border-b border-white/8 px-2 pb-3 pt-1 sm:grid-cols-2">
+                            {STARTER_PROMPTS.map((prompt) => (
+                              <button
+                                key={prompt}
+                                type="button"
+                                onClick={() => setInput(prompt)}
+                                className="truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
+                                title={prompt}
+                              >
+                                <span className="block truncate">{prompt}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="flex items-end gap-2 pt-2">
+                            <div className="flex h-14 w-11 shrink-0 items-center justify-center text-white/38 sm:w-12">
+                              <Mic className="h-4 w-4" />
+                            </div>
+
+                            <Input
+                              value={input}
+                              onChange={(event) => setInput(event.target.value)}
+                              onKeyDown={(event) => event.key === 'Enter' && !chatLoading && handleSend()}
+                              placeholder="Start your request, iar asistentul se ocupă de restul..."
+                              className="h-14 border-0 bg-transparent px-0 text-base text-white placeholder:text-white/35 focus-visible:ring-0 focus-visible:ring-offset-0"
+                              disabled={chatLoading}
+                            />
+
+                            <Button
+                              size="icon"
+                              className="h-12 w-12 shrink-0 rounded-full bg-sky-400 text-slate-950 hover:bg-sky-300"
+                              onClick={() => handleSend()}
+                              disabled={chatLoading}
+                            >
+                              {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                 <div className="relative">
-                    <Input
-                        placeholder="Ai o întrebare rapidă? Scrie aici..."
-                        className="pr-12 h-12 bg-white/10 border-white/20 placeholder:text-white/50 text-white"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !chatLoading && handleSend()}
-                        disabled={chatLoading}
-                    />
-                    <Button size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" onClick={handleSend} disabled={chatLoading}>
-                         {chatLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+
+                <aside className="min-h-0 overflow-hidden rounded-[30px] bg-[linear-gradient(180deg,rgba(59,130,246,0.09),rgba(255,255,255,0.02))]">
+                  <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div>
+                        <p className="text-xl font-medium text-white">Sugestii asistent</p>
+                        <p className="mt-1 text-sm text-white/45">Lansează rapid sarcini utile</p>
+                      </div>
+                      <Sparkles className="h-4 w-4 text-sky-200/55" />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                      <div className="space-y-3">
+                        {(welcome?.suggestions?.length ? welcome.suggestions : STARTER_PROMPTS).map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setInput(item)}
+                            className="group w-full rounded-[22px] border border-white/10 bg-black/20 px-4 py-4 text-left transition-all duration-200 hover:border-sky-300/18 hover:bg-white/[0.05]"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
+                                <MessageSquareText className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="line-clamp-3 text-sm leading-6 text-white/82">{item}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageAvatar({ children, variant }: { children: ReactNode; variant: 'user' | 'model' }) {
+  return (
+    <div
+      className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+        variant === 'model' ? 'bg-primary/12 text-primary' : 'bg-white/10 text-white'
+      }`}
+    >
+      {children}
     </div>
   );
 }

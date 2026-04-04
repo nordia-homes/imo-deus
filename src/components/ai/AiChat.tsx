@@ -6,7 +6,6 @@ import { Input } from "../ui/input";
 import { Send, Bot, User } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { chat } from "@/ai/flows/chat";
-import type { Message } from "genkit";
 import { useToast } from "@/hooks/use-toast";
 import type { Contact, Property, Agency, UserProfile, Viewing } from '@/lib/types';
 import Markdown from 'react-markdown';
@@ -17,6 +16,11 @@ interface ChatMessage {
     role: 'user' | 'model';
     text: string;
 }
+
+type AssistantHistoryMessage = {
+    role: 'user' | 'model';
+    content: Array<{ text: string }>;
+};
 
 interface AiChatProps {
     suggestedPrompts: string[];
@@ -50,7 +54,7 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
 
         try {
             // History for chat should include the briefing context maybe? For now, let's keep it simple.
-            const history: Message[] = [...messages, userMessage].slice(0, -1).map(msg => ({
+            const history: AssistantHistoryMessage[] = [...messages, userMessage].slice(0, -1).map(msg => ({
                 role: msg.role,
                 content: [{ text: msg.text }]
             }));

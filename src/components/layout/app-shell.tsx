@@ -215,13 +215,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <PushNotificationsBanner />
             {children}
         </main>
-        <footer className="hidden border-t border-white/8 bg-[#0F1E33] px-6 py-4 text-sm text-white/65 lg:block">
-          <div className="flex items-center justify-center gap-2">
-            <BadgeCheck className="h-4 w-4 text-emerald-300/80" />
-            <Copyright className="h-4 w-4 text-white/70" />
-            <span>2026 Drepturi rezervate ImoDeus</span>
-          </div>
-        </footer>
+        {pathname !== '/ai-assistant' ? (
+          <footer className="hidden border-t border-white/8 bg-[#0F1E33] px-6 py-4 text-sm text-white/65 lg:block">
+            <div className="flex items-center justify-center gap-2">
+              <BadgeCheck className="h-4 w-4 text-emerald-300/80" />
+              <Copyright className="h-4 w-4 text-white/70" />
+              <span>2026 Drepturi rezervate ImoDeus</span>
+            </div>
+          </footer>
+        ) : null}
         <BottomNavbar />
       </SidebarInset>
     </SidebarProvider>
