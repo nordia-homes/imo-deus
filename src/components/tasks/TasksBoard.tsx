@@ -1,52 +1,88 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
-import type { Task } from "@/lib/types";
+import type { Task, Contact } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { TaskCard } from './TaskCard';
-import { isToday, isPast, isThisWeek, endOfWeek, startOfToday, addDays } from 'date-fns';
+import { isToday, isPast, isThisWeek } from 'date-fns';
 import { useAgency } from '@/context/AgencyContext';
+import { AlertTriangle, CalendarClock, CalendarRange, Rocket, CheckCircle2 } from 'lucide-react';
+import { EditTaskDialog } from './EditTaskDialog';
+import { useToast } from "@/hooks/use-toast";
 
 const columns = [
-    { id: 'overdue', title: 'Scadente' },
-    { id: 'today', title: 'Azi' },
-    { id: 'this_week', title: 'Săptămâna aceasta' },
-    { id: 'future', title: 'Viitor' },
-    { id: 'completed', title: 'Completate' }
+    { id: 'overdue', title: 'Întârziate', description: 'Ce trebuia rezolvat deja', icon: AlertTriangle, accent: 'from-rose-400/20 to-transparent', badge: 'text-rose-100' },
+    { id: 'today', title: 'Astăzi', description: 'Focus pentru ziua curentă', icon: CalendarClock, accent: 'from-sky-400/20 to-transparent', badge: 'text-sky-100' },
+    { id: 'this_week', title: 'Săptămâna asta', description: 'Lucruri planificate curând', icon: CalendarRange, accent: 'from-indigo-400/20 to-transparent', badge: 'text-indigo-100' },
+    { id: 'future', title: 'Mai încolo', description: 'Planifică perioada următoare', icon: Rocket, accent: 'from-cyan-400/20 to-transparent', badge: 'text-cyan-100' },
+    { id: 'completed', title: 'Finalizate', description: 'Task-uri deja închise', icon: CheckCircle2, accent: 'from-emerald-400/20 to-transparent', badge: 'text-emerald-100' }
 ] as const;
 
 type ColumnId = typeof columns[number]['id'];
 
-function TaskColumn({ id, title, tasks }: { id: ColumnId, title: string, tasks: Task[] }) {
-    const { setNodeRef } = useDroppable({ id });
-
+function TaskColumn({
+    title,
+    description,
+    tasks,
+    icon: Icon,
+    accent,
+    badge,
+    onEdit,
+    onToggleComplete,
+}: {
+    title: string;
+    description: string;
+    tasks: Task[];
+    icon: typeof AlertTriangle;
+    accent: string;
+    badge: string;
+    onEdit: (task: Task) => void;
+    onToggleComplete: (task: Task) => void;
+}) {
     return (
-        <div className="bg-white/5 rounded-lg p-2 flex flex-col h-full w-full border border-white/10">
-            <h3 className="font-semibold text-sm mb-3 px-1 text-center text-white/80">{title} ({tasks.length})</h3>
-            <SortableContext id={id} items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <div ref={setNodeRef} className="flex-1 overflow-y-auto space-y-2 min-h-24 p-1">
-                    {tasks.length > 0 ? tasks.map(task => (
-                        <TaskCard key={task.id} task={task} />
-                    )) : (
-                        <div className="h-full flex items-center justify-center">
-                            <p className="text-xs text-white/60">Niciun task</p>
-                        </div>
-                    )}
+        <div className="flex h-full min-h-[22rem] w-full flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
+            <div className={`border-b border-white/10 bg-gradient-to-br ${accent} px-4 py-4`}>
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{title}</p>
+                        <h3 className="mt-1 text-lg font-semibold text-white">{tasks.length} task-uri</h3>
+                        <p className="mt-1 whitespace-nowrap text-sm text-white/60">{description}</p>
+                    </div>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]">
+                        <Icon className={`h-4 w-4 ${badge}`} />
+                    </div>
                 </div>
-            </SortableContext>
+            </div>
+            <div className="flex-1 p-3">
+                <div className="h-full rounded-[22px] bg-[#1A2944]/70 p-3">
+                    <div className="h-full space-y-3 overflow-y-auto">
+                        {tasks.length > 0 ? tasks.map(task => (
+                            <TaskCard
+                                key={task.id}
+                                task={task}
+                                onEdit={onEdit}
+                                onToggleComplete={onToggleComplete}
+                            />
+                        )) : (
+                            <div className="flex h-full min-h-40 items-center justify-center rounded-[22px] border border-dashed border-white/10 bg-white/[0.03] px-4 text-center">
+                                <p className="max-w-[13rem] text-sm text-white/55">Nu există task-uri în această categorie momentan.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
 
 export function TasksBoard() {
     const { agencyId } = useAgency();
+    const { toast } = useToast();
     const firestore = useFirestore();
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const tasksQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -54,6 +90,13 @@ export function TasksBoard() {
     }, [firestore, agencyId]);
 
     const { data: fetchedTasks, isLoading } = useCollection<Task>(tasksQuery);
+
+    const contactsQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'contacts');
+    }, [firestore, agencyId]);
+
+    const { data: contacts } = useCollection<Contact>(contactsQuery);
 
     useEffect(() => {
         if (fetchedTasks) {
@@ -92,89 +135,62 @@ export function TasksBoard() {
 
     }, [tasks]);
 
-    function handleDragEnd(event: DragEndEvent) {
-        const { active, over } = event;
-
-        if (!over) return;
-
-        const activeId = String(active.id);
-        const overId = String(over.id);
-
-        const activeContainer = active.data.current?.sortable?.containerId as ColumnId;
-        const overContainer = over.data.current?.sortable?.containerId as ColumnId || overId as ColumnId;
-        
-        if (!activeContainer || !overContainer || activeContainer === overContainer) {
-            return;
-        }
-
+    const handleToggleTask = (task: Task) => {
         if (!agencyId) return;
-
-        // Optimistic UI Update
-        setTasks((prev) => {
-            const activeTaskIndex = prev.findIndex((t) => t.id === activeId);
-            if (activeTaskIndex === -1) return prev;
-            
-            const taskToMove = { ...prev[activeTaskIndex] };
-            let newDueDate: Date | null = null;
-
-            if (overContainer === 'completed') {
-                taskToMove.status = 'completed';
-            } else {
-                taskToMove.status = 'open';
-                if (overContainer === 'today') newDueDate = startOfToday();
-                else if (overContainer === 'this_week') newDueDate = endOfWeek(new Date(), { weekStartsOn: 1 });
-                else if (overContainer === 'future') newDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
-            }
-            
-            if (newDueDate) {
-                taskToMove.dueDate = newDueDate.toISOString().split('T')[0];
-            }
-            
-            const newTasks = [...prev];
-            newTasks[activeTaskIndex] = taskToMove;
-            return newTasks;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
+        const nextStatus = task.status === 'completed' ? 'open' : 'completed';
+        updateDocumentNonBlocking(taskRef, { status: nextStatus });
+        toast({
+            title: nextStatus === 'completed' ? 'Task finalizat' : 'Task redeschis',
+            description: task.description,
         });
+    };
 
-        // Backend Firestore Update
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', activeId);
-        const updateData: Partial<Task> = {};
-        
-        let backendNewDueDate: Date | null = null;
-
-        if (overContainer === 'completed') {
-            updateData.status = 'completed';
-        } else {
-            updateData.status = 'open';
-            if (overContainer === 'today') backendNewDueDate = startOfToday();
-            else if (overContainer === 'this_week') backendNewDueDate = endOfWeek(new Date(), { weekStartsOn: 1 });
-            else if (overContainer === 'future') backendNewDueDate = addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1);
-        }
-
-        if (backendNewDueDate) {
-            updateData.dueDate = backendNewDueDate.toISOString().split('T')[0];
-        }
-        
-        if (Object.keys(updateData).length > 0) {
-            updateDocumentNonBlocking(taskRef, updateData);
-        }
-    }
+    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+        if (!agencyId || !editingTask) return;
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
+        const { id, ...dataToUpdate } = updatedTask;
+        updateDocumentNonBlocking(taskRef, dataToUpdate);
+        toast({
+            title: "Task actualizat!",
+            description: updatedTask.description,
+        });
+        setEditingTask(null);
+    };
 
 
     if (isLoading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 h-full">
+            <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {columns.map(col => <Skeleton key={col.id} className="h-full w-full bg-white/10" />)}
             </div>
         );
     }
     
     return (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 h-full">
+        <>
+            <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {columns.map(col => (
-                    <TaskColumn key={col.id} id={col.id} title={col.title} tasks={categorizedTasks[col.id]} />
+                    <TaskColumn
+                        key={col.id}
+                        title={col.title}
+                        description={col.description}
+                        tasks={categorizedTasks[col.id]}
+                        icon={col.icon}
+                        accent={col.accent}
+                        badge={col.badge}
+                        onEdit={setEditingTask}
+                        onToggleComplete={handleToggleTask}
+                    />
                 ))}
             </div>
-        </DndContext>
+            <EditTaskDialog
+                isOpen={!!editingTask}
+                onOpenChange={(isOpen) => !isOpen && setEditingTask(null)}
+                task={editingTask}
+                onUpdateTask={handleUpdateTask}
+                contacts={contacts || []}
+            />
+        </>
     );
 }

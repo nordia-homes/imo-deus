@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, CheckCircle2, Clock3 } from "lucide-react";
 import { EditTaskDialog } from "@/components/tasks/EditTaskDialog";
 import { DeleteTaskAlert } from "@/components/tasks/DeleteTaskAlert";
 import { useAgency } from '@/context/AgencyContext';
@@ -97,11 +97,11 @@ export function TasksList() {
       }
       return taskList.map(task => (
         <Card key={task.id} className={cn(
-            "shadow-lg rounded-xl bg-white/5 border border-white/10 text-white",
-            isCompletedList && "bg-white/5 opacity-60"
+            "rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] text-white shadow-[0_16px_40px_rgba(0,0,0,0.16)]",
+            isCompletedList && "opacity-65"
         )}>
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className='flex items-center gap-4 flex-1 min-w-0'>
+            <CardContent className="flex items-center justify-between gap-4 p-4">
+                <div className='flex min-w-0 flex-1 items-center gap-4'>
                     <Checkbox 
                         id={`task-list-${task.id}`} 
                         checked={task.status === 'completed'}
@@ -109,9 +109,20 @@ export function TasksList() {
                         className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                     />
                     <div className="flex-1 min-w-0">
-                        <label htmlFor={`task-list-${task.id}`} className={cn("font-medium cursor-pointer truncate", isCompletedList && "text-white/50 line-through")}>{task.description}</label>
-                        <p className={cn("text-sm truncate", isCompletedList ? "text-white/50 line-through" : "text-white/70")}>
-                            Scadent: {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white/[0.65]">
+                                {isCompletedList ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
+                                {isCompletedList ? 'Finalizat' : 'Activ'}
+                            </span>
+                            <span className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium text-white/[0.65]">
+                                {format(new Date(task.dueDate), "d MMMM yyyy", { locale: ro })}
+                            </span>
+                        </div>
+                        <label htmlFor={`task-list-${task.id}`} className={cn("block cursor-pointer truncate text-sm font-semibold sm:text-base", isCompletedList && "text-white/50 line-through")}>{task.description}</label>
+                        <p className={cn("mt-1 text-sm truncate", isCompletedList ? "text-white/50 line-through" : "text-white/70")}>
+                            Scadent:
+                            {' '}
+                            {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             {task.startTime && ` la ${task.startTime}`}
                             {task.contactName && (
                                 <>
@@ -140,15 +151,27 @@ export function TasksList() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <section>
-            <h2 className="text-xl font-headline font-semibold mb-4 text-white">De făcut ({upcomingTasks.length})</h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <section className="rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">În lucru</p>
+                    <h2 className="text-2xl font-semibold text-white">De făcut</h2>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-sm font-medium text-white/75">{upcomingTasks.length}</span>
+            </div>
             <div className="space-y-4">
                 {renderTaskList(upcomingTasks)}
             </div>
         </section>
-        <section>
-            <h2 className="text-xl font-headline font-semibold mb-4 text-white">Completate ({completedTasks.length})</h2>
+        <section className="rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Arhivă recentă</p>
+                    <h2 className="text-2xl font-semibold text-white">Completate</h2>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-sm font-medium text-white/75">{completedTasks.length}</span>
+            </div>
             <div className="space-y-4">
                  {renderTaskList(completedTasks, true)}
             </div>

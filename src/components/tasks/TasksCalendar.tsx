@@ -97,20 +97,26 @@ export function TasksCalendar() {
   }
 
   return (
-     <Card className="shadow-2xl rounded-2xl bg-[#152A47] text-white border-none h-full flex flex-col">
+     <Card className="flex h-full flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#12213E] text-white shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
       <CardContent className="p-4 flex flex-col flex-1">
         {/* Header */}
-        <header className="flex items-center justify-between p-0 border-b border-white/10 pb-4">
+        <header className="flex flex-col gap-4 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Planificare săptămânală</p>
+            <h2 className="mt-1 text-2xl font-semibold capitalize text-white">
+              {format(currentDate, 'MMMM yyyy', { locale: ro })}
+            </h2>
+          </div>
           <div className="flex items-center gap-4">
-            <Button onClick={() => setCurrentDate(new Date())} variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+            <Button onClick={() => setCurrentDate(new Date())} variant="outline" className="border-white/[0.15] bg-white/[0.08] text-white hover:bg-white/[0.14]">
               Astăzi
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('prev')}
-                className="hover:bg-white/10"
+                className="rounded-full hover:bg-white/10"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
@@ -118,15 +124,12 @@ export function TasksCalendar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateWeek('next')}
-                className="hover:bg-white/10"
+                className="rounded-full hover:bg-white/10"
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
-          <h2 className="text-xl font-semibold capitalize">
-            {format(currentDate, 'MMMM yyyy', { locale: ro })}
-          </h2>
         </header>
 
         {/* Main Grid */}
@@ -159,7 +162,7 @@ export function TasksCalendar() {
                   className="relative flex flex-col border-r border-white/10 last:border-r-0"
                 >
                   {/* Day Header */}
-                  <div className="sticky top-0 z-10 bg-[#152A47] h-20 p-2 flex flex-col items-center justify-center border-b border-white/10">
+                  <div className="sticky top-0 z-10 h-20 border-b border-white/10 bg-[#12213E] p-2 flex flex-col items-center justify-center">
                     <span className="text-sm uppercase font-medium text-white/70">
                       {format(day, 'eee', { locale: ro })}
                     </span>
@@ -191,7 +194,7 @@ export function TasksCalendar() {
                         <Link
                           key={task.id}
                           href={task.contactId ? `/leads/${task.contactId}` : '/tasks'}
-                          className="absolute w-[calc(100%-8px)] left-1 p-2 rounded-lg bg-primary/20 border-l-4 border-primary text-primary-foreground transition-all hover:bg-primary/30"
+                          className="absolute left-1 w-[calc(100%-8px)] rounded-xl border border-sky-300/[0.15] bg-[linear-gradient(180deg,rgba(59,130,246,0.26),rgba(37,99,235,0.16))] p-2 text-primary-foreground shadow-[0_10px_26px_rgba(37,99,235,0.18)] transition-all hover:bg-[linear-gradient(180deg,rgba(59,130,246,0.34),rgba(37,99,235,0.22))]"
                           style={{ top: `${top}px`, height: `${height}px` }}
                         >
                           <p className="text-xs font-bold text-white truncate">
