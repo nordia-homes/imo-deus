@@ -60,6 +60,7 @@ import { ro } from 'date-fns/locale';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
 import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from '@/components/properties/detail/actions/cardStyles';
 
 
 
@@ -202,7 +203,7 @@ export default function PropertyDetailPage() {
                  <MediaColumn property={property} shareUrl={publicPropertyUrl} />
 
                 <div className="space-y-4 px-2">
-                    <Card className="bg-[#152A47] text-white border-none rounded-2xl">
+                    <Card className={`${ACTION_CARD_CLASSNAME} rounded-[1.55rem]`}>
                         <CardContent className="p-3">
                             <div className="flex justify-around items-center text-sm">
                                 <div className="flex items-center gap-2">
@@ -230,11 +231,16 @@ export default function PropertyDetailPage() {
                     </Card>
 
                     <div className="space-y-4">
-                        <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
-                             <div>
+                        <Card className={`${ACTION_CARD_CLASSNAME} rounded-[1.75rem] p-4 space-y-4`}>
+                             <div className="space-y-4">
                                 <div className="relative flex items-center justify-center">
                                     <h1 className="px-10 text-center text-xl font-bold">{property.title}</h1>
-                                    <Button size="icon" variant="ghost" className="absolute right-0 text-white/70 hover:text-white h-8 w-8" onClick={() => setIsEditDialogOpen(true)}>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className={`absolute right-0 h-8 w-8 rounded-full text-white/75 hover:text-white ${ACTION_PILL_CLASSNAME}`}
+                                        onClick={() => setIsEditDialogOpen(true)}
+                                    >
                                         <Edit className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -248,7 +254,12 @@ export default function PropertyDetailPage() {
                                 avatarUrl: agentProfile?.photoUrl || `https://i.pravatar.cc/150?u=${property.agentId || 'unassigned'}`,
                             }} isMobile={true} />
                             <OwnerCard property={property} isMobile={true} />
-                            <Button className="w-full rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14" onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
+                            <Button
+                                className="w-full rounded-full border border-emerald-300/28 bg-emerald-400/20 text-emerald-50 shadow-[0_18px_40px_-18px_rgba(34,197,94,0.55)] hover:bg-emerald-400/24"
+                                onClick={() => setIsAddViewingOpen(true)}
+                            >
+                                Programează Vizionare
+                            </Button>
                         </Card>
 
                         <Accordion type="multiple" className="w-full space-y-4" defaultValue={['description']}>
@@ -281,7 +292,7 @@ export default function PropertyDetailPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
-                            <Card className="overflow-hidden rounded-2xl border border-primary/22 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.14),transparent_40%),linear-gradient(180deg,#132844_0%,#0f2036_56%,#0b1727_100%)] text-white shadow-[0_28px_80px_-34px_rgba(0,0,0,0.82)]">
+                            <Card className={`${ACTION_CARD_CLASSNAME} rounded-[1.6rem]`}>
                                 <CardContent className="space-y-4 p-5">
                                     <div className="space-y-1 text-center">
                                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
@@ -299,7 +310,7 @@ export default function PropertyDetailPage() {
                                     </Button>
                                 </CardContent>
                             </Card>
-                             <Card className="bg-[#152A47] text-white border-none rounded-2xl overflow-hidden">
+                             <Card className={`${ACTION_CARD_CLASSNAME} rounded-[1.6rem] overflow-hidden`}>
                                  <AccordionItem value="rlv" className="border-b-0">
                                     <AccordionTrigger className="p-4 hover:no-underline font-semibold text-white">Releveu Proprietate (RLV)</AccordionTrigger>
                                     <AccordionContent className="px-2 pb-2 pt-0">

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TrendingUp } from 'lucide-react';
-import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
+import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function PriceStatusCard({
     property,
@@ -20,7 +20,7 @@ export function PriceStatusCard({
         ? "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d] before:absolute before:left-5 before:right-5 before:top-0 before:h-px before:bg-white/10 before:content-[''] after:absolute after:bottom-0 after:left-8 after:right-8 after:h-px after:bg-white/10 after:content-['']"
         : "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d]";
     const adminCardClassName = isMobile
-        ? "overflow-hidden rounded-[1.75rem] border border-primary/20 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_35%),linear-gradient(180deg,#193253_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_28px_60px_-28px_rgba(0,0,0,0.65)]"
+        ? `${ACTION_CARD_INNER_CLASSNAME} overflow-hidden rounded-[1.65rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`
         : `${ACTION_CARD_CLASSNAME} rounded-[1.85rem]`;
 
     const pricePerSqm = useMemo(() => {

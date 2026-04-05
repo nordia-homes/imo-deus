@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
 import { cn } from "@/lib/utils";
-import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
+import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 type AgentInfo = {
     name?: string | null;
@@ -32,36 +32,36 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
 
     if (isMobile) {
         return (
-            <Card className="bg-white/10 text-white border-none rounded-lg">
+            <Card className={`${ACTION_CARD_INNER_CLASSNAME} rounded-[1.45rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`}>
                 <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                          <Avatar className="h-10 w-10">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                            <AvatarFallback className="bg-white/20">{getInitials(agent.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-emerald-400/10 text-emerald-100">{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-xs text-white/70">Agent:</p>
+                            <p className="text-xs text-white/60">Agent:</p>
                             <p className="text-sm font-semibold">{agent.name}</p>
-                            {agent.phone && <p className="text-xs text-white/70">{agent.phone}</p>}
+                            {agent.phone && <p className="text-xs text-white/65">{agent.phone}</p>}
                         </div>
                     </div>
                     <div className="flex items-center">
                         {agent.phone && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-full ${ACTION_PILL_CLASSNAME}`} asChild>
                                 <a href={`tel:${agent.phone}`} aria-label="Call agent">
                                     <Phone className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                         {sanitizedPhone && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-full ${ACTION_PILL_CLASSNAME}`} asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message agent on WhatsApp">
                                     <WhatsappIcon className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                         {agent.email && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80" asChild>
+                            <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-full ${ACTION_PILL_CLASSNAME}`} asChild>
                                 <a href={`mailto:${agent.email}`} aria-label="Email agent">
                                     <Mail className="h-4 w-4" />
                                 </a>
