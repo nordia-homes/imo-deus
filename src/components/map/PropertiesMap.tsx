@@ -69,6 +69,71 @@ const MAP_STYLES = [
   },
 ];
 
+const PUBLIC_PROPERTY_MAP_STYLES = [
+  {
+    elementType: 'geometry',
+    stylers: [{ color: '#0b1711' }],
+  },
+  {
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d7e6dc' }],
+  },
+  {
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#0b1711' }],
+  },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#244536' }],
+  },
+  {
+    featureType: 'landscape.natural',
+    elementType: 'geometry',
+    stylers: [{ color: '#102017' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'geometry',
+    stylers: [{ color: '#11241b' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#96b5a1' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#1a3528' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#294c39' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#20553a' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#54c57f' }],
+  },
+  {
+    featureType: 'transit',
+    elementType: 'geometry',
+    stylers: [{ color: '#173225' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#06110c' }],
+  },
+];
+
 function formatCurrency(value?: number) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return 'Pret indisponibil';
@@ -126,6 +191,7 @@ export function PropertiesMap({
   const [streetViewHostReady, setStreetViewHostReady] = useState(false);
   const [streetViewElement, setStreetViewElement] = useState<HTMLDivElement | null>(null);
   const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
+  const activeMapStyles = appearance === 'public-property-detail' ? PUBLIC_PROPERTY_MAP_STYLES : MAP_STYLES;
 
   useEffect(() => {
     if (!validProperties.length) {
@@ -182,7 +248,7 @@ export function PropertiesMap({
         disableDefaultUI: true,
         clickableIcons: false,
         gestureHandling: 'greedy',
-        styles: MAP_STYLES,
+        styles: activeMapStyles,
         mapTypeId: mapType,
       });
     }
@@ -227,7 +293,7 @@ export function PropertiesMap({
     } else {
       mapInstanceRef.current.fitBounds(bounds);
     }
-  }, [isLoaded, layoutMode, mapType, selectedProperty, validProperties, zoomMode]);
+  }, [activeMapStyles, isLoaded, layoutMode, mapType, selectedProperty, validProperties, zoomMode]);
 
   useEffect(() => {
     if (!isLoaded || !isStreetViewOpen || !streetViewElement || !selectedProperty) {
@@ -278,11 +344,11 @@ export function PropertiesMap({
 
     mapInstanceRef.current.setMapTypeId(mapType);
     if (mapType === 'roadmap') {
-      mapInstanceRef.current.setOptions({ styles: MAP_STYLES });
+      mapInstanceRef.current.setOptions({ styles: activeMapStyles });
     } else {
       mapInstanceRef.current.setOptions({ styles: undefined });
     }
-  }, [mapType]);
+  }, [activeMapStyles, mapType]);
 
   useEffect(() => {
     if (!isLoaded || !mapInstanceRef.current || !selectedProperty) {
@@ -646,62 +712,48 @@ export function PropertiesMap({
 
   if (appearance === 'public-property-detail') {
     return (
-      <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
-        <CardContent className="p-0">
-          <div className="relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]">
-            <div ref={mapRef} className="h-full w-full" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
-              <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0f2239]/85 px-3 py-2 text-xs font-medium text-white shadow-xl backdrop-blur">
-                <MapPinned className="h-4 w-4 text-emerald-300" />
-                {validProperties.length} proprietati pe harta
-              </div>
-              <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
-                  onClick={handleZoomIn}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
-                  onClick={handleZoomOut}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
-              <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={mapType === 'roadmap' ? 'default' : 'ghost'}
-                  className={mapType === 'roadmap' ? 'rounded-xl bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl text-white hover:bg-white/10'}
-                  onClick={() => setMapType('roadmap')}
-                >
-                  Harta
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={mapType === 'satellite' ? 'default' : 'ghost'}
-                  className={mapType === 'satellite' ? 'rounded-xl bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl text-white hover:bg-white/10'}
-                  onClick={() => setMapType('satellite')}
-                >
-                  <Layers3 className="mr-2 h-4 w-4" />
-                  Satelit
-                </Button>
-              </div>
-            </div>
+      <div className="public-property-map relative h-full rounded-[2rem] bg-[#08120c] shadow-none">
+        <div className="absolute inset-0 overflow-hidden rounded-[inherit] bg-[#08120c]">
+          <div ref={mapRef} className="h-full w-full" />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-end p-4">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-[#0f1d15]/84 p-2 shadow-xl backdrop-blur">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+              onClick={handleZoomIn}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+              onClick={handleZoomOut}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <style jsx global>{`
+          .public-property-map,
+          .public-property-map > div,
+          .public-property-map .gm-style,
+          .public-property-map .gm-style > div,
+          .public-property-map .gm-style > div > div,
+          .public-property-map .gm-style img,
+          .public-property-map .gm-style canvas {
+            border-radius: inherit !important;
+          }
+
+          .public-property-map .gm-style {
+            background: #08120c !important;
+          }
+        `}</style>
+      </div>
     );
   }
 

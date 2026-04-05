@@ -354,14 +354,9 @@ export default function PublicPropertyDetailPage() {
                     
                     <PublicInfoColumn property={property} isMobile={true} />
 
-                    <Card className={financeCardClassName}>
-                        <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-lg font-bold text-stone-50">Localizare pe harta</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0 h-80">
-                            <PublicPropertyDetailsMap properties={[property]} />
-                        </CardContent>
-                    </Card>
+                    <div className="h-80">
+                        <PublicPropertyDetailsMap properties={[property]} />
+                    </div>
 
                     <SimilarProperties properties={similarProperties} />
 
@@ -433,14 +428,9 @@ export default function PublicPropertyDetailPage() {
                         <PublicPropertyHeader property={property} />
                         <MediaColumn property={property} showMatchPrompt={true} shareImageUrl={propertyShareImageUrl} />
                         <PublicInfoColumn property={property} isMobile={false} />
-                        <Card className={financeCardClassName}>
-                            <CardHeader className="p-5 pb-3">
-                                <CardTitle className="text-xl font-bold text-stone-50">Localizare pe harta</CardTitle>
-                            </CardHeader>
-                            <CardContent className="h-80 p-5 pt-0">
-                                <PublicPropertyDetailsMap properties={[property]} />
-                            </CardContent>
-                        </Card>
+                        <div className="h-80">
+                            <PublicPropertyDetailsMap properties={[property]} />
+                        </div>
 
                         <SimilarProperties properties={similarProperties} />
 
