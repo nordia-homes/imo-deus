@@ -13,7 +13,6 @@ import {
   CreditCard,
   Settings,
   AppWindow,
-  Waypoints,
   FileText,
   UserCheck,
   Map,
@@ -100,14 +99,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/map">
                         <Map />
                         <span>Hartă</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem className="hidden md:block">
-                <SidebarMenuButton tooltip="Pipeline" asChild isActive={pathname === '/pipeline'}>
-                    <Link href="/pipeline">
-                        <Waypoints />
-                        <span>Pipeline</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
