@@ -22,7 +22,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getAgencyFacebookGroups } from '@/lib/facebook-groups';
 import type { FacebookPromotionSession, Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_PILL_CLASSNAME } from './cardStyles';
+import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_ICON_CLASSNAME, ACTION_ICON_WRAPPER_CLASSNAME } from './cardStyles';
 
 export function FacebookGroupPromotionLauncherCard({ property }: { property: Property }) {
   const isMobile = useIsMobile();
@@ -141,8 +141,8 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
         >
           <CardContent className="flex w-full items-center justify-between p-2">
             <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
-                <Facebook className="h-4 w-4 text-emerald-200" />
+              <div className={ACTION_ICON_WRAPPER_CLASSNAME}>
+                <Facebook className={ACTION_ICON_CLASSNAME} />
               </div>
               <div className="min-w-0">
                 <p className="text-base font-semibold text-white">Promovare grupuri Facebook</p>
@@ -151,8 +151,8 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                 </p>
               </div>
             </div>
-            <div className={`flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
-              <Rocket className="h-4 w-4 text-emerald-200" />
+            <div className={ACTION_ICON_WRAPPER_CLASSNAME}>
+              <Rocket className={ACTION_ICON_CLASSNAME} />
             </div>
           </CardContent>
         </Card>

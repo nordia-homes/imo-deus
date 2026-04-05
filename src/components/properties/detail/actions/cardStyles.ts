@@ -12,3 +12,8 @@ export const ACTION_PILL_CLASSNAME =
 
 export const ACTION_INPUT_CLASSNAME =
   "border-white/12 bg-[#0c1521] text-white placeholder:text-white/35";
+
+export const ACTION_ICON_WRAPPER_CLASSNAME =
+  `flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`;
+
+export const ACTION_ICON_CLASSNAME = "h-4 w-4 text-emerald-200";

@@ -13,7 +13,7 @@ import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { defaultFacebookGroups, getAgencyFacebookGroups } from "@/lib/facebook-groups";
-import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_INPUT_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
+import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_ICON_CLASSNAME, ACTION_ICON_WRAPPER_CLASSNAME, ACTION_INPUT_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function FacebookPromotionCard() {
     const isMobile = useIsMobile();
@@ -83,10 +83,9 @@ export function FacebookPromotionCard() {
                     <CardContent className="p-2 flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                             <div className={cn(
-                                "flex items-center justify-center rounded-full",
-                                `h-10 w-10 ${ACTION_PILL_CLASSNAME}`
+                                ACTION_ICON_WRAPPER_CLASSNAME
                             )}>
-                                <Facebook className="h-4 w-4 text-emerald-200" />
+                                <Facebook className={ACTION_ICON_CLASSNAME} />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-base font-semibold text-white">
@@ -97,8 +96,8 @@ export function FacebookPromotionCard() {
                                 </p>
                             </div>
                         </div>
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
-                            <Rocket className="h-4 w-4 text-emerald-200" />
+                        <div className={ACTION_ICON_WRAPPER_CLASSNAME}>
+                            <Rocket className={ACTION_ICON_CLASSNAME} />
                         </div>
                     </CardContent>
                 </Card>

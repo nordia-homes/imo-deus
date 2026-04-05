@@ -21,6 +21,7 @@ import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { ACTION_CARD_CLASSNAME } from './actions/cardStyles';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId } = useAgency();
@@ -47,6 +48,16 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
     const creationDate = property.createdAt ? new Date(property.createdAt) : new Date();
     const ageInDays = differenceInDays(new Date(), creationDate);
+    const desktopMetaItems = [
+        { icon: <Calendar className="h-4 w-4 text-emerald-300" />, value: creationDate.toLocaleDateString('ro-RO') },
+        { icon: <Clock className="h-4 w-4 text-emerald-300" />, value: `Vechime: ${ageInDays} ${ageInDays === 1 ? 'zi' : 'zile'}` },
+        { icon: null, value: property.location },
+        { icon: null, value: `${property.rooms} camere` },
+        { icon: null, value: `${property.bathrooms} ${property.bathrooms === 1 ? 'baie' : 'băi'}` },
+        { icon: null, value: `${property.squareFootage} mp` },
+        ...(property.constructionYear ? [{ icon: null, value: String(property.constructionYear) }] : []),
+        ...(property.floor ? [{ icon: null, value: `Et. ${property.floor}` }] : []),
+    ];
 
   return (
     <>
@@ -55,13 +66,13 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                 <div className="min-w-0 lg:col-span-8">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2 flex-wrap">
                         <div
-                            className="inline-block h-auto w-full md:max-w-lg truncate rounded-lg border bg-[#f8f8f9] p-3 text-xl font-bold text-card-foreground shadow-lg lg:max-w-2xl lg:rounded-[1.6rem] lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-5 lg:py-4 lg:text-[1.65rem] lg:tracking-tight lg:text-emerald-100 lg:shadow-none"
+                            className={`inline-block h-auto w-full truncate rounded-lg border bg-[#f8f8f9] p-3 text-xl font-bold text-card-foreground shadow-lg md:max-w-lg lg:max-w-2xl lg:rounded-[1.6rem] lg:border-0 lg:px-5 lg:py-4 lg:text-[1.65rem] lg:tracking-tight lg:text-emerald-50 lg:shadow-none ${ACTION_CARD_CLASSNAME}`}
                             title={property.title}
                         >
                             {property.title}
                         </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground lg:text-white/70">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground lg:hidden lg:text-white/70">
                         <Badge variant="outline" className="font-normal lg:rounded-full lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100"><Calendar className="mr-1.5 h-3.5 w-3.5" /> {creationDate.toLocaleDateString('ro-RO')}</Badge>
                         <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100"><Clock className="mr-1.5 h-3.5 w-3.5" /> Vechime: {ageInDays} {ageInDays === 1 ? 'zi' : 'zile'}</Badge>
                         <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
@@ -86,6 +97,21 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                 Et. {property.floor}
                             </Badge>
                         )}
+                    </div>
+                    <div className={`${ACTION_CARD_CLASSNAME} mt-4 hidden rounded-[1.45rem] p-3 lg:block`}>
+                        <div className="flex min-w-0 items-center gap-4 overflow-hidden px-2 py-1">
+                            {desktopMetaItems.map((item, index) => (
+                                <div key={`${item.value}-${index}`} className="flex min-w-0 shrink-0 items-center gap-2">
+                                    {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
+                                    <p className="truncate whitespace-nowrap text-sm font-semibold text-white">
+                                        {item.value}
+                                    </p>
+                                    {index < desktopMetaItems.length - 1 ? (
+                                        <span className="ml-2 h-5 w-px shrink-0 bg-white/10" />
+                                    ) : null}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap lg:col-span-4 lg:flex-nowrap">

@@ -41,6 +41,9 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
       { value: "documents", label: "RLV", icon: <FileText className="mr-2 h-4 w-4" /> },
     ];
 
+    const premiumTabClassName =
+      "h-12 rounded-full border border-white/10 bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.08),transparent_42%),linear-gradient(180deg,#122033_0%,#0d1726_100%)] text-white/92 shadow-[0_18px_45px_-26px_rgba(0,0,0,0.72)] transition-[transform,background,border-color,color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-emerald-300/18 hover:bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.12),transparent_42%),linear-gradient(180deg,#14253a_0%,#0f1b2c_100%)] hover:text-white data-[state=active]:border-emerald-300/26 data-[state=active]:bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.14),transparent_42%),linear-gradient(180deg,#173047_0%,#122131_100%)] data-[state=active]:text-emerald-300 data-[state=active]:shadow-[0_22px_55px_-28px_rgba(0,0,0,0.82)]";
+
     return (
         <div className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -49,7 +52,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                          <TabsTrigger
                             key={item.value}
                             value={item.value}
-                            className="h-12 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 shadow-none transition-colors hover:bg-emerald-400/14 hover:text-emerald-100 data-[state=active]:bg-emerald-400/18 data-[state=active]:text-white data-[state=active]:shadow-none"
+                            className={premiumTabClassName}
                          >
                             {item.icon}
                             {item.label}
@@ -57,7 +60,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                     ))}
                     <div 
                         onClick={() => setIsInfoDialogOpen(true)}
-                        className="inline-flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1.5 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-400/14 hover:text-emerald-100"
+                        className={`${premiumTabClassName} inline-flex cursor-pointer items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium`}
                     >
                         <Info className="mr-2 h-4 w-4" />
                         Informații
