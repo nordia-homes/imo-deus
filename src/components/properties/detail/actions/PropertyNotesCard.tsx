@@ -11,6 +11,7 @@ import { StickyNote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { ACTION_CARD_CLASSNAME, ACTION_INPUT_CLASSNAME } from "./cardStyles";
 
 type PropertyNotesCardProps = {
     property: Property;
@@ -48,7 +49,7 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
 
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+        <Card className={ACTION_CARD_CLASSNAME}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <StickyNote className="h-4 w-4" />
@@ -62,7 +63,7 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
                     onChange={(e) => setNotes(e.target.value)}
                     onBlur={handleBlur}
                     placeholder="Adaugă notițe despre proprietar, vizite tehnice, etc."
-                    className="text-sm resize-none overflow-hidden bg-white/10 border-white/20 text-white"
+                    className={cn("text-sm resize-none overflow-hidden min-h-[112px]", ACTION_INPUT_CLASSNAME)}
                     rows={4}
                 />
             </CardContent>

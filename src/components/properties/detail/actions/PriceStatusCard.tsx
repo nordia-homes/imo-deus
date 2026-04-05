@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TrendingUp } from 'lucide-react';
+import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function PriceStatusCard({
     property,
@@ -20,7 +21,7 @@ export function PriceStatusCard({
         : "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d]";
     const adminCardClassName = isMobile
         ? "overflow-hidden rounded-[1.75rem] border border-primary/20 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_35%),linear-gradient(180deg,#193253_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_28px_60px_-28px_rgba(0,0,0,0.65)]"
-        : "overflow-hidden rounded-[1.85rem] border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.12),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_28px_75px_-34px_rgba(0,0,0,0.72)]";
+        : `${ACTION_CARD_CLASSNAME} rounded-[1.85rem]`;
 
     const pricePerSqm = useMemo(() => {
         if (!property.price || !property.squareFootage) return null;
@@ -54,7 +55,7 @@ export function PriceStatusCard({
                         ) : (
                           <>
                             <div className="space-y-2 text-left">
-                              <div className="inline-flex items-center rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                              <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${ACTION_PILL_CLASSNAME}`}>
                                 Pret listare
                               </div>
                               <div className="flex items-end justify-between gap-3">
@@ -74,7 +75,7 @@ export function PriceStatusCard({
                               </div>
                             </div>
                             <DialogTrigger asChild>
-                              <div className="flex cursor-pointer items-center justify-between rounded-[1.2rem] border border-emerald-300/14 bg-emerald-400/10 px-4 py-3 text-primary transition-colors hover:bg-emerald-400/14">
+                              <div className={`flex cursor-pointer items-center justify-between rounded-[1.2rem] px-4 py-3 text-primary transition-colors ${ACTION_PILL_CLASSNAME}`}>
                                 <div className="flex items-center gap-2">
                                   <TrendingUp className="h-4 w-4" />
                                   <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>

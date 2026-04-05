@@ -13,6 +13,7 @@ import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { defaultFacebookGroups, getAgencyFacebookGroups } from "@/lib/facebook-groups";
+import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_INPUT_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function FacebookPromotionCard() {
     const isMobile = useIsMobile();
@@ -76,14 +77,14 @@ export function FacebookPromotionCard() {
             <DialogTrigger asChild>
                  <Card
                     className={cn(
-                        "overflow-hidden rounded-2xl border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.1),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] p-0 cursor-pointer text-white transition-colors shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.13),transparent_34%),linear-gradient(180deg,#1b3558_0%,#162c4b_58%,#13253e_100%)]"
+                        `${ACTION_CARD_INTERACTIVE_CLASSNAME} p-0 cursor-pointer`
                     )}
                  >
                     <CardContent className="p-2 flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 "flex items-center justify-center rounded-full",
-                                "h-10 w-10 border border-emerald-300/16 bg-emerald-400/10 text-emerald-200"
+                                `h-10 w-10 ${ACTION_PILL_CLASSNAME}`
                             )}>
                                 <Facebook className="h-4 w-4 text-emerald-200" />
                             </div>
@@ -96,7 +97,7 @@ export function FacebookPromotionCard() {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
                             <Rocket className="h-4 w-4 text-emerald-200" />
                         </div>
                     </CardContent>
@@ -124,7 +125,7 @@ export function FacebookPromotionCard() {
                             variant="ghost"
                             size="icon"
                             className={cn(
-                                "h-10 w-10 shrink-0 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100",
+                                `h-10 w-10 shrink-0 rounded-full ${ACTION_PILL_CLASSNAME}`,
                                 isMobile && "mr-10"
                             )}
                             onClick={() => setIsEditing((current) => !current)}
@@ -136,27 +137,27 @@ export function FacebookPromotionCard() {
                 <div className={cn(isMobile ? "flex-1 overflow-y-auto" : "max-h-80 overflow-y-auto pr-4")}>
                     <div className={cn("space-y-3", isMobile ? "p-4" : "")}>
                         {isEditing ? (
-                            <div className="space-y-3 rounded-2xl border border-emerald-300/12 bg-white/[0.03] p-4">
+                            <div className={cn("space-y-3 rounded-2xl p-4", ACTION_CARD_INNER_CLASSNAME)}>
                                 {groupsDraft.map((group, index) => (
-                                    <div key={`${index}-${group.url}`} className="grid gap-3 rounded-xl border border-white/8 bg-[#10233b] p-3">
+                                    <div key={`${index}-${group.url}`} className={cn("grid gap-3 rounded-xl p-3", ACTION_CARD_INNER_CLASSNAME)}>
                                         <Input
                                             value={group.name}
                                             onChange={(event) => handleGroupChange(index, 'name', event.target.value)}
                                             placeholder="Denumire grup"
-                                            className="border-white/12 bg-white/[0.04] text-white placeholder:text-white/35"
+                                            className={ACTION_INPUT_CLASSNAME}
                                         />
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 value={group.url}
                                                 onChange={(event) => handleGroupChange(index, 'url', event.target.value)}
                                                 placeholder="Link grup Facebook"
-                                                className="border-white/12 bg-white/[0.04] text-white placeholder:text-white/35"
+                                                className={ACTION_INPUT_CLASSNAME}
                                             />
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white"
+                                                className="h-10 w-10 shrink-0 rounded-full border border-white/12 bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white"
                                                 onClick={() => handleRemoveGroup(index)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -168,7 +169,7 @@ export function FacebookPromotionCard() {
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        className="rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100"
+                                        className={`rounded-full ${ACTION_PILL_CLASSNAME}`}
                                         onClick={handleAddGroup}
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
@@ -193,7 +194,8 @@ export function FacebookPromotionCard() {
                                 variant="outline"
                                 className={cn(
                                     "h-auto w-full justify-between rounded-2xl border p-0 text-white shadow-none",
-                                    "border-emerald-300/12 bg-white/[0.03] hover:bg-white/[0.05] hover:text-white"
+                                    ACTION_CARD_INNER_CLASSNAME,
+                                    "hover:bg-white/[0.05] hover:text-white"
                                 )}
                             >
                                 <Link
@@ -208,7 +210,7 @@ export function FacebookPromotionCard() {
                                             Deschide grupul si publica anuntul direct.
                                         </p>
                                     </div>
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
+                                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
                                         <ExternalLink className="h-4 w-4" />
                                     </div>
                                 </Link>

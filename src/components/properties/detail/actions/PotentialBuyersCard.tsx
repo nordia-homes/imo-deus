@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Users, ArrowRight } from 'lucide-react';
 import type { MatchedBuyer } from '@/lib/types';
 import Link from 'next/link';
+import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from './cardStyles';
 
 interface PotentialBuyersCardProps {
   matchedBuyers: MatchedBuyer[];
@@ -25,7 +26,7 @@ const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty'
 
 export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps) {
   return (
-    <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+    <Card className={ACTION_CARD_CLASSNAME}>
       <CardHeader className="px-3 pt-3 pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Users className="h-4 w-4" />
@@ -41,7 +42,11 @@ export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps)
         {matchedBuyers.length > 0 ? (
           <div className="space-y-2">
             {matchedBuyers.slice(0, 3).map((lead) => (
-              <Link key={lead.id} href={`/leads/${lead.id}`} className="flex items-center justify-between gap-3 p-2 rounded-lg border border-white/10 hover:bg-white/20 group">
+              <Link
+                key={lead.id}
+                href={`/leads/${lead.id}`}
+                className={`${ACTION_CARD_INNER_CLASSNAME} group flex items-center justify-between gap-3 rounded-lg p-2 hover:bg-white/[0.06]`}
+              >
                 <div className="min-w-0">
                   <p className="font-semibold text-sm group-hover:text-primary truncate">{lead.name}</p>
                   <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()} · Scor {lead.matchScore}/100</p>

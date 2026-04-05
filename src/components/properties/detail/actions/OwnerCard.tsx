@@ -6,6 +6,7 @@ import { WhatsappIcon } from "@/components/icons/WhatsappIcon";
 import type { Property } from "@/lib/types";
 import { Avatar, AvatarFallback } from "../../../ui/avatar";
 import { cn } from "@/lib/utils";
+import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function OwnerCard({ property, isMobile }: { property: Property, isMobile?: boolean }) {
     const ownerName = property.ownerName;
@@ -32,7 +33,7 @@ export function OwnerCard({ property, isMobile }: { property: Property, isMobile
 
     const cardClassName = isMobile
         ? "bg-white/10 text-white border-none rounded-lg"
-        : "rounded-2xl shadow-2xl p-0 flex items-center bg-[#f8f8f9] lg:bg-[#152A47] lg:border-none lg:text-white";
+        : `${ACTION_CARD_CLASSNAME} p-0 flex items-center`;
     
     const contentClassName = isMobile ? "p-3" : "p-2";
 
@@ -42,7 +43,7 @@ export function OwnerCard({ property, isMobile }: { property: Property, isMobile
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className={cn("bg-muted", isMobile && "bg-white/20")}>{getInitials(ownerName)}</AvatarFallback>
+                            <AvatarFallback className={cn("bg-muted", !isMobile && "bg-emerald-400/10 text-emerald-100", isMobile && "bg-white/20")}>{getInitials(ownerName)}</AvatarFallback>
                         </Avatar>
                         <div>
                              <p className={cn("text-xs", isMobile ? "text-white/70" : "text-muted-foreground lg:text-white/70")}>Proprietar:</p>
@@ -53,14 +54,14 @@ export function OwnerCard({ property, isMobile }: { property: Property, isMobile
 
                     <div className="flex items-center">
                         {ownerPhone && (
-                            <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile ? "text-white/80" : "lg:text-white/80")} asChild>
+                            <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile ? "text-white/80" : `${ACTION_PILL_CLASSNAME} lg:text-white`)} asChild>
                                 <a href={`tel:${ownerPhone}`} aria-label="Call owner">
                                     <Phone className="h-4 w-4" />
                                 </a>
                             </Button>
                         )}
                          {sanitizedPhone && (
-                            <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile ? "text-white/80" : "lg:text-white/80")} asChild>
+                            <Button variant="ghost" size="icon" className={cn("h-8 w-8", isMobile ? "text-white/80" : `${ACTION_PILL_CLASSNAME} lg:text-white`)} asChild>
                                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer" aria-label="Message owner on WhatsApp">
                                     <WhatsappIcon className="h-4 w-4" />
                                 </a>

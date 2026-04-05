@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { parseISO, format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
     const isMobile = useIsMobile();
@@ -15,7 +16,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
 
     return (
         <Card className={cn(
-            "overflow-hidden rounded-2xl border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.1),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] text-white shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)]"
+            ACTION_CARD_CLASSNAME
         )}>
             <CardHeader className={cn(
                 "flex flex-row items-center justify-between",
@@ -32,7 +33,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="h-9 rounded-full border border-emerald-300/16 bg-emerald-400/10 px-4 text-sm text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100"
+                    className={cn("h-9 rounded-full px-4 text-sm", ACTION_PILL_CLASSNAME)}
                 >
                     <Link href="/viewings" aria-label="Vezi calendarul de vizionări">
                         Vezi calendar
@@ -48,7 +49,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                         {scheduledViewings.slice(0, 3).map(viewing => (
                             <div
                                 key={viewing.id}
-                                className="flex items-center justify-between rounded-2xl border border-emerald-300/12 bg-white/[0.03] p-3 hover:bg-white/[0.05]"
+                                className={cn("flex items-center justify-between rounded-2xl p-3 hover:bg-white/[0.06]", ACTION_CARD_INNER_CLASSNAME)}
                             >
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-white">{viewing.contactName}</p>
@@ -61,7 +62,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                                     asChild
                                     variant="ghost"
                                     size="sm"
-                                    className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-4 text-emerald-200 hover:bg-emerald-400/14 hover:text-emerald-100"
+                                    className={cn("rounded-full px-4", ACTION_PILL_CLASSNAME)}
                                 >
                                     <Link href={`/leads/${viewing.contactId}`}>
                                         Detalii
@@ -71,7 +72,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                         ))}
                     </div>
                 ) : (
-                    <p className="rounded-2xl border border-white/8 bg-white/[0.03] py-6 text-center text-sm text-white/70">
+                    <p className={cn("rounded-2xl py-6 text-center text-sm text-white/70", ACTION_CARD_INNER_CLASSNAME)}>
                         Nicio vizionare programată.
                     </p>
                 )}

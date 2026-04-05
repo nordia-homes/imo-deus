@@ -20,6 +20,7 @@ import { useAgency } from "@/context/AgencyContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Skeleton } from "../../../ui/skeleton";
+import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
 
 export function SocialMediaCard({ property }: { property: Property }) {
@@ -69,14 +70,14 @@ export function SocialMediaCard({ property }: { property: Property }) {
             <DialogTrigger asChild>
                  <Card
                     className={cn(
-                        "overflow-hidden rounded-2xl border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.1),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] p-0 cursor-pointer text-white transition-colors shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.13),transparent_34%),linear-gradient(180deg,#1b3558_0%,#162c4b_58%,#13253e_100%)]"
+                        `${ACTION_CARD_INTERACTIVE_CLASSNAME} p-0 cursor-pointer`
                     )}
                  >
                     <CardContent className="p-2 flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 "flex items-center justify-center rounded-full",
-                                "h-10 w-10 border border-emerald-300/16 bg-emerald-400/10 text-emerald-200"
+                                `h-10 w-10 ${ACTION_PILL_CLASSNAME}`
                             )}>
                                 <Share2 className="h-4 w-4 text-emerald-200" />
                             </div>
@@ -89,7 +90,7 @@ export function SocialMediaCard({ property }: { property: Property }) {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${ACTION_PILL_CLASSNAME}`}>
                             <Rocket className="h-4 w-4 text-emerald-200" />
                         </div>
                     </CardContent>

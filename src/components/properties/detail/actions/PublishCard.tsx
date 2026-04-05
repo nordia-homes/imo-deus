@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 
 // Logo components
 const ImobiliareLogo = () => (
@@ -81,7 +82,7 @@ export function PublishCard({ property }: { property: Property }) {
 
     return (
         <Card className={cn(
-            "overflow-hidden rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)]"
+            ACTION_CARD_CLASSNAME
         )}>
             <CardHeader className={cn(isMobile ? "px-4 pb-0 pt-4" : "px-4 pb-0 pt-4")}>
                 <CardTitle className={cn(isMobile ? "text-base font-semibold text-white" : "text-base font-semibold text-white")}>
@@ -103,7 +104,8 @@ export function PublishCard({ property }: { property: Property }) {
                         <div
                             key={portal.id}
                             className={cn(
-                                "grid grid-cols-[minmax(0,1fr)_140px_52px] gap-4 rounded-xl border border-white/8 bg-[#10233b] p-3 text-sm hover:bg-[#132844]"
+                                "grid grid-cols-[minmax(0,1fr)_140px_52px] gap-4 rounded-xl p-3 text-sm hover:bg-white/[0.06]",
+                                ACTION_CARD_INNER_CLASSNAME
                             )}
                         >
                              <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-2 min-w-0">

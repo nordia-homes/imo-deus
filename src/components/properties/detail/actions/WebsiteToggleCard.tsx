@@ -9,6 +9,7 @@ import { doc } from 'firebase/firestore';
 import { useAgency } from "@/context/AgencyContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { ACTION_CARD_CLASSNAME, ACTION_INPUT_CLASSNAME } from "./cardStyles";
 
 export function WebsiteToggleCard({ property }: { property: Property }) {
     const { agencyId } = useAgency();
@@ -25,7 +26,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
     }
 
     return (
-        <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none">
+        <Card className={ACTION_CARD_CLASSNAME}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold">Website Public</CardTitle>
             </CardHeader>
@@ -40,7 +41,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
                         onCheckedChange={handleToggle}
                     />
                 </div>
-                <CardDescription className="text-xs !mt-1 text-white/70">
+                <CardDescription className={cn("text-xs !mt-1", ACTION_INPUT_CLASSNAME, "rounded-xl px-3 py-2 text-white/72")}>
                    Dacă este activ, proprietatea va apărea în secțiunea "Recomandate" de pe website-ul public.
                 </CardDescription>
             </CardContent>
