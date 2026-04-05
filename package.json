@@ -1,6 +1,6 @@
 {
   "name": "nextn",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "ImoDeus.ai CRM desktop companion",
   "author": "ImoDeus.ai",
   "private": true,
@@ -87,6 +87,7 @@
   "build": {
     "appId": "ai.imodeus.desktop",
     "productName": "ImoDeus Desktop",
+    "executableName": "ImoDeus Desktop",
     "directories": {
       "app": "desktop-dist-app",
       "output": "dist-desktop"

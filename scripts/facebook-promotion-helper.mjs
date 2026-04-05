@@ -104,7 +104,85 @@ async function tryClickFirst(page, selectors) {
   return false;
 }
 
+async function isVisibleLocator(locator) {
+  try {
+    const box = await locator.boundingBox();
+    return Boolean(box && box.width > 80 && box.height > 80);
+  } catch {
+    return false;
+  }
+}
+
+async function getActiveComposerRoot(page) {
+  const dialogs = page.locator('div[role="dialog"], div[aria-label="Create post"], div[aria-label="Creează o postare"]');
+  const count = await dialogs.count().catch(() => 0);
+  let bestIndex = -1;
+  let bestScore = -1;
+
+  for (let index = 0; index < count; index += 1) {
+    const candidate = dialogs.nth(index);
+    const box = await candidate.boundingBox().catch(() => null);
+    if (!box || box.width < 320 || box.height < 220) continue;
+
+    const textboxCount = await candidate.locator('[contenteditable="true"]').count().catch(() => 0);
+    const publishCount = await candidate.locator('div[role="button"]:has-text("Publică"), div[role="button"]:has-text("Post"), span:has-text("Publică"), span:has-text("Postează"), span:has-text("Post")').count().catch(() => 0);
+    const mediaCount = await candidate.locator('input[type="file"], div[aria-label*="fot"], div[aria-label*="photo"], div[role="button"][aria-label*="Foto"], div[role="button"][aria-label*="Photo"]').count().catch(() => 0);
+    const score = (textboxCount ? 1000 : 0) + (publishCount ? 300 : 0) + (mediaCount ? 120 : 0) + Math.round(box.width * box.height);
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  }
+
+  return bestIndex >= 0 ? dialogs.nth(bestIndex) : null;
+}
+
+async function closeExtraComposerRoots(page) {
+  const dialogs = page.locator('div[role="dialog"], div[aria-label="Create post"], div[aria-label="Creează o postare"]');
+  const count = await dialogs.count().catch(() => 0);
+  if (count <= 1) return;
+
+  const activeDialog = await getActiveComposerRoot(page);
+  const activeHandle = activeDialog ? await activeDialog.elementHandle().catch(() => null) : null;
+
+  for (let index = 0; index < count; index += 1) {
+    const dialog = dialogs.nth(index);
+    const dialogHandle = await dialog.elementHandle().catch(() => null);
+    if (activeHandle && dialogHandle && dialogHandle === activeHandle) {
+      continue;
+    }
+    if (!(await isVisibleLocator(dialog))) {
+      continue;
+    }
+
+    for (const selector of [
+      'div[aria-label="Închide"]',
+      'div[aria-label="Close"]',
+      'div[role="button"][aria-label="Închide"]',
+      'div[role="button"][aria-label="Close"]',
+    ]) {
+      const closeButton = dialog.locator(selector).first();
+      try {
+        if (await closeButton.count()) {
+          await closeButton.click({ timeout: 1500, force: true });
+          await page.waitForTimeout(250);
+          break;
+        }
+      } catch {
+        // try next close button
+      }
+    }
+  }
+}
+
 async function openComposer(page) {
+  const existingComposer = await getActiveComposerRoot(page);
+  if (existingComposer) {
+    await closeExtraComposerRoots(page);
+    return true;
+  }
+
   const composerSelectors = [
     'div[role="button"]:has-text("Scrie ceva")',
     'div[role="button"]:has-text("Write something")',
@@ -115,30 +193,276 @@ async function openComposer(page) {
   ];
 
   await page.waitForTimeout(1500);
-  await tryClickFirst(page, composerSelectors);
+  const clicked = await tryClickFirst(page, composerSelectors);
   await page.waitForTimeout(1500);
+  if (!clicked) {
+    return false;
+  }
+
+  await closeExtraComposerRoots(page);
+  return Boolean(await getActiveComposerRoot(page));
+}
+
+function normalizeComposerText(value) {
+  return (value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+async function composerContainsText(locator, text) {
+  const expected = normalizeComposerText(text);
+  if (!expected) return true;
+
+  try {
+    const actual = await locator.evaluate((node) => node.textContent || node.innerText || '');
+    return normalizeComposerText(actual).includes(expected);
+  } catch {
+    return false;
+  }
+}
+
+async function findBestTextbox(scope, selectors) {
+  for (const selector of selectors) {
+    const locator = scope.locator(selector);
+    const count = await locator.count().catch(() => 0);
+    if (!count) continue;
+
+    let bestIndex = -1;
+    let bestScore = -1;
+
+    for (let index = 0; index < count; index += 1) {
+      const candidate = locator.nth(index);
+      const box = await candidate.boundingBox().catch(() => null);
+      if (!box) continue;
+      if (box.width <= 40 || box.height <= 18) continue;
+
+      const debug = await candidate.evaluate((node) => {
+        if (!(node instanceof HTMLElement)) return '';
+        return [
+          node.getAttribute('aria-label') || '',
+          node.getAttribute('data-lexical-editor') || '',
+          node.className || '',
+          node.textContent || '',
+        ].join(' ').toLowerCase();
+      }).catch(() => '');
+
+      const area = box.width * box.height;
+      const yBonus = Math.max(0, 1200 - box.y);
+      const intentBonus = /(creeaz|public|mind|lexical|textbox|post)/.test(debug) ? 500000 : 0;
+      const score = intentBonus + yBonus * 100 + area;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+
+    if (bestIndex >= 0) {
+      return locator.nth(bestIndex);
+    }
+  }
+
+  return null;
+}
+
+async function getComposerTextbox(scope) {
+  const preferredSelectors = [
+    'div[role="textbox"][contenteditable="true"]',
+    'div[contenteditable="true"][data-lexical-editor="true"]',
+    'div[aria-label*="Creează o postare publică"][contenteditable="true"]',
+    'div[aria-label*="What\'s on your mind"][contenteditable="true"]',
+    'div.notranslate[contenteditable="true"]',
+    '[contenteditable="true"]',
+  ];
+
+  return findBestTextbox(scope, preferredSelectors);
+}
+
+async function clearComposerTarget(page) {
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A').catch(() => {});
+  await page.keyboard.press('Backspace').catch(() => {});
+}
+
+async function injectComposerText(locator, text) {
+  return locator.evaluate((node, value) => {
+    if (!(node instanceof HTMLElement)) return false;
+
+    const html = value
+      .split(/\r?\n/)
+      .map((line) => {
+        const escaped = line
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        return `<div>${escaped || '<br>'}</div>`;
+      })
+      .join('');
+
+    node.focus();
+    node.innerHTML = html || '<div><br></div>';
+
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+    selection?.addRange(range);
+
+    node.dispatchEvent(new InputEvent('beforeinput', {
+      bubbles: true,
+      cancelable: true,
+      data: value,
+      inputType: 'insertFromPaste',
+    }));
+
+    node.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      data: value,
+      inputType: 'insertFromPaste',
+    }));
+
+    node.dispatchEvent(new Event('change', { bubbles: true }));
+    node.dispatchEvent(new Event('blur', { bubbles: true }));
+    node.dispatchEvent(new Event('focus', { bubbles: true }));
+
+    return true;
+  }, text).catch(() => false);
+}
+
+async function dispatchPasteEvent(locator, text) {
+  return locator.evaluate((node, value) => {
+    if (!(node instanceof HTMLElement)) return false;
+
+    node.focus();
+
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+    selection?.addRange(range);
+
+    let dataTransfer = null;
+    try {
+      dataTransfer = new DataTransfer();
+      dataTransfer.setData('text/plain', value);
+      dataTransfer.setData('text', value);
+    } catch {
+      dataTransfer = null;
+    }
+
+    try {
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dataTransfer || undefined,
+      });
+      node.dispatchEvent(pasteEvent);
+    } catch {
+      // Ignore clipboard event construction failures.
+    }
+
+    if (dataTransfer) {
+      try {
+        const beforeInput = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          data: value,
+          inputType: 'insertFromPaste',
+          dataTransfer,
+        });
+        node.dispatchEvent(beforeInput);
+      } catch {
+        // Ignore beforeinput failures.
+      }
+    }
+
+    return true;
+  }, text).catch(() => false);
+}
+
+async function fillComposerTarget(page, locator, text) {
+  await locator.click({ timeout: 2500, force: true });
+  await page.waitForTimeout(200);
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await clearComposerTarget(page);
+    await page.keyboard.insertText(text).catch(() => {});
+    await page.waitForTimeout(250);
+
+    if (await composerContainsText(locator, text)) {
+      await page.waitForTimeout(1500);
+      if (await composerContainsText(locator, text)) {
+        return true;
+      }
+    }
+
+    await locator.click({ timeout: 2500 }).catch(() => {});
+    await page.waitForTimeout(250);
+  }
+
+  if (await injectComposerText(locator, text)) {
+    await page.waitForTimeout(500);
+    if (await composerContainsText(locator, text)) {
+      await page.waitForTimeout(1500);
+      if (await composerContainsText(locator, text)) {
+        return true;
+      }
+    }
+  }
+
+  if (await dispatchPasteEvent(locator, text)) {
+    await page.waitForTimeout(500);
+    if (await composerContainsText(locator, text)) {
+      await page.waitForTimeout(1500);
+      if (await composerContainsText(locator, text)) {
+        return true;
+      }
+    }
+  }
+
+  await locator.evaluate((node, value) => {
+    if (!(node instanceof HTMLElement)) return;
+
+    node.focus();
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    node.textContent = value;
+    node.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      data: value,
+      inputType: 'insertText',
+    }));
+  }, text).catch(() => {});
+
+  await page.waitForTimeout(400);
+  if (await composerContainsText(locator, text)) {
+    await page.waitForTimeout(1500);
+    if (await composerContainsText(locator, text)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function fillComposer(page, text) {
-  const textboxSelectors = [
-    'div[role="textbox"][contenteditable="true"]',
-    'div[contenteditable="true"][data-lexical-editor="true"]',
-    'div.notranslate[contenteditable="true"]',
-  ];
+  await closeExtraComposerRoots(page);
+  await page.waitForTimeout(1200);
+  const composerRoot = await getActiveComposerRoot(page);
+  if (!composerRoot) {
+    return false;
+  }
 
-  for (const selector of textboxSelectors) {
-    const locator = page.locator(selector).first();
-    try {
-      if (await locator.count()) {
-        await locator.click({ timeout: 2500 });
-        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A').catch(() => {});
-        await page.keyboard.press('Backspace').catch(() => {});
-        await page.keyboard.insertText(text);
-        return true;
-      }
-    } catch {
-      // try next selector
-    }
+  const activeTextbox = await getComposerTextbox(composerRoot);
+  if (activeTextbox && await fillComposerTarget(page, activeTextbox, text)) {
+    return true;
   }
 
   return false;
@@ -146,18 +470,34 @@ async function fillComposer(page, text) {
 
 async function attachImages(page, files) {
   if (!files.length) return false;
+  await closeExtraComposerRoots(page);
+  const composerRoot = await getActiveComposerRoot(page);
+  if (!composerRoot) return false;
 
   const mediaButtonSelectors = [
+    'div[aria-label*="Adaugă fotografii"]',
+    'div[aria-label*="Add photos"]',
     'div[role="button"]:has-text("Foto/video")',
     'div[role="button"]:has-text("Photo/video")',
     'span:has-text("Foto/video")',
     'span:has-text("Photo/video")',
   ];
 
-  await tryClickFirst(page, mediaButtonSelectors);
+  const existingInput = composerRoot.locator('input[type="file"]').last();
+  try {
+    if (await existingInput.count()) {
+      await existingInput.setInputFiles(files);
+      await page.waitForTimeout(2500);
+      return true;
+    }
+  } catch {
+    // continue with click-based flow
+  }
+
+  await tryClickFirst(composerRoot, mediaButtonSelectors);
   await page.waitForTimeout(1500);
 
-  const fileInput = page.locator('input[type="file"]').first();
+  const fileInput = composerRoot.locator('input[type="file"]').last();
   if (!(await fileInput.count())) {
     return false;
   }
@@ -257,8 +597,8 @@ async function run() {
       await page.waitForTimeout(2500);
 
       await openComposer(page);
-      const filled = await fillComposer(page, session.propertyDescription || '');
       const attached = await attachImages(page, files);
+      const filled = await fillComposer(page, session.propertyDescription || '');
       const publishDetected = await waitForPublishButton(page);
 
       console.log(`Text completat: ${filled ? 'da' : 'nu'}`);
@@ -271,8 +611,8 @@ async function run() {
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(2500);
         await openComposer(page);
-        await fillComposer(page, session.propertyDescription || '');
         await attachImages(page, files);
+        await fillComposer(page, session.propertyDescription || '');
         await waitForPublishButton(page);
         action = await askAction(rl, group.name);
       }

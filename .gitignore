@@ -46,9 +46,11 @@ firestore-debug.log
 
 # desktop build artifacts
 dist-desktop/
+dist-desktop-test/
 desktop-dist-app/
 
 # desktop release files published separately
 desktop-downloads/*.exe
 desktop-downloads/*.blockmap
 desktop-downloads/latest.yml
+.firebase/*.cache

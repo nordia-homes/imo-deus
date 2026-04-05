@@ -4,10 +4,12 @@ import path from "node:path";
 const root = process.cwd();
 const sourceDir = path.join(root, "dist-desktop");
 const targetDir = path.join(root, "desktop-downloads");
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const version = packageJson.version;
 
 const files = [
-  "ImoDeus Desktop Setup 0.1.1.exe",
-  "ImoDeus Desktop Setup 0.1.1.exe.blockmap",
+  `ImoDeus Desktop Setup ${version}.exe`,
+  `ImoDeus Desktop Setup ${version}.exe.blockmap`,
   "latest.yml",
 ];
 

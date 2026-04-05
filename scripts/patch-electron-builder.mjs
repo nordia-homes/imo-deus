@@ -35,42 +35,6 @@ async function main() {
     source = source.replace(batArgsNeedle, batArgsReplacement);
   }
 
-  const closeNeedle = `            child.on("close", code => {
-                outStream.close();
-                // https://github.com/npm/npm/issues/17624
-                const shouldIgnore = code === 1 && "npm" === execName.toLowerCase() && args.includes("list");
-                if (shouldIgnore) {
-                    builder_util_1.log.debug(null, "\`npm list\` returned non-zero exit code, but it MIGHT be expected (https://github.com/npm/npm/issues/17624). Check stderr for details.");
-                }
-                if (stderr.length > 0) {
-                    builder_util_1.log.debug({ stderr }, "note: there was node module collector output on stderr");
-                    this.cache.logSummary[moduleManager_1.LogMessageByKey.PKG_COLLECTOR_OUTPUT].push(stderr);
-                }
-                const shouldResolve = code === 0 || shouldIgnore;
-                return shouldResolve ? resolve() : reject(new Error(\`Node module collector process exited with code \${code}:\\n\${stderr}\`));
-            });`;
-
-  const closeReplacement = `            child.on("close", code => {
-                outStream.end();
-                outStream.on("close", () => {
-                    // https://github.com/npm/npm/issues/17624
-                    const shouldIgnore = code === 1 && "npm" === execName.toLowerCase() && args.includes("list");
-                    if (shouldIgnore) {
-                        builder_util_1.log.debug(null, "\`npm list\` returned non-zero exit code, but it MIGHT be expected (https://github.com/npm/npm/issues/17624). Check stderr for details.");
-                    }
-                    if (stderr.length > 0) {
-                        builder_util_1.log.debug({ stderr }, "note: there was node module collector output on stderr");
-                        this.cache.logSummary[moduleManager_1.LogMessageByKey.PKG_COLLECTOR_OUTPUT].push(stderr);
-                    }
-                    const shouldResolve = code === 0 || shouldIgnore;
-                    return shouldResolve ? resolve() : reject(new Error(\`Node module collector process exited with code \${code}:\\n\${stderr}\`));
-                });
-            });`;
-
-  if (source.includes(closeNeedle)) {
-    source = source.replace(closeNeedle, closeReplacement);
-  }
-
   await fs.writeFile(targetFile, source, 'utf8');
 }
 

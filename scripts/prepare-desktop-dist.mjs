@@ -39,6 +39,7 @@ async function main() {
 
   const desktopPackageJson = {
     name: 'imodeus-desktop',
+    productName: 'ImoDeus Desktop',
     version: rootPackageJson.version,
     private: true,
     main: 'main.cjs',

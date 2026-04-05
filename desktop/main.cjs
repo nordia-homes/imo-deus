@@ -1,7 +1,7 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawn } = require('node:child_process');
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, clipboard } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
 const isDev = !app.isPackaged;
@@ -74,6 +74,14 @@ async function writeSessionToDisk(session) {
 async function readSessionFromDisk(sessionPath) {
   const raw = await fs.readFile(sessionPath, 'utf8');
   return JSON.parse(raw);
+}
+
+function syncDescriptionToClipboard(session) {
+  try {
+    clipboard.writeText(session?.propertyDescription || '');
+  } catch {
+    // Ignore clipboard sync errors and let the worker fall back to direct input.
+  }
 }
 
 function createWindow() {
@@ -320,6 +328,7 @@ ipcMain.handle('facebook-runner:save-session-file', async (_event, { session }) 
 
 ipcMain.handle('facebook-runner:start', async (_event, { session }) => {
   currentSession = session;
+  syncDescriptionToClipboard(session);
   const sessionPath = await writeSessionToDisk(session);
 
   setRunnerStatus({
@@ -337,6 +346,9 @@ ipcMain.handle('facebook-runner:start', async (_event, { session }) => {
 });
 
 ipcMain.handle('facebook-runner:retry-current-group', async () => {
+  if (currentSession) {
+    syncDescriptionToClipboard(currentSession);
+  }
   sendWorkerCommand('retry-current-group');
   return { status: runnerStatus, session: currentSession };
 });
