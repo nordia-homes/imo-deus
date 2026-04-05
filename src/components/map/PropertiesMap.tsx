@@ -98,10 +98,12 @@ export function PropertiesMap({
   properties,
   zoomMode = 'default',
   layoutMode = 'split',
+  appearance = 'admin-property-detail',
 }: {
   properties: Property[];
   zoomMode?: 'default' | 'close';
   layoutMode?: 'split' | 'map-only';
+  appearance?: 'admin-property-detail' | 'dashboard-map-page' | 'public-property-detail';
 }) {
   const { isLoaded, error } = useGoogleMapsApi();
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -639,6 +641,67 @@ export function PropertiesMap({
           </DialogContent>
         </Dialog>
       </>
+    );
+  }
+
+  if (appearance === 'public-property-detail') {
+    return (
+      <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+        <CardContent className="p-0">
+          <div className="relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]">
+            <div ref={mapRef} className="h-full w-full" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
+              <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0f2239]/85 px-3 py-2 text-xs font-medium text-white shadow-xl backdrop-blur">
+                <MapPinned className="h-4 w-4 text-emerald-300" />
+                {validProperties.length} proprietati pe harta
+              </div>
+              <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+                  onClick={handleZoomIn}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+                  onClick={handleZoomOut}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
+              <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mapType === 'roadmap' ? 'default' : 'ghost'}
+                  className={mapType === 'roadmap' ? 'rounded-xl bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl text-white hover:bg-white/10'}
+                  onClick={() => setMapType('roadmap')}
+                >
+                  Harta
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mapType === 'satellite' ? 'default' : 'ghost'}
+                  className={mapType === 'satellite' ? 'rounded-xl bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl text-white hover:bg-white/10'}
+                  onClick={() => setMapType('satellite')}
+                >
+                  <Layers3 className="mr-2 h-4 w-4" />
+                  Satelit
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

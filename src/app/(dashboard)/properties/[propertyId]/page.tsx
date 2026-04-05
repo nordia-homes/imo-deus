@@ -59,7 +59,7 @@ import { format, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
-import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { AdminPropertyDetailsMap } from '@/components/map/AdminPropertyDetailsMap';
 import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from '@/components/properties/detail/actions/cardStyles';
 
 
@@ -327,7 +327,7 @@ export default function PropertyDetailPage() {
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="h-[240px] overflow-hidden">
-                                        <PropertiesMap properties={[property]} zoomMode="close" />
+                                        <AdminPropertyDetailsMap properties={[property]} />
                                     </div>
                                 </CardContent>
                             </Card>

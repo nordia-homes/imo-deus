@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
-import { PropertiesMap } from "@/components/map/PropertiesMap";
+import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
 
 export function InfoColumn({ property, matchedBuyers, viewings }: { property: Property, matchedBuyers: MatchedBuyer[], viewings: Viewing[] }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
@@ -128,7 +128,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                         </CardContent>
                     </Card>
                     <div className="hidden lg:block h-[448px]">
-                        <PropertiesMap properties={[property]} zoomMode="close" />
+                        <AdminPropertyDetailsMap properties={[property]} />
                     </div>
                     <div className="hidden lg:block">
                         <PropertyNotesCard property={property} />
@@ -180,7 +180,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                           </CardContent>
                         </Card>
                         <div className="h-[320px] lg:hidden">
-                            <PropertiesMap properties={[property]} zoomMode="close" />
+                            <AdminPropertyDetailsMap properties={[property]} />
                         </div>
                     </div>
                 </TabsContent>

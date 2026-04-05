@@ -27,7 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { PublicPropertyDetailsMap } from '@/components/map/PublicPropertyDetailsMap';
 import { SimilarProperties } from '@/components/public/SimilarProperties';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 
@@ -359,7 +359,7 @@ export default function PublicPropertyDetailPage() {
                             <CardTitle className="text-lg font-bold text-stone-50">Localizare pe harta</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 h-80">
-                            <PropertiesMap properties={[property]} zoomMode="close" />
+                            <PublicPropertyDetailsMap properties={[property]} />
                         </CardContent>
                     </Card>
 
@@ -438,7 +438,7 @@ export default function PublicPropertyDetailPage() {
                                 <CardTitle className="text-xl font-bold text-stone-50">Localizare pe harta</CardTitle>
                             </CardHeader>
                             <CardContent className="h-80 p-5 pt-0">
-                                <PropertiesMap properties={[property]} zoomMode="close" />
+                                <PublicPropertyDetailsMap properties={[property]} />
                             </CardContent>
                         </Card>
 

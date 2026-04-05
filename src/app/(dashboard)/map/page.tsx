@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
-import { PropertiesMap } from '@/components/map/PropertiesMap';
+import { DashboardMapPageMap } from '@/components/map/DashboardMapPageMap';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 
@@ -24,7 +24,7 @@ export default function MapPage() {
             {isLoading ? (
                 <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
             ) : (
-                <PropertiesMap properties={properties || []} layoutMode="map-only" />
+                <DashboardMapPageMap properties={properties || []} />
             )}
         </div>
     );
