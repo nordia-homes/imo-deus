@@ -379,6 +379,34 @@ export function PropertiesMap({
   }, [isLoaded, layoutMode, selectedProperty, validProperties.length, zoomMode]);
 
   useEffect(() => {
+    if (!isLoaded || !mapInstanceRef.current || isStreetViewOpen || !selectedProperty) {
+      return;
+    }
+
+    const googleMaps = (window as GoogleMapsWindow).google?.maps;
+    if (!googleMaps) {
+      return;
+    }
+
+    const position = {
+      lat: selectedProperty.latitude as number,
+      lng: selectedProperty.longitude as number,
+    };
+
+    const resizeTimer = window.setTimeout(() => {
+      googleMaps.event.trigger(mapInstanceRef.current, 'resize');
+      mapInstanceRef.current.setCenter(position);
+      if (validProperties.length === 1) {
+        mapInstanceRef.current.setZoom(zoomMode === 'close' ? 17 : 15);
+      }
+    }, 120);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+    };
+  }, [isLoaded, isStreetViewOpen, selectedProperty, validProperties.length, zoomMode]);
+
+  useEffect(() => {
     if (
       !isLoaded ||
       !selectedProperty ||
@@ -402,7 +430,7 @@ export function PropertiesMap({
     };
 
     const selectedMarker = markersRef.current.find((marker) => marker.__propertyId === selectedProperty.id);
-    if (layoutMode !== 'map-only') {
+    if (layoutMode !== 'map-only' && appearance !== 'admin-property-detail') {
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${position.lat},${position.lng}`;
       const infoContent = `
         <div style="max-width:220px;padding:4px 2px;color:#0f172a;">
@@ -433,7 +461,10 @@ export function PropertiesMap({
 
     const streetViewService = new googleMaps.StreetViewService();
     setStreetViewStatus('idle');
-    streetViewService.getPanorama({ location: position, radius: 120 }, (result: any, status: string) => {
+
+    // Use a wider search radius so Street View still works when the geocoded
+    // property pin is inside a complex/private lot but the panorama is on the nearby street.
+    streetViewService.getPanorama({ location: position, radius: 500 }, (result: any, status: string) => {
       if (status === 'OK' && result?.location?.pano) {
         panoramaRef.current.setPano(result.location.pano);
         panoramaRef.current.setPov({ heading: 0, pitch: 0 });
@@ -448,7 +479,7 @@ export function PropertiesMap({
       panoramaRef.current.setVisible(false);
       setStreetViewStatus('unavailable');
     });
-  }, [isLoaded, isStreetViewOpen, layoutMode, selectedProperty, streetViewHostReady, validProperties.length, zoomMode]);
+  }, [appearance, isLoaded, isStreetViewOpen, layoutMode, selectedProperty, streetViewHostReady, validProperties.length, zoomMode]);
 
   useEffect(() => {
     if (!isStreetViewOpen) {
@@ -754,6 +785,57 @@ export function PropertiesMap({
           }
         `}</style>
       </div>
+    );
+  }
+
+  if (appearance === 'admin-property-detail') {
+    return (
+      <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+        <CardContent className="p-0">
+          <div className="relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]">
+            <div ref={mapRef} className={`absolute inset-0 h-full w-full ${isStreetViewOpen ? 'opacity-0' : 'opacity-100'}`} />
+            <div
+              className={`absolute inset-0 h-full w-full ${isStreetViewOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+            >
+              <div ref={setStreetViewElement} className="h-full w-full" />
+            </div>
+
+            {isStreetViewOpen && streetViewStatus === 'unavailable' ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/85 p-6 text-center">
+                <div className="max-w-xs space-y-2">
+                  <p className="font-semibold text-white">Street View nu este disponibil pentru aceasta locatie.</p>
+                  <p className="text-sm text-white/70">
+                    Proprietatea ramane vizibila pe harta, dar Google nu are imagini stradale suficient de aproape.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+            {isStreetViewOpen && isLoaded && !streetViewHostReady ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 p-6 text-center text-sm text-white/70">
+                Se pregateste panorama Street View...
+              </div>
+            ) : null}
+            {!isLoaded ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 p-6 text-center text-sm text-white/70">
+                Se incarca Google Maps si Street View...
+              </div>
+            ) : null}
+
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-end p-4">
+              <div className="pointer-events-auto">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl bg-emerald-500 text-white hover:bg-emerald-400"
+                  onClick={() => setIsStreetViewOpen((current) => !current)}
+                >
+                  {isStreetViewOpen ? 'Harta' : 'Street View'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
