@@ -159,6 +159,37 @@ function buildPropertyPath(propertyId: string) {
   return `/properties/${propertyId}`;
 }
 
+function buildMapInfoContent(property: Property) {
+  const imageUrl = property.images?.[0]?.url;
+  const imageAlt = property.images?.[0]?.alt || property.title;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`;
+
+  return `
+    <div style="width:240px;overflow:hidden;border-radius:18px;background:linear-gradient(180deg,#0f1a2a,#0a1220);color:#ffffff;">
+      ${
+        imageUrl
+          ? `<div style="height:124px;overflow:hidden;background:#0b1220;">
+               <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" style="display:block;width:100%;height:100%;object-fit:cover;" />
+             </div>`
+          : ''
+      }
+      <div style="padding:14px 14px 12px;">
+        <div style="font-weight:700;font-size:15px;line-height:1.3;margin-bottom:6px;">${escapeHtml(property.title)}</div>
+        <div style="font-size:12px;line-height:1.45;color:rgba(255,255,255,0.72);margin-bottom:10px;">${escapeHtml(
+          property.address || property.location || ''
+        )}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:13px;font-weight:700;color:#a7f3d0;">${escapeHtml(formatCurrency(property.price))}</div>
+          <a href="${buildPropertyPath(property.id)}" style="display:inline-block;border-radius:999px;background:#10b981;padding:7px 12px;color:#04110c;font-size:12px;font-weight:700;text-decoration:none;">Detalii</a>
+        </div>
+        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:10px;color:#7dd3fc;font-size:12px;text-decoration:none;">
+          Deschide in Google Maps
+        </a>
+      </div>
+    </div>
+  `;
+}
+
 export function PropertiesMap({
   properties,
   zoomMode = 'default',
@@ -254,7 +285,9 @@ export function PropertiesMap({
     }
 
     if (!infoWindowRef.current) {
-      infoWindowRef.current = new googleMaps.InfoWindow();
+      infoWindowRef.current = new googleMaps.InfoWindow({
+        disableAutoPan: true,
+      });
     }
 
     markersRef.current.forEach((marker) => marker.setMap(null));
@@ -278,6 +311,10 @@ export function PropertiesMap({
 
       marker.addListener('click', () => {
         setSelectedPropertyId(property.id);
+        if (layoutMode === 'map-only' && mapInstanceRef.current) {
+          mapInstanceRef.current.panTo(position);
+          mapInstanceRef.current.setZoom(Math.max(mapInstanceRef.current.getZoom?.() ?? 12, 16));
+        }
       });
 
       markersRef.current.push(marker);
@@ -293,7 +330,7 @@ export function PropertiesMap({
     } else {
       mapInstanceRef.current.fitBounds(bounds);
     }
-  }, [activeMapStyles, isLoaded, layoutMode, mapType, selectedProperty, validProperties, zoomMode]);
+  }, [activeMapStyles, isLoaded, layoutMode, mapType, validProperties, zoomMode]);
 
   useEffect(() => {
     if (!isLoaded || !isStreetViewOpen || !streetViewElement || !selectedProperty) {
@@ -466,10 +503,17 @@ export function PropertiesMap({
     // property pin is inside a complex/private lot but the panorama is on the nearby street.
     streetViewService.getPanorama({ location: position, radius: 500 }, (result: any, status: string) => {
       if (status === 'OK' && result?.location?.pano) {
+        const panoPosition = result.location.latLng;
+        let heading = 0;
+
+        if (googleMaps.geometry?.spherical && panoPosition) {
+          heading = googleMaps.geometry.spherical.computeHeading(panoPosition, position);
+        }
+
         panoramaRef.current.setPano(result.location.pano);
-        panoramaRef.current.setPov({ heading: 0, pitch: 0 });
+        panoramaRef.current.setPosition(panoPosition || position);
+        panoramaRef.current.setPov({ heading, pitch: 0 });
         panoramaRef.current.setZoom(1);
-        panoramaRef.current.setPosition(position);
         googleMaps.event.trigger(panoramaRef.current, 'resize');
         panoramaRef.current.setVisible(true);
         setStreetViewStatus('ready');
@@ -486,6 +530,33 @@ export function PropertiesMap({
       setStreetViewStatus('idle');
     }
   }, [isStreetViewOpen]);
+
+  useEffect(() => {
+    if (
+      layoutMode !== 'map-only' ||
+      !isLoaded ||
+      !selectedProperty ||
+      !mapInstanceRef.current ||
+      !infoWindowRef.current
+    ) {
+      return;
+    }
+
+    const selectedMarker = markersRef.current.find((marker) => marker.__propertyId === selectedProperty.id);
+    if (!selectedMarker) {
+      return;
+    }
+
+    infoWindowRef.current.setContent(buildMapInfoContent(selectedProperty));
+    infoWindowRef.current.open({
+      map: mapInstanceRef.current,
+      anchor: selectedMarker,
+    });
+
+    return () => {
+      infoWindowRef.current?.close();
+    };
+  }, [isLoaded, layoutMode, selectedProperty]);
 
   function handleZoomIn() {
     if (!mapInstanceRef.current) {
@@ -515,7 +586,7 @@ export function PropertiesMap({
 
     setSelectedPropertyId(property.id);
     mapInstanceRef.current.panTo(position);
-    mapInstanceRef.current.setZoom(17);
+    mapInstanceRef.current.setZoom(Math.max(mapInstanceRef.current.getZoom?.() ?? 12, 16));
   }
 
   const streetViewPanel = selectedProperty ? (
@@ -726,6 +797,7 @@ export function PropertiesMap({
               </Button>
             </div>
           </div>
+
         </div>
 
         <Dialog open={isStreetViewOpen && !!selectedProperty} onOpenChange={setIsStreetViewOpen}>
