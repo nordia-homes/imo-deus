@@ -22,6 +22,7 @@ interface InfoDialogProps {
 
 export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) {
     const isMobile = useIsMobile();
+    const displaySurface = property.totalSurface ?? property.squareFootage;
 
     const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number | undefined | null }) => {
         if (!value && value !== 0) return null;
@@ -69,8 +70,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Etaj" value={property.floor && property.totalFloors ? `${'\'\'\''}${property.floor} / ${property.totalFloors}`: property.floor || property.totalFloors || 'N/A' } />
             <InfoItem icon={<BedDouble className="h-5 w-5 text-primary" />} label="Camere" value={property.rooms} />
             <InfoItem icon={<Bath className="h-5 w-5 text-primary" />} label="Băi" value={property.bathrooms} />
-            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață Utilă" value={property.squareFootage ? `${'\'\'\''}${property.squareFootage} mp` : undefined} />
-            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață cu Balcon" value={property.totalSurface ? `${'\'\'\''}${property.totalSurface} mp` : undefined} />
+            <InfoItem icon={<Maximize className="h-5 w-5 text-primary" />} label="Suprafață" value={displaySurface ? `${'\'\'\''}${displaySurface} mp` : undefined} />
             <InfoItem icon={<Compass className="h-5 w-5 text-primary" />} label="Orientare" value={property.orientation} />
             <InfoItem icon={<Layers className="h-5 w-5 text-primary" />} label="Compartimentare" value={property.partitioning} />
             <InfoItem icon={<AlertTriangle className="h-5 w-5 text-primary" />} label="Risc Seismic" value={property.seismicRisk} />

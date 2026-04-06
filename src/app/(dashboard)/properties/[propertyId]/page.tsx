@@ -190,6 +190,7 @@ export default function PropertyDetailPage() {
     }
     
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
+    const displaySurface = property.totalSurface ?? property.squareFootage;
     const publicPropertyUrl = agencyId
         ? agency?.customDomain
             ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}/properties/${propertyId}`
@@ -212,7 +213,7 @@ export default function PropertyDetailPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Ruler className="h-5 w-5 text-primary" />
-                                    <span className="font-semibold">{property.squareFootage} mp</span>
+                                    <span className="font-semibold">{displaySurface} mp</span>
                                 </div>
                                 {property.constructionYear && (
                                     <div className="flex items-center gap-2">

@@ -27,6 +27,7 @@ export function PublicPropertyCard({
 }) {
   const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
   const publicPath = usePublicPath();
+  const displaySurface = property.totalSurface ?? property.squareFootage;
   const [isCopied, setIsCopied] = useState(false);
   const propertyUrl = publicPath(`/properties/${property.id}`);
   const shareImageUrl = `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
@@ -141,7 +142,7 @@ export function PublicPropertyCard({
             </div>
             <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
               <Ruler className="mx-auto h-4 w-4 text-emerald-300" />
-              <p className="mt-2 font-medium text-white">{property.squareFootage || '-'}</p>
+              <p className="mt-2 font-medium text-white">{displaySurface || '-'}</p>
               <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-stone-400">Mp</p>
             </div>
           </div>

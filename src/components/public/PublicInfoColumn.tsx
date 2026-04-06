@@ -8,6 +8,7 @@ import { useState } from 'react';
 
 export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+    const displaySurface = property.totalSurface ?? property.squareFootage;
     const TRUNCATION_LENGTH = 250;
     const DESCRIPTION_BOLD_CHARS = 60;
     const rawDescription = property.description || 'Nicio descriere adăugată.';
@@ -35,10 +36,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                 return `Un reper util pentru stilul constructiei, standardele folosite si perceptia generala asupra imobilului.`;
             case 'Etaj':
                 return `Conteaza atat pentru lumina si priveliste, cat si pentru nivelul de acces si confortul zilnic.`;
-            case 'Suprafață Utilă':
-                return `Suprafata pe care o folosesti efectiv in interior, esentiala pentru comparatia reala intre proprietati.`;
-            case 'Suprafață cu Balcon':
-                return `Include si zonele exterioare sau anexele relevante, oferind o imagine mai completa a spatiului total.`;
+            case 'Suprafață':
+                return `Un reper esential pentru comparatia proprietatilor, ca sa intelegi mai usor spatiul disponibil.`;
             case 'Stare Interior':
                 return `Sugereaza cat de pregatita este proprietatea pentru mutare sau ce nivel de investitie mai poate necesita.`;
             case 'Bucătărie':
@@ -59,8 +58,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         { icon: <BedDouble className="h-5 w-5" />, label: 'Nr. Camere', value: property.rooms },
         { icon: <Calendar className="h-5 w-5" />, label: 'An Construcție', value: property.constructionYear },
         { icon: <Layers className="h-5 w-5" />, label: 'Etaj', value: property.floor },
-        { icon: <Ruler className="h-5 w-5" />, label: 'Suprafață Utilă', value: property.squareFootage ? `${property.squareFootage} mp` : undefined },
-        { icon: <Ruler className="h-5 w-5" />, label: 'Suprafață cu Balcon', value: property.totalSurface ? `${property.totalSurface} mp` : undefined },
+        { icon: <Ruler className="h-5 w-5" />, label: 'Suprafață', value: displaySurface ? `${displaySurface} mp` : undefined },
         { icon: <Paintbrush className="h-5 w-5" />, label: 'Stare Interior', value: property.interiorState },
         { icon: <Sofa className="h-5 w-5" />, label: 'Bucătărie', value: property.kitchen },
         { icon: <Maximize className="h-5 w-5" />, label: 'Balcon/Terasă', value: property.balconyTerrace },

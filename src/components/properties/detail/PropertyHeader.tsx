@@ -48,13 +48,14 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
     const creationDate = property.createdAt ? new Date(property.createdAt) : new Date();
     const ageInDays = differenceInDays(new Date(), creationDate);
+    const displaySurface = property.totalSurface ?? property.squareFootage;
     const desktopMetaItems = [
         { icon: <Calendar className="h-4 w-4 text-emerald-300" />, value: creationDate.toLocaleDateString('ro-RO') },
         { icon: <Clock className="h-4 w-4 text-emerald-300" />, value: `Vechime: ${ageInDays} ${ageInDays === 1 ? 'zi' : 'zile'}` },
         { icon: null, value: property.location },
         { icon: null, value: `${property.rooms} camere` },
         { icon: null, value: `${property.bathrooms} ${property.bathrooms === 1 ? 'baie' : 'băi'}` },
-        { icon: null, value: `${property.squareFootage} mp` },
+        { icon: null, value: `${displaySurface} mp` },
         ...(property.constructionYear ? [{ icon: null, value: String(property.constructionYear) }] : []),
         ...(property.floor ? [{ icon: null, value: `Et. ${property.floor}` }] : []),
     ];
@@ -85,7 +86,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                             {property.bathrooms} {property.bathrooms === 1 ? 'baie' : 'băi'}
                         </Badge>
                         <Badge variant="secondary" className="lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
-                            {property.squareFootage} mp
+                            {displaySurface} mp
                         </Badge>
                         {property.constructionYear && (
                             <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">

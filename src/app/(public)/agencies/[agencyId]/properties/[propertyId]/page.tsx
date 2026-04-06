@@ -322,6 +322,7 @@ export default function PublicPropertyDetailPage() {
     const whatsappHref = sanitizedPhone
         ? `https://wa.me/${sanitizedPhone}?text=${whatsappMessage}`
         : null;
+    const displaySurface = property.totalSurface ?? property.squareFootage;
 
 
     if (isMobile) {
@@ -335,11 +336,11 @@ export default function PublicPropertyDetailPage() {
                         <CardContent className="space-y-3 p-4">
                             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-medium text-stone-200">
                                 {property.rooms ? <span className="whitespace-nowrap">{property.rooms} camere</span> : null}
-                                {property.rooms && property.squareFootage ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
-                                {property.squareFootage ? <span className="whitespace-nowrap">{property.squareFootage} mp</span> : null}
-                                {(property.rooms || property.squareFootage) && property.constructionYear ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
+                                {property.rooms && displaySurface ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
+                                {displaySurface ? <span className="whitespace-nowrap">{displaySurface} mp</span> : null}
+                                {(property.rooms || displaySurface) && property.constructionYear ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.constructionYear ? <span className="whitespace-nowrap">An {property.constructionYear}</span> : null}
-                                {(property.rooms || property.squareFootage || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
+                                {(property.rooms || displaySurface || property.constructionYear) && property.floor ? <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
                                 {property.floor ? <span className="whitespace-nowrap">Etaj {property.floor}</span> : null}
                             </div>
 

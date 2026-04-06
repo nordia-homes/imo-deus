@@ -33,6 +33,7 @@ export function PropertyCard({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const isMobile = useIsMobile();
+  const displaySurface = property.totalSurface ?? property.squareFootage;
   const { agencyId: dashboardAgencyId } = useAgency();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -172,7 +173,7 @@ export function PropertyCard({
                 </div>
                 <div className="flex items-center gap-1.5">
                     <Ruler className="h-4 w-4"/>
-                    <span>{property.squareFootage} mp</span>
+                    <span>{displaySurface} mp</span>
                 </div>
                 {property.constructionYear && (
                   <div className="flex items-center gap-1.5">

@@ -40,6 +40,7 @@ const FeatureItem = ({ icon, label, value }: { icon: React.ReactNode, label: str
 
 export function PropertyClientView({ property }: { property: Property }) {
   const { agency } = usePublicAgency();
+  const displaySurface = property.totalSurface ?? property.squareFootage;
   
   const propertyImages = (property.images || []).map(img => img.url).filter(Boolean);
   const allImages = propertyImages.length > 0 ? propertyImages : ['https://placehold.co/1200x800?text=Imagine+lipsa'];
@@ -71,8 +72,7 @@ export function PropertyClientView({ property }: { property: Property }) {
                      <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                          <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
                          <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
-                         <FeatureItem icon={<Ruler />} label="Suprafață utilă" value={`${property.squareFootage} mp`} />
-                         {property.totalSurface && <FeatureItem icon={<Ruler />} label="Suprafață construită" value={`${property.totalSurface} mp`} />}
+                         <FeatureItem icon={<Ruler />} label="Suprafață" value={displaySurface ? `${displaySurface} mp` : undefined} />
                          <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
                          <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
                          <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />

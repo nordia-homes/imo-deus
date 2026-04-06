@@ -8,6 +8,7 @@ import { usePublicPath } from "@/context/PublicAgencyContext";
 export function PublicPropertyCard({ property, agencyId }: { property: Property, agencyId: string }) {
   const primaryImageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600';
   const publicPath = usePublicPath();
+  const displaySurface = property.totalSurface ?? property.squareFootage;
   
   return (
     <Link href={publicPath(`/properties/${property.id}`)} className="group">
@@ -38,7 +39,7 @@ export function PublicPropertyCard({ property, agencyId }: { property: Property,
                 </div>
                  <div className="flex items-center gap-2">
                     <Ruler className="h-4 w-4" />
-                    <span>{property.squareFootage} mp</span>
+                    <span>{displaySurface} mp</span>
                 </div>
             </div>
         </CardContent>
