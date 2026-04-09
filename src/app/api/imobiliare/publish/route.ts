@@ -16,6 +16,8 @@ function formatError(error: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  let agencyIdForLog: string | null = null;
+  let propertyIdForLog: string | null = null;
   try {
     const [{ requireAgencyUserFromBearerToken }, { publishPropertyToImobiliare }] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
@@ -23,8 +25,10 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId, uid } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    agencyIdForLog = agencyId;
     const body = await request.json().catch(() => ({}));
     const propertyId = typeof body?.propertyId === 'string' ? body.propertyId.trim() : '';
+    propertyIdForLog = propertyId || null;
 
     if (!propertyId) {
       return NextResponse.json({ message: 'Lipseste proprietatea pentru publicare.' }, { status: 400 });
@@ -38,6 +42,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);
+    console.error('[imobiliare] publish route failed', {
+      agencyId: agencyIdForLog,
+      propertyId: propertyIdForLog,
+      status: formatted.status,
+      message: formatted.message,
+      details: formatted.details,
+    });
     return NextResponse.json({ message: formatted.message, details: formatted.details }, { status: formatted.status });
   }
 }

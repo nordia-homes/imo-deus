@@ -4,8 +4,9 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { ImobiliarePortalProfile, Property } from "@/lib/types";
-import { useFirestore, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { useAgency } from "@/context/AgencyContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,49 @@ type ImobiliareLocationOption = {
   parent?: ImobiliareLocationOption | null;
 };
 
+function sanitizeCategoryOptions(categories: ImobiliareCategoryOption[]) {
+  const byId = new Map<number, ImobiliareCategoryOption>();
+
+  for (const category of categories) {
+    if (!category || typeof category.id !== 'number') {
+      continue;
+    }
+
+    const name = (category.name || '').trim();
+    if (!name) {
+      continue;
+    }
+
+    byId.set(category.id, {
+      ...category,
+      name,
+      parentName: category.parentName?.trim() || null,
+      selectable: category.selectable !== false,
+    });
+  }
+
+  return Array.from(byId.values()).sort((left, right) => {
+    const leftLabel = `${left.parentName || ''} ${left.name}`.trim();
+    const rightLabel = `${right.parentName || ''} ${right.name}`.trim();
+    return leftLabel.localeCompare(rightLabel, 'ro');
+  });
+}
+
+function sanitizeLocationOptions(locations: ImobiliareLocationOption[]) {
+  const byId = new Map<number, ImobiliareLocationOption>();
+
+  for (const location of locations) {
+    if (!location || typeof location.id !== 'number' || location.is_hidden) {
+      continue;
+    }
+    byId.set(location.id, location);
+  }
+
+  const visible = Array.from(byId.values());
+  const depth3 = visible.filter((location) => location.depth === 3);
+  return depth3.length ? depth3 : visible;
+}
+
 function normalizeLocationText(value?: string | null) {
   return (value || '')
     .normalize('NFD')
@@ -144,8 +188,23 @@ function buildDraft(profile?: ImobiliarePortalProfile): PortalSettingsDraft {
   };
 }
 
-async function authorizedFetch(user: NonNullable<ReturnType<typeof useUser>['user']>, input: RequestInfo, init?: RequestInit) {
-  const token = await user.getIdToken();
+async function authorizedFetch(
+  user: NonNullable<ReturnType<typeof useUser>['user']>,
+  auth: ReturnType<typeof useAuth>,
+  input: RequestInfo,
+  init?: RequestInit
+) {
+  let token: string;
+  try {
+    token = await user.getIdToken(true);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || '');
+    if (message.includes('auth/invalid-credential') || message.includes('invalid-credential')) {
+      await signOut(auth).catch(() => undefined);
+      throw new Error('Sesiunea Firebase nu mai este valida. Autentifica-te din nou si reincearca.');
+    }
+    throw error;
+  }
   return fetch(input, {
     ...init,
     headers: {
@@ -160,6 +219,7 @@ export function PublishCard({ property }: { property: Property }) {
   const { toast } = useToast();
   const { agencyId } = useAgency();
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -213,7 +273,7 @@ export function PublishCard({ property }: { property: Property }) {
     if (!user) return;
     setIsLoadingCategories(true);
     try {
-      const response = await authorizedFetch(user, '/api/imobiliare/categories', {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/categories', {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -224,17 +284,13 @@ export function PublishCard({ property }: { property: Property }) {
         throw new Error(payload?.message || 'Nu am putut incarca categoriile din imobiliare.ro.');
       }
 
-      const nextCategories = Array.isArray(payload?.data) ? payload.data as ImobiliareCategoryOption[] : [];
-      const selectable = nextCategories
-        .filter((item) => item?.selectable !== false && typeof item?.id === 'number' && item.id >= 100)
-        .sort((left, right) => {
-          const leftLabel = `${left.parentName || ''} ${left.name || ''}`.trim();
-          const rightLabel = `${right.parentName || ''} ${right.name || ''}`.trim();
-          return leftLabel.localeCompare(rightLabel, 'ro');
-        });
+      const nextCategories = Array.isArray(payload?.data) ? sanitizeCategoryOptions(payload.data as ImobiliareCategoryOption[]) : [];
+      const strict = nextCategories.filter((item) => item.selectable !== false && item.id >= 100);
+      const fallback = nextCategories.filter((item) => item.selectable !== false);
+      const selectable = strict.length ? strict : fallback.length ? fallback : nextCategories;
       setCategories(selectable);
       setSettingsDraft((current) => {
-        if (!current.categoryApi) {
+        if (!current.categoryApi || !selectable.length) {
           return current;
         }
         const exists = selectable.some((item) => String(item.id) === current.categoryApi);
@@ -255,7 +311,7 @@ export function PublishCard({ property }: { property: Property }) {
     if (!user) return;
     setIsLoadingLocations(true);
     try {
-      const response = await authorizedFetch(user, '/api/imobiliare/locations', {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/locations', {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -266,13 +322,11 @@ export function PublishCard({ property }: { property: Property }) {
         throw new Error(payload?.message || 'Nu am putut incarca locatiile din imobiliare.ro.');
       }
 
-      const nextLocations = Array.isArray(payload?.data) ? payload.data as ImobiliareLocationOption[] : [];
-      const visibleLocations = nextLocations.filter((location) => location && typeof location.id === 'number' && !location.is_hidden);
-      const depth3Locations = visibleLocations.filter((location) => location.depth === 3);
-      const availableLocations = depth3Locations.length ? depth3Locations : visibleLocations;
+      const nextLocations = Array.isArray(payload?.data) ? sanitizeLocationOptions(payload.data as ImobiliareLocationOption[]) : [];
+      const availableLocations = nextLocations;
       setLocations(availableLocations);
       setSettingsDraft((current) => {
-        if (!current.locationId) {
+        if (!current.locationId || !availableLocations.length) {
           return current;
         }
         const exists = availableLocations.some((item) => String(item.id) === current.locationId);
@@ -302,7 +356,7 @@ export function PublishCard({ property }: { property: Property }) {
     setIsSubmitting(true);
     try {
       const endpoint = checked ? '/api/imobiliare/publish' : '/api/imobiliare/unpublish';
-      const response = await authorizedFetch(user, endpoint, {
+      const response = await authorizedFetch(user, auth, endpoint, {
         method: 'POST',
         body: JSON.stringify({ propertyId: property.id }),
       });
@@ -481,28 +535,42 @@ export function PublishCard({ property }: { property: Property }) {
                         <div className="grid gap-4 pb-4 md:grid-cols-2">
                           <div className="space-y-2">
                             <Label className="text-white/80">categoryApi</Label>
-                            <Select
-                              value={settingsDraft.categoryApi || undefined}
-                              onValueChange={(value) => setSettingsDraft((s) => ({ ...s, categoryApi: value }))}
-                            >
-                              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                                <SelectValue placeholder={isLoadingCategories ? 'Se incarca categoriile...' : 'Selecteaza categoria'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.map((category) => {
-                                  const label = [
-                                    category.parentName,
-                                    category.name,
-                                    category.offerType ? `(${category.offerType})` : null,
-                                  ].filter(Boolean).join(' / ');
-                                  return (
-                                    <SelectItem key={category.id} value={String(category.id)}>
-                                      {label}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
+                            {categories.length ? (
+                              <Select
+                                value={settingsDraft.categoryApi || undefined}
+                                onValueChange={(value) => setSettingsDraft((s) => ({ ...s, categoryApi: value }))}
+                              >
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                  <SelectValue placeholder={isLoadingCategories ? 'Se incarca categoriile...' : 'Selecteaza categoria'} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((category) => {
+                                    const label = [
+                                      category.parentName,
+                                      category.name,
+                                      category.offerType ? `(${category.offerType})` : null,
+                                    ].filter(Boolean).join(' / ');
+                                    return (
+                                      <SelectItem key={category.id} value={String(category.id)}>
+                                        {label}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input
+                                value={settingsDraft.categoryApi}
+                                onChange={(e) => setSettingsDraft((s) => ({ ...s, categoryApi: e.target.value }))}
+                                placeholder={isLoadingCategories ? 'Se incarca categoriile...' : 'Introdu categoryApi manual'}
+                                className="bg-white/10 border-white/20 text-white"
+                              />
+                            )}
+                            {!categories.length ? (
+                              <p className="text-xs text-white/55">
+                                Dropdown indisponibil pentru acest cont. Poti introduce manual `categoryApi`.
+                              </p>
+                            ) : null}
                             {settingsDraft.categoryApi ? (
                               <p className="text-xs text-white/55">
                                 ID selectat: {settingsDraft.categoryApi}
@@ -523,7 +591,7 @@ export function PublishCard({ property }: { property: Property }) {
                                   const pathLabel = collectLocationLabels(location).join(' / ') || location.custom_display || `Locatie ${location.id}`;
                                   return (
                                     <SelectItem key={location.id} value={String(location.id)}>
-                                      {pathLabel}
+                                      {`${pathLabel} [id:${location.id}${location.depth ? `, d:${location.depth}` : ''}]`}
                                     </SelectItem>
                                   );
                                 })}

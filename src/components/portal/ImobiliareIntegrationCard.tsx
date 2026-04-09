@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 type IntegrationStatus = {
   connected: boolean;
@@ -27,8 +28,23 @@ type Props = {
   onStatusChange?: () => void;
 };
 
-async function authorizedFetch(user: NonNullable<ReturnType<typeof useUser>['user']>, input: RequestInfo, init?: RequestInit) {
-  const token = await user.getIdToken();
+async function authorizedFetch(
+  user: NonNullable<ReturnType<typeof useUser>['user']>,
+  auth: ReturnType<typeof useAuth>,
+  input: RequestInfo,
+  init?: RequestInit
+) {
+  let token: string;
+  try {
+    token = await user.getIdToken(true);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || '');
+    if (message.includes('auth/invalid-credential') || message.includes('invalid-credential')) {
+      await signOut(auth).catch(() => undefined);
+      throw new Error('Sesiunea Firebase nu mai este valida. Autentifica-te din nou si reconecteaza contul.');
+    }
+    throw error;
+  }
   return fetch(input, {
     ...init,
     headers: {
@@ -41,6 +57,7 @@ async function authorizedFetch(user: NonNullable<ReturnType<typeof useUser>['use
 
 export default function ImobiliareIntegrationCard({ listings, errors, lastSync, onStatusChange }: Props) {
   const { user } = useUser();
+  const auth = useAuth();
   const { toast } = useToast();
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +77,7 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
       }
 
       try {
-        const response = await authorizedFetch(user, '/api/imobiliare/status', {
+          const response = await authorizedFetch(user, auth, '/api/imobiliare/status', {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -107,7 +124,7 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
 
     setIsSubmitting(true);
     try {
-      const response = await authorizedFetch(user, '/api/imobiliare/connect', {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/connect', {
         method: 'POST',
         body: JSON.stringify({
           username: username.trim(),
@@ -142,7 +159,7 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
     if (!user) return;
     setIsSubmitting(true);
     try {
-      const response = await authorizedFetch(user, '/api/imobiliare/disconnect', {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/disconnect', {
         method: 'POST',
       });
       const payload = await response.json().catch(() => ({}));
