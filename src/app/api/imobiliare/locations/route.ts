@@ -16,13 +16,13 @@ function formatError(error: unknown) {
 
 export async function GET(request: NextRequest) {
   try {
-    const [{ requireAgencyUserFromBearerToken }, { getImobiliareLocations }] = await Promise.all([
+    const [{ requireAgencyUserFromBearerToken }, { getImobiliareLocationCatalog }] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
       import('@/lib/imobiliare'),
     ]);
 
     const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
-    const locations = await getImobiliareLocations(agencyId);
+    const locations = await getImobiliareLocationCatalog(agencyId);
     return NextResponse.json({ data: locations }, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

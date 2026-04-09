@@ -2,12 +2,70 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+function extractErrorText(details: unknown) {
+  if (!details) {
+    return '';
+  }
+
+  if (typeof details === 'string') {
+    return details;
+  }
+
+  if (typeof details !== 'object') {
+    return '';
+  }
+
+  const record = details as {
+    message?: unknown;
+    error?: unknown;
+    error_description?: unknown;
+    errors?: Record<string, unknown>;
+  };
+
+  if (record.errors && typeof record.errors === 'object') {
+    const flattened = Object.entries(record.errors)
+      .flatMap(([field, value]) => {
+        if (Array.isArray(value)) {
+          return value
+            .filter((item): item is string => typeof item === 'string' && Boolean(item))
+            .map((item) => `${field}: ${item}`);
+        }
+
+        if (typeof value === 'string' && value) {
+          return [`${field}: ${value}`];
+        }
+
+        return [];
+      })
+      .filter(Boolean);
+
+    if (flattened.length) {
+      return flattened.join(' | ');
+    }
+  }
+
+  if (typeof record.error_description === 'string' && record.error_description) {
+    return record.error_description;
+  }
+
+  if (typeof record.error === 'string' && record.error) {
+    return record.error;
+  }
+
+  if (typeof record.message === 'string' && record.message) {
+    return record.message;
+  }
+
+  return '';
+}
+
 function formatError(error: unknown) {
   if (error && typeof error === 'object' && 'status' in error) {
     const status = typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 500;
-    const message = error instanceof Error ? error.message : 'A aparut o eroare neasteptata la publicarea in imobiliare.ro.';
     const details = 'payload' in error ? (error as { payload?: unknown }).payload : null;
-    return { status, message, details };
+    const detailMessage = extractErrorText(details);
+    const fallbackMessage = error instanceof Error ? error.message : 'A aparut o eroare neasteptata la publicarea in imobiliare.ro.';
+    return { status, message: detailMessage || fallbackMessage, details };
   }
   if (error instanceof Error) {
     return { status: 500, message: error.message, details: null };

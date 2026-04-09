@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
+import path from 'path';
 import { adminDb } from '@/firebase/admin';
 import type {
   ImobiliareIntegrationPrivate,
@@ -16,6 +17,7 @@ const IMOBILIARE_LOCATIONS_SQL_PATHS = [
   process.env.IMOBILIARE_LOCATIONS_SQL_PATH,
   'C:\\Users\\Cristian\\Desktop\\Imodeus\\API imobiliare\\locations.sql',
 ].filter(Boolean) as string[];
+const IMOBILIARE_LOCATIONS_INDEX_PATH = path.join(process.cwd(), 'src', 'data', 'imobiliare-locations-index.json');
 
 type ImobiliareApiErrorPayload = {
   message?: string;
@@ -55,6 +57,18 @@ type LocationOption = {
   parent_id?: number | null;
   parent?: LocationOption | null;
   custom_display?: string;
+};
+
+export type ImobiliareLocationCatalogEntry = {
+  id: number;
+  oldId?: number | null;
+  title: string;
+  depth?: number;
+  county?: string;
+  locality?: string;
+  zone?: string;
+  display: string;
+  searchText: string;
 };
 
 type ParsedLocationCandidate = {
@@ -174,9 +188,6 @@ function parseStreet(address?: string | null) {
 function extractMessage(payload: ImobiliareApiErrorPayload | string | null | undefined, fallback: string) {
   if (!payload) return fallback;
   if (typeof payload === 'string') return payload || fallback;
-  if (typeof payload.error_description === 'string' && payload.error_description) return payload.error_description;
-  if (typeof payload.message === 'string' && payload.message) return payload.message;
-  if (typeof payload.error === 'string' && payload.error) return payload.error;
   if (payload.errors && typeof payload.errors === 'object') {
     const flattened = Object.entries(payload.errors)
       .flatMap(([field, messages]) =>
@@ -189,6 +200,9 @@ function extractMessage(payload: ImobiliareApiErrorPayload | string | null | und
       return flattened.join(' | ');
     }
   }
+  if (typeof payload.error_description === 'string' && payload.error_description) return payload.error_description;
+  if (typeof payload.message === 'string' && payload.message) return payload.message;
+  if (typeof payload.error === 'string' && payload.error) return payload.error;
   return fallback;
 }
 
@@ -289,6 +303,16 @@ async function loadSqlLocationRows() {
     } catch {
       continue;
     }
+  }
+
+  try {
+    const bundled = JSON.parse(await readFile(IMOBILIARE_LOCATIONS_INDEX_PATH, 'utf8')) as SqlLocationRow[];
+    if (Array.isArray(bundled) && bundled.length) {
+      sqlLocationsCache = bundled;
+      return sqlLocationsCache;
+    }
+  } catch {
+    // Fall through to API-backed locations below.
   }
 
   sqlLocationsCache = [];
@@ -489,13 +513,13 @@ function extractAgents(payload: unknown): RemoteAgent[] {
 function extractCategories(payload: unknown): CategoryOption[] {
   const seen = new Map<number, CategoryOption>();
 
-  const visit = (node: unknown, parentName?: string | null) => {
+  const visit = (node: unknown, parentName?: string | null, inheritedCategoryApi?: number | null) => {
     if (!node || typeof node !== 'object') {
       return;
     }
 
     if (Array.isArray(node)) {
-      node.forEach((entry) => visit(entry, parentName));
+      node.forEach((entry) => visit(entry, parentName, inheritedCategoryApi));
       return;
     }
 
@@ -505,6 +529,8 @@ function extractCategories(payload: unknown): CategoryOption[] {
         ? record.id
         : typeof record.category_api === 'number'
           ? record.category_api
+          : typeof inheritedCategoryApi === 'number'
+            ? inheritedCategoryApi
           : typeof record.category_id === 'number'
             ? record.category_id
             : null;
@@ -537,8 +563,9 @@ function extractCategories(payload: unknown): CategoryOption[] {
     }
 
     const nextParentName = ownName || parentName || null;
-    for (const value of Object.values(record)) {
-      visit(value, nextParentName);
+    for (const [key, value] of Object.entries(record)) {
+      const numericKey = /^\d+$/.test(key) ? Number(key) : null;
+      visit(value, nextParentName, numericKey ?? inheritedCategoryApi ?? null);
     }
   };
 
@@ -626,6 +653,27 @@ function collectLocationAncestors(location?: LocationOption | null): LocationOpt
   return result;
 }
 
+function getLocationPath(location?: LocationOption | null) {
+  if (!location) {
+    return [] as LocationOption[];
+  }
+
+  return [...collectLocationAncestors(location)].reverse().concat(location);
+}
+
+function formatLocationDisplay(location: LocationOption) {
+  const customDisplay = location.custom_display?.trim();
+  if (customDisplay) {
+    return customDisplay;
+  }
+
+  const parts = getLocationPath(location)
+    .map((item) => item.title?.trim())
+    .filter((item): item is string => Boolean(item));
+
+  return parts.join(' / ') || location.title?.trim() || String(location.id);
+}
+
 function tokenizeLocationText(value?: string | null): ParsedLocationCandidate[] {
   return (value || '')
     .split(/[,/|-]/g)
@@ -640,7 +688,6 @@ function buildLocationSearchTerms(property: Property) {
     property.city,
     property.zone,
     property.location,
-    property.address,
   ].filter(Boolean) as string[];
 
   const tokens = values.flatMap((value) => tokenizeLocationText(value));
@@ -652,6 +699,14 @@ function buildLocationSearchTerms(property: Property) {
   }
 
   return Array.from(unique.values());
+}
+
+function findLocationByLegacyId(locations: LocationOption[], legacyId?: number | null) {
+  if (typeof legacyId !== 'number') {
+    return null;
+  }
+
+  return locations.find((item) => item.old_id === legacyId) || null;
 }
 
 function getLocationHaystack(location: LocationOption) {
@@ -785,6 +840,62 @@ function sanitizeLocationOptions(locations: LocationOption[]) {
   const visible = Array.from(byId.values());
   const depth3 = visible.filter((location) => location.depth === 3);
   return depth3.length ? depth3 : visible;
+}
+
+function buildLocationCatalog(locations: LocationOption[]): ImobiliareLocationCatalogEntry[] {
+  const visible = locations.filter((location) => location && typeof location.id === 'number' && !location.is_hidden);
+  const visibleChildCounts = new Map<number, number>();
+
+  for (const location of visible) {
+    if (typeof location.parent_id === 'number') {
+      visibleChildCounts.set(location.parent_id, (visibleChildCounts.get(location.parent_id) || 0) + 1);
+    }
+  }
+
+  const candidates = visible.filter((location) => {
+    if (location.depth === 3) {
+      return true;
+    }
+    if (location.depth === 2) {
+      return !visibleChildCounts.has(location.id);
+    }
+    return false;
+  });
+
+  const byId = new Map<number, ImobiliareLocationCatalogEntry>();
+
+  for (const location of candidates) {
+    const path = getLocationPath(location);
+    const county = path.find((item) => item.depth === 1)?.title?.trim();
+    const locality = path.find((item) => item.depth === 2)?.title?.trim() || location.title?.trim();
+    const zoneCandidate = path.find((item) => item.depth === 3)?.title?.trim();
+    const zone = zoneCandidate && normalizeText(zoneCandidate) !== normalizeText(locality) ? zoneCandidate : undefined;
+    const display = formatLocationDisplay(location);
+    const searchText = [
+      display,
+      location.title,
+      county,
+      locality,
+      zone,
+      location.custom_display,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    byId.set(location.id, {
+      id: location.id,
+      oldId: location.old_id,
+      title: location.title?.trim() || display,
+      depth: location.depth,
+      county,
+      locality,
+      zone,
+      display,
+      searchText,
+    });
+  }
+
+  return Array.from(byId.values()).sort((left, right) => left.display.localeCompare(right.display, 'ro'));
 }
 
 async function persistPublishAudit(params: {
@@ -954,21 +1065,31 @@ async function resolveLocationIdForPublish(agencyId: string, property: Property,
     throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
   }
 
-  const explicitZoneMatch = publishableLocations.find((item) => {
-    const zone = normalizeText(property.zone);
-    const locationText = normalizeText(property.location);
-    const title = normalizeText(item.title);
-    return Boolean((zone && title === zone) || (locationText && title === locationText));
-  });
-  if (explicitZoneMatch?.id) {
-    return explicitZoneMatch.id;
-  }
-
   if (typeof portalProfile?.locationId === 'number') {
     const exactDepth3Match = publishableLocations.find((item) => item.id === portalProfile.locationId);
     if (exactDepth3Match?.id) {
       return exactDepth3Match.id;
     }
+
+    const migratedDepth3Match = findLocationByLegacyId(publishableLocations, portalProfile.locationId);
+    if (migratedDepth3Match?.id) {
+      return migratedDepth3Match.id;
+    }
+  }
+
+  const explicitZoneMatch = publishableLocations.find((item) => {
+    const zone = normalizeText(property.zone);
+    const locationText = normalizeText(property.location);
+    const title = normalizeText(item.title);
+    const customDisplay = normalizeText(item.custom_display);
+    const haystack = getLocationHaystack(item);
+    return Boolean(
+      (zone && (title === zone || customDisplay === zone || haystack.includes(zone))) ||
+      (locationText && (title === locationText || customDisplay === locationText || haystack.includes(locationText)))
+    );
+  });
+  if (explicitZoneMatch?.id) {
+    return explicitZoneMatch.id;
   }
 
   const preferred = pickBestLocationCandidate(publishableLocations, property);
@@ -1214,17 +1335,7 @@ async function upsertListing(agencyId: string, payload: Record<string, unknown>)
   const existing = await getListingByCustomReference(agencyId, customReference);
 
   if (existing?.data) {
-    return imobiliareRequest<{ data?: Record<string, unknown> }>(
-      agencyId,
-      `/api/v3/listings/${encodeURIComponent(customReference)}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    return updateListing(agencyId, customReference, payload);
   }
 
   return imobiliareRequest<Record<string, unknown>>(agencyId, '/api/v3/listings', {
@@ -1234,6 +1345,20 @@ async function upsertListing(agencyId: string, payload: Record<string, unknown>)
     },
     body: JSON.stringify(payload),
   });
+}
+
+async function updateListing(agencyId: string, customReference: string, payload: Record<string, unknown>) {
+  return imobiliareRequest<{ data?: Record<string, unknown> }>(
+    agencyId,
+    `/api/v3/listings/${encodeURIComponent(customReference)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 }
 
 async function uploadListingMedia(agencyId: string, customReference: string, property: Property) {
@@ -1251,7 +1376,7 @@ async function uploadListingMedia(agencyId: string, customReference: string, pro
     const mimeType = response.headers.get('content-type') || 'image/jpeg';
     const extension = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg';
     const blob = new Blob([arrayBuffer], { type: mimeType });
-    formData.append('images', blob, `property-${customReference}-${index + 1}.${extension}`);
+    formData.append('images[]', blob, `property-${customReference}-${index + 1}.${extension}`);
   }
 
   await imobiliareRequest<unknown>(agencyId, `/api/v3/listings/${encodeURIComponent(customReference)}/medias`, {
@@ -1317,23 +1442,31 @@ async function persistPropertyPublishState(params: {
   customReference: string;
   result: { remoteId?: number; path?: string | null; state?: string | null; errorMessage?: string | null };
   payloadHash?: string | null;
+  portalProfilePatch?: Partial<ImobiliarePortalProfile>;
 }) {
-  const { agencyId, propertyId, customReference, result, payloadHash } = params;
+  const { agencyId, propertyId, customReference, result, payloadHash, portalProfilePatch } = params;
+  const promotionPatch = {
+    status: result.errorMessage ? 'error' : result.state === 'draft' ? 'pending' : 'published',
+    lastSync: nowIso(),
+    link: result.path ?? null,
+    remoteId: typeof result.remoteId === 'number' ? result.remoteId : null,
+    remoteState: result.state ?? null,
+    errorMessage: result.errorMessage ?? null,
+  };
+
+  const normalizedPortalProfilePatch = Object.fromEntries(
+    Object.entries(portalProfilePatch || {}).map(([key, value]) => [key, value ?? null])
+  );
+
   await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
     {
       promotions: {
-        imobiliare: {
-          status: result.errorMessage ? 'error' : result.state === 'draft' ? 'pending' : 'published',
-          lastSync: nowIso(),
-          link: result.path || undefined,
-          remoteId: result.remoteId,
-          remoteState: result.state || undefined,
-          errorMessage: result.errorMessage || undefined,
-        },
+        imobiliare: promotionPatch,
       },
       portalProfiles: {
         imobiliare: {
           customReference,
+          ...normalizedPortalProfilePatch,
           lastValidationError: result.errorMessage || null,
           lastPublishedAt: result.errorMessage ? null : nowIso(),
           lastPayloadHash: payloadHash || null,
@@ -1499,7 +1632,7 @@ export async function publishPropertyToImobiliare(params: {
   });
 
   const payloadHash = getPayloadHash(payload);
-  let listingResponse: Record<string, unknown> | { data?: Record<string, unknown> };
+  let listingResponse: Record<string, unknown> | { data?: Record<string, unknown> } | null = null;
   try {
     listingResponse = await upsertListing(agencyId, payload);
   } catch (error) {
@@ -1527,45 +1660,60 @@ export async function publishPropertyToImobiliare(params: {
       },
     });
     const allowedCategoryIds = extractAllowedNumericValues(errorMessage, 'category_api');
+    const hasInvalidLocationError = /location_id/i.test(errorMessage);
 
-    if (allowedCategoryIds.length) {
-      const retryCategoryApi = await resolveCategoryApi(agencyId, property, portalProfile, allowedCategoryIds);
-      const retryPayload = buildListingPayload({
-        property,
-        portalProfile: {
-          ...(portalProfile || {}),
-          categoryApi: retryCategoryApi,
-        },
-        remoteAgentId,
-        categoryApi: retryCategoryApi,
-        locationId,
-      });
+    if (hasInvalidLocationError) {
+      try {
+        listingResponse = await updateListing(agencyId, String(payload.custom_reference), payload);
+        console.info('[imobiliare] publish retry force update after location_id error', {
+          ...auditLog,
+          locationId,
+        });
+      } catch {
+        // Continue with the normal fallback branches below.
+      }
+    }
 
-      listingResponse = await upsertListing(agencyId, retryPayload);
-      console.info('[imobiliare] publish retry category_api', {
-        ...auditLog,
-        retryCategoryApi,
-      });
-      await persistPublishAudit({
-        agencyId,
-        propertyId,
-        entry: {
-          attemptedAt: nowIso(),
-          stage: 'retry-category',
-          request: retryPayload,
+    if (!listingResponse) {
+      if (allowedCategoryIds.length) {
+        const retryCategoryApi = await resolveCategoryApi(agencyId, property, portalProfile, allowedCategoryIds);
+        const retryPayload = buildListingPayload({
+          property,
+          portalProfile: {
+            ...(portalProfile || {}),
+            categoryApi: retryCategoryApi,
+          },
+          remoteAgentId,
           categoryApi: retryCategoryApi,
           locationId,
-          remoteAgentId,
-        },
-      });
-    } else {
-      throw error;
+        });
+
+        listingResponse = await upsertListing(agencyId, retryPayload);
+        console.info('[imobiliare] publish retry category_api', {
+          ...auditLog,
+          retryCategoryApi,
+        });
+        await persistPublishAudit({
+          agencyId,
+          propertyId,
+          entry: {
+            attemptedAt: nowIso(),
+            stage: 'retry-category',
+            request: retryPayload,
+            categoryApi: retryCategoryApi,
+            locationId,
+            remoteAgentId,
+          },
+        });
+      } else {
+        throw error;
+      }
     }
   }
 
-  await uploadListingMedia(agencyId, String(payload.custom_reference), property);
-  await syncMediaLinks(agencyId, String(payload.custom_reference), portalProfile);
-  await applyPromotions(agencyId, String(payload.custom_reference), portalProfile);
+  if (!listingResponse) {
+    throw new Error('Publicarea in imobiliare.ro a esuat inainte de crearea listingului.');
+  }
 
   const listingData = ('data' in listingResponse ? listingResponse.data : listingResponse) as Record<string, unknown> | undefined;
   const result = {
@@ -1576,12 +1724,88 @@ export async function publishPropertyToImobiliare(params: {
     title: typeof listingData?.title === 'string' ? listingData.title : null,
   };
 
+  try {
+    try {
+      await uploadListingMedia(agencyId, result.customReference, property);
+    } catch (error) {
+      const typedError = error as ImobiliareApiError;
+      const errorMessage = typedError.message || extractMessage(typedError.payload, 'Uploadul imaginilor catre imobiliare.ro a esuat.');
+      throw Object.assign(new Error(`media: ${errorMessage}`), {
+        status: typedError.status,
+        payload: typedError.payload,
+      }) as ImobiliareApiError;
+    }
+
+    try {
+      await syncMediaLinks(agencyId, result.customReference, portalProfile);
+    } catch (error) {
+      const typedError = error as ImobiliareApiError;
+      const errorMessage = typedError.message || extractMessage(typedError.payload, 'Sincronizarea linkurilor media catre imobiliare.ro a esuat.');
+      throw Object.assign(new Error(`media-links: ${errorMessage}`), {
+        status: typedError.status,
+        payload: typedError.payload,
+      }) as ImobiliareApiError;
+    }
+
+    try {
+      await applyPromotions(agencyId, result.customReference, portalProfile);
+    } catch (error) {
+      const typedError = error as ImobiliareApiError;
+      const errorMessage = typedError.message || extractMessage(typedError.payload, 'Activarea anuntului pe imobiliare.ro a esuat.');
+      throw Object.assign(new Error(`promotions: ${errorMessage}`), {
+        status: typedError.status,
+        payload: typedError.payload,
+      }) as ImobiliareApiError;
+    }
+  } catch (error) {
+    const typedError = error as ImobiliareApiError;
+    const errorMessage = typedError.message || extractMessage(typedError.payload, 'Listingul a fost creat, dar sincronizarea finala cu imobiliare.ro a esuat.');
+
+    await persistPropertyPublishState({
+      agencyId,
+      propertyId,
+      customReference: result.customReference,
+      result: {
+        ...result,
+        errorMessage,
+      },
+      payloadHash,
+      portalProfilePatch: {
+        categoryApi,
+        locationId,
+        remoteAgentId,
+      },
+    });
+    await persistPublishAudit({
+      agencyId,
+      propertyId,
+      entry: {
+        attemptedAt: nowIso(),
+        stage: 'error',
+        request: payload,
+        categoryApi,
+        locationId,
+        remoteAgentId,
+        responseStatus: typedError.status || null,
+        responsePayload: typedError.payload || null,
+        errorMessage,
+      },
+    });
+
+    throw error;
+  }
+
   await persistPropertyPublishState({
     agencyId,
     propertyId,
     customReference: result.customReference,
     result,
     payloadHash,
+    portalProfilePatch: {
+      categoryApi,
+      locationId,
+      remoteAgentId,
+    },
   });
   await persistPublishAudit({
     agencyId,
@@ -1665,4 +1889,8 @@ export async function getImobiliareCategories(agencyId: string) {
 
 export async function getImobiliareLocations(agencyId: string) {
   return sanitizeLocationOptions(await getAvailableImobiliareLocations(agencyId));
+}
+
+export async function getImobiliareLocationCatalog(agencyId: string) {
+  return buildLocationCatalog(await getAvailableImobiliareLocations(agencyId));
 }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@/lib/types";
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
+import { useAgency } from "@/context/AgencyContext";
 
 const ImobiliareLogo = () => (
   <svg viewBox="0 0 130 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
@@ -40,6 +42,79 @@ const PORTALS = [
   { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
   { id: 'olx', name: 'OLX.ro', logo: <OlxLogo /> },
 ];
+
+function formatApiErrorDetails(details: unknown): string {
+  if (!details) {
+    return '';
+  }
+
+  if (typeof details === 'string') {
+    return details;
+  }
+
+  if (typeof details !== 'object') {
+    return '';
+  }
+
+  const record = details as {
+    message?: unknown;
+    error?: unknown;
+    error_description?: unknown;
+    errors?: Record<string, unknown>;
+  };
+
+  if (record.errors && typeof record.errors === 'object') {
+    const flattened = Object.entries(record.errors)
+      .flatMap(([field, value]) => {
+        if (Array.isArray(value)) {
+          return value
+            .filter((item): item is string => typeof item === 'string' && Boolean(item))
+            .map((item) => `${field}: ${item}`);
+        }
+
+        if (typeof value === 'string' && value) {
+          return [`${field}: ${value}`];
+        }
+
+        return [];
+      })
+      .filter(Boolean);
+
+    if (flattened.length) {
+      return flattened.join(' | ');
+    }
+  }
+
+  return [
+    typeof record.error_description === 'string' ? record.error_description : '',
+    typeof record.error === 'string' ? record.error : '',
+    typeof record.message === 'string' ? record.message : '',
+  ].filter(Boolean).join(' | ');
+}
+
+function getPersistedImobiliareError(propertyLike: {
+  promotions?: { imobiliare?: { status?: string | null; errorMessage?: string | null } | null } | null;
+  portalProfiles?: { imobiliare?: Record<string, unknown> | null } | null;
+}) {
+  const promotionStatus = propertyLike.promotions?.imobiliare?.status;
+  const genericError = propertyLike.promotions?.imobiliare?.errorMessage;
+  const profile = propertyLike.portalProfiles?.imobiliare as
+    | {
+        lastValidationError?: string | null;
+        lastPublishAudit?: { stage?: string | null; responsePayload?: unknown } | null;
+      }
+    | null
+    | undefined;
+
+  const auditError = formatApiErrorDetails(profile?.lastPublishAudit?.responsePayload);
+  if (
+    profile?.lastPublishAudit?.stage === 'success' ||
+    (promotionStatus === 'published' && !genericError && !profile?.lastValidationError)
+  ) {
+    return '';
+  }
+  return auditError || profile?.lastValidationError || genericError || '';
+}
 
 async function authorizedFetch(
   user: NonNullable<ReturnType<typeof useUser>['user']>,
@@ -70,16 +145,39 @@ async function authorizedFetch(
 
 export function PublishCard({ property }: { property: Property }) {
   const { toast } = useToast();
+  const { agencyId } = useAgency();
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const propertyRef = useMemo(() => {
+    if (!agencyId) {
+      return null;
+    }
+
+    return doc(firestore, 'agencies', agencyId, 'properties', property.id);
+  }, [agencyId, firestore, property.id]);
 
   const imobiliarePromotion = property.promotions?.imobiliare;
   const imobiliareProfile = property.portalProfiles?.imobiliare;
   const isPublished = imobiliarePromotion?.status === 'published';
   const isPending = isSubmitting || imobiliarePromotion?.status === 'pending';
   const isErrored = imobiliarePromotion?.status === 'error';
+  const persistedError = getPersistedImobiliareError(property);
+
+  async function loadLatestImobiliareError() {
+    if (!propertyRef) {
+      return '';
+    }
+
+    const snapshot = await getDoc(propertyRef);
+    if (!snapshot.exists()) {
+      return '';
+    }
+
+    return getPersistedImobiliareError(snapshot.data() as Property & Record<string, unknown>);
+  }
 
   async function handlePublishToggle(portalId: string, checked: boolean) {
     if (portalId !== 'imobiliare') {
@@ -100,12 +198,7 @@ export function PublishCard({ property }: { property: Property }) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const detailText =
-          payload?.details && typeof payload.details === 'object'
-            ? JSON.stringify(payload.details)
-            : typeof payload?.details === 'string'
-              ? payload.details
-              : '';
+        const detailText = formatApiErrorDetails(payload?.details);
         throw new Error([payload?.message, detailText].filter(Boolean).join(' | ') || 'Actiunea nu a putut fi finalizata.');
       }
 
@@ -116,9 +209,17 @@ export function PublishCard({ property }: { property: Property }) {
           : 'Proprietatea a fost retrasa din imobiliare.ro.',
       });
     } catch (error) {
+      let description = error instanceof Error ? error.message : 'A aparut o eroare neasteptata.';
+      if (/^Server Error\.(\s*\|\s*Server Error\.)?$/i.test(description.trim())) {
+        const latestError = await loadLatestImobiliareError().catch(() => '');
+        if (latestError) {
+          description = latestError;
+        }
+      }
+
       toast({
         title: checked ? 'Publicare esuata' : 'Retragere esuata',
-        description: error instanceof Error ? error.message : 'A aparut o eroare neasteptata.',
+        description,
         variant: 'destructive',
       });
     } finally {
@@ -203,9 +304,9 @@ export function PublishCard({ property }: { property: Property }) {
           );
         })}
 
-        {(imobiliarePromotion?.errorMessage || imobiliareProfile?.lastValidationError) ? (
+        {persistedError ? (
           <div className="rounded-xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
-            {imobiliarePromotion?.errorMessage || imobiliareProfile?.lastValidationError}
+            {persistedError}
           </div>
         ) : null}
 

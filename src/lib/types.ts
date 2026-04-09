@@ -40,6 +40,7 @@ export type ImobiliarePortalProfile = {
   descriptionOverride?: string;
   categoryApi?: number | null;
   locationId?: number | null;
+  locationLabel?: string | null;
   remoteAgentId?: number | null;
   priceCurrency?: 'EUR' | 'RON' | 'USD';
   streetName?: string;

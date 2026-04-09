@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronDown, Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
+import { Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -44,7 +44,6 @@ import { Card, CardContent } from '../ui/card';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 type AddressSuggestion = {
   label: string;
@@ -53,6 +52,18 @@ type AddressSuggestion = {
   zone?: string;
   latitude: number;
   longitude: number;
+};
+
+type ImobiliareLocationOption = {
+  id: number;
+  oldId?: number | null;
+  title: string;
+  depth?: number;
+  county?: string;
+  locality?: string;
+  zone?: string;
+  display: string;
+  searchText: string;
 };
 
 const PROPERTY_TYPE_OPTIONS = ['Apartament', 'Casă/Vilă', 'Garsonieră', 'Teren', 'Spațiu Comercial'] as const;
@@ -188,6 +199,76 @@ const deriveCityZoneFromLocation = (location?: string | null) => {
   return { city: detectedCity, zone: detectedZone };
 };
 
+const normalizeLocationOptionId = (value?: string | number | null) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  return '';
+};
+
+const derivePropertyLocationFromImobiliare = (location?: ImobiliareLocationOption | null) => {
+  if (!location) {
+    return { city: '', zone: '', location: '' };
+  }
+
+  const county = fixRomanianDiacritics(location.county);
+  const locality = fixRomanianDiacritics(location.locality || location.title);
+  const zone =
+    location.zone && normalizeText(location.zone) !== normalizeText(locality)
+      ? fixRomanianDiacritics(location.zone)
+      : '';
+  const display = fixRomanianDiacritics(location.display);
+  const isBucharest =
+    [county, locality, display].some((value) => normalizeText(value).includes('bucuresti')) ||
+    normalizeText(locality).includes('sector');
+
+  return {
+    city: isBucharest ? 'Bucuresti-Ilfov' : locality,
+    zone: zone || '',
+    location: display || [zone, locality, county].filter(Boolean).join(', '),
+  };
+};
+
+const matchesImobiliareLocation = (location: ImobiliareLocationOption, property?: Property | null) => {
+  if (!property) {
+    return false;
+  }
+
+  const explicitLocationId = property.portalProfiles?.imobiliare?.locationId;
+  if (typeof explicitLocationId === 'number') {
+    return explicitLocationId === location.id || explicitLocationId === location.oldId;
+  }
+
+  const candidates = [
+    property.portalProfiles?.imobiliare?.locationLabel,
+    property.location,
+    property.zone,
+    property.city,
+  ]
+    .map((value) => normalizeText(value))
+    .filter(Boolean);
+
+  if (!candidates.length) {
+    return false;
+  }
+
+  const haystack = [
+    location.display,
+    location.title,
+    location.county,
+    location.locality,
+    location.zone,
+  ]
+    .map((value) => normalizeText(value))
+    .filter(Boolean)
+    .join(' ');
+
+  return candidates.some((candidate) => haystack.includes(candidate));
+};
+
 const inferPropertyType = (propertyData: Property) => {
   const record = propertyData as unknown as Record<string, unknown>;
   const explicitValue =
@@ -272,6 +353,7 @@ const propertySchema = z.object({
   propertyType: z.string().min(1, { message: "Tipul proprietății este obligatoriu." }),
   transactionType: z.string().min(1, { message: "Tipul tranzacției este obligatoriu." }),
   address: z.string().min(1, { message: "Adresa este obligatorie." }),
+  imobiliareLocationId: z.string().optional(),
   city: z.string().optional(),
   zone: z.string().optional(),
   price: z.coerce.number().positive({ message: "Prețul trebuie să fie pozitiv." }),
@@ -320,6 +402,7 @@ const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
   propertyType: '',
   transactionType: 'Vânzare',
   address: '',
+  imobiliareLocationId: '',
   city: '',
   zone: '',
   price: 0,
@@ -370,6 +453,7 @@ const getPropertyFormValues = (propertyData: Property | null, userId?: string): 
     propertyType: inferPropertyType(propertyData),
     transactionType: inferTransactionType(propertyData),
     address: propertyData.address || '',
+    imobiliareLocationId: normalizeLocationOptionId(propertyData.portalProfiles?.imobiliare?.locationId),
     city: normalizedCity || '',
     zone: normalizedZone,
     price: propertyData.price || 0,
@@ -595,6 +679,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [addressSuggestionsError, setAddressSuggestionsError] = useState('');
     const [selectedCoordinates, setSelectedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
     const [selectedAddressLabel, setSelectedAddressLabel] = useState('');
+    const [imobiliareLocations, setImobiliareLocations] = useState<ImobiliareLocationOption[]>([]);
+    const [isLoadingImobiliareLocations, setIsLoadingImobiliareLocations] = useState(false);
+    const [imobiliareLocationsError, setImobiliareLocationsError] = useState('');
+    const [locationSearch, setLocationSearch] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const sensors = useSensors(
@@ -615,10 +703,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         values: initialFormValues,
     });
 
-    const watchedCity = form.watch('city') as City;
+    const watchedImobiliareLocationId = form.watch('imobiliareLocationId');
+    const watchedCity = form.watch('city');
     const watchedZone = form.watch('zone');
     const watchedAddress = form.watch('address');
-    const availableZones = (watchedCity && locations[watchedCity]) ? [...locations[watchedCity]].sort() : [];
     const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
     const watchedTitle = form.watch('title');
     const watchedPropertyType = form.watch('propertyType');
@@ -629,17 +717,112 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedSquareFootage = form.watch('squareFootage');
     const watchedConstructionYear = form.watch('constructionYear');
 
+    const selectedImobiliareLocation = useMemo(
+        () =>
+            imobiliareLocations.find(
+                (location) =>
+                    normalizeLocationOptionId(location.id) === normalizeLocationOptionId(watchedImobiliareLocationId) ||
+                    normalizeLocationOptionId(location.oldId) === normalizeLocationOptionId(watchedImobiliareLocationId)
+            ) || null,
+        [imobiliareLocations, watchedImobiliareLocationId]
+    );
+
+    const filteredImobiliareLocations = useMemo(() => {
+        const normalizedQuery = normalizeText(locationSearch);
+        const results = normalizedQuery
+            ? imobiliareLocations.filter((location) =>
+                  normalizeText(location.searchText || location.display).includes(normalizedQuery)
+              )
+            : imobiliareLocations;
+
+        return results.slice(0, normalizedQuery ? 80 : 40);
+    }, [imobiliareLocations, locationSearch]);
+
     useEffect(() => {
-        if (!watchedCity || !isEditMode || !propertyData) {
+        let isMounted = true;
+
+        async function loadImobiliareLocations() {
+            if (!user) {
+                if (isMounted) {
+                    setImobiliareLocations([]);
+                    setImobiliareLocationsError('');
+                    setIsLoadingImobiliareLocations(false);
+                }
+                return;
+            }
+
+            setIsLoadingImobiliareLocations(true);
+            setImobiliareLocationsError('');
+
+            try {
+                const token = await user.getIdToken(true);
+                const response = await fetch('/api/imobiliare/locations', {
+                    method: 'GET',
+                    cache: 'no-store',
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload?.message || 'Nu am putut incarca locatiile din imobiliare.ro.');
+                }
+
+                if (isMounted) {
+                    setImobiliareLocations(Array.isArray(payload?.data) ? payload.data : []);
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setImobiliareLocations([]);
+                    setImobiliareLocationsError(
+                        error instanceof Error ? error.message : 'Nu am putut incarca locatiile din imobiliare.ro.'
+                    );
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingImobiliareLocations(false);
+                }
+            }
+        }
+
+        loadImobiliareLocations();
+        return () => {
+            isMounted = false;
+        };
+    }, [user]);
+
+    useEffect(() => {
+        if (!selectedImobiliareLocation) {
             return;
         }
 
-        const fallbackLocation = deriveCityZoneFromLocation(propertyData.location);
-        const initialCity = normalizeCityValue(propertyData.city) || fallbackLocation.city;
-        if (initialCity && initialCity !== watchedCity) {
-            form.setValue('zone', '');
+        const derivedLocation = derivePropertyLocationFromImobiliare(selectedImobiliareLocation);
+        if (derivedLocation.city && form.getValues('city') !== derivedLocation.city) {
+            form.setValue('city', derivedLocation.city, { shouldDirty: true });
         }
-    }, [watchedCity, form, isEditMode, propertyData]);
+        if (form.getValues('zone') !== derivedLocation.zone) {
+            form.setValue('zone', derivedLocation.zone, { shouldDirty: true });
+        }
+        setLocationSearch(selectedImobiliareLocation.display);
+    }, [selectedImobiliareLocation, form]);
+
+    useEffect(() => {
+        if (!imobiliareLocations.length || normalizeLocationOptionId(watchedImobiliareLocationId)) {
+            return;
+        }
+
+        const matchedLocation = imobiliareLocations.find((location) => matchesImobiliareLocation(location, propertyData));
+        if (!matchedLocation) {
+            return;
+        }
+
+        form.setValue('imobiliareLocationId', String(matchedLocation.id), {
+            shouldDirty: false,
+            shouldTouch: false,
+        });
+        setLocationSearch(matchedLocation.display);
+    }, [form, imobiliareLocations, propertyData, watchedImobiliareLocationId]);
 
     useEffect(() => {
         if (!isEditMode || !propertyData) {
@@ -659,6 +842,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 propertyType: inferPropertyType(propertyData),
                 transactionType: inferTransactionType(propertyData),
                 address: propertyData.address || '',
+                imobiliareLocationId: normalizeLocationOptionId(propertyData.portalProfiles?.imobiliare?.locationId),
                 city: normalizedCity || '',
                 zone: normalizedZone,
                 price: propertyData.price || 0,
@@ -746,9 +930,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 : null
             );
             setSelectedAddressLabel(propertyData.address || '');
+            setLocationSearch(propertyData.portalProfiles?.imobiliare?.locationLabel || propertyData.location || '');
         } else {
              form.reset({
-                title: '', propertyType: '', transactionType: 'Vânzare', address: '', city: 'Bucuresti-Ilfov', zone: '', price: 0,
+                title: '', propertyType: '', transactionType: 'Vânzare', address: '', imobiliareLocationId: '', city: 'Bucuresti-Ilfov', zone: '', price: 0,
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
                 floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
@@ -761,6 +946,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             setImageSources([]);
             setSelectedCoordinates(null);
             setSelectedAddressLabel('');
+            setLocationSearch('');
         }
     }, [form, isEditMode, propertyData, user?.uid]);
     
@@ -771,7 +957,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }), [imageSources]);
 
     const previewImageUrl = imageItems[0]?.url || null;
-    const previewLocation = [watchedZone, watchedCity].filter(Boolean).join(', ');
+    const previewLocation = selectedImobiliareLocation?.display || [watchedZone, watchedCity].filter(Boolean).join(', ');
     const formattedPreviewPrice =
         typeof watchedPrice === 'number' && Number.isFinite(watchedPrice)
             ? new Intl.NumberFormat('ro-RO').format(watchedPrice)
@@ -899,11 +1085,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
         const nextAddressValue = fixRomanianDiacritics(suggestion.addressLine || suggestion.label);
         form.setValue('address', nextAddressValue, { shouldValidate: true, shouldDirty: true });
-        if (suggestion.city) {
+        if (!selectedImobiliareLocation && suggestion.city) {
             const normalizedCity = normalizeCityValue(suggestion.city) || fixRomanianDiacritics(suggestion.city);
             form.setValue('city', normalizedCity, { shouldValidate: true, shouldDirty: true });
         }
-        if (suggestion.zone) {
+        if (!selectedImobiliareLocation && suggestion.zone) {
             const nextCity = suggestion.city || form.getValues('city');
             const normalizedZone = normalizeZoneValue(suggestion.zone, nextCity) || fixRomanianDiacritics(suggestion.zone);
             form.setValue('zone', normalizedZone, { shouldValidate: true, shouldDirty: true });
@@ -1149,16 +1335,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
           }
           }
 
+          const derivedImobiliareLocation = derivePropertyLocationFromImobiliare(selectedImobiliareLocation);
+          const nextPortalProfile = {
+              ...(propertyData?.portalProfiles?.imobiliare || {}),
+              locationId: selectedImobiliareLocation?.id || null,
+              locationLabel: selectedImobiliareLocation?.display || null,
+          };
+
           const propertyDataToSave = {
               title: values.title,
               propertyType: values.propertyType,
               transactionType: values.transactionType,
               address: values.address,
-              city: values.city,
-              zone: values.zone,
+              city: selectedImobiliareLocation ? derivedImobiliareLocation.city : values.city,
+              zone: selectedImobiliareLocation ? derivedImobiliareLocation.zone : values.zone,
               latitude,
               longitude,
-              location: [values.zone, values.city].filter(Boolean).join(', '),
+              location: selectedImobiliareLocation
+                ? derivedImobiliareLocation.location
+                : [values.zone, values.city].filter(Boolean).join(', '),
               price: values.price,
               rooms: values.rooms,
               bathrooms: values.bathrooms,
@@ -1200,6 +1395,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               nearMetro: values.nearMetro,
               commissionType: values.commissionType,
               commissionValue: values.commissionValue,
+              portalProfiles: {
+                ...(propertyData?.portalProfiles || {}),
+                imobiliare: nextPortalProfile,
+              },
           };
       
           if (isEditMode) {
@@ -1365,37 +1564,70 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Locație</h3>
                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                         <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Oraș *</FormLabel>
-                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="ex: Bucuresti-Ilfov" /></SelectTrigger></FormControl>
-                                             <SelectContent>{field.value && !Object.keys(locations).includes(field.value) && <SelectItem value={field.value}>{field.value}</SelectItem>}{Object.keys(locations).map(city => <SelectItem key={city} value={city}>{city.replace('-', ' - ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                         <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Zonă</FormLabel>
-                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        disabled={!watchedCity}
-                                                        className="w-full justify-between border-white/20 bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
-                                                    >
-                                                        <span className="truncate">{field.value || 'ex: Herăstrău'}</span>
-                                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-white/60" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="start" className="max-h-80 w-[320px] overflow-y-auto border-white/10 bg-[#132844] text-white">
-                                                    <DropdownMenuRadioGroup value={field.value || ''} onValueChange={field.onChange}>
-                                                        {field.value && !availableZones.includes(field.value) && (
-                                                            <DropdownMenuRadioItem value={field.value} className="focus:bg-white/10 focus:text-white">
-                                                                {field.value}
-                                                            </DropdownMenuRadioItem>
-                                                        )}
-                                                        {availableZones.map(zone => (
-                                                            <DropdownMenuRadioItem key={zone} value={zone} className="focus:bg-white/10 focus:text-white">
-                                                                {zone}
-                                                            </DropdownMenuRadioItem>
-                                                        ))}
-                                                    </DropdownMenuRadioGroup>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu><FormMessage /></FormItem>)} />
+                                         <FormField
+                                            control={form.control}
+                                            name="imobiliareLocationId"
+                                            render={({ field }) => (
+                                                <FormItem className="md:col-span-3">
+                                                    <FormLabel className="text-white/80">Locație imobiliare.ro</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            value={locationSearch}
+                                                            onChange={(event) => setLocationSearch(event.target.value)}
+                                                            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                                                            placeholder="Caută județ, localitate sau zonă exact cum există în imobiliare.ro"
+                                                        />
+                                                    </FormControl>
+                                                    {selectedImobiliareLocation ? (
+                                                        <div className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-50">
+                                                            Selectat: {selectedImobiliareLocation.display}
+                                                        </div>
+                                                    ) : null}
+                                                    {isLoadingImobiliareLocations ? (
+                                                        <div className="rounded-xl bg-white/5 px-3 py-2 text-sm text-white/70">
+                                                            Se încarcă locațiile din imobiliare.ro...
+                                                        </div>
+                                                    ) : null}
+                                                    {!isLoadingImobiliareLocations && imobiliareLocationsError ? (
+                                                        <div className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+                                                            {imobiliareLocationsError}
+                                                        </div>
+                                                    ) : null}
+                                                    {!isLoadingImobiliareLocations && filteredImobiliareLocations.length > 0 ? (
+                                                        <div className="max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1e33]">
+                                                            {filteredImobiliareLocations.map((location) => {
+                                                                const isSelected = normalizeLocationOptionId(location.id) === normalizeLocationOptionId(field.value);
+                                                                return (
+                                                                    <button
+                                                                        key={location.id}
+                                                                        type="button"
+                                                                        className={cn(
+                                                                            "flex w-full items-start justify-between gap-3 border-b border-white/5 px-4 py-3 text-left text-sm last:border-b-0",
+                                                                            isSelected ? "bg-emerald-400/10 text-emerald-50" : "text-white/85 hover:bg-white/5"
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            field.onChange(String(location.id));
+                                                                            setLocationSearch(location.display);
+                                                                        }}
+                                                                    >
+                                                                        <span className="min-w-0">
+                                                                            <span className="block truncate">{location.display}</span>
+                                                                            <span className="block text-xs text-white/45">
+                                                                                {location.zone || location.locality || location.county || location.title}
+                                                                            </span>
+                                                                        </span>
+                                                                        {isSelected ? <span className="text-xs uppercase tracking-[0.2em] text-emerald-200">Selectat</span> : null}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : null}
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                         />
+                                         <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Oraș</FormLabel><FormControl><Input readOnly className="bg-white/5 border-white/10 text-white/85" {...field} placeholder="Se completează din locația imobiliare.ro" /></FormControl><FormMessage /></FormItem>)} />
+                                         <FormField control={form.control} name="zone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Zonă</FormLabel><FormControl><Input readOnly className="bg-white/5 border-white/10 text-white/85" {...field} placeholder="Se completează din locația imobiliare.ro" /></FormControl><FormMessage /></FormItem>)} />
                                          <FormField control={form.control} name="address" render={({ field }) => (
                                             <FormItem className="md:col-span-3">
                                                 <FormLabel className="text-white/80">Adresă *</FormLabel>
