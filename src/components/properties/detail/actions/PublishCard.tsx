@@ -3,13 +3,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Property } from "@/lib/types";
+import type { ImobiliarePromotionSettings, Property } from "@/lib/types";
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2 } from 'lucide-react';
@@ -45,6 +53,44 @@ const PORTALS = [
 
 type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
 type ImobiliareSyncTarget = 'published' | 'unpublished' | null;
+type PromotionFormState = {
+  status: 'draft' | 'online';
+  imoradarStatus: 'draft' | 'online';
+  special: boolean;
+  top_listing: boolean;
+  top_listing_s: boolean;
+  promo: boolean;
+  pole_position: boolean;
+  promote_imoradar: boolean;
+  bonus: boolean;
+  properties_of_the_month: boolean;
+  similar_properties: boolean;
+  promo_zones: string;
+  energy: string;
+};
+
+const PROMOTION_BOOLEAN_FIELDS: Array<{ key: keyof Pick<
+  PromotionFormState,
+  | 'special'
+  | 'top_listing'
+  | 'top_listing_s'
+  | 'promo'
+  | 'pole_position'
+  | 'promote_imoradar'
+  | 'bonus'
+  | 'properties_of_the_month'
+  | 'similar_properties'
+>; label: string }> = [
+  { key: 'special', label: 'Special' },
+  { key: 'top_listing', label: 'Top listing' },
+  { key: 'top_listing_s', label: 'Top listing S' },
+  { key: 'promo', label: 'Promo' },
+  { key: 'pole_position', label: 'Pole position' },
+  { key: 'promote_imoradar', label: 'Promote imoradar' },
+  { key: 'bonus', label: 'Bonus' },
+  { key: 'properties_of_the_month', label: 'Properties of the month' },
+  { key: 'similar_properties', label: 'Similar properties' },
+];
 
 function getImobiliareSyncStorageKey(propertyId: string) {
   return `imobiliare-sync-target:${propertyId}`;
@@ -71,6 +117,55 @@ function writePersistedSyncTarget(propertyId: string, target: ImobiliareSyncTarg
   }
 
   window.sessionStorage.setItem(storageKey, target);
+}
+
+function buildPromotionFormState(settings?: ImobiliarePromotionSettings | null): PromotionFormState {
+  return {
+    status: settings?.status || 'online',
+    imoradarStatus: settings?.imoradarStatus || 'draft',
+    special: Boolean(settings?.promotions?.special),
+    top_listing: Boolean(settings?.promotions?.top_listing),
+    top_listing_s: Boolean(settings?.promotions?.top_listing_s),
+    promo: Boolean(settings?.promotions?.promo),
+    pole_position: Boolean(settings?.promotions?.pole_position),
+    promote_imoradar: Boolean(settings?.promotions?.promote_imoradar),
+    bonus: Boolean(settings?.promotions?.bonus),
+    properties_of_the_month: Boolean(settings?.promotions?.properties_of_the_month),
+    similar_properties: Boolean(settings?.promotions?.similar_properties),
+    promo_zones: Array.isArray(settings?.promotions?.promo_zones) ? settings!.promotions!.promo_zones!.join(', ') : '',
+    energy:
+      typeof settings?.promotions?.energy === 'number' && Number.isFinite(settings.promotions.energy)
+        ? String(settings.promotions.energy)
+        : '',
+  };
+}
+
+function buildPromotionSettingsPayload(form: PromotionFormState): ImobiliarePromotionSettings {
+  const promoZones = form.promo_zones
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const parsedEnergy = Number(form.energy);
+
+  const promotions = {
+    ...(form.special ? { special: true } : {}),
+    ...(form.top_listing ? { top_listing: true } : {}),
+    ...(form.top_listing_s ? { top_listing_s: true } : {}),
+    ...(form.promo ? { promo: true } : {}),
+    ...(promoZones.length ? { promo_zones: promoZones } : {}),
+    ...(form.pole_position ? { pole_position: true } : {}),
+    ...(form.promote_imoradar ? { promote_imoradar: true } : {}),
+    ...(form.bonus ? { bonus: true } : {}),
+    ...(Number.isFinite(parsedEnergy) ? { energy: parsedEnergy } : {}),
+    ...(form.properties_of_the_month ? { properties_of_the_month: true } : {}),
+    ...(form.similar_properties ? { similar_properties: true } : {}),
+  };
+
+  return {
+    status: form.status,
+    imoradarStatus: form.imoradarStatus,
+    ...(Object.keys(promotions).length ? { promotions } : {}),
+  };
 }
 
 function formatApiErrorDetails(details: unknown): string {
@@ -222,8 +317,12 @@ export function PublishCard({ property }: { property: Property }) {
   const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingPromotionSettings, setIsSavingPromotionSettings] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<ImobiliareUiStatus | null>(null);
   const [syncTarget, setSyncTarget] = useState<ImobiliareSyncTarget>(() => readPersistedSyncTarget(property.id));
+  const [promotionForm, setPromotionForm] = useState<PromotionFormState>(
+    buildPromotionFormState(property.portalProfiles?.imobiliare?.promotionSettings)
+  );
   const propertyRef = useMemo(() => {
     if (!agencyId) {
       return null;
@@ -248,7 +347,8 @@ export function PublishCard({ property }: { property: Property }) {
     setSyncTarget(readPersistedSyncTarget(property.id));
     setOptimisticStatus(null);
     setIsSubmitting(false);
-  }, [property.id]);
+    setPromotionForm(buildPromotionFormState(property.portalProfiles?.imobiliare?.promotionSettings));
+  }, [property.id, property.portalProfiles?.imobiliare?.promotionSettings]);
 
   useEffect(() => {
     if (syncTarget) {
@@ -347,6 +447,82 @@ export function PublishCard({ property }: { property: Property }) {
     }
   }
 
+  async function handleSavePromotionSettings() {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru a salva promovarile.', variant: 'destructive' });
+      return;
+    }
+
+    const promotionSettings = buildPromotionSettingsPayload(promotionForm);
+
+    setIsSavingPromotionSettings(true);
+    try {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/property-promotion-settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          propertyId: property.id,
+          promotionSettings,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut salva promovarile pentru proprietate.');
+      }
+
+      toast({
+        title: 'Promovari salvate',
+        description: payload?.appliedRemotely
+          ? 'Setarile au fost salvate si aplicate imediat pe imobiliare.ro.'
+          : 'Setarile au fost salvate pentru urmatoarea publicare.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Salvare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut salva promovarile.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingPromotionSettings(false);
+    }
+  }
+
+  async function handleOpenPublishedListing() {
+    if (!user) {
+      toast({
+        title: 'Autentificare necesara',
+        description: 'Trebuie sa fii autentificat pentru a deschide anuntul.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/property-link', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || typeof payload?.url !== 'string' || !payload.url) {
+        throw new Error(payload?.message || 'Nu am putut rezolva linkul public al anuntului.');
+      }
+
+      window.open(payload.url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      toast({
+        title: 'Link indisponibil',
+        description: error instanceof Error ? error.message : 'Nu am putut deschide anuntul.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  function updatePromotionForm<K extends keyof PromotionFormState>(key: K, value: PromotionFormState[K]) {
+    setPromotionForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
   return (
     <Card className={cn(ACTION_CARD_CLASSNAME)}>
       <CardHeader className="px-4 pb-0 pt-4">
@@ -435,6 +611,105 @@ export function PublishCard({ property }: { property: Property }) {
             {persistedError}
           </div>
         ) : null}
+
+        {isPublished ? (
+          <div className="rounded-xl border border-emerald-300/18 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-50">
+            <button
+              type="button"
+              onClick={handleOpenPublishedListing}
+              className="underline underline-offset-4"
+            >
+              Vezi anuntul pe imobiliare.ro
+            </button>
+          </div>
+        ) : null}
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div className="mb-2">
+            <p className="text-sm font-medium text-white">Promovare imobiliare.ro</p>
+            <p className="text-xs text-white/55">
+              Seteaza promovarile direct pe aceasta proprietate. Daca anuntul este deja publicat, modificarile se aplica imediat.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-white/75">Status listing</Label>
+              <Select
+                value={promotionForm.status}
+                onValueChange={(value: 'draft' | 'online') => updatePromotionForm('status', value)}
+              >
+                <SelectTrigger className="border-white/15 bg-[#0F1E33] text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">online</SelectItem>
+                  <SelectItem value="draft">draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/75">Status imoradar</Label>
+              <Select
+                value={promotionForm.imoradarStatus}
+                onValueChange={(value: 'draft' | 'online') => updatePromotionForm('imoradarStatus', value)}
+              >
+                <SelectTrigger className="border-white/15 bg-[#0F1E33] text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">draft</SelectItem>
+                  <SelectItem value="online">online</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {PROMOTION_BOOLEAN_FIELDS.map(({ key, label }) => (
+              <label
+                key={key}
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#0F1E33] px-3 py-2 text-sm text-white/85"
+              >
+                <Checkbox
+                  checked={promotionForm[key]}
+                  onCheckedChange={(checked) => updatePromotionForm(key, Boolean(checked))}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-white/75">Promo zones</Label>
+              <Input
+                value={promotionForm.promo_zones}
+                onChange={(event) => updatePromotionForm('promo_zones', event.target.value)}
+                className="border-white/15 bg-[#0F1E33] text-white"
+                placeholder="zona1, zona2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/75">Energy</Label>
+              <Input
+                value={promotionForm.energy}
+                onChange={(event) => updatePromotionForm('energy', event.target.value)}
+                className="border-white/15 bg-[#0F1E33] text-white"
+                inputMode="numeric"
+                placeholder="ex. 3"
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Button
+              type="button"
+              onClick={handleSavePromotionSettings}
+              disabled={isSavingPromotionSettings || isSyncing}
+              className="bg-white/10 border border-white/20 hover:bg-white/20 text-white"
+            >
+              {isSavingPromotionSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Salveaza promovarea
+            </Button>
+          </div>
+        </div>
 
         {isSyncing ? (
           <div className="flex items-center gap-2 px-1 pt-1 text-xs text-white/60">

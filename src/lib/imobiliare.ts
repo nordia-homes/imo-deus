@@ -4,8 +4,11 @@ import path from 'path';
 import { adminDb } from '@/firebase/admin';
 import type {
   ImobiliareIntegrationPrivate,
+  ImobiliarePromotionSettings,
   ImobiliarePortalProfile,
+  ImobiliareSyncJobSummary,
   PortalIntegrationPublicStatus,
+  PromotionStatus,
   Property,
   UserProfile,
 } from '@/lib/types';
@@ -114,6 +117,16 @@ type PublishAuditEntry = {
 
 let sqlLocationsCache: SqlLocationRow[] | null = null;
 
+function slugifyImobiliareTitle(value?: string | null) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-') || 'anunt-imobiliar';
+}
+
 function getPrivateDocId(agencyId: string) {
   return `${agencyId}__${IMOBILIARE_PROVIDER}`;
 }
@@ -128,6 +141,27 @@ function getPublicDocRef(agencyId: string) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function normalizeNullableString(value?: string | null) {
+  const trimmed = (value || '').trim();
+  return trimmed || null;
+}
+
+function mergePromotionSettings(
+  defaults?: ImobiliarePromotionSettings | null,
+  overrides?: ImobiliarePromotionSettings | null
+): ImobiliarePromotionSettings {
+  const mergedPromotions = {
+    ...(defaults?.promotions || {}),
+    ...(overrides?.promotions || {}),
+  };
+
+  return {
+    status: overrides?.status || defaults?.status,
+    imoradarStatus: overrides?.imoradarStatus || defaults?.imoradarStatus,
+    promotions: Object.keys(mergedPromotions).length ? mergedPromotions : undefined,
+  };
 }
 
 function normalizeText(value?: string | null) {
@@ -369,6 +403,22 @@ async function setPublicStatus(agencyId: string, patch: Partial<PortalIntegratio
   );
 }
 
+async function setPublicJobSummary(
+  agencyId: string,
+  field: 'lastReconcileSummary' | 'lastRetrySummary',
+  summary: ImobiliareSyncJobSummary
+) {
+  const timestampField = field === 'lastReconcileSummary' ? 'lastReconcileAt' : 'lastRetryAt';
+  await getPublicDocRef(agencyId).set(
+    {
+      [field]: summary,
+      [timestampField]: summary.finishedAt,
+      updatedAt: nowIso(),
+    },
+    { merge: true }
+  );
+}
+
 async function getPrivateIntegration(agencyId: string) {
   const snapshot = await getPrivateDocRef(agencyId).get();
   if (!snapshot.exists) {
@@ -413,6 +463,9 @@ async function refreshAccessToken(agencyId: string, integration: ImobiliareInteg
     lastError: null,
     remoteAgentCount: integration.remoteAgentCount,
     remoteAccountName: integration.remoteAccountName || null,
+    acpUrl: integration.acpUrl || null,
+    performanceReportEmail: integration.performanceReportEmail || null,
+    defaultPromotionSettings: integration.defaultPromotionSettings || null,
   });
 
   return updated;
@@ -1419,8 +1472,14 @@ async function syncMediaLinks(agencyId: string, customReference: string, portalP
   }
 }
 
+async function getAgencyDefaultPromotionSettings(agencyId: string) {
+  const integration = await getPrivateIntegration(agencyId);
+  return integration?.defaultPromotionSettings || null;
+}
+
 async function applyPromotions(agencyId: string, customReference: string, portalProfile?: ImobiliarePortalProfile) {
-  const promotionSettings = portalProfile?.promotionSettings || {};
+  const defaultPromotionSettings = await getAgencyDefaultPromotionSettings(agencyId);
+  const promotionSettings = mergePromotionSettings(defaultPromotionSettings, portalProfile?.promotionSettings);
   const payload = {
     status: promotionSettings.status || 'online',
     ...(promotionSettings.imoradarStatus ? { imoradar_status: promotionSettings.imoradarStatus } : {}),
@@ -1434,6 +1493,57 @@ async function applyPromotions(agencyId: string, customReference: string, portal
     },
     body: JSON.stringify(payload),
   });
+}
+
+function mapRemoteListingStateToPromotionStatus(state?: string | null): PromotionStatus['status'] {
+  const normalized = normalizeText(state);
+  if (!normalized || normalized === 'draft') {
+    return 'unpublished';
+  }
+  if (normalized === 'online' || normalized === 'published' || normalized === 'active') {
+    return 'published';
+  }
+  if (normalized.includes('error')) {
+    return 'error';
+  }
+  return 'pending';
+}
+
+async function persistPropertyRemoteSnapshot(params: {
+  agencyId: string;
+  propertyId: string;
+  customReference: string;
+  remoteId?: number | null;
+  path?: string | null;
+  state?: string | null;
+  errorMessage?: string | null;
+}) {
+  const { agencyId, propertyId, customReference, remoteId, path, state, errorMessage } = params;
+  const promotionStatus = errorMessage ? 'error' : mapRemoteListingStateToPromotionStatus(state);
+  const link = promotionStatus === 'unpublished' ? null : path ?? null;
+  const normalizedRemoteId = promotionStatus === 'unpublished' ? null : remoteId ?? null;
+
+  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+    {
+      promotions: {
+        imobiliare: {
+          status: promotionStatus,
+          lastSync: nowIso(),
+          link,
+          remoteId: normalizedRemoteId,
+          remoteState: state ?? null,
+          errorMessage: errorMessage ?? null,
+        },
+      },
+      portalProfiles: {
+        imobiliare: {
+          customReference,
+          lastValidationError: errorMessage ?? null,
+        },
+      },
+    },
+    { merge: true }
+  );
 }
 
 async function persistPropertyPublishState(params: {
@@ -1475,6 +1585,222 @@ async function persistPropertyPublishState(params: {
     },
     { merge: true }
   );
+}
+
+export async function updateAgencyImobiliareSettings(params: {
+  agencyId: string;
+  acpUrl?: string | null;
+  performanceReportEmail?: string | null;
+  defaultPromotionSettings?: ImobiliarePromotionSettings | null;
+}) {
+  const { agencyId, acpUrl, performanceReportEmail, defaultPromotionSettings } = params;
+  const integration = await getPrivateIntegration(agencyId);
+  if (!integration) {
+    throw new Error('Contul imobiliare.ro nu este conectat pentru aceasta agentie.');
+  }
+
+  const updated: ImobiliareIntegrationPrivate = {
+    ...integration,
+    acpUrl: normalizeNullableString(acpUrl),
+    performanceReportEmail: normalizeNullableString(performanceReportEmail),
+    defaultPromotionSettings: defaultPromotionSettings || null,
+    updatedAt: nowIso(),
+  };
+
+  await persistPrivateIntegration(agencyId, updated);
+  await setPublicStatus(agencyId, {
+    acpUrl: updated.acpUrl || null,
+    performanceReportEmail: updated.performanceReportEmail || null,
+    defaultPromotionSettings: updated.defaultPromotionSettings || null,
+    lastError: null,
+  });
+
+  return {
+    acpUrl: updated.acpUrl || null,
+    performanceReportEmail: updated.performanceReportEmail || null,
+    defaultPromotionSettings: updated.defaultPromotionSettings || null,
+  };
+}
+
+export async function updatePropertyImobiliarePromotionSettings(params: {
+  agencyId: string;
+  propertyId: string;
+  promotionSettings: ImobiliarePromotionSettings | null;
+}) {
+  const { agencyId, propertyId, promotionSettings } = params;
+  const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId);
+  const propertySnapshot = await propertyRef.get();
+  if (!propertySnapshot.exists) {
+    throw new Error('Proprietatea nu a fost gasita.');
+  }
+
+  const property = {
+    id: propertySnapshot.id,
+    ...propertySnapshot.data(),
+  } as Property;
+
+  const normalizedSettings = promotionSettings || null;
+
+  await propertyRef.set(
+    {
+      portalProfiles: {
+        imobiliare: {
+          promotionSettings: normalizedSettings,
+        },
+      },
+    },
+    { merge: true }
+  );
+
+  const currentStatus = property.promotions?.imobiliare?.status;
+  if (currentStatus === 'published') {
+    const customReference = property.portalProfiles?.imobiliare?.customReference || property.id;
+    const mergedProfile: ImobiliarePortalProfile = {
+      ...(property.portalProfiles?.imobiliare || {}),
+      promotionSettings: normalizedSettings || undefined,
+    };
+    await applyPromotions(agencyId, customReference, mergedProfile);
+    await propertyRef.set(
+      {
+        promotions: {
+          imobiliare: {
+            lastSync: nowIso(),
+            errorMessage: null,
+          },
+        },
+        portalProfiles: {
+          imobiliare: {
+            lastValidationError: null,
+          },
+        },
+      },
+      { merge: true }
+    );
+  }
+
+  return {
+    promotionSettings: normalizedSettings,
+    appliedRemotely: currentStatus === 'published',
+  };
+}
+
+async function getAgencyImobiliareProperties(agencyId: string) {
+  const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('properties').get();
+  return snapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as Property))
+    .filter((property) => Boolean(property.portalProfiles?.imobiliare || property.promotions?.imobiliare));
+}
+
+export async function reconcileAgencyImobiliareListings(params: { agencyId: string }) {
+  const { agencyId } = params;
+  const startedAt = nowIso();
+  const properties = await getAgencyImobiliareProperties(agencyId);
+  const summary: ImobiliareSyncJobSummary = {
+    startedAt,
+    finishedAt: startedAt,
+    scanned: 0,
+    updated: 0,
+    published: 0,
+    unpublished: 0,
+    pending: 0,
+    errors: 0,
+    failed: 0,
+  };
+
+  for (const property of properties) {
+    summary.scanned += 1;
+    const customReference = property.portalProfiles?.imobiliare?.customReference || property.id;
+
+    try {
+      const listing = await getListingByCustomReference(agencyId, customReference);
+      const listingData = listing?.data as Record<string, unknown> | undefined;
+      const state = typeof listingData?.state === 'string' ? listingData.state : 'draft';
+      const path = typeof listingData?.path === 'string' ? listingData.path : null;
+      const remoteId = typeof listingData?.id === 'number' ? listingData.id : null;
+
+      await persistPropertyRemoteSnapshot({
+        agencyId,
+        propertyId: property.id,
+        customReference,
+        remoteId,
+        path,
+        state: listing ? state : 'draft',
+        errorMessage: null,
+      });
+
+      const status = mapRemoteListingStateToPromotionStatus(listing ? state : 'draft');
+      summary.updated += 1;
+      if (status === 'published') summary.published += 1;
+      if (status === 'unpublished') summary.unpublished += 1;
+      if (status === 'pending') summary.pending += 1;
+      if (status === 'error') summary.errors += 1;
+    } catch (error) {
+      summary.failed += 1;
+      const message = error instanceof Error ? error.message : 'Reconcilerea listingului a esuat.';
+      await persistPropertyRemoteSnapshot({
+        agencyId,
+        propertyId: property.id,
+        customReference,
+        errorMessage: message,
+      });
+      summary.errors += 1;
+    }
+  }
+
+  summary.finishedAt = nowIso();
+  await setPublicJobSummary(agencyId, 'lastReconcileSummary', summary);
+  return summary;
+}
+
+export async function retryAgencyImobiliareSync(params: {
+  agencyId: string;
+  requestedByUid: string;
+  limit?: number;
+}) {
+  const { agencyId, requestedByUid, limit = 10 } = params;
+  const startedAt = nowIso();
+  const properties = await getAgencyImobiliareProperties(agencyId);
+  const retryCandidates = properties.filter((property) => {
+    const status = property.promotions?.imobiliare?.status;
+    return status === 'error' || status === 'pending';
+  }).slice(0, Math.max(1, limit));
+
+  const summary: ImobiliareSyncJobSummary = {
+    startedAt,
+    finishedAt: startedAt,
+    scanned: retryCandidates.length,
+    updated: 0,
+    published: 0,
+    unpublished: 0,
+    pending: 0,
+    errors: 0,
+    failed: 0,
+    retried: 0,
+  };
+
+  for (const property of retryCandidates) {
+    try {
+      const result = await publishPropertyToImobiliare({
+        agencyId,
+        propertyId: property.id,
+        requestedByUid,
+      });
+      summary.retried = (summary.retried || 0) + 1;
+      summary.updated += 1;
+      const status = mapRemoteListingStateToPromotionStatus(result.state);
+      if (status === 'published') summary.published += 1;
+      if (status === 'unpublished') summary.unpublished += 1;
+      if (status === 'pending') summary.pending += 1;
+      if (status === 'error') summary.errors += 1;
+    } catch {
+      summary.failed += 1;
+      summary.errors += 1;
+    }
+  }
+
+  summary.finishedAt = nowIso();
+  await setPublicJobSummary(agencyId, 'lastRetrySummary', summary);
+  return summary;
 }
 
 export async function connectAgencyImobiliareAccount(agencyId: string, username: string, password: string): Promise<ConnectResult> {
@@ -1520,6 +1846,9 @@ export async function connectAgencyImobiliareAccount(agencyId: string, username:
     lastError: null,
     remoteAgentCount: agents.length,
     remoteAccountName: tempIntegration.remoteAccountName,
+    acpUrl: tempIntegration.acpUrl || null,
+    performanceReportEmail: tempIntegration.performanceReportEmail || null,
+    defaultPromotionSettings: tempIntegration.defaultPromotionSettings || null,
   });
 
   return {
@@ -1553,6 +1882,13 @@ export async function disconnectAgencyImobiliareAccount(agencyId: string) {
       lastError: null,
       remoteAgentCount: 0,
       remoteAccountName: null,
+      acpUrl: null,
+      performanceReportEmail: null,
+      defaultPromotionSettings: null,
+      lastReconcileAt: null,
+      lastReconcileSummary: null,
+      lastRetryAt: null,
+      lastRetrySummary: null,
       updatedAt: nowIso(),
     },
     { merge: true }
@@ -1561,6 +1897,7 @@ export async function disconnectAgencyImobiliareAccount(agencyId: string) {
 
 export async function getAgencyImobiliareStatus(agencyId: string) {
   const publicSnapshot = await getPublicDocRef(agencyId).get();
+  const privateIntegration = await getPrivateIntegration(agencyId);
   if (!publicSnapshot.exists) {
     return {
       connected: false,
@@ -1570,9 +1907,79 @@ export async function getAgencyImobiliareStatus(agencyId: string) {
       lastError: null,
       remoteAgentCount: 0,
       remoteAccountName: null,
+      acpUrl: privateIntegration?.acpUrl || null,
+      performanceReportEmail: privateIntegration?.performanceReportEmail || null,
+      defaultPromotionSettings: privateIntegration?.defaultPromotionSettings || null,
+      lastReconcileAt: null,
+      lastReconcileSummary: null,
+      lastRetryAt: null,
+      lastRetrySummary: null,
     };
   }
-  return publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string };
+  const publicData = publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string };
+  return {
+    ...publicData,
+    acpUrl: publicData.acpUrl ?? privateIntegration?.acpUrl ?? null,
+    performanceReportEmail: publicData.performanceReportEmail ?? privateIntegration?.performanceReportEmail ?? null,
+    defaultPromotionSettings: publicData.defaultPromotionSettings ?? privateIntegration?.defaultPromotionSettings ?? null,
+    lastReconcileAt: publicData.lastReconcileAt ?? null,
+    lastReconcileSummary: publicData.lastReconcileSummary ?? null,
+    lastRetryAt: publicData.lastRetryAt ?? null,
+    lastRetrySummary: publicData.lastRetrySummary ?? null,
+  };
+}
+
+export async function resolvePropertyImobiliarePublicUrl(params: {
+  agencyId: string;
+  propertyId: string;
+}) {
+  const { agencyId, propertyId } = params;
+  const propertySnapshot = await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).get();
+  if (!propertySnapshot.exists) {
+    throw new Error('Proprietatea nu a fost gasita.');
+  }
+
+  const property = {
+    id: propertySnapshot.id,
+    ...propertySnapshot.data(),
+  } as Property;
+
+  const customReference = property.portalProfiles?.imobiliare?.customReference || property.id;
+  const remoteIdFromDoc = property.promotions?.imobiliare?.remoteId;
+  const title = property.title || '';
+
+  const listing = await getListingByCustomReference(agencyId, customReference).catch(() => null);
+  const listingData = listing?.data as Record<string, unknown> | undefined;
+  const remoteId =
+    typeof listingData?.id === 'number'
+      ? listingData.id
+      : typeof remoteIdFromDoc === 'number'
+        ? remoteIdFromDoc
+        : null;
+  const path =
+    typeof listingData?.path === 'string'
+      ? listingData.path
+      : property.promotions?.imobiliare?.link || null;
+
+  if (typeof remoteId === 'number' && Number.isFinite(remoteId)) {
+    return {
+      url: `${IMOBILIARE_BASE_URL}/oferta/${slugifyImobiliareTitle(title)}-${remoteId}`,
+      remoteId,
+      path: path || null,
+    };
+  }
+
+  if (typeof path === 'string' && path.includes('/oferta/')) {
+    return {
+      url: path.startsWith('http://') || path.startsWith('https://')
+        ? path
+        : `${IMOBILIARE_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`,
+      remoteId: null,
+      path,
+    };
+  }
+
+  throw new Error('Nu am putut determina linkul public al anuntului din imobiliare.ro.');
 }
 
 export async function publishPropertyToImobiliare(params: {

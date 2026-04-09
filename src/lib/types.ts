@@ -59,6 +59,19 @@ export type ImobiliarePortalProfile = {
   lastPayloadHash?: string | null;
 };
 
+export type ImobiliareSyncJobSummary = {
+  startedAt: string;
+  finishedAt: string;
+  scanned: number;
+  updated: number;
+  published: number;
+  unpublished: number;
+  pending: number;
+  errors: number;
+  failed: number;
+  retried?: number;
+};
+
 export type PortalIntegrationPublicStatus = {
   connected: boolean;
   username?: string | null;
@@ -67,6 +80,13 @@ export type PortalIntegrationPublicStatus = {
   lastError?: string | null;
   remoteAccountName?: string | null;
   remoteAgentCount?: number;
+  acpUrl?: string | null;
+  performanceReportEmail?: string | null;
+  defaultPromotionSettings?: ImobiliarePromotionSettings | null;
+  lastReconcileAt?: string | null;
+  lastReconcileSummary?: ImobiliareSyncJobSummary | null;
+  lastRetryAt?: string | null;
+  lastRetrySummary?: ImobiliareSyncJobSummary | null;
 };
 
 export type ImobiliareIntegrationPrivate = {
@@ -80,6 +100,9 @@ export type ImobiliareIntegrationPrivate = {
   updatedAt: string;
   remoteAgentCount?: number;
   remoteAccountName?: string | null;
+  acpUrl?: string | null;
+  performanceReportEmail?: string | null;
+  defaultPromotionSettings?: ImobiliarePromotionSettings | null;
 };
 
 export type FacebookGroup = {
