@@ -9,7 +9,6 @@ import { WebsiteToggleCard } from "./actions/WebsiteToggleCard";
 import { ScheduledViewingsCard } from "./actions/ScheduledViewingsCard";
 import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { FacebookGroupPromotionLauncherCard } from "./actions/FacebookGroupPromotionLauncherCard";
-import { PotentialBuyersCard } from "./actions/PotentialBuyersCard";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
@@ -29,7 +28,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <ScheduledViewingsCard viewings={viewings} />
-            <PotentialBuyersCard matchedBuyers={matchedBuyers} />
             <CmaCard property={property} allProperties={allProperties} />
             <PublishCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />
