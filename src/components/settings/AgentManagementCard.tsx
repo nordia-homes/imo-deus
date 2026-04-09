@@ -4,10 +4,15 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, setDocumentNonBlocking, useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Agency, UserProfile } from '@/lib/types';
+import {
+    generateAgentPassword,
+    generateAgentPasswordSuggestions,
+    isValidManagedAgentPassword,
+} from '@/lib/agent-passwords';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,28 +21,60 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, RefreshCw, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const inviteSchema = z.object({
+const createAgentSchema = z.object({
+    name: z.string().min(2, 'Numele agentului este obligatoriu.'),
     email: z.string().email('Adresa de email este invalidă.'),
+    phone: z.string().optional(),
+    password: z
+        .string()
+        .min(8, 'Parola trebuie să aibă cel puțin 8 caractere.')
+        .max(10, 'Parola poate avea maximum 10 caractere.')
+        .refine((value) => isValidManagedAgentPassword(value), {
+            message: 'Parola trebuie să aibă 8-10 caractere, minimum 2 cifre și un caracter special.',
+        }),
 });
 
-export function AgentManagementCard({ agency }: { agency: Agency }) {
+type AgentManagementCardProps = {
+    agency: Agency;
+    agents?: UserProfile[];
+    isLoading?: boolean;
+    onAgentCreated?: (agent: UserProfile) => void;
+};
+
+export function AgentManagementCard({ agency, agents: providedAgents, isLoading: providedIsLoading, onAgentCreated }: AgentManagementCardProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
 
     const [agents, setAgents] = useState<UserProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isInviting, setIsInviting] = useState(false);
+    const [isCreatingAgent, setIsCreatingAgent] = useState(false);
+    const [latestCredentials, setLatestCredentials] = useState<{ email: string; password: string } | null>(null);
 
-    const form = useForm<z.infer<typeof inviteSchema>>({
-        resolver: zodResolver(inviteSchema),
-        defaultValues: { email: '' },
+    const form = useForm<z.infer<typeof createAgentSchema>>({
+        resolver: zodResolver(createAgentSchema),
+        defaultValues: {
+            name: '',
+            email: '',
+            phone: '',
+            password: generateAgentPassword(),
+        },
     });
+
+    const watchedName = form.watch('name');
+    const passwordSuggestions = generateAgentPasswordSuggestions(watchedName);
+    const shouldUseProvidedData = Array.isArray(providedAgents);
+    const displayAgents = shouldUseProvidedData ? providedAgents : agents;
+    const displayIsLoading = typeof providedIsLoading === 'boolean' ? providedIsLoading : isLoading;
     
     useEffect(() => {
+        if (shouldUseProvidedData) {
+            return;
+        }
+
         if (!agency.agentIds || agency.agentIds.length === 0) {
             setAgents([]);
             setIsLoading(false);
@@ -64,42 +101,69 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
         };
 
         fetchAgents();
-    }, [agency.agentIds, firestore, toast]);
+    }, [agency.agentIds, firestore, shouldUseProvidedData, toast]);
 
-    async function handleInviteAgent(values: z.infer<typeof inviteSchema>) {
+    function applyGeneratedPassword(nextPassword?: string) {
+        form.setValue('password', nextPassword || generateAgentPassword(form.getValues('name')), {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+    }
+
+    async function handleCreateAgent(values: z.infer<typeof createAgentSchema>) {
         if (!user) {
             toast({ variant: 'destructive', title: 'Eroare', description: 'Trebuie sa fii autentificat.' });
             return;
         }
 
-        setIsInviting(true);
+        setIsCreatingAgent(true);
         try {
-            const inviteId = btoa(values.email);
-            const inviteRef = doc(firestore, 'invites', inviteId);
-            
-            await setDocumentNonBlocking(inviteRef, {
-                email: values.email,
-                agencyId: agency.id,
-                agencyName: agency.name,
-                role: 'agent',
-                invitedBy: user.uid,
+            const token = await user.getIdToken(true);
+            const response = await fetch('/api/agency/agents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: values.name.trim(),
+                    email: values.email.trim(),
+                    phone: values.phone?.trim() || '',
+                    password: values.password.trim(),
+                }),
             });
+            const payload = await response.json().catch(() => ({}));
 
-            toast({
-                title: 'Invitație trimisă!',
-                description: `${values.email} a fost invitat. Acum trebuie să se înregistreze cu acest email.`,
+            if (!response.ok) {
+                throw new Error(payload?.message || 'Nu am putut crea contul agentului.');
+            }
+
+            setAgents((current) => {
+                const nextAgents = [...current.filter((agent) => agent.id !== payload.agent.id), payload.agent as UserProfile];
+                return nextAgents.sort((left, right) => left.name.localeCompare(right.name, 'ro'));
             });
-            form.reset();
+            onAgentCreated?.(payload.agent as UserProfile);
+            setLatestCredentials(payload.credentials || null);
+            toast({
+                title: 'Agent creat',
+                description: `${payload?.agent?.name || values.name} poate intra acum cu emailul și parola generate.`,
+            });
+            form.reset({
+                name: '',
+                email: '',
+                phone: '',
+                password: generateAgentPassword(),
+            });
 
         } catch (error) {
-            console.error('Failed to send invite:', error);
+            console.error('Failed to create agent:', error);
             toast({
                 variant: 'destructive',
-                title: 'Eroare la invitare',
-                description: 'Nu am putut trimite invitația. Încearcă din nou.',
+                title: 'Eroare la creare',
+                description: error instanceof Error ? error.message : 'Nu am putut crea agentul. Încearcă din nou.',
             });
         } finally {
-            setIsInviting(false);
+            setIsCreatingAgent(false);
         }
     }
 
@@ -107,29 +171,108 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
         <Card className={cn("shadow-2xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
             <CardHeader>
                 <CardTitle className="text-white">Management Agenți</CardTitle>
-                <CardDescription className="text-white/70">Invită și gestionează agenții din cadrul agenției tale.</CardDescription>
+                <CardDescription className="text-white/70">Creează direct conturi pentru agenții din cadrul agenției tale, fără să afectezi administratorul existent.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="font-semibold mb-2 text-white">Invită Agent Nou</h3>
+                    <h3 className="font-semibold mb-2 text-white">Creează Agent Nou</h3>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(handleInviteAgent)} className="flex items-start gap-4">
+                        <form onSubmit={form.handleSubmit(handleCreateAgent)} className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/80">Nume agent</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} placeholder="Andrei Popescu" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/80">Email</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} type="email" placeholder="andrei@agentie.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                             <FormField
                                 control={form.control}
-                                name="email"
+                                name="phone"
                                 render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel className="sr-only">Email</FormLabel>
+                                    <FormItem>
+                                        <FormLabel className="text-white/80">Telefon</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="email" placeholder="email@agent.ro" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                            <Input {...field} type="tel" placeholder="+40 723 000 111" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" disabled={isInviting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                                {isInviting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                Invită
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                                    <FormField
+                                        control={form.control}
+                                        name="password"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormLabel className="text-white/80">Parolă inițială</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} maxLength={10} placeholder="Sibiu27!" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => applyGeneratedPassword()}
+                                        className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                    >
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Generează alta
+                                    </Button>
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {passwordSuggestions.map((suggestion) => (
+                                        <Button
+                                            key={suggestion}
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => applyGeneratedPassword(suggestion)}
+                                            className="border-white/10 bg-transparent text-xs text-white/80 hover:bg-white/10"
+                                        >
+                                            {suggestion}
+                                        </Button>
+                                    ))}
+                                </div>
+                                <p className="mt-3 text-xs text-white/65">
+                                    Parola este sugerată automat din denumiri de orașe și respectă regula 8-10 caractere, minimum 2 cifre și un caracter special.
+                                </p>
+                            </div>
+                            {latestCredentials ? (
+                                <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
+                                    <p>Email creat: {latestCredentials.email}</p>
+                                    <p>Parolă inițială: {latestCredentials.password}</p>
+                                    <p className="mt-2 text-xs text-emerald-100/80">
+                                        Transmite aceste date agentului pe un canal sigur și recomandă-i să își schimbe parola după prima conectare.
+                                    </p>
+                                </div>
+                            ) : null}
+                            <Button type="submit" disabled={isCreatingAgent} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                {isCreatingAgent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                Creează cont agent
                             </Button>
                         </form>
                     </Form>
@@ -145,14 +288,14 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
+                            {displayIsLoading ? (
                                 [...Array(agency?.agentIds?.length || 1)].map((_, i) => (
                                     <TableRow key={i} className="border-white/20">
                                         <TableCell colSpan={3}><Skeleton className="h-10 w-full bg-white/20" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : agents && agents.length > 0 ? (
-                                agents.map(agent => (
+                            ) : displayAgents && displayAgents.length > 0 ? (
+                                displayAgents.map(agent => (
                                     <TableRow key={agent.id} className="border-white/20 hover:bg-white/10">
                                         <TableCell className="text-white">{agent.name}</TableCell>
                                         <TableCell className="text-muted-foreground text-white/90">{agent.email}</TableCell>
@@ -162,7 +305,7 @@ export function AgentManagementCard({ agency }: { agency: Agency }) {
                             ) : (
                                 <TableRow className="border-white/20">
                                     <TableCell colSpan={3} className="text-center text-white/70 h-24">
-                                        Niciun agent în agenție. Invită unul mai sus.
+                                        Niciun agent în agenție. Creează unul mai sus.
                                     </TableCell>
                                 </TableRow>
                             )}

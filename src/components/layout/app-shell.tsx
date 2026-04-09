@@ -15,6 +15,7 @@ import {
   AppWindow,
   FileText,
   UserCheck,
+  UserRound,
   Map,
   Globe,
   CalendarCheck,
@@ -118,11 +119,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Contracte" asChild isActive={pathname === '/contracts'}>
                     <Link href="/contracts">
                         <FileText />
                         <span>Contracte</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Agenti" asChild isActive={pathname === '/agenti'}>
+                    <Link href="/agenti">
+                        <UserRound />
+                        <span>Agenti</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

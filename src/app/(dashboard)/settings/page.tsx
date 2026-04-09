@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Camera, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
-import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { DesktopAppCard } from '@/components/settings/DesktopAppCard';
 import { PushNotificationsCard } from '@/components/settings/PushNotificationsCard';
 import { Badge } from '@/components/ui/badge';
@@ -458,8 +457,6 @@ export default function SettingsPage() {
             </div>
       </div>
       
-
-      {userProfile?.role === 'admin' && agency && <AgentManagementCard agency={agency} />}
     </div>
   );
 }
