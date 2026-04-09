@@ -5,7 +5,81 @@ export type PromotionStatus = {
   lastSync?: string;
   link?: string;
   views?: number;
+  remoteId?: number;
+  errorMessage?: string;
+  remoteState?: string;
 }
+
+export type ImobiliarePromotionSettings = {
+  status?: 'draft' | 'online';
+  imoradarStatus?: 'draft' | 'online';
+  promotions?: {
+    special?: boolean;
+    top_listing?: boolean;
+    top_listing_s?: boolean;
+    promo?: boolean;
+    promo_zones?: string[];
+    pole_position?: boolean;
+    promote_imoradar?: boolean;
+    bonus?: boolean;
+    energy?: number;
+    properties_of_the_month?: boolean;
+    similar_properties?: boolean;
+  };
+};
+
+export type ImobiliareMediaLink = {
+  type: 'video' | 'virtual_tour';
+  link: string;
+};
+
+export type ImobiliarePortalProfile = {
+  enabled?: boolean;
+  customReference?: string;
+  titleOverride?: string;
+  descriptionOverride?: string;
+  categoryApi?: number | null;
+  locationId?: number | null;
+  remoteAgentId?: number | null;
+  priceCurrency?: 'EUR' | 'RON' | 'USD';
+  streetName?: string;
+  streetNumber?: string;
+  block?: string;
+  entrance?: string;
+  apartmentNumber?: string;
+  mapMarkerType?: 'pin' | 'square_area';
+  gridId?: string;
+  dataPropertiesOverrides?: Record<string, unknown>;
+  mediaLinks?: ImobiliareMediaLink[];
+  performanceReportEmail?: string;
+  promotionSettings?: ImobiliarePromotionSettings;
+  lastValidationError?: string | null;
+  lastPublishedAt?: string | null;
+  lastPayloadHash?: string | null;
+};
+
+export type PortalIntegrationPublicStatus = {
+  connected: boolean;
+  username?: string | null;
+  connectedAt?: string | null;
+  lastTokenRefreshAt?: string | null;
+  lastError?: string | null;
+  remoteAccountName?: string | null;
+  remoteAgentCount?: number;
+};
+
+export type ImobiliareIntegrationPrivate = {
+  provider: 'imobiliare';
+  agencyId: string;
+  username: string;
+  accessToken: string;
+  accessTokenExpiresAt: string | null;
+  refreshToken: string | null;
+  connectedAt: string;
+  updatedAt: string;
+  remoteAgentCount?: number;
+  remoteAccountName?: string | null;
+};
 
 export type FacebookGroup = {
   name: string;
@@ -96,6 +170,9 @@ export type Property = {
   ownerName?: string;
   ownerPhone?: string;
   rlvUrl?: string;
+  portalProfiles?: {
+    imobiliare?: ImobiliarePortalProfile;
+  };
 
   // Commission fields
   commissionType?: 'percentage' | 'fixed';

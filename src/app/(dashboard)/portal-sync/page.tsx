@@ -1,6 +1,7 @@
 'use client';
 
 import PortalStatusCard from "@/components/portal/PortalStatusCard";
+import ImobiliareIntegrationCard from "@/components/portal/ImobiliareIntegrationCard";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { collection } from 'firebase/firestore';
@@ -28,6 +29,7 @@ export default function PortalSyncPage() {
     const portalStats = useMemo(() => {
         if (!properties) {
             return PORTALS.map(portal => ({
+                id: portal.id,
                 name: portal.name,
                 connected: false,
                 lastSync: '-',
@@ -80,6 +82,7 @@ export default function PortalSyncPage() {
             };
 
             return {
+                id: portal.id,
                 name: portal.name,
                 connected,
                 lastSync: formatLastSync(mostRecentSync),
@@ -108,7 +111,16 @@ export default function PortalSyncPage() {
                 ))
             ) : (
                 portalStats.map(portal => (
-                    <PortalStatusCard key={portal.name} {...portal} />
+                    portal.id === 'imobiliare' ? (
+                        <ImobiliareIntegrationCard
+                            key={portal.name}
+                            listings={portal.listings}
+                            errors={portal.errors}
+                            lastSync={portal.lastSync}
+                        />
+                    ) : (
+                        <PortalStatusCard key={portal.name} {...portal} />
+                    )
                 ))
             )}
         </div>

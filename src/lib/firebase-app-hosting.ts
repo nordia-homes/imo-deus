@@ -198,6 +198,27 @@ export async function requireAgencyAdminFromBearerToken(authorizationHeader: str
   };
 }
 
+export async function requireAgencyUserFromBearerToken(authorizationHeader: string | null | undefined): Promise<DecodedTokenContext> {
+  if (!authorizationHeader?.startsWith('Bearer ')) {
+    throw new AppHostingApiError('Lipseste tokenul de autentificare.', 401);
+  }
+
+  const token = authorizationHeader.slice('Bearer '.length).trim();
+  const decoded = await adminAuth.verifyIdToken(token);
+  const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
+  const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' } | undefined;
+
+  if (!userData?.agencyId) {
+    throw new AppHostingApiError('Utilizatorul nu este asociat unei agentii.', 403);
+  }
+
+  return {
+    uid: decoded.uid,
+    agencyId: userData.agencyId,
+    role: userData.role,
+  };
+}
+
 async function getDomainIfExists(domain: string): Promise<AppHostingDomain | null> {
   try {
     return await appHostingRequest<AppHostingDomain>(`/${getDomainResourceName(domain)}`);
