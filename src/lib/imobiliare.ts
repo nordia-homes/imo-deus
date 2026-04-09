@@ -3,6 +3,8 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { adminDb } from '@/firebase/admin';
 import type {
+  ImobiliareAgentMapping,
+  ImobiliareAnalyticsSummary,
   ImobiliareIntegrationPrivate,
   ImobiliarePromotionSettings,
   ImobiliarePortalProfile,
@@ -429,6 +431,133 @@ async function getPrivateIntegration(agencyId: string) {
 
 async function persistPrivateIntegration(agencyId: string, payload: ImobiliareIntegrationPrivate) {
   await getPrivateDocRef(agencyId).set(payload, { merge: true });
+}
+
+async function loadAgencyLocalAgentProfiles(agencyId: string) {
+  const snapshot = await adminDb.collection('users').where('agencyId', '==', agencyId).get();
+  return snapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as UserProfile))
+    .filter((profile) => profile.role === 'admin' || profile.role === 'agent');
+}
+
+function buildAgentMappingSummary(
+  localAgents: UserProfile[],
+  remoteAgents: RemoteAgent[],
+  existingMappings?: ImobiliareAgentMapping[] | null
+) {
+  const byExistingLocalId = new Map((existingMappings || []).map((entry) => [entry.localAgentId, entry]));
+  const usedRemoteIds = new Set<number>();
+  const mappings: ImobiliareAgentMapping[] = [];
+
+  for (const localAgent of localAgents) {
+    const existing = byExistingLocalId.get(localAgent.id);
+    if (existing?.remoteAgentId) {
+      const matchingRemote = remoteAgents.find((agent) => agent.id === existing.remoteAgentId);
+      if (matchingRemote?.id) {
+        usedRemoteIds.add(matchingRemote.id);
+        mappings.push({
+          ...existing,
+          remoteAgentName: matchingRemote.name || existing.remoteAgentName || null,
+          remoteAgentEmail: matchingRemote.email || existing.remoteAgentEmail || null,
+          localAgentName: localAgent.name || existing.localAgentName || null,
+          localAgentEmail: localAgent.email || existing.localAgentEmail || null,
+          updatedAt: nowIso(),
+        });
+        continue;
+      }
+    }
+
+    const normalizedEmail = normalizeText(localAgent.email || '');
+    const normalizedName = normalizeText(localAgent.name || '');
+    const emailMatch = remoteAgents.find((agent) => agent.id && !usedRemoteIds.has(agent.id) && normalizeText(agent.email || '') === normalizedEmail);
+    const nameMatch = remoteAgents.find((agent) => agent.id && !usedRemoteIds.has(agent.id) && normalizeText(agent.name || '') === normalizedName);
+    const matched = emailMatch || nameMatch || null;
+
+    if (!matched?.id) {
+      continue;
+    }
+
+    usedRemoteIds.add(matched.id);
+    mappings.push({
+      localAgentId: localAgent.id,
+      localAgentName: localAgent.name || null,
+      localAgentEmail: localAgent.email || null,
+      remoteAgentId: matched.id,
+      remoteAgentName: matched.name || null,
+      remoteAgentEmail: matched.email || null,
+      source: emailMatch ? 'matched_by_email' : 'matched_by_name',
+      updatedAt: nowIso(),
+    });
+  }
+
+  return mappings;
+}
+
+async function persistAgentMappings(
+  agencyId: string,
+  mappings: ImobiliareAgentMapping[]
+) {
+  const integration = await getPrivateIntegration(agencyId);
+  if (!integration) {
+    throw new Error('Contul imobiliare.ro nu este conectat pentru aceasta agentie.');
+  }
+
+  const updated: ImobiliareIntegrationPrivate = {
+    ...integration,
+    agentMappings: mappings,
+    updatedAt: nowIso(),
+  };
+  await persistPrivateIntegration(agencyId, updated);
+  await setPublicStatus(agencyId, { agentMappings: mappings });
+  return mappings;
+}
+
+async function computeAgencyImobiliareAnalytics(agencyId: string): Promise<ImobiliareAnalyticsSummary> {
+  const properties = await getAgencyImobiliareProperties(agencyId);
+  let published = 0;
+  let unpublished = 0;
+  let pending = 0;
+  let errors = 0;
+  let totalViews = 0;
+  let lastSyncAt: string | null = null;
+
+  const topListings = properties
+    .map((property) => {
+      const promotion = property.promotions?.imobiliare;
+      const status = (promotion?.status || 'unpublished') as PromotionStatus['status'];
+      const views = typeof promotion?.views === 'number' ? promotion.views : 0;
+      const lastSync = promotion?.lastSync || null;
+
+      if (status === 'published') published += 1;
+      else if (status === 'pending') pending += 1;
+      else if (status === 'error') errors += 1;
+      else unpublished += 1;
+
+      totalViews += views;
+      if (lastSync && (!lastSyncAt || new Date(lastSync) > new Date(lastSyncAt))) {
+        lastSyncAt = lastSync;
+      }
+
+      return {
+        propertyId: property.id,
+        title: property.title,
+        views,
+        status,
+      };
+    })
+    .sort((left, right) => right.views - left.views)
+    .slice(0, 5);
+
+  return {
+    totalProperties: properties.length,
+    published,
+    unpublished,
+    pending,
+    errors,
+    totalViews,
+    lastSyncAt,
+    topListings,
+  };
 }
 
 async function refreshAccessToken(agencyId: string, integration: ImobiliareIntegrationPrivate) {
@@ -957,11 +1086,27 @@ async function persistPublishAudit(params: {
   entry: PublishAuditEntry;
 }) {
   const { agencyId, propertyId, entry } = params;
+  const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId);
+  const snapshot = await propertyRef.get();
+  const existingHistory =
+    ((snapshot.data() as Property | undefined)?.portalProfiles?.imobiliare?.lastPublishAuditHistory || [])
+      .filter(Boolean)
+      .slice(-14);
+
   await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
     {
       portalProfiles: {
         imobiliare: {
           lastPublishAudit: entry,
+          lastPublishAuditHistory: [
+            ...existingHistory,
+            {
+              attemptedAt: entry.attemptedAt,
+              stage: entry.stage,
+              responseStatus: entry.responseStatus ?? null,
+              errorMessage: entry.errorMessage ?? null,
+            },
+          ],
         },
       },
     },
@@ -1184,6 +1329,14 @@ async function ensureRemoteAgentId(params: {
     return portalProfile.remoteAgentId;
   }
 
+  if (property.agentId) {
+    const integration = await getPrivateIntegration(agencyId);
+    const mappedAgent = integration?.agentMappings?.find((entry) => entry.localAgentId === property.agentId);
+    if (mappedAgent?.remoteAgentId) {
+      return mappedAgent.remoteAgentId;
+    }
+  }
+
   const assignedAgentProfile = await loadUserProfile(property.agentId);
   const fallbackProfile = await loadUserProfile(requestedByUid);
   const selectedProfile = pickLocalAgentProfile([assignedAgentProfile, fallbackProfile]);
@@ -1197,12 +1350,46 @@ async function ensureRemoteAgentId(params: {
   const normalizedEmail = normalizeText(selectedProfile.email);
   const existing = remoteAgents.find((agent) => normalizeText(agent.email) === normalizedEmail);
   if (existing?.id) {
+    if (selectedProfile.id) {
+      const integration = await getPrivateIntegration(agencyId);
+      const nextMappings = [
+        ...(integration?.agentMappings || []).filter((entry) => entry.localAgentId !== selectedProfile.id),
+        {
+          localAgentId: selectedProfile.id,
+          localAgentName: selectedProfile.name || null,
+          localAgentEmail: selectedProfile.email || null,
+          remoteAgentId: existing.id,
+          remoteAgentName: existing.name || null,
+          remoteAgentEmail: existing.email || null,
+          source: 'matched_by_email' as const,
+          updatedAt: nowIso(),
+        },
+      ];
+      await persistAgentMappings(agencyId, nextMappings);
+    }
     return existing.id;
   }
 
   const normalizedName = normalizeText(selectedProfile.name || property.agentName || '');
   const byName = remoteAgents.find((agent) => normalizedName && normalizeText(agent.name) === normalizedName);
   if (byName?.id) {
+    if (selectedProfile.id) {
+      const integration = await getPrivateIntegration(agencyId);
+      const nextMappings = [
+        ...(integration?.agentMappings || []).filter((entry) => entry.localAgentId !== selectedProfile.id),
+        {
+          localAgentId: selectedProfile.id,
+          localAgentName: selectedProfile.name || null,
+          localAgentEmail: selectedProfile.email || null,
+          remoteAgentId: byName.id,
+          remoteAgentName: byName.name || null,
+          remoteAgentEmail: byName.email || null,
+          source: 'matched_by_name' as const,
+          updatedAt: nowIso(),
+        },
+      ];
+      await persistAgentMappings(agencyId, nextMappings);
+    }
     return byName.id;
   }
 
@@ -1228,11 +1415,45 @@ async function ensureRemoteAgentId(params: {
     });
 
     if (created?.id) {
+      if (selectedProfile.id) {
+        const integration = await getPrivateIntegration(agencyId);
+        const nextMappings = [
+          ...(integration?.agentMappings || []).filter((entry) => entry.localAgentId !== selectedProfile.id),
+          {
+            localAgentId: selectedProfile.id,
+            localAgentName: selectedProfile.name || null,
+            localAgentEmail: selectedProfile.email || null,
+            remoteAgentId: created.id,
+            remoteAgentName: created.name || null,
+            remoteAgentEmail: created.email || null,
+            source: 'created_remote' as const,
+            updatedAt: nowIso(),
+          },
+        ];
+        await persistAgentMappings(agencyId, nextMappings);
+      }
       return created.id;
     }
   } catch (error) {
     const fallbackRemoteAgent = remoteAgents.find((agent) => typeof agent.id === 'number');
     if (fallbackRemoteAgent?.id) {
+      if (selectedProfile.id) {
+        const integration = await getPrivateIntegration(agencyId);
+        const nextMappings = [
+          ...(integration?.agentMappings || []).filter((entry) => entry.localAgentId !== selectedProfile.id),
+          {
+            localAgentId: selectedProfile.id,
+            localAgentName: selectedProfile.name || null,
+            localAgentEmail: selectedProfile.email || null,
+            remoteAgentId: fallbackRemoteAgent.id,
+            remoteAgentName: fallbackRemoteAgent.name || null,
+            remoteAgentEmail: fallbackRemoteAgent.email || null,
+            source: 'fallback' as const,
+            updatedAt: nowIso(),
+          },
+        ];
+        await persistAgentMappings(agencyId, nextMappings);
+      }
       return fallbackRemoteAgent.id;
     }
     throw error;
@@ -1240,6 +1461,23 @@ async function ensureRemoteAgentId(params: {
 
   const fallbackRemoteAgent = remoteAgents.find((agent) => typeof agent.id === 'number');
   if (fallbackRemoteAgent?.id) {
+    if (selectedProfile.id) {
+      const integration = await getPrivateIntegration(agencyId);
+      const nextMappings = [
+        ...(integration?.agentMappings || []).filter((entry) => entry.localAgentId !== selectedProfile.id),
+        {
+          localAgentId: selectedProfile.id,
+          localAgentName: selectedProfile.name || null,
+          localAgentEmail: selectedProfile.email || null,
+          remoteAgentId: fallbackRemoteAgent.id,
+          remoteAgentName: fallbackRemoteAgent.name || null,
+          remoteAgentEmail: fallbackRemoteAgent.email || null,
+          source: 'fallback' as const,
+          updatedAt: nowIso(),
+        },
+      ];
+      await persistAgentMappings(agencyId, nextMappings);
+    }
     return fallbackRemoteAgent.id;
   }
 
@@ -1622,6 +1860,28 @@ export async function updateAgencyImobiliareSettings(params: {
   };
 }
 
+export async function syncAgencyImobiliareAgentMappings(params: { agencyId: string }) {
+  const { agencyId } = params;
+  const integration = await getPrivateIntegration(agencyId);
+  if (!integration) {
+    throw new Error('Contul imobiliare.ro nu este conectat pentru aceasta agentie.');
+  }
+
+  const [localAgents, remoteAgentsPayload] = await Promise.all([
+    loadAgencyLocalAgentProfiles(agencyId),
+    imobiliareRequest<unknown>(agencyId, '/api/v3/agents?page=1'),
+  ]);
+  const remoteAgents = extractAgents(remoteAgentsPayload);
+  const mappings = buildAgentMappingSummary(localAgents, remoteAgents, integration.agentMappings);
+  await persistAgentMappings(agencyId, mappings);
+  return {
+    totalLocalAgents: localAgents.length,
+    totalRemoteAgents: remoteAgents.length,
+    mappedAgents: mappings.length,
+    mappings,
+  };
+}
+
 export async function updatePropertyImobiliarePromotionSettings(params: {
   agencyId: string;
   propertyId: string;
@@ -1898,6 +2158,7 @@ export async function disconnectAgencyImobiliareAccount(agencyId: string) {
 export async function getAgencyImobiliareStatus(agencyId: string) {
   const publicSnapshot = await getPublicDocRef(agencyId).get();
   const privateIntegration = await getPrivateIntegration(agencyId);
+  const analytics = await computeAgencyImobiliareAnalytics(agencyId);
   if (!publicSnapshot.exists) {
     return {
       connected: false,
@@ -1914,6 +2175,8 @@ export async function getAgencyImobiliareStatus(agencyId: string) {
       lastReconcileSummary: null,
       lastRetryAt: null,
       lastRetrySummary: null,
+      agentMappings: privateIntegration?.agentMappings || null,
+      analytics,
     };
   }
   const publicData = publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string };
@@ -1926,6 +2189,8 @@ export async function getAgencyImobiliareStatus(agencyId: string) {
     lastReconcileSummary: publicData.lastReconcileSummary ?? null,
     lastRetryAt: publicData.lastRetryAt ?? null,
     lastRetrySummary: publicData.lastRetrySummary ?? null,
+    agentMappings: publicData.agentMappings ?? privateIntegration?.agentMappings ?? null,
+    analytics: publicData.analytics ?? analytics,
   };
 }
 

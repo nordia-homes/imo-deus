@@ -57,6 +57,12 @@ export type ImobiliarePortalProfile = {
   lastValidationError?: string | null;
   lastPublishedAt?: string | null;
   lastPayloadHash?: string | null;
+  lastPublishAuditHistory?: Array<{
+    attemptedAt: string;
+    stage?: string | null;
+    responseStatus?: number | null;
+    errorMessage?: string | null;
+  }> | null;
 };
 
 export type ImobiliareSyncJobSummary = {
@@ -70,6 +76,33 @@ export type ImobiliareSyncJobSummary = {
   errors: number;
   failed: number;
   retried?: number;
+};
+
+export type ImobiliareAgentMapping = {
+  localAgentId: string;
+  localAgentName?: string | null;
+  localAgentEmail?: string | null;
+  remoteAgentId: number;
+  remoteAgentName?: string | null;
+  remoteAgentEmail?: string | null;
+  source: 'manual' | 'matched_by_email' | 'matched_by_name' | 'created_remote' | 'fallback';
+  updatedAt: string;
+};
+
+export type ImobiliareAnalyticsSummary = {
+  totalProperties: number;
+  published: number;
+  unpublished: number;
+  pending: number;
+  errors: number;
+  totalViews: number;
+  lastSyncAt?: string | null;
+  topListings: Array<{
+    propertyId: string;
+    title: string;
+    views: number;
+    status: PromotionStatus['status'];
+  }>;
 };
 
 export type PortalIntegrationPublicStatus = {
@@ -87,6 +120,8 @@ export type PortalIntegrationPublicStatus = {
   lastReconcileSummary?: ImobiliareSyncJobSummary | null;
   lastRetryAt?: string | null;
   lastRetrySummary?: ImobiliareSyncJobSummary | null;
+  agentMappings?: ImobiliareAgentMapping[] | null;
+  analytics?: ImobiliareAnalyticsSummary | null;
 };
 
 export type ImobiliareIntegrationPrivate = {
@@ -103,6 +138,7 @@ export type ImobiliareIntegrationPrivate = {
   acpUrl?: string | null;
   performanceReportEmail?: string | null;
   defaultPromotionSettings?: ImobiliarePromotionSettings | null;
+  agentMappings?: ImobiliareAgentMapping[] | null;
 };
 
 export type FacebookGroup = {

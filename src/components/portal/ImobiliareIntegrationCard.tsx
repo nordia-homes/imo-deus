@@ -10,7 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import type { ImobiliarePromotionSettings, ImobiliareSyncJobSummary } from '@/lib/types';
+import type {
+  ImobiliareAgentMapping,
+  ImobiliareAnalyticsSummary,
+  ImobiliarePromotionSettings,
+  ImobiliareSyncJobSummary,
+} from '@/lib/types';
 
 type IntegrationStatus = {
   connected: boolean;
@@ -28,6 +33,8 @@ type IntegrationStatus = {
   lastReconcileSummary?: ImobiliareSyncJobSummary | null;
   lastRetryAt?: string | null;
   lastRetrySummary?: ImobiliareSyncJobSummary | null;
+  agentMappings?: ImobiliareAgentMapping[] | null;
+  analytics?: ImobiliareAnalyticsSummary | null;
 };
 
 type Props = {
@@ -71,7 +78,7 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeAction, setActiveAction] = useState<'connect' | 'disconnect' | 'settings' | 'reconcile' | 'retry' | null>(null);
+  const [activeAction, setActiveAction] = useState<'connect' | 'disconnect' | 'settings' | 'reconcile' | 'retry' | 'agents' | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [acpUrl, setAcpUrl] = useState('');
@@ -309,6 +316,42 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
     }
   }
 
+  async function handleSyncAgents() {
+    if (!user || !isAdmin) return;
+
+    setIsSubmitting(true);
+    setActiveAction('agents');
+    try {
+      const response = await authorizedFetch(user, auth, '/api/imobiliare/agents/sync', {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut sincroniza agentii.');
+      }
+
+      setStatus((current) => current ? {
+        ...current,
+        remoteAgentCount: payload?.totalRemoteAgents ?? current.remoteAgentCount,
+        agentMappings: payload?.mappings ?? current.agentMappings,
+      } : current);
+
+      toast({
+        title: 'Agenti sincronizati',
+        description: `Am mapat ${payload?.mappedAgents ?? 0} agenti locali catre agentii remote.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Sincronizare agenti esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut sincroniza agentii.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+      setActiveAction(null);
+    }
+  }
+
   function renderSummary(summary?: ImobiliareSyncJobSummary | null) {
     if (!summary) {
       return 'Nerulat inca';
@@ -439,7 +482,33 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
               <p>Ultima reconciliere: {renderSummary(status?.lastReconcileSummary)}</p>
               <p>Ultimul retry: {renderSummary(status?.lastRetrySummary)}</p>
+              <p>
+                Analytics: {status?.analytics
+                  ? `${status.analytics.published} publicate, ${status.analytics.pending} pending, ${status.analytics.errors} cu erori, ${status.analytics.totalViews} vizualizari`
+                  : 'fara date'}
+              </p>
+              <p>Mapari agenti: {status?.agentMappings?.length ?? 0}</p>
             </div>
+            {status?.agentMappings?.length ? (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                {status.agentMappings.slice(0, 6).map((mapping) => (
+                  <p key={`${mapping.localAgentId}-${mapping.remoteAgentId}`}>
+                    {mapping.localAgentName || mapping.localAgentEmail || mapping.localAgentId}
+                    {' -> '}
+                    {mapping.remoteAgentName || mapping.remoteAgentEmail || mapping.remoteAgentId}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            {status?.analytics?.topListings?.length ? (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                {status.analytics.topListings.map((listing) => (
+                  <p key={listing.propertyId}>
+                    {listing.title}: {listing.views} views, {listing.status}
+                  </p>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </CardContent>
@@ -460,6 +529,16 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
               <Button
                 type="button"
                 variant="outline"
+                onClick={handleSyncAgents}
+                disabled={isSubmitting}
+                className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+              >
+                {activeAction === 'agents' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Sync agenti
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => handleRunJob('/api/imobiliare/reconcile', 'reconcile')}
                 disabled={isSubmitting}
                 className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
@@ -467,17 +546,17 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
                 {activeAction === 'reconcile' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Reconciliaza
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleRunJob('/api/imobiliare/retry', 'retry')}
-                disabled={isSubmitting}
-                className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
-              >
-                {activeAction === 'retry' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Retry erori
-              </Button>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleRunJob('/api/imobiliare/retry', 'retry')}
+              disabled={isSubmitting}
+              className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+            >
+              {activeAction === 'retry' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Retry erori
+            </Button>
           </div>
         ) : null}
 

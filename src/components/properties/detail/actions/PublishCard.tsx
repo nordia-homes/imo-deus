@@ -338,6 +338,8 @@ export function PublishCard({ property }: { property: Property }) {
   const isPending = effectiveStatus === 'pending';
   const isErrored = effectiveStatus === 'error';
   const persistedError = getPersistedImobiliareError(property);
+  const publishAuditHistory =
+    property.portalProfiles?.imobiliare?.lastPublishAuditHistory?.slice(-5).reverse() || [];
 
   useEffect(() => {
     writePersistedSyncTarget(property.id, syncTarget);
@@ -609,6 +611,18 @@ export function PublishCard({ property }: { property: Property }) {
         {persistedError ? (
           <div className="rounded-xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
             {persistedError}
+          </div>
+        ) : null}
+
+        {publishAuditHistory.length ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-white/65">
+            {publishAuditHistory.map((entry) => (
+              <p key={`${entry.attemptedAt}-${entry.stage}`}>
+                {new Date(entry.attemptedAt).toLocaleString('ro-RO')}: {entry.stage || 'necunoscut'}
+                {entry.responseStatus ? ` (${entry.responseStatus})` : ''}
+                {entry.errorMessage ? ` - ${entry.errorMessage}` : ''}
+              </p>
+            ))}
           </div>
         ) : null}
 
