@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { ImobiliarePortalProfile, Property } from "@/lib/types";
-import { setDocumentNonBlocking, useFirestore, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { useAgency } from "@/context/AgencyContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -71,6 +71,60 @@ type ImobiliareCategoryOption = {
   selectable?: boolean;
 };
 
+type ImobiliareLocationOption = {
+  id: number;
+  title?: string;
+  slug?: string;
+  depth?: number;
+  is_hidden?: boolean;
+  custom_display?: string;
+  parent?: ImobiliareLocationOption | null;
+};
+
+function normalizeLocationText(value?: string | null) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function collectLocationLabels(location?: ImobiliareLocationOption | null): string[] {
+  const labels: string[] = [];
+  const seen = new Set<number>();
+  let current = location || null;
+
+  while (current && typeof current.id === 'number' && !seen.has(current.id)) {
+    seen.add(current.id);
+    if (current.title) {
+      labels.unshift(current.title);
+    } else if (current.custom_display) {
+      labels.unshift(current.custom_display);
+    }
+    current = current.parent || null;
+  }
+
+  return labels;
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stripUndefinedDeep(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key, entry]) => [key, stripUndefinedDeep(entry)])
+    ) as T;
+  }
+
+  return value;
+}
+
 function buildDraft(profile?: ImobiliarePortalProfile): PortalSettingsDraft {
   return {
     categoryApi: profile?.categoryApi ? String(profile.categoryApi) : '',
@@ -112,7 +166,10 @@ export function PublishCard({ property }: { property: Property }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [settingsDraft, setSettingsDraft] = useState<PortalSettingsDraft>(() => buildDraft(property.portalProfiles?.imobiliare));
   const [categories, setCategories] = useState<ImobiliareCategoryOption[]>([]);
+  const [locations, setLocations] = useState<ImobiliareLocationOption[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const propertyRef = useMemo(() => {
     if (!agencyId) return null;
@@ -124,6 +181,33 @@ export function PublishCard({ property }: { property: Property }) {
   const isPublished = imobiliarePromotion?.status === 'published';
   const isPending = isSubmitting || imobiliarePromotion?.status === 'pending';
   const isErrored = imobiliarePromotion?.status === 'error';
+  const sortedLocations = useMemo(() => {
+    const normalizedCity = normalizeLocationText(property.city);
+    const normalizedZone = normalizeLocationText(property.zone);
+    const visibleLocations = locations.filter((location) => typeof location.id === 'number' && !location.is_hidden);
+    const depth3Locations = visibleLocations.filter((location) => location.depth === 3);
+    const candidateLocations = depth3Locations.length ? depth3Locations : visibleLocations;
+
+    return [...candidateLocations]
+      .sort((left, right) => {
+        const leftPath = collectLocationLabels(left).join(' / ');
+        const rightPath = collectLocationLabels(right).join(' / ');
+        const leftNormalized = normalizeLocationText(`${leftPath} ${left.custom_display || ''} ${left.slug || ''}`);
+        const rightNormalized = normalizeLocationText(`${rightPath} ${right.custom_display || ''} ${right.slug || ''}`);
+        const leftScore =
+          (normalizedZone && leftNormalized.includes(normalizedZone) ? 30 : 0) +
+          (normalizedCity && leftNormalized.includes(normalizedCity) ? 15 : 0);
+        const rightScore =
+          (normalizedZone && rightNormalized.includes(normalizedZone) ? 30 : 0) +
+          (normalizedCity && rightNormalized.includes(normalizedCity) ? 15 : 0);
+
+        if (leftScore !== rightScore) {
+          return rightScore - leftScore;
+        }
+
+        return leftPath.localeCompare(rightPath, 'ro');
+      });
+  }, [locations, property.city, property.zone]);
 
   async function loadCategories() {
     if (!user) return;
@@ -142,13 +226,20 @@ export function PublishCard({ property }: { property: Property }) {
 
       const nextCategories = Array.isArray(payload?.data) ? payload.data as ImobiliareCategoryOption[] : [];
       const selectable = nextCategories
-        .filter((item) => item?.selectable !== false)
+        .filter((item) => item?.selectable !== false && typeof item?.id === 'number' && item.id >= 100)
         .sort((left, right) => {
           const leftLabel = `${left.parentName || ''} ${left.name || ''}`.trim();
           const rightLabel = `${right.parentName || ''} ${right.name || ''}`.trim();
           return leftLabel.localeCompare(rightLabel, 'ro');
         });
       setCategories(selectable);
+      setSettingsDraft((current) => {
+        if (!current.categoryApi) {
+          return current;
+        }
+        const exists = selectable.some((item) => String(item.id) === current.categoryApi);
+        return exists ? current : { ...current, categoryApi: '' };
+      });
     } catch (error) {
       toast({
         title: 'Categorii indisponibile',
@@ -157,6 +248,44 @@ export function PublishCard({ property }: { property: Property }) {
       });
     } finally {
       setIsLoadingCategories(false);
+    }
+  }
+
+  async function loadLocations() {
+    if (!user) return;
+    setIsLoadingLocations(true);
+    try {
+      const response = await authorizedFetch(user, '/api/imobiliare/locations', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut incarca locatiile din imobiliare.ro.');
+      }
+
+      const nextLocations = Array.isArray(payload?.data) ? payload.data as ImobiliareLocationOption[] : [];
+      const visibleLocations = nextLocations.filter((location) => location && typeof location.id === 'number' && !location.is_hidden);
+      const depth3Locations = visibleLocations.filter((location) => location.depth === 3);
+      const availableLocations = depth3Locations.length ? depth3Locations : visibleLocations;
+      setLocations(availableLocations);
+      setSettingsDraft((current) => {
+        if (!current.locationId) {
+          return current;
+        }
+        const exists = availableLocations.some((item) => String(item.id) === current.locationId);
+        return exists ? current : { ...current, locationId: '' };
+      });
+    } catch (error) {
+      toast({
+        title: 'Locatii indisponibile',
+        description: error instanceof Error ? error.message : 'Nu am putut incarca locatiile.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingLocations(false);
     }
   }
 
@@ -179,7 +308,13 @@ export function PublishCard({ property }: { property: Property }) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload?.message || 'Actiunea nu a putut fi finalizata.');
+        const detailText =
+          payload?.details && typeof payload.details === 'object'
+            ? JSON.stringify(payload.details)
+            : typeof payload?.details === 'string'
+              ? payload.details
+              : '';
+        throw new Error([payload?.message, detailText].filter(Boolean).join(' | ') || 'Actiunea nu a putut fi finalizata.');
       }
 
       toast({
@@ -199,7 +334,7 @@ export function PublishCard({ property }: { property: Property }) {
     }
   }
 
-  function persistSettings() {
+  async function persistSettings() {
     if (!propertyRef) return;
 
     let parsedOverrides: Record<string, unknown> | undefined;
@@ -221,7 +356,7 @@ export function PublishCard({ property }: { property: Property }) {
       settingsDraft.virtualTourLink.trim() ? { type: 'virtual_tour' as const, link: settingsDraft.virtualTourLink.trim() } : null,
     ].filter(Boolean);
 
-    const nextProfile: ImobiliarePortalProfile = {
+    const nextProfile = stripUndefinedDeep<ImobiliarePortalProfile>({
       ...(imobiliareProfile || {}),
       categoryApi: settingsDraft.categoryApi.trim() ? Number(settingsDraft.categoryApi.trim()) : null,
       locationId: settingsDraft.locationId.trim() ? Number(settingsDraft.locationId.trim()) : null,
@@ -236,20 +371,31 @@ export function PublishCard({ property }: { property: Property }) {
       descriptionOverride: settingsDraft.descriptionOverride.trim() || undefined,
       dataPropertiesOverrides: parsedOverrides,
       mediaLinks: mediaLinks as ImobiliarePortalProfile['mediaLinks'],
-    };
-
-    setDocumentNonBlocking(propertyRef, {
-      portalProfiles: {
-        ...(property.portalProfiles || {}),
-        imobiliare: nextProfile,
-      },
-    }, { merge: true });
-
-    toast({
-      title: 'Setari salvate',
-      description: 'Override-urile pentru imobiliare.ro au fost actualizate.',
     });
-    setIsDialogOpen(false);
+
+    setIsSavingSettings(true);
+    try {
+      await setDoc(propertyRef, {
+        portalProfiles: {
+          ...(property.portalProfiles || {}),
+          imobiliare: nextProfile,
+        },
+      }, { merge: true });
+
+      toast({
+        title: 'Setari salvate',
+        description: 'Override-urile pentru imobiliare.ro au fost actualizate.',
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Salvare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut salva setarile pentru imobiliare.ro.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
   }
 
   return (
@@ -317,21 +463,22 @@ export function PublishCard({ property }: { property: Property }) {
                           className="h-9 w-9 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white"
                           onClick={() => {
                             setSettingsDraft(buildDraft(imobiliareProfile));
-                            void loadCategories();
+                            void Promise.all([loadCategories(), loadLocations()]);
                           }}
                         >
                           <Settings2 className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl border-white/10 bg-[#0F1E33] text-white">
-                        <DialogHeader>
+                      <DialogContent className="flex max-h-[90vh] w-[min(96vw,56rem)] flex-col overflow-hidden border-white/10 bg-[#0F1E33] p-0 text-white">
+                        <DialogHeader className="border-b border-white/10 px-6 py-5">
                           <DialogTitle>Setari Imobiliare.ro</DialogTitle>
                           <DialogDescription className="text-white/60">
                             Completeaza doar campurile pe care vrei sa le suprascrii fata de datele standard ale proprietatii.
                           </DialogDescription>
                         </DialogHeader>
 
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        <div className="grid gap-4 pb-4 md:grid-cols-2">
                           <div className="space-y-2">
                             <Label className="text-white/80">categoryApi</Label>
                             <Select
@@ -364,7 +511,29 @@ export function PublishCard({ property }: { property: Property }) {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-white/80">locationId</Label>
-                            <Input value={settingsDraft.locationId} onChange={(e) => setSettingsDraft((s) => ({ ...s, locationId: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
+                            <Select
+                              value={settingsDraft.locationId || undefined}
+                              onValueChange={(value) => setSettingsDraft((s) => ({ ...s, locationId: value }))}
+                            >
+                              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                <SelectValue placeholder={isLoadingLocations ? 'Se incarca locatiile...' : 'Selecteaza locatia'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {sortedLocations.map((location) => {
+                                  const pathLabel = collectLocationLabels(location).join(' / ') || location.custom_display || `Locatie ${location.id}`;
+                                  return (
+                                    <SelectItem key={location.id} value={String(location.id)}>
+                                      {pathLabel}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                            {settingsDraft.locationId ? (
+                              <p className="text-xs text-white/55">
+                                ID selectat: {settingsDraft.locationId}
+                              </p>
+                            ) : null}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-white/80">remoteAgentId</Label>
@@ -421,10 +590,11 @@ export function PublishCard({ property }: { property: Property }) {
                             {imobiliareProfile?.lastValidationError || imobiliarePromotion?.errorMessage}
                           </div>
                         ) : null}
+                        </div>
 
-                        <DialogFooter>
-                          <Button type="button" variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/20" onClick={persistSettings}>
-                            Salveaza setarile
+                        <DialogFooter className="shrink-0 border-t border-white/10 bg-[#0F1E33] px-6 py-4">
+                          <Button type="button" variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/20" onClick={() => void persistSettings()} disabled={isSavingSettings}>
+                            {isSavingSettings ? 'Se salveaza...' : 'Salveaza setarile'}
                           </Button>
                         </DialogFooter>
                       </DialogContent>

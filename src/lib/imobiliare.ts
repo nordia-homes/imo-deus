@@ -42,9 +42,11 @@ type CategoryOption = {
 
 type LocationOption = {
   id: number;
+  old_id?: number | null;
   title?: string;
   slug?: string;
   depth?: number;
+  is_hidden?: boolean;
   parent_id?: number | null;
   parent?: LocationOption | null;
   custom_display?: string;
@@ -148,12 +150,33 @@ function extractMessage(payload: ImobiliareApiErrorPayload | string | null | und
   if (typeof payload.message === 'string' && payload.message) return payload.message;
   if (typeof payload.error === 'string' && payload.error) return payload.error;
   if (payload.errors && typeof payload.errors === 'object') {
-    const firstMessage = Object.values(payload.errors).flat()[0];
-    if (typeof firstMessage === 'string' && firstMessage) {
-      return firstMessage;
+    const flattened = Object.entries(payload.errors)
+      .flatMap(([field, messages]) =>
+        (messages || [])
+          .filter((message): message is string => typeof message === 'string' && Boolean(message))
+          .map((message) => `${field}: ${message}`)
+      )
+      .filter(Boolean);
+    if (flattened.length) {
+      return flattened.join(' | ');
     }
   }
   return fallback;
+}
+
+function extractAllowedNumericValues(message: string | null | undefined, fieldName: string) {
+  if (!message) return [];
+  const normalizedField = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`${normalizedField}\\s*:\\s*[^\\d]*([\\d,\\s]+)`, 'i');
+  const match = message.match(regex);
+  if (!match?.[1]) {
+    return [];
+  }
+
+  return match[1]
+    .split(',')
+    .map((item) => Number(item.trim()))
+    .filter((value) => Number.isFinite(value));
 }
 
 async function safeJson(response: Response) {
@@ -306,6 +329,22 @@ async function imobiliareRequest<T>(agencyId: string, path: string, init?: Reque
   return payload as T;
 }
 
+async function getAvailableImobiliareLocations(agencyId: string) {
+  const nomenclatorPayload = await imobiliareRequest<unknown>(agencyId, '/api/v3/nomenclator').catch(() => null);
+  const nomenclatorLocations = nomenclatorPayload ? extractLocations(nomenclatorPayload) : [];
+  if (nomenclatorLocations.length) {
+    return nomenclatorLocations;
+  }
+
+  const locationsPayload = await imobiliareRequest<unknown>(agencyId, '/api/v3/locations');
+  return extractLocations(locationsPayload);
+}
+
+async function getLocationWithDescendants(agencyId: string, locationId: number) {
+  const payload = await imobiliareRequest<unknown>(agencyId, `/api/v3/locations/${locationId}`).catch(() => null);
+  return payload ? extractLocations(payload) : [];
+}
+
 function extractAgents(payload: unknown): RemoteAgent[] {
   const root = payload as { data?: unknown };
   if (Array.isArray(root?.data)) {
@@ -380,14 +419,64 @@ function extractCategories(payload: unknown): CategoryOption[] {
 }
 
 function extractLocations(payload: unknown): LocationOption[] {
+  const seen = new Map<number, LocationOption>();
+
+  const visit = (node: unknown, inheritedParent?: LocationOption | null) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach((entry) => visit(entry, inheritedParent));
+      return;
+    }
+
+    const record = node as Record<string, unknown>;
+    const id = typeof record.id === 'number' ? record.id : null;
+    const title = typeof record.title === 'string' ? record.title : null;
+    const depth = typeof record.depth === 'number' ? record.depth : null;
+    const customDisplay = typeof record.custom_display === 'string' ? record.custom_display : undefined;
+    const slug = typeof record.slug === 'string' ? record.slug : undefined;
+    const isHidden = typeof record.is_hidden === 'boolean' ? record.is_hidden : undefined;
+    const oldId = typeof record.old_id === 'number' ? record.old_id : undefined;
+    const parent =
+      record.parent && typeof record.parent === 'object'
+        ? (record.parent as LocationOption)
+        : inheritedParent || null;
+
+    const looksLikeLocation = Boolean(id && (title || depth !== null || customDisplay || slug));
+    if (looksLikeLocation && id) {
+      if (!seen.has(id)) {
+        seen.set(id, {
+          id,
+          old_id: oldId,
+          title: title || undefined,
+          slug,
+          depth: depth ?? undefined,
+          is_hidden: isHidden,
+          parent_id: typeof record.parent_id === 'number' ? record.parent_id : parent?.id || null,
+          parent,
+          custom_display: customDisplay,
+        });
+      }
+    }
+
+    const currentLocation = id && seen.has(id) ? seen.get(id)! : inheritedParent || null;
+    for (const [key, value] of Object.entries(record)) {
+      if (key === 'parent') {
+        continue;
+      }
+      visit(value, currentLocation);
+    }
+  };
+
+  visit(payload, null);
   const root = payload as { data?: unknown };
-  if (Array.isArray(root?.data)) {
-    return root.data as LocationOption[];
+  if (root?.data) {
+    visit(root.data, null);
   }
-  if (Array.isArray(payload)) {
-    return payload as LocationOption[];
-  }
-  return [];
+
+  return Array.from(seen.values());
 }
 
 function collectLocationAncestors(location?: LocationOption | null): LocationOption[] {
@@ -443,6 +532,37 @@ function getLocationHaystack(location: LocationOption) {
     .filter(Boolean)
     .map((item) => normalizeText(item))
     .join(' ');
+}
+
+function pickBestLocationCandidate(locations: LocationOption[], property: Property) {
+  const searchTerms = buildLocationSearchTerms(property);
+  const normalizedCity = normalizeText(property.city);
+  const normalizedZone = normalizeText(property.zone);
+
+  const scored = locations
+    .map((location) => {
+      const haystack = getLocationHaystack(location);
+      const title = normalizeText(location.title);
+      const customDisplay = normalizeText(location.custom_display);
+      const directZoneMatch = Boolean(normalizedZone && (title === normalizedZone || customDisplay.includes(normalizedZone)));
+      const directCityMatch = Boolean(normalizedCity && haystack.includes(normalizedCity));
+      const tokenHits = searchTerms.reduce((sum, token) => sum + (haystack.includes(token.normalized) ? 1 : 0), 0);
+      const score =
+        (directZoneMatch ? 80 : 0) +
+        (directCityMatch ? 25 : 0) +
+        tokenHits * 12;
+
+      return { location, score, directZoneMatch, directCityMatch, tokenHits };
+    })
+    .filter((entry) => entry.tokenHits > 0 || entry.directZoneMatch || entry.directCityMatch)
+    .sort((left, right) => right.score - left.score);
+
+  return (
+    scored.find((entry) => entry.directZoneMatch || entry.tokenHits >= 2)?.location ||
+    scored.find((entry) => entry.directCityMatch)?.location ||
+    scored[0]?.location ||
+    null
+  );
 }
 
 function pickCategoryName(propertyType?: string | null, transactionType?: string | null) {
@@ -515,8 +635,13 @@ function getCategorySearchTerms(property: Property) {
   };
 }
 
-async function resolveCategoryApi(agencyId: string, property: Property, portalProfile?: ImobiliarePortalProfile) {
-  if (typeof portalProfile?.categoryApi === 'number') {
+async function resolveCategoryApi(
+  agencyId: string,
+  property: Property,
+  portalProfile?: ImobiliarePortalProfile,
+  allowedCategoryIds?: number[]
+) {
+  if (!allowedCategoryIds?.length && typeof portalProfile?.categoryApi === 'number') {
     return portalProfile.categoryApi;
   }
 
@@ -526,7 +651,14 @@ async function resolveCategoryApi(agencyId: string, property: Property, portalPr
   if (!categories.length) {
     throw new Error('Imobiliare.ro nu a returnat categorii utilizabile. Incearca din nou sau configureaza manual categoryApi.');
   }
-  const candidatePool = selectableCategories.length ? selectableCategories : categories;
+  const baseCandidatePool = selectableCategories.length ? selectableCategories : categories;
+  const candidatePool = allowedCategoryIds?.length
+    ? baseCandidatePool.filter((item) => allowedCategoryIds.includes(item.id))
+    : baseCandidatePool;
+
+  if (!candidatePool.length && allowedCategoryIds?.length) {
+    return allowedCategoryIds[0];
+  }
 
   const desiredName = pickCategoryName(property.propertyType, property.transactionType);
   const normalizedDesiredName = normalizeText(desiredName);
@@ -570,21 +702,26 @@ async function resolveCategoryApi(agencyId: string, property: Property, portalPr
 }
 
 async function resolveLocationId(agencyId: string, property: Property, portalProfile?: ImobiliarePortalProfile) {
-  if (typeof portalProfile?.locationId === 'number') {
-    return portalProfile.locationId;
+  const visibleLocations = (await getAvailableImobiliareLocations(agencyId)).filter(
+    (item) => item && typeof item.id === 'number' && !(item as { is_hidden?: boolean }).is_hidden
+  );
+  const locations = visibleLocations.filter((item) => item.depth === 3);
+  const candidateLocations = locations.length ? locations : visibleLocations;
+  if (!candidateLocations.length) {
+    throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
   }
 
-  const payload = await imobiliareRequest<unknown>(agencyId, '/api/v3/locations');
-  const locations = extractLocations(payload).filter((item) => item && typeof item.id === 'number');
-  if (!locations.length) {
-    throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
+  if (typeof portalProfile?.locationId === 'number') {
+    const exactMatch = candidateLocations.find((item) => item.id === portalProfile.locationId);
+    if (exactMatch) {
+      return exactMatch.id;
+    }
   }
 
   const searchTerms = buildLocationSearchTerms(property);
   const normalizedCity = normalizeText(property.city);
   const normalizedZone = normalizeText(property.zone);
-
-  const scored = locations
+  const scored = candidateLocations
     .map((location) => {
       const haystack = getLocationHaystack(location);
       const title = normalizeText(location.title);
@@ -605,12 +742,49 @@ async function resolveLocationId(agencyId: string, property: Property, portalPro
     .sort((left, right) => right.score - left.score);
 
   const preferred =
-    scored.find((entry) => entry.location.depth === 3 && (entry.directZoneMatch || entry.tokenHits >= 2)) ||
-    scored.find((entry) => entry.location.depth === 3 && entry.directCityMatch) ||
+    scored.find((entry) => entry.directZoneMatch || entry.tokenHits >= 2) ||
+    scored.find((entry) => entry.directCityMatch) ||
     scored[0];
 
   if (preferred?.location?.id) {
     return preferred.location.id;
+  }
+
+  throw new Error('Nu am putut determina location_id pentru proprietate. Completeaza orasul/zona sau configureaza manual locationId.');
+}
+
+async function resolveLocationIdForPublish(agencyId: string, property: Property, portalProfile?: ImobiliarePortalProfile) {
+  const visibleLocations = (await getAvailableImobiliareLocations(agencyId)).filter(
+    (item) => item && typeof item.id === 'number' && !item.is_hidden
+  );
+  const directDepth3Locations = visibleLocations.filter((item) => item.depth === 3);
+  const candidateLocations = directDepth3Locations.length ? directDepth3Locations : visibleLocations;
+
+  if (!candidateLocations.length) {
+    throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
+  }
+
+  if (typeof portalProfile?.locationId === 'number') {
+    const exactDepth3Match = directDepth3Locations.find((item) => item.id === portalProfile.locationId);
+    if (exactDepth3Match?.id) {
+      return exactDepth3Match.id;
+    }
+
+    const selectedLocation = visibleLocations.find((item) => item.id === portalProfile.locationId);
+    if (selectedLocation) {
+      const descendants = (await getLocationWithDescendants(agencyId, selectedLocation.id)).filter(
+        (item) => item && typeof item.id === 'number' && item.depth === 3 && !item.is_hidden
+      );
+      const descendantMatch = pickBestLocationCandidate(descendants, property);
+      if (descendantMatch?.id) {
+        return descendantMatch.id;
+      }
+    }
+  }
+
+  const preferred = pickBestLocationCandidate(candidateLocations, property);
+  if (preferred?.id) {
+    return preferred.id;
   }
 
   throw new Error('Nu am putut determina location_id pentru proprietate. Completeaza orasul/zona sau configureaza manual locationId.');
@@ -711,6 +885,25 @@ async function ensureRemoteAgentId(params: {
 
 function buildBaseDataProperties(property: Property, portalProfile?: ImobiliarePortalProfile) {
   const overrides = (portalProfile?.dataPropertiesOverrides || {}) as Record<string, unknown>;
+  const normalizedPropertyType = normalizeText(property.propertyType);
+  const normalizedInteriorState = normalizeText(property.interiorState);
+
+  const housingType =
+    normalizedPropertyType.includes('garsoniera')
+      ? 'studio'
+      : normalizedPropertyType.includes('apartament')
+        ? 'apartment'
+        : normalizedPropertyType.includes('casa') || normalizedPropertyType.includes('vila')
+          ? 'house'
+          : undefined;
+
+  const buildingType =
+    normalizedPropertyType.includes('garsoniera') || normalizedPropertyType.includes('apartament')
+      ? 'apartment-building'
+      : normalizedPropertyType.includes('casa') || normalizedPropertyType.includes('vila')
+        ? 'house'
+        : undefined;
+
   const base = compactObject({
     bedroom_count: property.rooms ? String(property.rooms) : undefined,
     bathroom_count: typeof property.bathrooms === 'number' ? String(property.bathrooms) : undefined,
@@ -720,7 +913,13 @@ function buildBaseDataProperties(property: Property, portalProfile?: ImobiliareP
     year_built: property.constructionYear ? String(property.constructionYear) : undefined,
     floor_number: property.floor ? String(property.floor).replace(/[^\d\-]/g, '') || String(property.floor) : undefined,
     number_of_floors: property.totalFloors ? String(property.totalFloors) : undefined,
+    housing_type: housingType,
+    building_type: buildingType,
     comfort: property.comfort && ['1', '2', '3', 'lux'].includes(normalizeText(property.comfort)) ? property.comfort : undefined,
+    construction_stage:
+      normalizedInteriorState.includes('renovat') || normalizedInteriorState.includes('buna') || normalizedInteriorState.includes('nou')
+        ? 'completed'
+        : undefined,
     compartmentalization_type: property.partitioning
       ? normalizeText(property.partitioning).includes('semi')
         ? 'semi-detached'
@@ -1073,7 +1272,7 @@ export async function publishPropertyToImobiliare(params: {
 
   const portalProfile = property.portalProfiles?.imobiliare;
   const categoryApi = await resolveCategoryApi(agencyId, property, portalProfile);
-  const locationId = await resolveLocationId(agencyId, property, portalProfile);
+  const locationId = await resolveLocationIdForPublish(agencyId, property, portalProfile);
   const remoteAgentId = await ensureRemoteAgentId({
     agencyId,
     property,
@@ -1090,7 +1289,52 @@ export async function publishPropertyToImobiliare(params: {
   });
 
   const payloadHash = getPayloadHash(payload);
-  const listingResponse = await upsertListing(agencyId, payload);
+  let listingResponse: Record<string, unknown> | { data?: Record<string, unknown> };
+  try {
+    listingResponse = await upsertListing(agencyId, payload);
+  } catch (error) {
+    const typedError = error as ImobiliareApiError;
+    const errorMessage = typedError.message || extractMessage(typedError.payload, 'Publicarea in imobiliare.ro a esuat.');
+    const allowedCategoryIds = extractAllowedNumericValues(errorMessage, 'category_api');
+
+    if (allowedCategoryIds.length) {
+      const retryCategoryApi = await resolveCategoryApi(agencyId, property, portalProfile, allowedCategoryIds);
+      const retryPayload = buildListingPayload({
+        property,
+        portalProfile: {
+          ...(portalProfile || {}),
+          categoryApi: retryCategoryApi,
+        },
+        remoteAgentId,
+        categoryApi: retryCategoryApi,
+        locationId,
+      });
+
+      listingResponse = await upsertListing(agencyId, retryPayload);
+    } else if (errorMessage.includes('location_id')) {
+      const availableLocations = await getAvailableImobiliareLocations(agencyId);
+      const selectedLocation = availableLocations.find((item) => item.id === locationId);
+      if (typeof selectedLocation?.old_id === 'number') {
+        const retryPayload = buildListingPayload({
+          property,
+          portalProfile: {
+            ...(portalProfile || {}),
+            locationId: selectedLocation.old_id,
+          },
+          remoteAgentId,
+          categoryApi,
+          locationId: selectedLocation.old_id,
+        });
+
+        listingResponse = await upsertListing(agencyId, retryPayload);
+      } else {
+        throw error;
+      }
+    } else {
+      throw error;
+    }
+  }
+
   await uploadListingMedia(agencyId, String(payload.custom_reference), property);
   await syncMediaLinks(agencyId, String(payload.custom_reference), portalProfile);
   await applyPromotions(agencyId, String(payload.custom_reference), portalProfile);
@@ -1163,5 +1407,9 @@ export async function unpublishPropertyFromImobiliare(params: {
 
 export async function getImobiliareCategories(agencyId: string) {
   const payload = await imobiliareRequest<unknown>(agencyId, '/api/v3/categories');
-  return extractCategories(payload);
+  return extractCategories(payload).filter((item) => item.selectable && item.id >= 100);
+}
+
+export async function getImobiliareLocations(agencyId: string) {
+  return (await getAvailableImobiliareLocations(agencyId)).filter((item) => item && typeof item.id === 'number');
 }
