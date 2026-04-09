@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { Property } from "@/lib/types";
@@ -42,6 +42,36 @@ const PORTALS = [
   { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
   { id: 'olx', name: 'OLX.ro', logo: <OlxLogo /> },
 ];
+
+type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
+type ImobiliareSyncTarget = 'published' | 'unpublished' | null;
+
+function getImobiliareSyncStorageKey(propertyId: string) {
+  return `imobiliare-sync-target:${propertyId}`;
+}
+
+function readPersistedSyncTarget(propertyId: string): ImobiliareSyncTarget {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const rawValue = window.sessionStorage.getItem(getImobiliareSyncStorageKey(propertyId));
+  return rawValue === 'published' || rawValue === 'unpublished' ? rawValue : null;
+}
+
+function writePersistedSyncTarget(propertyId: string, target: ImobiliareSyncTarget) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const storageKey = getImobiliareSyncStorageKey(propertyId);
+  if (!target) {
+    window.sessionStorage.removeItem(storageKey);
+    return;
+  }
+
+  window.sessionStorage.setItem(storageKey, target);
+}
 
 function formatApiErrorDetails(details: unknown): string {
   if (!details) {
@@ -116,6 +146,47 @@ function getPersistedImobiliareError(propertyLike: {
   return auditError || profile?.lastValidationError || genericError || '';
 }
 
+function deriveImobiliareUiStatus(property: Property): ImobiliareUiStatus {
+  const promotion = property.promotions?.imobiliare;
+  const profile = property.portalProfiles?.imobiliare as
+    | {
+        lastPublishAudit?: { stage?: string | null } | null;
+      }
+    | null
+    | undefined;
+  const rawStatus = promotion?.status;
+  const remoteState = typeof promotion?.remoteState === 'string' ? promotion.remoteState.toLowerCase() : '';
+  const hasRemoteListing = Boolean(
+    promotion?.remoteId ||
+    promotion?.link ||
+    remoteState === 'online' ||
+    remoteState === 'published' ||
+    profile?.lastPublishAudit?.stage === 'success'
+  );
+
+  if (rawStatus === 'error') {
+    return 'error';
+  }
+
+  if (rawStatus === 'unpublished') {
+    return 'unpublished';
+  }
+
+  if (rawStatus === 'published') {
+    return 'published';
+  }
+
+  if (rawStatus === 'pending') {
+    return hasRemoteListing ? 'published' : 'pending';
+  }
+
+  if (hasRemoteListing) {
+    return 'published';
+  }
+
+  return 'unpublished';
+}
+
 async function authorizedFetch(
   user: NonNullable<ReturnType<typeof useUser>['user']>,
   auth: ReturnType<typeof useAuth>,
@@ -151,6 +222,8 @@ export function PublishCard({ property }: { property: Property }) {
   const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [optimisticStatus, setOptimisticStatus] = useState<ImobiliareUiStatus | null>(null);
+  const [syncTarget, setSyncTarget] = useState<ImobiliareSyncTarget>(() => readPersistedSyncTarget(property.id));
   const propertyRef = useMemo(() => {
     if (!agencyId) {
       return null;
@@ -159,12 +232,55 @@ export function PublishCard({ property }: { property: Property }) {
     return doc(firestore, 'agencies', agencyId, 'properties', property.id);
   }, [agencyId, firestore, property.id]);
 
-  const imobiliarePromotion = property.promotions?.imobiliare;
-  const imobiliareProfile = property.portalProfiles?.imobiliare;
-  const isPublished = imobiliarePromotion?.status === 'published';
-  const isPending = isSubmitting || imobiliarePromotion?.status === 'pending';
-  const isErrored = imobiliarePromotion?.status === 'error';
+  const serverStatus = deriveImobiliareUiStatus(property);
+  const isSyncing = syncTarget !== null;
+  const effectiveStatus: ImobiliareUiStatus = isSyncing ? 'pending' : optimisticStatus || serverStatus;
+  const isPublished = effectiveStatus === 'published';
+  const isPending = effectiveStatus === 'pending';
+  const isErrored = effectiveStatus === 'error';
   const persistedError = getPersistedImobiliareError(property);
+
+  useEffect(() => {
+    writePersistedSyncTarget(property.id, syncTarget);
+  }, [property.id, syncTarget]);
+
+  useEffect(() => {
+    setSyncTarget(readPersistedSyncTarget(property.id));
+    setOptimisticStatus(null);
+    setIsSubmitting(false);
+  }, [property.id]);
+
+  useEffect(() => {
+    if (syncTarget) {
+      if (serverStatus === syncTarget) {
+        setSyncTarget(null);
+        setOptimisticStatus(null);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!isSubmitting && serverStatus === 'error') {
+        setSyncTarget(null);
+        setOptimisticStatus('error');
+      }
+      return;
+    }
+
+    if (!optimisticStatus) {
+      return;
+    }
+
+    if (optimisticStatus === 'pending') {
+      if (!isSubmitting && serverStatus !== 'pending') {
+        setOptimisticStatus(null);
+      }
+      return;
+    }
+
+    if (!isSubmitting && optimisticStatus === serverStatus) {
+      setOptimisticStatus(null);
+    }
+  }, [isSubmitting, optimisticStatus, serverStatus, syncTarget]);
 
   async function loadLatestImobiliareError() {
     if (!propertyRef) {
@@ -190,6 +306,8 @@ export function PublishCard({ property }: { property: Property }) {
     }
 
     setIsSubmitting(true);
+    setOptimisticStatus(null);
+    setSyncTarget(checked ? 'published' : 'unpublished');
     try {
       const endpoint = checked ? '/api/imobiliare/publish' : '/api/imobiliare/unpublish';
       const response = await authorizedFetch(user, auth, endpoint, {
@@ -208,6 +326,7 @@ export function PublishCard({ property }: { property: Property }) {
           ? 'Proprietatea a fost sincronizata cu imobiliare.ro.'
           : 'Proprietatea a fost retrasa din imobiliare.ro.',
       });
+      setIsSubmitting(false);
     } catch (error) {
       let description = error instanceof Error ? error.message : 'A aparut o eroare neasteptata.';
       if (/^Server Error\.(\s*\|\s*Server Error\.)?$/i.test(description.trim())) {
@@ -222,7 +341,8 @@ export function PublishCard({ property }: { property: Property }) {
         description,
         variant: 'destructive',
       });
-    } finally {
+      setSyncTarget(null);
+      setOptimisticStatus('error');
       setIsSubmitting(false);
     }
   }
@@ -282,12 +402,18 @@ export function PublishCard({ property }: { property: Property }) {
               </div>
               <div className="flex items-center justify-end gap-2">
                 {isImobiliare ? (
-                  <Checkbox
-                    id={`portal-${portal.id}`}
-                    checked={published || pending}
-                    disabled={pending}
-                    onCheckedChange={(checked) => handlePublishToggle(portal.id, !!checked)}
-                  />
+                  isSyncing ? (
+                    <div className="flex h-5 w-5 items-center justify-center text-emerald-300">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <Checkbox
+                      id={`portal-${portal.id}`}
+                      checked={published || pending}
+                      disabled={isSubmitting}
+                      onCheckedChange={(checked) => handlePublishToggle(portal.id, !!checked)}
+                    />
+                  )
                 ) : (
                   <Button
                     type="button"
@@ -310,7 +436,7 @@ export function PublishCard({ property }: { property: Property }) {
           </div>
         ) : null}
 
-        {isSubmitting ? (
+        {isSyncing ? (
           <div className="flex items-center gap-2 px-1 pt-1 text-xs text-white/60">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Sincronizam proprietatea cu imobiliare.ro...

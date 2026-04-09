@@ -1857,8 +1857,15 @@ export async function unpublishPropertyFromImobiliare(params: {
         imobiliare: {
           status: 'unpublished',
           lastSync: nowIso(),
+          link: null,
+          remoteId: null,
           errorMessage: null,
           remoteState: 'draft',
+        },
+      },
+      portalProfiles: {
+        imobiliare: {
+          lastValidationError: null,
         },
       },
     },
