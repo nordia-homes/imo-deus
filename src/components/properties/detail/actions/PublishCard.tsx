@@ -1,23 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { ImobiliarePortalProfile, Property } from "@/lib/types";
-import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import type { Property } from "@/lib/types";
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { useAgency } from "@/context/AgencyContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Loader2, Settings2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 
 const ImobiliareLogo = () => (
@@ -46,147 +40,6 @@ const PORTALS = [
   { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
   { id: 'olx', name: 'OLX.ro', logo: <OlxLogo /> },
 ];
-
-type PortalSettingsDraft = {
-  categoryApi: string;
-  locationId: string;
-  remoteAgentId: string;
-  priceCurrency: string;
-  streetName: string;
-  streetNumber: string;
-  block: string;
-  entrance: string;
-  apartmentNumber: string;
-  titleOverride: string;
-  descriptionOverride: string;
-  videoLink: string;
-  virtualTourLink: string;
-  dataPropertiesJson: string;
-};
-
-type ImobiliareCategoryOption = {
-  id: number;
-  name: string;
-  offerType?: string | null;
-  parentName?: string | null;
-  selectable?: boolean;
-};
-
-type ImobiliareLocationOption = {
-  id: number;
-  title?: string;
-  slug?: string;
-  depth?: number;
-  is_hidden?: boolean;
-  custom_display?: string;
-  parent?: ImobiliareLocationOption | null;
-};
-
-function sanitizeCategoryOptions(categories: ImobiliareCategoryOption[]) {
-  const byId = new Map<number, ImobiliareCategoryOption>();
-
-  for (const category of categories) {
-    if (!category || typeof category.id !== 'number') {
-      continue;
-    }
-
-    const name = (category.name || '').trim();
-    if (!name) {
-      continue;
-    }
-
-    byId.set(category.id, {
-      ...category,
-      name,
-      parentName: category.parentName?.trim() || null,
-      selectable: category.selectable !== false,
-    });
-  }
-
-  return Array.from(byId.values()).sort((left, right) => {
-    const leftLabel = `${left.parentName || ''} ${left.name}`.trim();
-    const rightLabel = `${right.parentName || ''} ${right.name}`.trim();
-    return leftLabel.localeCompare(rightLabel, 'ro');
-  });
-}
-
-function sanitizeLocationOptions(locations: ImobiliareLocationOption[]) {
-  const byId = new Map<number, ImobiliareLocationOption>();
-
-  for (const location of locations) {
-    if (!location || typeof location.id !== 'number' || location.is_hidden) {
-      continue;
-    }
-    byId.set(location.id, location);
-  }
-
-  const visible = Array.from(byId.values());
-  const depth3 = visible.filter((location) => location.depth === 3);
-  return depth3.length ? depth3 : visible;
-}
-
-function normalizeLocationText(value?: string | null) {
-  return (value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-function collectLocationLabels(location?: ImobiliareLocationOption | null): string[] {
-  const labels: string[] = [];
-  const seen = new Set<number>();
-  let current = location || null;
-
-  while (current && typeof current.id === 'number' && !seen.has(current.id)) {
-    seen.add(current.id);
-    if (current.title) {
-      labels.unshift(current.title);
-    } else if (current.custom_display) {
-      labels.unshift(current.custom_display);
-    }
-    current = current.parent || null;
-  }
-
-  return labels;
-}
-
-function stripUndefinedDeep<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => stripUndefinedDeep(item))
-      .filter((item) => item !== undefined) as T;
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .filter(([, entry]) => entry !== undefined)
-        .map(([key, entry]) => [key, stripUndefinedDeep(entry)])
-    ) as T;
-  }
-
-  return value;
-}
-
-function buildDraft(profile?: ImobiliarePortalProfile): PortalSettingsDraft {
-  return {
-    categoryApi: profile?.categoryApi ? String(profile.categoryApi) : '',
-    locationId: profile?.locationId ? String(profile.locationId) : '',
-    remoteAgentId: profile?.remoteAgentId ? String(profile.remoteAgentId) : '',
-    priceCurrency: profile?.priceCurrency || 'EUR',
-    streetName: profile?.streetName || '',
-    streetNumber: profile?.streetNumber || '',
-    block: profile?.block || '',
-    entrance: profile?.entrance || '',
-    apartmentNumber: profile?.apartmentNumber || '',
-    titleOverride: profile?.titleOverride || '',
-    descriptionOverride: profile?.descriptionOverride || '',
-    videoLink: profile?.mediaLinks?.find((item) => item.type === 'video')?.link || '',
-    virtualTourLink: profile?.mediaLinks?.find((item) => item.type === 'virtual_tour')?.link || '',
-    dataPropertiesJson: profile?.dataPropertiesOverrides ? JSON.stringify(profile.dataPropertiesOverrides, null, 2) : '',
-  };
-}
 
 async function authorizedFetch(
   user: NonNullable<ReturnType<typeof useUser>['user']>,
@@ -217,131 +70,16 @@ async function authorizedFetch(
 
 export function PublishCard({ property }: { property: Property }) {
   const { toast } = useToast();
-  const { agencyId } = useAgency();
   const { user } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [settingsDraft, setSettingsDraft] = useState<PortalSettingsDraft>(() => buildDraft(property.portalProfiles?.imobiliare));
-  const [categories, setCategories] = useState<ImobiliareCategoryOption[]>([]);
-  const [locations, setLocations] = useState<ImobiliareLocationOption[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  const propertyRef = useMemo(() => {
-    if (!agencyId) return null;
-    return doc(firestore, 'agencies', agencyId, 'properties', property.id);
-  }, [agencyId, firestore, property.id]);
 
   const imobiliarePromotion = property.promotions?.imobiliare;
   const imobiliareProfile = property.portalProfiles?.imobiliare;
   const isPublished = imobiliarePromotion?.status === 'published';
   const isPending = isSubmitting || imobiliarePromotion?.status === 'pending';
   const isErrored = imobiliarePromotion?.status === 'error';
-  const sortedLocations = useMemo(() => {
-    const normalizedCity = normalizeLocationText(property.city);
-    const normalizedZone = normalizeLocationText(property.zone);
-    const visibleLocations = locations.filter((location) => typeof location.id === 'number' && !location.is_hidden);
-    const depth3Locations = visibleLocations.filter((location) => location.depth === 3);
-    const candidateLocations = depth3Locations.length ? depth3Locations : visibleLocations;
-
-    return [...candidateLocations]
-      .sort((left, right) => {
-        const leftPath = collectLocationLabels(left).join(' / ');
-        const rightPath = collectLocationLabels(right).join(' / ');
-        const leftNormalized = normalizeLocationText(`${leftPath} ${left.custom_display || ''} ${left.slug || ''}`);
-        const rightNormalized = normalizeLocationText(`${rightPath} ${right.custom_display || ''} ${right.slug || ''}`);
-        const leftScore =
-          (normalizedZone && leftNormalized.includes(normalizedZone) ? 30 : 0) +
-          (normalizedCity && leftNormalized.includes(normalizedCity) ? 15 : 0);
-        const rightScore =
-          (normalizedZone && rightNormalized.includes(normalizedZone) ? 30 : 0) +
-          (normalizedCity && rightNormalized.includes(normalizedCity) ? 15 : 0);
-
-        if (leftScore !== rightScore) {
-          return rightScore - leftScore;
-        }
-
-        return leftPath.localeCompare(rightPath, 'ro');
-      });
-  }, [locations, property.city, property.zone]);
-
-  async function loadCategories() {
-    if (!user) return;
-    setIsLoadingCategories(true);
-    try {
-      const response = await authorizedFetch(user, auth, '/api/imobiliare/categories', {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || 'Nu am putut incarca categoriile din imobiliare.ro.');
-      }
-
-      const nextCategories = Array.isArray(payload?.data) ? sanitizeCategoryOptions(payload.data as ImobiliareCategoryOption[]) : [];
-      const strict = nextCategories.filter((item) => item.selectable !== false && item.id >= 100);
-      const fallback = nextCategories.filter((item) => item.selectable !== false);
-      const selectable = strict.length ? strict : fallback.length ? fallback : nextCategories;
-      setCategories(selectable);
-      setSettingsDraft((current) => {
-        if (!current.categoryApi || !selectable.length) {
-          return current;
-        }
-        const exists = selectable.some((item) => String(item.id) === current.categoryApi);
-        return exists ? current : { ...current, categoryApi: '' };
-      });
-    } catch (error) {
-      toast({
-        title: 'Categorii indisponibile',
-        description: error instanceof Error ? error.message : 'Nu am putut incarca categoriile.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingCategories(false);
-    }
-  }
-
-  async function loadLocations() {
-    if (!user) return;
-    setIsLoadingLocations(true);
-    try {
-      const response = await authorizedFetch(user, auth, '/api/imobiliare/locations', {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || 'Nu am putut incarca locatiile din imobiliare.ro.');
-      }
-
-      const nextLocations = Array.isArray(payload?.data) ? sanitizeLocationOptions(payload.data as ImobiliareLocationOption[]) : [];
-      const availableLocations = nextLocations;
-      setLocations(availableLocations);
-      setSettingsDraft((current) => {
-        if (!current.locationId || !availableLocations.length) {
-          return current;
-        }
-        const exists = availableLocations.some((item) => String(item.id) === current.locationId);
-        return exists ? current : { ...current, locationId: '' };
-      });
-    } catch (error) {
-      toast({
-        title: 'Locatii indisponibile',
-        description: error instanceof Error ? error.message : 'Nu am putut incarca locatiile.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingLocations(false);
-    }
-  }
 
   async function handlePublishToggle(portalId: string, checked: boolean) {
     if (portalId !== 'imobiliare') {
@@ -385,70 +123,6 @@ export function PublishCard({ property }: { property: Property }) {
       });
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function persistSettings() {
-    if (!propertyRef) return;
-
-    let parsedOverrides: Record<string, unknown> | undefined;
-    if (settingsDraft.dataPropertiesJson.trim()) {
-      try {
-        parsedOverrides = JSON.parse(settingsDraft.dataPropertiesJson);
-      } catch {
-        toast({
-          title: 'JSON invalid',
-          description: 'Campul pentru data_properties overrides trebuie sa contina JSON valid.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
-    const mediaLinks = [
-      settingsDraft.videoLink.trim() ? { type: 'video' as const, link: settingsDraft.videoLink.trim() } : null,
-      settingsDraft.virtualTourLink.trim() ? { type: 'virtual_tour' as const, link: settingsDraft.virtualTourLink.trim() } : null,
-    ].filter(Boolean);
-
-    const nextProfile = stripUndefinedDeep<ImobiliarePortalProfile>({
-      ...(imobiliareProfile || {}),
-      categoryApi: settingsDraft.categoryApi.trim() ? Number(settingsDraft.categoryApi.trim()) : null,
-      locationId: settingsDraft.locationId.trim() ? Number(settingsDraft.locationId.trim()) : null,
-      remoteAgentId: settingsDraft.remoteAgentId.trim() ? Number(settingsDraft.remoteAgentId.trim()) : null,
-      priceCurrency: (settingsDraft.priceCurrency.trim().toUpperCase() || 'EUR') as 'EUR' | 'RON' | 'USD',
-      streetName: settingsDraft.streetName.trim() || undefined,
-      streetNumber: settingsDraft.streetNumber.trim() || undefined,
-      block: settingsDraft.block.trim() || undefined,
-      entrance: settingsDraft.entrance.trim() || undefined,
-      apartmentNumber: settingsDraft.apartmentNumber.trim() || undefined,
-      titleOverride: settingsDraft.titleOverride.trim() || undefined,
-      descriptionOverride: settingsDraft.descriptionOverride.trim() || undefined,
-      dataPropertiesOverrides: parsedOverrides,
-      mediaLinks: mediaLinks as ImobiliarePortalProfile['mediaLinks'],
-    });
-
-    setIsSavingSettings(true);
-    try {
-      await setDoc(propertyRef, {
-        portalProfiles: {
-          ...(property.portalProfiles || {}),
-          imobiliare: nextProfile,
-        },
-      }, { merge: true });
-
-      toast({
-        title: 'Setari salvate',
-        description: 'Override-urile pentru imobiliare.ro au fost actualizate.',
-      });
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: 'Salvare esuata',
-        description: error instanceof Error ? error.message : 'Nu am putut salva setarile pentru imobiliare.ro.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSavingSettings(false);
     }
   }
 
@@ -507,173 +181,12 @@ export function PublishCard({ property }: { property: Property }) {
               </div>
               <div className="flex items-center justify-end gap-2">
                 {isImobiliare ? (
-                  <>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 rounded-full border border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white"
-                          onClick={() => {
-                            setSettingsDraft(buildDraft(imobiliareProfile));
-                            void Promise.all([loadCategories(), loadLocations()]);
-                          }}
-                        >
-                          <Settings2 className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="flex max-h-[90vh] w-[min(96vw,56rem)] flex-col overflow-hidden border-white/10 bg-[#0F1E33] p-0 text-white">
-                        <DialogHeader className="border-b border-white/10 px-6 py-5">
-                          <DialogTitle>Setari Imobiliare.ro</DialogTitle>
-                          <DialogDescription className="text-white/60">
-                            Completeaza doar campurile pe care vrei sa le suprascrii fata de datele standard ale proprietatii.
-                          </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                        <div className="grid gap-4 pb-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label className="text-white/80">categoryApi</Label>
-                            {categories.length ? (
-                              <Select
-                                value={settingsDraft.categoryApi || undefined}
-                                onValueChange={(value) => setSettingsDraft((s) => ({ ...s, categoryApi: value }))}
-                              >
-                                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                                  <SelectValue placeholder={isLoadingCategories ? 'Se incarca categoriile...' : 'Selecteaza categoria'} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {categories.map((category) => {
-                                    const label = [
-                                      category.parentName,
-                                      category.name,
-                                      category.offerType ? `(${category.offerType})` : null,
-                                    ].filter(Boolean).join(' / ');
-                                    return (
-                                      <SelectItem key={category.id} value={String(category.id)}>
-                                        {label}
-                                      </SelectItem>
-                                    );
-                                  })}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <Input
-                                value={settingsDraft.categoryApi}
-                                onChange={(e) => setSettingsDraft((s) => ({ ...s, categoryApi: e.target.value }))}
-                                placeholder={isLoadingCategories ? 'Se incarca categoriile...' : 'Introdu categoryApi manual'}
-                                className="bg-white/10 border-white/20 text-white"
-                              />
-                            )}
-                            {!categories.length ? (
-                              <p className="text-xs text-white/55">
-                                Dropdown indisponibil pentru acest cont. Poti introduce manual `categoryApi`.
-                              </p>
-                            ) : null}
-                            {settingsDraft.categoryApi ? (
-                              <p className="text-xs text-white/55">
-                                ID selectat: {settingsDraft.categoryApi}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">locationId</Label>
-                            <Select
-                              value={settingsDraft.locationId || undefined}
-                              onValueChange={(value) => setSettingsDraft((s) => ({ ...s, locationId: value }))}
-                            >
-                              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                                <SelectValue placeholder={isLoadingLocations ? 'Se incarca locatiile...' : 'Selecteaza locatia'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {sortedLocations.map((location) => {
-                                  const pathLabel = collectLocationLabels(location).join(' / ') || location.custom_display || `Locatie ${location.id}`;
-                                  return (
-                                    <SelectItem key={location.id} value={String(location.id)}>
-                                      {`${pathLabel} [id:${location.id}${location.depth ? `, d:${location.depth}` : ''}]`}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                            {settingsDraft.locationId ? (
-                              <p className="text-xs text-white/55">
-                                ID selectat: {settingsDraft.locationId}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">remoteAgentId</Label>
-                            <Input value={settingsDraft.remoteAgentId} onChange={(e) => setSettingsDraft((s) => ({ ...s, remoteAgentId: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Moneda</Label>
-                            <Input value={settingsDraft.priceCurrency} onChange={(e) => setSettingsDraft((s) => ({ ...s, priceCurrency: e.target.value.toUpperCase() }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Strada</Label>
-                            <Input value={settingsDraft.streetName} onChange={(e) => setSettingsDraft((s) => ({ ...s, streetName: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Numar</Label>
-                            <Input value={settingsDraft.streetNumber} onChange={(e) => setSettingsDraft((s) => ({ ...s, streetNumber: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Bloc</Label>
-                            <Input value={settingsDraft.block} onChange={(e) => setSettingsDraft((s) => ({ ...s, block: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Scara / intrare</Label>
-                            <Input value={settingsDraft.entrance} onChange={(e) => setSettingsDraft((s) => ({ ...s, entrance: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Apartament</Label>
-                            <Input value={settingsDraft.apartmentNumber} onChange={(e) => setSettingsDraft((s) => ({ ...s, apartmentNumber: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-white/80">Link video</Label>
-                            <Input value={settingsDraft.videoLink} onChange={(e) => setSettingsDraft((s) => ({ ...s, videoLink: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2 md:col-span-2">
-                            <Label className="text-white/80">Link tur virtual</Label>
-                            <Input value={settingsDraft.virtualTourLink} onChange={(e) => setSettingsDraft((s) => ({ ...s, virtualTourLink: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2 md:col-span-2">
-                            <Label className="text-white/80">Titlu override</Label>
-                            <Input value={settingsDraft.titleOverride} onChange={(e) => setSettingsDraft((s) => ({ ...s, titleOverride: e.target.value }))} className="bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2 md:col-span-2">
-                            <Label className="text-white/80">Descriere override</Label>
-                            <Textarea value={settingsDraft.descriptionOverride} onChange={(e) => setSettingsDraft((s) => ({ ...s, descriptionOverride: e.target.value }))} className="min-h-24 bg-white/10 border-white/20 text-white" />
-                          </div>
-                          <div className="space-y-2 md:col-span-2">
-                            <Label className="text-white/80">data_properties overrides (JSON)</Label>
-                            <Textarea value={settingsDraft.dataPropertiesJson} onChange={(e) => setSettingsDraft((s) => ({ ...s, dataPropertiesJson: e.target.value }))} className="min-h-36 bg-white/10 border-white/20 font-mono text-white" />
-                          </div>
-                        </div>
-
-                        {(imobiliareProfile?.lastValidationError || imobiliarePromotion?.errorMessage) ? (
-                          <div className="mt-4 rounded-xl border border-red-300/18 bg-red-400/10 p-3 text-sm text-red-100">
-                            {imobiliareProfile?.lastValidationError || imobiliarePromotion?.errorMessage}
-                          </div>
-                        ) : null}
-                        </div>
-
-                        <DialogFooter className="shrink-0 border-t border-white/10 bg-[#0F1E33] px-6 py-4">
-                          <Button type="button" variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/20" onClick={() => void persistSettings()} disabled={isSavingSettings}>
-                            {isSavingSettings ? 'Se salveaza...' : 'Salveaza setarile'}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    <Checkbox
-                      id={`portal-${portal.id}`}
-                      checked={published || pending}
-                      disabled={pending}
-                      onCheckedChange={(checked) => handlePublishToggle(portal.id, !!checked)}
-                    />
-                  </>
+                  <Checkbox
+                    id={`portal-${portal.id}`}
+                    checked={published || pending}
+                    disabled={pending}
+                    onCheckedChange={(checked) => handlePublishToggle(portal.id, !!checked)}
+                  />
                 ) : (
                   <Button
                     type="button"

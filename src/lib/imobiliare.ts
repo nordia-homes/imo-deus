@@ -881,10 +881,6 @@ async function resolveCategoryApi(
   portalProfile?: ImobiliarePortalProfile,
   allowedCategoryIds?: number[]
 ) {
-  if (!allowedCategoryIds?.length && typeof portalProfile?.categoryApi === 'number') {
-    return portalProfile.categoryApi;
-  }
-
   const payload = await imobiliareRequest<unknown>(agencyId, '/api/v3/categories');
   const categories = sanitizeCategoryOptions(extractCategories(payload));
   const selectableCategories = categories.filter((item) => item.selectable);
@@ -895,6 +891,13 @@ async function resolveCategoryApi(
   const candidatePool = allowedCategoryIds?.length
     ? baseCandidatePool.filter((item) => allowedCategoryIds.includes(item.id))
     : baseCandidatePool;
+
+  if (!allowedCategoryIds?.length && typeof portalProfile?.categoryApi === 'number' && portalProfile.categoryApi >= 100) {
+    const exactSavedCategory = candidatePool.find((item) => item.id === portalProfile.categoryApi);
+    if (exactSavedCategory) {
+      return exactSavedCategory.id;
+    }
+  }
 
   if (!candidatePool.length && allowedCategoryIds?.length) {
     return allowedCategoryIds[0];
@@ -951,13 +954,6 @@ async function resolveLocationIdForPublish(agencyId: string, property: Property,
     throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
   }
 
-  if (typeof portalProfile?.locationId === 'number') {
-    const exactDepth3Match = publishableLocations.find((item) => item.id === portalProfile.locationId);
-    if (exactDepth3Match?.id) {
-      return exactDepth3Match.id;
-    }
-  }
-
   const explicitZoneMatch = publishableLocations.find((item) => {
     const zone = normalizeText(property.zone);
     const locationText = normalizeText(property.location);
@@ -966,6 +962,13 @@ async function resolveLocationIdForPublish(agencyId: string, property: Property,
   });
   if (explicitZoneMatch?.id) {
     return explicitZoneMatch.id;
+  }
+
+  if (typeof portalProfile?.locationId === 'number') {
+    const exactDepth3Match = publishableLocations.find((item) => item.id === portalProfile.locationId);
+    if (exactDepth3Match?.id) {
+      return exactDepth3Match.id;
+    }
   }
 
   const preferred = pickBestLocationCandidate(publishableLocations, property);
