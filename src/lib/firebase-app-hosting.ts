@@ -46,8 +46,13 @@ export type AppHostingDomain = {
 
 type DecodedTokenContext = {
   uid: string;
-  agencyId: string;
-  role: 'admin' | 'agent' | undefined;
+  agencyId?: string;
+  role: 'admin' | 'agent' | 'platform_admin' | undefined;
+};
+
+type DecodedPlatformAdminContext = {
+  uid: string;
+  role: 'platform_admin';
 };
 
 type AppHostingOperation = {
@@ -181,7 +186,7 @@ export async function requireAgencyAdminFromBearerToken(authorizationHeader: str
   const token = authorizationHeader.slice('Bearer '.length).trim();
   const decoded = await adminAuth.verifyIdToken(token);
   const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
-  const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' } | undefined;
+  const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
 
   if (!userData?.agencyId) {
     throw new AppHostingApiError('Utilizatorul nu este asociat unei agentii.', 403);
@@ -206,7 +211,7 @@ export async function requireAgencyUserFromBearerToken(authorizationHeader: stri
   const token = authorizationHeader.slice('Bearer '.length).trim();
   const decoded = await adminAuth.verifyIdToken(token);
   const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
-  const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' } | undefined;
+  const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
 
   if (!userData?.agencyId) {
     throw new AppHostingApiError('Utilizatorul nu este asociat unei agentii.', 403);
@@ -216,6 +221,28 @@ export async function requireAgencyUserFromBearerToken(authorizationHeader: stri
     uid: decoded.uid,
     agencyId: userData.agencyId,
     role: userData.role,
+  };
+}
+
+export async function requirePlatformAdminFromBearerToken(
+  authorizationHeader: string | null | undefined
+): Promise<DecodedPlatformAdminContext> {
+  if (!authorizationHeader?.startsWith('Bearer ')) {
+    throw new AppHostingApiError('Lipseste tokenul de autentificare.', 401);
+  }
+
+  const token = authorizationHeader.slice('Bearer '.length).trim();
+  const decoded = await adminAuth.verifyIdToken(token);
+  const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
+  const userData = userSnapshot.data() as { role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
+
+  if (userData?.role !== 'platform_admin') {
+    throw new AppHostingApiError('Doar master adminii platformei pot accesa aceasta zona.', 403);
+  }
+
+  return {
+    uid: decoded.uid,
+    role: 'platform_admin',
   };
 }
 

@@ -11,6 +11,7 @@
     "desktop:pack": "node scripts/patch-electron-builder.mjs && node scripts/prepare-desktop-dist.mjs && electron-builder --dir",
     "desktop:dist": "node scripts/patch-electron-builder.mjs && node scripts/prepare-desktop-dist.mjs && electron-builder",
     "backfill:viewing-contacts": "node scripts/backfill-viewing-created-contacts.mjs",
+    "platform-admin:create": "node scripts/create-platform-admin.mjs",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "NODE_ENV=production next build",

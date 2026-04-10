@@ -432,7 +432,7 @@ export type UserProfile = {
   photoUrl?: string;
   agentBio?: string;
   agencyId?: string;
-  role?: 'admin' | 'agent';
+  role?: 'admin' | 'agent' | 'platform_admin';
   pushTokens?: string[];
   pushNotificationsEnabled?: boolean;
   pushNotificationsUpdatedAt?: string;

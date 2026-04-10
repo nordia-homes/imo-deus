@@ -89,15 +89,24 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     }, [agency]);
 
     useEffect(() => {
+        if (!isAgencyLoading && userProfile?.role === 'platform_admin') {
+            router.replace('/master-admin');
+            return;
+        }
+
         // We redirect if loading is finished, and we can determine there is no agency.
         // The best way to know is to check if the loaded user profile has an agencyId.
         if (!isAgencyLoading && !agencyId && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [agencyId, isAgencyLoading, pathname, router]);
+    }, [agencyId, isAgencyLoading, pathname, router, userProfile?.role]);
 
     // We show the loader if ANY data is still loading.
     if (isAgencyLoading) {
+        return <FullScreenLoader />;
+    }
+
+    if (userProfile?.role === 'platform_admin') {
         return <FullScreenLoader />;
     }
     
