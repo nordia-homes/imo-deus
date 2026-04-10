@@ -3,13 +3,13 @@
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDocs, getDoc, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { propertyMatcher, propertyMatcherFromContact } from '@/ai/flows/property-matcher';
 
-import type { Contact, Property, Task, UserProfile, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus, ContactPreferences } from '@/lib/types';
+import type { Contact, Property, Task, Interaction, Agency, Viewing, MatchedProperty, PortalRecommendation, Offer, FinancialStatus, ContactPreferences } from '@/lib/types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Image from 'next/image';
@@ -45,6 +45,7 @@ import Link from 'next/link';
 import { EditPreferencesForm } from '@/components/leads/detail/EditPreferencesForm';
 import { PreferencesFormCard } from '@/components/leads/detail/PreferencesFormCard';
 import { PreferencesChatHistoryCard } from '@/components/leads/detail/PreferencesChatHistoryCard';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 
 const PageSkeleton = () => (
@@ -125,10 +126,9 @@ export default function LeadDetailPage() {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { agents, isLoading: areAgentsLoading, error: agentsError } = useAgencyAgents();
 
     // --- Component State ---
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -217,30 +217,15 @@ export default function LeadDetailPage() {
 
     // --- Side Effects & Memoization ---
     useEffect(() => {
-        if (!agency?.agentIds || agency.agentIds.length === 0) {
-            setAreAgentsLoading(false);
-            return;
-        }
+        if (!agentsError) return;
 
-        const fetchAgents = async () => {
-            setAreAgentsLoading(true);
-            try {
-                const agentPromises = (agency.agentIds ?? []).map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                const agentProfiles = agentDocs
-                    .filter(docSnap => docSnap.exists())
-                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                setAgents(agentProfiles);
-            } catch (error) {
-                console.error("Error fetching agent profiles:", error);
-                toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
-            } finally {
-                setAreAgentsLoading(false);
-            }
-        };
-
-        fetchAgents();
-    }, [agency, firestore, toast]);
+        console.error('Error fetching agent profiles:', agentsError);
+        toast({
+            variant: 'destructive',
+            title: 'Eroare la încărcare',
+            description: agentsError.message || 'Nu am putut încărca lista de agenți.',
+        });
+    }, [agentsError, toast]);
 
     useEffect(() => {
         if (!contactDocRef || !contact || !properties || viewings.length === 0) {

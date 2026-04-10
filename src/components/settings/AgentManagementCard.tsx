@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Agency, UserProfile } from '@/lib/types';
 import {
@@ -23,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, RefreshCw, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 const createAgentSchema = z.object({
     name: z.string().min(2, 'Numele agentului este obligatoriu.'),
@@ -47,10 +47,10 @@ type AgentManagementCardProps = {
 export function AgentManagementCard({ agency, agents: providedAgents, isLoading: providedIsLoading, onAgentCreated }: AgentManagementCardProps) {
     const { toast } = useToast();
     const { user } = useUser();
-    const firestore = useFirestore();
+    const shouldUseProvidedData = Array.isArray(providedAgents);
+    const { agents: fetchedAgents, isLoading: fetchedAgentsLoading, error: fetchedAgentsError } = useAgencyAgents({ enabled: !shouldUseProvidedData });
 
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [localAgents, setLocalAgents] = useState<UserProfile[]>([]);
     const [isCreatingAgent, setIsCreatingAgent] = useState(false);
     const [latestCredentials, setLatestCredentials] = useState<{ email: string; password: string } | null>(null);
 
@@ -66,42 +66,24 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
 
     const watchedName = form.watch('name');
     const passwordSuggestions = generateAgentPasswordSuggestions(watchedName);
-    const shouldUseProvidedData = Array.isArray(providedAgents);
-    const displayAgents = shouldUseProvidedData ? providedAgents : agents;
-    const displayIsLoading = typeof providedIsLoading === 'boolean' ? providedIsLoading : isLoading;
+    const displayAgents = shouldUseProvidedData ? providedAgents : localAgents;
+    const displayIsLoading = typeof providedIsLoading === 'boolean' ? providedIsLoading : fetchedAgentsLoading;
     
     useEffect(() => {
-        if (shouldUseProvidedData) {
-            return;
-        }
+        if (shouldUseProvidedData) return;
+        setLocalAgents(fetchedAgents);
+    }, [fetchedAgents, shouldUseProvidedData]);
 
-        if (!agency.agentIds || agency.agentIds.length === 0) {
-            setAgents([]);
-            setIsLoading(false);
-            return;
-        }
+    useEffect(() => {
+        if (shouldUseProvidedData || !fetchedAgentsError) return;
 
-        const fetchAgents = async () => {
-            setIsLoading(true);
-            try {
-                // Perform individual 'get' requests for each agent ID.
-                // This is secure and works with Firestore security rules.
-                const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                const agentProfiles = agentDocs
-                    .filter(docSnap => docSnap.exists())
-                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                setAgents(agentProfiles);
-            } catch (error) {
-                console.error("Error fetching agent profiles:", error);
-                toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut încărca lista de agenți.' });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchAgents();
-    }, [agency.agentIds, firestore, shouldUseProvidedData, toast]);
+        console.error('Error fetching agent profiles:', fetchedAgentsError);
+        toast({
+            variant: 'destructive',
+            title: 'Eroare la încărcare',
+            description: fetchedAgentsError.message || 'Nu am putut încărca lista de agenți.',
+        });
+    }, [fetchedAgentsError, shouldUseProvidedData, toast]);
 
     function applyGeneratedPassword(nextPassword?: string) {
         form.setValue('password', nextPassword || generateAgentPassword(form.getValues('name')), {
@@ -138,7 +120,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                 throw new Error(payload?.message || 'Nu am putut crea contul agentului.');
             }
 
-            setAgents((current) => {
+            setLocalAgents((current) => {
                 const nextAgents = [...current.filter((agent) => agent.id !== payload.agent.id), payload.agent as UserProfile];
                 return nextAgents.sort((left, right) => left.name.localeCompare(right.name, 'ro'));
             });

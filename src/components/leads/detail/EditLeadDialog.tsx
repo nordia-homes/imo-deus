@@ -24,11 +24,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { Label } from '@/components/ui/label';
 import { useAgency } from '@/context/AgencyContext';
-import type { UserProfile, Property, Contact } from '@/lib/types';
+import type { Property, Contact } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { Card, CardContent } from '../../ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -36,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { DialogFooter } from '../../ui/dialog';
 import { ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../../ui/dropdown-menu';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
@@ -64,32 +64,9 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
   const { toast } = useToast();
   const { user } = useUser();
   const { agency } = useAgency();
-  const firestore = useFirestore();
-  const [agents, setAgents] = useState<UserProfile[]>([]);
+  const { agents } = useAgencyAgents({ enabled: isOpen });
   const isMobile = useIsMobile();
   const formKey = useMemo(() => `edit-lead-${contact.id}-${isOpen}`, [contact.id, isOpen]);
-
-  useEffect(() => {
-      if (!isOpen || !agency || !agency.agentIds) {
-          setAgents([]);
-          return;
-      }
-      
-      const fetchAgents = async () => {
-          try {
-              const agentPromises = agency.agentIds!.map(id => getDoc(doc(firestore, 'users', id)));
-              const agentDocs = await Promise.all(agentPromises);
-              const agentProfiles = agentDocs
-                  .filter(docSnap => docSnap.exists())
-                  .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-              setAgents(agentProfiles);
-          } catch (error) {
-              console.error("Error fetching agent profiles for dialog:", error);
-          }
-      };
-
-      fetchAgents();
-  }, [isOpen, agency, firestore]);
 
   const form = useForm<z.infer<typeof cumparatorSchema>>({
     resolver: zodResolver(cumparatorSchema),

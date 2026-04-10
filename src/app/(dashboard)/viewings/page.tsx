@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, getDoc, doc, addDoc } from 'firebase/firestore';
-import type { Property, Contact, Viewing, UserProfile } from '@/lib/types';
+import { collection, query, orderBy, doc, addDoc } from 'firebase/firestore';
+import type { Property, Contact, Viewing } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -17,15 +17,15 @@ import { parseISO, addDays, startOfDay } from 'date-fns';
 import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
 import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
 import { cn } from '@/lib/utils';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 export default function ViewingsPage() {
     const { agencyId, agency, userProfile } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { agents, isLoading: areAgentsLoading, error: agentsError } = useAgencyAgents();
 
-    const [agents, setAgents] = useState<UserProfile[]>([]);
-    const [areAgentsLoading, setAreAgentsLoading] = useState(true);
     const [editingViewing, setEditingViewing] = useState<Viewing | null>(null);
     const [deletingViewing, setDeletingViewing] = useState<Viewing | null>(null);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
@@ -73,29 +73,9 @@ export default function ViewingsPage() {
     }, [viewings]);
 
     useEffect(() => {
-        if (!agency?.agentIds || agency.agentIds.length === 0) {
-            setAreAgentsLoading(false);
-            return;
-        }
-
-        const fetchAgents = async () => {
-            setAreAgentsLoading(true);
-            try {
-                const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
-                const agentDocs = await Promise.all(agentPromises);
-                const agentProfiles = agentDocs
-                    .filter(docSnap => docSnap.exists())
-                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                setAgents(agentProfiles);
-            } catch (error) {
-                console.error("Error fetching agent profiles:", error);
-            } finally {
-                setAreAgentsLoading(false);
-            }
-        };
-
-        fetchAgents();
-    }, [agency, firestore]);
+        if (!agentsError) return;
+        console.error('Error fetching agent profiles:', agentsError);
+    }, [agentsError]);
 
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agencyId || !user) return;

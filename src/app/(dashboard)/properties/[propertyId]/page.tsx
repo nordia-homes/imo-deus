@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing, UserProfile, Contact, MatchedBuyer } from "@/lib/types";
+import type { Property, Viewing, Contact, MatchedBuyer } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { buyerMatcherFromProperty } from '@/ai/flows/property-matcher';
 
@@ -19,7 +19,7 @@ import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 // Firebase & Context
 import { useAgency } from '@/context/AgencyContext';
 import { useDoc, useCollection, useMemoFirebase, useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, getDoc } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,7 @@ import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { OwnerCard } from '@/components/properties/detail/actions/OwnerCard';
 import { AdminPropertyDetailsMap } from '@/components/map/AdminPropertyDetailsMap';
 import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from '@/components/properties/detail/actions/cardStyles';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 
 
@@ -84,9 +85,8 @@ export default function PropertyDetailPage() {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { agents, isLoading: areAgentsLoading, error: agentsError } = useAgencyAgents();
 
-    const [agentProfile, setAgentProfile] = useState<UserProfile | null>(null);
-    const [isAgentLoading, setIsAgentLoading] = useState(true);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
     const [matchedBuyers, setMatchedBuyers] = useState<MatchedBuyer[]>([]);
     const isMobile = useIsMobile();
@@ -120,31 +120,14 @@ export default function PropertyDetailPage() {
     const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
 
     useEffect(() => {
-        if (!property?.agentId || !firestore) {
-            setIsAgentLoading(false);
-            return;
-        }
+        if (!agentsError) return;
+        console.error('Error fetching agent profiles:', agentsError);
+    }, [agentsError]);
 
-        const fetchAgent = async () => {
-            setIsAgentLoading(true);
-            try {
-                const agentDocRef = doc(firestore, 'users', property.agentId!);
-                const agentSnap = await getDoc(agentDocRef);
-                if (agentSnap.exists()) {
-                    setAgentProfile({ id: agentSnap.id, ...agentSnap.data() } as UserProfile);
-                } else {
-                    setAgentProfile(null);
-                }
-            } catch (error) {
-                console.error("Error fetching agent profile:", error);
-                setAgentProfile(null);
-            } finally {
-                setIsAgentLoading(false);
-            }
-        };
-
-        fetchAgent();
-    }, [property, firestore]);
+    const agentProfile = useMemo(() => {
+        if (!property?.agentId) return null;
+        return agents.find((agent) => agent.id === property.agentId) || null;
+    }, [agents, property?.agentId]);
 
     useEffect(() => {
         if (!property || !allContacts) {
@@ -178,7 +161,7 @@ export default function PropertyDetailPage() {
         toast({ title: "Vizionare programată!" });
     };
 
-    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || isAgentLoading || areContactsLoading;
+    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || areAgentsLoading || areContactsLoading;
     
     if (isLoading) {
         return <PageSkeleton />;

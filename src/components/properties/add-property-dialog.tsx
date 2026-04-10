@@ -32,10 +32,10 @@ import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
-import { collection, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import type { Property, UserProfile } from '@/lib/types';
+import type { Property } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -44,6 +44,7 @@ import { Card, CardContent } from '../ui/card';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
+import { useAgencyAgents } from '@/hooks/use-agency-agents';
 
 type AddressSuggestion = {
   label: string;
@@ -668,10 +669,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const { agency, agencyId } = useAgency();
     const firestore = useFirestore();
     const storage = useStorage();
+    const { agents, error: agentsError } = useAgencyAgents();
     
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [agents, setAgents] = useState<UserProfile[]>([]);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
     const [enhancingImageIds, setEnhancingImageIds] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -976,26 +977,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }, [imageItems]);
 
     useEffect(() => {
-        let isMounted = true;
-        if (agency?.agentIds) {
-            const fetchAgents = async () => {
-                try {
-                    const agentPromises = agency.agentIds.map(id => getDoc(doc(firestore, 'users', id)));
-                    const agentDocs = await Promise.all(agentPromises);
-                    if (isMounted) {
-                        const agentProfiles = agentDocs
-                            .filter(docSnap => docSnap.exists())
-                            .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as UserProfile));
-                        setAgents(agentProfiles);
-                    }
-                } catch (error) {
-                    console.error("Error loading agents:", error);
-                }
-            };
-            fetchAgents();
-        }
-        return () => { isMounted = false; };
-    }, [agency, firestore]);
+        if (!agentsError) return;
+        console.error('Error loading agents:', agentsError);
+    }, [agentsError]);
 
     useEffect(() => {
         const normalizedAddress = (watchedAddress || '').trim();
