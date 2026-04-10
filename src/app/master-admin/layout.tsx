@@ -77,9 +77,9 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="min-h-screen bg-[#08111F] text-white">
-      <div className="grid min-h-screen lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="border-r border-white/8 bg-[linear-gradient(180deg,_rgba(7,15,28,0.98)_0%,_rgba(6,12,22,1)_100%)] px-5 py-6">
+    <div className="h-screen overflow-hidden bg-[#08111F] text-white">
+      <div className="grid h-screen lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="flex h-screen flex-col border-r border-white/8 bg-[linear-gradient(180deg,_rgba(7,15,28,0.98)_0%,_rgba(6,12,22,1)_100%)] px-5 py-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-200">
               <Shield className="h-5 w-5" />
@@ -90,7 +90,7 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
             </div>
           </div>
 
-          <nav className="mt-8 space-y-2">
+          <nav className="mt-8 flex-1 space-y-2 overflow-y-auto pr-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -133,7 +133,7 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
           </div>
         </aside>
 
-        <div className="min-w-0">
+        <div className="flex h-screen min-w-0 flex-col overflow-hidden">
           <header className="sticky top-0 z-20 border-b border-white/8 bg-[#08111F]/90 px-4 py-4 backdrop-blur md:px-8">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -146,7 +146,7 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
               </div>
             </div>
           </header>
-          <main className="p-4 md:p-8">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
         </div>
       </div>
     </div>
