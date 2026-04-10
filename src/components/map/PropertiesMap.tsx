@@ -207,6 +207,8 @@ export function PropertiesMap({
   const markersRef = useRef<any[]>([]);
   const infoWindowRef = useRef<any>(null);
   const panoramaRef = useRef<any>(null);
+  const mapOnlyViewportRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+  const selectedPropertyIdRef = useRef<string | null>(null);
 
   const validProperties = useMemo(
     () => properties.filter((property) => property.latitude != null && property.longitude != null),
@@ -258,6 +260,10 @@ export function PropertiesMap({
     (layoutMode === 'map-only' ? null : validProperties[0] || null);
 
   useEffect(() => {
+    selectedPropertyIdRef.current = selectedPropertyId;
+  }, [selectedPropertyId]);
+
+  useEffect(() => {
     if (!isLoaded || !mapRef.current || !validProperties.length) {
       return;
     }
@@ -290,6 +296,10 @@ export function PropertiesMap({
       });
     }
 
+    infoWindowRef.current.setOptions({
+      disableAutoPan: layoutMode !== 'map-only',
+    });
+
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
 
@@ -310,6 +320,21 @@ export function PropertiesMap({
       marker.__propertyId = property.id;
 
       marker.addListener('click', () => {
+        if (layoutMode === 'map-only' && mapInstanceRef.current && !selectedPropertyIdRef.current) {
+          const currentCenter = mapInstanceRef.current.getCenter?.();
+          const currentZoom = mapInstanceRef.current.getZoom?.();
+
+          if (currentCenter && typeof currentZoom === 'number') {
+            mapOnlyViewportRef.current = {
+              center: {
+                lat: currentCenter.lat(),
+                lng: currentCenter.lng(),
+              },
+              zoom: currentZoom,
+            };
+          }
+        }
+
         setSelectedPropertyId(property.id);
         if (layoutMode === 'map-only' && mapInstanceRef.current) {
           mapInstanceRef.current.panTo(position);
@@ -547,6 +572,9 @@ export function PropertiesMap({
       return;
     }
 
+    infoWindowRef.current.setOptions({
+      disableAutoPan: false,
+    });
     infoWindowRef.current.setContent(buildMapInfoContent(selectedProperty));
     infoWindowRef.current.open({
       map: mapInstanceRef.current,
@@ -557,6 +585,35 @@ export function PropertiesMap({
       infoWindowRef.current?.close();
     };
   }, [isLoaded, layoutMode, selectedProperty]);
+
+  useEffect(() => {
+    if (layoutMode !== 'map-only' || !isLoaded || !infoWindowRef.current || !mapInstanceRef.current) {
+      return;
+    }
+
+    const googleMaps = (window as GoogleMapsWindow).google?.maps;
+    if (!googleMaps) {
+      return;
+    }
+
+    const listener = infoWindowRef.current.addListener('closeclick', () => {
+      const previousViewport = mapOnlyViewportRef.current;
+
+      setSelectedPropertyId(null);
+
+      if (!previousViewport || !mapInstanceRef.current) {
+        return;
+      }
+
+      mapInstanceRef.current.panTo(previousViewport.center);
+      mapInstanceRef.current.setZoom(previousViewport.zoom);
+      mapOnlyViewportRef.current = null;
+    });
+
+    return () => {
+      googleMaps.event.removeListener(listener);
+    };
+  }, [isLoaded, layoutMode]);
 
   function handleZoomIn() {
     if (!mapInstanceRef.current) {
