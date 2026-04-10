@@ -78,14 +78,14 @@ export function AgentCard({ agent, isMobile }: { agent: AgentInfo, isMobile?: bo
             <CardContent className="w-full p-4">
                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 ring-1 ring-emerald-300/18">
+                        <Avatar className="h-12 w-12 ring-1 ring-white/10">
                             <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name || 'Agent'}/>
-                            <AvatarFallback className="bg-white/10 text-emerald-100">{getInitials(agent.name)}</AvatarFallback>
+                            <AvatarFallback className="bg-[#1a2a40] text-sky-100">{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
                         <div className="space-y-1">
-                             <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-200/70">Agent dedicat</p>
+                             <p className="text-[11px] uppercase tracking-[0.18em] text-sky-100/62">Agent dedicat</p>
                              <p className="text-base font-semibold leading-tight text-white">{agent.name || 'Agent nealocat'}</p>
-                             {agent.phone && <p className="text-sm text-white/65">{agent.phone}</p>}
+                             {agent.phone && <p className="text-sm text-white/60">{agent.phone}</p>}
                         </div>
                     </div>
 

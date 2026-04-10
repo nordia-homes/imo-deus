@@ -55,32 +55,32 @@ export function PriceStatusCard({
                         ) : (
                           <>
                             <div className="space-y-2 text-left">
-                              <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${ACTION_PILL_CLASSNAME}`}>
+                              <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100/90 ${ACTION_PILL_CLASSNAME}`}>
                                 Pret listare
                               </div>
                               <div className="flex items-end justify-between gap-3">
                                 <div className="space-y-1">
-                                  <div className="text-[2.15rem] font-bold tracking-tight text-primary">
+                                  <div className="text-[2.2rem] font-bold tracking-tight text-emerald-300">
                                     €{property.price.toLocaleString()}
                                   </div>
-                                  <p className="text-sm text-white/65">
+                                  <p className="text-sm text-white/58">
                                     Valoarea afisata in anuntul public.
                                   </p>
                                 </div>
                                 {pricePerSqm && (
-                                  <div className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white/78">
+                                  <div className="shrink-0 rounded-full border border-white/8 bg-[#19293f] px-3 py-1.5 text-sm font-semibold text-white/78">
                                     €{pricePerSqm}/m²
                                   </div>
                                 )}
                               </div>
                             </div>
                             <DialogTrigger asChild>
-                              <div className={`flex cursor-pointer items-center justify-between rounded-[1.2rem] px-4 py-3 text-primary transition-colors ${ACTION_PILL_CLASSNAME}`}>
+                              <div className={`flex cursor-pointer items-center justify-between rounded-[1.2rem] px-4 py-3 text-emerald-200 transition-colors ${ACTION_PILL_CLASSNAME}`}>
                                 <div className="flex items-center gap-2">
                                   <TrendingUp className="h-4 w-4" />
                                   <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
                                 </div>
-                                <span className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-100/80">
+                                <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/58">
                                   Deschide
                                 </span>
                               </div>

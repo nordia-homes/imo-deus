@@ -33,7 +33,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className={cn("h-9 rounded-full px-4 text-sm", ACTION_PILL_CLASSNAME)}
+                    className={cn("h-9 rounded-full px-4 text-sm text-white", ACTION_PILL_CLASSNAME)}
                 >
                     <Link href="/viewings" aria-label="Vezi calendarul de vizionări">
                         Vezi calendar
@@ -62,7 +62,7 @@ export function ScheduledViewingsCard({ viewings }: { viewings: Viewing[] }) {
                                     asChild
                                     variant="ghost"
                                     size="sm"
-                                    className={cn("rounded-full px-4", ACTION_PILL_CLASSNAME)}
+                                    className={cn("rounded-full px-4 text-white", ACTION_PILL_CLASSNAME)}
                                 >
                                     <Link href={`/leads/${viewing.contactId}`}>
                                         Detalii

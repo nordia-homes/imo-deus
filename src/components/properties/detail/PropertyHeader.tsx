@@ -21,7 +21,7 @@ import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
-import { ACTION_CARD_CLASSNAME } from './actions/cardStyles';
+import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from './actions/cardStyles';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId } = useAgency();
@@ -116,10 +116,10 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap lg:col-span-4 lg:flex-nowrap">
-                    <div className="w-full rounded-[1.6rem] border border-emerald-300/14 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.12),transparent_34%),linear-gradient(180deg,#18304f_0%,#152A47_58%,#12233b_100%)] p-3 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)]">
-                        <div className="flex items-center gap-2">
+                    <div className={`${ACTION_CARD_CLASSNAME} w-full rounded-[1.7rem] p-4`}>
+                        <div className="flex items-center gap-3">
                             <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
-                                <SelectTrigger className="h-11 min-w-[124px] rounded-full border border-emerald-300/16 bg-emerald-400/10 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/14">
+                                <SelectTrigger className="h-12 min-w-[132px] rounded-[1.15rem] border border-white/8 bg-[#1a3046] px-4 text-sm font-semibold text-emerald-200 hover:bg-[#203850]">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -130,13 +130,13 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                     <SelectItem value="Inactiv">Inactiv</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button className="h-11 rounded-full border border-emerald-300/16 bg-emerald-400/10 px-5 text-emerald-200 hover:bg-emerald-400/14" onClick={onTriggerAddViewing}>
+                            <Button className={`h-12 rounded-[1.15rem] px-5 text-white ${ACTION_PILL_CLASSNAME}`} onClick={onTriggerAddViewing}>
                                 <CalendarCheck className="mr-2 h-4 w-4"/> 
                                 Vizionare
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="icon" className="h-11 w-11 rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/14">
+                                    <Button variant="outline" size="icon" className={`h-12 w-12 rounded-[1.15rem] text-white ${ACTION_PILL_CLASSNAME}`}>
                                         <MoreVertical className="h-4 w-4"/>
                                     </Button>
                                 </DropdownMenuTrigger>

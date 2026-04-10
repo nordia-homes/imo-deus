@@ -362,7 +362,7 @@ export default function PropertyDetailPage() {
                 />
 
                 <main className="grid grid-cols-1 items-start gap-8 pt-3 pb-8 lg:grid-cols-12">
-                    <div className="col-span-12 lg:col-span-8 space-y-8">
+                    <div className="col-span-12 lg:col-span-8 space-y-4">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn property={property} matchedBuyers={matchedBuyers} viewings={viewings || []} />
                     </div>

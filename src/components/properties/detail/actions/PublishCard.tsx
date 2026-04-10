@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
 
@@ -1048,6 +1048,7 @@ export function PublishCard({ property }: { property: Property }) {
           onClick={() => setIsPromotionModalOpen(true)}
           className="h-12 w-full rounded-2xl border border-white/12 bg-[#111927] text-white hover:bg-[#1F2A37]"
         >
+          <Zap className="mr-2 h-4 w-4 text-amber-300" />
           Promovare imobiliare.ro
         </Button>
 

@@ -9,6 +9,7 @@ import { Calculator, FileText, Loader2, Wand2 } from "lucide-react";
 import type { Property, CMA, ComparableProperty } from "@/lib/types";
 import { generateCMA } from '@/ai/flows/cma-generator';
 import { cn } from '@/lib/utils';
+import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from "./detail/actions/cardStyles";
 
 interface CmaAnalysisTabProps {
     subjectProperty: Property;
@@ -48,16 +49,21 @@ export function CmaAnalysisTab({ subjectProperty, allProperties, agencyId, isMob
     };
     
     return (
-        <Card className="rounded-2xl shadow-2xl p-0 h-12 flex items-center bg-[#152A47] text-white border-none">
-            <CardContent className="p-2 w-full">
-                <div className="flex items-center justify-between text-center">
-                     <div className="flex items-center gap-2">
-                        <Calculator className="h-4 w-4 text-white/70" />
-                        <span className="font-semibold text-sm">Analiză CMA</span>
+        <Card className={`${ACTION_CARD_CLASSNAME} p-0`}>
+            <CardContent className="w-full p-4">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-[#1a2a40]">
+                            <Calculator className="h-4 w-4 text-sky-100" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[11px] uppercase tracking-[0.18em] text-sky-100/62">Analiza pietei</p>
+                            <p className="truncate text-sm font-semibold text-white">Analiză CMA</p>
+                        </div>
                     </div>
                     <Button 
                         size="sm" 
-                        className="h-8 bg-white/20 text-white hover:bg-white/30"
+                        className={`h-10 rounded-full px-4 text-white ${ACTION_PILL_CLASSNAME}`}
                         onClick={handleGenerateCMA} 
                         disabled={isGenerating}
                     >

@@ -42,14 +42,14 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
     ];
 
     const premiumTabClassName =
-      "h-12 rounded-full border border-white/10 bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.08),transparent_42%),linear-gradient(180deg,#122033_0%,#0d1726_100%)] text-white/92 shadow-[0_18px_45px_-26px_rgba(0,0,0,0.72)] transition-[transform,background,border-color,color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-emerald-300/18 hover:bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.12),transparent_42%),linear-gradient(180deg,#14253a_0%,#0f1b2c_100%)] hover:text-white data-[state=active]:border-emerald-300/26 data-[state=active]:bg-[radial-gradient(circle_at_top,rgba(88,214,141,0.14),transparent_42%),linear-gradient(180deg,#173047_0%,#122131_100%)] data-[state=active]:text-emerald-300 data-[state=active]:shadow-[0_22px_55px_-28px_rgba(0,0,0,0.82)]";
+      "h-14 rounded-[1.45rem] border border-white/8 bg-[linear-gradient(180deg,rgba(18,31,49,0.98)_0%,rgba(14,24,39,0.98)_100%)] px-4 text-white/80 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.74)] transition-[transform,border-color,background,color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-sky-200/14 hover:bg-[linear-gradient(180deg,rgba(22,36,57,0.98)_0%,rgba(16,27,43,0.98)_100%)] hover:text-white data-[state=active]:border-sky-200/18 data-[state=active]:bg-[linear-gradient(180deg,rgba(23,39,60,1)_0%,rgba(17,30,47,1)_100%)] data-[state=active]:text-emerald-300 data-[state=active]:shadow-[0_22px_54px_-28px_rgba(0,0,0,0.82)]";
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="hidden md:grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
                     {menuItems.map(item => (
-                         <TabsTrigger
+                        <TabsTrigger
                             key={item.value}
                             value={item.value}
                             className={premiumTabClassName}
@@ -60,7 +60,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                     ))}
                     <div 
                         onClick={() => setIsInfoDialogOpen(true)}
-                        className={`${premiumTabClassName} inline-flex cursor-pointer items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium`}
+                        className={`${premiumTabClassName} inline-flex cursor-pointer items-center justify-center whitespace-nowrap text-sm font-medium`}
                     >
                         <Info className="mr-2 h-4 w-4" />
                         Informații
@@ -93,7 +93,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                     </Sheet>
                 </div>
 
-                <TabsContent value="overview" className="mt-6 space-y-6">
+                <TabsContent value="overview" className="mt-5 space-y-6">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
@@ -134,10 +134,10 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                         <PropertyNotesCard property={property} />
                     </div>
                 </TabsContent>
-                <TabsContent value="leads" className="mt-6">
+                <TabsContent value="leads" className="mt-5">
                     <MatchedLeadsTab matchedBuyers={matchedBuyers} />
                 </TabsContent>
-                <TabsContent value="viewings" className="mt-6">
+                <TabsContent value="viewings" className="mt-5">
                     <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Vizionări Programate</CardTitle></CardHeader>
                         <CardContent>
@@ -166,7 +166,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="documents" className="mt-6">
+                <TabsContent value="documents" className="mt-5">
                     <div className="space-y-6">
                         <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                           <CardHeader>
