@@ -38,6 +38,7 @@ export default function PropertiesPage() {
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
+  const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
 
   const propertiesQuery = useMemoFirebase(() => {
     if (!agencyId) return null;
@@ -74,6 +75,19 @@ export default function PropertiesPage() {
       return true;
     });
 
+    const portalFiltered = dialogFiltered.filter((prop) => {
+      if (!portalQuickFilter) return true;
+
+      const promotionEntries = prop.promotions || {};
+      const hasPublishedPromotion = (portalName: string) => promotionEntries[portalName]?.status === 'published';
+
+      if (portalQuickFilter === 'imobiliare') {
+        return hasPublishedPromotion('imobiliare') || Boolean(prop.portalProfiles?.imobiliare?.lastPublishedAt);
+      }
+
+      return hasPublishedPromotion('storia') || hasPublishedPromotion('olx');
+    });
+
     const reportPreset = searchParams.get('reportPreset');
     const activeViewingPropertyIds = new Set(
       (viewings || [])
@@ -82,7 +96,7 @@ export default function PropertiesPage() {
     );
     const now = Date.now();
 
-    return dialogFiltered.filter((prop) => {
+    return portalFiltered.filter((prop) => {
       if (agentIdFilter && prop.agentId !== agentIdFilter) {
         return false;
       }
@@ -121,7 +135,7 @@ export default function PropertiesPage() {
 
       return true;
     });
-  }, [properties, filters, searchParams, viewings]);
+  }, [properties, filters, portalQuickFilter, searchParams, viewings]);
 
   const handleDelete = () => {
     if (!agencyId || !deletingProperty) return;
@@ -139,6 +153,8 @@ export default function PropertiesPage() {
   const reportPreset = searchParams.get('reportPreset');
   const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
   const agentNameFilter = searchParams.get('agentName');
+  const isImobiliareQuickFilterActive = portalQuickFilter === 'imobiliare';
+  const isStoriaOlxQuickFilterActive = portalQuickFilter === 'storia-olx';
 
   return (
     <div className={cn("space-y-6", isMobile && "p-0")}>
@@ -216,18 +232,33 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             ) : null}
-            <Card className="bg-[#152A47] text-white border-none rounded-2xl">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-headline font-bold">Portofoliu Proprietăți ({filteredProperties?.length || 0})</h1>
-                            <p className="text-white/70">
-                                Gestionează și analizează portofoliul de proprietăți.
-                            </p>
+            <Card className="overflow-hidden rounded-[30px] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]">
+                <CardHeader className="px-7 py-6">
+                    <div className="flex items-center justify-between gap-6">
+                        <div className="min-w-0">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
+                                Portofoliu activ
+                            </div>
+                            <div className="mt-4 flex items-end gap-4">
+                                <div className="min-w-0">
+                                    <h1 className="text-4xl font-semibold tracking-tight text-white">
+                                        Portofoliu Proprietăți
+                                    </h1>
+                                    <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
+                                        Vezi rapid tot stocul disponibil, filtrează oportunitățile bune și intră direct în proprietățile care au nevoie de atenție.
+                                    </p>
+                                </div>
+                                <div className="shrink-0 rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
+                                    <p className="mt-1 text-3xl font-semibold text-white">{filteredProperties?.length || 0}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        <div className="flex min-h-[150px] shrink-0 flex-col items-stretch justify-between gap-3 self-stretch">
+                            <div className="grid grid-cols-2 gap-3">
                             <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white button-glow">
+                              <Button variant="outline" className="h-[68px] w-full rounded-[22px] border border-slate-500/35 bg-slate-800/70 px-5 text-base text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-slate-700/80 hover:text-white">
                                 <Filter className="mr-2 h-4 w-4" /> Filtrează
                               </Button>
                             </PropertyFilters>
@@ -236,11 +267,40 @@ export default function PropertiesPage() {
                                 onOpenChange={setIsAddOpen}
                                 property={null}
                             >
-                                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                                <Button className="h-[68px] w-full rounded-[22px] border border-sky-300/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-6 text-base text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]">
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adaugă Proprietate
                                 </Button>
                             </AddPropertyDialog>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPortalQuickFilter((current) => current === 'imobiliare' ? null : 'imobiliare')}
+                                    className={cn(
+                                        "h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                        isImobiliareQuickFilterActive
+                                            ? "border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
+                                            : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
+                                    )}
+                                >
+                                    Publicate pe imobiliare.ro
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPortalQuickFilter((current) => current === 'storia-olx' ? null : 'storia-olx')}
+                                    className={cn(
+                                        "h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                        isStoriaOlxQuickFilterActive
+                                            ? "border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
+                                            : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
+                                    )}
+                                >
+                                    Publicate pe Storia/OLX
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
