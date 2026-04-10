@@ -168,17 +168,24 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
     }
 
     return (
-        <Card className={cn("shadow-2xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
+        <Card className={cn("shadow-2xl rounded-2xl border border-white/10", "bg-[linear-gradient(180deg,_rgba(11,22,38,0.98)_0%,_rgba(8,18,32,1)_100%)] text-white")}>
             <CardHeader>
-                <CardTitle className="text-white">Management Agenți</CardTitle>
-                <CardDescription className="text-white/70">Creează direct conturi pentru agenții din cadrul agenției tale, fără să afectezi administratorul existent.</CardDescription>
+                <CardTitle className="text-3xl font-semibold tracking-tight text-white">Management Agenți</CardTitle>
+                <CardDescription className="max-w-3xl text-base leading-7 text-white/70">
+                    Creează direct conturi pentru agenții din cadrul agenției tale, fără să afectezi administratorul existent.
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div>
-                    <h3 className="font-semibold mb-2 text-white">Creează Agent Nou</h3>
+                <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.04)_0%,_rgba(255,255,255,0.02)_100%)] p-5 md:p-6">
+                    <div className="mb-5">
+                        <h3 className="text-xl font-semibold text-white">Creează Agent Nou</h3>
+                        <p className="mt-1 text-sm text-white/65">
+                            Completează rapid datele esențiale și generează o parolă sigură pentru noul agent.
+                        </p>
+                    </div>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleCreateAgent)} className="space-y-4">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                                 <FormField
                                     control={form.control}
                                     name="name"
@@ -205,21 +212,21 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                                         </FormItem>
                                     )}
                                 />
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/80">Telefon</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} type="tel" placeholder="+40 723 000 111" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
-                            <FormField
-                                control={form.control}
-                                name="phone"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-white/80">Telefon</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} type="tel" placeholder="+40 723 000 111" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                            <div className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.035)_0%,_rgba(255,255,255,0.015)_100%)] p-4">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-end">
                                     <FormField
                                         control={form.control}
@@ -278,7 +285,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                     </Form>
                 </div>
                 <div>
-                    <h3 className="font-semibold mb-2 text-white">Agenți existenți</h3>
+                    <h3 className="mb-2 text-xl font-semibold text-white">Agenți existenți</h3>
                      <Table>
                         <TableHeader>
                             <TableRow className="border-white/20 hover:bg-white/10">

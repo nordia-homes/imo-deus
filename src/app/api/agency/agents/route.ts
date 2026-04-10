@@ -75,11 +75,14 @@ export async function GET(request: NextRequest) {
     ]);
 
     const activeListingsByAgentId = new Map<string, number>();
+    const activePortfolioValueByAgentId = new Map<string, number>();
     propertiesSnapshot.docs.forEach((propertySnapshot) => {
-      const propertyData = propertySnapshot.data() as { agentId?: string | null } | undefined;
+      const propertyData = propertySnapshot.data() as { agentId?: string | null; price?: number | null } | undefined;
       const agentId = propertyData?.agentId;
       if (!agentId) return;
       activeListingsByAgentId.set(agentId, (activeListingsByAgentId.get(agentId) || 0) + 1);
+      const propertyPrice = typeof propertyData?.price === 'number' ? propertyData.price : 0;
+      activePortfolioValueByAgentId.set(agentId, (activePortfolioValueByAgentId.get(agentId) || 0) + propertyPrice);
     });
 
     const agents = usersSnapshot.docs
@@ -87,6 +90,7 @@ export async function GET(request: NextRequest) {
         id: docSnapshot.id,
         ...docSnapshot.data(),
         activeListingsCount: activeListingsByAgentId.get(docSnapshot.id) || 0,
+        activePortfolioValue: activePortfolioValueByAgentId.get(docSnapshot.id) || 0,
       }))
       .sort((left, right) => {
         const leftRole = left.role === 'admin' ? 0 : 1;

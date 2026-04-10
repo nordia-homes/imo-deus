@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 
 type AgentCardProfile = UserProfile & {
   activeListingsCount?: number;
+  activePortfolioValue?: number;
 };
 
 function getInitials(name?: string) {
@@ -47,6 +48,10 @@ function getInitials(name?: string) {
 function sanitizePhoneForWhatsapp(value?: string | null) {
   if (!value) return '';
   return value.replace(/[^\d]/g, '');
+}
+
+function formatCurrency(value?: number | null) {
+  return `€${Math.round(value || 0).toLocaleString('ro-RO')}`;
 }
 
 export default function AgentsPage() {
@@ -127,7 +132,7 @@ export default function AgentsPage() {
 
   function handleAgentCreated(agent: UserProfile) {
     setAgents((current) => {
-      const nextAgents = [...current.filter((existing) => existing.id !== agent.id), { ...agent, activeListingsCount: 0 }];
+      const nextAgents = [...current.filter((existing) => existing.id !== agent.id), { ...agent, activeListingsCount: 0, activePortfolioValue: 0 }];
       return nextAgents.sort((left, right) => {
         if (left.role === 'admin' && right.role !== 'admin') return -1;
         if (left.role !== 'admin' && right.role === 'admin') return 1;
@@ -204,6 +209,7 @@ export default function AgentsPage() {
       const nextAgent = {
         ...(payload.agent as UserProfile),
         activeListingsCount: agents.find((agent) => agent.id === editingAgent.id)?.activeListingsCount || 0,
+        activePortfolioValue: agents.find((agent) => agent.id === editingAgent.id)?.activePortfolioValue || 0,
       } as AgentCardProfile;
       setAgents((current) =>
         current
@@ -403,11 +409,13 @@ export default function AgentsPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
-                    <Building2 className="h-3.5 w-3.5" />
-                    Anunțuri active
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
+                      <Building2 className="h-3.5 w-3.5" />
+                      <span>Anunțuri active</span>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-white">{agent.activeListingsCount || 0}</span>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-white">{agent.activeListingsCount || 0}</p>
                 </div>
                 {agent.id === userProfile?.id ? (
                   <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-50">
