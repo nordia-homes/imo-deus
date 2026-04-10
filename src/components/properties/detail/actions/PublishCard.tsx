@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CheckCircle2, Loader2, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, Loader2, Rocket, Sparkles, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
 
@@ -1168,10 +1168,11 @@ export function PublishCard({ property }: { property: Property }) {
                 <div className="mx-auto flex w-full max-w-[430px] flex-col gap-3">
                   <Button
                     type="button"
-                    className="h-12 w-full bg-emerald-500 text-[#081426] hover:bg-emerald-400"
+                    className="h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
                     onClick={handleConfirmImobiliarePublish}
                     disabled={isSubmitting}
                   >
+                    <Rocket className="mr-2 h-4 w-4" />
                     Confirma publicarea pe imobiliare.ro
                   </Button>
                   <Button

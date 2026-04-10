@@ -891,6 +891,25 @@ function findLocationByLegacyId(locations: LocationOption[], legacyId?: number |
   return locations.find((item) => item.old_id === legacyId) || null;
 }
 
+function findPreferredPublishChildLocation(locations: LocationOption[], location?: LocationOption | null) {
+  if (!location?.id) {
+    return null;
+  }
+
+  const normalizedTitle = normalizeText(location.title);
+  const children = locations.filter((item) => item.parent_id === location.id && item.depth === 3);
+  if (!children.length) {
+    return null;
+  }
+
+  return (
+    children.find((item) => normalizeText(item.title) === normalizedTitle) ||
+    children.find((item) => normalizeText(item.custom_display).includes(normalizedTitle)) ||
+    children[0] ||
+    null
+  );
+}
+
 function getLocationHaystack(location: LocationOption) {
   const ancestors = collectLocationAncestors(location);
   return [
@@ -908,6 +927,7 @@ function pickBestLocationCandidate(locations: LocationOption[], property: Proper
   const searchTerms = buildLocationSearchTerms(property);
   const normalizedCity = normalizeText(property.city);
   const normalizedZone = normalizeText(property.zone);
+  const normalizedAddress = normalizeText(property.address);
 
   const scored = locations
     .map((location) => {
@@ -916,19 +936,27 @@ function pickBestLocationCandidate(locations: LocationOption[], property: Proper
       const customDisplay = normalizeText(location.custom_display);
       const directZoneMatch = Boolean(normalizedZone && (title === normalizedZone || customDisplay.includes(normalizedZone)));
       const directCityMatch = Boolean(normalizedCity && haystack.includes(normalizedCity));
+      const directAddressMatch = Boolean(
+        normalizedAddress &&
+        ((title && normalizedAddress.includes(title)) || (customDisplay && normalizedAddress.includes(customDisplay)))
+      );
       const tokenHits = searchTerms.reduce((sum, token) => sum + (haystack.includes(token.normalized) ? 1 : 0), 0);
       const score =
         (directZoneMatch ? 80 : 0) +
         (directCityMatch ? 25 : 0) +
+        (directAddressMatch ? 70 : 0) +
+        (location.depth === 3 ? 5 : 0) +
         tokenHits * 12;
 
-      return { location, score, directZoneMatch, directCityMatch, tokenHits };
+      return { location, score, directZoneMatch, directCityMatch, directAddressMatch, tokenHits };
     })
-    .filter((entry) => entry.tokenHits > 0 || entry.directZoneMatch || entry.directCityMatch)
+    .filter((entry) => entry.tokenHits > 0 || entry.directZoneMatch || entry.directCityMatch || entry.directAddressMatch)
     .sort((left, right) => right.score - left.score);
 
   return (
-    scored.find((entry) => entry.directZoneMatch || entry.tokenHits >= 2)?.location ||
+    scored.find((entry) => entry.directAddressMatch)?.location ||
+    scored.find((entry) => entry.directZoneMatch)?.location ||
+    scored.find((entry) => entry.tokenHits >= 2)?.location ||
     scored.find((entry) => entry.directCityMatch)?.location ||
     scored[0]?.location ||
     null
@@ -952,6 +980,124 @@ function locationLooksRelevant(location: LocationOption, property: Property) {
   }
 
   return false;
+}
+
+function isIlfovLocation(location?: LocationOption | null) {
+  if (!location) {
+    return false;
+  }
+
+  const path = getLocationPath(location);
+  return path.some((item) => {
+    const title = normalizeText(item.title);
+    const customDisplay = normalizeText(item.custom_display);
+    const slug = normalizeText(item.slug);
+    return (
+      item.id === 8276 ||
+      title === 'ilfovcounty' ||
+      title === 'judetulilfov' ||
+      customDisplay === 'judetulilfov' ||
+      slug === 'ilfov'
+    );
+  });
+}
+
+function containsPiperaHint(property: Property) {
+  const values = [
+    property.title,
+    property.address,
+    property.city,
+    property.zone,
+    property.location,
+  ];
+
+  return values.some((value) => normalizeText(value).includes('pipera'));
+}
+
+function containsAnyLocationHint(property: Property, hints: string[]) {
+  const values = [
+    property.title,
+    property.address,
+    property.city,
+    property.zone,
+    property.location,
+  ].map((value) => normalizeText(value));
+
+  return hints.some((hint) => values.some((value) => value.includes(hint)));
+}
+
+function findIlfovCountyLocation(locations: LocationOption[], location?: LocationOption | null) {
+  const path = getLocationPath(location || undefined);
+  const root = path.find((item) => item.depth === 1 && isIlfovLocation(item));
+  if (root) {
+    return locations.find((item) => item.id === root.id) || root;
+  }
+
+  return (
+    locations.find((item) => item.id === 8276) ||
+    locations.find((item) => item.depth === 1 && isIlfovLocation(item)) ||
+    null
+  );
+}
+
+function buildInvalidLocationFallbacks(locations: LocationOption[], property: Property, invalidLocationId: number) {
+  const invalidLocation =
+    locations.find((item) => item.id === invalidLocationId) ||
+    findLocationByLegacyId(locations, invalidLocationId);
+  const available = locations.filter((item) => item.id !== invalidLocation?.id);
+  const fallbackIds: number[] = [];
+  const pushFallback = (location?: LocationOption | null) => {
+    if (!location?.id || location.id === invalidLocationId || fallbackIds.includes(location.id)) {
+      return;
+    }
+
+    fallbackIds.push(location.id);
+  };
+  const pushFallbackId = (locationId?: number | null) => {
+    if (typeof locationId !== 'number' || locationId === invalidLocationId || fallbackIds.includes(locationId)) {
+      return;
+    }
+
+    fallbackIds.push(locationId);
+  };
+  const invalidTitle = normalizeText(invalidLocation?.title);
+  const invalidDisplay = normalizeText(invalidLocation?.custom_display);
+  const popestiMatch =
+    invalidTitle === 'popestileordeni' ||
+    invalidDisplay.includes('popestileordeni') ||
+    containsAnyLocationHint(property, ['popestileordeni']);
+
+  pushFallback(pickBestLocationCandidate(available, property));
+
+  if (popestiMatch) {
+    if (containsAnyLocationHint(property, ['metalurgiei'])) {
+      pushFallbackId(8736);
+    }
+    if (containsAnyLocationHint(property, ['berceni'])) {
+      pushFallbackId(8639);
+    }
+    if (containsAnyLocationHint(property, ['aparatoriipatriei', 'dimitrieleonida', 'leonida'])) {
+      pushFallbackId(8621);
+    }
+
+    pushFallbackId(8639);
+    pushFallbackId(8736);
+    pushFallbackId(8621);
+  }
+
+  if (invalidLocation && isIlfovLocation(invalidLocation)) {
+    if (containsPiperaHint(property)) {
+      const pipera = available.find((item) => {
+        const haystack = getLocationHaystack(item);
+        return normalizeText(item.title) === 'pipera' || haystack.includes('pipera');
+      });
+      pushFallback(pipera);
+    }
+
+    pushFallback(findIlfovCountyLocation(locations, invalidLocation));
+  }
+
+  return fallbackIds;
 }
 
 function buildPublishAuditLog(params: {
@@ -1020,8 +1166,36 @@ function sanitizeLocationOptions(locations: LocationOption[]) {
   }
 
   const visible = Array.from(byId.values());
-  const depth3 = visible.filter((location) => location.depth === 3);
-  return depth3.length ? depth3 : visible;
+  const publishable = visible.filter((location) => location.depth === 2 || location.depth === 3);
+
+  // Some counties, including Ilfov, expose valid locality-level locations while
+  // keeping their child zones hidden. If we keep only depth-3 entries we lose
+  // valid selections like Voluntari or Popesti-Leordeni at publish time.
+  return publishable.length ? publishable : visible;
+}
+
+function getPublishableLocationOptions(locations: LocationOption[]) {
+  const byId = new Map<number, LocationOption>();
+
+  for (const location of locations) {
+    if (!location || typeof location.id !== 'number') {
+      continue;
+    }
+
+    // imobiliare.ro can require hidden depth-3 zones for publish even when the
+    // UI selector exposes only the parent locality, such as Popesti-Leordeni.
+    if (location.is_hidden && location.depth !== 3) {
+      continue;
+    }
+
+    if (location.depth !== 2 && location.depth !== 3) {
+      continue;
+    }
+
+    byId.set(location.id, location);
+  }
+
+  return Array.from(byId.values());
 }
 
 function buildLocationCatalog(locations: LocationOption[]): ImobiliareLocationCatalogEntry[] {
@@ -1257,8 +1431,22 @@ async function resolveLocationId(agencyId: string, property: Property, portalPro
   return resolveLocationIdForPublish(agencyId, property, portalProfile);
 }
 
+function withoutExplicitLocation(portalProfile?: ImobiliarePortalProfile): ImobiliarePortalProfile | undefined {
+  if (!portalProfile) {
+    return undefined;
+  }
+
+  const nextProfile: ImobiliarePortalProfile = {
+    ...portalProfile,
+    locationId: null,
+    locationLabel: null,
+  };
+
+  return nextProfile;
+}
+
 async function resolveLocationIdForPublish(agencyId: string, property: Property, portalProfile?: ImobiliarePortalProfile) {
-  const publishableLocations = sanitizeLocationOptions(await getAvailableImobiliareLocations(agencyId));
+  const publishableLocations = getPublishableLocationOptions(await getAvailableImobiliareLocations(agencyId));
   if (!publishableLocations.length) {
     throw new Error('Imobiliare.ro nu a returnat locatii utilizabile. Incearca din nou sau configureaza manual locationId.');
   }
@@ -1266,12 +1454,14 @@ async function resolveLocationIdForPublish(agencyId: string, property: Property,
   if (typeof portalProfile?.locationId === 'number') {
     const exactDepth3Match = publishableLocations.find((item) => item.id === portalProfile.locationId);
     if (exactDepth3Match?.id) {
-      return exactDepth3Match.id;
+      const preferredChild = exactDepth3Match.depth === 2 ? findPreferredPublishChildLocation(publishableLocations, exactDepth3Match) : null;
+      return preferredChild?.id || exactDepth3Match.id;
     }
 
     const migratedDepth3Match = findLocationByLegacyId(publishableLocations, portalProfile.locationId);
     if (migratedDepth3Match?.id) {
-      return migratedDepth3Match.id;
+      const preferredChild = migratedDepth3Match.depth === 2 ? findPreferredPublishChildLocation(publishableLocations, migratedDepth3Match) : null;
+      return preferredChild?.id || migratedDepth3Match.id;
     }
   }
 
@@ -2281,6 +2471,9 @@ export async function publishPropertyToImobiliare(params: {
     categoryApi,
     locationId,
   });
+  let effectiveCategoryApi = categoryApi;
+  let effectiveLocationId = locationId;
+  let effectivePayload = payload;
   const auditLog = buildPublishAuditLog({
     agencyId,
     propertyId,
@@ -2303,7 +2496,7 @@ export async function publishPropertyToImobiliare(params: {
     },
   });
 
-  const payloadHash = getPayloadHash(payload);
+  let payloadHash = getPayloadHash(payload);
   let listingResponse: Record<string, unknown> | { data?: Record<string, unknown> } | null = null;
   try {
     listingResponse = await upsertListing(agencyId, payload);
@@ -2335,14 +2528,66 @@ export async function publishPropertyToImobiliare(params: {
     const hasInvalidLocationError = /location_id/i.test(errorMessage);
 
     if (hasInvalidLocationError) {
-      try {
-        listingResponse = await updateListing(agencyId, String(payload.custom_reference), payload);
-        console.info('[imobiliare] publish retry force update after location_id error', {
-          ...auditLog,
-          locationId,
+      const publishableLocations = getPublishableLocationOptions(await getAvailableImobiliareLocations(agencyId));
+      const fallbackLocationIds = [
+        await resolveLocationIdForPublish(
+          agencyId,
+          property,
+          withoutExplicitLocation(portalProfile)
+        ).catch(() => null),
+        ...buildInvalidLocationFallbacks(publishableLocations, property, locationId),
+      ].filter((candidate, index, values): candidate is number => {
+        return typeof candidate === 'number' && candidate !== locationId && values.indexOf(candidate) === index;
+      });
+
+      for (const fallbackLocationId of fallbackLocationIds) {
+        const retryPayload = buildListingPayload({
+          property,
+          portalProfile,
+          remoteAgentId,
+          categoryApi,
+          locationId: fallbackLocationId,
         });
-      } catch {
-        // Continue with the normal fallback branches below.
+
+        try {
+          await persistPublishAudit({
+            agencyId,
+            propertyId,
+            entry: {
+              attemptedAt: nowIso(),
+              stage: 'attempt',
+              request: retryPayload,
+              categoryApi,
+              locationId: fallbackLocationId,
+              remoteAgentId,
+            },
+          });
+
+          listingResponse = await upsertListing(agencyId, retryPayload);
+          effectiveLocationId = fallbackLocationId;
+          effectivePayload = retryPayload;
+          payloadHash = getPayloadHash(retryPayload);
+          console.info('[imobiliare] publish retry alternate location_id', {
+            ...auditLog,
+            originalLocationId: locationId,
+            fallbackLocationId,
+          });
+          break;
+        } catch {
+          // Continue trying alternative locations before using the generic branches below.
+        }
+      }
+
+      if (!listingResponse) {
+        try {
+          listingResponse = await updateListing(agencyId, String(payload.custom_reference), payload);
+          console.info('[imobiliare] publish retry force update after location_id error', {
+            ...auditLog,
+            locationId,
+          });
+        } catch {
+          // Continue with the normal fallback branches below.
+        }
       }
     }
 
@@ -2361,6 +2606,9 @@ export async function publishPropertyToImobiliare(params: {
         });
 
         listingResponse = await upsertListing(agencyId, retryPayload);
+        effectiveCategoryApi = retryCategoryApi;
+        effectivePayload = retryPayload;
+        payloadHash = getPayloadHash(retryPayload);
         console.info('[imobiliare] publish retry category_api', {
           ...auditLog,
           retryCategoryApi,
@@ -2373,7 +2621,7 @@ export async function publishPropertyToImobiliare(params: {
             stage: 'retry-category',
             request: retryPayload,
             categoryApi: retryCategoryApi,
-            locationId,
+            locationId: effectiveLocationId,
             remoteAgentId,
           },
         });
@@ -2443,8 +2691,8 @@ export async function publishPropertyToImobiliare(params: {
       },
       payloadHash,
       portalProfilePatch: {
-        categoryApi,
-        locationId,
+        categoryApi: effectiveCategoryApi,
+        locationId: effectiveLocationId,
         remoteAgentId,
       },
     });
@@ -2454,9 +2702,9 @@ export async function publishPropertyToImobiliare(params: {
       entry: {
         attemptedAt: nowIso(),
         stage: 'error',
-        request: payload,
-        categoryApi,
-        locationId,
+        request: effectivePayload,
+        categoryApi: effectiveCategoryApi,
+        locationId: effectiveLocationId,
         remoteAgentId,
         responseStatus: typedError.status || null,
         responsePayload: typedError.payload || null,
@@ -2474,8 +2722,8 @@ export async function publishPropertyToImobiliare(params: {
     result,
     payloadHash,
     portalProfilePatch: {
-      categoryApi,
-      locationId,
+      categoryApi: effectiveCategoryApi,
+      locationId: effectiveLocationId,
       remoteAgentId,
     },
   });
@@ -2485,9 +2733,9 @@ export async function publishPropertyToImobiliare(params: {
     entry: {
       attemptedAt: nowIso(),
       stage: 'success',
-      request: payload,
-      categoryApi,
-      locationId,
+      request: effectivePayload,
+      categoryApi: effectiveCategoryApi,
+      locationId: effectiveLocationId,
       remoteAgentId,
       responseStatus: 200,
       responsePayload: listingResponse,

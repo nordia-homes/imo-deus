@@ -4,10 +4,10 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 dotenv.config({ path: '.env.local' });
 
-const propertyId = process.argv[2];
+const address = process.argv[2];
 
-if (!propertyId) {
-  console.error('Usage: node scripts/inspect-property.mjs <propertyId>');
+if (!address) {
+  console.error('Usage: node scripts/find-property-by-address.mjs <address>');
   process.exit(1);
 }
 
@@ -27,7 +27,7 @@ function getAdminApp() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error('Lipsesc credențialele Firebase Admin din .env.local.');
+    throw new Error('Lipsesc credentialele Firebase Admin din .env.local.');
   }
 
   return initializeApp({
@@ -38,31 +38,33 @@ function getAdminApp() {
 async function main() {
   const db = getFirestore(getAdminApp());
   const agencies = await db.collection('agencies').get();
-  let found = false;
+  const hits = [];
 
   for (const agencyDoc of agencies.docs) {
-    const propertyDoc = await db.collection('agencies', agencyDoc.id, 'properties').doc(propertyId).get();
-    if (!propertyDoc.exists) continue;
+    const snap = await db
+      .collection('agencies')
+      .doc(agencyDoc.id)
+      .collection('properties')
+      .where('address', '==', address)
+      .get();
 
-    found = true;
-    const data = propertyDoc.data();
-    console.log({
-      agencyId: agencyDoc.id,
-      propertyId: propertyDoc.id,
-      title: data?.title ?? null,
-      address: data?.address ?? null,
-      city: data?.city ?? null,
-      zone: data?.zone ?? null,
-      location: data?.location ?? null,
-      price: data?.price ?? null,
-      portalProfileImobiliare: data?.portalProfiles?.imobiliare ?? null,
-      promotionImobiliare: data?.promotions?.imobiliare ?? null,
-    });
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      hits.push({
+        agencyId: agencyDoc.id,
+        propertyId: doc.id,
+        title: data?.title ?? null,
+        address: data?.address ?? null,
+        city: data?.city ?? null,
+        zone: data?.zone ?? null,
+        location: data?.location ?? null,
+        portalProfileImobiliare: data?.portalProfiles?.imobiliare ?? null,
+        promotionImobiliare: data?.promotions?.imobiliare ?? null,
+      });
+    }
   }
 
-  if (!found) {
-    console.log({ propertyId, found: false });
-  }
+  console.log(JSON.stringify(hits, null, 2));
 }
 
 main().catch((error) => {
