@@ -61,13 +61,33 @@ async function emailExistsInAuth(email: string) {
 export async function GET(request: NextRequest) {
   try {
     const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
-    const snapshot = await adminDb
-      .collection('users')
-      .where('agencyId', '==', agencyId)
-      .get();
+    const [usersSnapshot, propertiesSnapshot] = await Promise.all([
+      adminDb
+        .collection('users')
+        .where('agencyId', '==', agencyId)
+        .get(),
+      adminDb
+        .collection('agencies')
+        .doc(agencyId)
+        .collection('properties')
+        .where('status', '==', 'Activ')
+        .get(),
+    ]);
 
-    const agents = snapshot.docs
-      .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+    const activeListingsByAgentId = new Map<string, number>();
+    propertiesSnapshot.docs.forEach((propertySnapshot) => {
+      const propertyData = propertySnapshot.data() as { agentId?: string | null } | undefined;
+      const agentId = propertyData?.agentId;
+      if (!agentId) return;
+      activeListingsByAgentId.set(agentId, (activeListingsByAgentId.get(agentId) || 0) + 1);
+    });
+
+    const agents = usersSnapshot.docs
+      .map((docSnapshot) => ({
+        id: docSnapshot.id,
+        ...docSnapshot.data(),
+        activeListingsCount: activeListingsByAgentId.get(docSnapshot.id) || 0,
+      }))
       .sort((left, right) => {
         const leftRole = left.role === 'admin' ? 0 : 1;
         const rightRole = right.role === 'admin' ? 0 : 1;

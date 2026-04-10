@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { Building2, Camera, Loader2, Mail, Pencil, Phone, ShieldCheck, UserRound, Users2 } from 'lucide-react';
+import { ArrowRight, Building2, Camera, Loader2, Mail, Pencil, Phone, ShieldCheck, UserRound, Users2 } from 'lucide-react';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { useAgency } from '@/context/AgencyContext';
 import { useStorage, useUser } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
@@ -27,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
+type AgentCardProfile = UserProfile & {
+  activeListingsCount?: number;
+};
+
 function getInitials(name?: string) {
   if (!name) return 'AG';
   return name
@@ -38,12 +44,17 @@ function getInitials(name?: string) {
     .toUpperCase();
 }
 
+function sanitizePhoneForWhatsapp(value?: string | null) {
+  if (!value) return '';
+  return value.replace(/[^\d]/g, '');
+}
+
 export default function AgentsPage() {
   const { user } = useUser();
   const { agency, userProfile } = useAgency();
   const storage = useStorage();
   const { toast } = useToast();
-  const [agents, setAgents] = useState<UserProfile[]>([]);
+  const [agents, setAgents] = useState<AgentCardProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingAgent, setEditingAgent] = useState<UserProfile | null>(null);
   const [editName, setEditName] = useState('');
@@ -116,7 +127,7 @@ export default function AgentsPage() {
 
   function handleAgentCreated(agent: UserProfile) {
     setAgents((current) => {
-      const nextAgents = [...current.filter((existing) => existing.id !== agent.id), agent];
+      const nextAgents = [...current.filter((existing) => existing.id !== agent.id), { ...agent, activeListingsCount: 0 }];
       return nextAgents.sort((left, right) => {
         if (left.role === 'admin' && right.role !== 'admin') return -1;
         if (left.role !== 'admin' && right.role === 'admin') return 1;
@@ -125,7 +136,7 @@ export default function AgentsPage() {
     });
   }
 
-  function openEditDialog(agent: UserProfile) {
+  function openEditDialog(agent: AgentCardProfile) {
     setEditingAgent(agent);
     setEditName(agent.name || '');
     setEditPhone(agent.phone || '');
@@ -190,7 +201,10 @@ export default function AgentsPage() {
         throw new Error(payload?.message || 'Nu am putut actualiza agentul.');
       }
 
-      const nextAgent = payload.agent as UserProfile;
+      const nextAgent = {
+        ...(payload.agent as UserProfile),
+        activeListingsCount: agents.find((agent) => agent.id === editingAgent.id)?.activeListingsCount || 0,
+      } as AgentCardProfile;
       setAgents((current) =>
         current
           .map((agent) => (agent.id === nextAgent.id ? nextAgent : agent))
@@ -311,34 +325,65 @@ export default function AgentsPage() {
             >
               <CardHeader className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
-                  <Avatar className="h-14 w-14 rounded-2xl border border-white/10">
-                    <AvatarImage src={agent.photoUrl || undefined} alt={agent.name || 'Agent'} />
-                    <AvatarFallback className="rounded-2xl bg-gradient-to-br from-emerald-300/25 via-cyan-300/20 to-white/10 text-lg font-semibold text-white">
-                      {getInitials(agent.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Badge variant={agent.role === 'admin' ? 'default' : 'secondary'} className={agent.role === 'admin' ? '' : 'border-none bg-white/15 text-white'}>
+                  <div className="flex min-w-0 items-center gap-4">
+                    <Avatar className="h-14 w-14 shrink-0 rounded-2xl border border-white/10">
+                      <AvatarImage src={agent.photoUrl || undefined} alt={agent.name || 'Agent'} />
+                      <AvatarFallback className="rounded-2xl bg-gradient-to-br from-emerald-300/25 via-cyan-300/20 to-white/10 text-lg font-semibold text-white">
+                        {getInitials(agent.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-xl font-semibold text-white">{agent.name}</CardTitle>
+                      <CardDescription className="mt-1 text-white/62">
+                        {agent.role === 'admin' ? 'Administratorul agenției' : 'Membru al echipei comerciale'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant={agent.role === 'admin' ? 'default' : 'secondary'} className={agent.role === 'admin' ? 'shrink-0' : 'shrink-0 border-none bg-white/15 text-white'}>
                     {agent.role === 'admin' ? 'Admin' : 'Agent'}
                   </Badge>
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-white">{agent.name}</CardTitle>
-                  <CardDescription className="mt-1 text-white/62">
-                    {agent.role === 'admin' ? 'Administratorul agenției' : 'Membru al echipei comerciale'}
-                  </CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
                   <div className="flex items-center gap-3 text-sm text-white/80">
-                    <Mail className="h-4 w-4 text-emerald-200" />
-                    <span className="truncate">{agent.email}</span>
+                    <Mail className="h-4 w-4 shrink-0 text-emerald-200" />
+                    <span className="min-w-0 flex-1 truncate">{agent.email}</span>
+                    {agent.email ? (
+                      <a
+                        href={`mailto:${agent.email}`}
+                        aria-label={`Trimite email lui ${agent.name}`}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/85 transition hover:bg-white/12 hover:text-white"
+                      >
+                        <Mail className="h-4 w-4 text-emerald-200" />
+                      </a>
+                    ) : null}
                   </div>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
                   <div className="flex items-center gap-3 text-sm text-white/80">
-                    <Phone className="h-4 w-4 text-emerald-200" />
-                    <span>{agent.phone || 'Telefon necompletat'}</span>
+                    <Phone className="h-4 w-4 shrink-0 text-emerald-200" />
+                    <span className="min-w-0 flex-1 truncate">{agent.phone || 'Telefon necompletat'}</span>
+                    {sanitizePhoneForWhatsapp(agent.phone) ? (
+                      <a
+                        href={`https://wa.me/${sanitizePhoneForWhatsapp(agent.phone)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Contactează pe WhatsApp pe ${agent.name}`}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/85 transition hover:bg-white/12 hover:text-white"
+                      >
+                        <WhatsappIcon className="h-4 w-4 text-emerald-200" />
+                      </a>
+                    ) : null}
+                    {agent.phone ? (
+                      <a
+                        href={`tel:${agent.phone}`}
+                        aria-label={`Sună pe ${agent.name}`}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/85 transition hover:bg-white/12 hover:text-white"
+                      >
+                        <Phone className="h-4 w-4 text-emerald-200" />
+                      </a>
+                    ) : null}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -357,10 +402,30 @@ export default function AgentsPage() {
                     <p className="mt-2 truncate text-sm font-medium text-white">{agency?.name || 'Agenția curentă'}</p>
                   </div>
                 </div>
+                <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Anunțuri active
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-white">{agent.activeListingsCount || 0}</p>
+                </div>
                 {agent.id === userProfile?.id ? (
                   <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-50">
                     Acesta este contul tău curent.
                   </div>
+                ) : null}
+                {(isAdmin || agent.id === userProfile?.id) ? (
+                  <Button
+                    asChild
+                    type="button"
+                    variant="outline"
+                    className="w-full border-white/15 bg-white/8 text-white hover:bg-white/14"
+                  >
+                    <Link href={`/agenti/${agent.id}`}>
+                      Vezi statistici
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 ) : null}
                 {isAdmin && agent.role === 'agent' ? (
                   <div className="pt-1">

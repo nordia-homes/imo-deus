@@ -53,6 +53,7 @@ export default function PropertiesPage() {
   
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
+    const agentIdFilter = searchParams.get('agentId');
     const dialogFiltered = !filters ? properties : properties.filter(prop => {
       if (filters.transactionType && filters.transactionType !== 'all' && prop.transactionType !== filters.transactionType) return false;
       if (filters.rooms && filters.rooms !== 4 && prop.rooms !== filters.rooms) return false;
@@ -82,6 +83,10 @@ export default function PropertiesPage() {
     const now = Date.now();
 
     return dialogFiltered.filter((prop) => {
+      if (agentIdFilter && prop.agentId !== agentIdFilter) {
+        return false;
+      }
+
       const createdAt = prop.createdAt ? new Date(prop.createdAt).getTime() : null;
 
       if (reportPreset === 'active-no-traction') {
@@ -133,6 +138,7 @@ export default function PropertiesPage() {
   const isPageLoading = isLoading || areViewingsLoading;
   const reportPreset = searchParams.get('reportPreset');
   const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
+  const agentNameFilter = searchParams.get('agentName');
 
   return (
     <div className={cn("space-y-6", isMobile && "p-0")}>
@@ -154,6 +160,16 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             )}
+            {agentNameFilter && !reportPresetLabel ? (
+                <div className="px-2">
+                    <div className="flex items-center justify-between rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
+                        <p className="text-sm text-white/90">Portofoliu filtrat pentru agentul: {agentNameFilter}</p>
+                        <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
+                            <Link href="/properties">Reseteaza</Link>
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
             <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
@@ -190,6 +206,16 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             )}
+            {agentNameFilter && !reportPresetLabel ? (
+                <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
+                    <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm text-white/90">Portofoliu filtrat pentru agentul: {agentNameFilter}</p>
+                        <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
+                            <Link href="/properties">Reseteaza filtrul</Link>
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
             <Card className="bg-[#152A47] text-white border-none rounded-2xl">
                 <CardHeader>
                     <div className="flex items-center justify-between">
