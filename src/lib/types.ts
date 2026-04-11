@@ -213,6 +213,7 @@ export type Property = {
   lift?: string;
   city?: string;
   zone?: string;
+  cadastralNumber?: string;
 
   // For compatibility with existing components that might use these
   tagline?: string;
@@ -320,6 +321,10 @@ export type Contact = {
     financialStatus?: FinancialStatus;
     recommendationHistory?: { [propertyId: string]: PortalRecommendation };
     photoUrl?: string;
+    address?: string;
+    personalNumericCode?: string;
+    identityDocumentSeries?: string;
+    identityDocumentNumber?: string;
     preferencesLinkId?: string;
     preferencesChatHistory?: { role: 'user' | 'model'; content: string; }[];
     generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
@@ -379,6 +384,7 @@ export type Agency = {
   shareImageUrl?: string;
   legalCompanyName?: string;
   companyTaxId?: string;
+  tradeRegisterNumber?: string;
   registeredOffice?: string;
   legalRepresentative?: string;
   termsAndConditions?: string;
@@ -415,10 +421,23 @@ export type ContractTemplateFieldType =
 
 export type ContractTemplateFieldSource =
   | 'manual'
+  | 'contract.number'
+  | 'contract.city'
+  | 'property.cadastralNumber'
+  | 'property.commissionPercent'
+  | 'reservation.amount'
   | 'buyer.name'
+  | 'buyer.address'
+  | 'buyer.personalNumericCode'
+  | 'buyer.identityDocumentSeries'
+  | 'buyer.identityDocumentNumber'
   | 'buyer.phone'
   | 'buyer.email'
   | 'owner.name'
+  | 'owner.address'
+  | 'owner.personalNumericCode'
+  | 'owner.identityDocumentSeries'
+  | 'owner.identityDocumentNumber'
   | 'owner.phone'
   | 'owner.email'
   | 'property.address'
@@ -429,6 +448,7 @@ export type ContractTemplateFieldSource =
   | 'agency.name'
   | 'agency.legalCompanyName'
   | 'agency.companyTaxId'
+  | 'agency.tradeRegisterNumber'
   | 'agency.registeredOffice'
   | 'agency.legalRepresentative'
   | 'agent.name'
@@ -464,6 +484,7 @@ export type ContractTemplate = {
   description?: string;
   sourceType?: 'document';
   content?: string;
+  headerMode?: 'legacy' | 'crm_prefilled';
   sourceFormat?: 'manual' | 'docx';
   sourcePdfUrl?: string;
   sourcePdfPath?: string;

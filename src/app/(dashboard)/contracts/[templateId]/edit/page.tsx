@@ -63,6 +63,7 @@ export default function EditContractTemplatePage() {
         category,
         status: nextStatus || status,
         content,
+        headerMode: 'crm_prefilled',
         sourceType: 'document',
         updatedAt: new Date().toISOString(),
         updatedBy: user.uid,
@@ -189,7 +190,12 @@ export default function EditContractTemplatePage() {
           ) : null}
         </div>
 
-        <DocumentTemplateEditor content={content} onChange={setContent} />
+        <DocumentTemplateEditor
+          content={content}
+          onChange={setContent}
+          templateName={name}
+          category={category}
+        />
       </div>
     </div>
   );

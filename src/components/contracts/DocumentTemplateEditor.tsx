@@ -33,13 +33,16 @@ import {
   Undo2,
   Quote,
 } from 'lucide-react';
-import { CONTRACT_PLACEHOLDERS } from '@/lib/contracts';
+import { buildContractHeaderHtml, CONTRACT_PLACEHOLDERS } from '@/lib/contracts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { ContractTemplateCategory } from '@/lib/types';
 
 type DocumentTemplateEditorProps = {
   content: string;
   onChange: (value: string) => void;
+  templateName: string;
+  category: ContractTemplateCategory;
 };
 
 function VariableChip({ node }: { node: { attrs: { key?: string; label?: string } } }) {
@@ -47,7 +50,7 @@ function VariableChip({ node }: { node: { attrs: { key?: string; label?: string 
     <NodeViewWrapper as="span" className="inline-flex">
       <span
         contentEditable={false}
-        className="mx-0.5 inline-flex items-center rounded-full border border-emerald-300/30 bg-emerald-100 px-2.5 py-1 text-xs font-semibold tracking-[0.01em] text-emerald-950 shadow-sm"
+        className="inline-flex items-center rounded-full border border-emerald-300/30 bg-emerald-100 px-2.5 py-1 text-xs font-semibold tracking-[0.01em] text-emerald-950 shadow-sm"
       >
         {node.attrs.label || node.attrs.key}
       </span>
@@ -128,7 +131,12 @@ function ToolbarButton({ active, onClick, title, icon: Icon }: ToolbarButtonProp
   );
 }
 
-export function DocumentTemplateEditor({ content, onChange }: DocumentTemplateEditorProps) {
+export function DocumentTemplateEditor({
+  content,
+  onChange,
+  templateName,
+  category,
+}: DocumentTemplateEditorProps) {
   const groupedPlaceholders = useMemo(() => {
     const groups = new Map<string, Array<{ key: string; label: string }>>();
 
@@ -159,6 +167,15 @@ export function DocumentTemplateEditor({ content, onChange }: DocumentTemplateEd
     return Array.from(groups.entries());
   }, []);
 
+  const headerHtml = useMemo(
+    () =>
+      buildContractHeaderHtml({
+        title: templateName.trim() || 'Contract',
+        category,
+      }),
+    [category, templateName]
+  );
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -182,7 +199,7 @@ export function DocumentTemplateEditor({ content, onChange }: DocumentTemplateEd
     editorProps: {
       attributes: {
         class:
-          'min-h-[800px] outline-none [&_.ProseMirror-selectednode]:ring-2 [&_.ProseMirror-selectednode]:ring-emerald-400 [&>h1]:mb-6 [&>h1]:mt-2 [&>h1]:text-center [&>h1]:text-[28px] [&>h1]:font-semibold [&>h2]:mb-4 [&>h2]:mt-6 [&>h2]:text-[22px] [&>h2]:font-semibold [&>h3]:mb-4 [&>h3]:mt-6 [&>h3]:text-[18px] [&>h3]:font-semibold [&>ol]:my-4 [&>ol]:pl-6 [&>p]:my-4 [&>p]:text-[16px] [&>p]:leading-8 [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6',
+          'min-h-[520px] outline-none [&_.ProseMirror-selectednode]:ring-2 [&_.ProseMirror-selectednode]:ring-emerald-400 [&>h1]:mb-6 [&>h1]:mt-2 [&>h1]:text-center [&>h1]:text-[28px] [&>h1]:font-semibold [&>h2]:mb-4 [&>h2]:mt-6 [&>h2]:text-[22px] [&>h2]:font-semibold [&>h3]:mb-4 [&>h3]:mt-6 [&>h3]:text-[18px] [&>h3]:font-semibold [&>ol]:my-4 [&>ol]:pl-6 [&>p]:my-4 [&>p]:text-[16px] [&>p]:leading-8 [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6',
         style: 'font-family: Georgia, Times New Roman, serif;',
       },
     },
@@ -224,9 +241,9 @@ export function DocumentTemplateEditor({ content, onChange }: DocumentTemplateEd
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px] 2xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start">
       <Card className="rounded-[32px] border-none bg-[#152A47] text-white shadow-2xl">
         <CardHeader>
-          <CardTitle>Editor contract</CardTitle>
+          <CardTitle>Corp contract</CardTitle>
           <CardDescription className="text-white/70">
-            Editorul functioneaza vizual, ca un document normal. Utilizatorul nu vede HTML, ci doar pagina formatata si campurile dinamice inserate ca etichete.
+            Antetul este standardizat automat cu tagurile necesare. In editorul de mai jos agentia completeaza doar clauzele si continutul variabil al contractului.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -331,6 +348,14 @@ export function DocumentTemplateEditor({ content, onChange }: DocumentTemplateEd
 
           <div className="h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),rgba(255,255,255,0.04)_40%,rgba(10,18,30,0.2)_100%)] px-3 py-5 sm:p-6 lg:px-5 lg:py-6">
             <div className="mx-auto min-h-[980px] w-full max-w-[1080px] rounded-[8px] bg-white px-[56px] py-[72px] text-[#1b1f23] shadow-[0_30px_90px_rgba(0,0,0,0.35)] lg:px-[72px] lg:py-[82px] 2xl:max-w-[1180px]">
+              <div className="mb-8 rounded-[18px] border border-slate-200 bg-slate-50/85 p-6 text-[15px] leading-7 text-slate-900 [&_.contract-auto-header__eyebrow]:mb-4 [&_.contract-auto-header__eyebrow]:text-xs [&_.contract-auto-header__eyebrow]:font-semibold [&_.contract-auto-header__eyebrow]:uppercase [&_.contract-auto-header__eyebrow]:tracking-[0.18em] [&_.contract-auto-header__eyebrow]:text-slate-500 [&_.contract-auto-header_h1]:mb-6 [&_.contract-auto-header_h1]:text-center [&_.contract-auto-header_h1]:text-[30px] [&_.contract-auto-header_h1]:font-semibold [&_.contract-auto-header_h2]:mb-3 [&_.contract-auto-header_h2]:mt-6 [&_.contract-auto-header_h2]:text-[18px] [&_.contract-auto-header_h2]:font-semibold [&_.contract-auto-header_hr]:mt-6 [&_.contract-auto-header_hr]:border-slate-300 [&_.contract-auto-header_p]:my-3 [&_.contract-variable-chip]:inline-flex [&_.contract-variable-chip]:rounded-full [&_.contract-variable-chip]:border [&_.contract-variable-chip]:border-emerald-300/50 [&_.contract-variable-chip]:bg-emerald-100 [&_.contract-variable-chip]:px-2.5 [&_.contract-variable-chip]:py-1 [&_.contract-variable-chip]:text-xs [&_.contract-variable-chip]:font-semibold [&_.contract-variable-chip]:text-emerald-950">
+                <div
+                  dangerouslySetInnerHTML={{ __html: headerHtml }}
+                />
+              </div>
+              <div className="mb-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+                Corpul contractului incepe de aici. Antetul de mai sus se completeaza automat la generare din CRM sau manual.
+              </div>
               <EditorContent editor={editor} />
             </div>
           </div>

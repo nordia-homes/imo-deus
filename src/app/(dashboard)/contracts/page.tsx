@@ -9,6 +9,7 @@ import { useAgency } from '@/context/AgencyContext';
 import type { Contact, ContractTemplate, Property } from '@/lib/types';
 import {
   buildContractPlaceholderMap,
+  composeContractDocumentHtml,
   createDefaultContractHtml,
   CONTRACT_PLACEHOLDERS,
   CONTRACT_TEMPLATE_CATEGORIES,
@@ -78,7 +79,7 @@ function CreateTemplateDialog({
         <DialogHeader>
           <DialogTitle>Creeaza un template de contract</DialogTitle>
           <DialogDescription className="text-white/70">
-            Contractul va fi editabil ca document. Dupa creare il poti rafina in editor si poti insera variabile oriunde in text.
+            Antetul contractului va fi generat automat cu tagurile standard. Dupa creare, agentia va edita doar corpul contractului in editorul vizual.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -152,13 +153,13 @@ function CreateTemplateDialog({
               }}
             />
             <p className="text-xs text-white/55">
-              Incarca documentul Word al agentiei, iar textul lui va fi importat in editor pentru modificare.
+              Incarca documentul Word al agentiei, iar continutul lui va fi folosit ca baza pentru corpul contractului.
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4 text-sm leading-7 text-white/75">
             <p className="font-medium text-white">Continut initial pentru editor</p>
             <p className="mt-2">
-              Template-ul va fi creat fie din documentul Word importat, fie dintr-un document gol pregatit automat. Continutul se editeaza exclusiv in editorul vizual de la pasul urmator, nu aici.
+              Template-ul va fi creat fie din documentul Word importat, fie dintr-un corp de contract pregatit automat. Antetul cu datele partilor, proprietatii si agentiei se adauga automat in pasul urmator.
             </p>
             <p className="mt-3 text-white/55">
               Preview: {stripHtmlTags(state.content).slice(0, 220) || 'Document gol'}{stripHtmlTags(state.content).length > 220 ? '...' : ''}
@@ -225,8 +226,17 @@ function FillContractDialog({
   );
 
   const renderedPreview = useMemo(
-    () => renderContractContent(template?.content || '', mergedValues),
-    [mergedValues, template?.content]
+    () =>
+      renderContractContent(
+        composeContractDocumentHtml({
+          templateName: template?.name || 'Contract',
+          category: template?.category || 'reservation',
+          bodyContent: template?.content || '',
+          headerMode: template?.headerMode,
+        }),
+        mergedValues
+      ),
+    [mergedValues, template?.category, template?.content, template?.headerMode, template?.name]
   );
 
   useEffect(() => {
@@ -387,7 +397,7 @@ function FillContractDialog({
             <CardContent className="space-y-4">
               <div className="min-h-[760px] rounded-3xl border border-white/10 bg-[#0d1d31] p-6">
                 <div
-                  className="contract-preview prose prose-invert max-w-none text-white/90 [&_h1]:text-center [&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_p]:leading-8"
+                  className="contract-preview prose prose-invert max-w-none text-white/90 [&_.contract-variable-chip]:inline-flex [&_.contract-variable-chip]:mx-0 [&_h1]:text-center [&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_p]:leading-8"
                   dangerouslySetInnerHTML={{ __html: renderedPreview }}
                 />
               </div>
@@ -466,6 +476,7 @@ export default function ContractsPage() {
         description: state.description.trim(),
         sourceType: 'document',
         content: state.content,
+        headerMode: 'crm_prefilled',
         sourceFormat: state.sourceFormat,
         sourcePdfUrl: '',
         sourcePdfPath: '',
@@ -543,7 +554,7 @@ export default function ContractsPage() {
             </div>
             <h1 className="text-3xl font-bold tracking-tight">Documente si contracte</h1>
             <p className="max-w-3xl text-white/70">
-              Contractele sunt acum template-uri document editabile. Agenția poate scrie sau modifica conținutul liber și poate insera variabile direct în text, exact ca într-un document Word simplificat.
+              Antetul fiecarui contract este predefinit cu tagurile esentiale, iar agentia editeaza doar corpul documentului. La completare, agentul poate alege datele din CRM sau le poate suprascrie manual.
             </p>
           </div>
           <Button
@@ -586,7 +597,7 @@ export default function ContractsPage() {
                 <CardContent className="flex-grow space-y-4">
                     <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4">
                     <p className="line-clamp-6 whitespace-pre-wrap text-sm leading-7 text-white/80">
-                      {stripHtmlTags(template.content || '') || 'Acest template nu are inca text adaugat.'}
+                      {stripHtmlTags(template.content || '') || 'Acest template nu are inca un corp de contract adaugat.'}
                     </p>
                   </div>
                 </CardContent>
@@ -596,7 +607,6 @@ export default function ContractsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => setFillTemplate(template)}
-                      disabled={!template.content?.trim()}
                       className="border-white/10 bg-white/5 text-white hover:bg-white/10"
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
@@ -631,7 +641,7 @@ export default function ContractsPage() {
                 <div className="space-y-2">
                   <h2 className="text-xl font-semibold">Nu ai încă niciun template document</h2>
                   <p className="max-w-2xl text-sm leading-7 text-white/70">
-                    Creează primul template al agenției, scrie contractul direct în editor și inserează variabile precum <code>{'{{buyer.name}}'}</code> sau <code>{'{{property.address}}'}</code>.
+                    Creează primul template al agenției și personalizează doar corpul contractului. Antetul cu datele din CRM este generat automat.
                   </p>
                 </div>
               </CardContent>
