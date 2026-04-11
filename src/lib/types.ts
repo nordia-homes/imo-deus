@@ -399,6 +399,97 @@ export type Agency = {
   linkedinUrl?: string;
 }
 
+export type ContractTemplateCategory =
+  | 'reservation'
+  | 'collaboration'
+  | 'exclusivity'
+  | 'custom';
+
+export type ContractTemplateFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'select'
+  | 'checkbox';
+
+export type ContractTemplateFieldSource =
+  | 'manual'
+  | 'buyer.name'
+  | 'buyer.phone'
+  | 'buyer.email'
+  | 'owner.name'
+  | 'owner.phone'
+  | 'owner.email'
+  | 'property.address'
+  | 'property.price'
+  | 'property.city'
+  | 'property.zone'
+  | 'property.title'
+  | 'agency.name'
+  | 'agency.legalCompanyName'
+  | 'agency.companyTaxId'
+  | 'agency.registeredOffice'
+  | 'agency.legalRepresentative'
+  | 'agent.name'
+  | 'agent.email'
+  | 'agent.phone'
+  | 'currentDate';
+
+export type ContractTemplateField = {
+  id: string;
+  key: string;
+  label: string;
+  type: ContractTemplateFieldType;
+  required: boolean;
+  page: number;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  fontSize: number;
+  align?: 'left' | 'center' | 'right';
+  defaultValue?: string;
+  placeholder?: string;
+  options?: string[];
+  source?: ContractTemplateFieldSource;
+  multiline?: boolean;
+};
+
+export type ContractTemplate = {
+  id: string;
+  agencyId: string;
+  name: string;
+  category: ContractTemplateCategory;
+  description?: string;
+  sourceType?: 'document';
+  content?: string;
+  sourceFormat?: 'manual' | 'docx';
+  sourcePdfUrl?: string;
+  sourcePdfPath?: string;
+  fileName?: string;
+  pageCount?: number;
+  status: 'draft' | 'active';
+  fields: ContractTemplateField[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+};
+
+export type GeneratedContract = {
+  id: string;
+  agencyId: string;
+  templateId: string;
+  templateName: string;
+  generatedBy: string;
+  createdAt: string;
+  values: Record<string, string | number | boolean | null>;
+  fileName: string;
+  contactId?: string | null;
+  propertyId?: string | null;
+};
+
 export type CustomDomainInstructionRow = {
   action: 'ADD' | 'REMOVE' | 'UNSPECIFIED';
   type: string;

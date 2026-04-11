@@ -78,6 +78,16 @@ service cloud.firestore {
       allow create, update, delete: if isUserInAgency(agencyId);
     }
 
+    match /agencies/{agencyId}/contractTemplates/{templateId} {
+      allow get, list: if isUserInAgency(agencyId);
+      allow create, update, delete: if isUserAdminForAgency(agencyId);
+    }
+
+    match /agencies/{agencyId}/generatedContracts/{documentId} {
+      allow get, list, create: if isUserInAgency(agencyId);
+      allow update, delete: if isUserAdminForAgency(agencyId);
+    }
+
     // --- Generic Rule for other Agency Subcollections ---
     match /agencies/{agencyId}/{document=**} {
       allow read, write: if isUserInAgency(agencyId);
