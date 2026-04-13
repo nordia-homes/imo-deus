@@ -67,6 +67,8 @@ export const CONTRACT_FIELD_SOURCES: Array<{
   { value: 'agency.tradeRegisterNumber', label: 'Agentie: nr. registrul comertului' },
   { value: 'agency.registeredOffice', label: 'Agentie: sediu social' },
   { value: 'agency.legalRepresentative', label: 'Agentie: reprezentant legal' },
+  { value: 'agency.phone', label: 'Agentie: telefon' },
+  { value: 'agency.email', label: 'Agentie: email' },
   { value: 'agent.name', label: 'Agent: nume' },
   { value: 'agent.email', label: 'Agent: email' },
   { value: 'agent.phone', label: 'Agent: telefon' },
@@ -216,6 +218,12 @@ export function buildContractPrefillValues(params: {
       case 'agency.legalRepresentative':
         nextValue = agency?.legalRepresentative || '';
         break;
+      case 'agency.phone':
+        nextValue = agency?.phone || '';
+        break;
+      case 'agency.email':
+        nextValue = agency?.email || '';
+        break;
       case 'agent.name':
         nextValue = agent?.name || '';
         break;
@@ -286,6 +294,8 @@ export function buildContractPlaceholderMap(params: {
     agency_tradeRegisterNumber: agency?.tradeRegisterNumber || '',
     agency_registeredOffice: agency?.registeredOffice || '',
     agency_legalRepresentative: agency?.legalRepresentative || '',
+    agency_phone: agency?.phone || '',
+    agency_email: agency?.email || '',
     agent_name: agent?.name || '',
     agent_email: agent?.email || '',
     agent_phone: agent?.phone || '',
@@ -320,6 +330,128 @@ function buildAgencyAgentParagraph() {
 
 function buildPropertyParagraph() {
   return `Proprietatea care face obiectul acestui contract este situata in ${createVariableSpan('property.address', 'Proprietate: adresa')}, avand numarul cadastral ${createVariableSpan('property.cadastralNumber', 'Proprietate: numar cadastral')} si pretul propus la vanzare de ${createVariableSpan('property.price', 'Proprietate: pret')} EUR.`;
+}
+
+export type StructuredHeaderBlock =
+  | { kind: 'intro'; text: string }
+  | { kind: 'party'; index: number; text: string }
+  | { kind: 'connector'; text: string }
+  | { kind: 'paragraph'; text: string };
+
+function getHeaderValue(values: Record<string, string>, key: string, emptyFallback = '') {
+  const normalized = normalizeContractText(String(values[key] || ''));
+  return normalized || emptyFallback;
+}
+
+function buildFilledBeneficiaryParagraph(values: Record<string, string>) {
+  return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')} identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries')} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber')}, denumit în continuare “Beneficiar”`;
+}
+
+function buildFilledProviderParagraph(values: Record<string, string>) {
+  return `${getHeaderValue(values, 'agency_legalCompanyName')}, cu sediul social in ${getHeaderValue(values, 'agency_registeredOffice')}, CUI ${getHeaderValue(values, 'agency_companyTaxId')}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'agency_tradeRegisterNumber')}, fiind reprezentata legal prin ${getHeaderValue(values, 'agency_legalRepresentative')}, denumit in continuare “Prestator”`;
+}
+
+function buildFilledAgencyAgentParagraph(values: Record<string, string>) {
+  return `imputernicitul agentiei pentru administrarea proprietatii in portofoliu este ${getHeaderValue(values, 'agent_name')}, in calitate de agent, avand numarul de telefon ${getHeaderValue(values, 'agent_phone')}.`;
+}
+
+function buildFilledPropertyParagraph(values: Record<string, string>) {
+  return `Proprietatea care face obiectul acestui contract este situata in ${getHeaderValue(values, 'property_address')}, avand numarul cadastral ${getHeaderValue(values, 'property_cadastralNumber')} si pretul propus la vanzare de ${getHeaderValue(values, 'property_price')} EUR.`;
+}
+
+function buildFilledBuyerParagraph(values: Record<string, string>) {
+  return `${getHeaderValue(values, 'buyer_name')}, telefon ${getHeaderValue(values, 'buyer_phone')}, email ${getHeaderValue(values, 'buyer_email')}, denumit in continuare “Rezervant”`;
+}
+
+export function buildStructuredHeaderBlocks(
+  category: ContractTemplateCategory,
+  values: Record<string, string>,
+  options?: {
+    emptyFallback?: string;
+  }
+): StructuredHeaderBlock[] {
+  const emptyFallback = options?.emptyFallback || '';
+  const blocks: StructuredHeaderBlock[] = [
+    {
+      kind: 'intro',
+      text: 'Prezentul contract (denumit în continuare „Contractul”) se încheie între:',
+    },
+    {
+      kind: 'paragraph',
+      text: `${buildFilledBeneficiaryParagraph({
+        ...values,
+        owner_name: getHeaderValue(values, 'owner_name', emptyFallback),
+        owner_address: getHeaderValue(values, 'owner_address', emptyFallback),
+        owner_personalNumericCode: getHeaderValue(values, 'owner_personalNumericCode', emptyFallback),
+        owner_identityDocumentSeries: getHeaderValue(values, 'owner_identityDocumentSeries', emptyFallback),
+        owner_identityDocumentNumber: getHeaderValue(values, 'owner_identityDocumentNumber', emptyFallback),
+      })},`,
+    },
+    {
+      kind: 'connector',
+      text: 'și',
+    },
+    {
+      kind: 'paragraph',
+      text: `${buildFilledProviderParagraph({
+        ...values,
+        agency_legalCompanyName: getHeaderValue(values, 'agency_legalCompanyName', emptyFallback),
+        agency_registeredOffice: getHeaderValue(values, 'agency_registeredOffice', emptyFallback),
+        agency_companyTaxId: getHeaderValue(values, 'agency_companyTaxId', emptyFallback),
+        agency_tradeRegisterNumber: getHeaderValue(values, 'agency_tradeRegisterNumber', emptyFallback),
+        agency_legalRepresentative: getHeaderValue(values, 'agency_legalRepresentative', emptyFallback),
+      })}.`,
+    },
+    {
+      kind: 'paragraph',
+      text: 'Beneficiarul și Prestatorul vor fi denumiți individual „Partea” și împreună „Părțile”.',
+    },
+    {
+      kind: 'paragraph',
+      text: `Persoana împuternicită din partea Prestatorului pentru administrarea proprietății în portofoliu este ${getHeaderValue(values, 'agent_name', emptyFallback)}, în calitate de agent, având numărul de telefon ${getHeaderValue(values, 'agent_phone', emptyFallback)}.`,
+    },
+  ];
+
+  if (category === 'reservation') {
+    blocks.push({
+      kind: 'paragraph',
+      text: `Rezervantul este ${buildFilledBuyerParagraph({
+        ...values,
+        buyer_name: getHeaderValue(values, 'buyer_name', emptyFallback),
+        buyer_phone: getHeaderValue(values, 'buyer_phone', emptyFallback),
+        buyer_email: getHeaderValue(values, 'buyer_email', emptyFallback),
+      })}.`,
+    });
+    blocks.push({
+      kind: 'paragraph',
+      text: buildFilledPropertyParagraph({
+        ...values,
+        property_address: getHeaderValue(values, 'property_address', emptyFallback),
+        property_cadastralNumber: getHeaderValue(values, 'property_cadastralNumber', emptyFallback),
+        property_price: getHeaderValue(values, 'property_price', emptyFallback),
+      }),
+    });
+    blocks.push({
+      kind: 'paragraph',
+      text: `Suma platita la rezervare este de ${getHeaderValue(values, 'reservation_amount', emptyFallback)}.`,
+    });
+    blocks.push({
+      kind: 'paragraph',
+      text: 'Denumite individual “Partea” si impreuna “Partile”.',
+    });
+    return blocks;
+  }
+
+  blocks.push({
+    kind: 'paragraph',
+    text: `Comisionul convenit de Părți, datorat de Beneficiar și plătibil către Prestator în situația în care vânzarea proprietății se realizează prin intermediul agenției sau către un cumpărător identificat și prezentat de aceasta, este de ${getHeaderValue(values, 'property_commissionPercent', emptyFallback)}% din prețul de vânzare.`,
+  });
+  blocks.push({
+    kind: 'paragraph',
+    text: `Proprietatea care face obiectul prezentului Contract este situată în ${getHeaderValue(values, 'property_address', emptyFallback)}, având numărul cadastral ${getHeaderValue(values, 'property_cadastralNumber', emptyFallback)} și prețul propus la vânzare de ${getHeaderValue(values, 'property_price', emptyFallback)} EUR.`,
+  });
+
+  return blocks;
 }
 
 export function buildContractHeaderHtml(params: {
@@ -359,9 +491,9 @@ export function buildContractHeaderHtml(params: {
       <h2>Date agentie</h2>
       <p>${buildProviderParagraph()}</p>
       <p>${buildAgencyAgentParagraph()}</p>
+      <p><strong>Comision (%):</strong> ${createVariableSpan('property.commissionPercent', 'Proprietate: comision (%)')}</p>
       <h2>Date proprietate</h2>
       <p>${buildPropertyParagraph()}</p>
-      <p><strong>Comision (%):</strong> ${createVariableSpan('property.commissionPercent', 'Proprietate: comision (%)')}</p>
       <hr />
     </div>
   `.trim();
@@ -437,4 +569,32 @@ export function stripHtmlTags(value: string) {
     .replace(/&gt;/gi, '>')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+export function decodeContractEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+export function normalizeContractText(value: string) {
+  return decodeContractEntities(value).replace(/\s+/g, ' ').trim();
+}
+
+export function extractContractParagraphsFromHtml(value: string) {
+  return stripHtmlTags(
+    value
+      .replace(/<\/h1>/gi, '</h1>\n')
+      .replace(/<\/h2>/gi, '</h2>\n')
+      .replace(/<hr[^>]*>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+  )
+    .split(/\r?\n/)
+    .map((chunk) => normalizeContractText(chunk))
+    .filter(Boolean);
 }

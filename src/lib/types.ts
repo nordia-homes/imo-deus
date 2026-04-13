@@ -451,6 +451,8 @@ export type ContractTemplateFieldSource =
   | 'agency.tradeRegisterNumber'
   | 'agency.registeredOffice'
   | 'agency.legalRepresentative'
+  | 'agency.phone'
+  | 'agency.email'
   | 'agent.name'
   | 'agent.email'
   | 'agent.phone'

@@ -1,0 +1,253 @@
+1-'use client';
+2-
+3-import { useEffect, useMemo, useState } from 'react';
+4-import Link from 'next/link';
+5-import { collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
+6-import { FilePlus2, FileText, Loader2, PencilLine, Sparkles, Trash2 } from 'lucide-react';
+7-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+8-import { useAgency } from '@/context/AgencyContext';
+9-import type { Contact, ContractTemplate, Property } from '@/lib/types';
+10-import {
+11-  buildContractPlaceholderMap,
+12-  buildContractHeaderHtml,
+13-  createDefaultContractHtml,
+14-  CONTRACT_PLACEHOLDERS,
+15-  CONTRACT_TEMPLATE_CATEGORIES,
+16-  extractContractParagraphsFromHtml,
+17-  getCategoryLabel,
+18-  normalizeContractText,
+19-  renderContractContent,
+20-  stripHtmlTags,
+21-} from '@/lib/contracts';
+22-import { useToast } from '@/hooks/use-toast';
+23-import { Button } from '@/components/ui/button';
+24:import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+25-import { Input } from '@/components/ui/input';
+26-import { Label } from '@/components/ui/label';
+27-import { Textarea } from '@/components/ui/textarea';
+28-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+29-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+30-import { Badge } from '@/components/ui/badge';
+31-import { Skeleton } from '@/components/ui/skeleton';
+32-import { useRouter } from 'next/navigation';
+33-
+34-type CreateFormState = {
+35-  name: string;
+36-  category: ContractTemplate['category'];
+37-  description: string;
+38-  content: string;
+39-  sourceFormat: 'manual' | 'docx';
+40-  fileName: string;
+41-};
+42-
+43-const DEFAULT_CONTRACT_CONTENT = createDefaultContractHtml();
+44-
+45-function ExportedPdfPreview({
+46-  template,
+47-  values,
+48-  agencyName,
+49-}: {
+50-  template: ContractTemplate;
+51-  values: Record<string, string>;
+52-  agencyName?: string | null;
+53-}) {
+54-  const headerParagraphs = useMemo(() => {
+--
+393-      });
+394-      onOpenChange(false);
+395-    } catch (error) {
+396-      console.error('Failed to generate contract PDF:', error);
+397-      toast({
+398-        variant: 'destructive',
+399-        title: 'Generare esuata',
+400-        description: error instanceof Error ? error.message : 'Nu am putut genera contractul.',
+401-      });
+402-    } finally {
+403-      setIsGenerating(false);
+404-    }
+405-  }
+406-
+407-  if (!template) return null;
+408-
+409-  return (
+410-    <Dialog open={open} onOpenChange={onOpenChange}>
+411-      <DialogContent className="max-h-[94vh] w-[min(96vw,1820px)] max-w-none overflow-y-auto border-white/10 bg-[#081a2c] text-white">
+412-        <DialogHeader>
+413-          <DialogTitle>Completeaza contractul</DialogTitle>
+414-          <DialogDescription className="text-white/70">
+415-            Selectezi datele din CRM, ajustezi eventuale valori manuale si generezi PDF-ul final din documentul template.
+416-          </DialogDescription>
+417-        </DialogHeader>
+418-
+419-        <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+420-          <div className="space-y-6">
+421-            <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
+422-              <CardHeader>
+423:                <CardTitle>Surse CRM</CardTitle>
+424-              </CardHeader>
+425-              <CardContent className="space-y-4">
+426-                <div className="space-y-2">
+427-                  <Label className="text-white/80">Cumparator / client</Label>
+428-                  <Select value={buyerId} onValueChange={setBuyerId}>
+429-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+430-                    <SelectContent>
+431-                      <SelectItem value="none">Fara selectie</SelectItem>
+432-                      {contacts.map((contact) => (
+433-                        <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
+434-                      ))}
+435-                    </SelectContent>
+436-                  </Select>
+437-                </div>
+438-                <div className="space-y-2">
+439-                  <Label className="text-white/80">Proprietar</Label>
+440-                  <Select value={ownerId} onValueChange={setOwnerId}>
+441-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+442-                    <SelectContent>
+443-                      <SelectItem value="none">Fara selectie</SelectItem>
+444-                      {contacts.map((contact) => (
+445-                        <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
+446-                      ))}
+447-                    </SelectContent>
+448-                  </Select>
+449-                </div>
+450-                <div className="space-y-2">
+451-                  <Label className="text-white/80">Proprietate</Label>
+452-                  <Select value={propertyId} onValueChange={setPropertyId}>
+453-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+454-                    <SelectContent>
+455-                      <SelectItem value="none">Fara selectie</SelectItem>
+456-                      {properties.map((propertyEntry) => (
+457-                        <SelectItem key={propertyEntry.id} value={propertyEntry.id}>{propertyEntry.title}</SelectItem>
+458-                      ))}
+459-                    </SelectContent>
+460-                  </Select>
+461-                </div>
+462-              </CardContent>
+463-            </Card>
+464-
+465-            <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
+466-              <CardHeader>
+467:                <CardTitle>Valori manuale</CardTitle>
+468-                <CardDescription className="text-white/70">
+469-                  Aceste campuri suprascriu valorile luate automat din CRM atunci cand ai nevoie de ajustari rapide.
+470-                </CardDescription>
+471-              </CardHeader>
+472-              <CardContent className="space-y-4">
+473-                {CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => {
+474-                  const normalizedKey = item.key.replace(/\./g, '_');
+475-                  return (
+476-                    <div key={item.token} className="space-y-2">
+477-                      <Label className="text-white/80">{item.token}</Label>
+478-                      <Input
+479-                        value={manualValues[normalizedKey] || ''}
+480-                        onChange={(event) =>
+481-                          setManualValues((current) => ({
+482-                            ...current,
+483-                            [normalizedKey]: event.target.value,
+484-                          }))
+485-                        }
+486-                        placeholder={item.label}
+487-                        className="border-white/15 bg-white/10 text-white placeholder:text-white/45"
+488-                      />
+489-                    </div>
+490-                  );
+491-                })}
+492-              </CardContent>
+493-            </Card>
+494-          </div>
+495-
+496-          <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
+497-            <CardHeader>
+498:              <CardTitle>Preview document completat</CardTitle>
+499-              <CardDescription className="text-white/70">
+500-                Asa va arata contractul dupa inlocuirea variabilelor.
+501-              </CardDescription>
+502-            </CardHeader>
+503-            <CardContent className="space-y-4">
+504-              <div className="min-h-[860px] rounded-3xl border border-white/10 bg-[#0d1d31] p-6">
+505-                <ExportedPdfPreview
+506-                  template={template}
+507-                  values={mergedValues}
+508-                  agencyName={agency?.name || null}
+509-                />
+510-              </div>
+511-              <div className="flex justify-end">
+512-                <Button
+513-                  type="button"
+514-                  disabled={isGenerating}
+515-                  onClick={() => void handleGenerate()}
+516-                  className="bg-emerald-400 text-black hover:bg-emerald-300"
+517-                >
+518-                  {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+519-                  Genereaza PDF
+520-                </Button>
+521-              </div>
+522-            </CardContent>
+523-          </Card>
+524-        </div>
+525-      </DialogContent>
+526-    </Dialog>
+527-  );
+528-}
+--
+660-              Contracte editabile cu variabile
+661-            </div>
+662-            <h1 className="text-3xl font-bold tracking-tight">Documente si contracte</h1>
+663-            <p className="max-w-3xl text-white/70">
+664-              Antetul fiecarui contract este predefinit cu tagurile esentiale, iar agentia editeaza doar corpul documentului. La completare, agentul poate alege datele din CRM sau le poate suprascrie manual.
+665-            </p>
+666-          </div>
+667-          <Button
+668-            type="button"
+669-            onClick={() => setIsCreateOpen(true)}
+670-            disabled={userProfile?.role !== 'admin'}
+671-            className="bg-emerald-400 text-black hover:bg-emerald-300"
+672-          >
+673-            <FilePlus2 className="mr-2 h-4 w-4" />
+674-            Creeaza template document
+675-          </Button>
+676-        </div>
+677-
+678-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+679-          {sortedTemplates.length ? (
+680-            sortedTemplates.map((template) => (
+681-              <Card key={template.id} className="flex flex-col rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
+682-                <CardHeader className="space-y-3">
+683-                  <div className="flex items-start justify-between gap-3">
+684-                    <Badge className="bg-white/10 text-white hover:bg-white/10">{getCategoryLabel(template.category)}</Badge>
+685-                    <Badge className={template.status === 'active' ? 'bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/15' : 'bg-amber-400/15 text-amber-200 hover:bg-amber-400/15'}>
+686-                      {template.status === 'active' ? 'Activ' : 'Draft'}
+687-                    </Badge>
+688-                  </div>
+689-                  <div>
+690:                    <CardTitle className="text-xl">{template.name}</CardTitle>
+691-                    <CardDescription className="mt-2 text-white/70">
+692-                      {template.description || 'Template document editabil pentru generare contracte.'}
+693-                    </CardDescription>
+694-                    <div className="mt-3 flex flex-wrap gap-2">
+695-                      <Badge className="bg-white/10 text-white hover:bg-white/10">
+696-                        {template.sourceFormat === 'docx' ? 'Importat din Word' : 'Creat in editor'}
+697-                      </Badge>
+698-                      {template.fileName ? (
+699-                        <Badge className="bg-white/10 text-white hover:bg-white/10">{template.fileName}</Badge>
+700-                      ) : null}
+701-                    </div>
+702-                  </div>
+703-                </CardHeader>
+704-                <CardContent className="flex-grow space-y-4">
+705-                    <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4">
+706-                    <p className="line-clamp-6 whitespace-pre-wrap text-sm leading-7 text-white/80">
+707-                      {stripHtmlTags(template.content || '') || 'Acest template nu are inca un corp de contract adaugat.'}
+708-                    </p>
+709-                  </div>
+710-                </CardContent>
+711-                <CardFooter className="flex flex-col gap-3">
+712-                  <div className="grid w-full grid-cols-2 gap-3">
+713-                    <Button
+714-                      type="button"
+715-                      variant="outline"
+716-                      onClick={() => setFillTemplate(template)}
+717-                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+718-                    >
+719-                      <Sparkles className="mr-2 h-4 w-4" />
+720-                      Completeaza

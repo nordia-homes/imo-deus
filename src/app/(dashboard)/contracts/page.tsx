@@ -9,11 +9,12 @@ import { useAgency } from '@/context/AgencyContext';
 import type { Contact, ContractTemplate, Property } from '@/lib/types';
 import {
   buildContractPlaceholderMap,
-  composeContractDocumentHtml,
+  buildStructuredHeaderBlocks,
   createDefaultContractHtml,
   CONTRACT_PLACEHOLDERS,
   CONTRACT_TEMPLATE_CATEGORIES,
   getCategoryLabel,
+  normalizeContractText,
   renderContractContent,
   stripHtmlTags,
 } from '@/lib/contracts';
@@ -39,6 +40,196 @@ type CreateFormState = {
 };
 
 const DEFAULT_CONTRACT_CONTENT = createDefaultContractHtml();
+
+const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string[]> = {
+  collaboration: [
+    'contract.number',
+    'currentDate',
+    'owner.name',
+    'owner.address',
+    'owner.personalNumericCode',
+    'owner.identityDocumentSeries',
+    'owner.identityDocumentNumber',
+    'agent.name',
+    'agent.phone',
+    'property.commissionPercent',
+    'property.address',
+    'property.cadastralNumber',
+    'property.price',
+  ],
+  exclusivity: [
+    'contract.number',
+    'currentDate',
+    'owner.name',
+    'owner.address',
+    'owner.personalNumericCode',
+    'owner.identityDocumentSeries',
+    'owner.identityDocumentNumber',
+    'agent.name',
+    'agent.phone',
+    'property.commissionPercent',
+    'property.address',
+    'property.cadastralNumber',
+    'property.price',
+  ],
+  reservation: [
+    'contract.number',
+    'currentDate',
+    'owner.name',
+    'owner.address',
+    'owner.personalNumericCode',
+    'owner.identityDocumentSeries',
+    'owner.identityDocumentNumber',
+    'agent.name',
+    'agent.phone',
+    'buyer.name',
+    'buyer.phone',
+    'buyer.email',
+    'property.address',
+    'property.cadastralNumber',
+    'property.price',
+    'reservation.amount',
+  ],
+  custom: [
+    'contract.number',
+    'currentDate',
+    'owner.name',
+    'owner.address',
+    'owner.personalNumericCode',
+    'owner.identityDocumentSeries',
+    'owner.identityDocumentNumber',
+    'agent.name',
+    'agent.phone',
+    'property.commissionPercent',
+    'property.address',
+    'property.cadastralNumber',
+    'property.price',
+  ],
+};
+
+function ExportedPdfPreview({
+  template,
+  values,
+  agencyName,
+}: {
+  template: ContractTemplate;
+  values: Record<string, string>;
+  agencyName?: string | null;
+}) {
+  const headerBlocks = useMemo(
+    () => buildStructuredHeaderBlocks(template.category || 'reservation', values),
+    [template.category, values]
+  );
+
+  const bodyParagraphs = useMemo(() => {
+    return stripHtmlTags(renderContractContent(template.content || '', values))
+      .split(/\r?\n/)
+      .map((item) => normalizeContractText(item))
+      .filter(Boolean);
+  }, [template.content, values]);
+
+  const title = template.name || 'Contract';
+  const contractNumber = normalizeContractText(String(values.contract_number || ''));
+  const currentDate = normalizeContractText(String(values.currentDate || ''));
+  const agencyDisplayName = normalizeContractText(String(values.agency_legalCompanyName || values.agency_name || agencyName || 'Agentie imobiliara'));
+  const agencyPhone = normalizeContractText(String(values.agency_phone || ''));
+  const agencyEmail = normalizeContractText(String(values.agency_email || ''));
+  const headerLine = [agencyDisplayName, agencyPhone, agencyEmail].filter(Boolean).join('   •   ');
+
+  return (
+    <div className="relative mx-auto w-full max-w-[920px] min-h-[1300px] rounded-[28px] border border-slate-200 bg-white px-[7.5%] py-[7%] text-[#0f1720] shadow-[0_25px_70px_rgba(0,0,0,0.28)]">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="select-none whitespace-nowrap text-[clamp(56px,6.3vw,96px)] font-semibold tracking-[0.08em] text-slate-300/[0.18] [transform:rotate(-32deg)]">
+          {agencyDisplayName}
+        </div>
+      </div>
+      <div className="border-b border-slate-200 pb-3 text-center text-[clamp(11px,0.95vw,13px)] font-medium text-slate-600">
+        {headerLine}
+      </div>
+      <div className="text-center">
+        <div className="mx-auto h-[2px] w-[220px] bg-[#2f6fde]" />
+        <div className="py-3 text-[clamp(26px,2.4vw,32px)] font-bold tracking-[-0.03em] text-[#071326]">
+          {agencyDisplayName}
+        </div>
+        <div className="mx-auto h-[2px] w-[220px] bg-[#2f6fde]" />
+      </div>
+
+      <div className="mt-8 text-center">
+        <h1 className="whitespace-nowrap text-[clamp(22px,1.75vw,32px)] font-semibold tracking-[0.005em] text-[#bb1f2a]">
+          {title}
+        </h1>
+        {(contractNumber || currentDate) ? (
+          <div className="mt-0.5 text-[clamp(16px,1.3vw,20px)] text-[#2f6fde]">
+            {[contractNumber ? `Contract nr. ${contractNumber}` : '', currentDate ? `Data ${currentDate}` : '']
+              .filter(Boolean)
+              .join(' | ')}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-10 space-y-4">
+        {headerBlocks.map((block, index) => {
+          if (block.kind === 'intro') {
+            return (
+              <p
+                key={`intro-${index}`}
+                className="inline-block bg-slate-100 px-3 py-1.5 text-[clamp(16px,1.18vw,18px)] leading-[1.7] text-[#1f2937]"
+              >
+                {block.text}
+              </p>
+            );
+          }
+
+          if (block.kind === 'connector') {
+            return (
+              <p key={`connector-${index}`} className="text-[clamp(16px,1.18vw,18px)] leading-[1.6] text-[#374151]">
+                {block.text}
+              </p>
+            );
+          }
+
+          if (block.kind === 'party') {
+            return (
+              <div key={`party-${index}`} className="flex items-start gap-4">
+                <div className="w-8 shrink-0 pt-0.5 text-right text-[clamp(18px,1.25vw,20px)] font-medium text-[#111827]">
+                  {block.index}.
+                </div>
+                <p className="flex-1 text-[clamp(16px,1.22vw,19px)] leading-[1.82] text-[#111827]">
+                  {block.text}
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <p key={`paragraph-${index}`} className="text-[clamp(16px,1.22vw,19px)] leading-[1.82] text-[#111827]">
+              {block.text}
+            </p>
+          );
+        })}
+      </div>
+
+      {bodyParagraphs.length ? (
+        <div className="mt-10 border-t border-slate-200 pt-8">
+          <div className="space-y-4">
+            {bodyParagraphs.map((paragraph, index) => (
+              <p
+                key={`${paragraph}-${index}`}
+                className="text-[clamp(15px,1.1vw,18px)] leading-[1.8] text-[#111827]"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-8 border-t border-slate-200 pt-3 text-center text-[12px] font-medium text-slate-500">
+        Pagina 1
+      </div>
+    </div>
+  );
+}
 
 function CreateTemplateDialog({
   open,
@@ -225,19 +416,14 @@ function FillContractDialog({
     [manualValues, placeholderMap]
   );
 
-  const renderedPreview = useMemo(
-    () =>
-      renderContractContent(
-        composeContractDocumentHtml({
-          templateName: template?.name || 'Contract',
-          category: template?.category || 'reservation',
-          bodyContent: template?.content || '',
-          headerMode: template?.headerMode,
-        }),
-        mergedValues
-      ),
-    [mergedValues, template?.category, template?.content, template?.headerMode, template?.name]
-  );
+  const visibleManualPlaceholders = useMemo(() => {
+    const order = PLACEHOLDER_ORDER_BY_CATEGORY[template?.category || 'reservation'] || [];
+    const lookup = new Map(CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => [item.key, item]));
+    return order
+      .map((key) => lookup.get(key))
+      .filter((item) => item && !item.key.startsWith('agency.'))
+      .filter((item): item is (typeof CONTRACT_PLACEHOLDERS)[number] => Boolean(item));
+  }, [template?.category]);
 
   useEffect(() => {
     if (!open) {
@@ -302,7 +488,7 @@ function FillContractDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto border-white/10 bg-[#081a2c] text-white">
+      <DialogContent className="flex h-[94vh] flex-col overflow-hidden border-white/10 bg-[#081a2c] text-white w-[min(96vw,1820px)] max-w-none">
         <DialogHeader>
           <DialogTitle>Completeaza contractul</DialogTitle>
           <DialogDescription className="text-white/70">
@@ -310,8 +496,8 @@ function FillContractDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-          <div className="space-y-6">
+        <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="min-h-0 space-y-6 overflow-y-auto pr-2">
             <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
                 <CardTitle>Surse CRM</CardTitle>
@@ -358,13 +544,13 @@ function FillContractDialog({
 
             <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
-                <CardTitle>Valori manuale</CardTitle>
+                <CardTitle>Taguri din document</CardTitle>
                 <CardDescription className="text-white/70">
-                  Aceste campuri suprascriu valorile luate automat din CRM atunci cand ai nevoie de ajustari rapide.
+                  Apar doar campurile folosite de acest tip de contract, in ordinea in care sunt afisate in document.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => {
+                {visibleManualPlaceholders.map((item) => {
                   const normalizedKey = item.key.replace(/\./g, '_');
                   return (
                     <div key={item.token} className="space-y-2">
@@ -387,19 +573,22 @@ function FillContractDialog({
             </Card>
           </div>
 
-          <Card className="rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
+          <Card className="flex min-h-0 flex-col rounded-3xl border-none bg-[#152A47] text-white shadow-2xl">
             <CardHeader>
               <CardTitle>Preview document completat</CardTitle>
               <CardDescription className="text-white/70">
                 Asa va arata contractul dupa inlocuirea variabilelor.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="min-h-[760px] rounded-3xl border border-white/10 bg-[#0d1d31] p-6">
-                <div
-                  className="contract-preview prose prose-invert max-w-none text-white/90 [&_.contract-variable-chip]:inline-flex [&_.contract-variable-chip]:mx-0 [&_h1]:text-center [&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_p]:leading-8"
-                  dangerouslySetInnerHTML={{ __html: renderedPreview }}
-                />
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-4">
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-[#0d1d31] p-5">
+                <div className="mx-auto flex min-h-full w-full items-start justify-center">
+                  <ExportedPdfPreview
+                    template={template}
+                    values={mergedValues}
+                    agencyName={agency?.name || null}
+                  />
+                </div>
               </div>
               <div className="flex justify-end">
                 <Button

@@ -3,12 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import fontkit from '@pdf-lib/fontkit';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, degrees, rgb } from 'pdf-lib';
 import { adminDb } from '@/firebase/admin';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import {
   buildContractHeaderHtml,
-  getCategoryLabel,
+  buildStructuredHeaderBlocks,
   renderContractContent,
   stripHtmlTags,
 } from '@/lib/contracts';
@@ -93,23 +93,104 @@ function createPage(pdfDoc: PDFDocument) {
   return { page, width, height };
 }
 
+function drawPageHeader(params: {
+  state: PdfState;
+  text: string;
+  font: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  color: ReturnType<typeof rgb>;
+}) {
+  const { state, text, font, color } = params;
+  if (!text.trim()) return;
+
+  const fontSize = 9.5;
+  const textWidth = font.widthOfTextAtSize(text, fontSize);
+  state.page.drawText(text, {
+    x: Math.max(40, (state.width - textWidth) / 2),
+    y: state.height - 26,
+    size: fontSize,
+    font,
+    color,
+  });
+  state.page.drawLine({
+    start: { x: 40, y: state.height - 34 },
+    end: { x: state.width - 40, y: state.height - 34 },
+    thickness: 0.8,
+    color: rgb(0.88, 0.9, 0.93),
+  });
+}
+
+function drawPageFooter(params: {
+  state: PdfState;
+  text: string;
+  font: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  color: ReturnType<typeof rgb>;
+}) {
+  const { state, text, font, color } = params;
+  const fontSize = 9.5;
+  const textWidth = font.widthOfTextAtSize(text, fontSize);
+  state.page.drawLine({
+    start: { x: 40, y: 30 },
+    end: { x: state.width - 40, y: 30 },
+    thickness: 0.8,
+    color: rgb(0.88, 0.9, 0.93),
+  });
+  state.page.drawText(text, {
+    x: (state.width - textWidth) / 2,
+    y: 16,
+    size: fontSize,
+    font,
+    color,
+  });
+}
+
+function drawPageWatermark(params: {
+  state: PdfState;
+  text: string;
+  font: Awaited<ReturnType<typeof loadUnicodeFont>>;
+}) {
+  const { state, text, font } = params;
+  if (!text.trim()) return;
+
+  state.page.drawText(text, {
+    x: state.width * 0.06,
+    y: state.height * 0.18,
+    size: 82,
+    font,
+    rotate: degrees(32),
+    color: rgb(0.72, 0.77, 0.84),
+    opacity: 0.18,
+  });
+}
+
 function ensureSpace(params: {
   pdfDoc: PDFDocument;
   state: PdfState;
   needed: number;
   marginTop: number;
   marginBottom: number;
+  pageHeaderText?: string;
+  headerFont?: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  headerColor?: ReturnType<typeof rgb>;
 }) {
-  const { pdfDoc, state, needed, marginTop, marginBottom } = params;
+  const { pdfDoc, state, needed, marginTop, marginBottom, pageHeaderText, headerFont, headerColor } = params;
   if (state.cursorY - needed >= marginBottom) {
     return state;
   }
 
   const next = createPage(pdfDoc);
-  return {
+  const nextState = {
     ...next,
     cursorY: next.height - marginTop,
   };
+  if (pageHeaderText && headerFont && headerColor) {
+    drawPageHeader({
+      state: nextState,
+      text: pageHeaderText,
+      font: headerFont,
+      color: headerColor,
+    });
+  }
+  return nextState;
 }
 
 function drawWrappedText(params: {
@@ -123,9 +204,12 @@ function drawWrappedText(params: {
   marginTop: number;
   marginBottom: number;
   color?: ReturnType<typeof rgb>;
+  pageHeaderText?: string;
+  headerFont?: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  headerColor?: ReturnType<typeof rgb>;
 }) {
   let { state } = params;
-  const { pdfDoc, text, font, fontSize, lineHeight, marginX, marginTop, marginBottom } = params;
+  const { pdfDoc, text, font, fontSize, lineHeight, marginX, marginTop, marginBottom, pageHeaderText, headerFont, headerColor } = params;
   const color = params.color || rgb(0.05, 0.08, 0.12);
   const maxWidth = state.width - marginX * 2;
   const words = normalizeText(text).split(' ').filter(Boolean);
@@ -150,6 +234,9 @@ function drawWrappedText(params: {
     needed: lines.length * lineHeight,
     marginTop,
     marginBottom,
+    pageHeaderText,
+    headerFont,
+    headerColor,
   });
 
   for (const line of lines) {
@@ -176,9 +263,12 @@ function drawCenteredText(params: {
   marginTop: number;
   marginBottom: number;
   color?: ReturnType<typeof rgb>;
+  pageHeaderText?: string;
+  headerFont?: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  headerColor?: ReturnType<typeof rgb>;
 }) {
   let { state } = params;
-  const { pdfDoc, text, font, fontSize, marginX, marginTop, marginBottom } = params;
+  const { pdfDoc, text, font, fontSize, marginX, marginTop, marginBottom, pageHeaderText, headerFont, headerColor } = params;
   const color = params.color || rgb(0.05, 0.08, 0.12);
   state = ensureSpace({
     pdfDoc,
@@ -186,6 +276,9 @@ function drawCenteredText(params: {
     needed: fontSize * 1.6,
     marginTop,
     marginBottom,
+    pageHeaderText,
+    headerFont,
+    headerColor,
   });
 
   const normalized = normalizeText(text);
@@ -200,25 +293,6 @@ function drawCenteredText(params: {
   });
   state.cursorY -= fontSize * 1.6;
   return state;
-}
-
-function drawDotPattern(page: import('pdf-lib').PDFPage, originX: number, originY: number) {
-  const coral = rgb(0.96, 0.72, 0.64);
-  const stone = rgb(0.77, 0.77, 0.79);
-
-  for (let row = 0; row < 6; row += 1) {
-    const dotsInRow = 6 - row;
-    for (let col = 0; col < dotsInRow; col += 1) {
-      const x = originX + col * 16 + row * 8;
-      const y = originY - row * 13;
-      page.drawCircle({
-        x,
-        y,
-        size: (col + row) % 2 === 0 ? 4.1 : 3.2,
-        color: (col + row) % 2 === 0 ? coral : stone,
-      });
-    }
-  }
 }
 
 export async function POST(
@@ -258,6 +332,9 @@ export async function POST(
     );
     const renderedBodyHtml = renderContractContent(rawContent, normalizedValues);
     const headerParagraphs = extractParagraphsFromHtml(renderedHeaderHtml);
+    const headerBlocks = buildStructuredHeaderBlocks(template.category || 'reservation', normalizedValues, {
+      emptyFallback: '.'.repeat(35),
+    });
     const bodyParagraphs = stripHtmlTags(renderedBodyHtml)
       .split(/\r?\n/)
       .map((item) => normalizeText(item))
@@ -285,12 +362,23 @@ export async function POST(
     const muted = rgb(0.35, 0.39, 0.46);
     const legalName = normalizeText(String(normalizedValues.agency_legalCompanyName || normalizedValues.agency_name || 'Agentie imobiliara'));
     const agencyDisplayName = normalizeText(String(normalizedValues.agency_name || normalizedValues.agency_legalCompanyName || ''));
+    const agencyPhone = normalizeText(String(normalizedValues.agency_phone || ''));
+    const agencyEmail = normalizeText(String(normalizedValues.agency_email || ''));
+    const pageHeaderText = [legalName, agencyPhone, agencyEmail].filter(Boolean).join('   •   ');
+
+    drawPageHeader({
+      state,
+      text: pageHeaderText,
+      font,
+      color: muted,
+    });
 
     const agencyBlockTop = state.height - 56;
     const agencyTextSize = 24;
     const agencyTextY = state.height - 84;
-    const agencyLineStart = marginX;
-    const agencyLineEnd = marginX + 220;
+    const agencyLineWidth = 220;
+    const agencyLineStart = (state.width - agencyLineWidth) / 2;
+    const agencyLineEnd = agencyLineStart + agencyLineWidth;
 
     state.page.drawLine({
       start: { x: agencyLineStart, y: agencyBlockTop },
@@ -315,8 +403,6 @@ export async function POST(
       color: textColor,
     });
 
-    drawDotPattern(state.page, state.width - 128, state.height - 58);
-
     state.cursorY = state.height - 118;
     state = drawCenteredText({
       pdfDoc,
@@ -328,6 +414,9 @@ export async function POST(
       marginTop,
       marginBottom,
       color: titleAccent,
+      pageHeaderText,
+      headerFont: font,
+      headerColor: muted,
     });
 
     const contractNumber = normalizeText(String(normalizedValues.contract_number || ''));
@@ -337,7 +426,7 @@ export async function POST(
       .join('   |   ');
 
     if (centeredMeta) {
-      state.cursorY -= 2;
+      state.cursorY += 12;
       state = drawCenteredText({
         pdfDoc,
         state,
@@ -348,43 +437,79 @@ export async function POST(
         marginTop,
         marginBottom,
         color: accent,
+        pageHeaderText,
+        headerFont: font,
+        headerColor: muted,
       });
     }
 
     state.cursorY -= 8;
 
-    for (const paragraph of headerParagraphs) {
-      const isSectionTitle = /^(Partile contractului|Date proprietar|Date agentie|Date proprietate|Date proprietate si rezervare)$/i.test(paragraph);
-      const isMetaLine = /^(Numar contract:)/i.test(paragraph);
-      const isCategoryEcho = new RegExp(`^${getCategoryLabel(template.category || 'reservation')}`, 'i').test(paragraph);
-      const isTitleEcho = paragraph.toLowerCase() === normalizeText(templateName).toLowerCase();
-
-      if (isSectionTitle) {
-        state.cursorY -= 10;
+    for (const block of headerBlocks) {
+      if (block.kind === 'intro') {
         state = drawWrappedText({
           pdfDoc,
           state,
-          text: paragraph,
-          font: boldFont,
-          fontSize: 14,
+          text: block.text,
+          font,
+          fontSize: 12.4,
           lineHeight: 18,
           marginX,
           marginTop,
           marginBottom,
-          color: accent,
+          color: textColor,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
         });
         state.cursorY -= 6;
         continue;
       }
 
-      if (isMetaLine || isCategoryEcho || isTitleEcho) {
+      if (block.kind === 'connector') {
+        state = drawWrappedText({
+          pdfDoc,
+          state,
+          text: block.text,
+          font,
+          fontSize: 12,
+          lineHeight: 18,
+          marginX,
+          marginTop,
+          marginBottom,
+          color: textColor,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
+        });
+        state.cursorY -= 2;
+        continue;
+      }
+
+      if (block.kind === 'party') {
+        state = drawWrappedText({
+          pdfDoc,
+          state,
+          text: `${block.index}. ${block.text}`,
+          font,
+          fontSize: 12.2,
+          lineHeight: 19,
+          marginX,
+          marginTop,
+          marginBottom,
+          color: textColor,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
+        });
+        state.cursorY -= 4;
         continue;
       }
 
       state = drawWrappedText({
         pdfDoc,
         state,
-        text: paragraph,
+        text: block.text,
         font,
         fontSize: 12,
         lineHeight: 19,
@@ -392,8 +517,11 @@ export async function POST(
         marginTop,
         marginBottom,
         color: textColor,
+        pageHeaderText,
+        headerFont: font,
+        headerColor: muted,
       });
-      state.cursorY -= 6;
+      state.cursorY -= 4;
     }
 
     state.cursorY -= 10;
@@ -406,22 +534,39 @@ export async function POST(
     state.cursorY -= 22;
 
     for (const paragraph of bodyParagraphs) {
-      const isArticleTitle = /^Articolul\s+\d+/i.test(paragraph);
-      const isSubPoint = /^[0-9]+(?:\.[0-9]+)+/i.test(paragraph);
       state = drawWrappedText({
         pdfDoc,
         state,
         text: paragraph,
-        font: isArticleTitle || isSubPoint ? boldFont : font,
-        fontSize: isArticleTitle ? 14 : isSubPoint ? 11.8 : 11.5,
-        lineHeight: isArticleTitle ? 22 : 18,
+        font,
+        fontSize: 11.5,
+        lineHeight: 18,
         marginX,
         marginTop,
         marginBottom,
-        color: isArticleTitle ? accent : textColor,
+        color: textColor,
+        pageHeaderText,
+        headerFont: font,
+        headerColor: muted,
       });
-      state.cursorY -= isArticleTitle ? 10 : 8;
+      state.cursorY -= 8;
     }
+
+    const totalPages = pdfDoc.getPages();
+    totalPages.forEach((pageEntry, index) => {
+      const { width, height } = pageEntry.getSize();
+      drawPageWatermark({
+        state: { page: pageEntry, width, height, cursorY: 0 },
+        text: legalName || agencyDisplayName || 'Agentie imobiliara',
+        font: boldFont,
+      });
+      drawPageFooter({
+        state: { page: pageEntry, width, height, cursorY: 0 },
+        text: `Pagina ${index + 1}`,
+        font,
+        color: muted,
+      });
+    });
 
     const pdfBytes = await pdfDoc.save();
     const generatedContractRef = adminDb
