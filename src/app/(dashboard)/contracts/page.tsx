@@ -120,6 +120,8 @@ function ExportedPdfPreview({
     () => buildStructuredHeaderBlocks(template.category || 'reservation', values),
     [template.category, values]
   );
+  const ensureNamedParagraphSeparator = (text: string) =>
+    text.trimStart().startsWith(',') ? text : `, ${text.trimStart()}`;
 
   const bodyParagraphs = useMemo(() => {
     return stripHtmlTags(renderContractContent(template.content || '', values))
@@ -173,7 +175,7 @@ function ExportedPdfPreview({
             return (
               <p
                 key={`intro-${index}`}
-                className="inline-block bg-slate-100 px-3 py-1.5 text-[clamp(16px,1.18vw,18px)] leading-[1.7] text-[#1f2937]"
+                className="inline-block bg-slate-100 px-3 py-1.5 text-[12px] leading-[1.7] text-[#1f2937]"
               >
                 {block.text}
               </p>
@@ -182,7 +184,7 @@ function ExportedPdfPreview({
 
           if (block.kind === 'connector') {
             return (
-              <p key={`connector-${index}`} className="text-[clamp(16px,1.18vw,18px)] leading-[1.6] text-[#374151]">
+              <p key={`connector-${index}`} className="text-[12px] leading-[1.6] text-[#374151]">
                 {block.text}
               </p>
             );
@@ -201,8 +203,25 @@ function ExportedPdfPreview({
             );
           }
 
+          if (block.kind === 'emphasis') {
+            return (
+              <p key={`emphasis-${index}`} className="text-[12px] font-semibold leading-[1.82] text-[#111827]">
+                {block.text}
+              </p>
+            );
+          }
+
+          if (block.kind === 'namedParagraph') {
+            return (
+              <p key={`named-${index}`} className="text-[12px] leading-[1.82] text-[#111827]">
+                <span className="font-semibold">{block.boldText}</span>
+                {ensureNamedParagraphSeparator(block.text)}
+              </p>
+            );
+          }
+
           return (
-            <p key={`paragraph-${index}`} className="text-[clamp(16px,1.22vw,19px)] leading-[1.82] text-[#111827]">
+            <p key={`paragraph-${index}`} className="text-[12px] leading-[1.82] text-[#111827]">
               {block.text}
             </p>
           );

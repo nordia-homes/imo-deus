@@ -228,18 +228,18 @@ function drawWrappedText(params: {
   if (current) lines.push(current);
   if (!lines.length) lines.push('');
 
-  state = ensureSpace({
-    pdfDoc,
-    state,
-    needed: lines.length * lineHeight,
-    marginTop,
-    marginBottom,
-    pageHeaderText,
-    headerFont,
-    headerColor,
-  });
-
   for (const line of lines) {
+    state = ensureSpace({
+      pdfDoc,
+      state,
+      needed: lineHeight,
+      marginTop,
+      marginBottom,
+      pageHeaderText,
+      headerFont,
+      headerColor,
+    });
+
     state.page.drawText(line, {
       x: marginX,
       y: state.cursorY,
@@ -247,6 +247,104 @@ function drawWrappedText(params: {
       font,
       color,
     });
+    state.cursorY -= lineHeight;
+  }
+
+  return state;
+}
+
+function drawLeadingBoldWrappedText(params: {
+  pdfDoc: PDFDocument;
+  state: PdfState;
+  boldText: string;
+  text: string;
+  font: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  boldFont: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  fontSize: number;
+  lineHeight: number;
+  marginX: number;
+  marginTop: number;
+  marginBottom: number;
+  color?: ReturnType<typeof rgb>;
+  pageHeaderText?: string;
+  headerFont?: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  headerColor?: ReturnType<typeof rgb>;
+}) {
+  let { state } = params;
+  const {
+    pdfDoc,
+    boldText,
+    text,
+    font,
+    boldFont,
+    fontSize,
+    lineHeight,
+    marginX,
+    marginTop,
+    marginBottom,
+    pageHeaderText,
+    headerFont,
+    headerColor,
+  } = params;
+  const color = params.color || rgb(0.05, 0.08, 0.12);
+  const maxWidth = state.width - marginX * 2;
+
+  const normalizedRestText =
+    text.trimStart().startsWith(',') ? text : `, ${text.trimStart()}`;
+
+  const segments = [
+    { text: normalizeText(boldText), font: boldFont },
+    { text: normalizeText(normalizedRestText), font },
+  ]
+    .flatMap((segment) =>
+      segment.text
+        .split(/(\s+)/)
+        .filter(Boolean)
+        .map((part) => ({ text: part, font: segment.font }))
+    );
+
+  const lines: Array<Array<{ text: string; font: Awaited<ReturnType<typeof loadUnicodeFont>> }>> = [];
+  let currentLine: Array<{ text: string; font: Awaited<ReturnType<typeof loadUnicodeFont>> }> = [];
+  let currentWidth = 0;
+
+  for (const segment of segments) {
+    const segmentWidth = segment.font.widthOfTextAtSize(segment.text, fontSize);
+    if (currentLine.length && currentWidth + segmentWidth > maxWidth) {
+      lines.push(currentLine);
+      currentLine = [];
+      currentWidth = 0;
+    }
+    currentLine.push(segment);
+    currentWidth += segmentWidth;
+  }
+
+  if (currentLine.length) lines.push(currentLine);
+  if (!lines.length) lines.push([{ text: '', font }]);
+
+  for (const line of lines) {
+    state = ensureSpace({
+      pdfDoc,
+      state,
+      needed: lineHeight,
+      marginTop,
+      marginBottom,
+      pageHeaderText,
+      headerFont,
+      headerColor,
+    });
+
+    let cursorX = marginX;
+    for (const segment of line) {
+      state.page.drawText(segment.text, {
+        x: cursorX,
+        y: state.cursorY,
+        size: fontSize,
+        font: segment.font,
+        color,
+      });
+      cursorX += segment.font.widthOfTextAtSize(segment.text, fontSize);
+    }
+
     state.cursorY -= lineHeight;
   }
 
@@ -353,7 +451,7 @@ export async function POST(
     };
     const marginX = 56;
     const marginTop = 64;
-    const marginBottom = 56;
+    const marginBottom = 28;
     state.cursorY = state.height - marginTop;
 
     const accent = rgb(0.19, 0.46, 0.83);
@@ -399,7 +497,7 @@ export async function POST(
       x: agencyLineStart + Math.max(0, (agencyLineEnd - agencyLineStart - agencyTextWidth) / 2),
       y: agencyTextY,
       size: agencyTextSize,
-      font: boldFont,
+      font,
       color: textColor,
     });
 
@@ -413,7 +511,7 @@ export async function POST(
       marginX,
       marginTop,
       marginBottom,
-      color: titleAccent,
+      color: textColor,
       pageHeaderText,
       headerFont: font,
       headerColor: muted,
@@ -431,8 +529,8 @@ export async function POST(
         pdfDoc,
         state,
         text: centeredMeta,
-        font,
-        fontSize: 11.25,
+      font,
+      fontSize: 11.25,
         marginX,
         marginTop,
         marginBottom,
@@ -447,22 +545,45 @@ export async function POST(
 
     for (const block of headerBlocks) {
       if (block.kind === 'intro') {
-        state = drawWrappedText({
+        const introText = normalizeText(block.text);
+        const introFontSize = 12;
+        const introLineHeight = 18;
+        const introPaddingX = 8;
+        const introPaddingY = 4;
+        const introWidth = Math.min(
+          state.width - marginX * 2,
+          font.widthOfTextAtSize(introText, introFontSize) + introPaddingX * 2
+        );
+        const introHeight = introFontSize + introPaddingY * 2;
+
+        state = ensureSpace({
           pdfDoc,
           state,
-          text: block.text,
-          font,
-          fontSize: 12.4,
-          lineHeight: 18,
-          marginX,
+          needed: introHeight + 6,
           marginTop,
           marginBottom,
-          color: textColor,
           pageHeaderText,
           headerFont: font,
           headerColor: muted,
         });
-        state.cursorY -= 6;
+
+        state.page.drawRectangle({
+          x: marginX,
+          y: state.cursorY - introPaddingY,
+          width: introWidth,
+          height: introHeight,
+          color: rgb(0.94, 0.95, 0.97),
+        });
+
+        state.page.drawText(introText, {
+          x: marginX + introPaddingX,
+          y: state.cursorY,
+          size: introFontSize,
+          font,
+          color: rgb(0.12, 0.16, 0.22),
+        });
+
+        state.cursorY -= introLineHeight + 6;
         continue;
       }
 
@@ -486,13 +607,55 @@ export async function POST(
         continue;
       }
 
+      if (block.kind === 'emphasis') {
+        state = drawWrappedText({
+          pdfDoc,
+          state,
+          text: block.text,
+          font: boldFont,
+          fontSize: 12,
+          lineHeight: 19,
+          marginX,
+          marginTop,
+          marginBottom,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
+          color: textColor,
+        });
+        state.cursorY -= 4;
+        continue;
+      }
+
       if (block.kind === 'party') {
         state = drawWrappedText({
           pdfDoc,
           state,
           text: `${block.index}. ${block.text}`,
           font,
-          fontSize: 12.2,
+          fontSize: 12,
+          lineHeight: 19,
+          marginX,
+          marginTop,
+          marginBottom,
+          color: textColor,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
+        });
+        state.cursorY -= 4;
+        continue;
+      }
+
+      if (block.kind === 'namedParagraph') {
+        state = drawLeadingBoldWrappedText({
+          pdfDoc,
+          state,
+          boldText: block.boldText,
+          text: block.text,
+          font,
+          boldFont,
+          fontSize: 12,
           lineHeight: 19,
           marginX,
           marginTop,
@@ -539,7 +702,7 @@ export async function POST(
         state,
         text: paragraph,
         font,
-        fontSize: 11.5,
+        fontSize: 12,
         lineHeight: 18,
         marginX,
         marginTop,
@@ -558,7 +721,7 @@ export async function POST(
       drawPageWatermark({
         state: { page: pageEntry, width, height, cursorY: 0 },
         text: legalName || agencyDisplayName || 'Agentie imobiliara',
-        font: boldFont,
+        font,
       });
       drawPageFooter({
         state: { page: pageEntry, width, height, cursorY: 0 },

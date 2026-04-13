@@ -244,6 +244,10 @@ export function DocumentTemplateEditor({
     );
   }
 
+  function ensureNamedParagraphSeparator(text: string) {
+    return text.trimStart().startsWith(',') ? text : `, ${text.trimStart()}`;
+  }
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -416,7 +420,7 @@ export function DocumentTemplateEditor({
 
           <div className="h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),rgba(255,255,255,0.04)_40%,rgba(10,18,30,0.2)_100%)] px-3 py-5 sm:p-6 lg:px-5 lg:py-6">
             <div className="mx-auto min-h-[980px] w-full max-w-[1080px] rounded-[8px] bg-white px-[56px] py-[72px] text-[#1b1f23] shadow-[0_30px_90px_rgba(0,0,0,0.35)] lg:px-[72px] lg:py-[82px] 2xl:max-w-[1180px]">
-              <div className="mb-8 rounded-[18px] border border-slate-200 bg-slate-50/85 p-6 text-[15px] leading-7 text-slate-900">
+              <div className="mb-8 rounded-[18px] border border-slate-200 bg-slate-50/85 p-6 text-[12px] leading-7 text-slate-900">
                 <div className="border-b border-slate-200 pb-3 text-center text-[12px] font-medium text-slate-600">
                   {previewHeaderLine}
                 </div>
@@ -433,11 +437,11 @@ export function DocumentTemplateEditor({
                       .join(' | ')}
                   </div>
                 </div>
-                <div className="mt-8 space-y-4 text-[15px] leading-8 text-slate-900">
+                <div className="mt-8 space-y-4 text-[12px] leading-8 text-slate-900">
                   {headerBlocks.map((block, index) => {
                     if (block.kind === 'intro') {
                       return (
-                        <p key={`intro-${index}`} className="inline-block bg-slate-200/80 px-3 py-1.5 text-[15px] leading-7 text-slate-800">
+                        <p key={`intro-${index}`} className="inline-block bg-slate-200/80 px-3 py-1.5 text-[12px] leading-7 text-slate-800">
                           {renderPreviewTextWithChips(block.text)}
                         </p>
                       );
@@ -445,14 +449,31 @@ export function DocumentTemplateEditor({
 
                     if (block.kind === 'connector') {
                       return (
-                        <p key={`connector-${index}`} className="text-[15px] leading-7 text-slate-700">
+                        <p key={`connector-${index}`} className="text-[12px] leading-7 text-slate-700">
                           {renderPreviewTextWithChips(block.text)}
                         </p>
                       );
                     }
 
+                    if (block.kind === 'emphasis') {
+                      return (
+                        <p key={`emphasis-${index}`} className="text-[12px] font-semibold leading-8 text-slate-900">
+                          {renderPreviewTextWithChips(block.text)}
+                        </p>
+                      );
+                    }
+
+                    if (block.kind === 'namedParagraph') {
+                      return (
+                        <p key={`named-${index}`} className="text-[12px] leading-8 text-slate-900">
+                          <span className="font-semibold">{renderPreviewTextWithChips(block.boldText)}</span>
+                          {renderPreviewTextWithChips(ensureNamedParagraphSeparator(block.text))}
+                        </p>
+                      );
+                    }
+
                     return (
-                      <p key={`paragraph-${index}`} className="text-[15px] leading-8 text-slate-900">
+                      <p key={`paragraph-${index}`} className="text-[12px] leading-8 text-slate-900">
                         {renderPreviewTextWithChips(block.kind === 'party' ? `${block.index}. ${block.text}` : block.text)}
                       </p>
                     );

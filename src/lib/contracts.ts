@@ -317,7 +317,7 @@ function createVariableSpan(key: string, label: string) {
 }
 
 function buildBeneficiaryParagraph() {
-  return `${createVariableSpan('owner.name', 'Proprietar: nume')} cu domiciliul în ${createVariableSpan('owner.address', 'Proprietar: domiciliu complet')}, CNP ${createVariableSpan('owner.personalNumericCode', 'Proprietar: CNP')} identificat cu CI/BI seria ${createVariableSpan('owner.identityDocumentSeries', 'Proprietar: serie CI/BI')} nr. ${createVariableSpan('owner.identityDocumentNumber', 'Proprietar: numar CI/BI')}, denumit în continuare “Beneficiar”`;
+  return `${createVariableSpan('owner.name', 'Proprietar: nume')} cu domiciliul în ${createVariableSpan('owner.address', 'Proprietar: domiciliu complet')}, CNP ${createVariableSpan('owner.personalNumericCode', 'Proprietar: CNP')}, identificat cu CI/BI seria ${createVariableSpan('owner.identityDocumentSeries', 'Proprietar: serie CI/BI')} nr. ${createVariableSpan('owner.identityDocumentNumber', 'Proprietar: numar CI/BI')}, denumit în continuare “Beneficiar”`;
 }
 
 function buildProviderParagraph() {
@@ -336,6 +336,8 @@ export type StructuredHeaderBlock =
   | { kind: 'intro'; text: string }
   | { kind: 'party'; index: number; text: string }
   | { kind: 'connector'; text: string }
+  | { kind: 'emphasis'; text: string }
+  | { kind: 'namedParagraph'; boldText: string; text: string }
   | { kind: 'paragraph'; text: string };
 
 function getHeaderValue(values: Record<string, string>, key: string, emptyFallback = '') {
@@ -344,7 +346,7 @@ function getHeaderValue(values: Record<string, string>, key: string, emptyFallba
 }
 
 function buildFilledBeneficiaryParagraph(values: Record<string, string>) {
-  return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')} identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries')} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber')}, denumit în continuare “Beneficiar”`;
+  return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries')} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber')}, denumit în continuare “Beneficiar”`;
 }
 
 function buildFilledProviderParagraph(values: Record<string, string>) {
@@ -356,11 +358,27 @@ function buildFilledAgencyAgentParagraph(values: Record<string, string>) {
 }
 
 function buildFilledPropertyParagraph(values: Record<string, string>) {
-  return `Proprietatea care face obiectul acestui contract este situata in ${getHeaderValue(values, 'property_address')}, avand numarul cadastral ${getHeaderValue(values, 'property_cadastralNumber')} si pretul propus la vanzare de ${getHeaderValue(values, 'property_price')} EUR.`;
+  return `Proprietatea care face obiectul acestui contract este situata in ${getHeaderValue(values, 'property_address')}, avand nr. cadastral ${getHeaderValue(values, 'property_cadastralNumber')} si pretul propus la vanzare de ${getHeaderValue(values, 'property_price')} EUR.`;
 }
 
 function buildFilledBuyerParagraph(values: Record<string, string>) {
   return `${getHeaderValue(values, 'buyer_name')}, telefon ${getHeaderValue(values, 'buyer_phone')}, email ${getHeaderValue(values, 'buyer_email')}, denumit in continuare “Rezervant”`;
+}
+
+const HEADER_EMPTY_FALLBACKS: Record<string, string> = {
+  owner_name: '.'.repeat(78),
+  owner_address: '.'.repeat(138),
+  owner_personalNumericCode: '.'.repeat(42),
+  owner_identityDocumentSeries: '.'.repeat(10),
+  owner_identityDocumentNumber: '.'.repeat(10),
+  property_commissionPercent: '..........',
+  property_address: '.'.repeat(138),
+  property_cadastralNumber: '.'.repeat(30),
+  property_price: '.'.repeat(19),
+};
+
+function getHeaderEmptyFallback(key: string, defaultFallback = '') {
+  return HEADER_EMPTY_FALLBACKS[key] ?? defaultFallback;
 }
 
 export function buildStructuredHeaderBlocks(
@@ -371,39 +389,28 @@ export function buildStructuredHeaderBlocks(
   }
 ): StructuredHeaderBlock[] {
   const emptyFallback = options?.emptyFallback || '';
+  const getFallback = (key: string) => getHeaderEmptyFallback(key, emptyFallback);
   const blocks: StructuredHeaderBlock[] = [
     {
       kind: 'intro',
       text: 'Prezentul contract (denumit în continuare „Contractul”) se încheie între:',
     },
     {
-      kind: 'paragraph',
-      text: `${buildFilledBeneficiaryParagraph({
-        ...values,
-        owner_name: getHeaderValue(values, 'owner_name', emptyFallback),
-        owner_address: getHeaderValue(values, 'owner_address', emptyFallback),
-        owner_personalNumericCode: getHeaderValue(values, 'owner_personalNumericCode', emptyFallback),
-        owner_identityDocumentSeries: getHeaderValue(values, 'owner_identityDocumentSeries', emptyFallback),
-        owner_identityDocumentNumber: getHeaderValue(values, 'owner_identityDocumentNumber', emptyFallback),
-      })},`,
+      kind: 'namedParagraph',
+      boldText: getHeaderValue(values, 'owner_name', getFallback('owner_name')),
+      text: `, cu domiciliul în ${getHeaderValue(values, 'owner_address', getFallback('owner_address'))}, CNP ${getHeaderValue(values, 'owner_personalNumericCode', getFallback('owner_personalNumericCode'))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getFallback('owner_identityDocumentSeries'))} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getFallback('owner_identityDocumentNumber'))}, denumit în continuare “Beneficiar”,`,
     },
     {
       kind: 'connector',
       text: 'și',
     },
     {
-      kind: 'paragraph',
-      text: `${buildFilledProviderParagraph({
-        ...values,
-        agency_legalCompanyName: getHeaderValue(values, 'agency_legalCompanyName', emptyFallback),
-        agency_registeredOffice: getHeaderValue(values, 'agency_registeredOffice', emptyFallback),
-        agency_companyTaxId: getHeaderValue(values, 'agency_companyTaxId', emptyFallback),
-        agency_tradeRegisterNumber: getHeaderValue(values, 'agency_tradeRegisterNumber', emptyFallback),
-        agency_legalRepresentative: getHeaderValue(values, 'agency_legalRepresentative', emptyFallback),
-      })}.`,
+      kind: 'namedParagraph',
+      boldText: getHeaderValue(values, 'agency_legalCompanyName', emptyFallback),
+      text: `, cu sediul social in ${getHeaderValue(values, 'agency_registeredOffice', emptyFallback)}, CUI ${getHeaderValue(values, 'agency_companyTaxId', emptyFallback)}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'agency_tradeRegisterNumber', emptyFallback)}, fiind reprezentata legal prin ${getHeaderValue(values, 'agency_legalRepresentative', emptyFallback)}, denumit in continuare “Prestator”.`,
     },
     {
-      kind: 'paragraph',
+      kind: 'emphasis',
       text: 'Beneficiarul și Prestatorul vor fi denumiți individual „Partea” și împreună „Părțile”.',
     },
     {
@@ -426,9 +433,9 @@ export function buildStructuredHeaderBlocks(
       kind: 'paragraph',
       text: buildFilledPropertyParagraph({
         ...values,
-        property_address: getHeaderValue(values, 'property_address', emptyFallback),
-        property_cadastralNumber: getHeaderValue(values, 'property_cadastralNumber', emptyFallback),
-        property_price: getHeaderValue(values, 'property_price', emptyFallback),
+        property_address: getHeaderValue(values, 'property_address', getFallback('property_address')),
+        property_cadastralNumber: getHeaderValue(values, 'property_cadastralNumber', getFallback('property_cadastralNumber')),
+        property_price: getHeaderValue(values, 'property_price', getFallback('property_price')),
       }),
     });
     blocks.push({
@@ -444,11 +451,11 @@ export function buildStructuredHeaderBlocks(
 
   blocks.push({
     kind: 'paragraph',
-    text: `Comisionul convenit de Părți, datorat de Beneficiar și plătibil către Prestator în situația în care vânzarea proprietății se realizează prin intermediul agenției sau către un cumpărător identificat și prezentat de aceasta, este de ${getHeaderValue(values, 'property_commissionPercent', emptyFallback)}% din prețul de vânzare.`,
+    text: `Comisionul convenit de Părți, datorat de Beneficiar și plătibil către Prestator în situația în care vânzarea proprietății se realizează prin intermediul agenției sau către un cumpărător identificat și prezentat de aceasta, este de ${getHeaderValue(values, 'property_commissionPercent', getFallback('property_commissionPercent'))}% din prețul de vânzare.`,
   });
   blocks.push({
     kind: 'paragraph',
-    text: `Proprietatea care face obiectul prezentului Contract este situată în ${getHeaderValue(values, 'property_address', emptyFallback)}, având numărul cadastral ${getHeaderValue(values, 'property_cadastralNumber', emptyFallback)} și prețul propus la vânzare de ${getHeaderValue(values, 'property_price', emptyFallback)} EUR.`,
+    text: `Proprietatea care face obiectul prezentului Contract este situată în ${getHeaderValue(values, 'property_address', getFallback('property_address'))}, având nr. cadastral ${getHeaderValue(values, 'property_cadastralNumber', getFallback('property_cadastralNumber'))} și prețul propus la vânzare de ${getHeaderValue(values, 'property_price', getFallback('property_price'))} EUR.`,
   });
 
   return blocks;
