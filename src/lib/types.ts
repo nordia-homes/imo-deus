@@ -325,6 +325,12 @@ export type Contact = {
     personalNumericCode?: string;
     identityDocumentSeries?: string;
     identityDocumentNumber?: string;
+    entityType?: 'individual' | 'company';
+    legalCompanyName?: string;
+    companyTaxId?: string;
+    tradeRegisterNumber?: string;
+    registeredOffice?: string;
+    legalRepresentative?: string;
     preferencesLinkId?: string;
     preferencesChatHistory?: { role: 'user' | 'model'; content: string; }[];
     generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
@@ -438,6 +444,11 @@ export type ContractTemplateFieldSource =
   | 'owner.personalNumericCode'
   | 'owner.identityDocumentSeries'
   | 'owner.identityDocumentNumber'
+  | 'owner.legalCompanyName'
+  | 'owner.companyTaxId'
+  | 'owner.tradeRegisterNumber'
+  | 'owner.registeredOffice'
+  | 'owner.legalRepresentative'
   | 'owner.phone'
   | 'owner.email'
   | 'property.address'

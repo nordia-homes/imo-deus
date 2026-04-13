@@ -54,6 +54,11 @@ export const CONTRACT_FIELD_SOURCES: Array<{
   { value: 'owner.personalNumericCode', label: 'Proprietar: CNP' },
   { value: 'owner.identityDocumentSeries', label: 'Proprietar: serie CI/BI' },
   { value: 'owner.identityDocumentNumber', label: 'Proprietar: numar CI/BI' },
+  { value: 'owner.legalCompanyName', label: 'Proprietar: denumire legala' },
+  { value: 'owner.companyTaxId', label: 'Proprietar: CUI' },
+  { value: 'owner.tradeRegisterNumber', label: 'Proprietar: nr. registrul comertului' },
+  { value: 'owner.registeredOffice', label: 'Proprietar: sediu social' },
+  { value: 'owner.legalRepresentative', label: 'Proprietar: reprezentant legal' },
   { value: 'owner.phone', label: 'Proprietar: telefon' },
   { value: 'owner.email', label: 'Proprietar: email' },
   { value: 'property.address', label: 'Proprietate: adresa' },
@@ -170,6 +175,21 @@ export function buildContractPrefillValues(params: {
       case 'owner.identityDocumentNumber':
         nextValue = owner?.identityDocumentNumber || '';
         break;
+      case 'owner.legalCompanyName':
+        nextValue = owner?.legalCompanyName || '';
+        break;
+      case 'owner.companyTaxId':
+        nextValue = owner?.companyTaxId || '';
+        break;
+      case 'owner.tradeRegisterNumber':
+        nextValue = owner?.tradeRegisterNumber || '';
+        break;
+      case 'owner.registeredOffice':
+        nextValue = owner?.registeredOffice || '';
+        break;
+      case 'owner.legalRepresentative':
+        nextValue = owner?.legalRepresentative || '';
+        break;
       case 'owner.phone':
         nextValue = owner?.phone || '';
         break;
@@ -277,10 +297,16 @@ export function buildContractPlaceholderMap(params: {
     buyer_phone: buyer?.phone || '',
     buyer_email: buyer?.email || '',
     owner_name: owner?.name || '',
+    owner_entityType: owner?.entityType || 'individual',
     owner_address: owner?.address || '',
     owner_personalNumericCode: owner?.personalNumericCode || '',
     owner_identityDocumentSeries: owner?.identityDocumentSeries || '',
     owner_identityDocumentNumber: owner?.identityDocumentNumber || '',
+    owner_legalCompanyName: owner?.legalCompanyName || '',
+    owner_companyTaxId: owner?.companyTaxId || '',
+    owner_tradeRegisterNumber: owner?.tradeRegisterNumber || '',
+    owner_registeredOffice: owner?.registeredOffice || '',
+    owner_legalRepresentative: owner?.legalRepresentative || '',
     owner_phone: owner?.phone || '',
     owner_email: owner?.email || '',
     property_address: property?.address || '',
@@ -320,6 +346,10 @@ function buildBeneficiaryParagraph() {
   return `${createVariableSpan('owner.name', 'Proprietar: nume')} cu domiciliul în ${createVariableSpan('owner.address', 'Proprietar: domiciliu complet')}, CNP ${createVariableSpan('owner.personalNumericCode', 'Proprietar: CNP')}, identificat cu CI/BI seria ${createVariableSpan('owner.identityDocumentSeries', 'Proprietar: serie CI/BI')} nr. ${createVariableSpan('owner.identityDocumentNumber', 'Proprietar: numar CI/BI')}, denumit în continuare “Beneficiar”`;
 }
 
+function buildBeneficiaryCompanyParagraph() {
+  return `${createVariableSpan('owner.legalCompanyName', 'Proprietar: denumire legala')}, cu sediul social in ${createVariableSpan('owner.registeredOffice', 'Proprietar: sediu social')}, CUI ${createVariableSpan('owner.companyTaxId', 'Proprietar: CUI')}, inregistrat la registrul Comertului cu nr. ${createVariableSpan('owner.tradeRegisterNumber', 'Proprietar: nr. registrul comertului')}, fiind reprezentata legal prin ${createVariableSpan('owner.legalRepresentative', 'Proprietar: reprezentant legal')}, denumit in continuare “Beneficiar”`;
+}
+
 function buildProviderParagraph() {
   return `${createVariableSpan('agency.legalCompanyName', 'Agentie: denumire legala')}, cu sediul social in ${createVariableSpan('agency.registeredOffice', 'Agentie: sediu social')}, CUI ${createVariableSpan('agency.companyTaxId', 'Agentie: CUI')}, inregistrat la registrul Comertului cu nr. ${createVariableSpan('agency.tradeRegisterNumber', 'Agentie: nr. registrul comertului')}, fiind reprezentata legal prin ${createVariableSpan('agency.legalRepresentative', 'Agentie: reprezentant legal')}, denumit in continuare “Prestator”`;
 }
@@ -349,6 +379,10 @@ function buildFilledBeneficiaryParagraph(values: Record<string, string>) {
   return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries')} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber')}, denumit în continuare “Beneficiar”`;
 }
 
+function buildFilledBeneficiaryCompanyParagraph(values: Record<string, string>) {
+  return `${getHeaderValue(values, 'owner_legalCompanyName')}, cu sediul social in ${getHeaderValue(values, 'owner_registeredOffice')}, CUI ${getHeaderValue(values, 'owner_companyTaxId')}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'owner_tradeRegisterNumber')}, fiind reprezentata legal prin ${getHeaderValue(values, 'owner_legalRepresentative')}, denumit in continuare “Beneficiar”`;
+}
+
 function buildFilledProviderParagraph(values: Record<string, string>) {
   return `${getHeaderValue(values, 'agency_legalCompanyName')}, cu sediul social in ${getHeaderValue(values, 'agency_registeredOffice')}, CUI ${getHeaderValue(values, 'agency_companyTaxId')}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'agency_tradeRegisterNumber')}, fiind reprezentata legal prin ${getHeaderValue(values, 'agency_legalRepresentative')}, denumit in continuare “Prestator”`;
 }
@@ -371,6 +405,11 @@ const HEADER_EMPTY_FALLBACKS: Record<string, string> = {
   owner_personalNumericCode: '.'.repeat(42),
   owner_identityDocumentSeries: '.'.repeat(10),
   owner_identityDocumentNumber: '.'.repeat(10),
+  owner_legalCompanyName: '.'.repeat(42),
+  owner_registeredOffice: '.'.repeat(96),
+  owner_companyTaxId: '.'.repeat(20),
+  owner_tradeRegisterNumber: '.'.repeat(30),
+  owner_legalRepresentative: '.'.repeat(28),
   property_commissionPercent: '..........',
   property_address: '.'.repeat(138),
   property_cadastralNumber: '.'.repeat(30),
@@ -379,6 +418,10 @@ const HEADER_EMPTY_FALLBACKS: Record<string, string> = {
 
 function getHeaderEmptyFallback(key: string, defaultFallback = '') {
   return HEADER_EMPTY_FALLBACKS[key] ?? defaultFallback;
+}
+
+function getBodyEmptyFallback(key: string) {
+  return HEADER_EMPTY_FALLBACKS[key] ?? '.....';
 }
 
 export function buildStructuredHeaderBlocks(
@@ -390,16 +433,23 @@ export function buildStructuredHeaderBlocks(
 ): StructuredHeaderBlock[] {
   const emptyFallback = options?.emptyFallback || '';
   const getFallback = (key: string) => getHeaderEmptyFallback(key, emptyFallback);
+  const ownerEntityType = getHeaderValue(values, 'owner_entityType', 'individual') === 'company' ? 'company' : 'individual';
   const blocks: StructuredHeaderBlock[] = [
     {
       kind: 'intro',
       text: 'Prezentul contract (denumit în continuare „Contractul”) se încheie între:',
     },
-    {
-      kind: 'namedParagraph',
-      boldText: getHeaderValue(values, 'owner_name', getFallback('owner_name')),
-      text: `, cu domiciliul în ${getHeaderValue(values, 'owner_address', getFallback('owner_address'))}, CNP ${getHeaderValue(values, 'owner_personalNumericCode', getFallback('owner_personalNumericCode'))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getFallback('owner_identityDocumentSeries'))} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getFallback('owner_identityDocumentNumber'))}, denumit în continuare “Beneficiar”,`,
-    },
+    ownerEntityType === 'company'
+      ? {
+          kind: 'namedParagraph' as const,
+          boldText: getHeaderValue(values, 'owner_legalCompanyName', getFallback('owner_legalCompanyName')),
+          text: `, cu sediul social in ${getHeaderValue(values, 'owner_registeredOffice', getFallback('owner_registeredOffice'))}, CUI ${getHeaderValue(values, 'owner_companyTaxId', getFallback('owner_companyTaxId'))}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'owner_tradeRegisterNumber', getFallback('owner_tradeRegisterNumber'))}, fiind reprezentata legal prin ${getHeaderValue(values, 'owner_legalRepresentative', getFallback('owner_legalRepresentative'))}, denumit in continuare “Beneficiar”,`,
+        }
+      : {
+          kind: 'namedParagraph' as const,
+          boldText: getHeaderValue(values, 'owner_name', getFallback('owner_name')),
+          text: `, cu domiciliul în ${getHeaderValue(values, 'owner_address', getFallback('owner_address'))}, CNP ${getHeaderValue(values, 'owner_personalNumericCode', getFallback('owner_personalNumericCode'))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getFallback('owner_identityDocumentSeries'))} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getFallback('owner_identityDocumentNumber'))}, denumit în continuare “Beneficiar”,`,
+        },
     {
       kind: 'connector',
       text: 'și',
@@ -534,7 +584,9 @@ export function renderContractContent(
     (_, rawKey: string) => {
       const normalizedKey = rawKey.replace(/\./g, '_');
       const value = values[normalizedKey];
-      if (value == null) return '';
+      if (value == null || String(value).trim() === '') {
+        return getBodyEmptyFallback(normalizedKey);
+      }
       return String(value);
     }
   );
@@ -542,7 +594,9 @@ export function renderContractContent(
   return withVisualVariablesResolved.replace(/\{\{\s*([a-zA-Z0-9._]+)\s*\}\}/g, (_, rawKey: string) => {
     const normalizedKey = rawKey.replace(/\./g, '_');
     const value = values[normalizedKey];
-    if (value == null) return '';
+    if (value == null || String(value).trim() === '') {
+      return getBodyEmptyFallback(normalizedKey);
+    }
     return String(value);
   });
 }

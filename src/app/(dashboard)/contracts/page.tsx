@@ -50,6 +50,11 @@ const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string
     'owner.personalNumericCode',
     'owner.identityDocumentSeries',
     'owner.identityDocumentNumber',
+    'owner.legalCompanyName',
+    'owner.registeredOffice',
+    'owner.companyTaxId',
+    'owner.tradeRegisterNumber',
+    'owner.legalRepresentative',
     'agent.name',
     'agent.phone',
     'property.commissionPercent',
@@ -65,6 +70,11 @@ const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string
     'owner.personalNumericCode',
     'owner.identityDocumentSeries',
     'owner.identityDocumentNumber',
+    'owner.legalCompanyName',
+    'owner.registeredOffice',
+    'owner.companyTaxId',
+    'owner.tradeRegisterNumber',
+    'owner.legalRepresentative',
     'agent.name',
     'agent.phone',
     'property.commissionPercent',
@@ -98,6 +108,11 @@ const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string
     'owner.personalNumericCode',
     'owner.identityDocumentSeries',
     'owner.identityDocumentNumber',
+    'owner.legalCompanyName',
+    'owner.registeredOffice',
+    'owner.companyTaxId',
+    'owner.tradeRegisterNumber',
+    'owner.legalRepresentative',
     'agent.name',
     'agent.phone',
     'property.commissionPercent',
@@ -123,11 +138,8 @@ function ExportedPdfPreview({
   const ensureNamedParagraphSeparator = (text: string) =>
     text.trimStart().startsWith(',') ? text : `, ${text.trimStart()}`;
 
-  const bodyParagraphs = useMemo(() => {
-    return stripHtmlTags(renderContractContent(template.content || '', values))
-      .split(/\r?\n/)
-      .map((item) => normalizeContractText(item))
-      .filter(Boolean);
+  const renderedBodyHtml = useMemo(() => {
+    return renderContractContent(template.content || '', values);
   }, [template.content, values]);
 
   const title = template.name || 'Contract';
@@ -139,43 +151,43 @@ function ExportedPdfPreview({
   const headerLine = [agencyDisplayName, agencyPhone, agencyEmail].filter(Boolean).join('   •   ');
 
   return (
-    <div className="relative mx-auto w-full max-w-[920px] min-h-[1300px] rounded-[28px] border border-slate-200 bg-white px-[7.5%] py-[7%] text-[#0f1720] shadow-[0_25px_70px_rgba(0,0,0,0.28)]">
+    <div className="relative mx-auto w-full max-w-[920px] min-h-[1300px] rounded-[28px] border border-slate-200 bg-white px-[56px] py-[64px] text-[#0f1720] shadow-[0_25px_70px_rgba(0,0,0,0.28)]">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="select-none whitespace-nowrap text-[clamp(56px,6.3vw,96px)] font-semibold tracking-[0.08em] text-slate-300/[0.18] [transform:rotate(-32deg)]">
           {agencyDisplayName}
         </div>
       </div>
-      <div className="border-b border-slate-200 pb-3 text-center text-[clamp(11px,0.95vw,13px)] font-medium text-slate-600">
+      <div className="border-b border-slate-200 pb-[12px] text-center text-[15px] font-medium text-slate-600">
         {headerLine}
       </div>
-      <div className="text-center">
+      <div className="pt-[10px] text-center">
         <div className="mx-auto h-[2px] w-[220px] bg-[#2f6fde]" />
-        <div className="py-3 text-[clamp(26px,2.4vw,32px)] font-bold tracking-[-0.03em] text-[#071326]">
+        <div className="py-[10px] text-[32px] font-normal tracking-[-0.03em] text-[#071326]">
           {agencyDisplayName}
         </div>
         <div className="mx-auto h-[2px] w-[220px] bg-[#2f6fde]" />
       </div>
 
-      <div className="mt-8 text-center">
-        <h1 className="whitespace-nowrap text-[clamp(22px,1.75vw,32px)] font-semibold tracking-[0.005em] text-[#bb1f2a]">
+      <div className="mt-[14px] text-center">
+        <h1 className="whitespace-nowrap text-[23px] font-semibold tracking-[0.005em] text-[#0f1720]">
           {title}
         </h1>
         {(contractNumber || currentDate) ? (
-          <div className="mt-0.5 text-[clamp(16px,1.3vw,20px)] text-[#2f6fde]">
+          <div className="mt-[4px] text-[15px] text-[#2f6fde]">
             {[contractNumber ? `Contract nr. ${contractNumber}` : '', currentDate ? `Data ${currentDate}` : '']
               .filter(Boolean)
-              .join(' | ')}
+              .join('   |   ')}
           </div>
         ) : null}
       </div>
 
-      <div className="mt-10 space-y-4">
+      <div className="mt-[18px] space-y-[4px]">
         {headerBlocks.map((block, index) => {
           if (block.kind === 'intro') {
             return (
               <p
                 key={`intro-${index}`}
-                className="inline-block bg-slate-100 px-3 py-1.5 text-[12px] leading-[1.7] text-[#1f2937]"
+                className="inline-block bg-slate-100 px-2 py-1 text-[14.67px] leading-[21px] text-[#1f2937]"
               >
                 {block.text}
               </p>
@@ -184,7 +196,7 @@ function ExportedPdfPreview({
 
           if (block.kind === 'connector') {
             return (
-              <p key={`connector-${index}`} className="text-[12px] leading-[1.6] text-[#374151]">
+              <p key={`connector-${index}`} className="text-[14.67px] leading-[21px] text-[#111827]">
                 {block.text}
               </p>
             );
@@ -192,11 +204,11 @@ function ExportedPdfPreview({
 
           if (block.kind === 'party') {
             return (
-              <div key={`party-${index}`} className="flex items-start gap-4">
-                <div className="w-8 shrink-0 pt-0.5 text-right text-[clamp(18px,1.25vw,20px)] font-medium text-[#111827]">
+              <div key={`party-${index}`} className="flex items-start gap-3">
+                <div className="w-7 shrink-0 pt-0.5 text-right text-[14.67px] font-medium text-[#111827]">
                   {block.index}.
                 </div>
-                <p className="flex-1 text-[clamp(16px,1.22vw,19px)] leading-[1.82] text-[#111827]">
+                <p className="flex-1 text-[14.67px] leading-[21px] text-[#111827]">
                   {block.text}
                 </p>
               </div>
@@ -205,7 +217,7 @@ function ExportedPdfPreview({
 
           if (block.kind === 'emphasis') {
             return (
-              <p key={`emphasis-${index}`} className="text-[12px] font-semibold leading-[1.82] text-[#111827]">
+              <p key={`emphasis-${index}`} className="text-[14.67px] font-semibold leading-[21px] text-[#111827]">
                 {block.text}
               </p>
             );
@@ -213,7 +225,7 @@ function ExportedPdfPreview({
 
           if (block.kind === 'namedParagraph') {
             return (
-              <p key={`named-${index}`} className="text-[12px] leading-[1.82] text-[#111827]">
+              <p key={`named-${index}`} className="text-[14.67px] leading-[21px] text-[#111827]">
                 <span className="font-semibold">{block.boldText}</span>
                 {ensureNamedParagraphSeparator(block.text)}
               </p>
@@ -221,29 +233,35 @@ function ExportedPdfPreview({
           }
 
           return (
-            <p key={`paragraph-${index}`} className="text-[12px] leading-[1.82] text-[#111827]">
+            <p key={`paragraph-${index}`} className="text-[14.67px] leading-[21px] text-[#111827]">
               {block.text}
             </p>
           );
         })}
       </div>
 
-      {bodyParagraphs.length ? (
-        <div className="mt-10 border-t border-slate-200 pt-8">
-          <div className="space-y-4">
-            {bodyParagraphs.map((paragraph, index) => (
-              <p
-                key={`${paragraph}-${index}`}
-                className="text-[clamp(15px,1.1vw,18px)] leading-[1.8] text-[#111827]"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
+      {normalizeContractText(stripHtmlTags(renderedBodyHtml || '')).length ? (
+        <div className="mt-8 border-t border-slate-200 pt-[22px]">
+          <div
+            className="
+              text-[14.67px] leading-[21px] text-[#111827]
+              [&_p]:my-[10px] [&_p]:text-[14.67px] [&_p]:leading-[21px]
+              [&_div]:text-[14.67px] [&_div]:leading-[21px]
+              [&_div>p:first-child]:mt-0 [&_div>p:last-child]:mb-0
+              [&_h1]:my-[12px] [&_h1]:text-[14.67px] [&_h1]:font-normal [&_h1]:leading-[21px]
+              [&_h2]:my-[12px] [&_h2]:text-[14.67px] [&_h2]:font-normal [&_h2]:leading-[21px]
+              [&_h3]:my-[12px] [&_h3]:text-[14.67px] [&_h3]:font-normal [&_h3]:leading-[21px]
+              [&_strong]:font-semibold [&_b]:font-semibold
+              [&_ul]:my-[10px] [&_ul]:pl-6 [&_ol]:my-[10px] [&_ol]:pl-6
+              [&_li]:my-[4px] [&_li]:text-[14.67px] [&_li]:leading-[21px]
+              [&_br]:leading-[21px]
+            "
+            dangerouslySetInnerHTML={{ __html: renderedBodyHtml }}
+          />
         </div>
       ) : null}
 
-      <div className="mt-8 border-t border-slate-200 pt-3 text-center text-[12px] font-medium text-slate-500">
+      <div className="mt-7 border-t border-slate-200 pt-3 text-center text-[16px] font-medium text-slate-500">
         Pagina 1
       </div>
     </div>
@@ -409,6 +427,7 @@ function FillContractDialog({
   const { toast } = useToast();
   const [buyerId, setBuyerId] = useState<string>('none');
   const [ownerId, setOwnerId] = useState<string>('none');
+  const [ownerEntityType, setOwnerEntityType] = useState<'individual' | 'company'>('individual');
   const [propertyId, setPropertyId] = useState<string>('none');
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -430,28 +449,62 @@ function FillContractDialog({
   const mergedValues = useMemo(
     () => ({
       ...placeholderMap,
+      owner_entityType: ownerEntityType,
       ...manualValues,
     }),
-    [manualValues, placeholderMap]
+    [manualValues, ownerEntityType, placeholderMap]
   );
 
   const visibleManualPlaceholders = useMemo(() => {
     const order = PLACEHOLDER_ORDER_BY_CATEGORY[template?.category || 'reservation'] || [];
     const lookup = new Map(CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => [item.key, item]));
+    const ownerIndividualKeys = new Set([
+      'owner.name',
+      'owner.address',
+      'owner.personalNumericCode',
+      'owner.identityDocumentSeries',
+      'owner.identityDocumentNumber',
+    ]);
+    const ownerCompanyKeys = new Set([
+      'owner.legalCompanyName',
+      'owner.registeredOffice',
+      'owner.companyTaxId',
+      'owner.tradeRegisterNumber',
+      'owner.legalRepresentative',
+    ]);
     return order
       .map((key) => lookup.get(key))
       .filter((item) => item && !item.key.startsWith('agency.'))
+      .filter((item) =>
+        ownerEntityType === 'company'
+          ? !ownerIndividualKeys.has(item!.key)
+          : !ownerCompanyKeys.has(item!.key)
+      )
       .filter((item): item is (typeof CONTRACT_PLACEHOLDERS)[number] => Boolean(item));
-  }, [template?.category]);
+  }, [ownerEntityType, template?.category]);
 
   useEffect(() => {
     if (!open) {
       setBuyerId('none');
       setOwnerId('none');
+      setOwnerEntityType('individual');
       setPropertyId('none');
       setManualValues({});
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!owner) {
+      setOwnerEntityType('individual');
+      return;
+    }
+
+    const detectedType =
+      owner.entityType ||
+      (owner.legalCompanyName || owner.companyTaxId || owner.tradeRegisterNumber ? 'company' : 'individual');
+
+    setOwnerEntityType(detectedType === 'company' ? 'company' : 'individual');
+  }, [owner]);
 
   async function handleGenerate() {
     if (!template || !user) return;
@@ -543,6 +596,16 @@ function FillContractDialog({
                       {contacts.map((contact) => (
                         <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/80">Tip proprietar</Label>
+                  <Select value={ownerEntityType} onValueChange={(value) => setOwnerEntityType(value as 'individual' | 'company')}>
+                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual">Persoana fizica</SelectItem>
+                      <SelectItem value="company">Persoana juridica</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

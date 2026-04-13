@@ -143,6 +143,97 @@ function drawPageFooter(params: {
   });
 }
 
+type PdfInlineRun = {
+  text: string;
+  bold?: boolean;
+};
+
+type PdfRichBlock = {
+  runs: PdfInlineRun[];
+  align: 'left' | 'center' | 'right' | 'justify';
+  spacingAfter: number;
+};
+
+function decodeHtmlPreservingWhitespace(value: string) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+function parseInlineRunsFromHtml(value: string): PdfInlineRun[] {
+  const runs: PdfInlineRun[] = [];
+  const tokenRegex = /(<\/?(?:strong|b)[^>]*>|<br\s*\/?>)/gi;
+  let cursor = 0;
+  let isBold = false;
+
+  for (const match of value.matchAll(tokenRegex)) {
+    const token = match[0];
+    const index = match.index ?? 0;
+    const text = decodeHtmlPreservingWhitespace(value.slice(cursor, index));
+    if (text) {
+      runs.push({ text, bold: isBold });
+    }
+
+    if (/^<br/i.test(token)) {
+      runs.push({ text: '\n', bold: false });
+    } else if (/^<\s*\/\s*(strong|b)/i.test(token)) {
+      isBold = false;
+    } else {
+      isBold = true;
+    }
+
+    cursor = index + token.length;
+  }
+
+  const tail = decodeHtmlPreservingWhitespace(value.slice(cursor));
+  if (tail) {
+    runs.push({ text: tail, bold: isBold });
+  }
+
+  return runs;
+}
+
+function extractRichBlocksFromHtml(value: string): PdfRichBlock[] {
+  const normalized = value
+    .replace(/<hr[^>]*>/gi, '<p></p>')
+    .replace(/<div(?=[\s>])/gi, '<p')
+    .replace(/<\/div>/gi, '</p>');
+
+  const blocks: PdfRichBlock[] = [];
+  const blockRegex = /<(p|h1|h2|h3|li)([^>]*)>([\s\S]*?)<\/\1>/gi;
+
+  for (const match of normalized.matchAll(blockRegex)) {
+    const tag = (match[1] || 'p').toLowerCase();
+    const attrs = match[2] || '';
+    const inner = match[3] || '';
+    const alignMatch = attrs.match(/text-align\s*:\s*(left|center|right|justify)/i);
+    const align = (alignMatch?.[1]?.toLowerCase() as PdfRichBlock['align']) || 'left';
+    const runs = parseInlineRunsFromHtml(tag === 'li' ? `• ${inner}` : inner);
+
+    if (!runs.length || !runs.some((run) => run.text.replace(/\s+/g, '').length)) {
+      continue;
+    }
+
+    blocks.push({
+      runs,
+      align,
+      spacingAfter: tag === 'h1' || tag === 'h2' || tag === 'h3' ? 10 : 8,
+    });
+  }
+
+  if (blocks.length) return blocks;
+
+  const fallbackRuns = parseInlineRunsFromHtml(normalized);
+  return fallbackRuns.length
+    ? [{ runs: fallbackRuns, align: 'left', spacingAfter: 8 }]
+    : [];
+}
+
 function drawPageWatermark(params: {
   state: PdfState;
   text: string;
@@ -151,12 +242,28 @@ function drawPageWatermark(params: {
   const { state, text, font } = params;
   if (!text.trim()) return;
 
+  const angle = 32;
+  const angleRad = (angle * Math.PI) / 180;
+  const maxProjectedWidth = state.width * 0.72;
+  let size = 82;
+  let textWidth = font.widthOfTextAtSize(text, size);
+  let projectedWidth = textWidth * Math.cos(angleRad) + size * Math.sin(angleRad);
+
+  if (projectedWidth > maxProjectedWidth) {
+    size = size * (maxProjectedWidth / projectedWidth);
+    textWidth = font.widthOfTextAtSize(text, size);
+    projectedWidth = textWidth * Math.cos(angleRad) + size * Math.sin(angleRad);
+  }
+
+  const startX = Math.max(24, (state.width - projectedWidth) / 2);
+  const startY = state.height * 0.15;
+
   state.page.drawText(text, {
-    x: state.width * 0.06,
-    y: state.height * 0.18,
-    size: 82,
+    x: startX,
+    y: startY,
+    size,
     font,
-    rotate: degrees(32),
+    rotate: degrees(angle),
     color: rgb(0.72, 0.77, 0.84),
     opacity: 0.18,
   });
@@ -351,6 +458,134 @@ function drawLeadingBoldWrappedText(params: {
   return state;
 }
 
+function drawRichWrappedText(params: {
+  pdfDoc: PDFDocument;
+  state: PdfState;
+  runs: PdfInlineRun[];
+  font: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  boldFont: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  fontSize: number;
+  lineHeight: number;
+  marginX: number;
+  marginTop: number;
+  marginBottom: number;
+  align?: 'left' | 'center' | 'right' | 'justify';
+  color?: ReturnType<typeof rgb>;
+  pageHeaderText?: string;
+  headerFont?: Awaited<ReturnType<typeof loadUnicodeFont>>;
+  headerColor?: ReturnType<typeof rgb>;
+}) {
+  let { state } = params;
+  const {
+    pdfDoc,
+    runs,
+    font,
+    boldFont,
+    fontSize,
+    lineHeight,
+    marginX,
+    marginTop,
+    marginBottom,
+    pageHeaderText,
+    headerFont,
+    headerColor,
+  } = params;
+  const color = params.color || rgb(0.05, 0.08, 0.12);
+  const align = params.align || 'left';
+  const maxWidth = state.width - marginX * 2;
+
+  const lineGroups: Array<Array<{ text: string; font: Awaited<ReturnType<typeof loadUnicodeFont>> }>> = [[]];
+
+  for (const run of runs) {
+    const targetFont = run.bold ? boldFont : font;
+    const pieces = run.text.split('\n');
+
+    pieces.forEach((piece, pieceIndex) => {
+      if (piece) {
+        piece
+          .split(/(\s+)/)
+          .filter((part) => part.length > 0)
+          .forEach((part) => {
+            lineGroups[lineGroups.length - 1].push({ text: part, font: targetFont });
+          });
+      }
+
+      if (pieceIndex < pieces.length - 1) {
+        lineGroups.push([]);
+      }
+    });
+  }
+
+  const wrappedLines: Array<Array<{ text: string; font: Awaited<ReturnType<typeof loadUnicodeFont>> }>> = [];
+
+  for (const rawLine of lineGroups) {
+    if (!rawLine.length) {
+      wrappedLines.push([]);
+      continue;
+    }
+
+    let currentLine: Array<{ text: string; font: Awaited<ReturnType<typeof loadUnicodeFont>> }> = [];
+    let currentWidth = 0;
+
+    for (const segment of rawLine) {
+      const segmentWidth = segment.font.widthOfTextAtSize(segment.text, fontSize);
+      if (currentLine.length && currentWidth + segmentWidth > maxWidth) {
+        wrappedLines.push(currentLine);
+        currentLine = [];
+        currentWidth = 0;
+      }
+
+      currentLine.push(segment);
+      currentWidth += segmentWidth;
+    }
+
+    if (currentLine.length) {
+      wrappedLines.push(currentLine);
+    }
+  }
+
+  if (!wrappedLines.length) {
+    wrappedLines.push([]);
+  }
+
+  for (const line of wrappedLines) {
+    state = ensureSpace({
+      pdfDoc,
+      state,
+      needed: lineHeight,
+      marginTop,
+      marginBottom,
+      pageHeaderText,
+      headerFont,
+      headerColor,
+    });
+
+    const lineWidth = line.reduce((total, segment) => total + segment.font.widthOfTextAtSize(segment.text, fontSize), 0);
+    let cursorX = marginX;
+
+    if (align === 'center') {
+      cursorX = marginX + Math.max(0, (maxWidth - lineWidth) / 2);
+    } else if (align === 'right') {
+      cursorX = marginX + Math.max(0, maxWidth - lineWidth);
+    }
+
+    for (const segment of line) {
+      state.page.drawText(segment.text, {
+        x: cursorX,
+        y: state.cursorY,
+        size: fontSize,
+        font: segment.font,
+        color,
+      });
+      cursorX += segment.font.widthOfTextAtSize(segment.text, fontSize);
+    }
+
+    state.cursorY -= lineHeight;
+  }
+
+  return state;
+}
+
 function drawCenteredText(params: {
   pdfDoc: PDFDocument;
   state: PdfState;
@@ -433,12 +668,9 @@ export async function POST(
     const headerBlocks = buildStructuredHeaderBlocks(template.category || 'reservation', normalizedValues, {
       emptyFallback: '.'.repeat(35),
     });
-    const bodyParagraphs = stripHtmlTags(renderedBodyHtml)
-      .split(/\r?\n/)
-      .map((item) => normalizeText(item))
-      .filter(Boolean);
+    const bodyBlocks = extractRichBlocksFromHtml(renderedBodyHtml);
 
-    if (!headerParagraphs.length && !bodyParagraphs.length) {
+    if (!headerParagraphs.length && !bodyBlocks.length) {
       return NextResponse.json({ message: 'Template-ul nu are continut de generat.' }, { status: 400 });
     }
 
@@ -546,8 +778,8 @@ export async function POST(
     for (const block of headerBlocks) {
       if (block.kind === 'intro') {
         const introText = normalizeText(block.text);
-        const introFontSize = 12;
-        const introLineHeight = 18;
+        const introFontSize = 11;
+        const introLineHeight = 17;
         const introPaddingX = 8;
         const introPaddingY = 4;
         const introWidth = Math.min(
@@ -593,8 +825,8 @@ export async function POST(
           state,
           text: block.text,
           font,
-          fontSize: 12,
-          lineHeight: 18,
+          fontSize: 11,
+          lineHeight: 17,
           marginX,
           marginTop,
           marginBottom,
@@ -613,8 +845,8 @@ export async function POST(
           state,
           text: block.text,
           font: boldFont,
-          fontSize: 12,
-          lineHeight: 19,
+          fontSize: 11,
+          lineHeight: 17,
           marginX,
           marginTop,
           marginBottom,
@@ -633,8 +865,8 @@ export async function POST(
           state,
           text: `${block.index}. ${block.text}`,
           font,
-          fontSize: 12,
-          lineHeight: 19,
+          fontSize: 11,
+          lineHeight: 17,
           marginX,
           marginTop,
           marginBottom,
@@ -655,8 +887,8 @@ export async function POST(
           text: block.text,
           font,
           boldFont,
-          fontSize: 12,
-          lineHeight: 19,
+          fontSize: 11,
+          lineHeight: 17,
           marginX,
           marginTop,
           marginBottom,
@@ -674,8 +906,8 @@ export async function POST(
         state,
         text: block.text,
         font,
-        fontSize: 12,
-        lineHeight: 19,
+        fontSize: 11,
+        lineHeight: 17,
         marginX,
         marginTop,
         marginBottom,
@@ -696,23 +928,25 @@ export async function POST(
     });
     state.cursorY -= 22;
 
-    for (const paragraph of bodyParagraphs) {
-      state = drawWrappedText({
+    for (const block of bodyBlocks) {
+      state = drawRichWrappedText({
         pdfDoc,
         state,
-        text: paragraph,
+        runs: block.runs,
         font,
-        fontSize: 12,
-        lineHeight: 18,
+        boldFont,
+        fontSize: 11,
+        lineHeight: 17,
         marginX,
         marginTop,
         marginBottom,
+        align: block.align,
         color: textColor,
         pageHeaderText,
         headerFont: font,
         headerColor: muted,
       });
-      state.cursorY -= 8;
+      state.cursorY -= block.spacingAfter;
     }
 
     const totalPages = pdfDoc.getPages();
