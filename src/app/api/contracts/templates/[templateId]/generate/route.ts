@@ -45,6 +45,18 @@ function normalizeText(value: string) {
   return decodeHtmlEntities(value).replace(/\s+/g, ' ').trim();
 }
 
+function stripRomanianDiacritics(value: string) {
+  return value
+    .replace(/[ăâ]/g, 'a')
+    .replace(/[ĂÂ]/g, 'A')
+    .replace(/î/g, 'i')
+    .replace(/Î/g, 'I')
+    .replace(/[șş]/g, 's')
+    .replace(/[ȘŞ]/g, 'S')
+    .replace(/[țţ]/g, 't')
+    .replace(/[ȚŢ]/g, 'T');
+}
+
 function extractParagraphsFromHtml(value: string) {
   return stripHtmlTags(
     value
@@ -170,11 +182,12 @@ function parseInlineRunsFromHtml(value: string): PdfInlineRun[] {
   const tokenRegex = /(<\/?(?:strong|b)[^>]*>|<br\s*\/?>)/gi;
   let cursor = 0;
   let isBold = false;
+  const stripResidualTags = (input: string) => decodeHtmlPreservingWhitespace(input).replace(/<[^>]+>/g, '');
 
   for (const match of value.matchAll(tokenRegex)) {
     const token = match[0];
     const index = match.index ?? 0;
-    const text = decodeHtmlPreservingWhitespace(value.slice(cursor, index));
+    const text = stripResidualTags(value.slice(cursor, index));
     if (text) {
       runs.push({ text, bold: isBold });
     }
@@ -190,7 +203,7 @@ function parseInlineRunsFromHtml(value: string): PdfInlineRun[] {
     cursor = index + token.length;
   }
 
-  const tail = decodeHtmlPreservingWhitespace(value.slice(cursor));
+  const tail = stripResidualTags(value.slice(cursor));
   if (tail) {
     runs.push({ text: tail, bold: isBold });
   }
@@ -663,7 +676,7 @@ export async function POST(
       }),
       normalizedValues
     );
-    const renderedBodyHtml = renderContractContent(rawContent, normalizedValues);
+    const renderedBodyHtml = stripRomanianDiacritics(renderContractContent(rawContent, normalizedValues));
     const headerParagraphs = extractParagraphsFromHtml(renderedHeaderHtml);
     const headerBlocks = buildStructuredHeaderBlocks(template.category || 'reservation', normalizedValues, {
       emptyFallback: '.'.repeat(35),
@@ -856,6 +869,28 @@ export async function POST(
           color: textColor,
         });
         state.cursorY -= 4;
+        continue;
+      }
+
+      if (block.kind === 'separator') {
+        state = ensureSpace({
+          pdfDoc,
+          state,
+          needed: 18,
+          marginTop,
+          marginBottom,
+          pageHeaderText,
+          headerFont: font,
+          headerColor: muted,
+        });
+        state.cursorY -= 6;
+        state.page.drawLine({
+          start: { x: marginX, y: state.cursorY },
+          end: { x: state.width - marginX, y: state.cursorY },
+          thickness: 0.8,
+          color: rgb(0.84, 0.87, 0.91),
+        });
+        state.cursorY -= 12;
         continue;
       }
 

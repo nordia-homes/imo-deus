@@ -90,15 +90,35 @@ const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string
     'owner.personalNumericCode',
     'owner.identityDocumentSeries',
     'owner.identityDocumentNumber',
+    'owner2.name',
+    'owner2.address',
+    'owner2.personalNumericCode',
+    'owner2.identityDocumentSeries',
+    'owner2.identityDocumentNumber',
+    'owner2.legalCompanyName',
+    'owner2.registeredOffice',
+    'owner2.companyTaxId',
+    'owner2.tradeRegisterNumber',
+    'owner2.legalRepresentative',
     'agent.name',
-    'agent.phone',
     'buyer.name',
-    'buyer.phone',
-    'buyer.email',
+    'buyer.address',
+    'buyer.personalNumericCode',
+    'buyer.identityDocumentSeries',
+    'buyer.identityDocumentNumber',
+    'buyer.legalCompanyName',
+    'buyer.registeredOffice',
+    'buyer.companyTaxId',
+    'buyer.tradeRegisterNumber',
+    'buyer.legalRepresentative',
     'property.address',
     'property.cadastralNumber',
     'property.price',
     'reservation.amount',
+    'reservation.currency',
+    'reservation.expiryDate',
+    'owner.bankAccount',
+    'owner.bankAccountHolder',
   ],
   custom: [
     'contract.number',
@@ -221,6 +241,10 @@ function ExportedPdfPreview({
                 {block.text}
               </p>
             );
+          }
+
+          if (block.kind === 'separator') {
+            return <div key={`separator-${index}`} className="my-[10px] h-px w-full bg-slate-300" />;
           }
 
           if (block.kind === 'namedParagraph') {
@@ -427,7 +451,10 @@ function FillContractDialog({
   const { toast } = useToast();
   const [buyerId, setBuyerId] = useState<string>('none');
   const [ownerId, setOwnerId] = useState<string>('none');
+  const [hasSecondOwner, setHasSecondOwner] = useState<'no' | 'yes'>('no');
   const [ownerEntityType, setOwnerEntityType] = useState<'individual' | 'company'>('individual');
+  const [buyerEntityType, setBuyerEntityType] = useState<'individual' | 'company'>('individual');
+  const [secondOwnerEntityType, setSecondOwnerEntityType] = useState<'individual' | 'company'>('individual');
   const [propertyId, setPropertyId] = useState<string>('none');
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -450,9 +477,11 @@ function FillContractDialog({
     () => ({
       ...placeholderMap,
       owner_entityType: ownerEntityType,
+      owner2_entityType: secondOwnerEntityType,
+      buyer_entityType: buyerEntityType,
       ...manualValues,
     }),
-    [manualValues, ownerEntityType, placeholderMap]
+    [buyerEntityType, manualValues, ownerEntityType, placeholderMap, secondOwnerEntityType]
   );
 
   const visibleManualPlaceholders = useMemo(() => {
@@ -472,6 +501,34 @@ function FillContractDialog({
       'owner.tradeRegisterNumber',
       'owner.legalRepresentative',
     ]);
+    const owner2IndividualKeys = new Set([
+      'owner2.name',
+      'owner2.address',
+      'owner2.personalNumericCode',
+      'owner2.identityDocumentSeries',
+      'owner2.identityDocumentNumber',
+    ]);
+    const owner2CompanyKeys = new Set([
+      'owner2.legalCompanyName',
+      'owner2.registeredOffice',
+      'owner2.companyTaxId',
+      'owner2.tradeRegisterNumber',
+      'owner2.legalRepresentative',
+    ]);
+    const buyerIndividualKeys = new Set([
+      'buyer.name',
+      'buyer.address',
+      'buyer.personalNumericCode',
+      'buyer.identityDocumentSeries',
+      'buyer.identityDocumentNumber',
+    ]);
+    const buyerCompanyKeys = new Set([
+      'buyer.legalCompanyName',
+      'buyer.registeredOffice',
+      'buyer.companyTaxId',
+      'buyer.tradeRegisterNumber',
+      'buyer.legalRepresentative',
+    ]);
     return order
       .map((key) => lookup.get(key))
       .filter((item) => item && !item.key.startsWith('agency.'))
@@ -480,18 +537,46 @@ function FillContractDialog({
           ? !ownerIndividualKeys.has(item!.key)
           : !ownerCompanyKeys.has(item!.key)
       )
+      .filter((item) =>
+        buyerEntityType === 'company'
+          ? !buyerIndividualKeys.has(item!.key)
+          : !buyerCompanyKeys.has(item!.key)
+      )
+      .filter((item) =>
+        !item!.key.startsWith('owner2.') ||
+        (hasSecondOwner === 'yes' &&
+          (secondOwnerEntityType === 'company'
+            ? !owner2IndividualKeys.has(item!.key)
+            : !owner2CompanyKeys.has(item!.key)))
+      )
       .filter((item): item is (typeof CONTRACT_PLACEHOLDERS)[number] => Boolean(item));
-  }, [ownerEntityType, template?.category]);
+  }, [buyerEntityType, hasSecondOwner, ownerEntityType, secondOwnerEntityType, template?.category]);
 
   useEffect(() => {
     if (!open) {
       setBuyerId('none');
       setOwnerId('none');
+      setHasSecondOwner('no');
       setOwnerEntityType('individual');
+      setBuyerEntityType('individual');
+      setSecondOwnerEntityType('individual');
       setPropertyId('none');
       setManualValues({});
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!buyer) {
+      setBuyerEntityType('individual');
+      return;
+    }
+
+    const detectedType =
+      buyer.entityType ||
+      (buyer.legalCompanyName || buyer.companyTaxId || buyer.tradeRegisterNumber ? 'company' : 'individual');
+
+    setBuyerEntityType(detectedType === 'company' ? 'company' : 'individual');
+  }, [buyer]);
 
   useEffect(() => {
     if (!owner) {
@@ -505,6 +590,20 @@ function FillContractDialog({
 
     setOwnerEntityType(detectedType === 'company' ? 'company' : 'individual');
   }, [owner]);
+
+  useEffect(() => {
+    if (hasSecondOwner === 'yes') return;
+
+    setManualValues((current) => {
+      const next = { ...current };
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith('owner2_')) {
+          delete next[key];
+        }
+      });
+      return next;
+    });
+  }, [hasSecondOwner]);
 
   async function handleGenerate() {
     if (!template || !user) return;
@@ -600,6 +699,26 @@ function FillContractDialog({
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-white/80">Tip cumparator</Label>
+                  <Select value={buyerEntityType} onValueChange={(value) => setBuyerEntityType(value as 'individual' | 'company')}>
+                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual">Persoana fizica</SelectItem>
+                      <SelectItem value="company">Persoana juridica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white/80">Al doilea proprietar</Label>
+                  <Select value={hasSecondOwner} onValueChange={(value) => setHasSecondOwner(value as 'no' | 'yes')}>
+                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no">Nu</SelectItem>
+                      <SelectItem value="yes">Da</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label className="text-white/80">Tip proprietar</Label>
                   <Select value={ownerEntityType} onValueChange={(value) => setOwnerEntityType(value as 'individual' | 'company')}>
                     <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
@@ -609,6 +728,18 @@ function FillContractDialog({
                     </SelectContent>
                   </Select>
                 </div>
+                {hasSecondOwner === 'yes' ? (
+                  <div className="space-y-2">
+                    <Label className="text-white/80">Tip al doilea proprietar</Label>
+                    <Select value={secondOwnerEntityType} onValueChange={(value) => setSecondOwnerEntityType(value as 'individual' | 'company')}>
+                      <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Persoana fizica</SelectItem>
+                        <SelectItem value="company">Persoana juridica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <Label className="text-white/80">Proprietate</Label>
                   <Select value={propertyId} onValueChange={setPropertyId}>
@@ -636,18 +767,38 @@ function FillContractDialog({
                   const normalizedKey = item.key.replace(/\./g, '_');
                   return (
                     <div key={item.token} className="space-y-2">
-                      <Label className="text-white/80">{item.token}</Label>
-                      <Input
-                        value={manualValues[normalizedKey] || ''}
-                        onChange={(event) =>
-                          setManualValues((current) => ({
-                            ...current,
-                            [normalizedKey]: event.target.value,
-                          }))
-                        }
-                        placeholder={item.label}
-                        className="border-white/15 bg-white/10 text-white placeholder:text-white/45"
-                      />
+                      <Label className="text-white/80">{item.label}</Label>
+                      {item.key === 'reservation.currency' ? (
+                        <Select
+                          value={manualValues[normalizedKey] || 'EURO'}
+                          onValueChange={(value) =>
+                            setManualValues((current) => ({
+                              ...current,
+                              [normalizedKey]: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="border-white/15 bg-white/10 text-white">
+                            <SelectValue placeholder="Selecteaza moneda" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EURO">EURO</SelectItem>
+                            <SelectItem value="RON">RON</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={manualValues[normalizedKey] || ''}
+                          onChange={(event) =>
+                            setManualValues((current) => ({
+                              ...current,
+                              [normalizedKey]: event.target.value,
+                            }))
+                          }
+                          placeholder={item.label}
+                          className="border-white/15 bg-white/10 text-white placeholder:text-white/45"
+                        />
+                      )}
                     </div>
                   );
                 })}

@@ -42,11 +42,18 @@ export const CONTRACT_FIELD_SOURCES: Array<{
   { value: 'property.cadastralNumber', label: 'Proprietate: numar cadastral' },
   { value: 'property.commissionPercent', label: 'Proprietate: comision (%)' },
   { value: 'reservation.amount', label: 'Rezervare: suma platita' },
+  { value: 'reservation.currency', label: 'Rezervare: moneda' },
+  { value: 'reservation.expiryDate', label: 'Rezervare: data expirare' },
   { value: 'buyer.name', label: 'Cumparator: nume' },
   { value: 'buyer.address', label: 'Cumparator: domiciliu complet' },
   { value: 'buyer.personalNumericCode', label: 'Cumparator: CNP' },
   { value: 'buyer.identityDocumentSeries', label: 'Cumparator: serie CI/BI' },
   { value: 'buyer.identityDocumentNumber', label: 'Cumparator: numar CI/BI' },
+  { value: 'buyer.legalCompanyName', label: 'Cumparator: denumire legala' },
+  { value: 'buyer.companyTaxId', label: 'Cumparator: CUI' },
+  { value: 'buyer.tradeRegisterNumber', label: 'Cumparator: nr. registrul comertului' },
+  { value: 'buyer.registeredOffice', label: 'Cumparator: sediu social' },
+  { value: 'buyer.legalRepresentative', label: 'Cumparator: reprezentant legal' },
   { value: 'buyer.phone', label: 'Cumparator: telefon' },
   { value: 'buyer.email', label: 'Cumparator: email' },
   { value: 'owner.name', label: 'Proprietar: nume' },
@@ -59,6 +66,18 @@ export const CONTRACT_FIELD_SOURCES: Array<{
   { value: 'owner.tradeRegisterNumber', label: 'Proprietar: nr. registrul comertului' },
   { value: 'owner.registeredOffice', label: 'Proprietar: sediu social' },
   { value: 'owner.legalRepresentative', label: 'Proprietar: reprezentant legal' },
+  { value: 'owner.bankAccount', label: 'Proprietar: cont bancar' },
+  { value: 'owner.bankAccountHolder', label: 'Proprietar: detinator cont bancar' },
+  { value: 'owner2.name', label: 'Al doilea proprietar: nume' },
+  { value: 'owner2.address', label: 'Al doilea proprietar: domiciliu complet' },
+  { value: 'owner2.personalNumericCode', label: 'Al doilea proprietar: CNP' },
+  { value: 'owner2.identityDocumentSeries', label: 'Al doilea proprietar: serie CI/BI' },
+  { value: 'owner2.identityDocumentNumber', label: 'Al doilea proprietar: numar CI/BI' },
+  { value: 'owner2.legalCompanyName', label: 'Al doilea proprietar: denumire legala' },
+  { value: 'owner2.companyTaxId', label: 'Al doilea proprietar: CUI' },
+  { value: 'owner2.tradeRegisterNumber', label: 'Al doilea proprietar: nr. registrul comertului' },
+  { value: 'owner2.registeredOffice', label: 'Al doilea proprietar: sediu social' },
+  { value: 'owner2.legalRepresentative', label: 'Al doilea proprietar: reprezentant legal' },
   { value: 'owner.phone', label: 'Proprietar: telefon' },
   { value: 'owner.email', label: 'Proprietar: email' },
   { value: 'property.address', label: 'Proprietate: adresa' },
@@ -154,6 +173,21 @@ export function buildContractPrefillValues(params: {
       case 'buyer.identityDocumentNumber':
         nextValue = buyer?.identityDocumentNumber || '';
         break;
+      case 'buyer.legalCompanyName':
+        nextValue = buyer?.legalCompanyName || '';
+        break;
+      case 'buyer.companyTaxId':
+        nextValue = buyer?.companyTaxId || '';
+        break;
+      case 'buyer.tradeRegisterNumber':
+        nextValue = buyer?.tradeRegisterNumber || '';
+        break;
+      case 'buyer.registeredOffice':
+        nextValue = buyer?.registeredOffice || '';
+        break;
+      case 'buyer.legalRepresentative':
+        nextValue = buyer?.legalRepresentative || '';
+        break;
       case 'buyer.phone':
         nextValue = buyer?.phone || '';
         break;
@@ -190,6 +224,12 @@ export function buildContractPrefillValues(params: {
       case 'owner.legalRepresentative':
         nextValue = owner?.legalRepresentative || '';
         break;
+      case 'owner.bankAccount':
+        nextValue = '';
+        break;
+      case 'owner.bankAccountHolder':
+        nextValue = '';
+        break;
       case 'owner.phone':
         nextValue = owner?.phone || '';
         break;
@@ -209,6 +249,12 @@ export function buildContractPrefillValues(params: {
         nextValue = property?.price != null ? String(property.price) : '';
         break;
       case 'reservation.amount':
+        nextValue = field.defaultValue || '';
+        break;
+      case 'reservation.currency':
+        nextValue = field.defaultValue || '';
+        break;
+      case 'reservation.expiryDate':
         nextValue = field.defaultValue || '';
         break;
       case 'property.city':
@@ -289,11 +335,19 @@ export function buildContractPlaceholderMap(params: {
     property_commissionPercent:
       property?.commissionType === 'percentage' && property?.commissionValue != null ? String(property.commissionValue) : '',
     reservation_amount: '',
+    reservation_currency: '',
+    reservation_expiryDate: '',
     buyer_name: buyer?.name || '',
+    buyer_entityType: buyer?.entityType || 'individual',
     buyer_address: buyer?.address || '',
     buyer_personalNumericCode: buyer?.personalNumericCode || '',
     buyer_identityDocumentSeries: buyer?.identityDocumentSeries || '',
     buyer_identityDocumentNumber: buyer?.identityDocumentNumber || '',
+    buyer_legalCompanyName: buyer?.legalCompanyName || '',
+    buyer_companyTaxId: buyer?.companyTaxId || '',
+    buyer_tradeRegisterNumber: buyer?.tradeRegisterNumber || '',
+    buyer_registeredOffice: buyer?.registeredOffice || '',
+    buyer_legalRepresentative: buyer?.legalRepresentative || '',
     buyer_phone: buyer?.phone || '',
     buyer_email: buyer?.email || '',
     owner_name: owner?.name || '',
@@ -307,8 +361,23 @@ export function buildContractPlaceholderMap(params: {
     owner_tradeRegisterNumber: owner?.tradeRegisterNumber || '',
     owner_registeredOffice: owner?.registeredOffice || '',
     owner_legalRepresentative: owner?.legalRepresentative || '',
+    owner_bankAccount: '',
+    owner_bankAccountHolder: '',
     owner_phone: owner?.phone || '',
     owner_email: owner?.email || '',
+    owner2_name: '',
+    owner2_entityType: 'individual',
+    owner2_address: '',
+    owner2_personalNumericCode: '',
+    owner2_identityDocumentSeries: '',
+    owner2_identityDocumentNumber: '',
+    owner2_legalCompanyName: '',
+    owner2_companyTaxId: '',
+    owner2_tradeRegisterNumber: '',
+    owner2_registeredOffice: '',
+    owner2_legalRepresentative: '',
+    owner2_phone: '',
+    owner2_email: '',
     property_address: property?.address || '',
     property_price: property?.price != null ? String(property.price) : '',
     property_city: property?.city || property?.location || '',
@@ -367,6 +436,7 @@ export type StructuredHeaderBlock =
   | { kind: 'party'; index: number; text: string }
   | { kind: 'connector'; text: string }
   | { kind: 'emphasis'; text: string }
+  | { kind: 'separator' }
   | { kind: 'namedParagraph'; boldText: string; text: string }
   | { kind: 'paragraph'; text: string };
 
@@ -397,6 +467,62 @@ function buildFilledPropertyParagraph(values: Record<string, string>) {
 
 function buildFilledBuyerParagraph(values: Record<string, string>) {
   return `${getHeaderValue(values, 'buyer_name')}, telefon ${getHeaderValue(values, 'buyer_phone')}, email ${getHeaderValue(values, 'buyer_email')}, denumit in continuare “Rezervant”`;
+}
+
+function buildReservationPaymentSentence(values: Record<string, string>, emptyFallback = '') {
+  const amount = getHeaderValue(values, 'reservation_amount', emptyFallback);
+  const currency = getHeaderValue(values, 'reservation_currency', emptyFallback);
+  const bankAccount = getHeaderValue(values, 'owner_bankAccount', emptyFallback);
+  const bankAccountHolder = getHeaderValue(
+    values,
+    'owner_bankAccountHolder',
+    getHeaderValue(values, 'owner_name', getHeaderEmptyFallback('owner_name', emptyFallback))
+  );
+  const normalizedCurrency = currency.trim().toUpperCase();
+  const currencySuffix = normalizedCurrency === 'RON' ? ' la cursul valutar de astazi' : '';
+
+  return `La semnarea prezentului contract, CUMPARATORUL plateste catre VANZATOR suma de ${amount} ${currency}${currencySuffix}, cu titlu de rezervare in contul bancar ${bankAccount} deschis pe numele ${bankAccountHolder}.`;
+}
+
+function buildReservationOwnerParagraph() {
+  return `${createVariableSpan('owner.name', 'Proprietar: nume')}, cu domiciliul in ${createVariableSpan('owner.address', 'Proprietar: domiciliu complet')}, avand CNP ${createVariableSpan('owner.personalNumericCode', 'Proprietar: CNP')}, identificat cu CI/BI seria ${createVariableSpan('owner.identityDocumentSeries', 'Proprietar: serie CI/BI')}, nr. ${createVariableSpan('owner.identityDocumentNumber', 'Proprietar: numar CI/BI')}, denumit in continuare "Proprietar",`;
+}
+
+function buildReservationOwnerCompanyParagraph() {
+  return `${createVariableSpan('owner.legalCompanyName', 'Proprietar: denumire legala')}, cu sediul social in ${createVariableSpan('owner.registeredOffice', 'Proprietar: sediu social')}, CUI ${createVariableSpan('owner.companyTaxId', 'Proprietar: CUI')}, inregistrat la registrul Comertului cu nr. ${createVariableSpan('owner.tradeRegisterNumber', 'Proprietar: nr. registrul comertului')}, reprezentata legal prin ${createVariableSpan('owner.legalRepresentative', 'Proprietar: reprezentant legal')}, denumit in continuare "Proprietar",`;
+}
+
+function buildReservationBuyerParagraph() {
+  return `${createVariableSpan('buyer.name', 'Cumparator: nume')}, cu domiciliul in ${createVariableSpan('buyer.address', 'Cumparator: domiciliu complet')}, avand CNP ${createVariableSpan('buyer.personalNumericCode', 'Cumparator: CNP')}, identificat cu CI/BI seria ${createVariableSpan('buyer.identityDocumentSeries', 'Cumparator: serie CI/BI')}, nr. ${createVariableSpan('buyer.identityDocumentNumber', 'Cumparator: numar CI/BI')}, denumit in continuare "Cumparator".`;
+}
+
+function buildReservationBuyerCompanyParagraph() {
+  return `${createVariableSpan('buyer.legalCompanyName', 'Cumparator: denumire legala')}, cu sediul social in ${createVariableSpan('buyer.registeredOffice', 'Cumparator: sediu social')}, CUI ${createVariableSpan('buyer.companyTaxId', 'Cumparator: CUI')}, inregistrat la registrul Comertului cu nr. ${createVariableSpan('buyer.tradeRegisterNumber', 'Cumparator: nr. registrul comertului')}, reprezentata legal prin ${createVariableSpan('buyer.legalRepresentative', 'Cumparator: reprezentant legal')}, denumit in continuare "Cumparator".`;
+}
+
+function buildFilledReservationOwnerParagraph(values: Record<string, string>, emptyFallback = '') {
+  return `${getHeaderValue(values, 'owner_name', getHeaderEmptyFallback('owner_name', emptyFallback))}, cu domiciliul in ${getHeaderValue(values, 'owner_address', getHeaderEmptyFallback('owner_address', emptyFallback))}, avand CNP ${getHeaderValue(values, 'owner_personalNumericCode', getHeaderEmptyFallback('owner_personalNumericCode', emptyFallback))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getHeaderEmptyFallback('owner_identityDocumentSeries', emptyFallback))}, nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getHeaderEmptyFallback('owner_identityDocumentNumber', emptyFallback))}, denumit in continuare "Proprietar",`;
+}
+
+function buildFilledReservationOwnerCompanyParagraph(values: Record<string, string>, emptyFallback = '') {
+  return `${getHeaderValue(values, 'owner_legalCompanyName', getHeaderEmptyFallback('owner_legalCompanyName', emptyFallback))}, cu sediul social in ${getHeaderValue(values, 'owner_registeredOffice', getHeaderEmptyFallback('owner_registeredOffice', emptyFallback))}, CUI ${getHeaderValue(values, 'owner_companyTaxId', getHeaderEmptyFallback('owner_companyTaxId', emptyFallback))}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'owner_tradeRegisterNumber', getHeaderEmptyFallback('owner_tradeRegisterNumber', emptyFallback))}, reprezentata legal prin ${getHeaderValue(values, 'owner_legalRepresentative', getHeaderEmptyFallback('owner_legalRepresentative', emptyFallback))}, denumit in continuare "Proprietar",`;
+}
+
+function buildFilledReservationBuyerParagraph(values: Record<string, string>, emptyFallback = '') {
+  return `${getHeaderValue(values, 'buyer_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'buyer_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'buyer_personalNumericCode', emptyFallback)}, identificat cu CI/BI seria ${getHeaderValue(values, 'buyer_identityDocumentSeries', emptyFallback)}, nr. ${getHeaderValue(values, 'buyer_identityDocumentNumber', emptyFallback)}, denumit in continuare "Cumparator".`;
+}
+
+function buildFilledReservationBuyerCompanyParagraph(values: Record<string, string>, emptyFallback = '') {
+  return `${getHeaderValue(values, 'buyer_legalCompanyName', emptyFallback)}, cu sediul social in ${getHeaderValue(values, 'buyer_registeredOffice', emptyFallback)}, CUI ${getHeaderValue(values, 'buyer_companyTaxId', emptyFallback)}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'buyer_tradeRegisterNumber', emptyFallback)}, reprezentata legal prin ${getHeaderValue(values, 'buyer_legalRepresentative', emptyFallback)}, denumit in continuare "Cumparator".`;
+}
+
+function buildFilledReservationSecondOwnerParagraph(values: Record<string, string>, emptyFallback = '') {
+  const ownerEntityType = getHeaderValue(values, 'owner2_entityType', 'individual') === 'company' ? 'company' : 'individual';
+  if (ownerEntityType === 'company') {
+    return `Impreuna cu ${getHeaderValue(values, 'owner2_legalCompanyName', emptyFallback)}, cu sediul social in ${getHeaderValue(values, 'owner2_registeredOffice', emptyFallback)}, CUI ${getHeaderValue(values, 'owner2_companyTaxId', emptyFallback)}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'owner2_tradeRegisterNumber', emptyFallback)}, reprezentata legal prin ${getHeaderValue(values, 'owner2_legalRepresentative', emptyFallback)}, denumit in continuare "Proprietar",`;
+  }
+
+  return `Impreuna cu ${getHeaderValue(values, 'owner2_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'owner2_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'owner2_personalNumericCode', emptyFallback)}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner2_identityDocumentSeries', emptyFallback)}, nr. ${getHeaderValue(values, 'owner2_identityDocumentNumber', emptyFallback)}, denumit in continuare "Proprietar",`;
 }
 
 const HEADER_EMPTY_FALLBACKS: Record<string, string> = {
@@ -432,6 +558,88 @@ export function buildStructuredHeaderBlocks(
   }
 ): StructuredHeaderBlock[] {
   const emptyFallback = options?.emptyFallback || '';
+  if (category === 'reservation') {
+    const ownerEntityType = getHeaderValue(values, 'owner_entityType', 'individual') === 'company' ? 'company' : 'individual';
+    const buyerEntityType = getHeaderValue(values, 'buyer_entityType', 'individual') === 'company' ? 'company' : 'individual';
+    const hasSecondOwner = Boolean(
+      getHeaderValue(values, 'owner2_name', '') ||
+      getHeaderValue(values, 'owner2_legalCompanyName', '')
+    );
+    return [
+      {
+        kind: 'emphasis',
+        text: 'Articolul 1. Partile',
+      },
+      {
+        kind: 'intro',
+        text: 'Prezentul Contract de rezervare, denumit in continuare "Contractul", se incheie intre:',
+      },
+      {
+        kind: 'paragraph',
+        text:
+          ownerEntityType === 'company'
+            ? buildFilledReservationOwnerCompanyParagraph(values, emptyFallback)
+            : buildFilledReservationOwnerParagraph(values, emptyFallback),
+      },
+      ...(hasSecondOwner
+        ? [
+            {
+              kind: 'paragraph' as const,
+              text: buildFilledReservationSecondOwnerParagraph(values, emptyFallback),
+            },
+          ]
+        : []),
+      {
+        kind: 'connector',
+        text: 'si',
+      },
+      {
+        kind: 'paragraph',
+        text:
+          buyerEntityType === 'company'
+            ? buildFilledReservationBuyerCompanyParagraph(values, emptyFallback)
+            : buildFilledReservationBuyerParagraph(values, emptyFallback),
+      },
+      {
+        kind: 'paragraph',
+        text: 'Proprietarul si Cumparatorul vor fi denumiti in mod individual "Partea", iar impreuna "Partile".',
+      },
+      {
+        kind: 'separator',
+      },
+      {
+        kind: 'emphasis',
+        text: 'Articolul 2. Obiectul contractului',
+      },
+      {
+        kind: 'paragraph',
+        text: `Obiectul prezentului Contract il constituie rezervarea imobilului situat in ${getHeaderValue(values, 'property_address', getHeaderEmptyFallback('property_address', emptyFallback))}, avand numar cadastral ${getHeaderValue(values, 'property_cadastralNumber', getHeaderEmptyFallback('property_cadastralNumber', emptyFallback))}, convenit spre vanzare la pretul de ${getHeaderValue(values, 'property_price', getHeaderEmptyFallback('property_price', emptyFallback))} EUR.`,
+      },
+      {
+        kind: 'separator',
+      },
+      {
+        kind: 'emphasis',
+        text: 'Articolul 3. Pretul rezervarii',
+      },
+      {
+        kind: 'paragraph',
+        text: buildReservationPaymentSentence(values, emptyFallback),
+      },
+      {
+        kind: 'separator',
+      },
+      {
+        kind: 'emphasis',
+        text: 'Art. 4. Durata rezervarii',
+      },
+      {
+        kind: 'paragraph',
+        text: `Rezervarea este valabila pana la data de ${getHeaderValue(values, 'reservation_expiryDate', emptyFallback)} inclusiv, pana la ora 23:59, perioada in care partile se obliga sa finalizeze actele pentru semnarea promisiunii de vanzare-cumparare (antecontract) sau a contractului de vanzare-cumparare autentic.`,
+      },
+    ];
+  }
+
   const getFallback = (key: string) => getHeaderEmptyFallback(key, emptyFallback);
   const ownerEntityType = getHeaderValue(values, 'owner_entityType', 'individual') === 'company' ? 'company' : 'individual';
   const blocks: StructuredHeaderBlock[] = [
@@ -469,36 +677,6 @@ export function buildStructuredHeaderBlocks(
     },
   ];
 
-  if (category === 'reservation') {
-    blocks.push({
-      kind: 'paragraph',
-      text: `Rezervantul este ${buildFilledBuyerParagraph({
-        ...values,
-        buyer_name: getHeaderValue(values, 'buyer_name', emptyFallback),
-        buyer_phone: getHeaderValue(values, 'buyer_phone', emptyFallback),
-        buyer_email: getHeaderValue(values, 'buyer_email', emptyFallback),
-      })}.`,
-    });
-    blocks.push({
-      kind: 'paragraph',
-      text: buildFilledPropertyParagraph({
-        ...values,
-        property_address: getHeaderValue(values, 'property_address', getFallback('property_address')),
-        property_cadastralNumber: getHeaderValue(values, 'property_cadastralNumber', getFallback('property_cadastralNumber')),
-        property_price: getHeaderValue(values, 'property_price', getFallback('property_price')),
-      }),
-    });
-    blocks.push({
-      kind: 'paragraph',
-      text: `Suma platita la rezervare este de ${getHeaderValue(values, 'reservation_amount', emptyFallback)}.`,
-    });
-    blocks.push({
-      kind: 'paragraph',
-      text: 'Denumite individual “Partea” si impreuna “Partile”.',
-    });
-    return blocks;
-  }
-
   blocks.push({
     kind: 'paragraph',
     text: `Comisionul convenit de Părți, datorat de Beneficiar și plătibil către Prestator în situația în care vânzarea proprietății se realizează prin intermediul agenției sau către un cumpărător identificat și prezentat de aceasta, este de ${getHeaderValue(values, 'property_commissionPercent', getFallback('property_commissionPercent'))}% din prețul de vânzare.`,
@@ -524,15 +702,22 @@ export function buildContractHeaderHtml(params: {
         <div class="contract-auto-header__eyebrow">${escapeHtml(categoryLabel)}</div>
         <h1>${escapeHtml(title)}</h1>
         <p><strong>Numar contract:</strong> ${createVariableSpan('contract.number', 'Numar contract')} | <strong>Data:</strong> ${createVariableSpan('currentDate', 'Data curenta')} | <strong>Loc semnare:</strong> ${createVariableSpan('contract.city', 'Localitate semnare')}</p>
-        <h2>Partile contractului</h2>
-        <p>${buildBeneficiaryParagraph()}</p>
-        <h2>Date agentie</h2>
-        <p>${buildProviderParagraph()}</p>
-        <p>${buildAgencyAgentParagraph()}</p>
-        <p><strong>Cumparator:</strong> ${createVariableSpan('buyer.name', 'Cumparator: nume')} | <strong>Telefon:</strong> ${createVariableSpan('buyer.phone', 'Cumparator: telefon')} | <strong>Email:</strong> ${createVariableSpan('buyer.email', 'Cumparator: email')}</p>
-        <h2>Date proprietate si rezervare</h2>
-        <p>${buildPropertyParagraph()}</p>
-        <p><strong>Suma platita la rezervare:</strong> ${createVariableSpan('reservation.amount', 'Rezervare: suma platita')}</p>
+        <p><strong>Articolul 1. Partile</strong></p>
+        <p>Prezentul Contract de rezervare, denumit in continuare "Contractul", se incheie intre:</p>
+        <p>{{reservation.ownerParagraph}}</p>
+        <p>{{reservation.ownerSecondParagraph}}</p>
+        <p>si</p>
+        <p>{{reservation.buyerParagraph}}</p>
+        <p>Proprietarul si Cumparatorul vor fi denumiti in mod individual "Partea", iar impreuna "Partile".</p>
+        <hr />
+        <p><strong>Articolul 2. Obiectul contractului</strong></p>
+        <p>Obiectul prezentului Contract il constituie rezervarea imobilului situat in ${createVariableSpan('property.address', 'Proprietate: adresa')}, avand numar cadastral ${createVariableSpan('property.cadastralNumber', 'Proprietate: numar cadastral')}, convenit spre vanzare la pretul de ${createVariableSpan('property.price', 'Proprietate: pret')} EUR.</p>
+        <hr />
+        <p><strong>Articolul 3. Pretul rezervarii</strong></p>
+        <p>La semnarea prezentului contract, CUMPARATORUL plateste catre VANZATOR suma de ${createVariableSpan('reservation.amount', 'Rezervare: suma platita')} ${createVariableSpan('reservation.currency', 'Rezervare: moneda')}, cu titlu de rezervare in contul bancar ${createVariableSpan('owner.bankAccount', 'Proprietar: cont bancar')} deschis pe numele ${createVariableSpan('owner.bankAccountHolder', 'Proprietar: detinator cont bancar')}.</p>
+        <hr />
+        <p><strong>Art. 4. Durata rezervarii</strong></p>
+        <p>Rezervarea este valabila pana la data de ${createVariableSpan('reservation.expiryDate', 'Rezervare: data expirare')} inclusiv, pana la ora 23:59, perioada in care partile se obliga sa finalizeze actele pentru semnarea promisiunii de vanzare-cumparare (antecontract) sau a contractului de vanzare-cumparare autentic.</p>
         <hr />
       </div>
     `.trim();
@@ -579,6 +764,45 @@ export function renderContractContent(
   content: string,
   values: Record<string, string | number | boolean | null | undefined>
 ) {
+  const mappedValues = Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, value == null ? '' : String(value)])
+  ) as Record<string, string>;
+
+  const buildReservationPaymentSentenceFromValues = () => {
+    const amount = values.reservation_amount == null ? '' : String(values.reservation_amount);
+    const currency = values.reservation_currency == null ? '' : String(values.reservation_currency);
+    const bankAccount = values.owner_bankAccount == null ? '' : String(values.owner_bankAccount);
+    const bankAccountHolder = values.owner_bankAccountHolder == null ? '' : String(values.owner_bankAccountHolder);
+    const ownerName = values.owner_name == null ? '' : String(values.owner_name);
+    const normalizedCurrency = currency.trim().toUpperCase();
+    const renderedAmount = amount.trim() ? amount : getBodyEmptyFallback('reservation_amount');
+    const renderedCurrency = currency.trim() ? currency : getBodyEmptyFallback('reservation_currency');
+    const renderedBankAccount = bankAccount.trim() ? bankAccount : getBodyEmptyFallback('owner_bankAccount');
+    const renderedBankAccountHolder = bankAccountHolder.trim()
+      ? bankAccountHolder
+      : ownerName.trim()
+        ? ownerName
+        : getBodyEmptyFallback('owner_bankAccountHolder');
+    const currencySuffix = normalizedCurrency === 'RON' ? ' la cursul valutar de astazi' : '';
+
+    return `La semnarea prezentului contract, CUMPARATORUL plateste catre VANZATOR suma de ${renderedAmount} ${renderedCurrency}${currencySuffix}, cu titlu de rezervare in contul bancar ${renderedBankAccount} deschis pe numele ${renderedBankAccountHolder}.`;
+  };
+
+  const buildReservationOwnerParagraphFromValues = () =>
+    String(values.owner_entityType || 'individual') === 'company'
+      ? buildFilledReservationOwnerCompanyParagraph(mappedValues, '')
+      : buildFilledReservationOwnerParagraph(mappedValues, '');
+
+  const buildReservationBuyerParagraphFromValues = () =>
+    String(values.buyer_entityType || 'individual') === 'company'
+      ? buildFilledReservationBuyerCompanyParagraph(mappedValues, '')
+      : buildFilledReservationBuyerParagraph(mappedValues, '');
+
+  const buildReservationSecondOwnerParagraphFromValues = () =>
+    String(values.owner2_name || values.owner2_legalCompanyName || '').trim()
+      ? buildFilledReservationSecondOwnerParagraph(mappedValues, '')
+      : '';
+
   const withVisualVariablesResolved = content.replace(
     /<span[^>]*data-contract-variable-key="([^"]+)"[^>]*>(.*?)<\/span>/gi,
     (_, rawKey: string) => {
@@ -592,6 +816,19 @@ export function renderContractContent(
   );
 
   return withVisualVariablesResolved.replace(/\{\{\s*([a-zA-Z0-9._]+)\s*\}\}/g, (_, rawKey: string) => {
+    if (rawKey === 'reservation.paymentSentence') {
+      return buildReservationPaymentSentenceFromValues();
+    }
+    if (rawKey === 'reservation.ownerParagraph') {
+      return buildReservationOwnerParagraphFromValues();
+    }
+    if (rawKey === 'reservation.buyerParagraph') {
+      return buildReservationBuyerParagraphFromValues();
+    }
+    if (rawKey === 'reservation.ownerSecondParagraph') {
+      return buildReservationSecondOwnerParagraphFromValues();
+    }
+
     const normalizedKey = rawKey.replace(/\./g, '_');
     const value = values[normalizedKey];
     if (value == null || String(value).trim() === '') {

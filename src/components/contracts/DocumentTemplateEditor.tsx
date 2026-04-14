@@ -463,6 +463,10 @@ export function DocumentTemplateEditor({
                       );
                     }
 
+                    if (block.kind === 'separator') {
+                      return <div key={`separator-${index}`} className="my-4 h-px w-full bg-slate-300" />;
+                    }
+
                     if (block.kind === 'namedParagraph') {
                       return (
                         <p key={`named-${index}`} className="text-[12px] leading-8 text-slate-900">
