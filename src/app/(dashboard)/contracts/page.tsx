@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { FilePlus2, FileText, Loader2, PencilLine, Sparkles, Trash2 } from 'lucide-react';
@@ -458,6 +458,9 @@ function FillContractDialog({
   const [propertyId, setPropertyId] = useState<string>('none');
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [ocrTarget, setOcrTarget] = useState<'owner' | 'buyer' | null>(null);
+  const ownerIdInputRef = useRef<HTMLInputElement | null>(null);
+  const buyerIdInputRef = useRef<HTMLInputElement | null>(null);
 
   const buyer = useMemo(() => contacts.find((contact) => contact.id === buyerId) || null, [buyerId, contacts]);
   const owner = useMemo(() => contacts.find((contact) => contact.id === ownerId) || null, [ownerId, contacts]);
@@ -562,6 +565,7 @@ function FillContractDialog({
       setSecondOwnerEntityType('individual');
       setPropertyId('none');
       setManualValues({});
+      setOcrTarget(null);
     }
   }, [open]);
 
@@ -655,6 +659,68 @@ function FillContractDialog({
     }
   }
 
+  async function handleIdentityUpload(target: 'owner' | 'buyer', file: File | null) {
+    if (!file || !user) return;
+
+    try {
+      setOcrTarget(target);
+      const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/contracts/ocr-id', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut extrage datele din CI.');
+      }
+
+      const parsed = payload?.parsed as {
+        name?: string;
+        address?: string;
+        personalNumericCode?: string;
+        identityDocumentSeries?: string;
+        identityDocumentNumber?: string;
+      } | null;
+
+      if (!parsed) {
+        throw new Error('Raspuns OCR invalid.');
+      }
+
+      const prefix = target === 'owner' ? 'owner' : 'buyer';
+      setManualValues((current) => ({
+        ...current,
+        ...(parsed.name ? { [`${prefix}_name`]: parsed.name } : {}),
+        ...(parsed.address ? { [`${prefix}_address`]: parsed.address } : {}),
+        ...(parsed.personalNumericCode ? { [`${prefix}_personalNumericCode`]: parsed.personalNumericCode } : {}),
+        ...(parsed.identityDocumentSeries ? { [`${prefix}_identityDocumentSeries`]: parsed.identityDocumentSeries } : {}),
+        ...(parsed.identityDocumentNumber ? { [`${prefix}_identityDocumentNumber`]: parsed.identityDocumentNumber } : {}),
+      }));
+
+      toast({
+        title: target === 'owner' ? 'CI proprietar procesat' : 'CI cumparator procesat',
+        description: 'Campurile disponibile au fost precompletate automat.',
+      });
+    } catch (error) {
+      console.error('Failed to process identity document:', error);
+      toast({
+        variant: 'destructive',
+        title: 'OCR esuat',
+        description: error instanceof Error ? error.message : 'Nu am putut extrage datele din document.',
+      });
+    } finally {
+      setOcrTarget(null);
+      if (target === 'owner' && ownerIdInputRef.current) ownerIdInputRef.current.value = '';
+      if (target === 'buyer' && buyerIdInputRef.current) buyerIdInputRef.current.value = '';
+    }
+  }
+
   if (!template) return null;
 
   return (
@@ -707,6 +773,25 @@ function FillContractDialog({
                       <SelectItem value="company">Persoana juridica</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="pt-1">
+                    <input
+                      ref={buyerIdInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(event) => void handleIdentityUpload('buyer', event.target.files?.[0] || null)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => buyerIdInputRef.current?.click()}
+                      disabled={ocrTarget !== null}
+                      className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
+                    >
+                      {ocrTarget === 'buyer' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                      Incarca CI cumparator
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white/80">Al doilea proprietar</Label>
@@ -727,6 +812,25 @@ function FillContractDialog({
                       <SelectItem value="company">Persoana juridica</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="pt-1">
+                    <input
+                      ref={ownerIdInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(event) => void handleIdentityUpload('owner', event.target.files?.[0] || null)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => ownerIdInputRef.current?.click()}
+                      disabled={ocrTarget !== null}
+                      className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
+                    >
+                      {ocrTarget === 'owner' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                      Incarca CI proprietar
+                    </Button>
+                  </div>
                 </div>
                 {hasSecondOwner === 'yes' ? (
                   <div className="space-y-2">
