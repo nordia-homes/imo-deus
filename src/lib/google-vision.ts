@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 
 const GOOGLE_VISION_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 const GOOGLE_VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
+const GOOGLE_VISION_FILES_API_URL = 'https://vision.googleapis.com/v1/files:annotate';
 
 function getGoogleVisionCredentials() {
   const normalizePrivateKey = (value: string) => {
@@ -157,6 +158,100 @@ export async function extractDocumentTextWithGoogleVision(params: {
         )
       )
     ) || [];
+
+  return {
+    fullText,
+    words: words.filter((word) => word.text.trim().length > 0),
+  };
+}
+
+export async function extractPdfTextWithGoogleVision(params: {
+  contentBase64: string;
+  pages?: number[];
+}): Promise<GoogleVisionOcrResult> {
+  const { contentBase64, pages } = params;
+  const token = await getGoogleVisionAccessToken();
+  const response = await fetch(GOOGLE_VISION_FILES_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          inputConfig: {
+            mimeType: 'application/pdf',
+            content: contentBase64,
+          },
+          features: [
+            {
+              type: 'DOCUMENT_TEXT_DETECTION',
+            },
+          ],
+          imageContext: {
+            languageHints: ['ro'],
+          },
+          ...(pages?.length ? { pages } : {}),
+        },
+      ],
+    }),
+    cache: 'no-store',
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        responses?: Array<{
+          error?: { message?: string };
+          responses?: Array<{
+            error?: { message?: string };
+            fullTextAnnotation?: {
+              text?: string;
+              pages?: Array<{
+                blocks?: Array<{
+                  paragraphs?: Array<{
+                    words?: Array<{
+                      confidence?: number;
+                      symbols?: Array<{ text?: string }>;
+                    }>;
+                  }>;
+                }>;
+              }>;
+            };
+          }>;
+        }>;
+      }
+    | null;
+
+  if (!response.ok) {
+    const apiMessage = payload?.responses?.[0]?.error?.message || payload?.responses?.[0]?.responses?.[0]?.error?.message;
+    throw new Error(apiMessage || `Google Vision files:annotate a raspuns cu ${response.status}.`);
+  }
+
+  const fileResponse = payload?.responses?.[0];
+  if (fileResponse?.error?.message) {
+    throw new Error(fileResponse.error.message);
+  }
+
+  const pageResponses = fileResponse?.responses || [];
+  const words = pageResponses.flatMap((pageResponse) =>
+    (pageResponse.fullTextAnnotation?.pages || []).flatMap((page) =>
+      (page.blocks || []).flatMap((block) =>
+        (block.paragraphs || []).flatMap((paragraph) =>
+          (paragraph.words || []).map((word) => ({
+            text: (word.symbols || []).map((symbol) => symbol.text || '').join(''),
+            confidence: word.confidence,
+          }))
+        )
+      )
+    )
+  );
+
+  const fullText = pageResponses
+    .map((pageResponse) => pageResponse.fullTextAnnotation?.text?.trim() || '')
+    .filter(Boolean)
+    .join('\n')
+    .trim();
 
   return {
     fullText,

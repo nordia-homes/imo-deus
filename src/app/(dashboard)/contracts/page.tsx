@@ -430,6 +430,7 @@ function CreateTemplateDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
     </Dialog>
   );
 }
@@ -459,8 +460,11 @@ function FillContractDialog({
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [ocrTarget, setOcrTarget] = useState<'owner' | 'buyer' | null>(null);
-  const ownerIdInputRef = useRef<HTMLInputElement | null>(null);
-  const buyerIdInputRef = useRef<HTMLInputElement | null>(null);
+  const [ocrDialogTarget, setOcrDialogTarget] = useState<'owner' | 'buyer' | null>(null);
+  const [electronicIdFile, setElectronicIdFile] = useState<File | null>(null);
+  const [electronicAddressProofFile, setElectronicAddressProofFile] = useState<File | null>(null);
+  const ownerStandardIdInputRef = useRef<HTMLInputElement | null>(null);
+  const buyerStandardIdInputRef = useRef<HTMLInputElement | null>(null);
 
   const buyer = useMemo(() => contacts.find((contact) => contact.id === buyerId) || null, [buyerId, contacts]);
   const owner = useMemo(() => contacts.find((contact) => contact.id === ownerId) || null, [ownerId, contacts]);
@@ -566,6 +570,9 @@ function FillContractDialog({
       setPropertyId('none');
       setManualValues({});
       setOcrTarget(null);
+      setOcrDialogTarget(null);
+      setElectronicIdFile(null);
+      setElectronicAddressProofFile(null);
     }
   }, [open]);
 
@@ -696,6 +703,7 @@ function FillContractDialog({
       const prefix = target === 'owner' ? 'owner' : 'buyer';
       setManualValues((current) => ({
         ...current,
+        [`${prefix}_identityDocumentKind`]: 'standard',
         ...(parsed.name ? { [`${prefix}_name`]: parsed.name } : {}),
         ...(parsed.address ? { [`${prefix}_address`]: parsed.address } : {}),
         ...(parsed.personalNumericCode ? { [`${prefix}_personalNumericCode`]: parsed.personalNumericCode } : {}),
@@ -716,8 +724,74 @@ function FillContractDialog({
       });
     } finally {
       setOcrTarget(null);
-      if (target === 'owner' && ownerIdInputRef.current) ownerIdInputRef.current.value = '';
-      if (target === 'buyer' && buyerIdInputRef.current) buyerIdInputRef.current.value = '';
+      if (target === 'owner' && ownerStandardIdInputRef.current) ownerStandardIdInputRef.current.value = '';
+      if (target === 'buyer' && buyerStandardIdInputRef.current) buyerStandardIdInputRef.current.value = '';
+    }
+  }
+
+  async function handleElectronicIdentityUpload(target: 'owner' | 'buyer') {
+    if (!electronicIdFile || !electronicAddressProofFile || !user) return;
+
+    try {
+      setOcrTarget(target);
+      const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append('mode', 'electronic');
+      formData.append('file', electronicIdFile);
+      formData.append('addressProof', electronicAddressProofFile);
+
+      const response = await fetch('/api/contracts/ocr-id', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut extrage datele din CI electronica.');
+      }
+
+      const parsed = payload?.parsed as {
+        name?: string;
+        address?: string;
+        personalNumericCode?: string;
+        identityDocumentSeries?: string;
+        identityDocumentNumber?: string;
+      } | null;
+
+      if (!parsed) {
+        throw new Error('Raspuns OCR invalid.');
+      }
+
+      const prefix = target === 'owner' ? 'owner' : 'buyer';
+      setManualValues((current) => ({
+        ...current,
+        [`${prefix}_identityDocumentKind`]: 'electronic',
+        ...(parsed.name ? { [`${prefix}_name`]: parsed.name } : {}),
+        ...(parsed.address ? { [`${prefix}_address`]: parsed.address } : {}),
+        ...(parsed.personalNumericCode ? { [`${prefix}_personalNumericCode`]: parsed.personalNumericCode } : {}),
+        [`${prefix}_identityDocumentSeries`]: '',
+        ...(parsed.identityDocumentNumber ? { [`${prefix}_identityDocumentNumber`]: parsed.identityDocumentNumber } : {}),
+      }));
+
+      toast({
+        title: target === 'owner' ? 'CI electronica proprietar procesata' : 'CI electronica cumparator procesata',
+        description: 'Datele din CI si dovada de adresa au fost precompletate automat.',
+      });
+      setOcrDialogTarget(null);
+      setElectronicIdFile(null);
+      setElectronicAddressProofFile(null);
+    } catch (error) {
+      console.error('Failed to process electronic identity document:', error);
+      toast({
+        variant: 'destructive',
+        title: 'OCR esuat',
+        description: error instanceof Error ? error.message : 'Nu am putut extrage datele din documentele incarcate.',
+      });
+    } finally {
+      setOcrTarget(null);
     }
   }
 
@@ -774,17 +848,10 @@ function FillContractDialog({
                     </SelectContent>
                   </Select>
                   <div className="pt-1">
-                    <input
-                      ref={buyerIdInputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(event) => void handleIdentityUpload('buyer', event.target.files?.[0] || null)}
-                    />
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => buyerIdInputRef.current?.click()}
+                      onClick={() => setOcrDialogTarget('buyer')}
                       disabled={ocrTarget !== null}
                       className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
                     >
@@ -813,17 +880,10 @@ function FillContractDialog({
                     </SelectContent>
                   </Select>
                   <div className="pt-1">
-                    <input
-                      ref={ownerIdInputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(event) => void handleIdentityUpload('owner', event.target.files?.[0] || null)}
-                    />
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => ownerIdInputRef.current?.click()}
+                      onClick={() => setOcrDialogTarget('owner')}
                       disabled={ocrTarget !== null}
                       className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
                     >
@@ -942,6 +1002,95 @@ function FillContractDialog({
           </Card>
         </div>
       </DialogContent>
+
+      <Dialog open={Boolean(ocrDialogTarget)} onOpenChange={(open) => {
+        if (!open) {
+          setOcrDialogTarget(null);
+          setElectronicIdFile(null);
+          setElectronicAddressProofFile(null);
+        }
+      }}>
+        <DialogContent className="max-w-xl border-white/10 bg-[#10233b] text-white">
+          <DialogHeader>
+            <DialogTitle>
+              {ocrDialogTarget === 'owner' ? 'Incarca document proprietar' : 'Incarca document cumparator'}
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Alege tipul de document. Varianta standard accepta poza CI sau PDF. Varianta electronica foloseste CI electronica
+              in format imagine sau PDF, plus PDF-ul de atestare a domiciliului.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4">
+              <div className="mb-3 text-sm font-semibold text-white">Incarca CI standard</div>
+              <input
+                ref={ocrDialogTarget === 'owner' ? ownerStandardIdInputRef : buyerStandardIdInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  if (!ocrDialogTarget) return;
+                  void handleIdentityUpload(ocrDialogTarget, file);
+                  setOcrDialogTarget(null);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (ocrDialogTarget === 'owner') ownerStandardIdInputRef.current?.click();
+                  if (ocrDialogTarget === 'buyer') buyerStandardIdInputRef.current?.click();
+                }}
+                disabled={ocrTarget !== null}
+                className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+              >
+                Selecteaza CI standard
+              </Button>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4 space-y-4">
+              <div>
+                <div className="mb-1 text-sm font-semibold text-white">Incarca CI electronica + dovada adresa</div>
+                <div className="text-xs leading-6 text-white/65">
+                  Pentru cartea electronica, incarca CI electronica in format imagine sau PDF si PDF-ul de atestare a domiciliului.
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white/80">CI electronica</Label>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                  className="border-white/15 bg-white/10 text-white file:text-white"
+                  onChange={(event) => setElectronicIdFile(event.target.files?.[0] || null)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white/80">PDF dovada adresa</Label>
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  className="border-white/15 bg-white/10 text-white file:text-white"
+                  onChange={(event) => setElectronicAddressProofFile(event.target.files?.[0] || null)}
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => ocrDialogTarget && void handleElectronicIdentityUpload(ocrDialogTarget)}
+                disabled={!ocrDialogTarget || !electronicIdFile || !electronicAddressProofFile || ocrTarget !== null}
+                className="bg-emerald-400 text-black hover:bg-emerald-300"
+              >
+                {ocrTarget !== null ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Extrage din CI electronica
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

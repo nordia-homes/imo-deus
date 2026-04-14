@@ -445,8 +445,34 @@ function getHeaderValue(values: Record<string, string>, key: string, emptyFallba
   return normalized || emptyFallback;
 }
 
+function buildIdentityClause(params: {
+  values: Record<string, string>;
+  prefix: 'owner' | 'buyer' | 'owner2';
+  emptyFallback?: string;
+}) {
+  const { values, prefix, emptyFallback = '' } = params;
+  const kind = getHeaderValue(values, `${prefix}_identityDocumentKind`, 'standard');
+  const number = getHeaderValue(
+    values,
+    `${prefix}_identityDocumentNumber`,
+    getHeaderEmptyFallback(`${prefix}_identityDocumentNumber`, emptyFallback)
+  );
+
+  if (kind === 'electronic') {
+    return `identificat cu CI/BI nr. document ${number}`;
+  }
+
+  const series = getHeaderValue(
+    values,
+    `${prefix}_identityDocumentSeries`,
+    getHeaderEmptyFallback(`${prefix}_identityDocumentSeries`, emptyFallback)
+  );
+
+  return `identificat cu CI/BI seria ${series}, nr. ${number}`;
+}
+
 function buildFilledBeneficiaryParagraph(values: Record<string, string>) {
-  return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries')} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber')}, denumit în continuare “Beneficiar”`;
+  return `${getHeaderValue(values, 'owner_name')} cu domiciliul în ${getHeaderValue(values, 'owner_address')}, CNP ${getHeaderValue(values, 'owner_personalNumericCode')}, ${buildIdentityClause({ values, prefix: 'owner' })}, denumit în continuare “Beneficiar”`;
 }
 
 function buildFilledBeneficiaryCompanyParagraph(values: Record<string, string>) {
@@ -501,7 +527,7 @@ function buildReservationBuyerCompanyParagraph() {
 }
 
 function buildFilledReservationOwnerParagraph(values: Record<string, string>, emptyFallback = '') {
-  return `${getHeaderValue(values, 'owner_name', getHeaderEmptyFallback('owner_name', emptyFallback))}, cu domiciliul in ${getHeaderValue(values, 'owner_address', getHeaderEmptyFallback('owner_address', emptyFallback))}, avand CNP ${getHeaderValue(values, 'owner_personalNumericCode', getHeaderEmptyFallback('owner_personalNumericCode', emptyFallback))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getHeaderEmptyFallback('owner_identityDocumentSeries', emptyFallback))}, nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getHeaderEmptyFallback('owner_identityDocumentNumber', emptyFallback))}, denumit in continuare "Proprietar",`;
+  return `${getHeaderValue(values, 'owner_name', getHeaderEmptyFallback('owner_name', emptyFallback))}, cu domiciliul in ${getHeaderValue(values, 'owner_address', getHeaderEmptyFallback('owner_address', emptyFallback))}, avand CNP ${getHeaderValue(values, 'owner_personalNumericCode', getHeaderEmptyFallback('owner_personalNumericCode', emptyFallback))}, ${buildIdentityClause({ values, prefix: 'owner', emptyFallback })}, denumit in continuare "Proprietar",`;
 }
 
 function buildFilledReservationOwnerCompanyParagraph(values: Record<string, string>, emptyFallback = '') {
@@ -509,7 +535,7 @@ function buildFilledReservationOwnerCompanyParagraph(values: Record<string, stri
 }
 
 function buildFilledReservationBuyerParagraph(values: Record<string, string>, emptyFallback = '') {
-  return `${getHeaderValue(values, 'buyer_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'buyer_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'buyer_personalNumericCode', emptyFallback)}, identificat cu CI/BI seria ${getHeaderValue(values, 'buyer_identityDocumentSeries', emptyFallback)}, nr. ${getHeaderValue(values, 'buyer_identityDocumentNumber', emptyFallback)}, denumit in continuare "Cumparator".`;
+  return `${getHeaderValue(values, 'buyer_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'buyer_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'buyer_personalNumericCode', emptyFallback)}, ${buildIdentityClause({ values, prefix: 'buyer', emptyFallback })}, denumit in continuare "Cumparator".`;
 }
 
 function buildFilledReservationBuyerCompanyParagraph(values: Record<string, string>, emptyFallback = '') {
@@ -522,7 +548,7 @@ function buildFilledReservationSecondOwnerParagraph(values: Record<string, strin
     return `Impreuna cu ${getHeaderValue(values, 'owner2_legalCompanyName', emptyFallback)}, cu sediul social in ${getHeaderValue(values, 'owner2_registeredOffice', emptyFallback)}, CUI ${getHeaderValue(values, 'owner2_companyTaxId', emptyFallback)}, inregistrat la registrul Comertului cu nr. ${getHeaderValue(values, 'owner2_tradeRegisterNumber', emptyFallback)}, reprezentata legal prin ${getHeaderValue(values, 'owner2_legalRepresentative', emptyFallback)}, denumit in continuare "Proprietar",`;
   }
 
-  return `Impreuna cu ${getHeaderValue(values, 'owner2_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'owner2_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'owner2_personalNumericCode', emptyFallback)}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner2_identityDocumentSeries', emptyFallback)}, nr. ${getHeaderValue(values, 'owner2_identityDocumentNumber', emptyFallback)}, denumit in continuare "Proprietar",`;
+  return `Impreuna cu ${getHeaderValue(values, 'owner2_name', emptyFallback)}, cu domiciliul in ${getHeaderValue(values, 'owner2_address', emptyFallback)}, avand CNP ${getHeaderValue(values, 'owner2_personalNumericCode', emptyFallback)}, ${buildIdentityClause({ values, prefix: 'owner2', emptyFallback })}, denumit in continuare "Proprietar",`;
 }
 
 const HEADER_EMPTY_FALLBACKS: Record<string, string> = {
@@ -656,7 +682,7 @@ export function buildStructuredHeaderBlocks(
       : {
           kind: 'namedParagraph' as const,
           boldText: getHeaderValue(values, 'owner_name', getFallback('owner_name')),
-          text: `, cu domiciliul în ${getHeaderValue(values, 'owner_address', getFallback('owner_address'))}, CNP ${getHeaderValue(values, 'owner_personalNumericCode', getFallback('owner_personalNumericCode'))}, identificat cu CI/BI seria ${getHeaderValue(values, 'owner_identityDocumentSeries', getFallback('owner_identityDocumentSeries'))} nr. ${getHeaderValue(values, 'owner_identityDocumentNumber', getFallback('owner_identityDocumentNumber'))}, denumit în continuare “Beneficiar”,`,
+          text: `, cu domiciliul în ${getHeaderValue(values, 'owner_address', getFallback('owner_address'))}, CNP ${getHeaderValue(values, 'owner_personalNumericCode', getFallback('owner_personalNumericCode'))}, ${buildIdentityClause({ values, prefix: 'owner', emptyFallback })}, denumit în continuare “Beneficiar”,`,
         },
     {
       kind: 'connector',

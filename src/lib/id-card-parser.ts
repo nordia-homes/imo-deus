@@ -15,6 +15,15 @@ export type ParsedIdCard = {
   normalizedText: string;
 };
 
+export type ParsedAddressProof = {
+  address?: string;
+  confidence: {
+    address: number;
+  };
+  rawText: string;
+  normalizedText: string;
+};
+
 function normalizeWhitespace(value: string) {
   return value.replace(/\r/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n').trim();
 }
@@ -57,6 +66,8 @@ function cleanCandidateName(value: string) {
 function isNameLabelLine(value: string) {
   const normalized = stripDiacritics(value).toUpperCase().replace(/\s+/g, ' ').trim();
   return (
+    normalized === 'SURNAME' ||
+    normalized === 'GIVEN NAMES' ||
     normalized.includes('NUME') ||
     normalized.includes('NOM') ||
     normalized.includes('LAST NAME') ||
@@ -107,6 +118,58 @@ function pickNextValueLine(lines: string[], startIndex: number) {
   return '';
 }
 
+function extractNameFromMrz(rawText: string) {
+  const compactLines = normalizeWhitespace(rawText)
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, '').trim())
+    .filter(Boolean);
+
+  const mrzLine =
+    compactLines.find((line) => /^IDROU[A-Z<]+$/i.test(line)) ||
+    compactLines.find((line) => /^IDRO[A-Z<]+$/i.test(line));
+
+  if (!mrzLine) return '';
+
+  const normalized = mrzLine.toUpperCase();
+  const payload = normalized.startsWith('IDROU') ? normalized.slice(5) : normalized.slice(4);
+  const [surnamePart, givenNamesPart] = payload.split('<<');
+  if (!surnamePart) return '';
+
+  const surname = surnamePart.replace(/<+/g, ' ').trim();
+  const givenNames = (givenNamesPart || '')
+    .replace(/<+/g, ' ')
+    .replace(/[^A-Z ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return [surname, givenNames].filter(Boolean).join(' ').trim();
+}
+
+function pickNextDocumentValueLine(lines: string[], startIndex: number) {
+  for (let index = startIndex + 1; index < Math.min(lines.length, startIndex + 5); index += 1) {
+    const candidate = (lines[index] || '').trim().replace(/\s+/g, ' ');
+    if (!candidate) continue;
+    const normalized = stripDiacritics(candidate).toUpperCase();
+    if (
+      normalized.includes('DOCUMENT') ||
+      normalized.includes('SURNAME') ||
+      normalized.includes('GIVEN NAMES') ||
+      normalized.includes('CNP') ||
+      normalized.includes('ADDRESS') ||
+      normalized.includes('DOMICILIU')
+    ) {
+      continue;
+    }
+
+    const tokenMatch = candidate.match(/[A-Z0-9]{6,12}/i);
+    if (tokenMatch?.[0]) {
+      return tokenMatch[0].toUpperCase();
+    }
+  }
+
+  return '';
+}
+
 function extractName(lines: string[]) {
   const normalizedLines = lines.map((line) => stripDiacritics(line).toUpperCase());
   let lastName = '';
@@ -114,10 +177,18 @@ function extractName(lines: string[]) {
 
   for (let index = 0; index < normalizedLines.length; index += 1) {
     const line = normalizedLines[index];
-    if (!line.includes('NUME')) continue;
-    if (line.includes('PRENUME')) continue;
+    const isLastNameLabel =
+      line === 'SURNAME' ||
+      ((line.includes('NUME') || line.includes('NOM') || line.includes('LAST NAME')) &&
+        !line.includes('PRENUME') &&
+        !line.includes('PRENOM') &&
+        !line.includes('FIRST NAME') &&
+        !line.includes('GIVEN NAMES'));
+    if (!isLastNameLabel) continue;
 
-    const strippedSameLine = cleanCandidateName(lines[index].replace(/.*NUME[:\s]*/i, ''));
+    const strippedSameLine = cleanCandidateName(
+      lines[index].replace(/.*(?:SURNAME|NUME|NOM|LAST NAME)[:\s]*/i, '')
+    );
     if (strippedSameLine && looksLikePersonalName(strippedSameLine)) {
       lastName = strippedSameLine;
       break;
@@ -132,9 +203,17 @@ function extractName(lines: string[]) {
 
   for (let index = 0; index < normalizedLines.length; index += 1) {
     const line = normalizedLines[index];
-    if (!line.includes('PRENUME')) continue;
+    const isFirstNameLabel =
+      line === 'GIVEN NAMES' ||
+      line.includes('PRENUME') ||
+      line.includes('PRENOM') ||
+      line.includes('FIRST NAME') ||
+      line.includes('GIVEN NAMES');
+    if (!isFirstNameLabel) continue;
 
-    const strippedSameLine = cleanCandidateName(lines[index].replace(/.*PRENUME[:\s]*/i, ''));
+    const strippedSameLine = cleanCandidateName(
+      lines[index].replace(/.*(?:PRENUME|PRENOM|FIRST NAME|GIVEN NAMES)[:\s]*/i, '')
+    );
     if (strippedSameLine && looksLikePersonalName(strippedSameLine)) {
       firstName = strippedSameLine;
       break;
@@ -205,16 +284,71 @@ function extractAddress(lines: string[]) {
       addressLines.push(nextLine);
     }
 
-    return addressLines
-      .filter(Boolean)
-      .join(' ')
-      .replace(/\/?(?:Adresse|Address)\b/gi, ' ')
-      .replace(/\.(?=\S)/g, '. ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return normalizeAddressValue(addressLines.filter(Boolean).join(' '));
   }
 
   return '';
+}
+
+function normalizeAddressValue(value: string) {
+  return value
+    .replace(/\/?(?:Adresse|Address)\b/gi, ' ')
+    .replace(/^\s*.*?(?=(?:Jud\.?|Mun\.?|Oras\.?|Oras|Sat\.?|Com\.?|Str\.?|Strada|Aleea|Bdul\.?|Bd\.?|Piata|P-ta)\b)/i, '')
+    .replace(/\b[A-Z0-9]{4,8}\s+(?=(?:Jud\.?|Mun\.?|Oras\.?|Oras|Sat\.?|Com\.?|Str\.?|Strada|Aleea|Bdul\.?|Bd\.?|Piata|P-ta)\b)/gi, '')
+    .replace(/\.(?=\S)/g, '. ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractAddressFromFreeText(rawText: string) {
+  const normalized = normalizeWhitespace(rawText);
+  const domicileSentenceMatch = normalized.match(
+    /cu domiciliul (?:in|în)\s+(.+?)(?:\.\s+Nu\s+au\s+fost|\.\s+S-a\s+eliberat|\.\s+S-a\s+emis|$)/i
+  );
+  if (domicileSentenceMatch?.[1]) {
+    return normalizeAddressValue(domicileSentenceMatch[1]);
+  }
+
+  const lines = normalized.split('\n').map((line) => line.trim()).filter(Boolean);
+  const upperLines = lines.map((line) => stripDiacritics(line).toUpperCase());
+
+  for (let index = 0; index < upperLines.length; index += 1) {
+    const line = upperLines[index];
+    if (!line.includes('DOMICILIU') && !line.includes('ADRESA') && !line.includes('ADRESA DE DOMICILIU')) continue;
+
+    const parts: string[] = [];
+    const sameLine = lines[index]
+      .replace(/.*(?:DOMICILIU|ADRESA(?: DE DOMICILIU)?)[:\s]*/i, '')
+      .trim();
+
+    if (sameLine) parts.push(sameLine);
+
+    for (let nextIndex = index + 1; nextIndex < Math.min(lines.length, index + 8); nextIndex += 1) {
+      const candidate = lines[nextIndex].trim();
+      const upperCandidate = upperLines[nextIndex];
+      if (!candidate) break;
+      if (
+        upperCandidate.includes('NUME') ||
+        upperCandidate.includes('CNP') ||
+        upperCandidate.includes('SERIA') ||
+        upperCandidate.includes('EMIS') ||
+        upperCandidate.includes('DOCUMENT') ||
+        upperCandidate.includes('VALID')
+      ) {
+        break;
+      }
+      parts.push(candidate);
+      if (/[0-9]/.test(candidate) && /(?:STR|STRADA|BD|BULEVARD|ALEEA|NR|AP|BL|SC|ET|JUD|MUN|SAT|COM)/i.test(candidate)) {
+        if (parts.length >= 2) break;
+      }
+    }
+
+    const joined = normalizeAddressValue(parts.join(' '));
+    if (joined) return joined;
+  }
+
+  const inlineMatch = normalized.match(/(?:domicili(?:u|ul)|adresa(?: de domiciliu)?)[:\s]+(.+)/i);
+  return inlineMatch ? normalizeAddressValue(inlineMatch[1]) : '';
 }
 
 export function parseRomanianIdCard(rawText: string): ParsedIdCard {
@@ -222,7 +356,7 @@ export function parseRomanianIdCard(rawText: string): ParsedIdCard {
   const lines = normalizedText.split('\n').map((line) => line.trim()).filter(Boolean);
   const personalNumericCode = extractCnp(normalizedText);
   const identity = extractSeriesAndNumber(normalizedText);
-  const name = extractName(lines);
+  const name = extractNameFromMrz(rawText) || extractName(lines);
   const address = extractAddress(lines);
 
   return {
@@ -237,6 +371,75 @@ export function parseRomanianIdCard(rawText: string): ParsedIdCard {
       personalNumericCode: personalNumericCode ? 0.95 : 0.1,
       identityDocumentSeries: identity.series ? 0.85 : 0.1,
       identityDocumentNumber: identity.number ? 0.85 : 0.1,
+    },
+    rawText,
+    normalizedText,
+  };
+}
+
+export function parseRomanianElectronicIdCard(rawText: string): ParsedIdCard {
+  const normalizedText = normalizeWhitespace(rawText);
+  const lines = normalizedText.split('\n').map((line) => line.trim()).filter(Boolean);
+  const personalNumericCode = extractCnp(normalizedText);
+  const name = extractName(lines);
+  let identityDocumentNumber = '';
+  const normalizedLines = lines.map((line) => stripDiacritics(line).toUpperCase());
+
+  for (let index = 0; index < normalizedLines.length; index += 1) {
+    const line = normalizedLines[index];
+    const isDocumentLabel =
+      line.includes('NR. DOCUMENT') ||
+      line.includes('NR DOCUMENT') ||
+      line.includes('DOCUMENT NO') ||
+      line.includes('DOCUMENT NUMBER');
+    if (!isDocumentLabel) continue;
+
+    const sameLineMatch = lines[index].match(/(?:NR\.?\s*DOCUMENT|DOCUMENT NO|DOCUMENT NUMBER)[:\s-]*([A-Z0-9]{6,12})/i);
+    if (sameLineMatch?.[1]) {
+      identityDocumentNumber = sameLineMatch[1].toUpperCase();
+      break;
+    }
+
+    const nextValue = pickNextDocumentValueLine(lines, index);
+    if (nextValue) {
+      identityDocumentNumber = nextValue;
+      break;
+    }
+  }
+
+  if (!identityDocumentNumber) {
+    const docNumberMatch =
+      stripDiacritics(normalizedText).toUpperCase().match(/\b(?:NR\.?\s*DOCUMENT|DOCUMENT NO|DOCUMENT NUMBER)\s*[:\-]?\s*([A-Z0-9]{6,12})\b/) ||
+      stripDiacritics(normalizedText).toUpperCase().match(/\b([A-Z]{2}\d{6,8})\b/);
+    identityDocumentNumber = docNumberMatch?.[1] || '';
+  }
+
+  return {
+    name,
+    address: '',
+    personalNumericCode,
+    identityDocumentSeries: '',
+    identityDocumentNumber,
+    confidence: {
+      name: name ? 0.65 : 0.1,
+      address: 0.1,
+      personalNumericCode: personalNumericCode ? 0.95 : 0.1,
+      identityDocumentSeries: 0.1,
+      identityDocumentNumber: identityDocumentNumber ? 0.8 : 0.1,
+    },
+    rawText,
+    normalizedText,
+  };
+}
+
+export function parseRomanianAddressProof(rawText: string): ParsedAddressProof {
+  const normalizedText = normalizeWhitespace(rawText);
+  const address = extractAddressFromFreeText(normalizedText);
+
+  return {
+    address,
+    confidence: {
+      address: address ? 0.8 : 0.1,
     },
     rawText,
     normalizedText,
