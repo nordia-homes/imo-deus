@@ -6,35 +6,7 @@ import type { Agency, ClientPortal } from '@/lib/types';
 import { useParams, notFound } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Theme helper
-function hexToHsl(hex: string): string | null {
-    if (!hex || !hex.startsWith('#')) return null;
-    let hexValue = hex.replace(/#/, '');
-    if(hexValue.length === 3) {
-        hexValue = hexValue.split('').map(char => char + char).join('');
-    }
-    if(hexValue.length !== 6) return null;
-    const r = parseInt(hexValue.substring(0, 2), 16) / 255;
-    const g = parseInt(hexValue.substring(2, 4), 16) / 255;
-    const b = parseInt(hexValue.substring(4, 6), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    h = Math.round(h * 360);
-    s = Math.round(s * 100);
-    l = Math.round(l * 100);
-    return `${h} ${s}% ${l}%`;
-}
+import { applyAgencyThemeToRoot, resetAgencyThemeOnRoot } from '@/lib/theme';
 
 
 // This layout gets the portalId from params, fetches the portal, then fetches the agency to style the header/footer.
@@ -69,20 +41,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     // Apply agency theme
     useEffect(() => {
         const root = document.documentElement;
-        const defaultPrimary = '145 63% 45%'; // A fallback color
-        if (agency?.primaryColor) {
-          const hslColor = hexToHsl(agency.primaryColor);
-          if (hslColor) {
-            root.style.setProperty('--primary', hslColor);
-            root.style.setProperty('--ring', hslColor);
-          }
-        } else {
-             root.style.setProperty('--primary', defaultPrimary);
-             root.style.setProperty('--ring', defaultPrimary);
-        }
+        applyAgencyThemeToRoot(root, agency);
         return () => {
-            root.style.setProperty('--primary', defaultPrimary);
-            root.style.setProperty('--ring', defaultPrimary);
+            resetAgencyThemeOnRoot(root);
         }
     }, [agency]);
 

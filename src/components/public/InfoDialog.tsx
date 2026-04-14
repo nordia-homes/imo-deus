@@ -50,7 +50,7 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
           "sm:max-w-5xl",
-          "border-white/10 bg-[#101113] text-stone-100",
+          "border-white/10 bg-[var(--public-header-bg)] text-stone-100",
           isMobile && "flex h-screen w-screen max-w-full flex-col rounded-none border-none bg-[linear-gradient(180deg,_#060606_0%,_#101113_52%,_#151515_100%)] text-stone-100"
         )}>
         <DialogHeader className={cn("shrink-0", isMobile && "border-b border-white/10 bg-black/70 text-center backdrop-blur-xl")}>

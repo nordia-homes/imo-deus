@@ -35,6 +35,35 @@
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 1rem;
+
+    --app-shell-bg: #0f1e33;
+    --app-shell-bg-gradient: linear-gradient(180deg, #0f1e33 0%, #0f1e33 100%);
+    --app-topbar-bg: rgba(15, 30, 51, 0.96);
+    --app-sidebar-bg: #0f1e33;
+    --app-footer-bg: #0f1e33;
+    --app-sidebar-border: rgba(255, 255, 255, 0.1);
+    --app-sidebar-thumb: #3d5d82;
+    --app-sidebar-thumb-hover: #4a719d;
+    --app-sidebar-active-bg: linear-gradient(90deg, #13b180 0%, #37e6a5 100%);
+    --app-sidebar-active-foreground: #051f20;
+    --app-surface-solid: #152a47;
+    --app-surface-elevated: linear-gradient(180deg, rgba(21, 42, 71, 0.98) 0%, rgba(10, 22, 39, 1) 100%);
+    --app-surface-soft: rgba(255, 255, 255, 0.04);
+    --app-surface-input: #162538;
+    --app-surface-border: rgba(255, 255, 255, 0.12);
+    --app-highlight: #22c55e;
+    --app-highlight-soft: #86efac;
+    --app-highlight-glow: rgba(34, 197, 94, 0.18);
+    --public-shell-bg: radial-gradient(circle at top, rgba(212, 175, 55, 0.12), transparent 24%), linear-gradient(180deg, #050505 0%, #0b0b0d 42%, #121214 100%);
+    --public-header-bg: rgba(16, 17, 19, 0.95);
+    --public-footer-bg: linear-gradient(180deg, rgba(6, 8, 8, 0.96) 0%, rgba(9, 12, 11, 0.98) 100%);
+    --public-card-bg: radial-gradient(circle at top left, rgba(74, 222, 128, 0.2), transparent 28%), linear-gradient(135deg, rgba(7, 18, 12, 0.96) 0%, rgba(10, 10, 12, 0.98) 52%, rgba(16, 24, 18, 0.96) 100%);
+    --public-card-bg-soft: radial-gradient(circle at top left, rgba(74, 222, 128, 0.12), transparent 28%), linear-gradient(145deg, rgba(10, 18, 14, 0.98) 0%, rgba(8, 10, 10, 0.99) 52%, rgba(12, 22, 16, 0.98) 100%);
+    --public-card-border: rgba(74, 222, 128, 0.2);
+    --public-accent: #4ade80;
+    --public-accent-soft: #86efac;
+    --public-accent-strong: #166534;
+    --public-muted: rgba(255, 255, 255, 0.74);
   }
 
   .dark {

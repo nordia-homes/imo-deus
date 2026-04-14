@@ -109,8 +109,8 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         </Card>
     );
 
-    const panelClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
-    const detailsCardClassName = "overflow-hidden rounded-[2rem] border border-white/8 bg-[#0f1112] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.82)]";
+    const panelClassName = "overflow-hidden rounded-[2rem] border [border-color:var(--public-card-border)] [background:var(--public-card-bg)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
+    const detailsCardClassName = "overflow-hidden rounded-[2rem] border border-white/8 bg-[var(--public-header-bg)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.82)]";
     const panelHeaderClassName = "p-4 md:p-6";
     const panelTitleClassName = "text-white";
     const panelBodyClassName = "px-4 pb-4 pt-0 md:px-6 md:pb-6";

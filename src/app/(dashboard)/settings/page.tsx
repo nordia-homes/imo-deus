@@ -23,8 +23,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateEmail, updateProfile } from 'firebase/auth';
+import { THEME_PRESET_OPTIONS } from '@/lib/theme';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -48,6 +50,7 @@ const agencySchema = z.object({
   address: z.string().optional(),
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #22c55e).').optional(),
+  themePreset: z.enum(['classic', 'forest']).optional(),
   facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
@@ -92,6 +95,7 @@ export default function SettingsPage() {
         address: '', 
         logoUrl: '', 
         primaryColor: '#22c55e',
+        themePreset: 'classic',
         facebookUrl: '',
         instagramUrl: '',
         linkedinUrl: '',
@@ -133,6 +137,7 @@ export default function SettingsPage() {
             address: agency.address || '',
             logoUrl: agency.logoUrl || '',
             primaryColor: agency.primaryColor || '#22c55e',
+            themePreset: agency.themePreset || 'classic',
             facebookUrl: agency.facebookUrl || '',
             instagramUrl: agency.instagramUrl || '',
             linkedinUrl: agency.linkedinUrl || '',
@@ -260,6 +265,7 @@ export default function SettingsPage() {
     address: values.address || '',
     logoUrl: values.logoUrl || '',
     primaryColor: values.primaryColor || '#22c55e',
+    themePreset: values.themePreset || 'classic',
     facebookUrl: values.facebookUrl || '',
     instagramUrl: values.instagramUrl || '',
     linkedinUrl: values.linkedinUrl || '',
@@ -409,8 +415,8 @@ export default function SettingsPage() {
   
   if (!isAgencyLoading && !agency) {
       return (
-          <div className="min-h-full bg-[#0F1E33] px-4 py-10 text-white">
-              <Card className="mx-auto w-full max-w-lg border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,0.96)_0%,_rgba(12,26,45,0.98)_100%)] text-white shadow-2xl shadow-black/30">
+          <div className="min-h-full bg-[var(--app-shell-bg)] px-4 py-10 text-white">
+              <Card className="mx-auto w-full max-w-lg border border-white/10 [background:var(--app-surface-elevated)] text-white shadow-2xl shadow-black/30">
                 <Form {...agencyForm}>
                     <form onSubmit={agencyForm.handleSubmit(handleCreateAgency)}>
                         <CardHeader className="space-y-4">
@@ -439,22 +445,22 @@ export default function SettingsPage() {
 
   if (isAgencyLoading) {
     return (
-      <div className="space-y-8 bg-[#0F1E33] px-4 py-6 text-white md:px-6">
+      <div className="space-y-8 bg-[var(--app-shell-bg)] px-4 py-6 text-white md:px-6">
         <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_42%),linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(11,24,41,1)_100%)] p-6">
           <Skeleton className="mb-3 h-6 w-32 bg-white/15" />
           <Skeleton className="mb-2 h-10 w-80 bg-white/15" />
           <Skeleton className="h-4 w-full max-w-xl bg-white/10" />
         </div>
         <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <Card className="border border-white/10 bg-[#152A47] text-white"><CardHeader><Skeleton className="h-6 w-1/2 bg-white/15" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-24 w-24 rounded-full bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-24 bg-white/10" /></div></CardContent></Card>
-          <Card className="border border-white/10 bg-[#152A47] text-white"><CardHeader><Skeleton className="h-6 w-1/3 bg-white/15" /></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /></div></CardContent></Card>
+          <Card className="border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/2 bg-white/15" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-24 w-24 rounded-full bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-24 bg-white/10" /></div></CardContent></Card>
+          <Card className="border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/3 bg-white/15" /></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /></div></CardContent></Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0F1E33] px-4 py-6 text-white md:px-6">
+    <div className="bg-[var(--app-shell-bg)] px-4 py-6 text-white md:px-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
         <header className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -759,6 +765,29 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                   <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">URL logo</FormLabel><FormControl><Input {...field} placeholder="https://..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                  <FormField control={agencyForm.control} name="themePreset" render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-white/80">Tema aplicației</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                            <SelectValue placeholder="Alege tema" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent className="border-white/10 bg-[var(--app-surface-solid)] text-white">
+                                          {THEME_PRESET_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value} className="focus:bg-white/10 focus:text-white">
+                                              {option.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormDescription className="text-white/65">
+                                        {THEME_PRESET_OPTIONS.find((option) => option.value === field.value)?.description}
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}/>
                                   <FormField control={agencyForm.control} name="primaryColor" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Culoare primară</FormLabel><FormControl><Input type="color" {...field} className="h-10 w-24 p-1" /></FormControl><FormMessage /></FormItem> )}/>
                                 </div>
                               </section>

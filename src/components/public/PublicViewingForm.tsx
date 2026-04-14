@@ -63,7 +63,7 @@ export function PublicViewingForm({ propertyId, agencyId }: PublicViewingFormPro
     }
 
     return (
-        <Card className="rounded-[1.75rem] border border-white/10 bg-[#101113]/95 text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
+        <Card className="rounded-[1.75rem] border border-white/10 bg-[var(--public-header-bg)] text-stone-100 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.85)]">
             <CardHeader>
                 <CardTitle className="text-stone-50">Programeaza o Vizionare</CardTitle>
                 <CardDescription className="text-stone-400">Completati formularul si un agent va va contacta in cel mai scurt timp.</CardDescription>

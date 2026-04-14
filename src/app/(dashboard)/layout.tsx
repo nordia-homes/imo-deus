@@ -4,8 +4,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { AgencyProvider, useAgency } from '@/context/AgencyContext';
-import { cn } from '@/lib/utils';
 import { PushNotificationsBootstrap } from '@/components/notifications/PushNotificationsBootstrap';
+import { applyAgencyThemeToRoot, resetAgencyThemeOnRoot } from '@/lib/theme';
 
 
 // A simple skeleton loader
@@ -19,44 +19,6 @@ function FullScreenLoader() {
     )
 }
 
-function hexToHsl(hex: string): string | null {
-    if (!hex || !hex.startsWith('#')) return null;
-
-    let hexValue = hex.replace(/#/, '');
-    
-    if(hexValue.length === 3) {
-        hexValue = hexValue.split('').map(char => char + char).join('');
-    }
-
-    if(hexValue.length !== 6) return null;
-
-    const r = parseInt(hexValue.substring(0, 2), 16) / 255;
-    const g = parseInt(hexValue.substring(2, 4), 16) / 255;
-    const b = parseInt(hexValue.substring(4, 6), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    let l = (max + min) / 2;
-
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-
-    h = Math.round(h * 360);
-    s = Math.round(s * 100);
-    l = Math.round(l * 100);
-
-    return `${h} ${s}% ${l}%`;
-}
-
 function DashboardRoot({ children }: { children: React.ReactNode }) {
     const { agency, agencyId, userProfile, isAgencyLoading } = useAgency();
     const router = useRouter();
@@ -64,27 +26,10 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const root = document.documentElement;
-        const defaultPrimary = '145 63% 45%';
+        applyAgencyThemeToRoot(root, agency);
 
-        const colorToSet = agency?.primaryColor;
-
-        if (colorToSet) {
-            const hslColor = hexToHsl(colorToSet);
-            if (hslColor) {
-                 root.style.setProperty('--primary', hslColor);
-                 root.style.setProperty('--ring', hslColor);
-            } else {
-                 root.style.setProperty('--primary', defaultPrimary);
-                 root.style.setProperty('--ring', defaultPrimary);
-            }
-        } else {
-          root.style.setProperty('--primary', defaultPrimary);
-          root.style.setProperty('--ring', defaultPrimary);
-        }
-        
         return () => {
-            root.style.setProperty('--primary', defaultPrimary);
-            root.style.setProperty('--ring', defaultPrimary);
+            resetAgencyThemeOnRoot(root);
         }
     }, [agency]);
 

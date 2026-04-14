@@ -74,7 +74,7 @@ export function PublicContactForm({ propertyId = '', agencyId }: PublicContactFo
   };
 
   return (
-    <Card className="overflow-hidden rounded-[2rem] border border-emerald-500/14 bg-[radial-gradient(circle_at_top_left,rgba(22,101,52,0.22),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(22,101,52,0.12),transparent_22%),linear-gradient(160deg,rgba(4,8,7,0.995)_0%,rgba(6,10,9,0.99)_42%,rgba(8,16,12,0.985)_100%)] text-stone-100 shadow-[0_34px_96px_-42px_rgba(0,0,0,0.94)] backdrop-blur-xl">
+    <Card className="overflow-hidden rounded-[2rem] border [border-color:var(--public-card-border)] [background:var(--public-card-bg)] text-stone-100 shadow-[0_34px_96px_-42px_rgba(0,0,0,0.94)] backdrop-blur-xl">
       <CardHeader className="border-b border-white/8 pb-6">
         <CardTitle className="text-3xl font-semibold tracking-tight text-white">Trimite-ne un mesaj</CardTitle>
         <CardDescription className="max-w-2xl text-sm leading-7 text-emerald-50/72 md:text-base">

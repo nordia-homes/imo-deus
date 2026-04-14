@@ -112,7 +112,7 @@ export function Topbar() {
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-white/10 bg-[#0F1E33] px-3 text-white md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-white backdrop-blur-xl md:px-6">
             
             <div className="flex shrink-0 items-center gap-3">
                 {/* Sidebar trigger for all screen sizes */}

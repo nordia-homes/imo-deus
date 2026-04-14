@@ -5,43 +5,7 @@ import { firebaseConfig } from '@/firebase/config';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { PublicAgencyProvider } from '@/context/PublicAgencyContext';
-
-function hexToHsl(hex: string): string | null {
-  if (!hex || !hex.startsWith('#')) return null;
-  let hexValue = hex.replace(/#/, '');
-  if (hexValue.length === 3) {
-    hexValue = hexValue.split('').map((char) => char + char).join('');
-  }
-  if (hexValue.length !== 6) return null;
-
-  const r = parseInt(hexValue.substring(0, 2), 16) / 255;
-  const g = parseInt(hexValue.substring(2, 4), 16) / 255;
-  const b = parseInt(hexValue.substring(4, 6), 16) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-    h /= 6;
-  }
-
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
+import { getAgencyThemePreset, getAgencyThemeStyle } from '@/lib/theme';
 
 function parseFirestoreValue(value: any): any {
   if ('stringValue' in value) return value.stringValue;
@@ -117,7 +81,8 @@ export default async function AgencyPublicLayout({
   }
 
   const agency = { id: agencyId, ...agencyData } as Agency;
-  const primaryHsl = agency.primaryColor ? hexToHsl(agency.primaryColor) : null;
+  const themePreset = getAgencyThemePreset(agency);
+  const themeStyle = getAgencyThemeStyle(agency);
 
   return (
     <PublicAgencyProvider
@@ -130,14 +95,11 @@ export default async function AgencyPublicLayout({
       }}
     >
       <div
-        style={
-          primaryHsl
-            ? ({ ['--primary' as string]: primaryHsl, ['--ring' as string]: primaryHsl } as CSSProperties)
-            : undefined
-        }
+        data-app-theme={themePreset}
+        style={themeStyle as CSSProperties}
       >
         <PublicHeader agency={agency} isLoading={false} />
-        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.12),_transparent_24%),linear-gradient(180deg,_#050505_0%,_#0b0b0d_42%,_#121214_100%)] text-stone-100">
+        <main className="min-h-screen [background:var(--public-shell-bg)] text-stone-100">
           {children}
         </main>
         <PublicFooter />

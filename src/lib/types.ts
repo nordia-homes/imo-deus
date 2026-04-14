@@ -293,6 +293,8 @@ export type Offer = {
 
 export type FinancialStatus = 'Neprecalificat' | 'Credit Pre-aprobat' | 'Credit Aprobat' | 'Cash';
 
+export type ThemePreset = 'classic' | 'forest';
+
 
 export type Contact = {
     id: string;
@@ -385,6 +387,7 @@ export type Agency = {
   id: string;
   name: string;
   ownerId: string;
+  themePreset?: ThemePreset;
   agencyDescription?: string;
   facebookGroups?: FacebookGroup[];
   shareImageUrl?: string;

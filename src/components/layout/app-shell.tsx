@@ -38,7 +38,6 @@ import { Topbar } from './Topbar';
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
-import { cn } from '@/lib/utils';
 import { PushNotificationsBanner } from '@/components/notifications/PushNotificationsBanner';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -211,14 +210,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <Topbar />
-        <main className="flex-1 bg-[#0F1E33] pb-20 lg:pb-0">
+        <main className="flex-1 [background:var(--app-shell-bg-gradient)] pb-20 lg:pb-0">
             <PushNotificationsBanner />
             {children}
         </main>
         {pathname !== '/ai-assistant' ? (
-          <footer className="hidden border-t border-white/8 bg-[#0F1E33] px-6 py-4 text-sm text-white/65 lg:block">
+          <footer className="hidden border-t border-[var(--app-sidebar-border)] bg-[var(--app-footer-bg)] px-6 py-4 text-sm text-white/65 lg:block">
             <div className="flex items-center justify-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-300/80" />
+              <BadgeCheck className="h-4 w-4 text-[var(--app-highlight-soft)]" />
               <Copyright className="h-4 w-4 text-white/70" />
               <span>2026 Drepturi rezervate ImoDeus</span>
             </div>
