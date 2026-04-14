@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, BellOff, Loader2, Send, ShieldCheck, Smartphone } from 'lucide-react';
+import { Bell, BellOff, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,6 @@ export function PushNotificationsCard() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
 
@@ -87,48 +86,6 @@ export function PushNotificationsCard() {
     }
   };
 
-  const handleSendTest = async () => {
-    if (!user) return;
-
-    setIsSendingTest(true);
-    try {
-      const response = await fetch('/api/viewings/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agentId: user.uid,
-          contactName: 'Verificare sistem push',
-          propertyTitle: 'Notificare test ImoDeus',
-          viewingDate: new Date().toISOString(),
-        }),
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(result?.message || 'Nu am putut trimite notificarea de test.');
-      }
-
-      if (result?.successCount > 0) {
-        toast({
-          title: 'Notificare test trimisă',
-          description: `Am trimis ${result.successCount} notificare către acest device.`,
-        });
-        return;
-      }
-
-      throw new Error(result?.message || 'Nu există token-uri active pentru acest cont.');
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Testul de notificare a eșuat',
-        description: error instanceof Error ? error.message : 'Încearcă din nou.',
-      });
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
   return (
     <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
       <CardHeader>
@@ -172,10 +129,6 @@ export function PushNotificationsCard() {
           <Button type="button" onClick={handleEnable} disabled={isLoading || status === 'enabled'} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Activează notificările
-          </Button>
-          <Button type="button" variant="outline" onClick={handleSendTest} disabled={isSendingTest || tokenCount === 0} className="border-white/15 bg-white/5 text-white hover:bg-white/10">
-            {isSendingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Trimite notificare test
           </Button>
         </div>
       </CardContent>
