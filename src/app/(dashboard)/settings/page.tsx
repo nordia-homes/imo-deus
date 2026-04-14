@@ -38,6 +38,7 @@ const agencySchema = z.object({
   agencyDescription: z.string().optional(),
   legalCompanyName: z.string().optional(),
   companyTaxId: z.string().optional(),
+  tradeRegisterNumber: z.string().optional(),
   registeredOffice: z.string().optional(),
   legalRepresentative: z.string().optional(),
   termsAndConditions: z.string().optional(),
@@ -77,6 +78,7 @@ export default function SettingsPage() {
         agencyDescription: '',
         legalCompanyName: '',
         companyTaxId: '',
+        tradeRegisterNumber: '',
         registeredOffice: '',
         legalRepresentative: '',
         termsAndConditions: '',
@@ -112,6 +114,7 @@ export default function SettingsPage() {
             agencyDescription: agency.agencyDescription || '',
             legalCompanyName: agency.legalCompanyName || '',
             companyTaxId: agency.companyTaxId || '',
+            tradeRegisterNumber: agency.tradeRegisterNumber || '',
             registeredOffice: agency.registeredOffice || '',
             legalRepresentative: agency.legalRepresentative || '',
             termsAndConditions: agency.termsAndConditions || '',
@@ -408,7 +411,10 @@ export default function SettingsPage() {
                                 <FormField control={agencyForm.control} name="companyTaxId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">CUI</FormLabel><FormControl><Input {...field} placeholder="Ex: RO12345678" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Codul unic de identificare al agentiei.</FormDescription><FormMessage /></FormItem> )}/>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={agencyForm.control} name="tradeRegisterNumber" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nr. Inregistrare Registrul Comertului</FormLabel><FormControl><Input {...field} placeholder="Ex: J40/1234/2024" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Numarul de inregistrare al agentiei la Registrul Comertului.</FormDescription><FormMessage /></FormItem> )}/>
                                 <FormField control={agencyForm.control} name="registeredOffice" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Sediu social</FormLabel><FormControl><Input {...field} placeholder="Ex: Str. Exemplu nr. 1, Bucuresti" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Adresa juridica ce va aparea in pagina de Confidentialitate.</FormDescription><FormMessage /></FormItem> )}/>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={agencyForm.control} name="legalRepresentative" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Reprezentant legal</FormLabel><FormControl><Input {...field} placeholder="Ex: Elena Popescu" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormDescription className="text-white/70">Numele reprezentantului legal al agentiei.</FormDescription><FormMessage /></FormItem> )}/>
                             </div>
                             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

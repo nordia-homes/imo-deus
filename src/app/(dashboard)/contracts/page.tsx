@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { FilePlus2, FileText, Loader2, PencilLine, Sparkles, Trash2 } from 'lucide-react';
+import { FilePlus2, FileSearch, FileText, Loader2, PencilLine, Sparkles, Trash2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
 import type { Contact, ContractTemplate, Property } from '@/lib/types';
@@ -100,7 +100,6 @@ const PLACEHOLDER_ORDER_BY_CATEGORY: Record<ContractTemplate['category'], string
     'owner2.companyTaxId',
     'owner2.tradeRegisterNumber',
     'owner2.legalRepresentative',
-    'agent.name',
     'buyer.name',
     'buyer.address',
     'buyer.personalNumericCode',
@@ -459,12 +458,13 @@ function FillContractDialog({
   const [propertyId, setPropertyId] = useState<string>('none');
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [ocrTarget, setOcrTarget] = useState<'owner' | 'buyer' | null>(null);
-  const [ocrDialogTarget, setOcrDialogTarget] = useState<'owner' | 'buyer' | null>(null);
+  const [ocrTarget, setOcrTarget] = useState<'owner' | 'buyer' | 'owner2' | null>(null);
+  const [ocrDialogTarget, setOcrDialogTarget] = useState<'owner' | 'buyer' | 'owner2' | null>(null);
   const [electronicIdFile, setElectronicIdFile] = useState<File | null>(null);
   const [electronicAddressProofFile, setElectronicAddressProofFile] = useState<File | null>(null);
   const ownerStandardIdInputRef = useRef<HTMLInputElement | null>(null);
   const buyerStandardIdInputRef = useRef<HTMLInputElement | null>(null);
+  const owner2StandardIdInputRef = useRef<HTMLInputElement | null>(null);
 
   const buyer = useMemo(() => contacts.find((contact) => contact.id === buyerId) || null, [buyerId, contacts]);
   const owner = useMemo(() => contacts.find((contact) => contact.id === ownerId) || null, [ownerId, contacts]);
@@ -666,7 +666,7 @@ function FillContractDialog({
     }
   }
 
-  async function handleIdentityUpload(target: 'owner' | 'buyer', file: File | null) {
+  async function handleIdentityUpload(target: 'owner' | 'buyer' | 'owner2', file: File | null) {
     if (!file || !user) return;
 
     try {
@@ -700,7 +700,7 @@ function FillContractDialog({
         throw new Error('Raspuns OCR invalid.');
       }
 
-      const prefix = target === 'owner' ? 'owner' : 'buyer';
+      const prefix = target;
       setManualValues((current) => ({
         ...current,
         [`${prefix}_identityDocumentKind`]: 'standard',
@@ -712,7 +712,12 @@ function FillContractDialog({
       }));
 
       toast({
-        title: target === 'owner' ? 'CI proprietar procesat' : 'CI cumparator procesat',
+        title:
+          target === 'owner'
+            ? 'CI proprietar procesat'
+            : target === 'owner2'
+              ? 'CI al doilea proprietar procesat'
+              : 'CI cumparator procesat',
         description: 'Campurile disponibile au fost precompletate automat.',
       });
     } catch (error) {
@@ -726,10 +731,11 @@ function FillContractDialog({
       setOcrTarget(null);
       if (target === 'owner' && ownerStandardIdInputRef.current) ownerStandardIdInputRef.current.value = '';
       if (target === 'buyer' && buyerStandardIdInputRef.current) buyerStandardIdInputRef.current.value = '';
+      if (target === 'owner2' && owner2StandardIdInputRef.current) owner2StandardIdInputRef.current.value = '';
     }
   }
 
-  async function handleElectronicIdentityUpload(target: 'owner' | 'buyer') {
+  async function handleElectronicIdentityUpload(target: 'owner' | 'buyer' | 'owner2') {
     if (!electronicIdFile || !electronicAddressProofFile || !user) return;
 
     try {
@@ -765,7 +771,7 @@ function FillContractDialog({
         throw new Error('Raspuns OCR invalid.');
       }
 
-      const prefix = target === 'owner' ? 'owner' : 'buyer';
+      const prefix = target;
       setManualValues((current) => ({
         ...current,
         [`${prefix}_identityDocumentKind`]: 'electronic',
@@ -777,7 +783,12 @@ function FillContractDialog({
       }));
 
       toast({
-        title: target === 'owner' ? 'CI electronica proprietar procesata' : 'CI electronica cumparator procesata',
+        title:
+          target === 'owner'
+            ? 'CI electronica proprietar procesata'
+            : target === 'owner2'
+              ? 'CI electronica al doilea proprietar procesata'
+              : 'CI electronica cumparator procesata',
         description: 'Datele din CI si dovada de adresa au fost precompletate automat.',
       });
       setOcrDialogTarget(null);
@@ -815,52 +826,6 @@ function FillContractDialog({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-white/80">Cumparator / client</Label>
-                  <Select value={buyerId} onValueChange={setBuyerId}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Fara selectie</SelectItem>
-                      {contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Proprietar</Label>
-                  <Select value={ownerId} onValueChange={setOwnerId}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Fara selectie</SelectItem>
-                      {contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/80">Tip cumparator</Label>
-                  <Select value={buyerEntityType} onValueChange={(value) => setBuyerEntityType(value as 'individual' | 'company')}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="individual">Persoana fizica</SelectItem>
-                      <SelectItem value="company">Persoana juridica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="pt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setOcrDialogTarget('buyer')}
-                      disabled={ocrTarget !== null}
-                      className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
-                    >
-                      {ocrTarget === 'buyer' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                      Incarca CI cumparator
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
                   <Label className="text-white/80">Al doilea proprietar</Label>
                   <Select value={hasSecondOwner} onValueChange={(value) => setHasSecondOwner(value as 'no' | 'yes')}>
                     <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
@@ -885,10 +850,14 @@ function FillContractDialog({
                       variant="outline"
                       onClick={() => setOcrDialogTarget('owner')}
                       disabled={ocrTarget !== null}
-                      className="h-9 rounded-full border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
+                      className="h-11 w-full rounded-2xl border-emerald-300/30 bg-emerald-400/15 px-4 text-sm font-medium text-emerald-50 hover:bg-emerald-400/25"
                     >
-                      {ocrTarget === 'owner' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                      Incarca CI proprietar
+                      {ocrTarget === 'owner' ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileSearch className="mr-2 h-4 w-4" />
+                      )}
+                      Extrage datele din CI proprietar
                     </Button>
                   </div>
                 </div>
@@ -902,7 +871,67 @@ function FillContractDialog({
                         <SelectItem value="company">Persoana juridica</SelectItem>
                       </SelectContent>
                     </Select>
+                    {secondOwnerEntityType === 'individual' ? (
+                      <div className="pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setOcrDialogTarget('owner2')}
+                          disabled={ocrTarget !== null}
+                          className="h-11 w-full rounded-2xl border-emerald-300/30 bg-emerald-400/15 px-4 text-sm font-medium text-emerald-50 hover:bg-emerald-400/25"
+                        >
+                          {ocrTarget === 'owner2' ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <FileSearch className="mr-2 h-4 w-4" />
+                          )}
+                          Date CI al doilea proprietar
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
+                ) : null}
+                {template?.category !== 'collaboration' ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="text-white/80">Cumparator / client</Label>
+                      <Select value={buyerId} onValueChange={setBuyerId}>
+                        <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Fara selectie</SelectItem>
+                          {contacts.map((contact) => (
+                            <SelectItem key={contact.id} value={contact.id}>{contact.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white/80">Tip cumparator</Label>
+                      <Select value={buyerEntityType} onValueChange={(value) => setBuyerEntityType(value as 'individual' | 'company')}>
+                        <SelectTrigger className="border-white/15 bg-white/10 text-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="individual">Persoana fizica</SelectItem>
+                          <SelectItem value="company">Persoana juridica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setOcrDialogTarget('buyer')}
+                          disabled={ocrTarget !== null}
+                          className="h-11 w-full rounded-2xl border-emerald-300/30 bg-emerald-400/15 px-4 text-sm font-medium text-emerald-50 hover:bg-emerald-400/25"
+                        >
+                          {ocrTarget === 'buyer' ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <FileSearch className="mr-2 h-4 w-4" />
+                          )}
+                          Extrage datele din CI cumparator
+                        </Button>
+                      </div>
+                    </div>
+                  </>
                 ) : null}
                 <div className="space-y-2">
                   <Label className="text-white/80">Proprietate</Label>
@@ -1013,7 +1042,11 @@ function FillContractDialog({
         <DialogContent className="max-w-xl border-white/10 bg-[#10233b] text-white">
           <DialogHeader>
             <DialogTitle>
-              {ocrDialogTarget === 'owner' ? 'Incarca document proprietar' : 'Incarca document cumparator'}
+              {ocrDialogTarget === 'owner'
+                ? 'Incarca document proprietar'
+                : ocrDialogTarget === 'owner2'
+                  ? 'Incarca document al doilea proprietar'
+                  : 'Incarca document cumparator'}
             </DialogTitle>
             <DialogDescription className="text-white/70">
               Alege tipul de document. Varianta standard accepta poza CI sau PDF. Varianta electronica foloseste CI electronica
@@ -1025,7 +1058,13 @@ function FillContractDialog({
             <div className="rounded-2xl border border-white/10 bg-[#0d1d31] p-4">
               <div className="mb-3 text-sm font-semibold text-white">Incarca CI standard</div>
               <input
-                ref={ocrDialogTarget === 'owner' ? ownerStandardIdInputRef : buyerStandardIdInputRef}
+                ref={
+                  ocrDialogTarget === 'owner'
+                    ? ownerStandardIdInputRef
+                    : ocrDialogTarget === 'owner2'
+                      ? owner2StandardIdInputRef
+                      : buyerStandardIdInputRef
+                }
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
                 className="hidden"
@@ -1041,6 +1080,7 @@ function FillContractDialog({
                 variant="outline"
                 onClick={() => {
                   if (ocrDialogTarget === 'owner') ownerStandardIdInputRef.current?.click();
+                  if (ocrDialogTarget === 'owner2') owner2StandardIdInputRef.current?.click();
                   if (ocrDialogTarget === 'buyer') buyerStandardIdInputRef.current?.click();
                 }}
                 disabled={ocrTarget !== null}

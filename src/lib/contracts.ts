@@ -335,7 +335,7 @@ export function buildContractPlaceholderMap(params: {
     property_commissionPercent:
       property?.commissionType === 'percentage' && property?.commissionValue != null ? String(property.commissionValue) : '',
     reservation_amount: '',
-    reservation_currency: '',
+    reservation_currency: 'EURO',
     reservation_expiryDate: '',
     buyer_name: buyer?.name || '',
     buyer_entityType: buyer?.entityType || 'individual',
@@ -497,7 +497,7 @@ function buildFilledBuyerParagraph(values: Record<string, string>) {
 
 function buildReservationPaymentSentence(values: Record<string, string>, emptyFallback = '') {
   const amount = getHeaderValue(values, 'reservation_amount', emptyFallback);
-  const currency = getHeaderValue(values, 'reservation_currency', emptyFallback);
+  const currency = getHeaderValue(values, 'reservation_currency', 'EURO');
   const bankAccount = getHeaderValue(values, 'owner_bankAccount', emptyFallback);
   const bankAccountHolder = getHeaderValue(
     values,
@@ -796,13 +796,13 @@ export function renderContractContent(
 
   const buildReservationPaymentSentenceFromValues = () => {
     const amount = values.reservation_amount == null ? '' : String(values.reservation_amount);
-    const currency = values.reservation_currency == null ? '' : String(values.reservation_currency);
+    const currency = values.reservation_currency == null ? 'EURO' : String(values.reservation_currency || 'EURO');
     const bankAccount = values.owner_bankAccount == null ? '' : String(values.owner_bankAccount);
     const bankAccountHolder = values.owner_bankAccountHolder == null ? '' : String(values.owner_bankAccountHolder);
     const ownerName = values.owner_name == null ? '' : String(values.owner_name);
     const normalizedCurrency = currency.trim().toUpperCase();
     const renderedAmount = amount.trim() ? amount : getBodyEmptyFallback('reservation_amount');
-    const renderedCurrency = currency.trim() ? currency : getBodyEmptyFallback('reservation_currency');
+    const renderedCurrency = currency.trim() ? currency : 'EURO';
     const renderedBankAccount = bankAccount.trim() ? bankAccount : getBodyEmptyFallback('owner_bankAccount');
     const renderedBankAccountHolder = bankAccountHolder.trim()
       ? bankAccountHolder
