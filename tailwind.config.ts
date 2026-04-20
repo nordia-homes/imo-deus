@@ -17,6 +17,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        body: ['var(--font-body)', 'sans-serif'],
+        headline: ['var(--font-headline)', 'var(--font-body)', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

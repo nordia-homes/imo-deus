@@ -112,7 +112,7 @@ export function Topbar() {
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-white backdrop-blur-xl md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-[var(--app-page-foreground)] backdrop-blur-xl md:px-6">
             
             <div className="flex shrink-0 items-center gap-3">
                 {/* Sidebar trigger for all screen sizes */}
@@ -124,11 +124,11 @@ export function Topbar() {
                 <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                     <PopoverTrigger asChild>
                         <div className="relative min-w-0 w-full">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/70" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--app-page-muted)]" />
                             <Input
                                 type="search"
                                 placeholder="Caută lead-uri, proprietăți..."
-                                className="w-full min-w-0 rounded-lg border-none bg-white/10 pl-8 text-white placeholder:text-white/70 md:w-[280px] lg:w-[320px]"
+                                className="w-full min-w-0 rounded-lg border-none bg-[var(--app-surface-input)] pl-8 text-[var(--app-page-foreground)] placeholder:text-[var(--app-page-muted)] md:w-[280px] lg:w-[320px]"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                             />
@@ -197,10 +197,10 @@ export function Topbar() {
             <div className='flex shrink-0 items-center gap-3'>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full hover:bg-white/10">
+                        <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full hover:bg-[var(--app-nav-hover-bg)]">
                             <Avatar className="cursor-pointer h-8 w-8">
                                 <AvatarImage src={user?.photoURL || undefined} />
-                                <AvatarFallback className="bg-white/20">{getInitials(user?.displayName || user?.email)}</AvatarFallback>
+                                <AvatarFallback className="bg-muted text-foreground">{getInitials(user?.displayName || user?.email)}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>

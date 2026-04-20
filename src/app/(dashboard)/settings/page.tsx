@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateEmail, updateProfile } from 'firebase/auth';
-import { THEME_PRESET_OPTIONS } from '@/lib/theme';
+import { applyAgencyThemeToRoot, THEME_PRESET_OPTIONS } from '@/lib/theme';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -50,7 +50,7 @@ const agencySchema = z.object({
   address: z.string().optional(),
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #22c55e).').optional(),
-  themePreset: z.enum(['classic', 'forest']).optional(),
+  themePreset: z.enum(['classic', 'forest', 'agentfinder']).optional(),
   facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
@@ -106,6 +106,8 @@ export default function SettingsPage() {
   const watchedProfileEmail = useWatch({ control: profileForm.control, name: 'email' });
   const watchedProfilePhone = useWatch({ control: profileForm.control, name: 'phone' });
   const watchedAgencyName = useWatch({ control: agencyForm.control, name: 'name' });
+  const watchedAgencyThemePreset = useWatch({ control: agencyForm.control, name: 'themePreset' });
+  const watchedAgencyPrimaryColor = useWatch({ control: agencyForm.control, name: 'primaryColor' });
 
   useEffect(() => {
     if (userProfile) {
@@ -412,6 +414,13 @@ export default function SettingsPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [agency, agencyForm, watchedAgencyName]);
+
+  useEffect(() => {
+    applyAgencyThemeToRoot(document.documentElement, {
+      themePreset: watchedAgencyThemePreset || agency?.themePreset || 'classic',
+      primaryColor: watchedAgencyPrimaryColor || agency?.primaryColor || '#22c55e',
+    });
+  }, [agency?.primaryColor, agency?.themePreset, watchedAgencyPrimaryColor, watchedAgencyThemePreset]);
   
   if (!isAgencyLoading && !agency) {
       return (
@@ -460,30 +469,30 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="bg-[var(--app-shell-bg)] px-4 py-6 text-white md:px-6">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+    <div className="bg-[var(--app-shell-bg)] px-4 py-6 text-[var(--app-page-foreground)] md:px-6">
+      <div className="agentfinder-form mx-auto flex w-full max-w-7xl flex-col gap-8">
         <header className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/90">Setări</Badge>
+            <Badge className="rounded-full border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] px-3 py-1 text-[var(--app-page-foreground)]">Setări</Badge>
             <Badge className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-100">
               <ShieldCheck className="mr-1 h-3.5 w-3.5" />
               {userProfile?.role ? userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1) : 'Indisponibil'}
             </Badge>
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">Setările contului și ale agenției</h1>
-            <p className="mt-1 text-sm text-white/68 md:text-base">O vedere unitară pentru profilul agentului, datele firmei, website-ul public și branding.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-page-foreground)] md:text-3xl">Setările contului și ale agenției</h1>
+            <p className="mt-1 text-sm text-[var(--app-page-muted)] md:text-base">O vedere unitară pentru profilul agentului, datele firmei, website-ul public și branding.</p>
           </div>
         </header>
 
-        <Card className="overflow-hidden rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_26%),linear-gradient(180deg,_rgba(24,42,68,0.98)_0%,_rgba(14,29,49,1)_100%)] text-white shadow-2xl shadow-black/25">
+        <Card className="agentfinder-surface overflow-hidden rounded-[32px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
           <CardContent className="p-6 md:p-7">
             <div className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
               <div className="relative w-fit">
-                <Avatar className="h-28 w-28 border border-white/15 bg-white/5 md:h-32 md:w-32">
+                <Avatar className="h-28 w-28 border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] md:h-32 md:w-32">
                   <AvatarImage src={userProfile?.photoUrl || user?.photoURL || undefined} alt={userProfile?.name} />
-                  <AvatarFallback className="bg-white/10 text-4xl">{userProfile?.name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-[var(--app-surface-soft)] text-4xl">{userProfile?.name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <Button
                   type="button"
@@ -614,7 +623,7 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[360px_minmax(0,1fr)]">
             <div className="space-y-6 xl:sticky xl:top-6">
-                <Card className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(10,22,39,1)_100%)] text-white shadow-2xl shadow-black/25">
+                <Card className="agentfinder-surface rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between gap-4">
                         <div>
@@ -654,10 +663,10 @@ export default function SettingsPage() {
                 <PushNotificationsCard />
             </div>
             <div className="space-y-6">
-                 <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(10,22,39,1)_100%)] text-white shadow-2xl shadow-black/25">
+                 <Card className="agentfinder-surface overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
                     <Form {...agencyForm}>
                     <form onSubmit={agencyForm.handleSubmit((values) => handleAgencySave(values))}>
-                        <CardHeader className="border-b border-white/10 bg-white/[0.03]">
+                        <CardHeader className="border-b border-[var(--app-surface-border)] bg-[var(--app-surface-soft)]">
                           <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-200">
                               <Building2 className="h-5 w-5" />
@@ -672,7 +681,7 @@ export default function SettingsPage() {
                           <div className="grid gap-6 xl:grid-cols-2">
 
                             <div className="order-2 space-y-5 xl:order-2 xl:col-span-2">
-                              <section className="space-y-5 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(10,22,39,1)_100%)] p-5 shadow-2xl shadow-black/20 md:p-6">
+                              <section className="agentfinder-surface space-y-5 rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] p-5 shadow-2xl shadow-black/20 md:p-6">
                                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                   <div className="space-y-2">
                                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-white/75">
@@ -694,7 +703,7 @@ export default function SettingsPage() {
                                 </div>
                               </section>
 
-                              <section className="space-y-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 md:p-6">
+                              <section className="agentfinder-soft space-y-5 rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] p-5 md:p-6">
                                 <div className="space-y-1">
                                   <h4 className="text-lg font-semibold text-white">Domeniu și pagini legale</h4>
                                   <p className="text-sm text-white/65">Setările care influențează website-ul public și informațiile legale afișate acolo.</p>
@@ -721,7 +730,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="order-1 space-y-5 xl:order-1 xl:col-span-2">
-                              <section className="space-y-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(10,22,39,1)_100%)] p-5 text-white shadow-2xl shadow-black/25 md:p-6">
+                              <section className="agentfinder-surface space-y-6 rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] p-5 text-[var(--app-page-foreground)] shadow-2xl shadow-black/25 md:p-6">
                                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                                   <div className="space-y-1">
                                     <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-cyan-100">
@@ -758,7 +767,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="order-3 space-y-5 xl:order-3 xl:col-span-2">
-                              <section className="space-y-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 md:p-6">
+                              <section className="agentfinder-soft space-y-5 rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] p-5 md:p-6">
                                 <div className="space-y-1">
                                   <h4 className="text-lg font-semibold text-white">Identitate vizuală</h4>
                                   <p className="text-sm text-white/65">Elementele care definesc vizual agenția în produs și în website-ul public.</p>
@@ -792,7 +801,7 @@ export default function SettingsPage() {
                                 </div>
                               </section>
 
-                              <section className="space-y-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 md:p-6">
+                              <section className="agentfinder-soft space-y-5 rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] p-5 md:p-6">
                                 <div className="space-y-1">
                                   <h4 className="text-lg font-semibold text-white">Social media</h4>
                                   <p className="text-sm text-white/65">Linkurile oficiale ale agenției, afișate acolo unde este cazul.</p>

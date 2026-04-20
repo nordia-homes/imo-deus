@@ -293,7 +293,7 @@ export type Offer = {
 
 export type FinancialStatus = 'Neprecalificat' | 'Credit Pre-aprobat' | 'Credit Aprobat' | 'Cash';
 
-export type ThemePreset = 'classic' | 'forest';
+export type ThemePreset = 'classic' | 'forest' | 'agentfinder';
 
 
 export type Contact = {

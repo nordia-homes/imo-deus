@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="group-data-[collapsible=icon]:hidden">
                 <ImoDeusTextLogo className="w-44" />
             </div>
-            <Home className="h-7 w-7 text-white hidden group-data-[collapsible=icon]:block" />
+            <Home className="hidden h-7 w-7 text-[var(--app-nav-foreground)] group-data-[collapsible=icon]:block" />
           </Link>
         </SidebarHeader>
         <SidebarContent>
@@ -202,7 +202,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="p-4 text-center text-xs text-sidebar-foreground/60">
+        <SidebarFooter className="p-4 text-center text-xs text-[var(--app-nav-muted)]">
           <p>
             &copy; {new Date().getFullYear()} ImoDeus.ai
           </p>
@@ -215,10 +215,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {children}
         </main>
         {pathname !== '/ai-assistant' ? (
-          <footer className="hidden border-t border-[var(--app-sidebar-border)] bg-[var(--app-footer-bg)] px-6 py-4 text-sm text-white/65 lg:block">
+          <footer className="hidden border-t border-[var(--app-sidebar-border)] bg-[var(--app-footer-bg)] px-6 py-4 text-sm text-[var(--app-page-muted)] lg:block">
             <div className="flex items-center justify-center gap-2">
               <BadgeCheck className="h-4 w-4 text-[var(--app-highlight-soft)]" />
-              <Copyright className="h-4 w-4 text-white/70" />
+              <Copyright className="h-4 w-4 text-[var(--app-page-muted)]" />
               <span>2026 Drepturi rezervate ImoDeus</span>
             </div>
           </footer>

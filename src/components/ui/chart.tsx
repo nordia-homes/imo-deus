@@ -67,7 +67,7 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border/50 [&_.recharts-defs_svg]:-translate-y-4 [&_.recharts-polar-grid_[stroke=hsl(var(--card-foreground))]]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-radial-bar-background-sector]:stroke-border [&_.recharts-reference-line_line]:stroke-border [&_.recharts-reference-line_label_text]:fill-muted-foreground [&_.recharts-tooltip-cursor]:stroke-border [&.recharts-tooltip-wrapper]:text-sm",
+          "ui-chart flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line]:stroke-border/50 [&_.recharts-defs_svg]:-translate-y-4 [&_.recharts-polar-grid_[stroke=hsl(var(--card-foreground))]]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-radial-bar-background-sector]:stroke-border [&_.recharts-reference-line_line]:stroke-border [&_.recharts-reference-line_label_text]:fill-muted-foreground [&_.recharts-tooltip-cursor]:stroke-border [&.recharts-tooltip-wrapper]:text-sm",
           className
         )}
         {...props}

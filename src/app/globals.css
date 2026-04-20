@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    --font-body: var(--font-inter);
+    --font-headline: var(--font-inter);
     --background: 220 13% 98%; /* slate-50 #f8fafc */
     --foreground: 222.2 84% 4.9%;
 
@@ -54,6 +56,12 @@
     --app-highlight: #22c55e;
     --app-highlight-soft: #86efac;
     --app-highlight-glow: rgba(34, 197, 94, 0.18);
+    --app-nav-foreground: #ffffff;
+    --app-nav-muted: rgba(255, 255, 255, 0.7);
+    --app-nav-hover-bg: rgba(255, 255, 255, 0.1);
+    --app-nav-hover-foreground: #ffffff;
+    --app-page-foreground: #ffffff;
+    --app-page-muted: rgba(255, 255, 255, 0.68);
     --public-shell-bg: radial-gradient(circle at top, rgba(212, 175, 55, 0.12), transparent 24%), linear-gradient(180deg, #050505 0%, #0b0b0d 42%, #121214 100%);
     --public-header-bg: rgba(16, 17, 19, 0.95);
     --public-footer-bg: linear-gradient(180deg, rgba(6, 8, 8, 0.96) 0%, rgba(9, 12, 11, 0.98) 100%);
@@ -96,6 +104,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
@@ -124,5 +133,449 @@
   }
   .button-glow {
     box-shadow: 0 0 12px hsl(var(--primary) / 0.6);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-surface {
+    background: var(--app-surface-elevated) !important;
+    border-color: var(--app-surface-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-soft {
+    background: var(--app-surface-soft) !important;
+    border-color: var(--app-surface-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-input {
+    background: var(--app-surface-input) !important;
+    border-color: var(--app-surface-border) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-input::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form input:not([type='color']),
+  [data-app-theme='agentfinder'] .agentfinder-form textarea,
+  [data-app-theme='agentfinder'] .agentfinder-form button[role='combobox'] {
+    background: var(--app-surface-input) !important;
+    border-color: var(--app-surface-border) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form input:not([type='color'])::placeholder,
+  [data-app-theme='agentfinder'] .agentfinder-form textarea::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/90,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/80,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/75 {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/72,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/70,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/68,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/65,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/62,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/60,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/55,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/50,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/45,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/40,
+  [data-app-theme='agentfinder'] .agentfinder-form .text-white\/35 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form .bg-white\/10,
+  [data-app-theme='agentfinder'] .agentfinder-form .bg-white\/\[0\.06\],
+  [data-app-theme='agentfinder'] .agentfinder-form .bg-white\/\[0\.04\],
+  [data-app-theme='agentfinder'] .agentfinder-form .bg-white\/\[0\.03\],
+  [data-app-theme='agentfinder'] .agentfinder-form .bg-white\/5 {
+    background: hsl(var(--secondary)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-form .border-white\/10,
+  [data-app-theme='agentfinder'] .agentfinder-form .border-white\/14,
+  [data-app-theme='agentfinder'] .agentfinder-form .border-white\/15,
+  [data-app-theme='agentfinder'] .agentfinder-form .border-white\/20 {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  [data-app-theme='agentfinder'] {
+    color-scheme: light;
+  }
+
+  [data-app-theme='agentfinder'] body,
+  [data-app-theme='agentfinder'] main,
+  [data-app-theme='agentfinder'] .min-h-screen,
+  [data-app-theme='agentfinder'] .bg-background {
+    background-color: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-[#050806]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#07111f]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#08111F]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#081a2c]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0b0f0d]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0B1728]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0b1727]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0D121C]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0F1E33]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#0d1d31]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#101113]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#10213A]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#102238]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#10233b]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#10243D]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#11243b]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#12213E]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#12263f]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#132840]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#132844]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#132B49]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#152A47]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#152a47]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#16304f]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#172742]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#18191d]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#183152]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#19304f]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#1A2944]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#1F2A37]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#1a3046]'],
+  [data-app-theme='agentfinder'] [class*='bg-[#203850]'],
+  [data-app-theme='agentfinder'] [class*='bg-black/20'],
+  [data-app-theme='agentfinder'] [class*='bg-black/25'],
+  [data-app-theme='agentfinder'] [class*='bg-black/40'],
+  [data-app-theme='agentfinder'] [class*='bg-black/88'],
+  [data-app-theme='agentfinder'] [class*='bg-[linear-gradient'],
+  [data-app-theme='agentfinder'] [class*='bg-[radial-gradient'],
+  [data-app-theme='agentfinder'] [class*='bg-gradient-to-r'],
+  [data-app-theme='agentfinder'] [class*='bg-gradient-to-b'],
+  [data-app-theme='agentfinder'] [class*='bg-gradient-to-t'] {
+    background: var(--agentfinder-card-bg) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+    box-shadow: var(--agentfinder-card-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-[#415782]'] {
+    background: var(--agentfinder-primary-button) !important;
+    color: white !important;
+    box-shadow: var(--agentfinder-primary-button-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-[#152033]'] {
+    background: var(--agentfinder-dark-button) !important;
+    color: white !important;
+    box-shadow: var(--agentfinder-dark-button-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='from-[#'],
+  [data-app-theme='agentfinder'] [class*='via-[#'],
+  [data-app-theme='agentfinder'] [class*='to-[#'] {
+    --tw-gradient-from: hsl(var(--card)) var(--tw-gradient-from-position) !important;
+    --tw-gradient-via: hsl(var(--card)) var(--tw-gradient-via-position) !important;
+    --tw-gradient-to: hsl(var(--card)) var(--tw-gradient-to-position) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-white/5'],
+  [data-app-theme='agentfinder'] [class*='bg-white/6'],
+  [data-app-theme='agentfinder'] [class*='bg-white/8'],
+  [data-app-theme='agentfinder'] [class*='bg-white/10'],
+  [data-app-theme='agentfinder'] [class*='bg-white/12'],
+  [data-app-theme='agentfinder'] [class*='bg-white/14'],
+  [data-app-theme='agentfinder'] [class*='bg-white/15'],
+  [data-app-theme='agentfinder'] [class*='bg-white/20'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.02]'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.03]'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.04]'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.05]'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.06]'],
+  [data-app-theme='agentfinder'] [class*='bg-white/[0.08]'] {
+    background: var(--agentfinder-card-bg-soft) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='border-white/6'],
+  [data-app-theme='agentfinder'] [class*='border-white/8'],
+  [data-app-theme='agentfinder'] [class*='border-white/10'],
+  [data-app-theme='agentfinder'] [class*='border-white/12'],
+  [data-app-theme='agentfinder'] [class*='border-white/14'],
+  [data-app-theme='agentfinder'] [class*='border-white/15'],
+  [data-app-theme='agentfinder'] [class*='border-white/16'],
+  [data-app-theme='agentfinder'] [class*='border-white/18'],
+  [data-app-theme='agentfinder'] [class*='border-white/20'] {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-white'] {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-white/90'],
+  [data-app-theme='agentfinder'] [class*='text-white/88'],
+  [data-app-theme='agentfinder'] [class*='text-white/85'],
+  [data-app-theme='agentfinder'] [class*='text-white/82'],
+  [data-app-theme='agentfinder'] [class*='text-white/80'],
+  [data-app-theme='agentfinder'] [class*='text-white/78'],
+  [data-app-theme='agentfinder'] [class*='text-white/75'],
+  [data-app-theme='agentfinder'] [class*='text-white/72'],
+  [data-app-theme='agentfinder'] [class*='text-white/70'],
+  [data-app-theme='agentfinder'] [class*='text-white/68'],
+  [data-app-theme='agentfinder'] [class*='text-white/65'],
+  [data-app-theme='agentfinder'] [class*='text-white/62'],
+  [data-app-theme='agentfinder'] [class*='text-white/60'],
+  [data-app-theme='agentfinder'] [class*='text-white/58'],
+  [data-app-theme='agentfinder'] [class*='text-white/55'],
+  [data-app-theme='agentfinder'] [class*='text-white/50'],
+  [data-app-theme='agentfinder'] [class*='text-white/45'],
+  [data-app-theme='agentfinder'] [class*='text-white/40'],
+  [data-app-theme='agentfinder'] [class*='text-white/35'],
+  [data-app-theme='agentfinder'] [class*='text-white/30'],
+  [data-app-theme='agentfinder'] [class*='text-stone-300'],
+  [data-app-theme='agentfinder'] [class*='text-stone-400'],
+  [data-app-theme='agentfinder'] [class*='text-stone-500'],
+  [data-app-theme='agentfinder'] [class*='text-stone-100'],
+  [data-app-theme='agentfinder'] [class*='text-emerald-50/80'] {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='placeholder:text-stone-500']::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/5']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/10']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/15']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/20']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.04]']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.05]']:hover,
+  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.08]']:hover {
+    background: hsl(var(--accent)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-[#22c55e]'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-400/8'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-400/12'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-400/10'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-400/14'],
+  [data-app-theme='agentfinder'] [class*='bg-[#22c55e]/10'],
+  [data-app-theme='agentfinder'] [class*='bg-[#22c55e]/15'],
+  [data-app-theme='agentfinder'] [class*='bg-[#22c55e]/20'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/10'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/15'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/18'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/22'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/32'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/[0.08]'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500/85'],
+  [data-app-theme='agentfinder'] [class*='bg-emerald-500'] {
+    background: var(--agentfinder-success-bg) !important;
+    color: var(--agentfinder-success-foreground) !important;
+    border-color: var(--agentfinder-success-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-[#86efac]'],
+  [data-app-theme='agentfinder'] [class*='text-emerald-50'],
+  [data-app-theme='agentfinder'] [class*='text-sky-300'],
+  [data-app-theme='agentfinder'] [class*='text-sky-200'] {
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-emerald-100'],
+  [data-app-theme='agentfinder'] [class*='text-emerald-200'],
+  [data-app-theme='agentfinder'] [class*='text-emerald-300'] {
+    color: var(--agentfinder-success-foreground) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='border-emerald-300'],
+  [data-app-theme='agentfinder'] [class*='border-emerald-400'] {
+    border-color: var(--agentfinder-success-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-amber-300/14'],
+  [data-app-theme='agentfinder'] [class*='bg-amber-500/10'],
+  [data-app-theme='agentfinder'] [class*='bg-amber-500/15'],
+  [data-app-theme='agentfinder'] [class*='bg-amber-500/20'],
+  [data-app-theme='agentfinder'] [class*='bg-amber-400'] {
+    background: var(--agentfinder-warning-bg) !important;
+    color: var(--agentfinder-warning-foreground) !important;
+    border-color: var(--agentfinder-warning-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-amber-100'],
+  [data-app-theme='agentfinder'] [class*='text-amber-200'],
+  [data-app-theme='agentfinder'] [class*='text-amber-300'] {
+    color: var(--agentfinder-warning-foreground) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='border-amber-300'],
+  [data-app-theme='agentfinder'] [class*='border-amber-400'] {
+    border-color: var(--agentfinder-warning-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='bg-rose-300/10'],
+  [data-app-theme='agentfinder'] [class*='bg-rose-400/16'],
+  [data-app-theme='agentfinder'] [class*='bg-rose-500/10'],
+  [data-app-theme='agentfinder'] [class*='bg-rose-500/15'],
+  [data-app-theme='agentfinder'] [class*='bg-rose-500/20'],
+  [data-app-theme='agentfinder'] [class*='bg-rose-400'] {
+    background: var(--agentfinder-danger-bg) !important;
+    color: var(--agentfinder-danger-foreground) !important;
+    border-color: var(--agentfinder-danger-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='text-rose-100'],
+  [data-app-theme='agentfinder'] [class*='text-rose-200'],
+  [data-app-theme='agentfinder'] [class*='text-rose-300'] {
+    color: var(--agentfinder-danger-foreground) !important;
+  }
+
+  [data-app-theme='agentfinder'] [class*='border-rose-300'],
+  [data-app-theme='agentfinder'] [class*='border-rose-400'] {
+    border-color: var(--agentfinder-danger-border) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-card {
+    border-color: #d9dfeb !important;
+    background: var(--agentfinder-card-bg) !important;
+    box-shadow: var(--agentfinder-card-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-card:hover {
+    box-shadow: var(--agentfinder-card-shadow-strong) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button {
+    border-radius: 9999px;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.bg-primary,
+  [data-app-theme='agentfinder'] .ui-button[class*='bg-primary'] {
+    background: var(--agentfinder-primary-button) !important;
+    color: white !important;
+    box-shadow: var(--agentfinder-primary-button-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.bg-primary:hover,
+  [data-app-theme='agentfinder'] .ui-button[class*='bg-primary']:hover {
+    background: var(--agentfinder-primary-button-hover) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.border,
+  [data-app-theme='agentfinder'] .ui-button[class*='border-input'] {
+    border-color: #d6e0ed !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1d2d49 !important;
+    box-shadow: 0 12px 24px rgba(33, 51, 84, 0.06) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.border:hover,
+  [data-app-theme='agentfinder'] .ui-button[class*='border-input']:hover {
+    background: rgba(244, 248, 255, 0.96) !important;
+    color: #152033 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button[class*='hover:bg-accent']:hover,
+  [data-app-theme='agentfinder'] .ui-button[class*='ghost']:hover {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #415782 !important;
+    box-shadow: var(--agentfinder-pill-shadow) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-badge {
+    border-radius: 9999px;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    box-shadow: 0 10px 24px rgba(33, 51, 84, 0.08);
+  }
+
+  [data-app-theme='agentfinder'] .ui-badge[class*='bg-primary'],
+  [data-app-theme='agentfinder'] .ui-badge[class*='variant-default'] {
+    border-color: #dce3ef !important;
+    background: var(--agentfinder-pill-bg) !important;
+    color: #415782 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-badge[class*='bg-secondary'] {
+    border-color: #dce3ef !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    color: #61739a !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-badge[class*='bg-green-500'],
+  [data-app-theme='agentfinder'] .ui-badge[class*='success'] {
+    border-color: var(--agentfinder-success-border) !important;
+    background: var(--agentfinder-success-bg) !important;
+    color: var(--agentfinder-success-foreground) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-badge[class*='bg-yellow-500'],
+  [data-app-theme='agentfinder'] .ui-badge[class*='warning'] {
+    border-color: var(--agentfinder-warning-border) !important;
+    background: var(--agentfinder-warning-bg) !important;
+    color: var(--agentfinder-warning-foreground) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-input,
+  [data-app-theme='agentfinder'] .ui-textarea,
+  [data-app-theme='agentfinder'] .ui-select-trigger {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    background: var(--app-surface-input) !important;
+    color: #152033 !important;
+    box-shadow: 0 12px 24px rgba(33, 51, 84, 0.06) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-input::placeholder,
+  [data-app-theme='agentfinder'] .ui-textarea::placeholder,
+  [data-app-theme='agentfinder'] .ui-select-trigger [data-placeholder] {
+    color: #7d8aa3 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-input:focus-visible,
+  [data-app-theme='agentfinder'] .ui-textarea:focus-visible,
+  [data-app-theme='agentfinder'] .ui-select-trigger:focus {
+    --tw-ring-color: #9eb2d5 !important;
+    border-color: #d6e0ed !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-select-content {
+    border-color: #d9dfeb !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 248, 253, 0.99)) !important;
+    box-shadow: 0 30px 80px rgba(33, 51, 84, 0.18) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-select-item:focus {
+    background: rgba(241, 246, 253, 0.98) !important;
+    color: #152033 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-chart {
+    color: #61739a !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-chart .recharts-cartesian-grid line,
+  [data-app-theme='agentfinder'] .ui-chart .recharts-polar-grid line {
+    stroke: rgba(191, 205, 228, 0.7) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-chart .recharts-cartesian-axis-tick text,
+  [data-app-theme='agentfinder'] .ui-chart .recharts-legend-item-text {
+    fill: #6f7f9c !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-chart .recharts-tooltip-wrapper .ui-card,
+  [data-app-theme='agentfinder'] .ui-chart .recharts-default-tooltip {
+    border: 1px solid #d9dfeb !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 248, 253, 0.99)) !important;
+    box-shadow: 0 22px 60px rgba(33, 51, 84, 0.12) !important;
   }
 }
