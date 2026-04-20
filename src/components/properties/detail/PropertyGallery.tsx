@@ -142,7 +142,7 @@ export function PropertyGallery({
           className="object-cover transition-transform group-hover:scale-105"
           sizes="(min-width: 1024px) 50vw, 100vw"
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+        <div className="agentfinder-gallery-overlay absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
       </div>
     )
   }

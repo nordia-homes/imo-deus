@@ -578,4 +578,12 @@
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 248, 253, 0.99)) !important;
     box-shadow: 0 22px 60px rgba(33, 51, 84, 0.12) !important;
   }
+
+  [data-app-theme='agentfinder'] .agentfinder-gallery-overlay {
+    background: transparent !important;
+  }
+
+  [data-app-theme='agentfinder'] .group:hover .agentfinder-gallery-overlay {
+    background: rgba(0, 0, 0, 0.2) !important;
+  }
 }

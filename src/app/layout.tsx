@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-app-theme="classic">
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-body`}>
         <FirebaseClientProvider>
           <FirebaseErrorListener />

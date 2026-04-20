@@ -280,7 +280,7 @@ export function applyAgencyThemeToRoot(
 }
 
 export function resetAgencyThemeOnRoot(root: HTMLElement) {
-  delete root.dataset.appTheme;
+  root.dataset.appTheme = 'classic';
 
   for (const variableName of THEME_VARIABLE_NAMES) {
     root.style.removeProperty(variableName);
