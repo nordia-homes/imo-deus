@@ -43,7 +43,7 @@ export function OfferManagementCard({ contact, properties, onAddOffer, onUpdateO
   }
 
   return (
-    <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 shadow-2xl">
+    <Card className="agentfinder-offer-management-card mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 shadow-2xl">
       <CardHeader className="p-4 pb-2 lg:p-6 lg:pb-4">
         <CardTitle className="flex items-center gap-2 text-base text-white">
           <FileText className="h-5 w-5 text-primary" />
@@ -96,7 +96,7 @@ export function OfferManagementCard({ contact, properties, onAddOffer, onUpdateO
       </CardContent>
       <CardFooter className="p-4 pt-0 lg:p-6 lg:pt-0">
         <AddOfferDialog onAddOffer={onAddOffer} properties={properties}>
-            <Button variant="outline" className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white">
+            <Button variant="outline" className="agentfinder-sidebar-button agentfinder-sidebar-button--full w-full">
                 Adaugă Ofertă
             </Button>
         </AddOfferDialog>
@@ -104,3 +104,4 @@ export function OfferManagementCard({ contact, properties, onAddOffer, onUpdateO
     </Card>
   );
 }
+

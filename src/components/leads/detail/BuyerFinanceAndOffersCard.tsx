@@ -7,7 +7,6 @@ import { Banknote, FileText, Heart, ThumbsDown, HelpCircle, MoreVertical, Trash2
 import { Label } from '@/components/ui/label';
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { AddOfferDialog } from './AddOfferDialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
@@ -102,7 +101,7 @@ export function BuyerFinanceAndOffersCard({
         <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
           <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Status financiar</Label>
           <Select value={contact.financialStatus || 'Neprecalificat'} onValueChange={handleStatusChange}>
-            <SelectTrigger className="mt-2 h-11 rounded-2xl border-white/10 bg-[#1d385d]">
+            <SelectTrigger className="mt-2 h-11 rounded-2xl border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -127,14 +126,7 @@ export function BuyerFinanceAndOffersCard({
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <span className="font-bold text-primary">€{offer.price.toLocaleString()}</span>
                   <Select value={offer.feedback} onValueChange={(value: PortalRecommendation['clientFeedback']) => handleFeedbackChange(offer.recId, value)}>
-                    <SelectTrigger
-                      className={cn(
-                        'h-8 w-[150px] text-xs bg-white/10 border-white/20',
-                        offer.feedback === 'liked' && 'text-green-400 border-green-500',
-                        offer.feedback === 'disliked' && 'text-red-400 border-red-500',
-                        offer.feedback === 'none' && 'text-yellow-400 border-yellow-500'
-                      )}
-                    >
+                    <SelectTrigger className="h-8 w-[150px] border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-xs text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
                       <div className="flex items-center gap-2">
                         {offer.feedback === 'liked' && <><Heart className="h-4 w-4" /> I-a plăcut</>}
                         {offer.feedback === 'disliked' && <><ThumbsDown className="h-4 w-4" /> Nu i-a plăcut</>}
@@ -191,7 +183,7 @@ export function BuyerFinanceAndOffersCard({
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <span className="text-lg font-bold text-primary">€{offer.price.toLocaleString()}</span>
                   <Select value={offer.status} onValueChange={(value: Offer['status']) => handleOfferStatusChange(offer.id, value)}>
-                    <SelectTrigger className={cn('h-8 w-[150px] text-xs font-semibold bg-white/10 border-white/20', getOfferStatusClass(offer.status))}>
+                    <SelectTrigger className="h-8 w-[150px] border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-xs font-semibold text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -207,7 +199,7 @@ export function BuyerFinanceAndOffersCard({
             <p className="py-2 text-center text-sm text-white/70">Nicio ofertă înregistrată.</p>
           )}
           <AddOfferDialog onAddOffer={onAddOffer} properties={properties || []}>
-            <Button variant="outline" className="h-11 w-full rounded-2xl border-white/10 bg-white/8 text-white hover:bg-white/16">
+            <Button variant="outline" className="agentfinder-button-primary agentfinder-add-to-portal-button h-11 w-full rounded-2xl text-sm font-semibold">
               Adaugă Ofertă
             </Button>
           </AddOfferDialog>

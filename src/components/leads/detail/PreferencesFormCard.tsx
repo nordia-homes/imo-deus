@@ -80,20 +80,20 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
               <Label htmlFor="preferences-link" className="text-xs text-white/70">Link Formular</Label>
               <div className="flex gap-2 mt-1">
                 <Input id="preferences-link" readOnly value={preferencesLink} className="bg-white/10 border-white/20 h-9" />
-                <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                <Button variant="secondary" size="icon" onClick={handleCopy} className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-9 w-9 shrink-0">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
-                <Button variant="secondary" size="icon" onClick={handleGenerateLink} disabled={isLoading} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                <Button variant="secondary" size="icon" onClick={handleGenerateLink} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-9 w-9 shrink-0">
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-             <Button size="sm" variant="secondary" onClick={() => window.open(preferencesLink, '_blank')} disabled={isLoading} className="bg-white/90 text-black hover:bg-white w-full">
+             <Button size="sm" variant="secondary" onClick={() => window.open(preferencesLink, '_blank')} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--full w-full">
                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide Formular
               </Button>
           </>
         ) : (
-          <Button onClick={handleGenerateLink} disabled={isLoading} className="h-11 w-full rounded-full bg-[#1f4b7a] text-white hover:bg-[#24588f]">
+          <Button onClick={handleGenerateLink} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--full h-11 w-full rounded-full">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Generează Link Formular
           </Button>

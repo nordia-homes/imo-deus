@@ -112,7 +112,7 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
 };
 
   return (
-    <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
+    <Card className="agentfinder-lead-timeline-card overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
       <CardHeader className="p-5 space-y-4">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Activitate</p>
@@ -120,16 +120,16 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
         </div>
         <div className="grid grid-cols-2 gap-2">
             <AddInteractionPopover type="Apel telefonic" onSave={(notes) => handleInteractionSave('Apel telefonic', notes)}>
-                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
+                <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><Phone className="mr-2 h-4 w-4" /> Apel</Button>
             </AddInteractionPopover>
             <AddInteractionPopover type="WhatsApp" onSave={(notes) => handleInteractionSave('WhatsApp', notes)}>
-                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+                <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
             </AddInteractionPopover>
             <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
-                <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
+                <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
             </AddInteractionPopover>
             <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
-                 <Button variant="outline" size="sm" className="h-10 w-full rounded-2xl border-white/10 bg-white/6 hover:bg-white/12"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
+                 <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
             </AddTaskDialog>
         </div>
       </CardHeader>
@@ -146,3 +146,5 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
     </Card>
   );
 }
+
+

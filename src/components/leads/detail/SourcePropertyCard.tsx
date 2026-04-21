@@ -44,7 +44,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                 </CardHeader>
                 <CardContent>
                     <Select onValueChange={handleSelectChange} defaultValue={property?.id || 'none'}>
-                        <SelectTrigger className="bg-white/10 border-white/20">
+                        <SelectTrigger className="border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
                             <SelectValue placeholder="Selectează proprietatea..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -54,7 +54,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                             ))}
                         </SelectContent>
                     </Select>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="mt-2 w-full text-white/80">Anulează</Button>
+                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="agentfinder-sidebar-button agentfinder-sidebar-button--full mt-2 w-full">Anulează</Button>
                 </CardContent>
             </Card>
         )
@@ -68,14 +68,14 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                         <CardTitle className="text-base font-semibold text-white">
                             Proprietate Inițială
                         </CardTitle>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white" onClick={() => setIsEditing(true)}>
+                        <Button variant="ghost" size="icon" className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-8 w-8" onClick={() => setIsEditing(true)}>
                             <Edit className="h-4 w-4" />
                         </Button>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                         <div className="text-center text-white/70 py-4">
                             <p className="text-sm mb-2">Nicio proprietate sursă asociată.</p>
-                            <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)} className="bg-white/10 hover:bg-white/20 text-white">Asociază o proprietate</Button>
+                            <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)} className="agentfinder-sidebar-button">Asociază o proprietate</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -88,7 +88,12 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                 <h3 className="text-base font-semibold text-white pl-1">
                                     Proprietate Inițială
                                 </h3>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={() => setIsEditing(true)}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-8 w-8"
+                                    onClick={() => setIsEditing(true)}
+                                >
                                     <Edit className="h-4 w-4" />
                                 </Button>
                             </div>

@@ -24,6 +24,7 @@ import { Check, Copy, Link as LinkIcon, Loader2, RefreshCw, Star, Trash2 } from 
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const sanitizeForWhatsapp = (phone?: string | null) => {
     if (!phone) return '';
@@ -347,8 +348,12 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
 
   return (
     <Card
-      className="agentfinder-recommendations-shell rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] text-white shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)] mx-2 lg:mx-0"
-      style={isAgentfinderTheme ? { background: 'transparent', borderColor: 'transparent', boxShadow: 'none' } : undefined}
+      className={cn(
+        "agentfinder-recommendations-shell rounded-[30px] text-white mx-2 lg:mx-0",
+        isAgentfinderTheme
+          ? "border-transparent bg-transparent shadow-none"
+          : "border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)]"
+      )}
     >
         <div className="lg:hidden p-4">
             <div>

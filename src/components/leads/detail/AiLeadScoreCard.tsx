@@ -30,7 +30,13 @@ export function AiLeadScoreCard({
   const [isGenerating, setIsGenerating] = useState(false);
   const normalizedScore = typeof contact.leadScore === 'number' ? Math.max(0, Math.min(100, contact.leadScore)) : 0;
   const scoreTone =
-    normalizedScore >= 80 ? 'bg-emerald-400' : normalizedScore >= 60 ? 'bg-cyan-400' : normalizedScore >= 40 ? 'bg-amber-400' : 'bg-rose-400';
+    normalizedScore >= 80
+      ? 'agentfinder-lead-score-fill--high'
+      : normalizedScore >= 60
+        ? 'agentfinder-lead-score-fill--good'
+        : normalizedScore >= 40
+          ? 'agentfinder-lead-score-fill--mid'
+          : 'agentfinder-lead-score-fill--low';
   const scoreLabel =
     normalizedScore >= 80 ? 'Foarte bun' : normalizedScore >= 60 ? 'Bun' : normalizedScore >= 40 ? 'Mediu' : 'Scăzut';
 
@@ -87,15 +93,15 @@ export function AiLeadScoreCard({
     if (isInline) {
       return (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Credibilitate AI</p>
-            <p className="mt-1 text-sm leading-6 text-white/78">Generează cu OpenAI un scor de credibilitate pe baza datelor din CRM.</p>
+          <div className="agentfinder-lead-score-intro rounded-2xl border px-4 py-3">
+            <p className="agentfinder-lead-score-intro__eyebrow text-[11px] font-semibold uppercase tracking-[0.18em]">Credibilitate AI</p>
+            <p className="agentfinder-lead-score-intro__body mt-1 text-sm leading-6">Generează cu OpenAI un scor de credibilitate pe baza datelor din CRM.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-            <p className="text-sm text-white/78">Scorul nu este generat încă.</p>
+          <div className="agentfinder-lead-score-state rounded-2xl border px-4 py-3">
+            <p className="agentfinder-lead-score-state__body text-sm">Scorul nu este generat încă.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-            <Button onClick={handleGenerateScore} className="agentfinder-button-primary h-11 w-full rounded-full bg-[#1f4b7a] px-4 text-white hover:bg-[#24588f]">
+          <div className="agentfinder-lead-score-refresh rounded-2xl border px-4 py-3">
+            <Button onClick={handleGenerateScore} className="agentfinder-sidebar-button agentfinder-sidebar-button--full h-11 w-full rounded-full px-4">
               <Sparkles className="mr-2 h-4 w-4" />
               Generează Scor
             </Button>
@@ -178,35 +184,35 @@ export function AiLeadScoreCard({
   if (isInline) {
     return (
       <div className="space-y-3">
-        <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+        <div className="agentfinder-lead-score-intro rounded-2xl border px-4 py-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Credibilitate AI</p>
-            <p className="mt-1 text-sm text-white/78">Scor OpenAI bazat pe datele din CRM.</p>
+            <p className="agentfinder-lead-score-intro__eyebrow text-[11px] font-semibold uppercase tracking-[0.18em]">Credibilitate AI</p>
+            <p className="agentfinder-lead-score-intro__body mt-1 text-sm">Scor OpenAI bazat pe datele din CRM.</p>
           </div>
         </div>
         {typeof contact.leadScore === 'number' && (
-          <div className="rounded-2xl border border-emerald-300/14 bg-emerald-400/7 px-4 py-3">
+          <div className="agentfinder-lead-score-panel rounded-2xl border px-4 py-3">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs text-white/55">Scor</p>
+                <p className="agentfinder-lead-score-panel__label text-xs">Scor</p>
                 <div className="mt-1 flex items-end gap-2">
-                  <p className="text-4xl font-bold leading-none text-primary">{contact.leadScore}</p>
-                  <p className="pb-1 text-xs text-white/70">/ 100</p>
+                  <p className="agentfinder-lead-score-panel__value text-4xl font-bold leading-none">{contact.leadScore}</p>
+                  <p className="agentfinder-lead-score-panel__unit pb-1 text-xs">/ 100</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">Nivel</p>
-                <p className="mt-1 text-sm font-semibold text-white">{scoreLabel}</p>
+              <div className="agentfinder-lead-score-panel__level text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Nivel</p>
+                <p className="mt-1 text-sm font-semibold">{scoreLabel}</p>
               </div>
             </div>
-            <div className="mt-4 space-y-2">
-              <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+            <div className="agentfinder-lead-score-panel__meter mt-4 space-y-2">
+              <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${scoreTone}`}
+                  className={`agentfinder-lead-score-fill h-full rounded-full transition-all duration-500 ${scoreTone}`}
                   style={{ width: `${normalizedScore}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] text-white/45">
+              <div className="agentfinder-lead-score-scale flex justify-between text-[11px]">
                 <span>0</span>
                 <span>25</span>
                 <span>50</span>
@@ -217,20 +223,18 @@ export function AiLeadScoreCard({
           </div>
         )}
         {contact.leadScoreReason && (
-          <div className="rounded-2xl border border-white/20 bg-[#0f2036] px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">De ce acest scor</p>
-            <p className="mt-2 text-sm leading-6 text-white/88">{contact.leadScoreReason}</p>
+          <div className="agentfinder-lead-score-reason rounded-2xl border px-4 py-3">
+            <p className="agentfinder-lead-score-reason__title text-[11px] font-semibold uppercase tracking-[0.18em]">De ce acest scor</p>
+            <p className="agentfinder-lead-score-reason__body mt-2 text-sm leading-6">{contact.leadScoreReason}</p>
           </div>
         )}
-        <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+        <div className="agentfinder-lead-score-refresh rounded-2xl border px-4 py-3">
           <Button
-            variant="ghost"
-            size="sm"
             onClick={handleGenerateScore}
             disabled={isGenerating}
-            className="agentfinder-button-tertiary h-auto p-0 text-xs text-white/70 hover:text-white"
+            className="agentfinder-sidebar-button agentfinder-sidebar-button--full agentfinder-lead-score-refresh__button h-11 w-full rounded-xl px-4 text-sm font-semibold"
           >
-            <RefreshCw className="mr-1 h-3 w-3" />
+            <RefreshCw className="h-4 w-4" />
             Regenerează scorul
           </Button>
         </div>
