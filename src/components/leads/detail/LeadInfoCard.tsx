@@ -138,6 +138,31 @@ export function LeadInfoCard({
               {contact.city || 'N/A'}
             </p>
           </div>
+
+          {contact.zones && contact.zones.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-white/72">
+                <MapPin className="h-4 w-4" />
+                Zone preferate
+              </h4>
+              <div className="space-y-2">
+                {contact.zones.map((zone) => (
+                  <div
+                    key={zone}
+                    className="agentfinder-lead-info-stat agentfinder-lead-info-zone rounded-2xl border border-white/10 bg-white/6 px-3 py-3"
+                  >
+                    <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Zona preferata
+                    </p>
+                    <p className="mt-2 truncate whitespace-nowrap text-sm font-semibold text-white">
+                      {zone}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -156,25 +181,6 @@ export function LeadInfoCard({
           />
         </div>
 
-        {contact.zones && contact.zones.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-white/72">
-              <MapPin className="h-4 w-4" />
-              Zone preferate
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {contact.zones.map((zone) => (
-                <div
-                  key={zone}
-                  className="agentfinder-lead-info-zone rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-sm text-white"
-                >
-                  <MapPin className="mr-1.5 inline h-3.5 w-3.5 text-white/60" />
-                  {zone}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </CardContent>
 
       <div className="hidden lg:block px-5 pb-5">

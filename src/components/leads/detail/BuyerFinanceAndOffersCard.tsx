@@ -90,7 +90,7 @@ export function BuyerFinanceAndOffersCard({
   };
 
   return (
-    <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
+    <Card className="agentfinder-finance-offers-card overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_62%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
       <CardHeader className="p-5 pb-3">
         <CardTitle className="flex items-center gap-2 text-base text-white">
           <Banknote className="h-5 w-5 text-primary" />
@@ -101,7 +101,7 @@ export function BuyerFinanceAndOffersCard({
         <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
           <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">Status financiar</Label>
           <Select value={contact.financialStatus || 'Neprecalificat'} onValueChange={handleStatusChange}>
-            <SelectTrigger className="mt-2 h-11 rounded-2xl border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
+            <SelectTrigger className="agentfinder-finance-offers-select mt-2 h-11 rounded-2xl border-[rgba(102,214,168,0.8)] bg-[linear-gradient(135deg,rgba(38,158,114,0.98),rgba(23,129,92,0.98))] text-[#f6fffb] shadow-[0_20px_44px_rgba(21,118,84,0.24)]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -199,7 +199,7 @@ export function BuyerFinanceAndOffersCard({
             <p className="py-2 text-center text-sm text-white/70">Nicio ofertă înregistrată.</p>
           )}
           <AddOfferDialog onAddOffer={onAddOffer} properties={properties || []}>
-            <Button variant="outline" className="agentfinder-button-primary agentfinder-add-to-portal-button h-11 w-full rounded-2xl text-sm font-semibold">
+            <Button variant="outline" className="agentfinder-button-primary agentfinder-add-to-portal-button agentfinder-finance-offers-add-button h-11 w-full rounded-2xl text-sm font-semibold">
               Adaugă Ofertă
             </Button>
           </AddOfferDialog>
