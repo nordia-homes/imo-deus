@@ -124,7 +124,10 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                         <p className="text-xs text-white/50">Imagine lipsă</p>
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F1E33]/55 via-transparent to-transparent" />
+                                <div
+                                    className="absolute inset-0"
+                                    style={{ background: 'linear-gradient(to top, rgba(15, 30, 51, 0.55), transparent 58%)' }}
+                                />
                                 <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-3">
                                     <Badge variant={getStatusVariant(viewing.status)} className="text-sm">{viewing.status}</Badge>
                                     <DropdownMenu>

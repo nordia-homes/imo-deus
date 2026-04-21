@@ -187,7 +187,8 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
                 <WhatsappIcon className="h-5 w-5" />
               </Button>
             )}
-            <Button onClick={handleAddClick} className="agentfinder-button-primary agentfinder-add-to-portal-button rounded-full bg-white px-3.5 text-sm text-slate-950 hover:bg-slate-100">
+            <Button onClick={handleAddClick} className="agentfinder-button-primary agentfinder-add-to-portal-button gap-1 rounded-full bg-white px-3.5 text-sm text-slate-950 hover:bg-slate-100">
+              <Plus className="h-4 w-4" />
               Adauga in portal
             </Button>
           </div>

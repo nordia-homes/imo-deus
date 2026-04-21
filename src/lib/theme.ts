@@ -100,7 +100,7 @@ const AGENTFINDER_THEME_VARIABLES: ThemeVariableMap = {
   '--font-headline': 'var(--font-space-grotesk)',
   '--app-shell-bg': 'hsl(var(--background))',
   '--app-shell-bg-gradient': 'linear-gradient(180deg, #eef3fb 0%, #f8fbff 100%)',
-  '--app-topbar-bg': 'rgba(255, 255, 255, 0.88)',
+  '--app-topbar-bg': 'hsl(214 45% 97%)',
   '--app-sidebar-bg': 'hsl(214 45% 97%)',
   '--app-footer-bg': 'hsl(214 45% 97%)',
   '--app-sidebar-border': 'hsl(214 34% 87%)',

@@ -145,6 +145,10 @@
     border-color: var(--app-surface-border) !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-topbar {
+    background: var(--app-sidebar-bg) !important;
+  }
+
   [data-app-theme='agentfinder'] .agentfinder-input {
     background: var(--app-surface-input) !important;
     border-color: var(--app-surface-border) !important;

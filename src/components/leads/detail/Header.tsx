@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Contact, Property, Task } from '@/lib/types';
-import { Phone, CalendarCheck, Wand2 } from 'lucide-react';
+import { BadgeCheck, Phone, CalendarCheck, Wand2 } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 type LeadHeaderProps = {
@@ -38,7 +38,7 @@ export function LeadHeader({
   const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
 
   return (
-    <header className="agentfinder-lead-detail-topbar sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 border-b px-0 py-0 md:-mt-6 lg:-mt-8 lg:border-white/10 lg:bg-[#0F1E33]/95">
+    <header className="agentfinder-lead-detail-topbar sticky top-16 z-20 bg-background/95 backdrop-blur-sm -mt-4 border-b px-0 py-0 md:-mt-6 lg:-mt-8 lg:border-white/10 lg:bg-[#0F1E33]/95">
       <div className="agentfinder-lead-detail-topbar__inner flex flex-col gap-3 px-4 py-4 md:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
         <div className="agentfinder-lead-detail-topbar__identity flex min-w-0 flex-wrap items-center gap-3">
           <h1 className="agentfinder-lead-detail-topbar__title truncate text-[2.05rem] font-bold leading-none tracking-tight text-white">
@@ -107,6 +107,7 @@ export function LeadHeader({
             onClick={() => onUpdateContact({ status: 'Câștigat' })}
             className="agentfinder-button-primary agentfinder-lead-detail-topbar__action agentfinder-lead-detail-topbar__action--primary col-span-2"
           >
+            <BadgeCheck className="mr-2 h-4 w-4" />
             Marchează Vândut
           </Button>
         </div>
