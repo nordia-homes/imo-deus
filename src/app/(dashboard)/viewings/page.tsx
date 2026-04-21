@@ -153,7 +153,7 @@ export default function ViewingsPage() {
 
     return (
         <div className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-x-hidden bg-[#0F1E33] px-2 py-2 text-white sm:gap-6 sm:p-2">
-            <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
+            <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="agentfinder-schedule-viewing-button w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
                 <PlusCircle className="mr-2 h-4 w-4"/>
                 Programează Vizionare
             </Button>

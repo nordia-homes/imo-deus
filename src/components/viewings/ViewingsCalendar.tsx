@@ -369,7 +369,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 key={dayKey}
                 onClick={() => setSelectedDay(day)}
                 className={cn(
-                  'flex min-w-0 flex-col items-center rounded-lg p-1 transition-colors',
+                  'agentfinder-calendar-day flex min-w-0 flex-col items-center rounded-lg p-1 transition-colors',
                   isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-white/10'
                 )}
               >
@@ -400,20 +400,20 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
           })}
         </div>
 
-        <div className="mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+        <div className="agentfinder-viewing-summary-card mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
               <p className="text-sm text-white/55 sm:text-base">Programul zilei între 08:00 și 21:00</p>
             </div>
-            <div className="mt-0.5 shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
+            <div className="agentfinder-viewing-summary-count mt-0.5 shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
               {selectedDayViewings.length} vizionări
             </div>
           </div>
 
           <div className="mt-5">
-            <div className="relative h-14 rounded-2xl border border-white/10 bg-[#0F1E33]/90 px-2">
-              <div className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/10" />
+            <div className="agentfinder-viewing-summary-timeline relative h-14 rounded-2xl border border-white/10 bg-[#0F1E33]/90 px-2">
+              <div className="agentfinder-viewing-summary-axis absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/10" />
               {daySummaryViewings.map((viewing) => (
                 <div
                   key={viewing.id}
@@ -423,17 +423,17 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                     width: `calc(${viewing.widthPercent}% - 0.25rem)`,
                   }}
                 >
-                  <div className="h-3 rounded-full bg-primary shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(34,197,94,0.35)]" />
+                  <div className="agentfinder-viewing-summary-bar h-3 rounded-full bg-primary shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(34,197,94,0.35)]" />
                 </div>
               ))}
               {daySummaryViewings.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-white/45">
+                <div className="agentfinder-viewing-summary-empty absolute inset-0 flex items-center justify-center text-xs text-white/45">
                   Nicio vizionare în ziua selectată
                 </div>
               )}
             </div>
 
-            <div className="mt-3 flex items-center justify-between text-xs font-medium uppercase tracking-[0.14em] text-white/45 sm:text-sm">
+            <div className="agentfinder-viewing-summary-ticks mt-3 flex items-center justify-between text-xs font-medium uppercase tracking-[0.14em] text-white/45 sm:text-sm">
               <span>08:00</span>
               <span>11:00</span>
               <span>14:00</span>
@@ -449,25 +449,26 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                       key={item.key}
                       type="button"
                       onClick={() => scrollToViewingCard(item.key)}
-                      className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
+                      className="agentfinder-viewing-summary-item flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
                     >
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
-                      <span className="shrink-0 font-medium text-white sm:text-base">{item.label}</span>
-                      <span className="min-w-0 truncate text-white/55 sm:text-base">{item.title}</span>
+                      <span className="agentfinder-viewing-summary-dot h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                      <span className="agentfinder-viewing-summary-item-time shrink-0 font-medium text-white sm:text-base">{item.label}</span>
+                      <span className="agentfinder-viewing-summary-item-title min-w-0 truncate text-white/55 sm:text-base">{item.title}</span>
                     </button>
                   ) : (
-                    <div key={item.key} className="w-full px-1 py-1.5">
+                    <div key={item.key} className="agentfinder-viewing-summary-free w-full px-1 py-1.5">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/80 sm:text-sm">Timp liber</span>
+                        <span className="agentfinder-viewing-summary-free-label text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/80 sm:text-sm">Timp liber</span>
                         <div className="h-px flex-1 bg-white/10">
                           <div
-                            className="h-px bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
+                            className="agentfinder-viewing-summary-free-line h-px bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
                             style={{ width: `${Math.max(12, Math.min(100, (item.minutes / VIEWING_DAY_TOTAL_MINUTES) * 100))}%` }}
                           />
                         </div>
-                        <span className="text-xs text-white/45 sm:text-sm">{item.label}</span>
+                        <span className="agentfinder-viewing-summary-free-range text-xs text-white/45 sm:text-sm">
+                          {item.label} / {formatAvailabilityDuration(item.minutes)}
+                        </span>
                       </div>
-                      <div className="mt-1 text-right text-xs text-emerald-200/70 sm:text-sm">{formatAvailabilityDuration(item.minutes)}</div>
                     </div>
                   )
                 )}
@@ -515,9 +516,9 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                           {Math.floor(entry.minutes / 60)}h {entry.minutes % 60}m
                         </span>
                       </div>
-                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#0F1E33]/85">
+                      <div className="agentfinder-available-time-track mt-4 h-3 overflow-hidden rounded-full bg-[#0F1E33]/85">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
+                          className="agentfinder-available-time-fill h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400"
                           style={{
                             width: `${Math.max(12, Math.min(100, (entry.minutes / VIEWING_DAY_TOTAL_MINUTES) * 100))}%`,
                             marginLeft: `${Math.max(
@@ -636,15 +637,15 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                                 property?.ownerName ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2"
                                             )}
                                         >
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                                             <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--client min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                                 <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
                                                     <UserRound className="h-3.5 w-3.5" />
                                                     Client
                                                 </div>
                                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                    <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
+                                                     <Link href={`/leads/${viewing.contactId}`} className="agentfinder-viewing-person-name min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
                                                     {contactPhone && (
-                                                        <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                         <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                             <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
                                                                 <MessageSquareText className="h-4 w-4" />
                                                             </a>
@@ -681,17 +682,17 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                                 </div>
                                             )}
 
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
-                                                <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
+                                             <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--agent min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
+                                                 <div className="agentfinder-viewing-person-label mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
                                                     <Building2 className="h-3.5 w-3.5" />
                                                     Agent
                                                 </div>
-                                                <div className="flex min-w-0 max-w-full items-center gap-3 text-sm text-white/80">
+                                             <div className="agentfinder-viewing-agent-row flex min-w-0 max-w-full items-center gap-3 text-sm text-white/80">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={agent?.photoUrl || undefined} />
                                                         <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
                                                     </Avatar>
-                                                    <span className="min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                                 <span className="agentfinder-viewing-person-name min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -710,15 +711,15 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                             : "sm:grid-cols-2 md:max-lg:grid-cols-2"
                                     )}
                                 >
-                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                            <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                                        <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--client min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                            <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
                                                 <UserRound className="h-3.5 w-3.5" />
                                                 Client
                                             </div>
                                             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
+                                                <Link href={`/leads/${viewing.contactId}`} className="agentfinder-viewing-person-name min-w-0 max-w-full flex-1 break-words text-[15px] font-medium leading-tight text-white/90 hover:underline sm:text-base">{viewing.contactName}</Link>
                                                 {contactPhone && (
-                                                    <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                    <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                         <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
                                                             <MessageSquareText className="h-4 w-4" />
                                                         </a>
@@ -755,17 +756,17 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                             </div>
                                         )}
 
-                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
-                                            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
+                                        <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--agent min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
+                                            <div className="agentfinder-viewing-person-label mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:mb-3">
                                                 <Building2 className="h-3.5 w-3.5" />
                                                 Agent
                                             </div>
-                                            <div className="flex min-w-0 max-w-full items-center gap-3 text-sm text-white/80">
+                                            <div className="agentfinder-viewing-agent-row flex min-w-0 max-w-full items-center gap-3 text-sm text-white/80">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={agent?.photoUrl || undefined} />
                                                     <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
                                                 </Avatar>
-                                                <span className="min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                                <span className="agentfinder-viewing-person-name min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
                                             </div>
                                         </div>
                                 </div>

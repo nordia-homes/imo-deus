@@ -273,6 +273,168 @@
     box-shadow: var(--agentfinder-primary-button-shadow) !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-available-time-track.agentfinder-available-time-track {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(20, 83, 45, 0.1) !important;
+    box-shadow: inset 0 1px 2px rgba(20, 83, 45, 0.08) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-available-time-fill.agentfinder-available-time-fill {
+    background: linear-gradient(90deg, #34d399 0%, #22c55e 58%, #84cc16 100%) !important;
+    box-shadow: 0 0 0 1px rgba(20, 83, 45, 0.06), 0 6px 14px rgba(34, 197, 94, 0.24) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-calendar-day.agentfinder-calendar-day:hover {
+    background: #dcfce7 !important;
+    color: #064e3b !important;
+    box-shadow: 0 14px 28px rgba(22, 101, 52, 0.12) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-calendar-day.agentfinder-calendar-day:hover span {
+    color: #064e3b !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button {
+    background: #dcfce7 !important;
+    border-color: #a7f3d0 !important;
+    color: #064e3b !important;
+    box-shadow: 0 14px 28px rgba(22, 101, 52, 0.12) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button:hover {
+    background: #bbf7d0 !important;
+    border-color: #86efac !important;
+    color: #052e26 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-card.agentfinder-viewing-summary-card {
+    background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    border-color: #a7f3d0 !important;
+    box-shadow: 0 18px 44px rgba(22, 101, 52, 0.16) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-card > div:first-child p:first-child {
+    color: #0f1e33 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-card > div:first-child p:nth-child(2) {
+    color: #40526f !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-count.agentfinder-viewing-summary-count {
+    background: #e7edf6 !important;
+    border: 1px solid #cfdae9 !important;
+    color: #304565 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-timeline.agentfinder-viewing-summary-timeline {
+    background: #f9fbfe !important;
+    border-color: #cbd6e5 !important;
+    box-shadow: inset 0 1px 2px rgba(37, 55, 88, 0.08), 0 10px 22px rgba(37, 55, 88, 0.06) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-axis.agentfinder-viewing-summary-axis {
+    background: #becbe0 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-bar.agentfinder-viewing-summary-bar {
+    background: #445b84 !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.96), 0 10px 22px rgba(68, 91, 132, 0.28) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-empty.agentfinder-viewing-summary-empty,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-ticks.agentfinder-viewing-summary-ticks {
+    color: #526684 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-item.agentfinder-viewing-summary-item {
+    background: #ffffff !important;
+    border-color: #ccd7e8 !important;
+    color: #253858 !important;
+    box-shadow: 0 10px 24px rgba(37, 55, 88, 0.08) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-item.agentfinder-viewing-summary-item:hover {
+    background: #f2f6fc !important;
+    border-color: #b8c7dc !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-dot.agentfinder-viewing-summary-dot {
+    background: #445b84 !important;
+    box-shadow: 0 0 0 3px rgba(68, 91, 132, 0.12) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-item-time.agentfinder-viewing-summary-item-time {
+    color: #0f1e33 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-item-title.agentfinder-viewing-summary-item-title {
+    color: #51627d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-free-label.agentfinder-viewing-summary-free-label {
+    color: #075f46 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-free .bg-white\/10 {
+    background: #cfd8e7 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-free-line.agentfinder-viewing-summary-free-line {
+    background: linear-gradient(90deg, #059669 0%, #16a34a 62%, #65a30d 100%) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-free-range.agentfinder-viewing-summary-free-range {
+    color: #526684 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-summary-free-duration.agentfinder-viewing-summary-free-duration {
+    color: #075f46 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-card.agentfinder-viewing-person-card {
+    position: relative;
+    background: rgba(240, 253, 244, 0.72) !important;
+    border-color: rgba(134, 239, 172, 0.68) !important;
+    box-shadow: 0 10px 24px rgba(22, 101, 52, 0.08) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-card.agentfinder-viewing-person-card::before {
+    content: none;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-card--client.agentfinder-viewing-person-card--client {
+    background: rgba(220, 252, 231, 0.78) !important;
+    border-color: rgba(74, 222, 128, 0.62) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-card--agent.agentfinder-viewing-person-card--agent {
+    background: rgba(236, 253, 245, 0.64) !important;
+    border-color: rgba(110, 231, 183, 0.58) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-label.agentfinder-viewing-person-label {
+    color: #047857 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-card--client .agentfinder-viewing-person-label {
+    color: #047857 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-name.agentfinder-viewing-person-name,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-agent-row.agentfinder-viewing-agent-row {
+    color: #0f1e33 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-person-actions.agentfinder-viewing-person-actions {
+    background: rgba(255, 255, 255, 0.58) !important;
+    border: 1px solid rgba(134, 239, 172, 0.5) !important;
+    box-shadow: none !important;
+    gap: 0.55rem !important;
+    padding: 0.45rem 0.6rem !important;
+  }
+
   [data-app-theme='agentfinder'] [class*='bg-[#152033]'] {
     background: var(--agentfinder-dark-button) !important;
     color: white !important;
@@ -483,6 +645,24 @@
   [data-app-theme='agentfinder'] .ui-button[class*='border-input']:hover {
     background: rgba(244, 248, 255, 0.96) !important;
     color: #152033 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button {
+    background: #dcfce7 !important;
+    border-color: #a7f3d0 !important;
+    color: #064e3b !important;
+    box-shadow: 0 14px 28px rgba(22, 101, 52, 0.12) !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button:hover {
+    background: #bbf7d0 !important;
+    border-color: #86efac !important;
+    color: #052e26 !important;
+  }
+
+  [data-app-theme='agentfinder'] .ui-button.agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button svg {
+    color: #064e3b !important;
+    stroke: #064e3b !important;
   }
 
   [data-app-theme='agentfinder'] .ui-button[class*='hover:bg-accent']:hover,
