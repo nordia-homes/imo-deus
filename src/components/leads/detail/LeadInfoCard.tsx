@@ -60,7 +60,7 @@ export function LeadInfoCard({ contact, onEdit, onUpdateContact, sourceProperty,
 
     return (
         <Card className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#132844_0%,#0f2036_58%,#0b1727_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]">
-            <Button variant="ghost" size="icon" onClick={onEdit} className="absolute top-3 right-3 z-10 h-8 w-8 text-white/70 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={onEdit} className="agentfinder-button-tertiary absolute top-3 right-3 z-10 h-8 w-8 text-white/70 hover:text-white hover:bg-white/10">
                 <Edit className="h-4 w-4" />
             </Button>
             <CardContent className="space-y-5 p-5 pt-6">

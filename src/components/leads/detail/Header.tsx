@@ -29,7 +29,7 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
   const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
 
   return (
-    <header className="sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-0 py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
+    <header className="agentfinder-lead-detail-topbar sticky top-[65px] z-20 bg-background/95 backdrop-blur-sm -mt-4 md:-mt-6 lg:-mt-8 px-0 py-0 border-b lg:bg-[#0F1E33]/95 lg:border-white/10 lg:h-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 h-full">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
@@ -42,14 +42,14 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-wrap">
           {contact.phone && (
             <>
-              <Button size="sm" variant="outline" asChild className="lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
+              <Button size="sm" variant="outline" asChild className="agentfinder-button-secondary lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
                 <a href={`tel:${contact.phone}`}>
                   <Phone className="mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">{contact.phone}</span>
                   <span className="sm:hidden">Apel</span>
                 </a>
               </Button>
-               <Button size="sm" variant="outline" asChild className="lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
+               <Button size="sm" variant="outline" asChild className="agentfinder-button-secondary lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
                  <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
                     <WhatsappIcon className="mr-2 h-4 w-4" />
                     WhatsApp
@@ -57,15 +57,15 @@ export function LeadHeader({ contact, onUpdateContact, onAddTask, onTriggerAddVi
               </Button>
             </>
           )}
-          <Button size="sm" variant="secondary" onClick={onTriggerEditPreferences} className="lg:bg-[#0B1319] lg:text-white lg:hover:bg-[#0B1319]/90">
+          <Button size="sm" variant="secondary" onClick={onTriggerEditPreferences} className="agentfinder-button-tertiary lg:bg-[#0B1319] lg:text-white lg:hover:bg-[#0B1319]/90">
               <Wand2 className="mr-2 h-4 w-4" />
               Actualizare Preferințe
           </Button>
-          <Button size="sm" variant="outline" onClick={onTriggerAddViewing} className="lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
+          <Button size="sm" variant="outline" onClick={onTriggerAddViewing} className="agentfinder-button-secondary lg:bg-white/10 lg:border-white/20 lg:text-white lg:hover:bg-white/20">
               <CalendarCheck className="mr-2 h-4 w-4" />
               Vizionare
           </Button>
-          <Button size="sm" onClick={() => onUpdateContact({ status: 'Câștigat' })} className="col-span-2 lg:bg-primary lg:text-primary-foreground">
+          <Button size="sm" onClick={() => onUpdateContact({ status: 'Câștigat' })} className="agentfinder-button-primary col-span-2 lg:bg-primary lg:text-primary-foreground">
             Marchează Vândut
           </Button>
         </div>

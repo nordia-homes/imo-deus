@@ -598,9 +598,9 @@ export default function LeadDetailPage() {
     };
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="agentfinder-lead-detail-page h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='lg:hidden bg-[#0F1E33] -mt-6 pb-4'>
+            <div className='agentfinder-lead-detail-mobile lg:hidden bg-[#0F1E33] -mt-6 pb-4'>
                 <div className="pt-4 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>
@@ -623,19 +623,19 @@ export default function LeadDetailPage() {
                         <div className="space-y-2">
                              {contact.phone && (
                                 <div className="grid grid-cols-2 gap-2">
-                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                    <Button asChild variant='secondary' className="agentfinder-button-secondary bg-white/90 text-black hover:bg-white">
                                         <a href={`tel:${contact.phone}`}><Phone className='mr-2' /> Apel</a>
                                     </Button>
-                                    <Button asChild variant='secondary' className="bg-white/90 text-black hover:bg-white">
+                                    <Button asChild variant='secondary' className="agentfinder-button-secondary bg-white/90 text-black hover:bg-white">
                                         <a href={`https://wa.me/${sanitizeForWhatsapp(contact.phone)}`} target="_blank" rel="noopener noreferrer"><WhatsappIcon className="mr-2 h-5 w-5" /> WhatsApp</a>
                                     </Button>
                                 </div>
                              )}
-                            <Button variant='secondary' className="bg-[#0B1319] text-white hover:bg-[#0B1319]/90 w-full" onClick={() => setIsEditingPreferences(true)}>
+                            <Button variant='secondary' className="agentfinder-button-tertiary bg-[#0B1319] text-white hover:bg-[#0B1319]/90 w-full" onClick={() => setIsEditingPreferences(true)}>
                                 <Wand2 className='mr-2 h-4 w-4' /> Actualizare Preferinte
                             </Button>
                         </div>
-                        <Button className='w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
+                        <Button className='agentfinder-button-primary w-full bg-primary hover:bg-primary/90 text-white' onClick={() => setIsAddViewingOpen(true)}>Programează Vizionare</Button>
                     </Card>
 
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl mx-2">
@@ -746,7 +746,7 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
+            <div className="agentfinder-lead-detail-desktop hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
                  <LeadHeader 
                     contact={contact} 
                     onUpdateContact={handleUpdateContact}
@@ -755,8 +755,8 @@ export default function LeadDetailPage() {
                     properties={properties || []}
                     onTriggerEditPreferences={() => setIsEditingPreferences(true)}
                  />
-                 <main className="grid lg:grid-cols-12 gap-6 items-start mt-6">
-                    <div className="lg:col-span-3 space-y-6">
+                 <main className="agentfinder-lead-detail-grid grid lg:grid-cols-12 gap-6 items-start mt-6">
+                    <div className="agentfinder-lead-detail-sidebar lg:col-span-3 space-y-6">
                         <LeadInfoCard
                             contact={contact}
                             onEdit={() => setIsEditDialogOpen(true)}
@@ -789,7 +789,7 @@ export default function LeadDetailPage() {
                         />
                     </div>
 
-                    <div className="lg:col-span-9 space-y-6">
+                    <div className="agentfinder-lead-detail-content lg:col-span-9 space-y-6">
                         <MatchedProperties
                             properties={matchedProperties}
                             onAddRecommendation={handleAddRecommendation}

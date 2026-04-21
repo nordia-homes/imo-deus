@@ -34,9 +34,19 @@ const sanitizeForWhatsapp = (phone?: string | null) => {
     return sanitized;
 };
 
+const getMatchedPropertyImageUrl = (property: Property, agencyId?: string | null) => {
+  if (agencyId) {
+    return `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
+  }
+
+  return property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+};
+
+const isInternalPropertyImage = (imageUrl: string) => imageUrl.startsWith('/api/public-property-image?');
+
 
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
-  const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
   const constructionYear = property.constructionYear;
   const scoreColor = (() => {
     const clamped = Math.max(0, Math.min(100, property.matchScore || 0));
@@ -71,9 +81,16 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 50vw"
+              unoptimized={isInternalPropertyImage(imageUrl)}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09111b] via-[#09111b]/45 to-transparent" />
-          <div className="absolute right-4 top-4 shrink-0 rounded-2xl bg-[#08111bcc] px-3 py-2 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]">
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(180deg, rgba(9, 17, 27, 0.04) 0%, rgba(9, 17, 27, 0.22) 48%, rgba(9, 17, 27, 0.78) 100%)' }}
+          />
+          <div
+            className="agentfinder-recommended-image-label absolute right-4 top-4 shrink-0 rounded-2xl px-3 py-2 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]"
+            style={{ backgroundColor: 'rgba(8, 17, 27, 0.8)' }}
+          >
             <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D7CCBC]/72">Scor</p>
             <p className="mt-0.5 text-base font-black leading-none" style={{ color: scoreColor }}>
               {property.matchScore}
@@ -81,7 +98,10 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             </p>
           </div>
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs text-white/92 backdrop-blur-md">
+            <div
+              className="agentfinder-recommended-image-label inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/92 backdrop-blur-md"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)' }}
+            >
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
               <span className="truncate">{property.reasoning}</span>
             </div>
@@ -153,11 +173,11 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
           </div>
           <div className="flex items-center gap-2">
             {contact?.phone && agencyId && (
-              <Button onClick={handleWhatsAppShare} size="icon" className="h-10 w-10 rounded-full border border-emerald-300/24 bg-emerald-500 text-white shadow-[0_12px_28px_-12px_rgba(34,197,94,0.8)] hover:bg-emerald-400">
+              <Button onClick={handleWhatsAppShare} size="icon" className="agentfinder-button-secondary h-10 w-10 rounded-full border border-emerald-300/24 bg-emerald-500 text-white shadow-[0_12px_28px_-12px_rgba(34,197,94,0.8)] hover:bg-emerald-400">
                 <WhatsappIcon className="h-5 w-5" />
               </Button>
             )}
-            <Button onClick={handleAddClick} className="rounded-full bg-white px-3.5 text-sm text-slate-950 hover:bg-slate-100">
+            <Button onClick={handleAddClick} className="agentfinder-button-primary agentfinder-add-to-portal-button rounded-full bg-white px-3.5 text-sm text-slate-950 hover:bg-slate-100">
               Adauga in portal
             </Button>
           </div>
@@ -216,6 +236,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
   const firestore = useFirestore();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const isAgentfinderTheme = agency?.themePreset === 'agentfinder';
 
   const portalLink = contact?.portalId ? `${window.location.origin}/portal/${contact.portalId}` : '';
 
@@ -325,7 +346,10 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
   const singleProperty = properties.length === 1;
 
   return (
-    <Card className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] text-white shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)] mx-2 lg:mx-0">
+    <Card
+      className="agentfinder-recommendations-shell rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] text-white shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)] mx-2 lg:mx-0"
+      style={isAgentfinderTheme ? { background: 'transparent', borderColor: 'transparent', boxShadow: 'none' } : undefined}
+    >
         <div className="lg:hidden p-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selecție AI</p>
@@ -333,9 +357,12 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
             </div>
         </div>
         
-        <CardContent className="px-4 pb-4 lg:p-0 relative">
+        <CardContent
+          className="agentfinder-recommendations-content px-4 pb-4 lg:p-0 relative"
+          style={isAgentfinderTheme ? { background: 'transparent' } : undefined}
+        >
              <div className="hidden lg:flex absolute top-5 left-5 z-10 items-start">
-                <div className="rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
+                <div className="agentfinder-recommended-image-label rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Selecție AI</p>
                   <p className="mt-1 text-sm font-semibold text-white">Proprietăți Potrivite</p>
                 </div>
@@ -349,9 +376,13 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                     align: "start",
                     loop: true,
                   }}
-                  className="w-full"
+                  className="agentfinder-recommendations-carousel w-full"
+                  style={isAgentfinderTheme ? { background: 'transparent' } : undefined}
                 >
-                  <CarouselContent className="-ml-2 lg:-ml-3">
+                  <CarouselContent
+                    className="agentfinder-recommendations-track -ml-2 lg:-ml-3"
+                    style={isAgentfinderTheme ? { background: 'transparent' } : undefined}
+                  >
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="pl-2 md:basis-1/2 lg:basis-1/3 lg:pl-3">
                         <div className="h-full">

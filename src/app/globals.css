@@ -586,4 +586,228 @@
   [data-app-theme='agentfinder'] .group:hover .agentfinder-gallery-overlay {
     background: rgba(0, 0, 0, 0.2) !important;
   }
+
+  [data-app-theme='agentfinder'] .agentfinder-recommended-image-label {
+    background: linear-gradient(135deg, rgba(214, 250, 227, 0.96), rgba(186, 240, 208, 0.94)) !important;
+    border-color: #8fe3b2 !important;
+    color: #0f5c3f !important;
+    box-shadow: 0 16px 36px rgba(79, 167, 114, 0.18) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-recommended-image-label svg,
+  [data-app-theme='agentfinder'] .agentfinder-recommended-image-label span,
+  [data-app-theme='agentfinder'] .agentfinder-recommended-image-label p {
+    color: #0f7a53 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-to-portal-button {
+    background: linear-gradient(135deg, rgba(214, 250, 227, 0.96), rgba(186, 240, 208, 0.94)) !important;
+    border: 1px solid #8fe3b2 !important;
+    color: #0f7a53 !important;
+    box-shadow: 0 16px 36px rgba(79, 167, 114, 0.18) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-to-portal-button:hover {
+    background: linear-gradient(135deg, rgba(200, 246, 216, 0.98), rgba(170, 233, 194, 0.96)) !important;
+    border-color: #7ed9a4 !important;
+    color: #0f7a53 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-button:not(.agentfinder-button-primary):not(.agentfinder-button-secondary):not(.agentfinder-button-tertiary),
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-tertiary {
+    background: linear-gradient(135deg, rgba(67, 88, 124, 0.96), rgba(43, 60, 92, 0.96)) !important;
+    border-color: #5f78a8 !important;
+    color: #f5f9ff !important;
+    box-shadow: 0 16px 36px rgba(43, 60, 92, 0.22) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-button:not(.agentfinder-button-primary):not(.agentfinder-button-secondary):not(.agentfinder-button-tertiary):hover,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-tertiary:hover {
+    background: linear-gradient(135deg, rgba(57, 77, 111, 0.98), rgba(35, 50, 79, 0.98)) !important;
+    border-color: #6b86ba !important;
+    color: #ffffff !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-secondary {
+    background: linear-gradient(135deg, rgba(223, 238, 255, 0.98), rgba(201, 223, 249, 0.96)) !important;
+    border-color: #a8c7f0 !important;
+    color: #355c9a !important;
+    box-shadow: 0 16px 34px rgba(92, 128, 184, 0.16) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-secondary:hover {
+    background: linear-gradient(135deg, rgba(210, 229, 253, 0.98), rgba(186, 212, 245, 0.98)) !important;
+    border-color: #95b9e9 !important;
+    color: #2e538f !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-primary,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-add-to-portal-button {
+    background: linear-gradient(135deg, rgba(214, 250, 227, 0.96), rgba(186, 240, 208, 0.94)) !important;
+    border-color: #8fe3b2 !important;
+    color: #0f7a53 !important;
+    box-shadow: 0 16px 36px rgba(79, 167, 114, 0.18) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-primary:hover,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-add-to-portal-button:hover {
+    background: linear-gradient(135deg, rgba(200, 246, 216, 0.98), rgba(170, 233, 194, 0.96)) !important;
+    border-color: #7ed9a4 !important;
+    color: #0f7a53 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-button:not(.agentfinder-button-primary):not(.agentfinder-button-secondary):not(.agentfinder-button-tertiary) svg,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-tertiary svg {
+    color: #f5f9ff !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-secondary svg {
+    color: #355c9a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-button-primary svg,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-add-to-portal-button svg {
+    color: #0f7a53 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page {
+    --agentfinder-lead-page-bg:
+      radial-gradient(circle at 0% 0%, rgba(120, 162, 235, 0.22), transparent 26%),
+      radial-gradient(circle at 100% 4%, rgba(129, 233, 195, 0.18), transparent 22%),
+      radial-gradient(circle at 78% 18%, rgba(255, 214, 170, 0.16), transparent 18%),
+      linear-gradient(180deg, #eef5ff 0%, #f6fbff 42%, #eef7f4 100%);
+    background:
+      var(--agentfinder-lead-page-bg) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-desktop {
+    position: relative;
+    background: transparent !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-desktop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.85), transparent 0 18%),
+      radial-gradient(circle at 82% 8%, rgba(172, 235, 214, 0.24), transparent 0 20%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.52), transparent 28%);
+    opacity: 0.85;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-grid {
+    position: relative;
+    z-index: 1;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar {
+    border-color: rgba(181, 199, 227, 0.72) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(244, 249, 255, 0.9)) !important;
+    box-shadow:
+      0 18px 44px rgba(72, 96, 138, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(18px);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-sidebar .ui-card,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .ui-card,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .ui-card {
+    border: 1px solid rgba(188, 205, 232, 0.82) !important;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 250, 255, 0.82)) !important;
+    box-shadow:
+      0 24px 60px rgba(75, 103, 151, 0.1),
+      0 8px 24px rgba(55, 84, 129, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(16px);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-sidebar .ui-card {
+    background:
+      radial-gradient(circle at top left, rgba(113, 143, 220, 0.14), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 247, 255, 0.86)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .ui-card,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .ui-card {
+    background:
+      radial-gradient(circle at top right, rgba(160, 236, 205, 0.16), transparent 34%),
+      radial-gradient(circle at bottom left, rgba(152, 188, 242, 0.12), transparent 28%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 251, 255, 0.88)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card:hover {
+    box-shadow:
+      0 30px 76px rgba(68, 97, 144, 0.14),
+      0 12px 30px rgba(56, 84, 130, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .border-white\/10,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .border-white\/20 {
+    border-color: rgba(191, 206, 230, 0.78) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-white\/6,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-white\/8,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-white\/10 {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(243, 248, 255, 0.72)) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-\[\#0f2036\],
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-\[\#1d385d\],
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card .bg-\[\#0B1319\] {
+    background:
+      linear-gradient(160deg, rgba(29, 51, 86, 0.96), rgba(21, 35, 63, 0.96)) !important;
+    color: #f4f8ff !important;
+    border-color: rgba(99, 125, 169, 0.58) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 34px rgba(24, 39, 69, 0.24) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .agentfinder-recommendations-shell,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .agentfinder-recommendations-shell {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .agentfinder-recommendations-content,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .agentfinder-recommendations-track,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .agentfinder-recommendations-carousel,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-content .agentfinder-recommendations-carousel .overflow-hidden,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .agentfinder-recommendations-content,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .agentfinder-recommendations-track,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .agentfinder-recommendations-carousel,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile .agentfinder-recommendations-carousel .overflow-hidden {
+    background: transparent !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-recommendations-shell .embla__button,
+  [data-app-theme='agentfinder'] .agentfinder-recommendations-shell button[class*='Carousel'] {
+    box-shadow: 0 16px 32px rgba(74, 108, 154, 0.14) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/70,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/68,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/65,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/60,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/55,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/50,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .text-white\/45 {
+    color: #6f7f9d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .shadow-2xl,
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .shadow-xl {
+    box-shadow:
+      0 26px 64px rgba(74, 103, 151, 0.12),
+      0 8px 24px rgba(65, 92, 139, 0.06) !important;
+  }
 }

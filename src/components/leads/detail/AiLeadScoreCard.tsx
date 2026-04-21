@@ -95,7 +95,7 @@ export function AiLeadScoreCard({
             <p className="text-sm text-white/78">Scorul nu este generat încă.</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-            <Button onClick={handleGenerateScore} className="h-11 w-full rounded-full bg-[#1f4b7a] px-4 text-white hover:bg-[#24588f]">
+            <Button onClick={handleGenerateScore} className="agentfinder-button-primary h-11 w-full rounded-full bg-[#1f4b7a] px-4 text-white hover:bg-[#24588f]">
               <Sparkles className="mr-2 h-4 w-4" />
               Generează Scor
             </Button>
@@ -118,7 +118,7 @@ export function AiLeadScoreCard({
               </p>
             </div>
           </div>
-          <Button onClick={handleGenerateScore} className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button onClick={handleGenerateScore} className="agentfinder-button-primary mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground">
             <Sparkles className="mr-2 h-4 w-4" />
             Generează Scor
           </Button>
@@ -136,7 +136,7 @@ export function AiLeadScoreCard({
                 <p className="text-sm text-white/70">
                     Generează cu OpenAI un scor de credibilitate de la 0 la 100 pe baza tuturor informațiilor disponibile despre acest cumpărător.
                 </p>
-                <Button onClick={handleGenerateScore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={handleGenerateScore} className="agentfinder-button-primary bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generează Scor
                 </Button>
@@ -166,7 +166,7 @@ export function AiLeadScoreCard({
           size="sm"
           onClick={handleGenerateScore}
           disabled={isGenerating}
-          className="mt-3 h-auto p-0 text-xs text-white/70 hover:text-white"
+          className="agentfinder-button-tertiary mt-3 h-auto p-0 text-xs text-white/70 hover:text-white"
         >
           <RefreshCw className="mr-1 h-3 w-3" />
           Regenerează scorul
@@ -228,7 +228,7 @@ export function AiLeadScoreCard({
             size="sm"
             onClick={handleGenerateScore}
             disabled={isGenerating}
-            className="h-auto p-0 text-xs text-white/70 hover:text-white"
+            className="agentfinder-button-tertiary h-auto p-0 text-xs text-white/70 hover:text-white"
           >
             <RefreshCw className="mr-1 h-3 w-3" />
             Regenerează scorul
@@ -262,7 +262,7 @@ export function AiLeadScoreCard({
                     size="sm" 
                     onClick={handleGenerateScore} 
                     disabled={isGenerating}
-                    className="text-xs h-auto p-0 text-white/70 hover:text-white"
+                    className="agentfinder-button-tertiary text-xs h-auto p-0 text-white/70 hover:text-white"
                 >
                 <RefreshCw className="mr-1 h-3 w-3" />
                 Regenerează scorul

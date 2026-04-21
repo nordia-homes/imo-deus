@@ -24,9 +24,19 @@ const sanitizeForWhatsapp = (phone?: string | null) => {
     return sanitized;
 };
 
+const getMatchedPropertyImageUrl = (property: Property, agencyId?: string | null) => {
+  if (agencyId) {
+    return `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
+  }
+
+  return property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+};
+
+const isInternalPropertyImage = (imageUrl: string) => imageUrl.startsWith('/api/public-property-image?');
+
 
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
-  const imageUrl = property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+  const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
   const constructionYear = property.constructionYear;
   
   const handleAddClick = (e: React.MouseEvent) => {
@@ -56,6 +66,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
+              unoptimized={isInternalPropertyImage(imageUrl)}
           />
            <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-2">
                 <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
