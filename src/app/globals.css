@@ -821,32 +821,21 @@
       0 28px 70px rgba(52, 83, 136, 0.14),
       0 10px 28px rgba(44, 71, 117, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.88);
-    --agentfinder-lead-page-bg:
-      radial-gradient(circle at 4% -2%, rgba(108, 151, 235, 0.34), transparent 28%),
-      radial-gradient(circle at 100% 0%, rgba(90, 203, 255, 0.24), transparent 24%),
-      radial-gradient(circle at 78% 16%, rgba(166, 136, 255, 0.2), transparent 18%),
-      radial-gradient(circle at 46% 110%, rgba(145, 214, 255, 0.22), transparent 34%),
-      linear-gradient(180deg, #edf4ff 0%, #f5f9ff 40%, #ecf4ff 100%);
-    background:
-      var(--agentfinder-lead-page-bg) !important;
+    --agentfinder-lead-page-bg: transparent;
+    position: relative;
+    isolation: isolate;
+    background: var(--agentfinder-lead-page-bg) !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-mobile,
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-desktop {
     position: relative;
-    background: transparent !important;
+    isolation: isolate;
+    background: linear-gradient(180deg, #edf4ff 0%, #f7faff 42%, #edf4ff 100%) !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-desktop::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.92), transparent 0 20%),
-      radial-gradient(circle at 86% 6%, rgba(153, 199, 255, 0.3), transparent 0 22%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 34%);
-    opacity: 0.92;
+    content: none;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-grid {
@@ -857,28 +846,14 @@
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar {
     position: sticky;
     overflow: hidden;
-    border-color: rgba(167, 222, 189, 0.6) !important;
-    background:
-      radial-gradient(circle at 18% 0%, rgba(220, 252, 231, 0.95), transparent 34%),
-      radial-gradient(circle at 82% -12%, rgba(255, 255, 255, 0.78), transparent 38%),
-      linear-gradient(135deg, rgba(248, 255, 251, 0.94) 0%, rgba(239, 250, 244, 0.92) 48%, rgba(248, 250, 252, 0.92) 100%) !important;
-    box-shadow:
-      0 24px 70px rgba(74, 139, 99, 0.14),
-      0 8px 32px rgba(92, 175, 124, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.88) !important;
-    backdrop-filter: blur(22px) saturate(135%);
+    border-color: var(--app-sidebar-border) !important;
+    background: #eff8f3 !important;
+    box-shadow: 0 10px 28px rgba(37, 55, 88, 0.08) !important;
+    backdrop-filter: blur(14px);
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent),
-      radial-gradient(circle at 24% 50%, rgba(187, 247, 208, 0.24), transparent 26%);
-    mix-blend-mode: screen;
-    opacity: 0.92;
+    content: none;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar::after {
@@ -889,7 +864,7 @@
     bottom: 0;
     height: 1px;
     pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgba(134, 239, 172, 0.7), rgba(226, 232, 240, 0.8), transparent);
+    background: linear-gradient(90deg, transparent, rgba(203, 213, 225, 0.9), transparent);
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar__inner {
@@ -938,6 +913,8 @@
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar__action {
     min-height: 46px;
     border-radius: 16px !important;
+    border-width: 0 !important;
+    border-color: transparent !important;
     padding-left: 0.95rem !important;
     padding-right: 0.95rem !important;
     font-weight: 600;
@@ -955,7 +932,7 @@
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar__action--preferences {
     background:
       linear-gradient(135deg, #fef3c7 0%, #fde68a 48%, #bbf7d0 100%) !important;
-    border-color: rgba(245, 158, 11, 0.58) !important;
+    border-color: transparent !important;
     color: #4a3410 !important;
     box-shadow:
       0 18px 42px rgba(245, 158, 11, 0.18),
@@ -966,15 +943,19 @@
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar__action--preferences:hover {
     background:
       linear-gradient(135deg, #fde68a 0%, #fcd34d 48%, #a7f3c1 100%) !important;
-    border-color: rgba(217, 119, 6, 0.72) !important;
+    border-color: transparent !important;
     color: #3f2a08 !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .agentfinder-lead-detail-topbar__action--preferences svg,
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar .agentfinder-lead-detail-topbar__action--preferences svg {
-    color: #92400e !important;
+    color: #be5f8a !important;
     opacity: 1 !important;
     stroke-width: 2.4;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-lead-detail-topbar__action svg {
+    color: #be5f8a !important;
   }
 
   @media (min-width: 1024px) {
@@ -1121,10 +1102,11 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-info-card {
+    overflow: hidden !important;
+    border-radius: 28px !important;
+    clip-path: inset(0 round 28px);
     border-color: rgba(175, 197, 228, 0.9) !important;
-    background:
-      radial-gradient(circle at top left, rgba(188, 210, 243, 0.24), transparent 34%),
-      linear-gradient(180deg, rgba(251, 253, 255, 0.98), rgba(239, 245, 252, 0.94)) !important;
+    background: linear-gradient(180deg, rgba(251, 253, 255, 0.98), rgba(239, 245, 252, 0.94)) !important;
     box-shadow:
       0 28px 64px rgba(63, 88, 128, 0.14),
       0 10px 28px rgba(45, 68, 104, 0.08),
@@ -1132,6 +1114,11 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-info-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
     background:
       radial-gradient(circle at 105% -5%, rgba(168, 198, 239, 0.18), transparent 42%),
       radial-gradient(circle at -10% 110%, rgba(198, 215, 243, 0.12), transparent 40%) !important;

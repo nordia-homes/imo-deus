@@ -59,7 +59,7 @@ export function LeadHeader({
                 size="sm"
                 variant="outline"
                 asChild
-                className="agentfinder-button-secondary agentfinder-lead-detail-topbar__action"
+                className="agentfinder-button-tertiary agentfinder-lead-detail-topbar__action agentfinder-lead-detail-topbar__action--preferences"
               >
                 <a href={`tel:${contact.phone}`}>
                   <Phone className="mr-2 h-4 w-4" />
@@ -72,7 +72,7 @@ export function LeadHeader({
                 size="sm"
                 variant="outline"
                 asChild
-                className="agentfinder-button-secondary agentfinder-lead-detail-topbar__action"
+                className="agentfinder-button-tertiary agentfinder-lead-detail-topbar__action agentfinder-lead-detail-topbar__action--preferences"
               >
                 <a href={`https://wa.me/${sanitizedPhone}`} target="_blank" rel="noopener noreferrer">
                   <WhatsappIcon className="mr-2 h-4 w-4" />
