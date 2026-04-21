@@ -3,7 +3,7 @@
 import type { Property } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BedDouble, Bath, Ruler, Edit, Link2, Calendar, Layers } from 'lucide-react';
+import { BedDouble, Ruler, Edit, Link2, Calendar, Layers } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -83,15 +83,15 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                 <>
                     {/* Desktop View */}
                     <div className="hidden lg:block group">
-                        <div className="relative w-full overflow-hidden rounded-xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
-                            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-gradient-to-b from-black/60 to-transparent">
-                                <h3 className="text-base font-semibold text-white pl-1">
+                        <div className="agentfinder-source-property-card relative w-full overflow-hidden rounded-xl bg-slate-900 text-white shadow-lg h-full flex flex-col">
+                            <div className="agentfinder-source-property-header absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-gradient-to-b from-black/60 to-transparent">
+                                <h3 className="agentfinder-source-property-title text-base font-semibold text-white pl-1">
                                     Proprietate Inițială
                                 </h3>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-8 w-8"
+                                    className="agentfinder-source-property-edit agentfinder-sidebar-button agentfinder-sidebar-button--icon h-8 w-8"
                                     onClick={() => setIsEditing(true)}
                                 >
                                     <Edit className="h-4 w-4" />
@@ -99,7 +99,7 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                             </div>
                             
                             <Link href={`/properties/${property.id}`} className="block">
-                                <div className="relative aspect-[2/1] w-full">
+                                <div className="agentfinder-source-property-image relative aspect-[2/1] w-full">
                                     <Image
                                         src={property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa'}
                                         alt={property.title || 'Proprietate'}
@@ -107,30 +107,30 @@ export function SourcePropertyCard({ property, isLoading, allProperties, onUpdat
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                         sizes="(max-width: 1023px) 100vw, 25vw"
                                     />
-                                    <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-1.5">
-                                        <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                    <div className="agentfinder-source-property-badges hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-1.5">
+                                        <Button variant="secondary" size="sm" className="agentfinder-source-property-pill pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
                                             <BedDouble className="mr-1 h-4 w-4" /> {property.rooms}
                                         </Button>
-                                        <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                        <Button variant="secondary" size="sm" className="agentfinder-source-property-pill pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
                                             <Ruler className="mr-1 h-4 w-4" /> {property.squareFootage} mp
                                         </Button>
                                         {property.floor && (
-                                            <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
+                                            <Button variant="secondary" size="sm" className="agentfinder-source-property-pill pointer-events-none shrink-0 h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">
                                                 <Layers className="mr-1 h-4 w-4" /> Et. {property.floor}
                                             </Button>
                                         )}
                                         {property.constructionYear && (
-                                            <Button variant="secondary" size="sm" className="pointer-events-none shrink-0 h-auto whitespace-nowrap py-1 px-3 text-xs bg-black/50 text-white hover:bg-black/70">
+                                            <Button variant="secondary" size="sm" className="agentfinder-source-property-pill pointer-events-none shrink-0 h-auto whitespace-nowrap py-1 px-3 text-xs bg-black/50 text-white hover:bg-black/70">
                                                 <Calendar className="mr-1 h-4 w-4" /> {property.constructionYear}
                                             </Button>
                                         )}
                                     </div>
                                 </div>
-                                <div className="relative p-3 space-y-2 flex-1 flex flex-col">
-                                    <h4 className="font-bold text-base hover:underline break-words" title={property.title}>{(property.title || '').length > 25 ? `${(property.title || '').substring(0, 25)}...` : property.title}</h4>
-                                    <p className="text-sm text-slate-300 break-words">{property.address}</p>
+                                <div className="agentfinder-source-property-body relative p-3 space-y-2 flex-1 flex flex-col">
+                                    <h4 className="agentfinder-source-property-name font-bold text-base hover:underline break-words" title={property.title}>{(property.title || '').length > 25 ? `${(property.title || '').substring(0, 25)}...` : property.title}</h4>
+                                    <p className="agentfinder-source-property-address text-sm text-slate-300 break-words">{property.address}</p>
                                     <div className="pt-1 mt-auto flex justify-between items-end">
-                                        <p className="text-xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
+                                        <p className="agentfinder-source-property-price text-xl font-extrabold text-white">€{property.price.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </Link>
