@@ -86,7 +86,7 @@ export function LeadHeader({
             size="sm"
             variant="secondary"
             onClick={onTriggerEditPreferences}
-            className="agentfinder-button-tertiary agentfinder-lead-detail-topbar__action"
+            className="agentfinder-button-tertiary agentfinder-lead-detail-topbar__action agentfinder-lead-detail-topbar__action--preferences"
           >
             <Wand2 className="mr-2 h-4 w-4" />
             Actualizare Preferințe

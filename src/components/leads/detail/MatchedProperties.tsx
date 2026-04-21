@@ -49,11 +49,15 @@ const isInternalPropertyImage = (imageUrl: string) => imageUrl.startsWith('/api/
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
   const constructionYear = property.constructionYear;
-  const scoreColor = (() => {
-    const clamped = Math.max(0, Math.min(100, property.matchScore || 0));
-    const hue = Math.round((clamped / 100) * 120);
-    return `hsl(${hue} 78% 60%)`;
-  })();
+  const normalizedScore = Math.max(0, Math.min(100, property.matchScore || 0));
+  const scoreTone =
+    normalizedScore >= 75
+      ? 'agentfinder-lead-score-fill--high'
+      : normalizedScore >= 60
+        ? 'agentfinder-lead-score-fill--good'
+        : normalizedScore >= 40
+          ? 'agentfinder-lead-score-fill--mid'
+          : 'agentfinder-lead-score-fill--low';
   
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,7 +78,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
   };
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,42,71,0.98)_0%,rgba(10,20,34,1)_100%)] text-white shadow-[0_28px_70px_-30px_rgba(0,0,0,0.85)]">
+    <div className="agentfinder-recommended-property-card group relative h-full overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,42,71,0.98)_0%,rgba(10,20,34,1)_100%)] text-white shadow-[0_28px_70px_-30px_rgba(0,0,0,0.85)]">
       <div className="relative aspect-[4/3] w-full overflow-hidden">
           <Image
               src={imageUrl}
@@ -88,15 +92,20 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             className="absolute inset-0"
             style={{ background: 'linear-gradient(180deg, rgba(9, 17, 27, 0.04) 0%, rgba(9, 17, 27, 0.22) 48%, rgba(9, 17, 27, 0.78) 100%)' }}
           />
-          <div
-            className="agentfinder-recommended-image-label absolute right-4 top-4 shrink-0 rounded-2xl px-3 py-2 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]"
-            style={{ backgroundColor: 'rgba(8, 17, 27, 0.8)' }}
-          >
-            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D7CCBC]/72">Scor</p>
-            <p className="mt-0.5 text-base font-black leading-none" style={{ color: scoreColor }}>
-              {property.matchScore}
-              <span className="text-[11px] font-semibold text-[#D7CCBC]/82">/100</span>
-            </p>
+          <div className="agentfinder-recommended-score-meter absolute left-4 right-4 top-4 rounded-2xl border border-white/10 px-3.5 py-2.5 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]">
+            <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full">
+              <div
+                className={`agentfinder-lead-score-fill h-full rounded-full transition-all duration-500 ${scoreTone}`}
+                style={{ width: `${normalizedScore}%` }}
+              />
+            </div>
+            <div className="agentfinder-lead-score-scale mt-2 flex justify-between text-[11px]">
+              <span>0</span>
+              <span>25</span>
+              <span>50</span>
+              <span>75</span>
+              <span>100</span>
+            </div>
           </div>
           <div className="absolute bottom-4 left-4 right-4">
             <div
@@ -112,10 +121,10 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
         <div className="space-y-1.5">
           <div className="flex items-start gap-3">
             <Link href={`/properties/${property.id}`} className="block min-w-0 flex-1">
-              <h4 className="truncate text-lg font-semibold leading-tight text-white transition-colors group-hover:text-emerald-200">{property.title}</h4>
+              <h4 className="agentfinder-recommended-property-title truncate text-lg font-semibold leading-tight text-white transition-colors group-hover:text-emerald-200">{property.title}</h4>
             </Link>
           </div>
-          <p className="flex items-center gap-2 text-sm text-slate-300">
+          <p className="agentfinder-recommended-property-address flex items-center gap-2 text-sm text-slate-300">
             <MapPin className="h-4 w-4 text-slate-400" />
             <span className="line-clamp-1">{property.address || property.location}</span>
           </p>
@@ -216,13 +225,13 @@ const ZoneDebugPanel = ({
   ];
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#07101a]/72 p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Debug zone</p>
+    <div className="agentfinder-zone-debug-panel rounded-2xl border border-white/8 bg-[#07101a]/72 p-3">
+      <p className="agentfinder-zone-debug-title text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Debug zone</p>
       <div className="mt-2 grid grid-cols-[0.9fr_1.15fr_0.9fr_0.9fr] gap-2">
         {items.map((item) => (
-          <div key={item.label} className={`rounded-xl border px-2 py-2 text-center ${toneForValue(item.label, item.value)}`}>
-            <p className="text-[9px] uppercase tracking-[0.14em] opacity-70">{item.label}</p>
-            <p className="mt-1 text-xs font-bold">{item.value}</p>
+          <div key={item.label} className={`agentfinder-zone-debug-item rounded-xl border px-2 py-2 text-center ${toneForValue(item.label, item.value)}`}>
+            <p className="agentfinder-zone-debug-label text-[9px] uppercase tracking-[0.14em] opacity-70">{item.label}</p>
+            <p className="agentfinder-zone-debug-value mt-1 text-xs font-bold">{item.value}</p>
           </div>
         ))}
       </div>
@@ -345,34 +354,58 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
   }
   
   const singleProperty = properties.length === 1;
+  const RecommendationsShell = isAgentfinderTheme ? 'div' : Card;
+  const carouselNavClass = cn(
+    "agentfinder-recommendations-nav z-30 h-11 w-11 border-0 shadow-lg",
+    isAgentfinderTheme
+      ? "!border !border-white/70 !bg-white/60 !text-slate-950 shadow-[0_14px_30px_rgba(15,23,42,0.18)] backdrop-blur-md hover:!bg-white/75 hover:!text-slate-950"
+      : "bg-black/82 text-white hover:bg-black/92"
+  );
+
+  if (false && isAgentfinderTheme) {
+    return (
+      <div className="agentfinder-recommendations-floating-grid relative mx-2 grid grid-cols-1 gap-6 lg:mx-0 lg:grid-cols-3">
+        <div className="hidden lg:flex absolute top-5 left-5 z-10 items-start">
+          <div className="agentfinder-recommended-image-label rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">SelecÈ›ie AI</p>
+            <p className="mt-1 text-sm font-semibold text-white">ProprietÄƒÈ›i Potrivite</p>
+          </div>
+        </div>
+        {properties.map((prop) => (
+          <MatchedPropertyCard
+            key={prop.id}
+            property={prop}
+            onAddRecommendation={onAddRecommendation}
+            agencyId={agency?.id}
+            contact={contact}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <Card
+    <RecommendationsShell
       className={cn(
-        "agentfinder-recommendations-shell rounded-[30px] text-white mx-2 lg:mx-0",
+        "agentfinder-recommendations-card-shell agentfinder-recommendations-shell rounded-[30px] text-white mx-2 lg:mx-0",
         isAgentfinderTheme
-          ? "border-transparent bg-transparent shadow-none"
+          ? "agentfinder-recommendations-shell--floating border-transparent bg-transparent shadow-none"
           : "border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_32%),linear-gradient(180deg,#152A47_0%,#0C1828_100%)] shadow-[0_32px_90px_-42px_rgba(0,0,0,0.95)]"
       )}
     >
-        <div className="lg:hidden p-4">
+        {false && (
+        <div className="hidden">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selecție AI</p>
               <h3 className="font-semibold text-white text-base">Proprietăți Potrivite</h3>
             </div>
         </div>
         
+        )}
         <CardContent
           className="agentfinder-recommendations-content px-4 pb-4 lg:p-0 relative"
           style={isAgentfinderTheme ? { background: 'transparent' } : undefined}
         >
-             <div className="hidden lg:flex absolute top-5 left-5 z-10 items-start">
-                <div className="agentfinder-recommended-image-label rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Selecție AI</p>
-                  <p className="mt-1 text-sm font-semibold text-white">Proprietăți Potrivite</p>
-                </div>
-            </div>
-
             {singleProperty ? (
                 <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
             ) : (
@@ -396,56 +429,72 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-3 top-[26%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
-                  <CarouselNext className="right-3 top-[26%] border-white/20 bg-[#09111b]/72 text-white shadow-lg hover:bg-[#09111b]/88" />
+                  <CarouselPrevious className={cn(carouselNavClass, "agentfinder-recommendations-nav--prev left-4 top-[22%]")} />
+                  <CarouselNext className={cn(carouselNavClass, "agentfinder-recommendations-nav--next right-4 top-[22%]")} />
                 </Carousel>
             )}
         </CardContent>
          {showPortalManager && agency && contact && (
             <>
-                <Separator className="bg-white/20 px-4" />
-                <div className="p-4">
-                    <CardTitle className="flex items-center gap-2 text-white text-base mb-3">
-                        <Star className="text-yellow-500" />
+                <Separator className="agentfinder-client-portal-separator bg-white/20 px-4" />
+                <div className="agentfinder-client-portal-panel p-4">
+                    <CardTitle className="agentfinder-client-portal-title flex items-center gap-2 text-white text-base mb-3">
+                        <Star className="agentfinder-client-portal-title-icon text-yellow-500" />
                         <span>Portalul Clientului</span>
                     </CardTitle>
                     <div className="space-y-3">
-                        <p className="text-xs text-white/70">
+                        <p className="agentfinder-client-portal-description text-xs text-white/70">
                         Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
                         </p>
                         {contact.portalId ? (
                         <>
                             <div>
-                            <Label htmlFor="portal-link" className="text-xs text-white/70">Link Unic Portal</Label>
+                            <Label htmlFor="portal-link" className="agentfinder-client-portal-label text-xs text-white/70">Link Unic Portal</Label>
                             <div className="flex gap-2 mt-1">
-                                <Input id="portal-link" readOnly value={portalLink} className="bg-white/10 border-white/20 h-9" />
-                                <Button variant="secondary" size="icon" onClick={handleCopy} className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
-                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                <Input id="portal-link" readOnly value={portalLink} className="agentfinder-client-portal-input bg-white/10 border-white/20 h-9" />
+                                <Button variant="secondary" size="icon" onClick={handleCopy} className="agentfinder-client-portal-icon-button h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30">
+                                {copied ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
                                 </Button>
                             </div>
                             </div>
                             <div className="flex items-center gap-2">
-                            <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="bg-white/90 text-black hover:bg-white flex-1">
+                            <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="agentfinder-client-portal-button bg-white/90 text-black hover:bg-white flex-1">
                                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
                             </Button>
-                            <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoadingPortal} className="bg-white/20 hover:bg-white/30">
-                                {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoadingPortal} className="agentfinder-client-portal-icon-button bg-white/20 hover:bg-white/30">
+                                {isLoadingPortal ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-4 w-4" />
+                                )}
                             </Button>
-                            <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoadingPortal}>
-                                {isLoadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoadingPortal} className="agentfinder-client-portal-danger-button">
+                                {isLoadingPortal ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                             </Button>
                             </div>
                         </>
                         ) : (
-                        <Button onClick={() => handlePortalAction('activate')} disabled={isLoadingPortal} className="w-full bg-primary hover:bg-primary/90 text-white">
-                            {isLoadingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
+                        <Button onClick={() => handlePortalAction('activate')} disabled={isLoadingPortal} className="agentfinder-client-portal-button w-full bg-primary hover:bg-primary/90 text-white">
+                            {isLoadingPortal ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Star className="mr-2 h-4 w-4" />
+                            )}
                             Activează Portalul
                         </Button>
                         )}
                     </div>
                 </div>
             </>
-        )}
-    </Card>
-  );
+         )}
+      </RecommendationsShell>
+    );
 }

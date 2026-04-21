@@ -71,42 +71,42 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   };
 
   return (
-    <Card className="mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 shadow-2xl">
+    <Card className="agentfinder-client-portal-card mx-2 bg-[#152A47] text-white border-none rounded-2xl lg:mx-0 shadow-2xl">
       <CardHeader className="p-4 pb-2 lg:pb-2">
-        <CardTitle className="flex items-center gap-2 text-white text-base">
-            <Star className="text-yellow-500" />
+        <CardTitle className="agentfinder-client-portal-title flex items-center gap-2 text-white text-base">
+            <Star className="agentfinder-client-portal-title-icon text-yellow-500" />
             <span>Portalul Clientului</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 p-4 pt-0 lg:p-6 lg:pt-0">
-        <p className="text-xs text-white/70">
+        <p className="agentfinder-client-portal-description text-xs text-white/70">
           Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
         </p>
         {contact.portalId ? (
           <>
             <div>
-              <Label htmlFor="portal-link" className="text-xs text-white/70">Link Unic Portal</Label>
+              <Label htmlFor="portal-link" className="agentfinder-client-portal-label text-xs text-white/70">Link Unic Portal</Label>
               <div className="flex gap-2 mt-1">
-                <Input id="portal-link" readOnly value={portalLink} className="bg-white/10 border-white/20 h-9" />
-                <Button variant="secondary" size="icon" onClick={handleCopy} className="agentfinder-sidebar-button agentfinder-sidebar-button--icon h-9 w-9 shrink-0">
+                <Input id="portal-link" readOnly value={portalLink} className="agentfinder-client-portal-input bg-white/10 border-white/20 h-9" />
+                <Button variant="secondary" size="icon" onClick={handleCopy} className="agentfinder-client-portal-icon-button agentfinder-sidebar-button agentfinder-sidebar-button--icon h-9 w-9 shrink-0">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading} className="agentfinder-sidebar-button flex-1">
+              <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading} className="agentfinder-client-portal-button agentfinder-client-portal-button--open agentfinder-sidebar-button flex-1">
                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
               </Button>
-              <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--icon">
+              <Button size="icon" variant="secondary" onClick={() => handlePortalAction('regenerate')} disabled={isLoading} className="agentfinder-client-portal-icon-button agentfinder-sidebar-button agentfinder-sidebar-button--icon">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               </Button>
-              <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--icon">
+              <Button size="icon" variant="destructive" onClick={() => handlePortalAction('deactivate')} disabled={isLoading} className="agentfinder-client-portal-danger-button agentfinder-sidebar-button agentfinder-sidebar-button--icon">
                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               </Button>
             </div>
           </>
         ) : (
-          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading} className="agentfinder-sidebar-button agentfinder-sidebar-button--full h-11 w-full rounded-full">
+          <Button onClick={() => handlePortalAction('activate')} disabled={isLoading} className="agentfinder-client-portal-button agentfinder-sidebar-button agentfinder-sidebar-button--full h-11 w-full rounded-full">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
             Activează Portalul
           </Button>
