@@ -67,7 +67,7 @@ export function LeadCard({
 
   return (
     <Card className={cn(
-      "group overflow-hidden rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-[0_10px_26px_rgba(2,8,18,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#19304f] hover:shadow-[0_16px_40px_rgba(2,8,18,0.22)]",
+      "agentfinder-leads-list-card group overflow-hidden rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-[0_10px_26px_rgba(2,8,18,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#19304f] hover:shadow-[0_16px_40px_rgba(2,8,18,0.22)]",
       archived && "bg-[#112238] opacity-95"
     )}>
       <CardContent className="p-4">

@@ -29,7 +29,7 @@ export function LeadList({
 
     if (!contacts || contacts.length === 0) {
         return (
-            <Card className="shadow-lg rounded-2xl mt-4">
+            <Card className="agentfinder-leads-empty-card shadow-lg rounded-2xl mt-4">
                 <CardContent className="p-10 text-center text-muted-foreground">
                     Niciun cumpărător nu corespunde filtrelor selectate.
                 </CardContent>
@@ -38,7 +38,7 @@ export function LeadList({
     }
   
     return (
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="agentfinder-leads-grid mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {contacts.map(cumparator => (
                 <LeadCard
                     key={cumparator.id}

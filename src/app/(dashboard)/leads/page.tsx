@@ -256,14 +256,14 @@ export default function LeadsPage() {
 
   return (
     <div className={cn(
-        "space-y-6", 
+        "agentfinder-leads-page space-y-6",
         isMobile ? "p-0" : "bg-[#0F1E33] text-white px-4 pb-6 pt-1 lg:px-6 lg:pb-6 lg:pt-1"
     )}>
         {/* Mobile & Tablet View */}
-        <div className="lg:hidden space-y-4">
+        <div className="agentfinder-leads-mobile lg:hidden space-y-4">
             {reportPresetLabel && (
                 <div className="px-2">
-                    <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                    <div className="agentfinder-leads-filter-banner flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
                         <p className="text-sm text-white/90">{reportPresetLabel}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
                             <Link href="/leads">Reseteaza</Link>
@@ -271,10 +271,10 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
-            <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
+            <Card className="agentfinder-leads-hero-card bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
                 <CardHeader>
                     <div className="space-y-4">
-                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="space-y-1">
                                     <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
@@ -290,7 +290,7 @@ export default function LeadsPage() {
                         <AddLeadDialog properties={properties || []} contacts={buyerContacts} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
                             <button
                                 type="button"
-                                className="w-full rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
+                                className="agentfinder-leads-primary-tile w-full rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
                             >
                                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
                                     <PlusCircle className="h-3.5 w-3.5" />
@@ -306,15 +306,15 @@ export default function LeadsPage() {
                         <Skeleton className="h-16 w-full" />
                     ) : (
                         <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="p-2 rounded-lg bg-white/10">
+                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
                                 <p className="font-bold text-2xl">{newBuyersCount.toString()}</p>
                                 <p className="text-xs text-white/80">Noi (7 zile)</p>
                             </div>
-                            <div className="p-2 rounded-lg bg-white/10">
+                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
                                 <p className="font-bold text-2xl">{formatBudget(totalBudget)}</p>
                                 <p className="text-xs text-white/80">Buget Total</p>
                             </div>
-                            <div className="p-2 rounded-lg bg-white/10">
+                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
                                 <p className="font-bold text-2xl">{averageAiScore.toString()}</p>
                                 <p className="text-xs text-white/80">Scor Mediu AI</p>
                             </div>
@@ -324,13 +324,13 @@ export default function LeadsPage() {
             </Card>
             <div className="mt-4 px-2">
                 <div className="flex gap-2">
-                    <Button variant="outline" className="w-full" onClick={() => setIsFilterOpen(true)}>
+                    <Button variant="outline" className="agentfinder-leads-soft-button w-full" onClick={() => setIsFilterOpen(true)}>
                         <Filter className="mr-2 h-4 w-4" />
                         Filtrare Preferinte
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="outline" className="shrink-0">
+                            <Button type="button" variant="outline" className="agentfinder-leads-soft-button shrink-0">
                                 <ArrowUpDown className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -347,7 +347,7 @@ export default function LeadsPage() {
                     <Button
                         type="button"
                         variant="outline"
-                        className="shrink-0"
+                        className="agentfinder-leads-soft-button shrink-0"
                         onClick={() => setShowArchived((current) => !current)}
                     >
                         {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
@@ -360,9 +360,9 @@ export default function LeadsPage() {
         </div>
 
         {/* Desktop View */}
-        <div className="hidden lg:block space-y-6">
+        <div className="agentfinder-leads-desktop hidden lg:block space-y-6">
             {reportPresetLabel && (
-                <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                <div className="agentfinder-leads-filter-banner rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
                     <div className="flex items-center justify-between gap-4">
                         <p className="text-sm text-white/90">{reportPresetLabel}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
@@ -371,22 +371,22 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
-            <Card className="overflow-hidden border-white/10 bg-[#152A47] text-white shadow-xl">
+            <Card className="agentfinder-leads-hero-card overflow-hidden border-white/10 bg-[#152A47] text-white shadow-xl">
                 <CardContent className="p-0">
                     <div className="grid gap-6 p-6">
                         <div className="space-y-4">
                             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-inset ring-white/10">
+                                    <div className="agentfinder-leads-hero-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-inset ring-white/10">
                                         <Users className="h-6 w-6" />
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex flex-wrap items-center gap-3">
                                             <h1 className="text-3xl font-headline font-bold text-white">Cumpărători</h1>
-                                            <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
+                                            <span className="agentfinder-leads-count-pill rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
                                                 {filteredContacts.length}
                                             </span>
-                                            <span className="rounded-full bg-white/5 px-3 py-1 text-sm font-medium text-white/65 ring-1 ring-inset ring-white/10">
+                                            <span className="agentfinder-leads-count-pill rounded-full bg-white/5 px-3 py-1 text-sm font-medium text-white/65 ring-1 ring-inset ring-white/10">
                                                 {showArchived ? `Arhiva ${archivedContacts.length}` : `Activi ${activeContacts.length}`}
                                             </span>
                                         </div>
@@ -401,7 +401,7 @@ export default function LeadsPage() {
                                     <DropdownMenuTrigger asChild>
                                         <button
                                             type="button"
-                                            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+                                            className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
                                         >
                                             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
                                                 <ArrowUpDown className="h-3.5 w-3.5" />
@@ -423,7 +423,7 @@ export default function LeadsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowArchived((current) => !current)}
-                                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+                                    className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
                                 >
                                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
                                         {showArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
@@ -436,7 +436,7 @@ export default function LeadsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsFilterOpen(true)}
-                                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+                                    className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
                                 >
                                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
                                         <Filter className="h-3.5 w-3.5" />
@@ -452,7 +452,7 @@ export default function LeadsPage() {
                                 >
                                     <button
                                         type="button"
-                                        className="rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
+                                        className="agentfinder-leads-primary-tile rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
                                     >
                                         <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
                                             <PlusCircle className="h-3.5 w-3.5" />
@@ -476,9 +476,9 @@ export default function LeadsPage() {
                         </>
                     ) : (
                         <>
-                            <StatCard className="bg-[#152A47] border-none text-white" title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
-                            <StatCard className="bg-[#152A47] border-none text-white" title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
-                            <StatCard className="bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} icon={<BarChart />} segmentedScore={averageAiScore} />
+                            <StatCard className="agentfinder-leads-stat-card bg-[#152A47] border-none text-white" title="Cumpărători Noi" value={newBuyersCount.toString()} period="în ultima săptămână" icon={<Users />} />
+                            <StatCard className="agentfinder-leads-stat-card bg-[#152A47] border-none text-white" title="Buget Total Estimat" value={formatBudget(totalBudget)} period="din toți cumpărătorii" icon={<Target />} />
+                            <StatCard className="agentfinder-leads-stat-card bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} icon={<BarChart />} segmentedScore={averageAiScore} />
                         </>
                     )}
                 </div>
