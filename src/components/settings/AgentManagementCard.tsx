@@ -150,7 +150,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
     }
 
     return (
-        <Card className={cn("shadow-2xl rounded-2xl border border-white/10", "bg-[linear-gradient(180deg,_rgba(11,22,38,0.98)_0%,_rgba(8,18,32,1)_100%)] text-white")}>
+        <Card className={cn("agentfinder-agent-management-card shadow-2xl rounded-2xl border border-white/10", "bg-[linear-gradient(180deg,_rgba(11,22,38,0.98)_0%,_rgba(8,18,32,1)_100%)] text-white")}>
             <CardHeader>
                 <CardTitle className="text-3xl font-semibold tracking-tight text-white">Management Agenți</CardTitle>
                 <CardDescription className="max-w-3xl text-base leading-7 text-white/70">
@@ -158,7 +158,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.04)_0%,_rgba(255,255,255,0.02)_100%)] p-5 md:p-6">
+                <div className="agentfinder-agent-management-panel rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.04)_0%,_rgba(255,255,255,0.02)_100%)] p-5 md:p-6">
                     <div className="mb-5">
                         <h3 className="text-xl font-semibold text-white">Creează Agent Nou</h3>
                         <p className="mt-1 text-sm text-white/65">
@@ -208,7 +208,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                                     )}
                                 />
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.035)_0%,_rgba(255,255,255,0.015)_100%)] p-4">
+                            <div className="agentfinder-agent-management-panel rounded-2xl border border-white/10 bg-[linear-gradient(180deg,_rgba(255,255,255,0.035)_0%,_rgba(255,255,255,0.015)_100%)] p-4">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-end">
                                     <FormField
                                         control={form.control}
@@ -251,7 +251,7 @@ export function AgentManagementCard({ agency, agents: providedAgents, isLoading:
                                 </p>
                             </div>
                             {latestCredentials ? (
-                                <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
+                                <div className="agentfinder-agent-current rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
                                     <p>Email creat: {latestCredentials.email}</p>
                                     <p>Parolă inițială: {latestCredentials.password}</p>
                                     <p className="mt-2 text-xs text-emerald-100/80">

@@ -276,11 +276,11 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="space-y-8 p-4 text-white">
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-6 shadow-2xl">
+    <div className="agentfinder-agents-page space-y-8 p-4 text-white">
+      <section className="agentfinder-agents-hero overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-6 shadow-2xl">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-100/85">
+            <div className="agentfinder-agents-eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-100/85">
               <Users2 className="h-3.5 w-3.5" />
               Agenti
             </div>
@@ -292,15 +292,15 @@ export default function AgentsPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
+            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-white/55">Total</p>
               <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.totalAgents}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
+            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-white/55">Admini</p>
               <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.admins}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
+            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-white/55">Agenți</p>
               <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.activeAgents}</p>
             </div>
@@ -311,7 +311,7 @@ export default function AgentsPage() {
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {isLoading ? (
           [...Array(3)].map((_, index) => (
-            <Card key={index} className="rounded-[26px] border-none bg-[#152A47] text-white shadow-2xl">
+            <Card key={index} className="agentfinder-agent-card rounded-[26px] border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
                 <Skeleton className="h-14 w-14 rounded-2xl bg-white/15" />
                 <Skeleton className="mt-4 h-6 w-40 bg-white/15" />
@@ -327,7 +327,7 @@ export default function AgentsPage() {
           agents.map((agent) => (
             <Card
               key={agent.id}
-              className="group rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,1)_0%,_rgba(16,32,55,1)_100%)] text-white shadow-2xl transition-transform duration-200 hover:-translate-y-1"
+              className="agentfinder-agent-card group rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,_rgba(21,42,71,1)_0%,_rgba(16,32,55,1)_100%)] text-white shadow-2xl transition-transform duration-200 hover:-translate-y-1"
             >
               <CardHeader className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
@@ -351,7 +351,7 @@ export default function AgentsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                <div className="agentfinder-agent-info-row rounded-2xl border border-white/10 bg-white/6 p-3">
                   <div className="flex items-center gap-3 text-sm text-white/80">
                     <Mail className="h-4 w-4 shrink-0 text-emerald-200" />
                     <span className="min-w-0 flex-1 truncate">{agent.email}</span>
@@ -366,7 +366,7 @@ export default function AgentsPage() {
                     ) : null}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                <div className="agentfinder-agent-info-row rounded-2xl border border-white/10 bg-white/6 p-3">
                   <div className="flex items-center gap-3 text-sm text-white/80">
                     <Phone className="h-4 w-4 shrink-0 text-emerald-200" />
                     <span className="min-w-0 flex-1 truncate">{agent.phone || 'Telefon necompletat'}</span>
@@ -393,14 +393,14 @@ export default function AgentsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                  <div className="agentfinder-agent-info-row rounded-2xl border border-white/10 bg-white/6 p-3">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
                       <ShieldCheck className="h-3.5 w-3.5" />
                       Rol
                     </div>
                     <p className="mt-2 text-sm font-medium text-white">{agent.role === 'admin' ? 'Admin' : 'Agent'}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                  <div className="agentfinder-agent-info-row rounded-2xl border border-white/10 bg-white/6 p-3">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
                       <Building2 className="h-3.5 w-3.5" />
                       Agenție
@@ -408,7 +408,7 @@ export default function AgentsPage() {
                     <p className="mt-2 truncate text-sm font-medium text-white">{agency?.name || 'Agenția curentă'}</p>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                <div className="agentfinder-agent-info-row rounded-2xl border border-white/10 bg-white/6 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/50">
                       <Building2 className="h-3.5 w-3.5" />
@@ -418,7 +418,7 @@ export default function AgentsPage() {
                   </div>
                 </div>
                 {agent.id === userProfile?.id ? (
-                  <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-50">
+                  <div className="agentfinder-agent-current rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-50">
                     Acesta este contul tău curent.
                   </div>
                 ) : null}
@@ -452,7 +452,7 @@ export default function AgentsPage() {
             </Card>
           ))
         ) : (
-          <Card className="col-span-full rounded-[26px] border border-white/10 bg-[#152A47] text-white shadow-2xl">
+          <Card className="agentfinder-agent-card col-span-full rounded-[26px] border border-white/10 bg-[#152A47] text-white shadow-2xl">
             <CardHeader>
               <CardTitle>Niciun agent încă</CardTitle>
               <CardDescription className="text-white/65">
@@ -473,7 +473,7 @@ export default function AgentsPage() {
       ) : null}
 
       <Dialog open={Boolean(editingAgent)} onOpenChange={(open) => (!open ? closeEditDialog() : undefined)}>
-        <DialogContent className="border-white/10 bg-[#152A47] text-white sm:max-w-xl">
+        <DialogContent className="agentfinder-agent-dialog border-white/10 bg-[#152A47] text-white sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Editează agent</DialogTitle>
             <DialogDescription className="text-white/65">
@@ -481,7 +481,7 @@ export default function AgentsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="agentfinder-agent-dialog-panel flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
               <Avatar className="h-24 w-24 border border-white/10">
                 <AvatarImage src={editPhotoUrl || undefined} alt={editName || 'Agent'} />
                 <AvatarFallback className="bg-white/10 text-2xl text-white">
@@ -569,7 +569,7 @@ export default function AgentsPage() {
       </Dialog>
 
       <AlertDialog open={Boolean(deletingAgent)} onOpenChange={(open) => (!open ? setDeletingAgent(null) : undefined)}>
-        <AlertDialogContent className="border-white/10 bg-[#152A47] text-white">
+        <AlertDialogContent className="agentfinder-agent-dialog border-white/10 bg-[#152A47] text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Ștergi acest agent?</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">

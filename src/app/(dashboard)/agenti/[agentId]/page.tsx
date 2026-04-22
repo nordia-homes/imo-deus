@@ -138,8 +138,8 @@ export default function AgentStatsPage() {
 
   if (!canViewPage) {
     return (
-      <div className="space-y-6 p-4 text-white">
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+      <div className="agentfinder-agent-detail-page space-y-6 p-4 text-white">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle>Acces restricționat</CardTitle>
             <CardDescription className="text-white/70">
@@ -153,8 +153,8 @@ export default function AgentStatsPage() {
 
   if (!isLoading && (errorMessage || !agentProfile || agentProfile.agencyId !== agencyId || !metrics)) {
     return (
-      <div className="space-y-6 p-4 text-white">
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+      <div className="agentfinder-agent-detail-page space-y-6 p-4 text-white">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle>Agent indisponibil</CardTitle>
             <CardDescription className="text-white/70">
@@ -167,9 +167,9 @@ export default function AgentStatsPage() {
   }
 
   return (
-    <div className="space-y-8 p-4 text-white">
+    <div className="agentfinder-agent-detail-page space-y-8 p-4 text-white">
       <div className="flex items-center gap-3">
-        <Button asChild variant="outline" className="border-white/15 bg-white/8 text-white hover:bg-white/14">
+        <Button asChild variant="outline" className="agentfinder-agent-detail-back-button border-white/15 bg-white/8 text-white hover:bg-white/14">
           <Link href="/agenti">
             <ArrowLeft className="h-4 w-4" />
             Înapoi la agenți
@@ -177,7 +177,7 @@ export default function AgentStatsPage() {
         </Button>
       </div>
 
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-4 shadow-2xl sm:p-6">
+      <section className="agentfinder-agent-detail-hero overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-4 shadow-2xl sm:p-6">
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-20 w-20 rounded-3xl bg-white/10" />
@@ -201,7 +201,7 @@ export default function AgentStatsPage() {
                       {agentProfile?.role === 'admin' ? 'Admin' : 'Agent'}
                     </Badge>
                     {ranking ? (
-                      <Badge className="max-w-full whitespace-normal border-none bg-amber-400/15 text-amber-100">
+                      <Badge className="agentfinder-agent-detail-rank-badge max-w-full whitespace-normal border-none bg-amber-400/15 text-amber-100">
                         Locul {ranking.commissionRank} din {ranking.totalAgents} la comision
                       </Badge>
                     ) : null}
@@ -211,11 +211,11 @@ export default function AgentStatsPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 text-sm text-white/75 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                  <span className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
+                  <span className="agentfinder-agent-detail-contact-pill inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
                     <Mail className="h-4 w-4 text-emerald-200" />
                     <span className="truncate">{agentProfile?.email || 'Email indisponibil'}</span>
                   </span>
-                  <span className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
+                  <span className="agentfinder-agent-detail-contact-pill inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
                     <Phone className="h-4 w-4 text-emerald-200" />
                     <span className="truncate">{agentProfile?.phone || 'Telefon necompletat'}</span>
                   </span>
@@ -276,7 +276,7 @@ export default function AgentStatsPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-3">
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-emerald-200" /> Portofoliu proprietăți</CardTitle>
             <CardDescription className="text-white/70">Distribuția actuală a anunțurilor agentului.</CardDescription>
@@ -295,7 +295,7 @@ export default function AgentStatsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-emerald-200" /> Lead-uri și conversie</CardTitle>
             <CardDescription className="text-white/70">Calitatea pipeline-ului și randamentul comercial al agentului.</CardDescription>
@@ -314,7 +314,7 @@ export default function AgentStatsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-emerald-200" /> Performanță comercială</CardTitle>
             <CardDescription className="text-white/70">Volum și comision estimat pe tranzacțiile finalizate.</CardDescription>
@@ -334,14 +334,14 @@ export default function AgentStatsPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-emerald-200" /> Anunțuri recente</CardTitle>
                 <CardDescription className="text-white/70">Ultimele proprietăți atribuite acestui agent.</CardDescription>
               </div>
-              <Button asChild variant="outline" className="border-white/15 bg-white/8 text-white hover:bg-white/14">
+              <Button asChild variant="outline" className="agentfinder-agent-detail-back-button border-white/15 bg-white/8 text-white hover:bg-white/14">
                 <Link href={`/properties?agentId=${encodeURIComponent(agentId)}&agentName=${encodeURIComponent(agentProfile?.name || 'Agent')}`}>
                   Vezi anunțurile agentului
                 </Link>
@@ -353,7 +353,7 @@ export default function AgentStatsPage() {
               <Skeleton className="h-[260px] w-full bg-white/10" />
             ) : metrics.agentProperties.length ? (
               metrics.agentProperties.map((property) => (
-                <div key={property.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div key={property.id} className="agentfinder-agent-detail-list-item rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="truncate text-base font-semibold text-white">{property.title}</p>
@@ -371,14 +371,14 @@ export default function AgentStatsPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <div className="agentfinder-agent-detail-list-item rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                 Agentul nu are încă proprietăți atribuite.
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-emerald-200" /> Activitate recentă</CardTitle>
             <CardDescription className="text-white/70">Vizionări și task-uri programate sau finalizate recent.</CardDescription>
@@ -389,7 +389,7 @@ export default function AgentStatsPage() {
             ) : (
               <>
                 {metrics.assignedViewings.map((viewing) => (
-                  <div key={`viewing-${viewing.id}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div key={`viewing-${viewing.id}`} className="agentfinder-agent-detail-list-item rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="text-base font-semibold text-white">{viewing.propertyTitle}</p>
                     <p className="mt-1 text-sm text-white/65">Vizionare cu {viewing.contactName}</p>
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-white/70">
@@ -399,7 +399,7 @@ export default function AgentStatsPage() {
                   </div>
                 ))}
                 {metrics.assignedTasks.map((task) => (
-                  <div key={`task-${task.id}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div key={`task-${task.id}`} className="agentfinder-agent-detail-list-item rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="text-base font-semibold text-white">{task.description}</p>
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-white/70">
                       <span>Scadență: {formatDate(task.dueDate)}</span>
@@ -408,7 +408,7 @@ export default function AgentStatsPage() {
                   </div>
                 ))}
                 {!metrics.assignedViewings.length && !metrics.assignedTasks.length ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                  <div className="agentfinder-agent-detail-list-item rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                     Nu există încă activitate recentă pentru acest agent.
                   </div>
                 ) : null}
@@ -423,7 +423,7 @@ export default function AgentStatsPage() {
 
 function QuickStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
+    <div className="agentfinder-agent-detail-quick-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
       <p className="whitespace-nowrap text-[11px] uppercase tracking-[0.12em] text-white/55 sm:text-xs sm:tracking-[0.18em]">{label}</p>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
@@ -442,7 +442,7 @@ function MetricCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card className="border-none bg-[#152A47] text-white shadow-2xl">
+    <Card className="agentfinder-agent-detail-metric-card border-none bg-[#152A47] text-white shadow-2xl">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -450,7 +450,7 @@ function MetricCard({
             <p className="mt-3 text-4xl font-semibold text-white">{value}</p>
             <p className="mt-3 text-sm text-white/68">{helper}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-3 text-emerald-200">
+          <div className="agentfinder-agent-detail-icon-tile rounded-2xl border border-white/10 bg-white/6 p-3 text-emerald-200">
             {icon}
           </div>
         </div>
@@ -461,7 +461,7 @@ function MetricCard({
 
 function MiniMetric({ label, value, text }: { label: string; value: number | string; text: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="agentfinder-agent-detail-mini rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-xs uppercase tracking-[0.22em] text-white/45">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
       <p className="mt-2 text-sm text-white/70">{text}</p>
@@ -471,7 +471,7 @@ function MiniMetric({ label, value, text }: { label: string; value: number | str
 
 function MiniPanel({ title, value, subtitle }: { title: string; value: string; subtitle: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="agentfinder-agent-detail-mini rounded-2xl border border-white/10 bg-white/5 p-4">
       <p className="text-sm text-white/70">{title}</p>
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
       <p className="mt-1 text-sm text-white/60">{subtitle}</p>

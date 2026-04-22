@@ -326,7 +326,7 @@ function CreateTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto border-white/10 bg-[#10233b] text-white">
+      <DialogContent className="agentfinder-contract-dialog max-h-[90vh] max-w-3xl overflow-y-auto border-white/10 bg-[#10233b] text-white">
         <DialogHeader>
           <DialogTitle>Creeaza un template de contract</DialogTitle>
           <DialogDescription className="text-white/70">
@@ -810,7 +810,7 @@ function FillContractDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[94vh] flex-col overflow-hidden border-white/10 bg-[#081a2c] text-white w-[min(96vw,1820px)] max-w-none">
+      <DialogContent className="agentfinder-contract-dialog flex h-[94vh] flex-col overflow-hidden border-white/10 bg-[#081a2c] text-white w-[min(96vw,1820px)] max-w-none">
         <DialogHeader>
           <DialogTitle>Completeaza contractul</DialogTitle>
           <DialogDescription className="text-white/70">
@@ -1039,7 +1039,7 @@ function FillContractDialog({
           setElectronicAddressProofFile(null);
         }
       }}>
-        <DialogContent className="max-w-xl border-white/10 bg-[#10233b] text-white">
+        <DialogContent className="agentfinder-contract-dialog max-w-xl border-white/10 bg-[#10233b] text-white">
           <DialogHeader>
             <DialogTitle>
               {ocrDialogTarget === 'owner'
@@ -1253,7 +1253,7 @@ export default function ContractsPage() {
 
   if (isAgencyLoading || isTemplatesLoading) {
     return (
-      <div className="space-y-6 bg-[#0F1E33] p-4 text-white">
+      <div className="agentfinder-contracts-page space-y-6 bg-[#0F1E33] p-4 text-white">
         <div className="space-y-2">
           <Skeleton className="h-9 w-72" />
           <Skeleton className="h-5 w-[420px]" />
@@ -1269,12 +1269,12 @@ export default function ContractsPage() {
 
   return (
     <>
-      <div className="space-y-8 bg-[#0F1E33] p-4 text-white">
-        <section className="overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,_rgba(21,42,71,0.98),_rgba(11,23,39,0.98))] shadow-[0_20px_50px_rgba(0,0,0,0.22)]">
+      <div className="agentfinder-contracts-page space-y-8 bg-[#0F1E33] p-4 text-white">
+        <section className="agentfinder-contracts-hero overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,_rgba(21,42,71,0.98),_rgba(11,23,39,0.98))] shadow-[0_20px_50px_rgba(0,0,0,0.22)]">
           <div className="space-y-4 p-4 lg:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-3">
-                <div className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                <div className="agentfinder-contracts-eyebrow inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
                 <FileText className="mr-2 h-4 w-4" />
                 Contracte editabile cu variabile
                 </div>
@@ -1292,12 +1292,12 @@ export default function ContractsPage() {
                   type="button"
                   onClick={() => setIsCreateOpen(true)}
                   disabled={userProfile?.role !== 'admin'}
-                  className="h-10 rounded-full bg-emerald-400 px-5 text-black hover:bg-emerald-300"
+                  className="agentfinder-contracts-primary-button h-10 rounded-full bg-emerald-400 px-5 text-black hover:bg-emerald-300"
                 >
                   <FilePlus2 className="mr-2 h-4 w-4" />
                   Creeaza template document
                 </Button>
-                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
+                <div className="agentfinder-contracts-feature-pill inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
                   <Sparkles className="mr-2 h-4 w-4 text-emerald-300" />
                   Completare din CRM + editare vizuala + export PDF
                 </div>
@@ -1305,28 +1305,28 @@ export default function ContractsPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Card className="rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
+              <Card className="agentfinder-contracts-stat rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
                 <CardContent className="p-4">
                   <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Template-uri</p>
                   <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{templateStats.total}</p>
                   <p className="mt-1 text-xs leading-6 text-slate-300">Total documente contract disponibile in agentie.</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
+              <Card className="agentfinder-contracts-stat rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
                 <CardContent className="p-4">
                   <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Active</p>
                   <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{templateStats.active}</p>
                   <p className="mt-1 text-xs leading-6 text-slate-300">Template-uri gata de completat de catre agenti.</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
+              <Card className="agentfinder-contracts-stat rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
                 <CardContent className="p-4">
                   <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Draft</p>
                   <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{templateStats.draft}</p>
                   <p className="mt-1 text-xs leading-6 text-slate-300">Documente care mai au nevoie de ajustari.</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
+              <Card className="agentfinder-contracts-stat rounded-3xl border border-white/10 bg-white/5 text-white shadow-none">
                 <CardContent className="p-4">
                   <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Importate din Word</p>
                   <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{templateStats.imported}</p>
@@ -1337,7 +1337,7 @@ export default function ContractsPage() {
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="agentfinder-contracts-library space-y-4">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">Biblioteca de contracte</h2>
@@ -1353,16 +1353,16 @@ export default function ContractsPage() {
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {sortedTemplates.length ? (
             sortedTemplates.map((template) => (
-              <Card key={template.id} className="group flex flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#152A47] text-white shadow-[0_22px_60px_rgba(0,0,0,0.28)] transition-all duration-200 hover:border-white/15 hover:bg-[#183152]">
+              <Card key={template.id} className="agentfinder-contract-card group flex flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#152A47] text-white shadow-[0_22px_60px_rgba(0,0,0,0.28)] transition-all duration-200 hover:border-white/15 hover:bg-[#183152]">
                 <CardHeader className="space-y-4 pb-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-white/10 text-white hover:bg-white/10">{getCategoryLabel(template.category)}</Badge>
-                      <Badge className="bg-white/5 text-slate-200 hover:bg-white/5">
+                      <Badge className="agentfinder-contracts-badge bg-white/10 text-white hover:bg-white/10">{getCategoryLabel(template.category)}</Badge>
+                      <Badge className="agentfinder-contracts-badge bg-white/5 text-slate-200 hover:bg-white/5">
                         {template.sourceFormat === 'docx' ? 'Import Word' : 'Editor intern'}
                       </Badge>
                     </div>
-                    <Badge className={template.status === 'active' ? 'bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/15' : 'bg-amber-400/15 text-amber-200 hover:bg-amber-400/15'}>
+                    <Badge className={template.status === 'active' ? 'agentfinder-contracts-status-badge bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/15' : 'agentfinder-contracts-status-badge bg-amber-400/15 text-amber-200 hover:bg-amber-400/15'}>
                       {template.status === 'active' ? 'Activ' : 'Draft'}
                     </Badge>
                   </div>
@@ -1374,7 +1374,7 @@ export default function ContractsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-4 pt-0">
-                  <div className="rounded-[24px] border border-white/10 bg-[#0d1d31] p-5">
+                  <div className="agentfinder-contract-preview rounded-[24px] border border-white/10 bg-[#0d1d31] p-5">
                     <p className="line-clamp-4 whitespace-pre-wrap text-sm leading-7 text-slate-200">
                       {stripHtmlTags(template.content || '') || 'Acest template nu are inca un corp de contract adaugat.'}
                     </p>
@@ -1412,9 +1412,9 @@ export default function ContractsPage() {
               </Card>
             ))
           ) : (
-            <Card className="col-span-full overflow-hidden rounded-[32px] border border-dashed border-white/15 bg-[#152A47] text-white">
+            <Card className="agentfinder-contracts-empty col-span-full overflow-hidden rounded-[32px] border border-dashed border-white/15 bg-[#152A47] text-white">
               <CardContent className="flex flex-col items-center justify-center gap-5 p-12 text-center">
-                <div className="rounded-full border border-white/10 bg-white/5 p-5">
+                <div className="agentfinder-contracts-empty-icon rounded-full border border-white/10 bg-white/5 p-5">
                   <FileText className="h-7 w-7 text-emerald-300" />
                 </div>
                 <div className="space-y-2">
@@ -1427,7 +1427,7 @@ export default function ContractsPage() {
                   type="button"
                   onClick={() => setIsCreateOpen(true)}
                   disabled={userProfile?.role !== 'admin'}
-                  className="h-11 rounded-full bg-emerald-400 px-6 text-black hover:bg-emerald-300"
+                  className="agentfinder-contracts-primary-button h-11 rounded-full bg-emerald-400 px-6 text-black hover:bg-emerald-300"
                 >
                   <FilePlus2 className="mr-2 h-4 w-4" />
                   Creeaza primul template

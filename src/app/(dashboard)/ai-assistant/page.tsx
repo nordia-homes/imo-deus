@@ -169,9 +169,9 @@ export default function AiAssistantPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] overflow-hidden bg-[#07111f] text-white lg:h-[calc(100vh-5rem)]">
+    <div className="agentfinder-ai-page h-[calc(100vh-4rem)] overflow-hidden bg-[#07111f] text-white lg:h-[calc(100vh-5rem)]">
       <div className="relative h-full overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_82%_12%,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_50%_100%,rgba(37,99,235,0.16),transparent_34%),linear-gradient(180deg,#12253f_0%,#0c1a30_14%,#081322_34%,#07111f_100%)]" />
+        <div className="agentfinder-ai-background pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_82%_12%,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_50%_100%,rgba(37,99,235,0.16),transparent_34%),linear-gradient(180deg,#12253f_0%,#0c1a30_14%,#081322_34%,#07111f_100%)]" />
         <div className="pointer-events-none absolute left-[-8rem] top-24 h-80 w-80 rounded-full bg-sky-400/10 blur-3xl" />
         <div className="pointer-events-none absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-blue-400/10 blur-3xl" />
         <div className="pointer-events-none absolute bottom-[-8rem] left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -180,18 +180,18 @@ export default function AiAssistantPage() {
           <div className="flex h-full min-h-0 flex-1 overflow-hidden">
             <div className="flex min-w-0 flex-1 flex-col">
               <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pt-3 pb-3 sm:px-3 sm:pt-3 sm:pb-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5 lg:px-4 lg:pt-4 lg:pb-4">
-                <div className="min-h-0 overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.012))]">
+                <div className="agentfinder-ai-chat-shell min-h-0 overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.012))]">
                   <div className="flex min-h-0 h-full flex-col overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
-                      <div className="flex items-center gap-2 text-sky-200/80">
+                    <div className="agentfinder-ai-chat-header flex items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
+                      <div className="agentfinder-ai-eyebrow flex items-center gap-2 text-sky-200/80">
                         <Bot className="h-4 w-4" />
                         <span className="text-sm">Asistent AI</span>
                       </div>
                     </div>
-                    <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
+                    <div ref={chatScrollRef} className="agentfinder-ai-chat-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
                       {messages.length === 0 ? (
                         <div className="mx-auto flex h-full max-h-full max-w-4xl flex-col items-center justify-center overflow-hidden px-3 py-4 text-center sm:px-4 sm:py-6 lg:px-6 lg:py-8">
-                          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-300/8 text-sky-300 shadow-[0_0_90px_rgba(56,189,248,0.16)] sm:h-18 sm:w-18 lg:h-20 lg:w-20">
+                          <div className="agentfinder-ai-orb mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-300/8 text-sky-300 shadow-[0_0_90px_rgba(56,189,248,0.16)] sm:h-18 sm:w-18 lg:h-20 lg:w-20">
                             <Sparkles className="h-8 w-8 lg:h-9 lg:w-9" />
                           </div>
 
@@ -214,10 +214,10 @@ export default function AiAssistantPage() {
                               ) : null}
 
                               <div
-                                className={`prose prose-sm max-w-none break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:prose-base ${
+                                className={`agentfinder-ai-message prose prose-sm max-w-none break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:prose-base ${
                                   message.role === 'model'
-                                    ? 'w-full border border-white/10 bg-transparent text-white shadow-none'
-                                    : 'max-w-[88%] bg-sky-400 text-slate-950'
+                                    ? 'agentfinder-ai-message-model w-full border border-white/10 bg-transparent text-white shadow-none'
+                                    : 'agentfinder-ai-message-user max-w-[88%] bg-sky-400 text-slate-950'
                                 }`}
                               >
                                 <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
@@ -236,7 +236,7 @@ export default function AiAssistantPage() {
                               <MessageAvatar variant="model">
                                 <Bot className="h-5 w-5" />
                               </MessageAvatar>
-                              <div className="rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-4">
+                              <div className="agentfinder-ai-typing rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-4">
                                 <div className="flex items-center gap-2">
                                   <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300" />
                                   <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300 [animation-delay:0.15s]" />
@@ -253,7 +253,7 @@ export default function AiAssistantPage() {
 
                     <div className="px-3 py-3 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
                       <div className="mx-auto max-w-4xl">
-                        <div className="rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(56,189,248,0.06),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                        <div className="agentfinder-ai-input-shell rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(56,189,248,0.06),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                           {messages.length === 0 ? (
                             <div className="grid grid-cols-1 gap-2 border-b border-white/8 px-2 pb-3 pt-1 sm:grid-cols-2">
                               {STARTER_PROMPTS.map((prompt) => (
@@ -261,7 +261,7 @@ export default function AiAssistantPage() {
                                   key={prompt}
                                   type="button"
                                   onClick={() => setInput(prompt)}
-                                  className="truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
+                                  className="agentfinder-ai-starter truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
                                   title={prompt}
                                 >
                                   <span className="block truncate">{prompt}</span>
@@ -280,13 +280,13 @@ export default function AiAssistantPage() {
                               onChange={(event) => setInput(event.target.value)}
                               onKeyDown={(event) => event.key === 'Enter' && !chatLoading && handleSend()}
                               placeholder="Start your request, iar asistentul se ocupă de restul..."
-                              className="h-14 border-0 bg-transparent px-0 text-base text-white placeholder:text-white/35 focus-visible:ring-0 focus-visible:ring-offset-0"
+                              className="agentfinder-ai-input h-14 border-0 bg-transparent px-0 text-base text-white placeholder:text-white/35 focus-visible:ring-0 focus-visible:ring-offset-0"
                               disabled={chatLoading}
                             />
 
                             <Button
                               size="icon"
-                              className="h-12 w-12 shrink-0 rounded-full bg-sky-400 text-slate-950 hover:bg-sky-300"
+                              className="agentfinder-ai-send h-12 w-12 shrink-0 rounded-full bg-sky-400 text-slate-950 hover:bg-sky-300"
                               onClick={() => handleSend()}
                               disabled={chatLoading}
                             >
@@ -299,7 +299,7 @@ export default function AiAssistantPage() {
                   </div>
                 </div>
 
-                <aside className="min-h-0 overflow-hidden rounded-[30px] bg-[linear-gradient(180deg,rgba(59,130,246,0.09),rgba(255,255,255,0.02))]">
+                <aside className="agentfinder-ai-suggestions min-h-0 overflow-hidden rounded-[30px] bg-[linear-gradient(180deg,rgba(59,130,246,0.09),rgba(255,255,255,0.02))]">
                   <div className="flex h-full min-h-0 flex-col overflow-hidden">
                     <div className="flex items-center justify-between gap-3 px-4 py-3">
                       <div>
@@ -316,10 +316,10 @@ export default function AiAssistantPage() {
                             key={item}
                             type="button"
                             onClick={() => setInput(item)}
-                            className="group w-full rounded-[22px] border border-white/10 bg-black/20 px-4 py-4 text-left transition-all duration-200 hover:border-sky-300/18 hover:bg-white/[0.05]"
+                            className="agentfinder-ai-suggestion group w-full rounded-[22px] border border-white/10 bg-black/20 px-4 py-4 text-left transition-all duration-200 hover:border-sky-300/18 hover:bg-white/[0.05]"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
+                              <div className="agentfinder-ai-suggestion-icon mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
                                 <MessageSquareText className="h-4 w-4" />
                               </div>
                               <div className="min-w-0 flex-1">
@@ -344,7 +344,7 @@ export default function AiAssistantPage() {
 function MessageAvatar({ children, variant }: { children: ReactNode; variant: 'user' | 'model' }) {
   return (
     <div
-      className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+      className={`agentfinder-ai-avatar mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
         variant === 'model' ? 'bg-primary/12 text-primary' : 'bg-white/10 text-white'
       }`}
     >

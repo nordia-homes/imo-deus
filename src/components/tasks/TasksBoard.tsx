@@ -42,21 +42,21 @@ function TaskColumn({
     onToggleComplete: (task: Task) => void;
 }) {
     return (
-        <div className="flex h-full min-h-[22rem] w-full flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
-            <div className={`border-b border-white/10 bg-gradient-to-br ${accent} px-4 py-4`}>
+        <div className="agentfinder-tasks-column flex h-full min-h-[22rem] w-full flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
+            <div className={`agentfinder-tasks-column-header border-b border-white/10 bg-gradient-to-br ${accent} px-4 py-4`}>
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{title}</p>
                         <h3 className="mt-1 text-lg font-semibold text-white">{tasks.length} task-uri</h3>
                         <p className="mt-1 whitespace-nowrap text-sm text-white/60">{description}</p>
                     </div>
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]">
+                    <div className="agentfinder-tasks-column-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]">
                         <Icon className={`h-4 w-4 ${badge}`} />
                     </div>
                 </div>
             </div>
             <div className="flex-1 p-3">
-                <div className="h-full rounded-[22px] bg-[#1A2944]/70 p-3">
+                <div className="agentfinder-tasks-column-body h-full rounded-[22px] bg-[#1A2944]/70 p-3">
                     <div className="h-full space-y-3 overflow-y-auto">
                         {tasks.length > 0 ? tasks.map(task => (
                             <TaskCard
@@ -66,7 +66,7 @@ function TaskColumn({
                                 onToggleComplete={onToggleComplete}
                             />
                         )) : (
-                            <div className="flex h-full min-h-40 items-center justify-center rounded-[22px] border border-dashed border-white/10 bg-white/[0.03] px-4 text-center">
+                            <div className="agentfinder-tasks-empty-column flex h-full min-h-40 items-center justify-center rounded-[22px] border border-dashed border-white/10 bg-white/[0.03] px-4 text-center">
                                 <p className="max-w-[13rem] text-sm text-white/55">Nu există task-uri în această categorie momentan.</p>
                             </div>
                         )}
@@ -161,7 +161,7 @@ export function TasksBoard() {
 
     if (isLoading) {
         return (
-            <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="agentfinder-tasks-board grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {columns.map(col => <Skeleton key={col.id} className="h-full w-full bg-white/10" />)}
             </div>
         );

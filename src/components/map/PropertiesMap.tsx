@@ -228,7 +228,7 @@ export function PropertiesMap({
   const activeMapStyles =
     appearance === 'public-property-detail'
       ? PUBLIC_PROPERTY_MAP_STYLES
-      : appearance === 'admin-property-detail' && isAgentfinderTheme
+      : appearance !== 'public-property-detail' && isAgentfinderTheme
         ? undefined
         : MAP_STYLES;
 
@@ -787,21 +787,21 @@ export function PropertiesMap({
   if (layoutMode === 'map-only') {
     return (
       <>
-        <div className="relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#10233b] shadow-2xl">
-          <div ref={mapRef} className="h-full min-h-[440px] w-full" />
+        <div className="agentfinder-dashboard-map-shell relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#10233b] shadow-2xl">
+          <div ref={mapRef} className="agentfinder-dashboard-map-canvas h-full min-h-[440px] w-full" />
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
             <Popover open={isPropertyPickerOpen} onOpenChange={setIsPropertyPickerOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0f2239]/85 px-3 py-2 text-xs font-medium text-white shadow-xl backdrop-blur transition-colors hover:bg-[#16314f]"
+                  className="agentfinder-dashboard-map-picker pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0f2239]/85 px-3 py-2 text-xs font-medium text-white shadow-xl backdrop-blur transition-colors hover:bg-[#16314f]"
                 >
                   <MapPinned className="h-4 w-4 text-emerald-300" />
                   {selectedProperty ? selectedProperty.title : `${validProperties.length} proprietati pe harta`}
                   <ChevronDown className="h-4 w-4 text-white/70" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-[340px] rounded-2xl border border-white/10 bg-[#152A47] p-2 text-white shadow-2xl">
+              <PopoverContent align="start" className="agentfinder-dashboard-map-popover w-[340px] rounded-2xl border border-white/10 bg-[#152A47] p-2 text-white shadow-2xl">
                 <div className="px-2 pb-2 pt-1 text-xs font-medium text-white/60">
                   Selecteaza proprietatea pe care vrei sa o vezi pe harta
                 </div>
@@ -828,7 +828,7 @@ export function PropertiesMap({
                 </div>
               </PopoverContent>
             </Popover>
-            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
+            <div className="agentfinder-dashboard-map-controls pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
               <Button
                 type="button"
                 size="icon"
@@ -850,7 +850,7 @@ export function PropertiesMap({
             </div>
           </div>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
-            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
+            <div className="agentfinder-dashboard-map-controls pointer-events-auto flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0f2239]/85 p-2 shadow-xl backdrop-blur">
               <Button
                 type="button"
                 size="sm"

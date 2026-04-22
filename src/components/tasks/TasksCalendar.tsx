@@ -97,10 +97,10 @@ export function TasksCalendar() {
   }
 
   return (
-     <Card className="flex h-full flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#12213E] text-white shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
+     <Card className="agentfinder-tasks-calendar flex h-full flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#12213E] text-white shadow-[0_22px_70px_rgba(0,0,0,0.22)]">
       <CardContent className="p-4 flex flex-col flex-1">
         {/* Header */}
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
+        <header className="agentfinder-tasks-calendar-header flex flex-col gap-4 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Planificare săptămânală</p>
             <h2 className="mt-1 text-2xl font-semibold capitalize text-white">
@@ -111,7 +111,7 @@ export function TasksCalendar() {
             <Button onClick={() => setCurrentDate(new Date())} variant="outline" className="border-white/[0.15] bg-white/[0.08] text-white hover:bg-white/[0.14]">
               Astăzi
             </Button>
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
+            <div className="agentfinder-tasks-calendar-nav flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -162,7 +162,7 @@ export function TasksCalendar() {
                   className="relative flex flex-col border-r border-white/10 last:border-r-0"
                 >
                   {/* Day Header */}
-                  <div className="sticky top-0 z-10 h-20 border-b border-white/10 bg-[#12213E] p-2 flex flex-col items-center justify-center">
+                  <div className="agentfinder-tasks-calendar-day-header sticky top-0 z-10 h-20 border-b border-white/10 bg-[#12213E] p-2 flex flex-col items-center justify-center">
                     <span className="text-sm uppercase font-medium text-white/70">
                       {format(day, 'eee', { locale: ro })}
                     </span>
@@ -194,7 +194,7 @@ export function TasksCalendar() {
                         <Link
                           key={task.id}
                           href={task.contactId ? `/leads/${task.contactId}` : '/tasks'}
-                          className="absolute left-1 w-[calc(100%-8px)] rounded-xl border border-sky-300/[0.15] bg-[linear-gradient(180deg,rgba(59,130,246,0.26),rgba(37,99,235,0.16))] p-2 text-primary-foreground shadow-[0_10px_26px_rgba(37,99,235,0.18)] transition-all hover:bg-[linear-gradient(180deg,rgba(59,130,246,0.34),rgba(37,99,235,0.22))]"
+                          className="agentfinder-tasks-calendar-event absolute left-1 w-[calc(100%-8px)] rounded-xl border border-sky-300/[0.15] bg-[linear-gradient(180deg,rgba(59,130,246,0.26),rgba(37,99,235,0.16))] p-2 text-primary-foreground shadow-[0_10px_26px_rgba(37,99,235,0.18)] transition-all hover:bg-[linear-gradient(180deg,rgba(59,130,246,0.34),rgba(37,99,235,0.22))]"
                           style={{ top: `${top}px`, height: `${height}px` }}
                         >
                           <p className="text-xs font-bold text-white truncate">

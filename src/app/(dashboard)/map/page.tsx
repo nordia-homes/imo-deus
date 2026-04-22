@@ -20,9 +20,9 @@ export default function MapPage() {
     const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
 
     return (
-        <div className="h-full w-full">
+        <div className="agentfinder-map-page h-full w-full">
             {isLoading ? (
-                <Skeleton className="w-full h-full bg-white/10 rounded-2xl" />
+                <Skeleton className="agentfinder-map-skeleton w-full h-full bg-white/10 rounded-2xl" />
             ) : (
                 <DashboardMapPageMap properties={properties || []} />
             )}

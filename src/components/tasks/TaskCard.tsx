@@ -23,7 +23,7 @@ export function TaskCard({ task, onEdit, onToggleComplete, className }: TaskCard
     return (
         <div
             className={cn(
-                "group relative overflow-hidden rounded-[22px] border border-white/[0.12] bg-[#172742] text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_22px_52px_rgba(0,0,0,0.24)]",
+                "agentfinder-task-card group relative overflow-hidden rounded-[22px] border border-white/[0.12] bg-[#172742] text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_22px_52px_rgba(0,0,0,0.24)]",
                 task.status === 'completed' && "bg-[#132238] opacity-60",
                 className
             )}

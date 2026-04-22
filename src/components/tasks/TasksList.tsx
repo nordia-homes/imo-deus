@@ -97,7 +97,7 @@ export function TasksList() {
       }
       return taskList.map(task => (
         <Card key={task.id} className={cn(
-            "rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] text-white shadow-[0_16px_40px_rgba(0,0,0,0.16)]",
+            "agentfinder-tasks-list-card rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] text-white shadow-[0_16px_40px_rgba(0,0,0,0.16)]",
             isCompletedList && "opacity-65"
         )}>
             <CardContent className="flex items-center justify-between gap-4 p-4">
@@ -152,7 +152,7 @@ export function TasksList() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <section className="rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+        <section className="agentfinder-tasks-list-section rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
             <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">În lucru</p>
@@ -164,7 +164,7 @@ export function TasksList() {
                 {renderTaskList(upcomingTasks)}
             </div>
         </section>
-        <section className="rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+        <section className="agentfinder-tasks-list-section rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
             <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Arhivă recentă</p>
