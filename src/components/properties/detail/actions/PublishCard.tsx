@@ -33,30 +33,33 @@ import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles
 import { useAgency } from "@/context/AgencyContext";
 
 const ImobiliareLogo = () => (
-  <svg viewBox="0 0 130 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
-    <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#0078d4">imobiliare</text>
-    <text x="98" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="white">.ro</text>
-  </svg>
+  <img
+    src="/imobiliare-logo.svg"
+    alt="imobiliare.ro"
+    className="h-4 w-auto max-w-[112px] object-contain"
+  />
 );
 
 const StoriaLogo = () => (
-  <svg viewBox="0 0 100 20" className="h-4 w-auto" preserveAspectRatio="xMinYMid meet">
-    <text x="0" y="15" fontFamily="Helvetica, Arial, sans-serif" fontSize="18" fontWeight="bold" fill="#ff5a00">storia.ro</text>
-  </svg>
+  <img
+    src="/storia-official-logo.svg"
+    alt="storia.ro"
+    className="h-[20px] w-auto max-w-[86px] object-contain"
+  />
 );
 
-const OlxLogo = () => (
-  <svg viewBox="0 0 45 20" className="h-5 w-auto" preserveAspectRatio="xMinYMid meet">
-    <text x="0" y="16" fontFamily="Verdana, Arial, sans-serif" fontSize="20" fontWeight="bold">
-      <tspan fill="#FFF">ol</tspan><tspan fill="#23e5db">x</tspan>
-    </text>
-  </svg>
+const Publi24Logo = () => (
+  <img
+    src="/publi24-logo.svg"
+    alt="Publi24.ro"
+    className="h-5 w-auto max-w-[86px] object-contain"
+  />
 );
 
 const PORTALS = [
   { id: 'imobiliare', name: 'Imobiliare.ro', logo: <ImobiliareLogo /> },
   { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
-  { id: 'olx', name: 'OLX.ro', logo: <OlxLogo /> },
+  { id: 'publi24', name: 'Publi24.ro', logo: <Publi24Logo /> },
 ];
 
 type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
@@ -958,7 +961,7 @@ export function PublishCard({ property }: { property: Property }) {
                 ACTION_CARD_INNER_CLASSNAME
               )}
             >
-              <Label htmlFor={`portal-${portal.id}`} className="font-medium flex-1 cursor-pointer flex items-center gap-2 min-w-0">
+              <Label className="font-medium flex-1 flex items-center gap-2 min-w-0">
                 {portal.logo}
               </Label>
               <div className="flex items-center justify-center">
@@ -986,16 +989,23 @@ export function PublishCard({ property }: { property: Property }) {
               <div className="flex items-center justify-end gap-2">
                 {isImobiliare ? (
                   isSyncing ? (
-                    <div className="flex h-5 w-5 items-center justify-center text-emerald-300">
+                    <div className="flex h-9 items-center justify-center rounded-full border border-yellow-300/18 bg-yellow-400/10 px-3 text-yellow-200">
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
+                  ) : published ? (
+                    <span className="inline-flex h-9 items-center justify-center rounded-full border border-emerald-300/18 bg-emerald-400/12 px-3 text-sm font-semibold text-emerald-100">
+                      Publicat
+                    </span>
                   ) : (
-                    <Checkbox
-                      id={`portal-${portal.id}`}
-                      checked={published || pending}
-                      disabled={isSubmitting}
-                      onCheckedChange={(checked) => handlePublishToggle(portal.id, !!checked)}
-                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      disabled={isSubmitting || pending}
+                      onClick={() => handlePublishToggle(portal.id, true)}
+                    >
+                      Publica
+                    </Button>
                   )
                 ) : (
                   <Button

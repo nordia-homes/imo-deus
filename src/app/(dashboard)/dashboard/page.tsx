@@ -262,7 +262,7 @@ export default function DashboardPage() {
     
     if (isLoading) {
         return (
-            <div className="space-y-4 p-4">
+            <div className="agentfinder-dashboard-page space-y-4 p-4">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -271,7 +271,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-6 p-4">
+        <div className="agentfinder-dashboard-page space-y-6 p-4">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
@@ -291,35 +291,35 @@ export default function DashboardPage() {
                     activeBuyersEvolutionData={activeBuyersEvolutionData}
                 />
                 
-                <Card className="shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
+                <Card className="agentfinder-dashboard-card shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
                     <CardHeader className="pt-4 pb-2 text-center">
                         <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-2 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-3 rounded-lg bg-white/5">
+                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
                                 <p className="font-bold text-3xl">{activePropertiesCount}</p>
                                 <p className="text-xs text-white/70">Proprietăți Active</p>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-white/5">
+                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
                                 <p className="font-bold text-3xl">{activeBuyersCount}</p>
                                 <p className="text-xs text-white/70">Cumpărători Activi</p>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-white/5">
+                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
                                 <p className="font-bold text-3xl">{totalReservedCount}</p>
                                 <p className="text-xs text-white/70">Prop. Rezervate</p>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-white/5">
+                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
                                 <p className="font-bold text-3xl">{totalSoldCount}</p>
                                 <p className="text-xs text-white/70">Prop. Vândute</p>
                             </div>
                         </div>
                         <div className="space-y-2">
-                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
+                             <Button className="agentfinder-dashboard-soft-button w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
                                <span>Proprietăți Rezervate Luna Curentă</span>
                                <span>{reservedThisMonth.length}</span>
                             </Button>
-                             <Button className="w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
+                             <Button className="agentfinder-dashboard-soft-button w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
                                <span>Proprietăți Vândute Luna Curentă</span>
                                <span>{soldThisMonth.length}</span>
                             </Button>
@@ -337,7 +337,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="grid grid-cols-1 gap-6">
-                 <Card className="shadow-2xl rounded-2xl border-none bg-[#152a47]">
+                 <Card className="agentfinder-dashboard-card shadow-2xl rounded-2xl border-none bg-[#152a47]">
                     <CardHeader className="text-white p-4">
                         <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
                         <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
