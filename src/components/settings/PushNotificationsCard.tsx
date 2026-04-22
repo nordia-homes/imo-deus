@@ -87,7 +87,7 @@ export function PushNotificationsCard() {
   };
 
   return (
-    <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+    <Card className="agentfinder-settings-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           {status === 'enabled' ? <Bell className="h-5 w-5 text-emerald-300" /> : <BellOff className="h-5 w-5 text-white/70" />}

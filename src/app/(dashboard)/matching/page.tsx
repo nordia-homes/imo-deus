@@ -131,15 +131,15 @@ export default function MatchingPage() {
     const isLoading = areContactsLoading || arePropertiesLoading;
 
     return (
-        <div className="space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
-            <div className="text-center lg:text-left">
+        <div className="agentfinder-matching-page space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
+            <div className="agentfinder-matching-hero text-center lg:text-left">
                 <h1 className="text-3xl font-headline font-bold text-white">Potrivire Proprietăți AI</h1>
                 <p className="text-white/70">
                     Găsește cele mai bune proprietăți pentru clienții tăi folosind inteligența artificială.
                 </p>
             </div>
             
-            <Card className="bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
+            <Card className="agentfinder-matching-card bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                 <CardHeader>
                     <CardTitle className="text-white">1. Selectează un client</CardTitle>
                     <CardDescription className="text-white/70">Alege un lead din lista ta pentru a-i vedea preferințele și a rula analiza.</CardDescription>
@@ -147,7 +147,7 @@ export default function MatchingPage() {
                 <CardContent>
                     {isLoading ? <Skeleton className="h-10 w-full md:w-1/2 bg-white/10" /> : (
                         <Select onValueChange={setSelectedContactId} value={selectedContactId || ''}>
-                            <SelectTrigger className="w-full md:w-1/2 bg-white/10 border-white/20 text-white">
+                            <SelectTrigger className="agentfinder-matching-select w-full md:w-1/2 bg-white/10 border-white/20 text-white">
                                 <SelectValue placeholder="Selectează un client..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -165,7 +165,7 @@ export default function MatchingPage() {
             {selectedContact && (
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onMatchSubmit)}>
-                        <Card className="animate-in fade-in-0 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
+                        <Card className="agentfinder-matching-card animate-in fade-in-0 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                             <CardHeader>
                                 <CardTitle className="text-white">2. Preferințele lui {selectedContact.name}</CardTitle>
                                 <CardDescription className="text-white/70">Ajustează criteriile de mai jos, apoi lansează analiza AI.</CardDescription>
@@ -196,7 +196,7 @@ export default function MatchingPage() {
             )}
 
             {isMatching && (
-                <div className="text-center p-8">
+                <div className="agentfinder-matching-loading text-center p-8">
                     <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary mb-4" />
                     <p className="font-semibold text-white">Analiza AI este în curs...</p>
                     <p className="text-sm text-white/70">Căutăm cele mai bune proprietăți. Acest proces poate dura câteva momente.</p>
@@ -204,11 +204,11 @@ export default function MatchingPage() {
             )}
             
             {matchedProperties.length > 0 && !isMatching && (
-                 <div className="space-y-6 animate-in fade-in-0">
+                 <div className="agentfinder-matching-results space-y-6 animate-in fade-in-0">
                      <h2 className="text-2xl font-headline font-bold text-white">3. Rezultate Analiză AI</h2>
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {matchedProperties.map(prop => (
-                            <Card key={prop.id} className="flex flex-col md:flex-row gap-4 p-4 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
+                            <Card key={prop.id} className="agentfinder-matching-result-card flex flex-col md:flex-row gap-4 p-4 bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
                                 <Link href={`/properties/${prop.id}`} className="block w-full md:w-1/3 aspect-video md:aspect-auto relative shrink-0">
                                     <Image 
                                         src={prop.images?.[0]?.url || `https://picsum.photos/seed/${prop.id}/400/300`}
@@ -224,7 +224,7 @@ export default function MatchingPage() {
                                     </Link>
                                     <p className="text-lg font-bold text-primary mt-1">€{prop.price.toLocaleString()}</p>
                                     
-                                     <Card className="mt-4 bg-blue-900/30 border-blue-500/50 text-white">
+                                     <Card className="agentfinder-matching-score-card mt-4 bg-blue-900/30 border-blue-500/50 text-white">
                                         <CardHeader className="flex flex-row items-center gap-2 p-2">
                                             <Star className="h-4 w-4 text-blue-400" />
                                             <CardTitle className="font-bold text-blue-300 text-sm">Potrivire: {prop.matchScore}/100</CardTitle>
@@ -243,7 +243,7 @@ export default function MatchingPage() {
             )}
 
              {!isMatching && matchedProperties.length === 0 && selectedContactId && (
-                 <Alert className="mt-6 bg-transparent border-white/20 text-white">
+                 <Alert className="agentfinder-matching-alert mt-6 bg-transparent border-white/20 text-white">
                      <Info className="h-4 w-4 text-white" />
                     <AlertTitle className="text-white">Gata de analiză</AlertTitle>
                     <AlertDescription className="text-white/70">

@@ -361,7 +361,7 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
   }
 
   return (
-    <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+    <Card className="agentfinder-integration-card agentfinder-imobiliare-integration-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-white">Imobiliare.ro</CardTitle>

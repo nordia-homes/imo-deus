@@ -10,7 +10,7 @@ interface UsageMeterProps {
 export default function UsageMeter({ title, used, total }: UsageMeterProps) {
     const percentage = (used / total) * 100;
     return (
-        <div>
+        <div className="agentfinder-billing-usage">
             <div className="flex justify-between items-baseline mb-1">
                 <p className="font-semibold text-white">{title}</p>
                 <p className="text-sm text-white/70">{used} / {total}</p>

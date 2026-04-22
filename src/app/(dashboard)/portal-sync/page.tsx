@@ -96,15 +96,15 @@ export default function PortalSyncPage() {
 
 
   return (
-    <div className="space-y-6 bg-[#0F1E33] text-white p-4 lg:p-6">
-       <div className="text-center">
+    <div className="agentfinder-integrations-page space-y-6 bg-[#0F1E33] text-white p-4 lg:p-6">
+       <div className="agentfinder-integrations-hero text-center">
             <h1 className="text-3xl font-headline font-bold text-white">Integrări Portale</h1>
             <p className="text-white/70">
                 Sincronizează anunțurile și lead-urile cu principalele portaluri imobiliare.
             </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="agentfinder-integrations-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
                 [...Array(3)].map((_, i) => (
                     <Skeleton key={i} className="h-[250px] w-full bg-white/10" />

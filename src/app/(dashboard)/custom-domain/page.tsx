@@ -81,7 +81,7 @@ function DomainStateBadge({
   const isIssue = normalized.endsWith('ERROR') || normalized.endsWith('CONFLICT') || normalized.endsWith('FAILED');
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+    <div className="agentfinder-custom-domain-state rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">{label}</p>
       <p className={`mt-1 text-sm font-medium ${isActive ? 'text-emerald-200' : isIssue ? 'text-rose-200' : 'text-white/80'}`}>
         {normalized.replaceAll('_', ' ')}
@@ -137,17 +137,17 @@ function InstructionTable({ instructions }: { instructions: CustomDomainInstruct
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10">
-      <div className="grid grid-cols-[90px_90px_1fr_1.2fr_54px] bg-white/5 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-white/45">
+    <div className="agentfinder-custom-domain-table overflow-hidden rounded-2xl border border-white/10">
+      <div className="agentfinder-custom-domain-table-header grid grid-cols-[90px_90px_1fr_1.2fr_54px] bg-white/5 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-white/45">
         <span>Actiune</span>
         <span>Tip</span>
         <span>Host</span>
         <span>Valoare</span>
         <span className="text-right">Copy</span>
       </div>
-      <div className="divide-y divide-white/10 bg-[#10261f]/75">
+      <div className="agentfinder-custom-domain-table-body divide-y divide-white/10 bg-[#10261f]/75">
         {instructions.map((instruction, index) => (
-          <div key={`${instruction.action}-${instruction.type}-${instruction.host}-${instruction.value}-${index}`} className="grid grid-cols-[90px_90px_1fr_1.2fr_54px] items-start gap-3 px-4 py-4 text-sm text-white/85">
+          <div key={`${instruction.action}-${instruction.type}-${instruction.host}-${instruction.value}-${index}`} className="agentfinder-custom-domain-table-row grid grid-cols-[90px_90px_1fr_1.2fr_54px] items-start gap-3 px-4 py-4 text-sm text-white/85">
             <span className={instruction.action === 'REMOVE' ? 'text-rose-200' : 'text-emerald-200'}>
               {instruction.action}
             </span>
@@ -353,9 +353,9 @@ export default function CustomDomainPage() {
 
   return (
     <>
-      <div className="space-y-8 bg-[#0F1E33] p-4 text-white">
-        <div className="space-y-2">
-          <div className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
+      <div className="agentfinder-custom-domain-page space-y-8 bg-[#0F1E33] p-4 text-white">
+        <div className="agentfinder-custom-domain-hero space-y-2">
+          <div className="agentfinder-custom-domain-eyebrow inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
             <Globe className="mr-2 h-4 w-4" />
             Domeniu custom
           </div>
@@ -366,7 +366,7 @@ export default function CustomDomainPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+          <Card className="agentfinder-custom-domain-card rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
             <CardHeader>
               <CardTitle>Domeniul agentiei</CardTitle>
               <CardDescription className="text-white/70">
@@ -398,13 +398,13 @@ export default function CustomDomainPage() {
                   />
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-white/55">Status curent</p>
                       <div className="mt-3">
                         <StatusBadge status={agency?.customDomainStatus} />
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-white/55">Domeniu activ</p>
                       <p className="mt-3 break-all text-base font-semibold text-white">
                         {currentDomain || 'Nesetat'}
@@ -449,7 +449,7 @@ export default function CustomDomainPage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+            <Card className="agentfinder-custom-domain-card rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
                 <CardTitle>Ce primeste agentia dupa salvare</CardTitle>
                 <CardDescription className="text-white/70">
@@ -457,19 +457,19 @@ export default function CustomDomainPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">1. Domeniul este legat la backend-ul public</p>
                   <p className="mt-2 text-sm leading-7 text-white/70">
                     Serverul aplicației initializeaza legatura cu backend-ul App Hosting si salveaza maparea corecta pentru agentie.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">2. Vezi exact ce trebuie sa pui in registrar</p>
                   <p className="mt-2 text-sm leading-7 text-white/70">
                     Afisam tipul inregistrarii, host-ul, valoarea si actiunea ceruta (`ADD` sau `REMOVE`) exact din raspunsul Firebase.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">3. Reverifici SSL si ownership dintr-un click</p>
                   <p className="mt-2 text-sm leading-7 text-white/70">
                     Butonul de reverificare citeste din nou statusul din App Hosting si actualizeaza pagina cu cele mai noi cerinte DNS.
@@ -478,7 +478,7 @@ export default function CustomDomainPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+            <Card className="agentfinder-custom-domain-card rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
                 <CardTitle>Imagine reprezentativa la distribuire</CardTitle>
                 <CardDescription className="text-white/70">
@@ -486,7 +486,7 @@ export default function CustomDomainPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="agentfinder-custom-domain-panel overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                   {agency?.shareImageUrl ? (
                     <img
                       src={agency.shareImageUrl}
@@ -532,7 +532,7 @@ export default function CustomDomainPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
+            <Card className="agentfinder-custom-domain-card rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
               <CardHeader>
                 <CardTitle>Preview si fallback</CardTitle>
                 <CardDescription className="text-white/70">
@@ -540,13 +540,13 @@ export default function CustomDomainPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/55">Fallback public</p>
                   <p className="mt-2 break-all text-sm font-medium text-emerald-200">
                     {previewUrl || 'Ruta publica indisponibila'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="agentfinder-custom-domain-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/55">Aliasuri pregatite</p>
                   <div className="mt-3 space-y-2 text-sm text-white/75">
                     {mappedAliases.length ? mappedAliases.map((alias) => (
@@ -566,8 +566,8 @@ export default function CustomDomainPage() {
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-h-[90vh] max-w-5xl overflow-hidden rounded-[28px] border-white/10 bg-[#081811] p-0 text-white shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
-          <DialogHeader className="border-b border-white/10 bg-[linear-gradient(160deg,rgba(31,82,63,0.92),rgba(8,24,17,0.96))] px-6 py-6 sm:px-8">
+        <DialogContent className="agentfinder-custom-domain-dialog max-h-[90vh] max-w-5xl overflow-hidden rounded-[28px] border-white/10 bg-[#081811] p-0 text-white shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
+          <DialogHeader className="agentfinder-custom-domain-dialog-header border-b border-white/10 bg-[linear-gradient(160deg,rgba(31,82,63,0.92),rgba(8,24,17,0.96))] px-6 py-6 sm:px-8">
             <DialogTitle className="text-2xl font-semibold text-white">
               Instructiuni DNS generate de Firebase App Hosting
             </DialogTitle>
@@ -580,7 +580,7 @@ export default function CustomDomainPage() {
             {modalData ? (
               <div className="space-y-6">
                 <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="rounded-[24px] border border-emerald-400/20 bg-[linear-gradient(160deg,rgba(18,49,39,0.96),rgba(8,16,13,0.98))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                  <div className="agentfinder-custom-domain-dialog-panel rounded-[24px] border border-emerald-400/20 bg-[linear-gradient(160deg,rgba(18,49,39,0.96),rgba(8,16,13,0.98))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge className="bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/15">
                         <ShieldCheck className="mr-1 h-3.5 w-3.5" />
@@ -595,7 +595,7 @@ export default function CustomDomainPage() {
                   </div>
 
                   <div className="grid gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="agentfinder-custom-domain-dialog-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-white/45">Aliasuri incluse</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {modalAliases.map((alias) => (
@@ -603,7 +603,7 @@ export default function CustomDomainPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="agentfinder-custom-domain-dialog-panel rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-white/45">Verificare rapida</p>
                       <p className="mt-2 text-sm leading-7 text-white/70">
                         Dupa ce actualizezi registrarul, apasa `Verifica din nou` din pagina principala a domeniului. Statusurile se vor actualiza din backend.
@@ -613,7 +613,7 @@ export default function CustomDomainPage() {
                 </div>
 
                 {modalData.domains.map((domain) => (
-                  <div key={domain.domainName} className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(9,22,17,0.98),rgba(8,14,12,0.98))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                  <div key={domain.domainName} className="agentfinder-custom-domain-dialog-panel rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(9,22,17,0.98),rgba(8,14,12,0.98))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-emerald-200/70">Domeniu</p>

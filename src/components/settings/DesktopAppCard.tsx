@@ -8,7 +8,7 @@ const DESKTOP_DOWNLOAD_URL = "https://studio-652232171-42fb6.web.app";
 
 export function DesktopAppCard() {
   return (
-    <Card className="shadow-2xl rounded-2xl bg-[var(--app-surface-solid)] border-none text-white">
+    <Card className="agentfinder-settings-card shadow-2xl rounded-2xl bg-[var(--app-surface-solid)] border-none text-white">
       <CardHeader className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">

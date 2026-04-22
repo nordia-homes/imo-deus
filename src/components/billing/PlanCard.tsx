@@ -18,8 +18,8 @@ export default function PlanCard({ name, price, features, recommended, onChooseP
     
     return (
         <Card className={cn(
-            "flex flex-col shadow-2xl rounded-2xl bg-[#152A47] border-none text-white", 
-            recommended && "border-2 border-primary"
+            "agentfinder-billing-plan-card flex flex-col shadow-2xl rounded-2xl bg-[#152A47] border-none text-white",
+            recommended && "agentfinder-billing-plan-card--recommended border-2 border-primary"
         )}>
             <CardHeader>
                 {recommended && <p className="text-sm font-semibold text-primary mb-2">Recomandat</p>}

@@ -20,15 +20,15 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="space-y-8 bg-[#0F1E33] text-white p-4 lg:p-6">
-      <div>
+    <div className="agentfinder-billing-page space-y-8 bg-[#0F1E33] text-white p-4 lg:p-6">
+      <div className="agentfinder-billing-hero">
         <h1 className="text-3xl font-headline font-bold text-white">Facturare și Abonament</h1>
         <p className="text-white/70">
           Gestionează abonamentul și vezi consumul.
         </p>
       </div>
 
-       <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+       <Card className="agentfinder-billing-current-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
            <CardHeader>
                <CardTitle className="text-white">Abonamentul Tău: Starter</CardTitle>
            </CardHeader>
@@ -44,7 +44,7 @@ export default function BillingPage() {
             </CardFooter>
        </Card>
 
-      <div>
+      <div className="agentfinder-billing-plans-section">
         <h2 className="text-2xl font-headline font-semibold mb-4 text-white">Schimbă abonamentul</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map(plan => (

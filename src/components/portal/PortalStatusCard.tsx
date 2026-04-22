@@ -15,7 +15,7 @@ interface PortalStatusCardProps {
 }
 export default function PortalStatusCard({ name, connected, lastSync, listings, leads, errors }: PortalStatusCardProps) {
     return (
-        <Card className="shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+        <Card className="agentfinder-integration-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-white">{name}</CardTitle>

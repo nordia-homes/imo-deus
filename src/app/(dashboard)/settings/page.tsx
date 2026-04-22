@@ -424,8 +424,8 @@ export default function SettingsPage() {
   
   if (!isAgencyLoading && !agency) {
       return (
-          <div className="min-h-full bg-[var(--app-shell-bg)] px-4 py-10 text-white">
-              <Card className="mx-auto w-full max-w-lg border border-white/10 [background:var(--app-surface-elevated)] text-white shadow-2xl shadow-black/30">
+          <div className="agentfinder-settings-page min-h-full bg-[var(--app-shell-bg)] px-4 py-10 text-white">
+              <Card className="agentfinder-settings-card mx-auto w-full max-w-lg border border-white/10 [background:var(--app-surface-elevated)] text-white shadow-2xl shadow-black/30">
                 <Form {...agencyForm}>
                     <form onSubmit={agencyForm.handleSubmit(handleCreateAgency)}>
                         <CardHeader className="space-y-4">
@@ -454,24 +454,24 @@ export default function SettingsPage() {
 
   if (isAgencyLoading) {
     return (
-      <div className="space-y-8 bg-[var(--app-shell-bg)] px-4 py-6 text-white md:px-6">
-        <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_42%),linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(11,24,41,1)_100%)] p-6">
+      <div className="agentfinder-settings-page space-y-8 bg-[var(--app-shell-bg)] px-4 py-6 text-white md:px-6">
+        <div className="agentfinder-settings-hero rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_42%),linear-gradient(180deg,_rgba(21,42,71,0.98)_0%,_rgba(11,24,41,1)_100%)] p-6">
           <Skeleton className="mb-3 h-6 w-32 bg-white/15" />
           <Skeleton className="mb-2 h-10 w-80 bg-white/15" />
           <Skeleton className="h-4 w-full max-w-xl bg-white/10" />
         </div>
         <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <Card className="border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/2 bg-white/15" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-24 w-24 rounded-full bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-24 bg-white/10" /></div></CardContent></Card>
-          <Card className="border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/3 bg-white/15" /></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /></div></CardContent></Card>
+          <Card className="agentfinder-settings-card border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/2 bg-white/15" /></CardHeader><CardContent><div className="space-y-4"><Skeleton className="h-24 w-24 rounded-full bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-24 bg-white/10" /></div></CardContent></Card>
+          <Card className="agentfinder-settings-card border border-white/10 bg-[var(--app-surface-solid)] text-white"><CardHeader><Skeleton className="h-6 w-1/3 bg-white/15" /></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-10 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /><Skeleton className="h-28 md:col-span-2 bg-white/10" /></div></CardContent></Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[var(--app-shell-bg)] px-4 py-6 text-[var(--app-page-foreground)] md:px-6">
+    <div className="agentfinder-settings-page bg-[var(--app-shell-bg)] px-4 py-6 text-[var(--app-page-foreground)] md:px-6">
       <div className="agentfinder-form mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <header className="space-y-3">
+        <header className="agentfinder-settings-hero space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="rounded-full border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] px-3 py-1 text-[var(--app-page-foreground)]">Setări</Badge>
             <Badge className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-100">
@@ -485,7 +485,7 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <Card className="agentfinder-surface overflow-hidden rounded-[32px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
+        <Card className="agentfinder-settings-card agentfinder-surface overflow-hidden rounded-[32px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
           <CardContent className="p-6 md:p-7">
             <div className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
@@ -623,7 +623,7 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[360px_minmax(0,1fr)]">
             <div className="space-y-6 xl:sticky xl:top-6">
-                <Card className="agentfinder-surface rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
+                <Card className="agentfinder-settings-card agentfinder-surface rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between gap-4">
                         <div>
@@ -663,7 +663,7 @@ export default function SettingsPage() {
                 <PushNotificationsCard />
             </div>
             <div className="space-y-6">
-                 <Card className="agentfinder-surface overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
+                 <Card className="agentfinder-settings-card agentfinder-surface overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
                     <Form {...agencyForm}>
                     <form onSubmit={agencyForm.handleSubmit((values) => handleAgencySave(values))}>
                         <CardHeader className="border-b border-[var(--app-surface-border)] bg-[var(--app-surface-soft)]">

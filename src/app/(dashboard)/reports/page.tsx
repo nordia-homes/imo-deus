@@ -1013,8 +1013,8 @@ export default function ReportsPage() {
     .filter(Boolean);
 
   return (
-    <div className="space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="agentfinder-reports-page space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
+      <div className="agentfinder-reports-hero flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-headline font-bold text-white">Rapoarte de Performanță</h1>
           <p className="max-w-3xl text-white/70">
