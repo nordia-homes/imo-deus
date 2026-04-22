@@ -16,10 +16,11 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, Navigation, MessageSquareText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, MessageSquareText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { WhatsappIcon } from '../icons/WhatsappIcon';
+import { WazeIcon } from '../icons/WazeIcon';
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
 import {
@@ -404,7 +405,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
-              <p className="text-sm text-white/55 sm:text-base">Programul zilei între 08:00 și 21:00</p>
+              <p className="text-sm text-white/55 sm:text-base">Programul zilei 08:00 - 21:00</p>
             </div>
             <div className="agentfinder-viewing-summary-count mt-0.5 shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
               {selectedDayViewings.length} vizionări
@@ -601,9 +602,10 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             aria-label={`Deschide directii Waze pentru ${viewing.propertyAddress}`}
-                                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/20 bg-[#0F1E33]/80 text-sky-300 backdrop-blur-sm transition-colors hover:bg-[#0F1E33] hover:text-sky-200"
+                                            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#33CCFF]/25 bg-white/90 px-3 text-xs font-semibold text-[#33CCFF] shadow-[0_10px_22px_rgba(51,204,255,0.16)] backdrop-blur-sm transition-colors hover:bg-white hover:text-[#00A9E8] sm:text-sm"
                                         >
-                                            <Navigation className="h-4 w-4" />
+                                            <WazeIcon className="h-4 w-4 shrink-0" />
+                                            Vezi pe Waze
                                         </a>
                                     )}
                                 </div>
