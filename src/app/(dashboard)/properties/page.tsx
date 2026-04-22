@@ -85,7 +85,7 @@ export default function PropertiesPage() {
         return hasPublishedPromotion('imobiliare') || Boolean(prop.portalProfiles?.imobiliare?.lastPublishedAt);
       }
 
-      return hasPublishedPromotion('storia') || hasPublishedPromotion('olx');
+      return hasPublishedPromotion('storia') || hasPublishedPromotion('publi24') || hasPublishedPromotion('olx');
     });
 
     const reportPreset = searchParams.get('reportPreset');
@@ -157,7 +157,7 @@ export default function PropertiesPage() {
   const isStoriaOlxQuickFilterActive = portalQuickFilter === 'storia-olx';
 
   return (
-    <div className={cn("space-y-6", isMobile && "p-0")}>
+    <div className={cn("agentfinder-properties-page space-y-6", isMobile && "p-0")}>
        <AddPropertyDialog 
           isOpen={isAddOpen} 
           onOpenChange={setIsAddOpen}
@@ -165,10 +165,10 @@ export default function PropertiesPage() {
         />
         
         {/* Mobile & Tablet View */}
-        <div className="lg:hidden space-y-4">
+        <div className="agentfinder-properties-mobile lg:hidden space-y-4">
             {reportPresetLabel && (
                 <div className="px-2">
-                    <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                    <div className="agentfinder-properties-filter-banner flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
                         <p className="text-sm text-white/90">{reportPresetLabel}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
                             <Link href="/properties">Reseteaza</Link>
@@ -178,7 +178,7 @@ export default function PropertiesPage() {
             )}
             {agentNameFilter && !reportPresetLabel ? (
                 <div className="px-2">
-                    <div className="flex items-center justify-between rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
+                    <div className="agentfinder-properties-filter-banner flex items-center justify-between rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
                         <p className="text-sm text-white/90">Portofoliu filtrat pentru agentul: {agentNameFilter}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
                             <Link href="/properties">Reseteaza</Link>
@@ -186,12 +186,12 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             ) : null}
-            <Card className="bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
+            <Card className="agentfinder-properties-header-card bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-white text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
                          <div className="flex items-center gap-2">
-                           <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white" onClick={() => setIsAddOpen(true)}>
+                           <Button size="sm" className="agentfinder-properties-primary-button bg-white/20 hover:bg-white/30 text-white" onClick={() => setIsAddOpen(true)}>
                              <PlusCircle className="mr-2 h-4 w-4" /> Adaugă
                            </Button>
                         </div>
@@ -200,7 +200,7 @@ export default function PropertiesPage() {
             </Card>
              <div className="px-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                    <Button variant="outline" className="w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
+                    <Button variant="outline" className="agentfinder-properties-soft-button w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
                         <Filter className="mr-2 h-4 w-4" /> Filtrează
                     </Button>
                 </PropertyFilters>
@@ -211,9 +211,9 @@ export default function PropertiesPage() {
         </div>
 
         {/* Desktop View */}
-        <div className="hidden lg:block space-y-6 px-3">
+        <div className="agentfinder-properties-desktop hidden lg:block space-y-6 px-3">
             {reportPresetLabel && (
-                <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
+                <div className="agentfinder-properties-filter-banner rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-white">
                     <div className="flex items-center justify-between gap-4">
                         <p className="text-sm text-white/90">{reportPresetLabel}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
@@ -223,7 +223,7 @@ export default function PropertiesPage() {
                 </div>
             )}
             {agentNameFilter && !reportPresetLabel ? (
-                <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
+                <div className="agentfinder-properties-filter-banner rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-white">
                     <div className="flex items-center justify-between gap-4">
                         <p className="text-sm text-white/90">Portofoliu filtrat pentru agentul: {agentNameFilter}</p>
                         <Button asChild size="sm" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
@@ -232,11 +232,11 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             ) : null}
-            <Card className="overflow-hidden rounded-[30px] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]">
+            <Card className="agentfinder-properties-hero-card overflow-hidden rounded-[30px] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]">
                 <CardHeader className="px-7 py-6">
                     <div className="flex items-center justify-between gap-6">
                         <div className="min-w-0">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
+                            <div className="agentfinder-properties-eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
                                 Portofoliu activ
                             </div>
                             <div className="mt-4 flex items-end gap-4">
@@ -248,7 +248,7 @@ export default function PropertiesPage() {
                                         Vezi rapid tot stocul disponibil, filtrează oportunitățile bune și intră direct în proprietățile care au nevoie de atenție.
                                     </p>
                                 </div>
-                                <div className="shrink-0 rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                                <div className="agentfinder-properties-count-card shrink-0 rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
                                     <p className="mt-1 text-3xl font-semibold text-white">{filteredProperties?.length || 0}</p>
                                 </div>
@@ -258,7 +258,7 @@ export default function PropertiesPage() {
                         <div className="flex min-h-[150px] shrink-0 flex-col items-stretch justify-between gap-3 self-stretch">
                             <div className="grid grid-cols-2 gap-3">
                             <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                              <Button variant="outline" className="h-[68px] w-full rounded-[22px] border border-slate-500/35 bg-slate-800/70 px-5 text-base text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-slate-700/80 hover:text-white">
+                              <Button variant="outline" className="agentfinder-properties-soft-button h-[68px] w-full rounded-[22px] border border-slate-500/35 bg-slate-800/70 px-5 text-base text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-slate-700/80 hover:text-white">
                                 <Filter className="mr-2 h-4 w-4" /> Filtrează
                               </Button>
                             </PropertyFilters>
@@ -267,7 +267,7 @@ export default function PropertiesPage() {
                                 onOpenChange={setIsAddOpen}
                                 property={null}
                             >
-                                <Button className="h-[68px] w-full rounded-[22px] border border-sky-300/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-6 text-base text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]">
+                                <Button className="agentfinder-properties-primary-button h-[68px] w-full rounded-[22px] border border-sky-300/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-6 text-base text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]">
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adaugă Proprietate
                                 </Button>
@@ -279,9 +279,9 @@ export default function PropertiesPage() {
                                     variant="outline"
                                     onClick={() => setPortalQuickFilter((current) => current === 'imobiliare' ? null : 'imobiliare')}
                                     className={cn(
-                                        "h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                        "agentfinder-properties-portal-button h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                                         isImobiliareQuickFilterActive
-                                            ? "border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
+                                            ? "agentfinder-properties-portal-button--active border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
                                             : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
                                     )}
                                 >
@@ -292,13 +292,13 @@ export default function PropertiesPage() {
                                     variant="outline"
                                     onClick={() => setPortalQuickFilter((current) => current === 'storia-olx' ? null : 'storia-olx')}
                                     className={cn(
-                                        "h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                        "agentfinder-properties-portal-button h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                                         isStoriaOlxQuickFilterActive
-                                            ? "border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
+                                            ? "agentfinder-properties-portal-button--active border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
                                             : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
                                     )}
                                 >
-                                    Publicate pe Storia/OLX
+                                    Publicate pe Storia/Publi24
                                 </Button>
                             </div>
                         </div>

@@ -32,7 +32,7 @@ export function PropertyList({ properties, isLoading, onDeleteRequest, agencyId,
 
         if (!properties || properties.length === 0) {
             return (
-                <Card className="shadow-lg rounded-2xl mt-4 bg-transparent lg:bg-card">
+                <Card className="agentfinder-properties-empty-card shadow-lg rounded-2xl mt-4 bg-transparent lg:bg-card">
                     <CardContent className="p-10 text-center text-muted-foreground">
                         Nicio proprietate nu corespunde filtrelor selectate.
                     </CardContent>
@@ -41,7 +41,7 @@ export function PropertyList({ properties, isLoading, onDeleteRequest, agencyId,
         }
 
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="agentfinder-properties-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {properties.map(property => (
                     <PropertyCard 
                         key={property.id} 

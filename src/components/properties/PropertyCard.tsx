@@ -128,7 +128,7 @@ export function PropertyCard({
         "group overflow-hidden rounded-[1.75rem] transition-all duration-300 hover:-translate-y-1",
         isPublicCard
           ? "border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]"
-          : "border-none bg-[#152A47] text-white shadow-2xl hover:shadow-xl"
+          : "agentfinder-property-list-card border-none bg-[#152A47] text-white shadow-2xl hover:shadow-xl"
       )}>
         <CardContent className="p-0">
           <div className="relative">
