@@ -103,12 +103,13 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
 
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
+                const agentPhone = sanitizeForWhatsapp(agent?.phone);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
                 const viewingConfirmationText = encodeURIComponent(buildViewingConfirmationText(viewing));
                 const ownerConfirmationText = encodeURIComponent(buildOwnerConfirmationText(viewing));
 
                 return (
-                <Card key={viewing.id} className="group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
+                <Card key={viewing.id} className="agentfinder-viewing-card group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
                         <div className="flex flex-col md:max-lg:grid md:max-lg:grid-cols-[200px_minmax(0,1fr)] lg:flex-row">
                             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-[26px] md:h-auto md:w-[200px] md:max-lg:col-start-1 md:max-lg:row-start-1 md:max-lg:aspect-square md:max-lg:w-[200px] md:shrink-0 md:rounded-l-[26px] md:rounded-r-none lg:aspect-[16/10] lg:w-[320px]">
                                 {property?.images?.[0]?.url ? (
@@ -195,15 +196,15 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                                 property?.ownerName ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2"
                                             )}
                                         >
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                <div className="mb-0.5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">
+                                            <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--client min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                                <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">
                                                     <UserRound className="h-3.5 w-3.5" />
                                                     Client
                                                 </div>
                                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                    <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-base font-medium leading-tight text-white/90 hover:underline sm:text-lg">{viewing.contactName}</Link>
+                                                    <Link href={`/leads/${viewing.contactId}`} className="agentfinder-viewing-person-name min-w-0 max-w-full flex-1 break-words text-base font-medium leading-tight text-white/90 hover:underline sm:text-lg">{viewing.contactName}</Link>
                                                     {contactPhone && (
-                                                        <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                             <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
                                                                 <MessageSquareText className="h-4 w-4" />
                                                             </a>
@@ -219,12 +220,12 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                             </div>
 
                                             {property?.ownerName && (
-                                                <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                    <div className="mb-0.5 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">Proprietar</div>
+                                                <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--owner min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                                    <div className="agentfinder-viewing-person-label mb-0.5 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">Proprietar</div>
                                                     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                        <p className="min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
+                                                        <p className="agentfinder-viewing-person-name min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
                                                         {ownerPhone && (
-                                                            <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                            <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                                 <a href={`https://wa.me/${ownerPhone}?text=${ownerConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare proprietarului pe WhatsApp">
                                                                     <MessageSquareText className="h-4 w-4" />
                                                                 </a>
@@ -240,17 +241,29 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                                 </div>
                                             )}
 
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
-                                                <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/45 sm:mb-3 sm:text-sm">
+                                            <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--agent min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
+                                                <div className="agentfinder-viewing-person-label mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/45 sm:mb-3 sm:text-sm">
                                                     <Building2 className="h-3.5 w-3.5" />
                                                     Agent
                                                 </div>
-                                                <div className="flex min-w-0 max-w-full items-center gap-3 text-base text-white/80">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={agent?.photoUrl || undefined} />
-                                                        <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                                <div className="agentfinder-viewing-agent-row grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-base text-white/80">
+                                                    <div className="flex min-w-0 items-center gap-3">
+                                                        <Avatar className="h-8 w-8 shrink-0">
+                                                            <AvatarImage src={agent?.photoUrl || undefined} />
+                                                            <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="agentfinder-viewing-person-name min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                                    </div>
+                                                    {agentPhone && (
+                                                        <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                            <a href={`tel:${agent?.phone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Sună agentul">
+                                                                <Phone className="h-4 w-4" />
+                                                            </a>
+                                                            <a href={`https://wa.me/${agentPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Scrie agentului pe WhatsApp">
+                                                                <WhatsappIcon className="h-4 w-4" />
+                                                            </a>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -269,15 +282,15 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                             : "sm:grid-cols-2 md:max-lg:grid-cols-2"
                                     )}
                                 >
-                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                            <div className="mb-0.5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">
+                                        <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--client min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                            <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">
                                                 <UserRound className="h-3.5 w-3.5" />
                                                 Client
                                             </div>
                                             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                <Link href={`/leads/${viewing.contactId}`} className="min-w-0 max-w-full flex-1 break-words text-base font-medium leading-tight text-white/90 hover:underline sm:text-lg">{viewing.contactName}</Link>
+                                                <Link href={`/leads/${viewing.contactId}`} className="agentfinder-viewing-person-name min-w-0 max-w-full flex-1 break-words text-base font-medium leading-tight text-white/90 hover:underline sm:text-lg">{viewing.contactName}</Link>
                                                 {contactPhone && (
-                                                    <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                    <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                         <a href={`https://wa.me/${contactPhone}?text=${viewingConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-500/22 text-emerald-300 transition-colors hover:bg-emerald-500/32 hover:text-emerald-200 sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare pe WhatsApp">
                                                             <MessageSquareText className="h-4 w-4" />
                                                         </a>
@@ -293,12 +306,12 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                         </div>
 
                                         {property?.ownerName && (
-                                            <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                <div className="mb-0.5 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">Proprietar</div>
+                                            <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--owner min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
+                                                <div className="agentfinder-viewing-person-label mb-0.5 text-xs uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-sm sm:tracking-[0.18em]">Proprietar</div>
                                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                                                    <p className="min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
+                                                    <p className="agentfinder-viewing-person-name min-w-0 max-w-full break-words text-base font-medium leading-tight text-white/90 sm:text-lg">{property.ownerName}</p>
                                                     {ownerPhone && (
-                                                        <div className="ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
                                                             <a href={`https://wa.me/${ownerPhone}?text=${ownerConfirmationText}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Trimite mesaj de confirmare proprietarului pe WhatsApp">
                                                                 <MessageSquareText className="h-4 w-4" />
                                                             </a>
@@ -314,17 +327,29 @@ export function ViewingList({ title, viewings, agents = [], properties = [], con
                                             </div>
                                         )}
 
-                                        <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
-                                            <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/45 sm:mb-3 sm:text-sm">
+                                        <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--agent min-w-0 rounded-2xl border border-white/[0.08] bg-[#132840] p-3 sm:p-4">
+                                            <div className="agentfinder-viewing-person-label mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/45 sm:mb-3 sm:text-sm">
                                                 <Building2 className="h-3.5 w-3.5" />
                                                 Agent
                                             </div>
-                                            <div className="flex min-w-0 max-w-full items-center gap-3 text-base text-white/80">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={agent?.photoUrl || undefined} />
-                                                    <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                            <div className="agentfinder-viewing-agent-row grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-base text-white/80">
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <Avatar className="h-8 w-8 shrink-0">
+                                                        <AvatarImage src={agent?.photoUrl || undefined} />
+                                                        <AvatarFallback className="text-xs bg-white/20">{agent?.name?.charAt(0) || 'A'}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="agentfinder-viewing-person-name min-w-0 max-w-full break-words">{agent?.name || 'N/A'}</span>
+                                                </div>
+                                                {agentPhone && (
+                                                    <div className="agentfinder-viewing-person-actions ml-auto flex shrink-0 items-center gap-1.5 self-center rounded-full bg-white/[0.04] px-1 py-0 sm:gap-2 sm:px-1.5 sm:py-1">
+                                                        <a href={`tel:${agent?.phone}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Sună agentul">
+                                                            <Phone className="h-4 w-4" />
+                                                        </a>
+                                                        <a href={`https://wa.me/${agentPhone}`} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-colors hover:bg-white/15 hover:text-white sm:h-10 sm:w-10" aria-label="Scrie agentului pe WhatsApp">
+                                                            <WhatsappIcon className="h-4 w-4" />
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                 </div>
