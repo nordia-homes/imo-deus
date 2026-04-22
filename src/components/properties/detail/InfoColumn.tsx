@@ -94,7 +94,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                 </div>
 
                 <TabsContent value="overview" className="mt-5 space-y-6">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                    <Card className="agentfinder-property-info-card rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Descriere</CardTitle></CardHeader>
                         <CardContent>
                              <div>
@@ -138,7 +138,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                     <MatchedLeadsTab matchedBuyers={matchedBuyers} />
                 </TabsContent>
                 <TabsContent value="viewings" className="mt-5">
-                    <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                    <Card className="agentfinder-property-info-card rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                         <CardHeader><CardTitle>Vizionări Programate</CardTitle></CardHeader>
                         <CardContent>
                             {scheduledViewings.length > 0 ? (
@@ -168,7 +168,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
                 </TabsContent>
                 <TabsContent value="documents" className="mt-5">
                     <div className="space-y-6">
-                        <Card className="rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
+                        <Card className="agentfinder-property-info-card rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">
                           <CardHeader>
                             <CardTitle>Releveu Proprietate (RLV)</CardTitle>
                             <CardDescription className="lg:text-white/70">

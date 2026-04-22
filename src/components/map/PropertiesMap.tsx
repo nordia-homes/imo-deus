@@ -224,7 +224,25 @@ export function PropertiesMap({
   const [streetViewHostReady, setStreetViewHostReady] = useState(false);
   const [streetViewElement, setStreetViewElement] = useState<HTMLDivElement | null>(null);
   const [isPropertyPickerOpen, setIsPropertyPickerOpen] = useState(false);
-  const activeMapStyles = appearance === 'public-property-detail' ? PUBLIC_PROPERTY_MAP_STYLES : MAP_STYLES;
+  const [isAgentfinderTheme, setIsAgentfinderTheme] = useState(false);
+  const activeMapStyles =
+    appearance === 'public-property-detail'
+      ? PUBLIC_PROPERTY_MAP_STYLES
+      : appearance === 'admin-property-detail' && isAgentfinderTheme
+        ? undefined
+        : MAP_STYLES;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => setIsAgentfinderTheme(root.dataset.appTheme === 'agentfinder');
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['data-app-theme'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!validProperties.length) {

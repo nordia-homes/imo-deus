@@ -182,7 +182,7 @@ export default function PropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className="bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
+          <div className="agentfinder-property-detail-page agentfinder-property-detail-mobile bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
              <div className="space-y-4">
                  <MediaColumn property={property} shareUrl={publicPropertyUrl} />
 
@@ -354,8 +354,8 @@ export default function PropertyDetailPage() {
     }
 
     return (
-        <div className="h-full">
-            <div className="hidden lg:block h-full bg-[#0F1E33] -mt-6 -mb-6 px-3 pt-6 pb-6 text-white">
+        <div className="agentfinder-property-detail-page h-full">
+            <div className="agentfinder-property-detail-desktop hidden lg:block h-full bg-[#0F1E33] -mt-6 -mb-6 px-3 pt-6 pb-6 text-white">
                 <PropertyHeader 
                     property={property} 
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}

@@ -2128,4 +2128,173 @@
       0 28px 72px rgba(34, 118, 87, 0.12),
       0 10px 28px rgba(45, 71, 117, 0.08) !important;
   }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page {
+    background:
+      radial-gradient(circle at 14% 0%, rgba(68, 91, 132, 0.13), transparent 32%),
+      radial-gradient(circle at 84% 8%, rgba(182, 128, 246, 0.12), transparent 30%),
+      linear-gradient(180deg, #eef3fb 0%, #f8fbff 48%, #edf4fb 100%) !important;
+    color: #0f172a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-desktop,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-mobile {
+    background:
+      radial-gradient(circle at 10% 0%, rgba(68, 91, 132, 0.16), transparent 34%),
+      radial-gradient(circle at 88% 10%, rgba(134, 239, 172, 0.16), transparent 30%),
+      linear-gradient(180deg, #eef3fb 0%, #f8fbff 50%, #edf4fb 100%) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page header {
+    border-color: rgba(191, 206, 230, 0.78) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card,
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(124, 203, 255, 0.18), transparent 34%),
+      radial-gradient(circle at bottom left, rgba(182, 128, 246, 0.12), transparent 28%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 250, 255, 0.94)) !important;
+    border: 1px solid rgba(191, 206, 230, 0.82) !important;
+    color: #0f172a !important;
+    box-shadow:
+      0 26px 64px rgba(37, 55, 88, 0.13),
+      0 10px 28px rgba(34, 118, 87, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card::before,
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card::before {
+    content: none;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card:hover,
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(126, 154, 201, 0.9) !important;
+    box-shadow:
+      0 34px 82px rgba(37, 55, 88, 0.16),
+      0 14px 34px rgba(34, 118, 87, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card:nth-of-type(3n + 1),
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card:nth-of-type(3n + 1) {
+    background:
+      radial-gradient(circle at top right, rgba(68, 91, 132, 0.17), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 243, 253, 0.94)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card:nth-of-type(3n + 2),
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card:nth-of-type(3n + 2) {
+    background:
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 250, 245, 0.95)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-card:nth-of-type(3n),
+  [data-app-theme='agentfinder'] .agentfinder-property-info-card:nth-of-type(3n) {
+    background:
+      radial-gradient(circle at top right, rgba(182, 128, 246, 0.16), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 240, 252, 0.94)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-inner {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 249, 255, 0.76)) !important;
+    border-color: rgba(191, 206, 230, 0.76) !important;
+    color: #0f172a !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      0 10px 24px rgba(37, 55, 88, 0.07) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-pill {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9)) !important;
+    border-color: rgba(171, 190, 219, 0.82) !important;
+    color: #273b5b !important;
+    box-shadow:
+      0 12px 26px rgba(37, 55, 88, 0.09),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-action-pill:hover {
+    background:
+      linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(239, 246, 255, 0.94)) !important;
+    border-color: rgba(34, 197, 94, 0.55) !important;
+    color: #14532d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-action-card .text-white,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-info-card .text-white,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-action-inner .text-white {
+    color: #0f172a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-emerald-300,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-emerald-200,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-primary {
+    color: #2f5f4a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/80,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/78,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/75,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/70,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/65,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/60,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/58,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .text-white\/55 {
+    color: #5b6b84 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .ring-white\/10,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .border-white\/8,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .border-white\/10,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .border-white\/20 {
+    border-color: rgba(191, 206, 230, 0.78) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .bg-\[\#19293f\],
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .bg-\[\#1a2a40\],
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .bg-\[\#1a3046\],
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .bg-white\/10 {
+    background:
+      linear-gradient(180deg, rgba(240, 253, 244, 0.92), rgba(226, 246, 238, 0.78)) !important;
+    color: #14532d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page svg {
+    color: currentColor;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-action-card .ui-card-title,
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-info-card .ui-card-title {
+    color: #0f172a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page [role='tab'],
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page .agentfinder-property-detail-page-tab {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 247, 255, 0.84)) !important;
+    border-color: rgba(191, 206, 230, 0.8) !important;
+    color: #40516e !important;
+    box-shadow: 0 14px 32px rgba(37, 55, 88, 0.08) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-property-detail-page [role='tab'][data-state='active'] {
+    background:
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 34%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(232, 246, 239, 0.95)) !important;
+    border-color: rgba(96, 165, 128, 0.72) !important;
+    color: #14532d !important;
+    box-shadow:
+      0 18px 38px rgba(34, 118, 87, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+  }
 }
