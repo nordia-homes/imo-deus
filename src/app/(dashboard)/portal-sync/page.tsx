@@ -12,7 +12,7 @@ import { useAgency } from "@/context/AgencyContext";
 const PORTALS = [
     { id: 'imobiliare', name: 'Imobiliare.ro' },
     { id: 'storia', name: 'Storia.ro' },
-    { id: 'olx', name: 'OLX.ro' },
+    { id: 'publi24', name: 'Publi24.ro' },
 ];
 
 export default function PortalSyncPage() {

@@ -25,15 +25,17 @@ const sanitizeForWhatsapp = (phone?: string | null) => {
 };
 
 const getMatchedPropertyImageUrl = (property: Property, agencyId?: string | null) => {
+  const firstImageUrl = property.images?.find((image) => Boolean(image?.url))?.url;
+  if (firstImageUrl) {
+    return firstImageUrl;
+  }
+
   if (agencyId) {
     return `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
   }
 
-  return property.images?.[0]?.url || 'https://placehold.co/800x600?text=Imagine+lipsa';
+  return 'https://placehold.co/800x600?text=Imagine+lipsa';
 };
-
-const isInternalPropertyImage = (imageUrl: string) => imageUrl.startsWith('/api/public-property-image?');
-
 
 const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
@@ -66,7 +68,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
-              unoptimized={isInternalPropertyImage(imageUrl)}
+              unoptimized
           />
            <div className="hidden lg:flex absolute bottom-2 left-2 right-2 justify-start items-center gap-2">
                 <Button variant="secondary" size="sm" className="pointer-events-none h-auto py-1 px-2 text-xs bg-black/50 text-white hover:bg-black/70">

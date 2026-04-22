@@ -364,7 +364,9 @@ export default function ImobiliareIntegrationCard({ listings, errors, lastSync, 
     <Card className="agentfinder-integration-card agentfinder-imobiliare-integration-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-white">Imobiliare.ro</CardTitle>
+          <CardTitle className="text-white">
+            <img src="/imobiliare-logo.svg" alt="imobiliare.ro" className="agentfinder-portal-logo agentfinder-portal-logo--imobiliare" />
+          </CardTitle>
           <span className={`flex items-center text-sm ${status?.connected ? 'text-green-400' : 'text-red-400'}`}>
             {status?.connected ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Unplug className="h-4 w-4 mr-1" />}
             {statusLabel}

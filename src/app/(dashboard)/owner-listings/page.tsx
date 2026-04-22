@@ -111,10 +111,10 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
       : null;
 
   return (
-    <Card className="group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
+    <Card className="agentfinder-owner-listing-card group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
       <CardContent className="p-0">
         <div className="relative">
-          <div className="block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
+          <div className="agentfinder-owner-listing-image block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
             {imageToDisplay ? (
               <Image
                 src={imageToDisplay}
@@ -162,12 +162,13 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
             )}
           </div>
 
-          <div className="flex justify-between items-center pt-2">
-            <Button variant="default" size="sm" className="pointer-events-none font-bold bg-[#f8f8f9] text-foreground hover:bg-muted border border-primary shadow-lg">
+          <div className="flex justify-between items-center gap-3 pt-2">
+            <Button variant="default" size="sm" className="agentfinder-owner-listing-price pointer-events-none font-bold bg-[#f8f8f9] text-foreground hover:bg-muted border border-primary shadow-lg">
                 {displayPrice}
             </Button>
             <div className="flex items-center gap-2">
                 <Button 
+                    className="agentfinder-owner-listing-import"
                     size="sm"
                     onClick={() => handleImport(listing)}
                     disabled={isLoadingImport}
@@ -177,7 +178,7 @@ function OwnerListingCard({ listing, handleImport, isLoadingImport }: { listing:
                     ) : null}
                     Importă Anunțul
                 </Button>
-                <Button asChild size="icon" className="bg-green-500 hover:bg-green-600 text-white">
+                <Button asChild size="icon" className="agentfinder-owner-listing-link bg-green-500 hover:bg-green-600 text-white">
                     <Link href={listing.link} target="_blank">
                         <Rocket className="h-4 w-4" />
                     </Link>
@@ -311,13 +312,13 @@ export default function OwnerListingsPage() {
 
   if (isLoading) {
     return (
-        <div className="space-y-6">
+        <div className="agentfinder-owner-listings-page space-y-6">
             <h1 className="text-xl md:text-3xl font-headline font-bold">
                 Anunțuri de la proprietari
             </h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
-                    <div key={i} className="space-y-3">
+                    <div key={i} className="agentfinder-owner-listing-card space-y-3 p-4">
                         <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
                         <Skeleton className="h-5 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
@@ -329,13 +330,13 @@ export default function OwnerListingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="agentfinder-owner-listings-page space-y-6">
       <h1 className="text-xl md:text-3xl font-headline font-bold">
         Anunțuri de la proprietari
       </h1>
 
       {/* Desktop Filters */}
-      <div className="hidden md:flex flex-wrap gap-4 items-center">
+      <div className="agentfinder-owner-listings-filters hidden md:flex flex-wrap gap-4 items-center">
         <div className="flex gap-2">
           <Button variant={sourceFilter === null ? "default" : "outline"} onClick={() => setSourceFilter(null)}>Toate sursele</Button>
           <Button variant={sourceFilter === 'olx' ? "default" : "outline"} onClick={() => setSourceFilter('olx')}>OLX</Button>
@@ -379,14 +380,14 @@ export default function OwnerListingsPage() {
       </div>
 
        {/* Mobile Filter Button */}
-      <div className="md:hidden">
+      <div className="agentfinder-owner-listings-mobile-filter md:hidden">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                   <Button variant="outline" className="w-full">
                       <Filter className="mr-2 h-4 w-4" /> Filtrează anunțuri
                   </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-2xl">
+              <SheetContent side="bottom" className="agentfinder-owner-listings-sheet rounded-t-2xl">
                   <SheetHeader className="text-left pb-4">
                       <SheetTitle>Filtre</SheetTitle>
                   </SheetHeader>

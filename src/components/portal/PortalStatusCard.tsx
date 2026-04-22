@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 
 interface PortalStatusCardProps {
+    id?: string;
     name: string;
     connected: boolean;
     lastSync: string;
@@ -13,12 +14,25 @@ interface PortalStatusCardProps {
     leads: number;
     errors: number;
 }
-export default function PortalStatusCard({ name, connected, lastSync, listings, leads, errors }: PortalStatusCardProps) {
+const PORTAL_LOGOS: Record<string, { src: string; alt: string; className: string }> = {
+    storia: { src: '/storia-official-logo.svg', alt: 'Storia.ro', className: 'agentfinder-portal-logo agentfinder-portal-logo--storia' },
+    publi24: { src: '/publi24-logo.svg', alt: 'Publi24.ro', className: 'agentfinder-portal-logo agentfinder-portal-logo--publi24' },
+};
+
+export default function PortalStatusCard({ id, name, connected, lastSync, listings, leads, errors }: PortalStatusCardProps) {
+    const logo = id ? PORTAL_LOGOS[id] : undefined;
+
     return (
         <Card className="agentfinder-integration-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-white">{name}</CardTitle>
+                    <CardTitle className="text-white">
+                        {logo ? (
+                            <img src={logo.src} alt={logo.alt} className={logo.className} />
+                        ) : (
+                            name
+                        )}
+                    </CardTitle>
                     {connected ? (
                         <span className="flex items-center text-sm text-green-400"><CheckCircle2 className="h-4 w-4 mr-1" /> Conectat</span>
                     ) : (

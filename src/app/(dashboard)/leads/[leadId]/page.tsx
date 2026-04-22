@@ -600,7 +600,7 @@ export default function LeadDetailPage() {
     return (
         <div className="agentfinder-lead-detail-page h-full flex flex-col">
              {/* Mobile View: Dark, app-like */}
-            <div className='agentfinder-lead-detail-mobile lg:hidden bg-[#0F1E33] -mt-6 pb-4'>
+            <div className='agentfinder-lead-detail-mobile lg:hidden -mt-6 pb-4'>
                 <div className="pt-4 space-y-4">
                     <Card className="bg-[#152A47] text-white border-none rounded-2xl p-4 space-y-4">
                         <div className='flex justify-between items-start'>
@@ -746,7 +746,7 @@ export default function LeadDetailPage() {
             </div>
             
             {/* Desktop View */}
-            <div className="agentfinder-lead-detail-desktop hidden lg:block h-full bg-[#0F1E33] pb-6 pt-5 px-6">
+            <div className="agentfinder-lead-detail-desktop hidden lg:block h-full pb-6 pt-5 px-6">
                  <LeadHeader 
                     contact={contact} 
                     onUpdateContact={handleUpdateContact}
