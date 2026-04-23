@@ -40,6 +40,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
 import { PushNotificationsBanner } from '@/components/notifications/PushNotificationsBanner';
+import { DemoConversionModal } from '@/components/demo/DemoConversionModal';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
@@ -227,6 +228,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </footer>
         ) : null}
+        <DemoConversionModal />
         <BottomNavbar />
       </SidebarInset>
     </SidebarProvider>
