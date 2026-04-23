@@ -663,6 +663,18 @@ function SortableImage({
   );
 }
 
+function ImageSlotPlaceholder({ slotNumber }: { slotNumber: number }) {
+  return (
+    <div className="agentfinder-add-property-image-placeholder hidden h-40 w-40 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center shadow-lg">
+      <div className="agentfinder-add-property-image-placeholder__icon flex h-10 w-10 items-center justify-center rounded-full">
+        <Upload className="h-5 w-5" />
+      </div>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em]">Imagine {slotNumber}</p>
+      <p className="mt-1 text-[11px]">Slot disponibil</p>
+    </div>
+  );
+}
+
 function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Property | null; onClose: () => void; isMobile: boolean }) {
     const { toast } = useToast();
     const { user } = useUser();
@@ -956,6 +968,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         const url = source instanceof File ? URL.createObjectURL(source) : source.url;
         return { id, url };
     }), [imageSources]);
+    const imagePlaceholderSlots = useMemo(
+        () => Array.from({ length: Math.max(0, 15 - imageItems.length) }, (_, index) => imageItems.length + index + 2),
+        [imageItems.length]
+    );
 
     const previewImageUrl = imageItems[0]?.url || null;
     const previewLocation = selectedImobiliareLocation?.display || [watchedZone, watchedCity].filter(Boolean).join(', ');
@@ -1407,8 +1423,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
   
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-                <div className={cn("overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="agentfinder-add-property-dialog__form grid grid-rows-[1fr_auto] h-full">
+                <div className={cn("agentfinder-add-property-dialog__body overflow-y-auto", isMobile ? "p-4 space-y-6" : "p-6")}>
                     
                     {!isMobile && (
                          <Card className="shadow-2xl rounded-2xl mb-8 bg-[#152A47] border-2 border-dashed border-primary/50 text-white">
@@ -1443,6 +1459,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                 </div>
                                             </label>
                                         )}
+                                        {imagePlaceholderSlots.map((slotNumber) => (
+                                            <ImageSlotPlaceholder key={`image-placeholder-${slotNumber}`} slotNumber={slotNumber} />
+                                        ))}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
                                 </ScrollArea>
@@ -1482,6 +1501,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                 </div>
                                             </label>
                                         )}
+                                        {imagePlaceholderSlots.map((slotNumber) => (
+                                            <ImageSlotPlaceholder key={`mobile-image-placeholder-${slotNumber}`} slotNumber={slotNumber} />
+                                        ))}
                                     </div>
                                     <ScrollBar orientation="horizontal" />
                                 </ScrollArea>
@@ -1863,7 +1885,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                         </div>
                     </div>
                 </div>
-                <DialogFooter className="shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md bg-[#0F1E33] border-white/10">
+                <DialogFooter className="agentfinder-add-property-dialog__footer shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md bg-[#0F1E33] border-white/10">
                     <div className="flex justify-end gap-2 w-full">
                         <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting} className="text-white/80 hover:bg-white/10 hover:text-white/90">Anulează</Button>
                         <Button type="submit" disabled={isSubmitting}>
@@ -1903,10 +1925,10 @@ export function AddPropertyDialog({
         </DialogTrigger>
       )}
       <DialogContent className={cn(
-        "p-0 flex flex-col max-w-full rounded-none border-none bg-[#0F1E33] text-white",
+        "agentfinder-add-property-dialog p-0 flex flex-col max-w-full rounded-none border-none bg-[#0F1E33] text-white",
         isMobile ? "h-screen w-screen" : "w-screen h-screen"
       )}>
-        <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
+        <DialogHeader className="agentfinder-add-property-dialog__header shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
           <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
            <DialogClose className="absolute right-2 top-1/2 -translate-y-1/2" />
         </DialogHeader>

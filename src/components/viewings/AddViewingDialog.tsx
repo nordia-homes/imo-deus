@@ -188,17 +188,19 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
     }
   }
 
+  const panelClassName = "agentfinder-add-viewing-dialog__panel rounded-2xl border-none bg-[#152A47] text-white shadow-xl";
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("flex flex-col gap-0 overflow-hidden border-none bg-[#0F1E33] p-0", isMobile ? "h-screen w-screen max-w-full rounded-none" : "max-h-[85vh] sm:max-w-md")}>
-        <DialogHeader className="relative z-10 flex h-14 shrink-0 items-center justify-center border-b border-white/10 bg-[#0F1E33] p-2 shadow-md">
+      <DialogContent className={cn("agentfinder-add-viewing-dialog flex flex-col gap-0 overflow-hidden border-none bg-[#0F1E33] p-0", isMobile ? "h-screen w-screen max-w-full rounded-none" : "max-h-[85vh] sm:max-w-md")}>
+        <DialogHeader className="agentfinder-add-viewing-dialog__header relative z-10 flex h-14 shrink-0 items-center justify-center border-b border-white/10 bg-[#0F1E33] p-2 shadow-md">
           <DialogTitle className="text-center text-xl text-white/90">Programează o Vizionare</DialogTitle>
         </DialogHeader>
         {isOpen && (
             <Form {...form}>
             <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 space-y-6 overflow-y-auto bg-[#0F1E33] px-4 py-4 md:px-6">
-                    <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-xl">
+                <div className="agentfinder-add-viewing-dialog__body flex-1 space-y-6 overflow-y-auto bg-[#0F1E33] px-4 py-4 md:px-6">
+                    <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
                             <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             {isNewContact ? (

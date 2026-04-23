@@ -222,9 +222,9 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
     onOpenChange(false);
   };
 
-  const panelClassName = "rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#152A47_0%,#12263f_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]";
-  const inputClassName = "border-white/15 bg-white/10 text-white placeholder:text-white/40";
-  const selectClassName = "border-white/15 bg-white/10 text-white";
+  const panelClassName = "agentfinder-add-lead-dialog__panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#152A47_0%,#12263f_100%)] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)]";
+  const inputClassName = "agentfinder-add-lead-dialog__field border-white/15 bg-white/10 text-white placeholder:text-white/40";
+  const selectClassName = "agentfinder-add-lead-dialog__field border-white/15 bg-white/10 text-white";
   const availableZones = watchedCity && locations[watchedCity] ? [...locations[watchedCity]].sort() : [];
   const selectedZonesLabel = selectedZones.length === 0
     ? 'Selectează zonele de interes'
@@ -240,19 +240,19 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
         </DialogTrigger>
       )}
       <DialogContent className={cn(
-        "flex flex-col overflow-hidden p-0",
+        "agentfinder-add-lead-dialog flex flex-col overflow-hidden p-0",
         isMobile
           ? "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33]"
           : "h-[90vh] border-white/10 bg-[#0F1E33] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)] sm:max-w-4xl"
       )}>
-        <DialogHeader className="relative z-10 shrink-0 border-b border-white/10 bg-[#132844] px-4 py-4 md:px-6">
+        <DialogHeader className="agentfinder-add-lead-dialog__header relative z-10 shrink-0 border-b border-white/10 bg-[#132844] px-4 py-4 md:px-6">
             <DialogTitle className="text-xl text-white">Adaugă Cumpărător Nou</DialogTitle>
         </DialogHeader>
 
         {isOpen && (
             <Form {...form}>
             <form key={formKey} onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto space-y-6 bg-[#0F1E33] px-4 py-5 md:px-6">
+                <div className="agentfinder-add-lead-dialog__body flex-1 overflow-y-auto space-y-6 bg-[#0F1E33] px-4 py-5 md:px-6">
                     
                     <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
@@ -486,7 +486,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                     </Card>
                 </div>
 
-                <DialogFooter className="shrink-0 border-t border-white/10 bg-[#132844] p-3 shadow-md md:px-6 md:py-4">
+                <DialogFooter className="agentfinder-add-lead-dialog__footer shrink-0 border-t border-white/10 bg-[#132844] p-3 shadow-md md:px-6 md:py-4">
                     <div className="flex justify-end gap-2 w-full">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-white/80 hover:bg-white/10 hover:text-white/90">Anulează</Button>
                         <Button type="submit" disabled={Boolean(duplicateContact)}>

@@ -168,7 +168,7 @@ export function BuyerFinanceAndOffersCard({
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="-mr-2 -mt-1 h-7 w-7 text-white">
+                      <Button variant="ghost" size="icon" className="agentfinder-offer-menu-button -mr-2 -mt-1 h-7 w-7 text-white">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
