@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
-import { CheckSquare, ExternalLink, Facebook, Loader2, Rocket } from 'lucide-react';
+import { CheckSquare, ExternalLink, Facebook, Loader2, Rocket, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -160,11 +160,11 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
 
       <DialogContent
         className={cn(
-          'flex max-h-[88vh] flex-col overflow-hidden bg-[#0F1E33] text-white sm:max-w-2xl',
+          'facebook-groups-promotion-modal flex max-h-[88vh] flex-col overflow-hidden bg-[#0F1E33] text-white sm:max-w-2xl',
           isMobile && 'flex h-screen w-screen max-w-full flex-col rounded-none border-none p-0'
         )}
       >
-        <DialogHeader className={cn('p-6', isMobile && 'shrink-0 border-b border-white/10 p-4 text-center')}>
+        <DialogHeader className={cn('facebook-groups-promotion-modal__header p-6', isMobile && 'shrink-0 border-b border-white/10 p-4 text-center')}>
           <DialogTitle className="text-left text-xl font-semibold text-white">
             Promovare grupuri Facebook
           </DialogTitle>
@@ -174,7 +174,7 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
         </DialogHeader>
 
         <div className={cn(isMobile ? 'flex-1 overflow-y-auto p-4' : 'min-h-0 flex-1 overflow-y-auto px-6 pb-6')}>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="facebook-groups-promotion-modal__panel rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-white">{property.title}</p>
@@ -186,7 +186,7 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                 <Button
                   type="button"
                   variant="ghost"
-                  className="rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
+                  className="facebook-groups-promotion-modal__secondary-button rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
                   onClick={handleSelectAll}
                 >
                   Selectează toate
@@ -194,10 +194,13 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                 <Button
                   type="button"
                   variant="ghost"
-                  className="rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
+                  size="icon"
+                  className="facebook-groups-promotion-modal__secondary-button h-10 w-10 rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white"
                   onClick={handleClearSelection}
+                  aria-label="Reseteaza selectia"
+                  title="Reseteaza selectia"
                 >
-                  Resetează
+                  <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -212,7 +215,7 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                     key={`${group.url}-${index}`}
                     htmlFor={checkboxId}
                     className={cn(
-                      'flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors',
+                      'facebook-groups-promotion-modal__group-item flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors',
                       isSelected
                         ? 'border-emerald-300/28 bg-emerald-400/10'
                         : 'border-white/8 bg-[#10233b] hover:bg-[#132844]'
@@ -247,7 +250,7 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                 type="button"
                 onClick={handleOpenPromotion}
                 disabled={isSubmitting || selectedGroups.length === 0}
-                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className="facebook-groups-promotion-modal__primary-button rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
                 Confirmă selecția
@@ -255,6 +258,103 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
             </div>
           </div>
         </div>
+        <style jsx global>{`
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal {
+            border: 1px solid rgba(174, 195, 225, 0.78) !important;
+            background:
+              radial-gradient(circle at 12% 0%, rgba(196, 181, 253, 0.16), transparent 32%),
+              radial-gradient(circle at 92% 6%, rgba(125, 211, 252, 0.22), transparent 34%),
+              linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94) 54%, rgba(235, 253, 244, 0.92)) !important;
+            color: #111827 !important;
+            box-shadow:
+              0 32px 90px rgba(30, 45, 74, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal > button.absolute {
+            border: 1px solid rgba(174, 195, 225, 0.76) !important;
+            background: rgba(255, 255, 255, 0.78) !important;
+            color: #273b5b !important;
+            box-shadow: 0 10px 24px rgba(37, 55, 88, 0.12) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__header {
+            border-bottom-color: rgba(174, 195, 225, 0.52) !important;
+            background:
+              radial-gradient(circle at top right, rgba(125, 211, 252, 0.18), transparent 36%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(235, 243, 252, 0.92)) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__header [data-radix-dialog-title],
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__header .text-white {
+            color: #111827 !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__header [data-radix-dialog-description],
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__header .text-white\/65 {
+            color: #5d6c86 !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel {
+            border-color: rgba(191, 206, 230, 0.82) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.84)) !important;
+            box-shadow:
+              0 18px 38px rgba(45, 68, 104, 0.13),
+              inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .text-white {
+            color: #111827 !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .text-white\/70,
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .text-white\/60,
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .text-white\/55,
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .text-white\/40 {
+            color: #5d6c86 !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .border-white\/10,
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__panel .border-white\/8 {
+            border-color: rgba(191, 206, 230, 0.82) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__secondary-button {
+            border-color: rgba(191, 206, 230, 0.82) !important;
+            background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.9)) !important;
+            color: #273b5b !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__secondary-button:hover {
+            background: rgba(226, 236, 249, 0.9) !important;
+            color: #1f2f49 !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__group-item {
+            border-color: rgba(191, 206, 230, 0.82) !important;
+            background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__group-item:hover {
+            background: rgba(226, 236, 249, 0.9) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__group-item.border-emerald-300\\/28 {
+            border-color: rgba(74, 222, 128, 0.42) !important;
+            background: linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(239, 246, 255, 0.88)) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__primary-button {
+            border: 1px solid rgba(68, 91, 132, 0.16) !important;
+            background: linear-gradient(135deg, rgba(39, 66, 104, 0.95) 0%, rgba(27, 52, 86, 0.98) 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 18px 38px -22px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__primary-button:hover {
+            background: linear-gradient(135deg, rgba(46, 77, 120, 0.98) 0%, rgba(31, 59, 96, 1) 100%) !important;
+          }
+        `}</style>
       </DialogContent>
     </Dialog>
   );

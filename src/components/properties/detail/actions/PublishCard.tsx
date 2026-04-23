@@ -833,7 +833,7 @@ export function PublishCard({ property }: { property: Property }) {
 
   function renderPromotionEditor() {
     return (
-      <div className="rounded-[24px] border border-white/10 bg-[#111927] p-4">
+      <div className="imobiliare-publish-modal__promotion-editor rounded-[24px] border border-white/10 bg-[#111927] p-4">
         <div className="mb-4 text-center">
           <p className="text-lg font-semibold text-white">Promovare imobiliare.ro</p>
           <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-white/55">
@@ -922,7 +922,7 @@ export function PublishCard({ property }: { property: Property }) {
             type="button"
             onClick={handleSavePromotionSettings}
             disabled={isSavingPromotionSettings || isSyncing}
-            className="bg-white/10 border border-white/20 hover:bg-white/20 text-white"
+            className="imobiliare-publish-modal__secondary-button bg-white/10 border border-white/20 hover:bg-white/20 text-white"
           >
             {isSavingPromotionSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salveaza promovarea
@@ -1095,10 +1095,10 @@ export function PublishCard({ property }: { property: Property }) {
           }
         }}
       >
-        <DialogContent className="imobiliare-publish-modal max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
+        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
           <DialogHeader
             className={cn(
-              "border-b border-white/10 px-6 py-5 text-center sm:text-center",
+              "imobiliare-publish-modal__header border-b border-white/10 px-6 py-5 text-center sm:text-center",
               publishModalStep === 'published' ? "bg-[linear-gradient(180deg,rgba(48,55,79,0.32),rgba(17,25,39,0.94))]" : "bg-[#111927]"
             )}
           >
@@ -1138,7 +1138,7 @@ export function PublishCard({ property }: { property: Property }) {
           <div className="space-y-5 p-6">
             {publishModalStep === 'confirm' ? (
               <>
-                <div className="mx-auto w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
+                <div className="imobiliare-publish-modal__preview-card mx-auto w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
                   {heroImage ? (
                     <div
                       className="h-56 w-full bg-cover bg-center"
@@ -1183,21 +1183,21 @@ export function PublishCard({ property }: { property: Property }) {
                 ) : null}
 
                 <div className="mx-auto flex w-full max-w-[430px] flex-col gap-3">
-                  <Button
-                    type="button"
-                    className="h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
-                    onClick={handleConfirmImobiliarePublish}
-                    disabled={isSubmitting}
-                  >
+                    <Button
+                      type="button"
+                      className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                      onClick={handleConfirmImobiliarePublish}
+                      disabled={isSubmitting}
+                    >
                     <Rocket className="mr-2 h-4 w-4" />
                     Confirma publicarea pe imobiliare.ro
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
-                    onClick={() => setIsPublishModalOpen(false)}
-                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                      onClick={() => setIsPublishModalOpen(false)}
+                    >
                     Anuleaza
                   </Button>
                 </div>
@@ -1208,7 +1208,7 @@ export function PublishCard({ property }: { property: Property }) {
 
             {publishModalStep === 'published' ? (
               <div className="space-y-5">
-                <div className="mx-auto w-full max-w-[430px] overflow-hidden rounded-3xl border border-white/10 bg-[#111927] shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
+                <div className="imobiliare-publish-modal__preview-card mx-auto w-full max-w-[430px] overflow-hidden rounded-3xl border border-white/10 bg-[#111927] shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
                   <div className="grid gap-0">
                     {heroImage ? (
                       <div
@@ -1246,7 +1246,7 @@ export function PublishCard({ property }: { property: Property }) {
                         <Button
                           type="button"
                           onClick={handleOpenPublishedListing}
-                          className="h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                          className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
                         >
                           Deschide anuntul pe imobiliare.ro
                         </Button>
@@ -1263,7 +1263,7 @@ export function PublishCard({ property }: { property: Property }) {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                    className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
                     onClick={() => setIsPublishModalOpen(false)}
                   >
                     Inchide
@@ -1275,8 +1275,8 @@ export function PublishCard({ property }: { property: Property }) {
         </DialogContent>
       </Dialog>
       <Dialog open={isPromotionModalOpen} onOpenChange={setIsPromotionModalOpen}>
-        <DialogContent className="imobiliare-publish-modal max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
-          <DialogHeader className="border-b border-white/10 bg-[#111927] px-6 py-5 text-center sm:text-center">
+        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
+          <DialogHeader className="imobiliare-publish-modal__header border-b border-white/10 bg-[#111927] px-6 py-5 text-center sm:text-center">
             <DialogTitle className="text-center text-xl text-white">Promovare imobiliare.ro</DialogTitle>
             <DialogDescription className="mx-auto max-w-md text-center text-white/65">
               Configureaza promovarile proprietatii intr-un panou separat, fara sa incarcam cardul principal din pagina.
@@ -1310,6 +1310,141 @@ export function PublishCard({ property }: { property: Property }) {
 
         .imobiliare-publish-modal::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(180deg, rgba(148, 163, 184, 0.88), rgba(100, 116, 139, 0.98));
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal--dialog {
+          border: 1px solid rgba(174, 195, 225, 0.78);
+          background:
+            radial-gradient(circle at 12% 0%, rgba(196, 181, 253, 0.16), transparent 32%),
+            radial-gradient(circle at 92% 6%, rgba(125, 211, 252, 0.22), transparent 34%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94) 54%, rgba(235, 253, 244, 0.92));
+          color: #111827;
+          box-shadow:
+            0 32px 90px rgba(30, 45, 74, 0.32),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal--dialog > button.absolute {
+          border: 1px solid rgba(174, 195, 225, 0.76);
+          background: rgba(255, 255, 255, 0.78);
+          color: #273b5b;
+          box-shadow: 0 10px 24px rgba(37, 55, 88, 0.12);
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header {
+          border-bottom-color: rgba(174, 195, 225, 0.52) !important;
+          background:
+            radial-gradient(circle at top right, rgba(125, 211, 252, 0.18), transparent 36%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(235, 243, 252, 0.92)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header [data-radix-dialog-title],
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header h2,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-white {
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header [data-radix-dialog-description],
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-white\/72,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-white\/65,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-white\/60,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-white\/45 {
+          color: #5d6c86 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-emerald-200,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__header .text-emerald-200\/80 {
+          color: #1f7a45 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.84)) !important;
+          box-shadow:
+            0 18px 38px rgba(45, 68, 104, 0.13),
+            inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .text-white,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .text-white {
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .text-white\/82,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .text-white\/80,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .text-white\/60,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .text-white\/45,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .text-white\/85,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .text-white\/75,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .text-white\/65,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .text-white\/55 {
+          color: #5d6c86 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .bg-\[\#202939\],
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .bg-white\/\[0\.05\],
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .bg-\[\#1F2A37\],
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .bg-\[\#202939\] {
+          background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__preview-card .border-white\/10,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .border-white\/10,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .border-white\/15,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor .border-white\/8 {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor input,
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor [role='combobox'] {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.96)) !important;
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__promotion-editor input::placeholder {
+          color: #8a98b2 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__primary-button {
+          border: 1px solid rgba(68, 91, 132, 0.16) !important;
+          background: linear-gradient(135deg, rgba(39, 66, 104, 0.95) 0%, rgba(27, 52, 86, 0.98) 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 18px 38px -22px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__primary-button:hover {
+          background: linear-gradient(135deg, rgba(46, 77, 120, 0.98) 0%, rgba(31, 59, 96, 1) 100%) !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__secondary-button {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.9)) !important;
+          color: #273b5b !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal__secondary-button:hover {
+          background: rgba(226, 236, 249, 0.9) !important;
+          color: #1f2f49 !important;
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal {
+          scrollbar-color: rgba(174, 195, 225, 0.88) rgba(232, 239, 248, 0.92);
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal::-webkit-scrollbar-track {
+          background: rgba(232, 239, 248, 0.92);
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, rgba(174, 195, 225, 0.96), rgba(125, 146, 181, 0.98));
+          border: 2px solid rgba(232, 239, 248, 0.92);
+        }
+
+        [data-app-theme='agentfinder'] .imobiliare-publish-modal::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, rgba(125, 146, 181, 0.98), rgba(92, 112, 146, 1));
         }
       `}</style>
     </>
