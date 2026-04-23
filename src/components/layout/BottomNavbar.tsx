@@ -115,6 +115,22 @@ export function BottomNavbar() {
         </div>
       </nav>
 
+      <button
+        type="button"
+        aria-label="Alege aspectul aplicatiei"
+        className="agentfinder-appearance-pulse-launcher fixed bottom-6 right-6 z-40 hidden items-center gap-3 rounded-full border border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-4 py-3 text-left text-[var(--app-page-foreground)] shadow-[0_20px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[var(--app-surface-border)] hover:bg-[var(--app-surface-soft)] md:flex"
+        onClick={() => setIsAppearanceOpen(true)}
+      >
+        <span className="agentfinder-appearance-pulse-launcher__pulse" aria-hidden="true">
+          <span className="agentfinder-appearance-pulse-launcher__dot" />
+        </span>
+        <span className="agentfinder-appearance-pulse-launcher__copy">
+          <span className="agentfinder-appearance-pulse-launcher__label">Alege aspectul</span>
+          <span className="agentfinder-appearance-pulse-launcher__subtle">Schimba tema aplicatiei</span>
+        </span>
+        <Palette className="h-4 w-4 shrink-0 text-[var(--app-highlight-soft)]" />
+      </button>
+
       <Dialog open={isAppearanceOpen} onOpenChange={setIsAppearanceOpen}>
         <DialogContent className="agentfinder-appearance-dialog w-[calc(100vw-2rem)] max-w-[430px] rounded-[28px] border bg-background p-0">
           <DialogHeader className="agentfinder-appearance-dialog__header">

@@ -110,6 +110,15 @@
 }
 
 @layer utilities {
+  @keyframes agentfinder-appearance-pulse {
+    0% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.28);
+    }
+    100% {
+      box-shadow: 0 0 0 20px hsl(var(--primary) / 0);
+    }
+  }
+
   @keyframes background-pan {
     from {
       background-position: 0% center;
@@ -281,6 +290,60 @@
   .agentfinder-appearance-dialog__check svg {
     color: currentColor;
     stroke: currentColor;
+  }
+
+  .agentfinder-appearance-pulse-launcher {
+    min-height: 4rem;
+  }
+
+  .agentfinder-appearance-pulse-launcher__pulse {
+    position: relative;
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .agentfinder-appearance-pulse-launcher__pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    animation: agentfinder-appearance-pulse 2s infinite;
+    background: transparent;
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.28);
+  }
+
+  .agentfinder-appearance-pulse-launcher__dot {
+    display: inline-flex;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 999px;
+    background: hsl(var(--primary));
+    box-shadow:
+      0 0 0 1px hsl(var(--background) / 0.35),
+      0 8px 20px hsl(var(--primary) / 0.32);
+  }
+
+  .agentfinder-appearance-pulse-launcher__copy {
+    display: grid;
+    min-width: 0;
+    gap: 0.1rem;
+  }
+
+  .agentfinder-appearance-pulse-launcher__label {
+    color: hsl(var(--foreground));
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .agentfinder-appearance-pulse-launcher__subtle {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.74rem;
+    line-height: 1.1;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-surface {
