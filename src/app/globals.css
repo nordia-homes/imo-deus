@@ -1945,9 +1945,11 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(191, 206, 230, 0.82) !important;
     box-shadow:
-      0 34px 86px rgba(37, 113, 83, 0.14),
-      0 12px 32px rgba(39, 67, 116, 0.1),
+      0 38px 92px rgba(37, 55, 88, 0.2),
+      0 18px 42px rgba(34, 118, 87, 0.13),
       inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
   }
 
@@ -2343,15 +2345,15 @@
       0 26px 64px rgba(37, 55, 88, 0.13),
       0 10px 28px rgba(34, 118, 87, 0.07),
       inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease !important;
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-dashboard-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(126, 154, 201, 0.9) !important;
+    transform: translateY(-6px);
+    border-color: rgba(191, 206, 230, 0.82) !important;
     box-shadow:
-      0 34px 82px rgba(37, 55, 88, 0.16),
-      0 14px 34px rgba(34, 118, 87, 0.1),
+      0 38px 92px rgba(37, 55, 88, 0.2),
+      0 18px 42px rgba(34, 118, 87, 0.13),
       inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
   }
 
@@ -2940,13 +2942,15 @@
       0 10px 28px rgba(34, 118, 87, 0.07),
       inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
     backdrop-filter: blur(16px);
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-lead-detail-page .ui-card:hover {
-    border-color: rgba(126, 154, 201, 0.9) !important;
+    transform: translateY(-6px);
+    border-color: rgba(191, 206, 230, 0.82) !important;
     box-shadow:
-      0 34px 82px rgba(37, 55, 88, 0.16),
-      0 14px 34px rgba(34, 118, 87, 0.1),
+      0 38px 92px rgba(37, 55, 88, 0.2),
+      0 18px 42px rgba(34, 118, 87, 0.13),
       inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
   }
 
@@ -5449,6 +5453,36 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .agentfinder-add-property-photo-scroll {
+    padding-bottom: 1.15rem !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .agentfinder-add-property-photo-scroll [data-radix-scroll-area-viewport] > div {
+    padding-bottom: 0.2rem !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .agentfinder-add-property-photo-scrollbar {
+    height: 0.7rem !important;
+    padding: 0.12rem !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background:
+      linear-gradient(135deg, rgba(199, 213, 232, 0.96), rgba(211, 226, 241, 0.88)) !important;
+    box-shadow:
+      inset 0 1px 3px rgba(40, 60, 92, 0.2),
+      0 8px 18px rgba(73, 103, 137, 0.1) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .agentfinder-add-property-photo-scrollbar [data-radix-scroll-area-thumb] {
+    min-width: 4.5rem !important;
+    border-radius: 999px !important;
+    background:
+      linear-gradient(90deg, #263b5f 0%, #3f5f8e 52%, #2f7a61 100%) !important;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.78),
+      0 6px 14px rgba(38, 59, 95, 0.3) !important;
+  }
+
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog label,
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .text-white\/80,
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .text-white\/70,
@@ -5481,6 +5515,53 @@
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog input::placeholder,
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog textarea::placeholder {
     color: #8190aa !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='radio'],
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='checkbox'] {
+    width: 1.12rem !important;
+    height: 1.12rem !important;
+    border: 1.5px solid rgba(63, 95, 142, 0.78) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.9)) !important;
+    color: #263b5f !important;
+    box-shadow:
+      0 8px 18px rgba(38, 59, 95, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    opacity: 1 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='radio'] {
+    border-radius: 999px !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='checkbox'] {
+    border-radius: 0.35rem !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='radio'][data-state='checked'],
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='checkbox'][data-state='checked'] {
+    border-color: rgba(47, 122, 97, 0.92) !important;
+    background:
+      linear-gradient(135deg, #2f7a61, #4da67f) !important;
+    color: #ffffff !important;
+    box-shadow:
+      0 10px 22px rgba(47, 122, 97, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='radio'] svg,
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='checkbox'] svg {
+    color: currentColor !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='radio']:focus-visible,
+  [data-app-theme='agentfinder'] .agentfinder-add-property-dialog [role='checkbox']:focus-visible {
+    outline: 2px solid rgba(159, 199, 242, 0.82) !important;
+    outline-offset: 2px !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-add-property-dialog .bg-\[\#0F1E33\],
@@ -5535,5 +5616,375 @@
     box-shadow:
       0 12px 26px rgba(37, 55, 88, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog {
+    border: 1px solid rgba(180, 200, 230, 0.82) !important;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(196, 181, 253, 0.16), transparent 30%),
+      radial-gradient(circle at 92% 8%, rgba(125, 211, 252, 0.2), transparent 34%),
+      radial-gradient(circle at 88% 88%, rgba(134, 239, 172, 0.18), transparent 28%),
+      linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(239, 246, 255, 0.96)) !important;
+    color: #111827 !important;
+    box-shadow:
+      0 34px 90px rgba(39, 58, 94, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__header,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__footer {
+    border-color: rgba(191, 206, 230, 0.72) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.82)) !important;
+    color: #111827 !important;
+    box-shadow:
+      0 16px 36px rgba(60, 78, 110, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__body {
+    background:
+      radial-gradient(circle at 6% 8%, rgba(196, 181, 253, 0.11), transparent 30%),
+      radial-gradient(circle at 96% 0%, rgba(186, 230, 253, 0.22), transparent 32%),
+      linear-gradient(180deg, rgba(238, 243, 251, 0.5), rgba(248, 251, 255, 0.92)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog [data-radix-dialog-title],
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__header .text-foreground\/90,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__header .text-white\/90,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog h3 {
+    color: #111827 !important;
+    letter-spacing: 0 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog [data-radix-dialog-description],
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__header .text-white\/70 {
+    color: #5d6c86 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__panel {
+    border: 1px solid rgba(191, 206, 230, 0.84) !important;
+    border-radius: 1.35rem !important;
+    background:
+      radial-gradient(circle at top right, rgba(186, 230, 253, 0.2), transparent 36%),
+      radial-gradient(circle at bottom left, rgba(220, 252, 231, 0.22), transparent 34%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.84)) !important;
+    color: #111827 !important;
+    box-shadow:
+      0 22px 54px rgba(45, 68, 104, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog label,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .text-white\/80 {
+    color: #5d6c86 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .text-primary {
+    color: #14532d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog input,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog textarea,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .ui-select-trigger {
+    border-color: rgba(203, 218, 239, 0.92) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #172033 !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 10px 24px rgba(50, 72, 108, 0.06) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog input::placeholder,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog textarea::placeholder {
+    color: #8190aa !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .ui-button {
+    border: 1px solid rgba(191, 206, 230, 0.78) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9)) !important;
+    color: #273b5b !important;
+    box-shadow:
+      0 12px 26px rgba(37, 55, 88, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog__footer .ui-button[type='submit'] {
+    border-color: rgba(74, 222, 128, 0.62) !important;
+    background:
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.28), transparent 42%),
+      linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(134, 239, 172, 0.82)) !important;
+    color: #14532d !important;
+    box-shadow:
+      0 18px 38px rgba(34, 197, 94, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .ui-button svg,
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog .ui-select-trigger svg {
+    color: currentColor !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog [data-radix-dialog-close],
+  [data-app-theme='agentfinder'] .agentfinder-add-task-dialog > button.absolute {
+    border: 1px solid rgba(191, 206, 230, 0.78) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.88)) !important;
+    color: #273b5b !important;
+    box-shadow:
+      0 12px 26px rgba(37, 55, 88, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav {
+    bottom: max(0.85rem, env(safe-area-inset-bottom)) !important;
+    left: 0.85rem !important;
+    right: 0.85rem !important;
+    height: 4.75rem !important;
+    border: 1px solid rgba(174, 195, 225, 0.74) !important;
+    border-radius: 1.55rem !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(234, 244, 255, 0.78) 52%, rgba(223, 248, 239, 0.76)) !important;
+    box-shadow:
+      0 22px 54px rgba(37, 55, 88, 0.24),
+      0 8px 18px rgba(68, 91, 132, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(22px) saturate(1.18) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.18) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__inner {
+    gap: 0.35rem !important;
+    padding: 0.42rem !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__item {
+    position: relative !important;
+    min-width: 0 !important;
+    border: 1px solid transparent !important;
+    border-radius: 1.15rem !important;
+    color: #51627d !important;
+    background: transparent !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    transform: translateY(0);
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      background 180ms ease,
+      color 180ms ease !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__item:hover,
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__item:focus-visible {
+    color: #172033 !important;
+    background: rgba(255, 255, 255, 0.52) !important;
+    box-shadow:
+      0 10px 22px rgba(68, 91, 132, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+    transform: translateY(-2px);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__item--active,
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__aspect {
+    border-color: rgba(164, 185, 220, 0.72) !important;
+    color: #14233c !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.86)) !important;
+    box-shadow:
+      0 12px 28px rgba(68, 91, 132, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__aspect {
+    background:
+      linear-gradient(135deg, rgba(224, 242, 254, 0.92), rgba(220, 252, 231, 0.86)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__icon {
+    display: inline-flex;
+    height: 1.75rem;
+    width: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__icon svg {
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.15 !important;
+    opacity: 1 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-bottom-nav__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog {
+    overflow: hidden !important;
+    border: 1px solid rgba(174, 195, 225, 0.78) !important;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(196, 181, 253, 0.16), transparent 32%),
+      radial-gradient(circle at 92% 6%, rgba(125, 211, 252, 0.22), transparent 34%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94) 54%, rgba(235, 253, 244, 0.92)) !important;
+    color: #111827 !important;
+    box-shadow:
+      0 32px 90px rgba(30, 45, 74, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog > button.absolute {
+    top: 0.85rem !important;
+    right: 0.85rem !important;
+    border: 1px solid rgba(174, 195, 225, 0.76) !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: #273b5b !important;
+    box-shadow: 0 10px 24px rgba(37, 55, 88, 0.12) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__header {
+    padding: 1.55rem 1.35rem 0.75rem !important;
+    text-align: left !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__badge {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 999px;
+    background: rgba(220, 252, 231, 0.78);
+    padding: 0.35rem 0.7rem;
+    color: #14532d;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__badge svg {
+    color: #1f7a45 !important;
+    stroke: currentColor !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__title {
+    margin-top: 0.9rem !important;
+    color: #111827 !important;
+    font-size: 1.45rem !important;
+    letter-spacing: 0 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__description {
+    max-width: 22rem;
+    color: #5d6c86 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__options {
+    display: grid;
+    gap: 0.78rem;
+    padding: 0.35rem 1.1rem 1.15rem;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.9rem;
+    align-items: center;
+    width: 100%;
+    border: 1px solid rgba(191, 206, 230, 0.82);
+    border-radius: 1.25rem;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(239, 246, 255, 0.78));
+    padding: 0.82rem;
+    text-align: left;
+    color: #172033;
+    box-shadow:
+      0 14px 30px rgba(45, 68, 104, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__option:hover,
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__option:focus-visible {
+    border-color: rgba(68, 91, 132, 0.42);
+    box-shadow:
+      0 18px 38px rgba(45, 68, 104, 0.13),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+    transform: translateY(-2px);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__option--active {
+    border-color: rgba(74, 222, 128, 0.58);
+    background:
+      linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(239, 246, 255, 0.88));
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__swatches {
+    display: flex;
+    height: 3.45rem;
+    width: 3.45rem;
+    overflow: hidden;
+    border: 1px solid rgba(174, 195, 225, 0.72);
+    border-radius: 1rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__swatches span {
+    flex: 1;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__copy {
+    display: grid;
+    min-width: 0;
+    gap: 0.18rem;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__name {
+    color: #111827;
+    font-size: 0.98rem;
+    font-weight: 850;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__accent {
+    color: #285f45;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__text {
+    color: #667792;
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__check {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    border-radius: 999px;
+    background: rgba(220, 252, 231, 0.78);
+    color: #14532d;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-appearance-dialog__check svg {
+    color: currentColor !important;
+    stroke: currentColor !important;
   }
 }

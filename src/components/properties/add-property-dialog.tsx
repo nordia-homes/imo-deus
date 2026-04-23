@@ -1433,7 +1433,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     <FormLabel className="text-xl font-semibold mb-2 block text-primary">Fotografii (max 16)</FormLabel>
                                     <FormDescription className="text-lg text-white/70 !mt-2">Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                                 </div>
-                                <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                                <ScrollArea className="agentfinder-add-property-photo-scroll w-full whitespace-nowrap rounded-lg">
                                     <div className="flex items-center w-max space-x-4 pb-4">
                                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                             <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
@@ -1463,7 +1463,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             <ImageSlotPlaceholder key={`image-placeholder-${slotNumber}`} slotNumber={slotNumber} />
                                         ))}
                                     </div>
-                                    <ScrollBar orientation="horizontal" />
+                                    <ScrollBar orientation="horizontal" className="agentfinder-add-property-photo-scrollbar" />
                                 </ScrollArea>
                             </CardContent>
                         </Card>
@@ -1475,7 +1475,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     <FormLabel className={cn("font-semibold mb-2 block", "text-white/80")}>Fotografii (max 16)</FormLabel>
                                     <FormDescription className={cn("text-white/70 !mt-2")}>Prima imagine va fi cea de copertă. Trageți pentru a reordona.</FormDescription>
                                 </div>
-                                <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                                <ScrollArea className="agentfinder-add-property-photo-scroll w-full whitespace-nowrap rounded-lg">
                                     <div className="flex items-center w-max space-x-4 pb-4">
                                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                             <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
@@ -1505,7 +1505,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             <ImageSlotPlaceholder key={`mobile-image-placeholder-${slotNumber}`} slotNumber={slotNumber} />
                                         ))}
                                     </div>
-                                    <ScrollBar orientation="horizontal" />
+                                    <ScrollBar orientation="horizontal" className="agentfinder-add-property-photo-scrollbar" />
                                 </ScrollArea>
                             </CardContent>
                         </Card>

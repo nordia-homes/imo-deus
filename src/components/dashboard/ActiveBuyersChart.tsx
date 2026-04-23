@@ -25,7 +25,7 @@ export function ActiveBuyersChart({ data }: { data: ActiveBuyersEvolutionData[] 
   return (
     <ChartContainer config={chartConfig} className="w-full h-[120px]">
         <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+            <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: 8 }}>
                 <CartesianGrid vertical={false} stroke="rgba(255, 255, 255, 0.1)" />
                 <XAxis
                     dataKey="date"
@@ -43,7 +43,7 @@ export function ActiveBuyersChart({ data }: { data: ActiveBuyersEvolutionData[] 
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
-                  width={30}
+                  width={36}
                   fontSize={12}
                 />
                 <ChartTooltip

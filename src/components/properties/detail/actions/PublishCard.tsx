@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CheckCircle2, Loader2, Rocket, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, EyeOff, Loader2, Rocket, Sparkles, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
 
@@ -981,8 +981,15 @@ export function PublishCard({ property }: { property: Property }) {
                   </span>
                 ) : null}
                 {!published && !pending && !errored ? (
-                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55">
-                    {isImobiliare ? 'Nepublicat' : 'Curand'}
+                  <span
+                    className={cn(
+                      "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55",
+                      isImobiliare && "inline-flex h-8 w-10 items-center justify-center px-0"
+                    )}
+                    aria-label={isImobiliare ? 'Nepublicat' : undefined}
+                    title={isImobiliare ? 'Nepublicat' : undefined}
+                  >
+                    {isImobiliare ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : 'Curand'}
                   </span>
                 ) : null}
               </div>

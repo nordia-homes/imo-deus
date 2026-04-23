@@ -93,9 +93,9 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-rows-[1fr_auto] h-full">
-        <div className={cn("overflow-y-auto md:px-3 md:py-4 space-y-6 px-2 py-4", isMobile && "bg-[#0F1E33]")}>
-            <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="agentfinder-add-task-dialog__form grid grid-rows-[1fr_auto] h-full">
+        <div className={cn("agentfinder-add-task-dialog__body overflow-y-auto md:px-3 md:py-4 space-y-6 px-2 py-4", isMobile && "bg-[#0F1E33]")}>
+            <Card className={cn("agentfinder-add-task-dialog__panel shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                 <CardContent className="pt-6 space-y-4">
                     <h3 className="text-lg font-semibold text-primary">Detalii Task</h3>
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Descriere Task</FormLabel><FormControl><Textarea {...field} placeholder="ex: Sună clientul X pentru follow-up" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
@@ -123,7 +123,7 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
                 </CardContent>
             </Card>
 
-            <Card className={cn("shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
+            <Card className={cn("agentfinder-add-task-dialog__panel shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                 <CardContent className="pt-6 space-y-4">
                      <h3 className="text-lg font-semibold text-primary">Programare</h3>
                       <FormField
@@ -158,7 +158,7 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
             </Card>
         </div>
 
-        <DialogFooter className={cn("shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+        <DialogFooter className={cn("agentfinder-add-task-dialog__footer shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
             <div className="flex justify-end gap-2 w-full">
               <Button type="button" variant="ghost" onClick={onClose} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
               <Button type="submit">Salvează Task</Button>
@@ -186,8 +186,8 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
       <DialogTrigger asChild>
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Task</Button>}
       </DialogTrigger>
-      <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-2xl h-[90vh]")}>
-        <DialogHeader className={cn("shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
+      <DialogContent className={cn("agentfinder-add-task-dialog p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-2xl h-[90vh]")}>
+        <DialogHeader className={cn("agentfinder-add-task-dialog__header shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
           <DialogTitle className={cn("text-xl text-foreground/90", isMobile && "text-white/90")}>{property ? 'Adaugă Task' : 'Adaugă Task Nou'}</DialogTitle>
           {property && <DialogDescription className={cn("text-center -mt-1", isMobile && "text-white/70")}>{property.title}</DialogDescription>}
         </DialogHeader>
