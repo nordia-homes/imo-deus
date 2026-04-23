@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { updateDocumentNonBlocking, useFirestore } from '@/firebase';
-import { THEME_PRESET_OPTIONS, applyAgencyThemeToRoot } from '@/lib/theme';
+import { THEME_PRESET_OPTIONS, applyAgencyThemeToRoot, resolveThemePreset } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import type { ThemePreset } from '@/lib/types';
 import {
@@ -34,45 +34,25 @@ const navItems = [
 const themeVisuals: Record<
   ThemePreset,
   {
-    accent: string;
-    preview: {
-      shell: string;
-      surface: string;
-      sidebar: string;
-      primary: string;
-      soft: string;
-    };
+    colorName: string;
+    swatch: string;
+    swatchBorder: string;
   }
 > = {
   classic: {
-    accent: 'Verde proaspat',
-    preview: {
-      shell: '#f8fafc',
-      surface: '#ffffff',
-      sidebar: '#eef2f7',
-      primary: '#22c55e',
-      soft: '#dcfce7',
-    },
+    colorName: 'Albastru inchis',
+    swatch: '#0F1E33',
+    swatchBorder: 'rgba(15, 30, 51, 0.38)',
   },
   forest: {
-    accent: 'Forest premium',
-    preview: {
-      shell: '#051f20',
-      surface: '#0b2b26',
-      sidebar: '#163832',
-      primary: '#8eb69b',
-      soft: '#daf1de',
-    },
+    colorName: 'Verde regal',
+    swatch: '#235347',
+    swatchBorder: 'rgba(35, 83, 71, 0.38)',
   },
   agentfinder: {
-    accent: 'AgentFinder glass',
-    preview: {
-      shell: '#eef3fb',
-      surface: '#ffffff',
-      sidebar: '#dbe7f5',
-      primary: '#445b84',
-      soft: '#dff8ef',
-    },
+    colorName: 'Alb light',
+    swatch: '#F8FBFF',
+    swatchBorder: 'rgba(174, 195, 225, 0.92)',
   },
 };
 
@@ -81,7 +61,7 @@ export function BottomNavbar() {
   const firestore = useFirestore();
   const { agency, agencyId } = useAgency();
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
-  const activeTheme = (agency?.themePreset || 'classic') as ThemePreset;
+  const activeTheme = resolveThemePreset(agency?.themePreset);
 
   const handleThemeSelect = (themePreset: ThemePreset) => {
     if (typeof document !== 'undefined') {
@@ -94,6 +74,8 @@ export function BottomNavbar() {
     if (agencyId) {
       updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId), { themePreset });
     }
+
+    setIsAppearanceOpen(false);
   };
 
   return (
@@ -164,30 +146,16 @@ export function BottomNavbar() {
                   onClick={() => handleThemeSelect(theme.value)}
                 >
                   <span
-                    className="agentfinder-appearance-dialog__preview"
-                    style={
-                      {
-                        '--theme-preview-shell': visual.preview.shell,
-                        '--theme-preview-surface': visual.preview.surface,
-                        '--theme-preview-sidebar': visual.preview.sidebar,
-                        '--theme-preview-primary': visual.preview.primary,
-                        '--theme-preview-soft': visual.preview.soft,
-                      } as CSSProperties
-                    }
+                    className="agentfinder-appearance-dialog__swatch"
+                    style={{
+                      background: visual.swatch,
+                      borderColor: visual.swatchBorder,
+                    }}
                     aria-hidden="true"
-                  >
-                    <span className="agentfinder-appearance-dialog__preview-sidebar" />
-                    <span className="agentfinder-appearance-dialog__preview-panel">
-                      <span />
-                      <span />
-                      <span />
-                    </span>
-                    <span className="agentfinder-appearance-dialog__preview-action" />
-                  </span>
+                  />
                   <span className="agentfinder-appearance-dialog__copy">
                     <span className="agentfinder-appearance-dialog__name">{theme.label}</span>
-                    <span className="agentfinder-appearance-dialog__accent">{visual.accent}</span>
-                    <span className="agentfinder-appearance-dialog__text">{theme.description}</span>
+                    <span className="agentfinder-appearance-dialog__accent">{visual.colorName}</span>
                   </span>
                   <span className="agentfinder-appearance-dialog__check" aria-hidden="true">
                     {isActive && <Check className="h-4 w-4" />}

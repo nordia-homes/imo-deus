@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Agency, ThemePreset } from '@/lib/types';
 
+export const DEFAULT_THEME_PRESET: ThemePreset = 'agentfinder';
 const DEFAULT_CLASSIC_PRIMARY_HEX = '#22c55e';
 const DEFAULT_CLASSIC_PRIMARY_HSL = '145 63% 45%';
 const FOREST_PRIMARY_HEX = '#8EB69B';
@@ -176,7 +177,11 @@ export function resolveThemePreset(value?: string | null): ThemePreset {
     return value;
   }
 
-  return 'classic';
+  if (value === 'classic') {
+    return value;
+  }
+
+  return DEFAULT_THEME_PRESET;
 }
 
 export function hexToHsl(hex: string): string | null {

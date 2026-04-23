@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateEmail, updateProfile } from 'firebase/auth';
-import { applyAgencyThemeToRoot, THEME_PRESET_OPTIONS } from '@/lib/theme';
+import { DEFAULT_THEME_PRESET, applyAgencyThemeToRoot, THEME_PRESET_OPTIONS } from '@/lib/theme';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -95,7 +95,7 @@ export default function SettingsPage() {
         address: '', 
         logoUrl: '', 
         primaryColor: '#22c55e',
-        themePreset: 'classic',
+        themePreset: DEFAULT_THEME_PRESET,
         facebookUrl: '',
         instagramUrl: '',
         linkedinUrl: '',
@@ -139,7 +139,7 @@ export default function SettingsPage() {
             address: agency.address || '',
             logoUrl: agency.logoUrl || '',
             primaryColor: agency.primaryColor || '#22c55e',
-            themePreset: agency.themePreset || 'classic',
+            themePreset: agency.themePreset || DEFAULT_THEME_PRESET,
             facebookUrl: agency.facebookUrl || '',
             instagramUrl: agency.instagramUrl || '',
             linkedinUrl: agency.linkedinUrl || '',
@@ -267,7 +267,7 @@ export default function SettingsPage() {
     address: values.address || '',
     logoUrl: values.logoUrl || '',
     primaryColor: values.primaryColor || '#22c55e',
-    themePreset: values.themePreset || 'classic',
+    themePreset: values.themePreset || DEFAULT_THEME_PRESET,
     facebookUrl: values.facebookUrl || '',
     instagramUrl: values.instagramUrl || '',
     linkedinUrl: values.linkedinUrl || '',
@@ -417,7 +417,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     applyAgencyThemeToRoot(document.documentElement, {
-      themePreset: watchedAgencyThemePreset || agency?.themePreset || 'classic',
+      themePreset: watchedAgencyThemePreset || agency?.themePreset || DEFAULT_THEME_PRESET,
       primaryColor: watchedAgencyPrimaryColor || agency?.primaryColor || '#22c55e',
     });
   }, [agency?.primaryColor, agency?.themePreset, watchedAgencyPrimaryColor, watchedAgencyThemePreset]);

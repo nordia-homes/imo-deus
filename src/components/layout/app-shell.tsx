@@ -33,6 +33,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
@@ -43,6 +44,7 @@ import { PushNotificationsBanner } from '@/components/notifications/PushNotifica
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
   const pathname = usePathname();
+  const showSidebarHeaderTrigger = pathname.startsWith('/leads') || pathname.startsWith('/properties');
   const publicWebsiteHref = agency?.customDomain
     ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`
     : agencyId
@@ -52,13 +54,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <Link href="/dashboard" className="flex items-center p-2 justify-center group-data-[collapsible=icon]:justify-center h-14">
+        <SidebarHeader className="relative h-16 shrink-0">
+          <Link href="/dashboard" className="flex h-14 min-w-0 items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
             <div className="group-data-[collapsible=icon]:hidden">
                 <ImoDeusTextLogo className="w-44" />
             </div>
-            <Home className="hidden h-7 w-7 text-[var(--app-nav-foreground)] group-data-[collapsible=icon]:block" />
           </Link>
+          {showSidebarHeaderTrigger ? (
+            <SidebarTrigger className="absolute right-2 top-4 h-8 w-8 rounded-xl border border-[var(--app-sidebar-border)] bg-[var(--app-surface-soft)] text-[var(--app-nav-foreground)] hover:bg-[var(--app-nav-hover-bg)] hover:text-[var(--app-nav-hover-foreground)] group-data-[collapsible=icon]:left-1/2 group-data-[collapsible=icon]:right-auto group-data-[collapsible=icon]:-translate-x-1/2" />
+          ) : null}
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
