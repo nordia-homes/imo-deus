@@ -358,8 +358,8 @@ export default function FacebookPromotionRunnerPage() {
 
   if (!isHydrated) {
     return (
-      <div className="space-y-6 p-4 text-white">
-        <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+      <div className="facebook-runner-page space-y-6 p-4 text-white">
+        <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
           <CardContent className="flex items-center gap-3 p-6">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span>Se încarcă sesiunea de promovare...</span>
@@ -371,8 +371,8 @@ export default function FacebookPromotionRunnerPage() {
 
   if (!session) {
     return (
-      <div className="space-y-6 p-4 text-white">
-        <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+      <div className="facebook-runner-page space-y-6 p-4 text-white">
+        <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
           <CardHeader>
             <CardTitle>Nu există o sesiune de promovare activă</CardTitle>
             <CardDescription className="text-white/70">
@@ -390,12 +390,12 @@ export default function FacebookPromotionRunnerPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 text-white">
-      <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+    <div className="facebook-runner-page space-y-6 p-4 text-white">
+      <Card className="facebook-runner-page__card facebook-runner-page__hero rounded-2xl border-white/10 bg-[#152A47] text-white">
         <CardHeader className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+              <div className="facebook-runner-page__eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
                 <Facebook className="h-3.5 w-3.5" />
                 Runner asistat
               </div>
@@ -409,33 +409,33 @@ export default function FacebookPromotionRunnerPage() {
 
           {currentGroup ? (
             <div className="grid gap-3 lg:grid-cols-4">
-              <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => router.push(`/properties/${session.propertyId}`)}>
+              <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => router.push(`/properties/${session.propertyId}`)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Înapoi la proprietate
               </Button>
               {isDesktop ? (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={saveDesktopSessionFile}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={saveDesktopSessionFile}>
                   <Copy className="mr-2 h-4 w-4" />
                   Exportă sesiunea
                 </Button>
               ) : (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={downloadSessionFile}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={downloadSessionFile}>
                   <Copy className="mr-2 h-4 w-4" />
                   Descarcă sesiunea JSON
                 </Button>
               )}
               {isDesktop ? (
-                <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={startDesktopRunner} disabled={isUpdating}>
+                <Button className="facebook-runner-page__primary-button rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={startDesktopRunner} disabled={isUpdating}>
                   <Laptop className="mr-2 h-4 w-4" />
                   Publică în primul grup
                 </Button>
               ) : (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={copyHelperCommand}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={copyHelperCommand}>
                   <TerminalSquare className="mr-2 h-4 w-4" />
                   Copiază comanda helper
                 </Button>
               )}
-              <Button variant="ghost" className="rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white" onClick={clearSession}>
+              <Button variant="ghost" className="facebook-runner-page__secondary-button rounded-full border border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:text-white" onClick={clearSession}>
                 Închide sesiunea
               </Button>
             </div>
@@ -444,39 +444,39 @@ export default function FacebookPromotionRunnerPage() {
           {currentGroup ? (
             <div className="grid gap-3 lg:grid-cols-4">
               {isDesktop ? (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={retryDesktopCurrentGroup} disabled={isUpdating}>
                   <LogIn className="mr-2 h-4 w-4" />
                   Reia grupul curent
                 </Button>
               ) : (
-                <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={openCurrentGroup} disabled={isUpdating}>
+                <Button className="facebook-runner-page__primary-button rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={openCurrentGroup} disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
                   Deschide grupul curent
                 </Button>
               )}
               {isDesktop ? (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={resetDesktopRunnerProfile} disabled={isUpdating}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={resetDesktopRunnerProfile} disabled={isUpdating}>
                   <RefreshCcw className="mr-2 h-4 w-4" />
                   Resetează profilul runner
                 </Button>
               ) : (
-                <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={openAllImages}>
+                <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={openAllImages}>
                   <ImageIcon className="mr-2 h-4 w-4" />
                   Deschide toate pozele
                 </Button>
               )}
-              <Button className="rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
+              <Button className="facebook-runner-page__success-button rounded-full bg-emerald-500 text-white hover:bg-emerald-500/90" onClick={() => (isDesktop ? advanceDesktopGroup('posted') : advanceGroup('posted'))} disabled={isUpdating}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Publică în următorul grup
               </Button>
-              <Button variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
+              <Button variant="outline" className="facebook-runner-page__secondary-button rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]" onClick={() => (isDesktop ? advanceDesktopGroup('skipped') : advanceGroup('skipped'))} disabled={isUpdating}>
                 <SkipForward className="mr-2 h-4 w-4" />
                 Sari peste acest grup
               </Button>
             </div>
           ) : null}
 
-          <div className="space-y-2">
+          <div className="facebook-runner-page__progress space-y-2">
             <div className="flex items-center justify-between text-sm text-white/70">
               <span>Progres sesiune</span>
               <span>{progressValue}%</span>
@@ -487,7 +487,7 @@ export default function FacebookPromotionRunnerPage() {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
-        <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+        <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
           <CardHeader>
             <CardTitle className="text-white">
               {currentGroup ? currentGroup.name : 'Toate grupurile au fost parcurse'}
@@ -501,17 +501,17 @@ export default function FacebookPromotionRunnerPage() {
           <CardContent className="space-y-4">
             {currentGroup ? (
               <>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="facebook-runner-page__surface rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-white">{currentGroup.name}</p>
                       <p className="mt-1 text-xs text-white/55">{currentGroup.url}</p>
                     </div>
-                    <Badge className="bg-white/10 text-white/80">{currentGroup.status}</Badge>
+                    <Badge className="facebook-runner-page__badge bg-white/10 text-white/80">{currentGroup.status}</Badge>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-300/16 bg-emerald-400/10 p-4 text-sm text-emerald-50">
+                <div className="facebook-runner-page__info-panel rounded-2xl border border-emerald-300/16 bg-emerald-400/10 p-4 text-sm text-emerald-50">
                   <p className="font-semibold">Ce face runner-ul acum</p>
                   <p className="mt-2 leading-7 text-emerald-50/90">
                     {isDesktop
@@ -521,7 +521,7 @@ export default function FacebookPromotionRunnerPage() {
                 </div>
 
                 {isDesktop && desktopStatus ? (
-                  <div className="rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm text-white/80">
+                  <div className="facebook-runner-page__surface facebook-runner-page__status-panel rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm text-white/80">
                     <p className="font-semibold text-white">Status desktop runner</p>
                     <p className="mt-2">{desktopStatus.message || 'Așteaptă comenzi.'}</p>
                     <p className="mt-2 text-xs text-white/55">
@@ -530,16 +530,16 @@ export default function FacebookPromotionRunnerPage() {
                   </div>
                 ) : null}
 
-                <div className="rounded-2xl border border-white/10 bg-[#10233b] p-4">
+                <div className="facebook-runner-page__surface rounded-2xl border border-white/10 bg-[#10233b] p-4">
                   <p className="font-semibold text-white">Stare grupuri</p>
                   <div className="mt-4 space-y-2">
                     {session.groups.map((group, index) => (
-                      <div key={`${group.url}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-[#0e2138] px-3 py-2.5">
+                      <div key={`${group.url}-${index}`} className="facebook-runner-page__group-row flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-[#0e2138] px-3 py-2.5">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-white">{group.name}</p>
                           <p className="truncate text-xs text-white/55">{group.url}</p>
                         </div>
-                        <Badge className={group.status === 'posted' ? 'bg-emerald-500/20 text-emerald-100' : group.status === 'opened' ? 'bg-blue-500/20 text-blue-100' : group.status === 'skipped' ? 'bg-amber-500/20 text-amber-100' : 'bg-white/10 text-white/80'}>
+                        <Badge className={group.status === 'posted' ? 'facebook-runner-page__status-badge bg-emerald-500/20 text-emerald-100' : group.status === 'opened' ? 'facebook-runner-page__status-badge bg-blue-500/20 text-blue-100' : group.status === 'skipped' ? 'facebook-runner-page__status-badge bg-amber-500/20 text-amber-100' : 'facebook-runner-page__status-badge bg-white/10 text-white/80'}>
                           {group.status}
                         </Badge>
                       </div>
@@ -548,7 +548,7 @@ export default function FacebookPromotionRunnerPage() {
                 </div>
               </>
             ) : (
-              <div className="rounded-2xl border border-emerald-300/16 bg-emerald-400/10 p-5 text-sm text-emerald-50">
+              <div className="facebook-runner-page__info-panel rounded-2xl border border-emerald-300/16 bg-emerald-400/10 p-5 text-sm text-emerald-50">
                 Toate grupurile din sesiune au fost parcurse. Poți reveni la proprietate sau porni o nouă sesiune.
               </div>
             )}
@@ -557,7 +557,7 @@ export default function FacebookPromotionRunnerPage() {
 
         <div className="space-y-6">
           {!isDesktop ? (
-          <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+          <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
             <CardHeader>
               <CardTitle className="text-white">Helper local Playwright</CardTitle>
               <CardDescription className="text-white/70">
@@ -565,7 +565,7 @@ export default function FacebookPromotionRunnerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-[#10233b] p-4 font-mono text-xs leading-6 text-white/80">
+              <div className="facebook-runner-page__surface rounded-2xl border border-white/10 bg-[#10233b] p-4 font-mono text-xs leading-6 text-white/80">
                 npm run facebook:helper -- --session C:\path\to\facebook-promotion-session.json
               </div>
               <p className="text-sm text-white/65">
@@ -574,7 +574,7 @@ export default function FacebookPromotionRunnerPage() {
             </CardContent>
           </Card>
           ) : (
-          <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+          <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
             <CardHeader>
               <CardTitle className="text-white">Desktop automation activ</CardTitle>
               <CardDescription className="text-white/70">
@@ -582,7 +582,7 @@ export default function FacebookPromotionRunnerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm leading-7 text-white/80">
+              <div className="facebook-runner-page__surface rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm leading-7 text-white/80">
                 1. Apasă `Pornește runner desktop`.
                 <br />
                 2. Aplicația desktop pregătește grupul curent.
@@ -595,7 +595,7 @@ export default function FacebookPromotionRunnerPage() {
           </Card>
           )}
 
-          <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+          <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
             <CardHeader>
               <CardTitle className="text-white">Descriere pregătită</CardTitle>
               <CardDescription className="text-white/70">
@@ -603,13 +603,13 @@ export default function FacebookPromotionRunnerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm leading-7 text-white/85 whitespace-pre-wrap">
+              <div className="facebook-runner-page__surface max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-[#10233b] p-4 text-sm leading-7 text-white/85 whitespace-pre-wrap">
                 {session.propertyDescription || 'Proprietatea nu are descriere adăugată.'}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white">
+          <Card className="facebook-runner-page__card rounded-2xl border-white/10 bg-[#152A47] text-white">
             <CardHeader>
               <CardTitle className="text-white">Poze proprietate</CardTitle>
               <CardDescription className="text-white/70">
@@ -622,7 +622,7 @@ export default function FacebookPromotionRunnerPage() {
                   <button
                     key={`${image.url}-${index}`}
                     type="button"
-                    className="group overflow-hidden rounded-2xl border border-white/10 bg-[#10233b] text-left"
+                    className="facebook-runner-page__image-tile group overflow-hidden rounded-2xl border border-white/10 bg-[#10233b] text-left"
                     onClick={() => window.open(image.url, '_blank', 'noopener,noreferrer')}
                   >
                     <div className="relative aspect-[4/3]">
@@ -638,6 +638,146 @@ export default function FacebookPromotionRunnerPage() {
           </Card>
         </div>
       </div>
+      <style jsx global>{`
+        [data-app-theme='agentfinder'] .facebook-runner-page__card {
+          border-color: rgba(174, 195, 225, 0.78) !important;
+          background:
+            radial-gradient(circle at 12% 0%, rgba(196, 181, 253, 0.16), transparent 32%),
+            radial-gradient(circle at 92% 6%, rgba(125, 211, 252, 0.16), transparent 34%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94) 54%, rgba(235, 253, 244, 0.92)) !important;
+          color: #111827 !important;
+          box-shadow:
+            0 24px 64px rgba(30, 45, 74, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__hero {
+          background:
+            radial-gradient(circle at top right, rgba(125, 211, 252, 0.2), transparent 28%),
+            radial-gradient(circle at top left, rgba(196, 181, 253, 0.14), transparent 24%),
+            linear-gradient(155deg, rgba(255, 255, 255, 0.99), rgba(237, 246, 255, 0.95) 54%, rgba(235, 253, 244, 0.93)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__card .text-white,
+        [data-app-theme='agentfinder'] .facebook-runner-page__card [class*='text-white'] {
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__card .text-white\/70,
+        [data-app-theme='agentfinder'] .facebook-runner-page__card .text-white\/65,
+        [data-app-theme='agentfinder'] .facebook-runner-page__card .text-white\/60,
+        [data-app-theme='agentfinder'] .facebook-runner-page__card .text-white\/55 {
+          color: #5d6c86 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__eyebrow {
+          border-color: rgba(110, 231, 183, 0.28) !important;
+          background: linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(239, 246, 255, 0.88)) !important;
+          color: #23543f !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__secondary-button {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
+          color: #273b5b !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__secondary-button:hover {
+          background: rgba(226, 236, 249, 0.9) !important;
+          color: #1f2f49 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__primary-button {
+          border: 1px solid rgba(68, 91, 132, 0.16) !important;
+          background: linear-gradient(135deg, rgba(39, 66, 104, 0.95) 0%, rgba(27, 52, 86, 0.98) 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 18px 38px -22px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__primary-button:hover {
+          background: linear-gradient(135deg, rgba(46, 77, 120, 0.98) 0%, rgba(31, 59, 96, 1) 100%) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__success-button {
+          border: 1px solid rgba(68, 91, 132, 0.16) !important;
+          background: linear-gradient(135deg, rgba(60, 121, 197, 0.94), rgba(39, 66, 104, 0.98)) !important;
+          color: #ffffff !important;
+          box-shadow: 0 18px 38px -22px rgba(39, 66, 104, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__success-button svg,
+        [data-app-theme='agentfinder'] .facebook-runner-page__success-button span,
+        [data-app-theme='agentfinder'] .facebook-runner-page__success-button {
+          color: #ffffff !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__success-button:hover {
+          background: linear-gradient(135deg, rgba(78, 138, 214, 0.96), rgba(46, 77, 120, 1)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__progress [role='progressbar'] {
+          background: linear-gradient(90deg, rgba(39, 66, 104, 0.98), rgba(74, 222, 128, 0.82)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page .border-white\/10,
+        [data-app-theme='agentfinder'] .facebook-runner-page .border-white\/8 {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__surface {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__info-panel {
+          border-color: rgba(110, 231, 183, 0.28) !important;
+          background: linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(239, 246, 255, 0.88)) !important;
+          color: #23543f !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-panel {
+          color: #4c5f7f !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__group-row {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(248, 251, 255, 0.98), rgba(239, 246, 255, 0.92)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__badge,
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-badge {
+          border: 1px solid rgba(191, 206, 230, 0.72) !important;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-badge.bg-emerald-500\\/20 {
+          background: rgba(220, 252, 231, 0.92) !important;
+          color: #166534 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-badge.bg-blue-500\\/20 {
+          background: rgba(219, 234, 254, 0.92) !important;
+          color: #1d4ed8 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-badge.bg-amber-500\\/20 {
+          background: rgba(254, 243, 199, 0.94) !important;
+          color: #b45309 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__status-badge.bg-white\\/10,
+        [data-app-theme='agentfinder'] .facebook-runner-page__badge.bg-white\\/10 {
+          background: rgba(235, 243, 252, 0.92) !important;
+          color: #334155 !important;
+        }
+
+        [data-app-theme='agentfinder'] .facebook-runner-page__image-tile {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
+          box-shadow: 0 14px 28px -22px rgba(30, 45, 74, 0.35) !important;
+        }
+      `}</style>
     </div>
   );
 }

@@ -175,14 +175,14 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
 
         <div className={cn(isMobile ? 'flex-1 overflow-y-auto p-4' : 'min-h-0 flex-1 overflow-y-auto px-6 pb-6')}>
           <div className="facebook-groups-promotion-modal__panel rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+            <div className="mb-4 flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-white">{property.title}</p>
                 <p className="mt-1 text-xs text-white/60">
                   {property.images?.length || 0} poze disponibile • descrierea existentă va fi folosită ca atare
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="facebook-groups-promotion-modal__actions flex shrink-0 items-center gap-2 self-start sm:self-start">
                 <Button
                   type="button"
                   variant="ghost"
@@ -225,7 +225,7 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
                       id={checkboxId}
                       checked={isSelected}
                       onCheckedChange={(checked) => handleToggleGroup(group.url, !!checked)}
-                      className="mt-1 border-white/30 data-[state=checked]:border-primary"
+                      className="facebook-groups-promotion-modal__checkbox mt-1 border-white/30 data-[state=checked]:border-primary"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
@@ -330,6 +330,11 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
             color: #1f2f49 !important;
           }
 
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__actions {
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+          }
+
           [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__group-item {
             border-color: rgba(191, 206, 230, 0.82) !important;
             background: linear-gradient(145deg, rgba(244, 248, 254, 0.96), rgba(255, 255, 255, 0.92)) !important;
@@ -342,6 +347,27 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
           [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__group-item.border-emerald-300\\/28 {
             border-color: rgba(74, 222, 128, 0.42) !important;
             background: linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(239, 246, 255, 0.88)) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__checkbox {
+            border-color: rgba(125, 146, 181, 0.92) !important;
+            background: rgba(255, 255, 255, 0.96) !important;
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.92),
+              0 0 0 1px rgba(225, 233, 245, 0.75) !important;
+            color: #ffffff !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__checkbox[data-state='checked'] {
+            border-color: rgba(39, 66, 104, 0.96) !important;
+            background: linear-gradient(135deg, rgba(39, 66, 104, 0.98), rgba(31, 59, 96, 0.98)) !important;
+            box-shadow:
+              0 8px 18px -12px rgba(39, 66, 104, 0.65),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+          }
+
+          [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__checkbox svg {
+            color: #ffffff !important;
           }
 
           [data-app-theme='agentfinder'] .facebook-groups-promotion-modal__primary-button {
