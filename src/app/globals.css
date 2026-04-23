@@ -6133,3 +6133,38 @@
     stroke: currentColor !important;
   }
 }
+
+@keyframes agentfinder-dashboard-confetti-fall {
+  0% {
+    transform: translate3d(0, -14px, 0) rotate(0deg);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(var(--agentfinder-confetti-drift, 0px), calc(100% + 220px), 0) rotate(var(--agentfinder-confetti-rotation, 180deg));
+    opacity: 0;
+  }
+}
+
+.agentfinder-dashboard-confetti-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.agentfinder-dashboard-confetti-piece {
+  position: absolute;
+  top: -16px;
+  border-radius: 2px;
+  animation-name: agentfinder-dashboard-confetti-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  will-change: transform, opacity;
+}
