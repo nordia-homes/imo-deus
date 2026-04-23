@@ -242,7 +242,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
       <DialogContent className={cn(
         "agentfinder-add-lead-dialog flex flex-col overflow-hidden p-0",
         isMobile
-          ? "h-screen w-screen max-w-full rounded-none border-none bg-[#0F1E33]"
+          ? "inset-0 left-0 top-0 h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-none bg-[#0F1E33]"
           : "h-[90vh] border-white/10 bg-[#0F1E33] text-white shadow-[0_30px_80px_-38px_rgba(0,0,0,0.9)] sm:max-w-4xl"
       )}>
         <DialogHeader className="agentfinder-add-lead-dialog__header relative z-10 shrink-0 border-b border-white/10 bg-[#132844] px-4 py-4 md:px-6">

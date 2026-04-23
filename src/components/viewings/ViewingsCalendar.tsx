@@ -16,7 +16,7 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, MessageSquareText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, Calendar, MoreVertical, Edit, Trash2, Clock3, MapPin, UserRound, Building2, Home, MessageSquareText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { WhatsappIcon } from '../icons/WhatsappIcon';
@@ -665,7 +665,10 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
 
                                             {property?.ownerName && (
                                                 <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--owner min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                    <div className="agentfinder-viewing-person-label mb-0.5 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">Proprietar</div>
+                                                    <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                                                        <Home className="h-3.5 w-3.5" />
+                                                        Proprietar
+                                                    </div>
                                                     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                                                         <p className="agentfinder-viewing-person-name min-w-0 max-w-full break-words text-[15px] font-medium leading-tight text-white/90 sm:text-base">{property.ownerName}</p>
                                                         {ownerPhone && (
@@ -751,7 +754,10 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
 
                                         {property?.ownerName && (
                                             <div className="agentfinder-viewing-person-card agentfinder-viewing-person-card--owner min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 sm:p-4">
-                                                <div className="agentfinder-viewing-person-label mb-0.5 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">Proprietar</div>
+                                                <div className="agentfinder-viewing-person-label mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-white/45 sm:mb-3 sm:text-[11px] sm:tracking-[0.18em]">
+                                                    <Home className="h-3.5 w-3.5" />
+                                                    Proprietar
+                                                </div>
                                                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                                                     <p className="agentfinder-viewing-person-name min-w-0 max-w-full break-words text-[15px] font-medium leading-tight text-white/90 sm:text-base">{property.ownerName}</p>
                                                     {ownerPhone && (

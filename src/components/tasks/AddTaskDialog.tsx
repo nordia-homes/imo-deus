@@ -186,7 +186,7 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
       <DialogTrigger asChild>
         {children || <Button><PlusCircle className="mr-2 h-4 w-4" />Adaugă Task</Button>}
       </DialogTrigger>
-      <DialogContent className={cn("agentfinder-add-task-dialog p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-2xl h-[90vh]")}>
+      <DialogContent className={cn("agentfinder-add-task-dialog p-0 flex flex-col", isMobile ? "inset-0 left-0 top-0 h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-none" : "sm:max-w-2xl h-[90vh]")}>
         <DialogHeader className={cn("agentfinder-add-task-dialog__header shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
           <DialogTitle className={cn("text-xl text-foreground/90", isMobile && "text-white/90")}>{property ? 'Adaugă Task' : 'Adaugă Task Nou'}</DialogTitle>
           {property && <DialogDescription className={cn("text-center -mt-1", isMobile && "text-white/70")}>{property.title}</DialogDescription>}

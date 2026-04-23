@@ -122,7 +122,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("flex flex-col gap-0 overflow-hidden border-none bg-[#0F1E33] p-0", isMobile ? "h-screen w-screen max-w-full rounded-none" : "max-h-[85vh] sm:max-w-md")}>
+      <DialogContent className={cn("flex flex-col gap-0 overflow-hidden border-none bg-[#0F1E33] p-0", isMobile ? "inset-0 left-0 top-0 h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 rounded-none" : "max-h-[85vh] sm:max-w-md")}>
         <DialogHeader className="relative z-10 flex h-14 shrink-0 items-center justify-center border-b border-white/10 bg-[#0F1E33] p-2 shadow-md">
           <DialogTitle className="text-center text-xl text-white/90">Editează Vizionare</DialogTitle>
         </DialogHeader>

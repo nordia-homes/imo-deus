@@ -1926,7 +1926,7 @@ export function AddPropertyDialog({
       )}
       <DialogContent className={cn(
         "agentfinder-add-property-dialog p-0 flex flex-col max-w-full rounded-none border-none bg-[#0F1E33] text-white",
-        isMobile ? "h-screen w-screen" : "w-screen h-screen"
+        isMobile ? "inset-0 left-0 top-0 h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0" : "w-screen h-screen"
       )}>
         <DialogHeader className="agentfinder-add-property-dialog__header shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-[#0F1E33] border-white/10">
           <DialogTitle className="text-xl text-center text-white/90">{isEditMode ? 'Editează Proprietate' : 'Adaugă Proprietate Nouă'}</DialogTitle>
