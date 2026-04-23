@@ -1,5 +1,5 @@
 'use client';
-import { LogOut, Search, Users, Building2, CheckSquare, Loader2 } from 'lucide-react';
+import { LogOut, Search, Users, Building2, CheckSquare, Loader2, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { useRouter } from 'next/navigation';
 import { LogoIcon } from '../icons/LogoIcon';
+import { getStoredRuntimeMode } from '@/lib/runtime-mode';
 
 export function Topbar() {
     const auth = useAuth();
@@ -28,6 +29,11 @@ export function Topbar() {
     const [results, setResults] = useState<{ contacts: Contact[], properties: Property[], tasks: Task[] }>({ contacts: [], properties: [], tasks: [] });
     const [isSearching, setIsSearching] = useState(false);
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const [isDemoMode, setIsDemoMode] = useState(false);
+
+    useEffect(() => {
+        setIsDemoMode(getStoredRuntimeMode() === 'demo');
+    }, []);
 
     // Fetch all data for client-side search
     const contactsQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'contacts') : null, [firestore, agencyId]);
@@ -195,6 +201,14 @@ export function Topbar() {
                 </Popover>
             </div>
             <div className='flex shrink-0 items-center gap-3'>
+                 {isDemoMode ? (
+                    <Button asChild variant="outline" className="hidden rounded-full border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] text-[var(--app-page-foreground)] hover:bg-[var(--app-nav-hover-bg)] md:inline-flex">
+                        <Link href="/demo/exit">
+                            <ShieldCheck className="h-4 w-4" />
+                            Iesire demo
+                        </Link>
+                    </Button>
+                 ) : null}
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full hover:bg-[var(--app-nav-hover-bg)]">
@@ -205,6 +219,14 @@ export function Topbar() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        {isDemoMode ? (
+                            <DropdownMenuItem asChild>
+                                <Link href="/demo/exit">
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    <span>Iesire demo</span>
+                                </Link>
+                            </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Deconectare</span>

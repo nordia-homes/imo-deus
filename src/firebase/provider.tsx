@@ -4,7 +4,7 @@ import React, { createContext, useContext, ReactNode, useMemo, useState, useEffe
 import type { FirebaseApp } from 'firebase/app';
 import type { Firestore } from 'firebase/firestore';
 import type { Auth, User } from 'firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onIdTokenChanged } from 'firebase/auth';
 import type { FirebaseStorage } from 'firebase/storage';
 
 interface FirebaseProviderProps {
@@ -51,20 +51,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
 
   useEffect(() => {
-    // The onAuthStateChanged listener is the canonical way to get the current user.
-    // It fires once on initialization and then again whenever the auth state changes.
-    const unsubscribe = onAuthStateChanged(
+    let isMounted = true;
+
+    setUserAuthState({
+      user: null,
+      isUserLoading: true,
+      userError: null,
+    });
+
+    const unsubscribe = onIdTokenChanged(
       auth,
       (user) => {
+        if (!isMounted) return;
         setUserAuthState({ user, isUserLoading: false, userError: null });
       },
       (error) => {
-        console.error("FirebaseProvider: Auth state listener error:", error);
+        if (!isMounted) return;
+        console.error("FirebaseProvider: Auth token listener error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
+
+    void auth.authStateReady().catch((error) => {
+      if (!isMounted) return;
+      console.error("FirebaseProvider: authStateReady failed:", error);
+      setUserAuthState({ user: null, isUserLoading: false, userError: error instanceof Error ? error : new Error('Auth state could not be resolved.') });
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [auth]);
 
   // Memoize the context value to prevent unnecessary re-renders of consuming components.

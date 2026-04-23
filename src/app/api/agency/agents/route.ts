@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { adminAuth, adminDb } from '@/firebase/admin';
 import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import {
   generateAgentPassword,
@@ -41,6 +40,7 @@ function formatError(error: unknown) {
 }
 
 async function emailExistsInAuth(email: string) {
+  const { adminAuth } = await import('@/firebase/admin');
   try {
     await adminAuth.getUserByEmail(email);
     return true;
@@ -60,7 +60,7 @@ async function emailExistsInAuth(email: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const [usersSnapshot, propertiesSnapshot] = await Promise.all([
       adminDb
         .collection('users')
@@ -108,9 +108,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let createdUid: string | null = null;
+  let resolvedAdminAuth: Awaited<ReturnType<typeof requireAgencyAdminFromBearerToken>>['adminAuth'] | null = null;
 
   try {
-    const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb, adminAuth, runtimeMode } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    resolvedAdminAuth = adminAuth;
     const body = createAgentSchema.parse(await request.json().catch(() => ({})));
 
     const email = normalizeAgentEmail(body.email);
@@ -124,10 +126,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [agencySnapshot, authEmailExists] = await Promise.all([
-      adminDb.collection('agencies').doc(agencyId).get(),
-      emailExistsInAuth(email),
-    ]);
+    const authEmailExists =
+      runtimeMode === 'demo'
+        ? false
+        : await emailExistsInAuth(email);
+
+    const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
 
     if (!agencySnapshot.exists) {
       return NextResponse.json({ message: 'Agentia nu a fost gasita.' }, { status: 404 });
@@ -207,8 +211,8 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    if (createdUid) {
-      await adminAuth.deleteUser(createdUid).catch(() => undefined);
+    if (createdUid && resolvedAdminAuth) {
+      await resolvedAdminAuth.deleteUser(createdUid).catch(() => undefined);
     }
 
     if (error instanceof z.ZodError) {

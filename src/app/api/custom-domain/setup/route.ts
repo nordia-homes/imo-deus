@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 import { getCanonicalCustomDomain } from '@/lib/domain-routing';
 
 export const runtime = 'nodejs';
@@ -50,6 +51,11 @@ export async function POST(request: NextRequest) {
     } = await import('@/lib/firebase-app-hosting');
 
     const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Configurarea domeniilor custom este disponibila doar in conturile reale.');
+    }
+
     const body = await request.json().catch(() => ({}));
     const requestedDomain = getCanonicalCustomDomain(body?.domain);
 

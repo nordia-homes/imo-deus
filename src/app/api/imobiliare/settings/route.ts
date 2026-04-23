@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 import type { ImobiliarePromotionSettings } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Setarile reale imobiliare.ro nu pot fi modificate in mediul demo.');
+    }
+
     const body = await request.json().catch(() => ({}));
     const defaultPromotionSettings =
       body?.defaultPromotionSettings && typeof body.defaultPromotionSettings === 'object'

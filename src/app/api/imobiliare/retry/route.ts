@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,11 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId, uid } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Retry pentru sincronizarea imobiliare.ro este dezactivat in mediul demo.');
+    }
+
     const body = await request.json().catch(() => ({}));
     const limit = typeof body?.limit === 'number' && Number.isFinite(body.limit) ? body.limit : 10;
     const result = await retryAgencyImobiliareSync({ agencyId, requestedByUid: uid, limit });

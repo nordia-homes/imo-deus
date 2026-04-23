@@ -19,6 +19,7 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } f
 import { doc, getDoc, deleteDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import type { Invite } from "@/lib/types";
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
+import { setStoredRuntimeMode } from "@/lib/runtime-mode";
 
 const registerSchema = z.object({
   email: z.string().email({ message: 'Adresă de email invalidă.' }),
@@ -41,6 +42,10 @@ export default function RegisterPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    setStoredRuntimeMode('real');
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn) {

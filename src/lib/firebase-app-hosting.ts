@@ -1,7 +1,11 @@
 import { GoogleAuth } from 'google-auth-library';
 import { adminDb, adminAuth } from '@/firebase/admin';
+import { getDemoAdminAuth, getDemoAdminDb } from '@/firebase/demo-admin';
 import { normalizeDomain, getCanonicalCustomDomain, getDomainAliases } from '@/lib/domain-routing';
 import type { CustomDomainApiResult, CustomDomainInstructionRow } from '@/lib/types';
+import type { DecodedIdToken } from 'firebase-admin/auth';
+import type { Auth as AdminAuth } from 'firebase-admin/auth';
+import type { Firestore } from 'firebase-admin/firestore';
 
 const APP_HOSTING_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 const APP_HOSTING_API_BASE = 'https://firebaseapphosting.googleapis.com/v1';
@@ -48,11 +52,17 @@ type DecodedTokenContext = {
   uid: string;
   agencyId?: string;
   role: 'admin' | 'agent' | 'platform_admin' | undefined;
+  adminDb: Firestore;
+  adminAuth: AdminAuth;
+  runtimeMode: 'real' | 'demo';
 };
 
 type DecodedPlatformAdminContext = {
   uid: string;
   role: 'platform_admin';
+  adminDb: Firestore;
+  adminAuth: AdminAuth;
+  runtimeMode: 'real' | 'demo';
 };
 
 type AppHostingOperation = {
@@ -74,6 +84,39 @@ class AppHostingApiError extends Error {
     this.name = 'AppHostingApiError';
     this.status = status;
     this.details = details;
+  }
+}
+
+type VerifiedAdminContext = {
+  decoded: DecodedIdToken;
+  adminDb: Firestore;
+  adminAuth: AdminAuth;
+  runtimeMode: 'real' | 'demo';
+};
+
+async function verifyTokenAgainstAvailableBackends(token: string): Promise<VerifiedAdminContext> {
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    return {
+      decoded,
+      adminDb,
+      adminAuth,
+      runtimeMode: 'real',
+    };
+  } catch (realError) {
+    try {
+      const demoAuth = getDemoAdminAuth();
+      const demoDb = getDemoAdminDb();
+      const decoded = await demoAuth.verifyIdToken(token);
+      return {
+        decoded,
+        adminDb: demoDb,
+        adminAuth: demoAuth,
+        runtimeMode: 'demo',
+      };
+    } catch {
+      throw realError;
+    }
   }
 }
 
@@ -184,8 +227,8 @@ export async function requireAgencyAdminFromBearerToken(authorizationHeader: str
   }
 
   const token = authorizationHeader.slice('Bearer '.length).trim();
-  const decoded = await adminAuth.verifyIdToken(token);
-  const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
+  const { decoded, adminDb: resolvedAdminDb, adminAuth: resolvedAdminAuth, runtimeMode } = await verifyTokenAgainstAvailableBackends(token);
+  const userSnapshot = await resolvedAdminDb.collection('users').doc(decoded.uid).get();
   const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
 
   if (!userData?.agencyId) {
@@ -200,6 +243,9 @@ export async function requireAgencyAdminFromBearerToken(authorizationHeader: str
     uid: decoded.uid,
     agencyId: userData.agencyId,
     role: userData.role,
+    adminDb: resolvedAdminDb,
+    adminAuth: resolvedAdminAuth,
+    runtimeMode,
   };
 }
 
@@ -209,8 +255,8 @@ export async function requireAgencyUserFromBearerToken(authorizationHeader: stri
   }
 
   const token = authorizationHeader.slice('Bearer '.length).trim();
-  const decoded = await adminAuth.verifyIdToken(token);
-  const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
+  const { decoded, adminDb: resolvedAdminDb, adminAuth: resolvedAdminAuth, runtimeMode } = await verifyTokenAgainstAvailableBackends(token);
+  const userSnapshot = await resolvedAdminDb.collection('users').doc(decoded.uid).get();
   const userData = userSnapshot.data() as { agencyId?: string; role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
 
   if (!userData?.agencyId) {
@@ -221,6 +267,9 @@ export async function requireAgencyUserFromBearerToken(authorizationHeader: stri
     uid: decoded.uid,
     agencyId: userData.agencyId,
     role: userData.role,
+    adminDb: resolvedAdminDb,
+    adminAuth: resolvedAdminAuth,
+    runtimeMode,
   };
 }
 
@@ -232,8 +281,8 @@ export async function requirePlatformAdminFromBearerToken(
   }
 
   const token = authorizationHeader.slice('Bearer '.length).trim();
-  const decoded = await adminAuth.verifyIdToken(token);
-  const userSnapshot = await adminDb.collection('users').doc(decoded.uid).get();
+  const { decoded, adminDb: resolvedAdminDb, adminAuth: resolvedAdminAuth, runtimeMode } = await verifyTokenAgainstAvailableBackends(token);
+  const userSnapshot = await resolvedAdminDb.collection('users').doc(decoded.uid).get();
   const userData = userSnapshot.data() as { role?: 'admin' | 'agent' | 'platform_admin' } | undefined;
 
   if (userData?.role !== 'platform_admin') {
@@ -243,6 +292,9 @@ export async function requirePlatformAdminFromBearerToken(
   return {
     uid: decoded.uid,
     role: 'platform_admin',
+    adminDb: resolvedAdminDb,
+    adminAuth: resolvedAdminAuth,
+    runtimeMode,
   };
 }
 

@@ -17,6 +17,7 @@ import type { AuthError } from "firebase/auth";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
+import { setStoredRuntimeMode } from "@/lib/runtime-mode";
 
 
 const loginSchema = z.object({
@@ -39,6 +40,10 @@ export default function LoginPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    setStoredRuntimeMode('real');
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn) {

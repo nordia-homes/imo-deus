@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
@@ -84,6 +85,11 @@ export async function POST(request: NextRequest) {
 
     const { agencyId, uid } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     agencyIdForLog = agencyId;
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Publicarea pe imobiliare.ro este simulata doar vizual in mediul demo.');
+    }
+
     const body = await request.json().catch(() => ({}));
     const propertyId = typeof body?.propertyId === 'string' ? body.propertyId.trim() : '';
     propertyIdForLog = propertyId || null;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,11 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Linkurile publice din imobiliare.ro nu sunt disponibile in mediul demo.');
+    }
+
     const body = await request.json().catch(() => ({}));
     const propertyId = typeof body?.propertyId === 'string' ? body.propertyId.trim() : '';
 

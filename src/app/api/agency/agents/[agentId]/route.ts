@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { adminAuth, adminDb } from '@/firebase/admin';
 import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 
 export const runtime = 'nodejs';
@@ -74,12 +73,12 @@ export async function GET(
     }
 
     const [userSnapshot, agencyUsersSnapshot, propertiesSnapshot, contactsSnapshot, viewingsSnapshot, tasksSnapshot] = await Promise.all([
-      adminDb.collection('users').doc(agentId).get(),
-      adminDb.collection('users').where('agencyId', '==', authContext.agencyId).get(),
-      adminDb.collection('agencies').doc(authContext.agencyId).collection('properties').get(),
-      adminDb.collection('agencies').doc(authContext.agencyId).collection('contacts').get(),
-      adminDb.collection('agencies').doc(authContext.agencyId).collection('viewings').get(),
-      adminDb.collection('agencies').doc(authContext.agencyId).collection('tasks').get(),
+      authContext.adminDb.collection('users').doc(agentId).get(),
+      authContext.adminDb.collection('users').where('agencyId', '==', authContext.agencyId).get(),
+      authContext.adminDb.collection('agencies').doc(authContext.agencyId).collection('properties').get(),
+      authContext.adminDb.collection('agencies').doc(authContext.agencyId).collection('contacts').get(),
+      authContext.adminDb.collection('agencies').doc(authContext.agencyId).collection('viewings').get(),
+      authContext.adminDb.collection('agencies').doc(authContext.agencyId).collection('tasks').get(),
     ]);
 
     if (!userSnapshot.exists) {
@@ -233,7 +232,7 @@ export async function PATCH(
   context: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const { agentId } = await context.params;
     const body = updateAgentSchema.parse(await request.json().catch(() => ({})));
 
@@ -314,7 +313,7 @@ export async function DELETE(
   context: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const { agentId } = await context.params;
 
     const userRef = adminDb.collection('users').doc(agentId);

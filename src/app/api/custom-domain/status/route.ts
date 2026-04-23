@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 import { getCanonicalCustomDomain } from '@/lib/domain-routing';
 
 export const runtime = 'nodejs';
@@ -50,6 +51,11 @@ export async function GET(request: NextRequest) {
     } = await import('@/lib/firebase-app-hosting');
 
     const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Verificarea domeniilor custom este dezactivata in mediul demo.');
+    }
+
     const requestedDomain = getCanonicalCustomDomain(request.nextUrl.searchParams.get('domain'));
 
     if (!requestedDomain) {

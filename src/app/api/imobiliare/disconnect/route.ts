@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,11 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Deconectarea integrarii imobiliare.ro este blocata in mediul demo.');
+    }
+
     await disconnectAgencyImobiliareAccount(agencyId);
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

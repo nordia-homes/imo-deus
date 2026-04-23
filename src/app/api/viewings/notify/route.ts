@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
@@ -14,7 +15,11 @@ export async function POST(request: NextRequest) {
   try {
     const { adminDb, adminMessaging } = await import('@/firebase/admin');
     const body = (await request.json()) as NotifyViewingPayload;
-    const { agentId, contactName, propertyTitle, viewingDate } = body;
+    const { agentId, contactName, propertyTitle, viewingDate, agencyId } = body;
+
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Notificarile push sunt dezactivate in mediul demo.');
+    }
 
     if (!agentId || !viewingDate) {
       return NextResponse.json({ message: 'agentId and viewingDate are required.' }, { status: 400 });
