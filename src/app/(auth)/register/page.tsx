@@ -28,6 +28,7 @@ import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { ImoDeusTextLogo } from '@/components/icons/ImoDeusTextLogo';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
+import type { CompanyLookupResult } from '@/lib/infocui';
 import type { Invite } from '@/lib/types';
 import { setStoredRuntimeMode } from '@/lib/runtime-mode';
 
@@ -70,6 +71,11 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showManualLegalFields, setShowManualLegalFields] = useState(false);
+  const [isLookupLoading, setIsLookupLoading] = useState(false);
+  const [lookupFeedback, setLookupFeedback] = useState<{
+    tone: 'success' | 'error' | 'neutral';
+    message: string;
+  } | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -88,6 +94,7 @@ export default function RegisterPage() {
   });
 
   const entityType = form.watch('entityType');
+  const companyTaxIdValue = form.watch('companyTaxId');
   useEffect(() => {
     setStoredRuntimeMode('real');
   }, []);
@@ -102,6 +109,21 @@ export default function RegisterPage() {
     if (!newUser.email) return;
 
     const userDocRef = doc(firestore, 'users', newUser.uid);
+    const onboardingData = values
+      ? {
+          onboarding: {
+            status: 'pending',
+            entityType: values.entityType,
+            companyTaxId: values.companyTaxId?.trim() || '',
+            legalCompanyName: values.legalCompanyName?.trim() || '',
+            tradeRegisterNumber: values.tradeRegisterNumber?.trim() || '',
+            registeredOffice: values.registeredOffice?.trim() || '',
+            legalRepresentative: values.legalRepresentative?.trim() || '',
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      : {};
+
     await setDoc(
       userDocRef,
       {
@@ -109,6 +131,7 @@ export default function RegisterPage() {
         email: newUser.email,
         phone: values?.phone?.trim() || '',
         photoUrl: newUser.photoURL || '',
+        ...onboardingData,
       },
       { merge: true }
     );
@@ -180,6 +203,90 @@ export default function RegisterPage() {
         });
         setIsSubmitting(false);
       });
+  };
+
+  const handleCompanyLookup = async () => {
+    const rawTaxId = companyTaxIdValue?.trim() || '';
+
+    if (!rawTaxId) {
+      form.setError('companyTaxId', {
+        type: 'manual',
+        message: 'Introdu CUI / CIF pentru preluarea automata a datelor.',
+      });
+      setLookupFeedback({
+        tone: 'error',
+        message: 'Introdu CUI / CIF pentru a putea prelua datele firmei sau ale PFA-ului.',
+      });
+      return;
+    }
+
+    setIsLookupLoading(true);
+    setLookupFeedback({
+      tone: 'neutral',
+      message: 'Verificam datele firmei si pregatim completarea automata a formularului.',
+    });
+    form.clearErrors('companyTaxId');
+
+    try {
+      const response = await fetch(`/api/company-lookup?taxId=${encodeURIComponent(rawTaxId)}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+
+      const payload = (await response.json()) as
+        | { ok: true; company: CompanyLookupResult }
+        | { ok: false; message?: string };
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.ok ? 'Nu am putut prelua datele companiei acum.' : payload.message || 'Nu am putut prelua datele companiei acum.');
+      }
+
+      const { company } = payload;
+
+      form.setValue('companyTaxId', company.companyTaxId || rawTaxId, { shouldDirty: true, shouldValidate: true });
+      form.setValue('legalCompanyName', company.legalCompanyName || '', { shouldDirty: true });
+      form.setValue('tradeRegisterNumber', company.tradeRegisterNumber || '', { shouldDirty: true });
+      form.setValue('registeredOffice', company.registeredOffice || '', { shouldDirty: true });
+
+      if (company.legalRepresentative) {
+        form.setValue('legalRepresentative', company.legalRepresentative, { shouldDirty: true });
+      }
+
+      if (company.entityTypeHint && company.entityTypeHint !== entityType) {
+        form.setValue('entityType', company.entityTypeHint, { shouldDirty: true });
+      }
+
+      setShowManualLegalFields(true);
+      setLookupFeedback({
+        tone: 'success',
+        message: company.entityStatus
+          ? `Am completat automat datele gasite. Status companie: ${company.entityStatus}.`
+          : 'Am completat automat datele firmei sau ale PFA-ului in formular.',
+      });
+
+      toast({
+        title: 'Date preluate automat',
+        description: 'Am completat campurile juridice cu informatiile gasite pentru acest CUI / CIF.',
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Nu am putut prelua datele companiei acum.';
+
+      setLookupFeedback({
+        tone: 'error',
+        message,
+      });
+
+      toast({
+        variant: 'destructive',
+        title: 'Preluare esuata',
+        description: message,
+      });
+    } finally {
+      setIsLookupLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -461,56 +568,87 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-                    <FormField
-                      control={form.control}
-                      name="companyTaxId"
-                      render={({ field }) => (
-                        <FormItem className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-                          <div className="flex items-center justify-between gap-3">
+                  <FormField
+                    control={form.control}
+                    name="companyTaxId"
+                    render={({ field }) => (
+                      <FormItem className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:p-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
                             <FormLabel className="text-[1.05rem] font-semibold text-slate-950">CUI / CIF</FormLabel>
-                            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                              Pas esential
-                            </span>
+                            <FormDescription className="mt-1 text-sm leading-6 text-slate-600">
+                              Scrii codul fiscal, apoi preluam automat denumirea legala, numarul de inregistrare si adresa firmei sau a PFA-ului.
+                            </FormDescription>
                           </div>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={entityType === 'pfa' ? 'Ex: 12345678' : 'Ex: RO12345678'}
-                              className="mt-4 h-14 rounded-[18px] border-slate-200 bg-slate-50 text-base"
-                            />
-                          </FormControl>
-                          <FormDescription className="mt-3 text-sm leading-6 text-slate-600">
-                            Introdu codul fiscal pentru a identifica rapid firma sau PFA-ul.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-700">
+                            Pas esential
+                          </span>
+                        </div>
 
-                    <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Date companie</p>
-                      <Button
-                        type="button"
-                        disabled
-                        variant="outline"
-                        className="mt-4 h-14 w-full rounded-[18px] border-slate-200 bg-slate-50 text-slate-400"
-                      >
-                        <SearchCheck className="mr-2 h-4 w-4" />
-                        Preia automat datele firmei
-                      </Button>
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        Vei putea continua rapid cu datele firmei sau ale PFA-ului, direct din acest pas.
-                      </p>
-                    </div>
-                  </div>
+                        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                          <div>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={entityType === 'pfa' ? 'Ex: 12345678' : 'Ex: RO12345678'}
+                                className="h-14 rounded-[18px] border-slate-200 bg-slate-50 text-base"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </div>
+
+                          <div className="lg:min-w-[320px]">
+                            <Button
+                              type="button"
+                              onClick={handleCompanyLookup}
+                              disabled={isLookupLoading || !companyTaxIdValue?.trim()}
+                              className={[
+                                'h-14 w-full rounded-[18px] border-0 bg-[linear-gradient(135deg,#0f172a,#21407a)] px-6 text-base font-semibold text-white shadow-[0_20px_48px_rgba(33,64,122,0.28)] transition-all hover:scale-[1.01] hover:opacity-95',
+                                !isLookupLoading && companyTaxIdValue?.trim()
+                                  ? 'animate-pulse'
+                                  : '',
+                                'disabled:cursor-not-allowed disabled:bg-[linear-gradient(135deg,#94a3b8,#cbd5e1)] disabled:text-white disabled:shadow-none disabled:animate-none',
+                              ].join(' ')}
+                            >
+                              {isLookupLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Preluam datele...
+                                </>
+                              ) : (
+                                <>
+                                  <SearchCheck className="mr-2 h-4 w-4" />
+                                  {entityType === 'pfa' ? 'Preia automat datele PFA-ului' : 'Preia automat datele firmei'}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {lookupFeedback ? (
+                          <div
+                            className={[
+                              'mt-4 rounded-[18px] border px-4 py-3 text-sm leading-6',
+                              lookupFeedback.tone === 'success'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                : lookupFeedback.tone === 'error'
+                                  ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                  : 'border-sky-200 bg-sky-50 text-sky-700',
+                            ].join(' ')}
+                          >
+                            {lookupFeedback.message}
+                          </div>
+                        ) : null}
+                      </FormItem>
+                    )}
+                  />
 
                   <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-base font-semibold text-slate-950">Vrei sa completezi datele manual?</p>
                         <p className="mt-1.5 text-sm leading-6 text-slate-600">
-                          Poti continua doar cu CUI/CIF acum si completa restul datelor cand ai nevoie.
+                          Daca vrei, poti ajusta sau completa manual informatiile juridice deja preluate.
                         </p>
                       </div>
                       <Button
