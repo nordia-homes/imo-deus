@@ -5,12 +5,7 @@ import {
   Bot,
   Building2,
   CalendarCheck2,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Eye,
   Globe2,
-  LayoutDashboard,
   Play,
   Search,
   ShieldCheck,
@@ -19,12 +14,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
-
-const heroSignals = [
-  "Agentie demo complet populata, gata de explorat",
-  "Lead-uri, proprietati, task-uri si AI in context real",
-  "Demo separat de datele reale, fara risc",
-];
 
 const commandCards = [
   {
@@ -50,39 +39,6 @@ const commandCards = [
   },
 ];
 
-const mockupFeatures = [
-  {
-    icon: Building2,
-    label: "Proprietati",
-    text: "Fise complete, media, proprietari si statusuri comerciale.",
-  },
-  {
-    icon: Users,
-    label: "Lead-uri",
-    text: "Pipeline clar, interactiuni, scoruri si prioritizare automata.",
-  },
-  {
-    icon: Bot,
-    label: "AI Assistant",
-    text: "Briefing, matching, recomandari si continut generat in context.",
-  },
-  {
-    icon: CalendarCheck2,
-    label: "Vizionari",
-    text: "Agenda echipei, task-uri si urmatorii pasi intr-un singur flux.",
-  },
-  {
-    icon: Globe2,
-    label: "Publicare",
-    text: "Website public, portal sync si prezentare moderna catre client.",
-  },
-  {
-    icon: BarChart3,
-    label: "Rapoarte",
-    text: "Activitate, claritate operationala si semnale utile pentru agentie.",
-  },
-];
-
 const featureCards = [
   {
     icon: Building2,
@@ -101,31 +57,43 @@ const featureCards = [
   },
 ];
 
-const leftSupportCards = [
+const leftFeatureCards = [
   {
-    icon: LayoutDashboard,
-    label: "Workspace demo",
-    title: "Demo populat",
-    text: "Contacte, proprietati si task-uri deja pregatite pentru explorare.",
+    icon: Building2,
+    label: "Proprietati",
+    title: "Fise complete",
+    text: "Proprietati, media, proprietari si statusuri comerciale intr-un singur loc.",
   },
   {
-    icon: Eye,
-    label: "Tur complet",
-    title: "Flux complet",
-    text: "De la lead la publicare, vezi tot traseul fara goluri in prezentare.",
+    icon: Users,
+    label: "Lead-uri",
+    title: "Pipeline clar",
+    text: "Lead-uri, interactiuni, scoruri si prioritizare automata pentru echipa.",
   },
   {
-    icon: Clock3,
-    label: "AI activ",
-    title: "AI vizibil",
-    text: "Recomandari, matching si context operabil direct in demo.",
+    icon: Bot,
+    label: "AI Assistant",
+    title: "Context operabil",
+    text: "Briefing, matching, recomandari si continut generat direct in context.",
   },
-];
-
-const heroProof = [
-  "Fara onboarding lung",
-  "Date demo pregatite",
-  "Primele 30 secunde conteaza",
+  {
+    icon: CalendarCheck2,
+    label: "Vizionari",
+    title: "Agenda live",
+    text: "Vizionari, task-uri si urmatorii pasi coordonati pentru toata agentia.",
+  },
+  {
+    icon: Globe2,
+    label: "Publicare",
+    title: "Portal sync",
+    text: "Website public si canale externe pornite din acelasi flux de lucru.",
+  },
+  {
+    icon: BarChart3,
+    label: "Rapoarte",
+    title: "Claritate",
+    text: "Activitate, performanta si semnale utile pentru deciziile agentiei.",
+  },
 ];
 
 function DemoButton({ className = "" }: { className?: string }) {
@@ -187,8 +155,8 @@ export default function HomePage() {
               Hero orientat spre demo
             </div>
 
-            <h1 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.9] tracking-[-0.08em] text-slate-950 sm:text-6xl lg:text-[5.6rem]">
-              <span className="block">Vezi un SaaS real,</span>
+            <h1 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-[0.92] tracking-[-0.08em] text-slate-950 sm:text-5xl lg:text-[4.85rem]">
+              <span className="block">Vezi un demo live,</span>
               <span className="landing-gradient-text block">nu o prezentare moarta.</span>
             </h1>
 
@@ -197,30 +165,8 @@ export default function HomePage() {
               proprietati, task-uri, AI si publicare, toate deja in miscare.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {heroProof.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-full border border-slate-200 bg-white/86 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 shadow-[0_10px_24px_rgba(37,55,88,0.05)]"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <DemoButton />
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="h-14 rounded-full border-slate-200 bg-white/82 px-7 text-base text-slate-700 shadow-[0_16px_38px_rgba(37,55,88,0.08)] transition-transform duration-300 hover:scale-[1.02] hover:bg-white"
-              >
-                <Link href="/register">
-                  Creeaza cont dupa demo
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
+            <div className="mt-8">
+              <DemoButton className="landing-hero-primary h-16 w-full justify-between px-8 text-lg sm:text-xl" />
             </div>
 
             <div className="mt-8 flex items-center gap-3 rounded-[24px] border border-emerald-300/50 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-900 shadow-[0_18px_40px_rgba(16,185,129,0.08)] backdrop-blur">
@@ -228,20 +174,8 @@ export default function HomePage() {
               Demo-ul este separat de date reale. Poti explora fara risc.
             </div>
 
-            <div className="mt-8 grid gap-3">
-              {heroSignals.map((item) => (
-                <div
-                  key={item}
-                  className="landing-soft-card flex items-start gap-3 rounded-[22px] px-4 py-3"
-                >
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-sky-200" />
-                  <p className="text-sm leading-6 text-slate-700">{item}</p>
-                </div>
-              ))}
-            </div>
-
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {leftSupportCards.map((card) => {
+              {leftFeatureCards.map((card) => {
                 const Icon = card.icon;
                 return (
                   <article key={card.title} className="landing-metric-card rounded-[26px] p-4 sm:p-5">
@@ -346,23 +280,6 @@ export default function HomePage() {
                         <div className="landing-inline-proof">publicare</div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {mockupFeatures.map((feature) => {
-                      const Icon = feature.icon;
-                      return (
-                        <article key={feature.label} className="landing-feature-tile rounded-[24px] p-4">
-                          <div className="rounded-[18px] border border-slate-200/80 bg-white/92 p-2.5 text-sky-700 shadow-[0_10px_24px_rgba(37,55,88,0.06)] w-fit">
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            {feature.label}
-                          </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-700">{feature.text}</p>
-                        </article>
-                      );
-                    })}
                   </div>
 
                   <div className="landing-demo-cta mt-5 rounded-[28px] p-5 sm:p-6">
