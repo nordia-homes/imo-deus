@@ -7,13 +7,15 @@ import {
   CalendarCheck2,
   CheckCircle2,
   ChevronRight,
+  Clock3,
+  Eye,
   Globe2,
+  LayoutDashboard,
   Play,
   Search,
   ShieldCheck,
   Sparkles,
   Users,
-  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
@@ -48,6 +50,39 @@ const commandCards = [
   },
 ];
 
+const mockupFeatures = [
+  {
+    icon: Building2,
+    label: "Proprietati",
+    text: "Fise complete, media, proprietari si statusuri comerciale.",
+  },
+  {
+    icon: Users,
+    label: "Lead-uri",
+    text: "Pipeline clar, interactiuni, scoruri si prioritizare automata.",
+  },
+  {
+    icon: Bot,
+    label: "AI Assistant",
+    text: "Briefing, matching, recomandari si continut generat in context.",
+  },
+  {
+    icon: CalendarCheck2,
+    label: "Vizionari",
+    text: "Agenda echipei, task-uri si urmatorii pasi intr-un singur flux.",
+  },
+  {
+    icon: Globe2,
+    label: "Publicare",
+    text: "Website public, portal sync si prezentare moderna catre client.",
+  },
+  {
+    icon: BarChart3,
+    label: "Rapoarte",
+    text: "Activitate, claritate operationala si semnale utile pentru agentie.",
+  },
+];
+
 const featureCards = [
   {
     icon: Building2,
@@ -66,33 +101,31 @@ const featureCards = [
   },
 ];
 
-const proofPills = [
-  "Dashboard demo",
-  "Lead-uri reale de prezentare",
-  "Proprietati gata de publicare",
-  "AI activ in context",
-];
-
 const leftSupportCards = [
   {
+    icon: LayoutDashboard,
+    label: "Workspace demo",
     title: "Demo populat",
     text: "Contacte, proprietati si task-uri deja pregatite pentru explorare.",
   },
   {
+    icon: Eye,
+    label: "Tur complet",
     title: "Flux complet",
     text: "De la lead la publicare, vezi tot traseul fara goluri in prezentare.",
   },
   {
+    icon: Clock3,
+    label: "AI activ",
     title: "AI vizibil",
     text: "Recomandari, matching si context operabil direct in demo.",
   },
 ];
 
-const walkthrough = [
-  "Deschizi dashboard-ul si vezi ce merita facut azi.",
-  "Intri pe un lead si observi matching-ul cu proprietatile.",
-  "Deschizi o proprietate si vezi publicarea, media si promovarea.",
-  "Iesi din demo cu o imagine clara despre cum ar lucra agentia ta.",
+const heroProof = [
+  "Fara onboarding lung",
+  "Date demo pregatite",
+  "Primele 30 secunde conteaza",
 ];
 
 function DemoButton({ className = "" }: { className?: string }) {
@@ -164,6 +197,17 @@ export default function HomePage() {
               proprietati, task-uri, AI si publicare, toate deja in miscare.
             </p>
 
+            <div className="mt-6 flex flex-wrap gap-2">
+              {heroProof.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-full border border-slate-200 bg-white/86 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 shadow-[0_10px_24px_rgba(37,55,88,0.05)]"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <DemoButton />
               <Button
@@ -197,17 +241,25 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {leftSupportCards.map((card) => (
-                <article key={card.title} className="landing-soft-card rounded-[26px] p-4 sm:p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {card.title}
-                  </p>
-                  <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-slate-950">
-                    {card.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.text}</p>
-                </article>
-              ))}
+              {leftSupportCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <article key={card.title} className="landing-metric-card rounded-[26px] p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="rounded-[18px] border border-slate-200/80 bg-white/92 p-2.5 text-sky-700 shadow-[0_10px_24px_rgba(37,55,88,0.06)]">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        {card.label}
+                      </p>
+                    </div>
+                    <p className="mt-4 text-lg font-semibold tracking-[-0.03em] text-slate-950">
+                      {card.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.text}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
 
@@ -259,7 +311,7 @@ export default function HomePage() {
                       return (
                         <article
                           key={card.title}
-                          className={`landing-command-card ${card.tone} landing-float-fast rounded-[24px] p-4`}
+                          className={`landing-command-card ${card.tone} rounded-[24px] p-4`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-2.5 text-sky-700 shadow-[0_10px_24px_rgba(37,55,88,0.06)]">
@@ -278,67 +330,55 @@ export default function HomePage() {
                     })}
                   </div>
 
-                  <div className="mt-5 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
-                    <div className="landing-soft-card rounded-[28px] p-4 sm:p-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                            Ce vezi in 30 secunde
-                          </p>
-                          <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-slate-950">
-                            Produsul isi explica singur valoarea.
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-sky-100/90 p-3 text-sky-700">
-                          <Wand2 className="h-5 w-5" />
-                        </div>
+                  <div className="landing-section-band mt-5 rounded-[24px] px-4 py-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          Functionalitati cheie
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-700">
+                          In demo vezi exact modulele care muta agentia din haos intr-un sistem clar.
+                        </p>
                       </div>
-
-                      <div className="mt-5 space-y-3">
-                        {walkthrough.map((item, index) => (
-                          <div
-                            key={item}
-                            className="rounded-[20px] border border-slate-200/80 bg-white/78 px-4 py-3 transition-transform duration-300 hover:-translate-y-0.5 hover:bg-white"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-950">
-                                0{index + 1}
-                              </div>
-                              <p className="text-sm leading-6 text-slate-700">{item}</p>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        <div className="landing-inline-proof">crm complet</div>
+                        <div className="landing-inline-proof">ai contextual</div>
+                        <div className="landing-inline-proof">publicare</div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="grid gap-4">
-                      <div className="landing-bright-card rounded-[28px] p-5">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Prima impresie</p>
-                        <p className="mt-2 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold tracking-[-0.06em] text-slate-950">
-                          Intra. Vede. Vrea.
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {mockupFeatures.map((feature) => {
+                      const Icon = feature.icon;
+                      return (
+                        <article key={feature.label} className="landing-feature-tile rounded-[24px] p-4">
+                          <div className="rounded-[18px] border border-slate-200/80 bg-white/92 p-2.5 text-sky-700 shadow-[0_10px_24px_rgba(37,55,88,0.06)] w-fit">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            {feature.label}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">{feature.text}</p>
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  <div className="landing-demo-cta mt-5 rounded-[28px] p-5 sm:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="max-w-xl">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/80">
+                          Acces demo
                         </p>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
-                          Hero-ul impinge demo-ul in fata, iar mockup-ul il face sa para imposibil de ignorat.
+                        <p className="mt-2 font-[family-name:var(--font-space-grotesk)] text-2xl font-bold tracking-[-0.05em] text-slate-950 sm:text-3xl">
+                          Deschide demo-ul si vezi toate functionalitatile in actiune.
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          Intri direct in dashboard-ul demo, fara pasi inutili si fara date reale afectate.
                         </p>
                       </div>
-
-                      <div className="landing-soft-card rounded-[28px] p-5">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Proof points</p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {proofPills.map((pill) => (
-                            <div
-                              key={pill}
-                              className="rounded-full border border-slate-200 bg-white/88 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
-                            >
-                              {pill}
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-5">
-                          <DemoButton className="w-full justify-center" />
-                        </div>
-                      </div>
+                      <DemoButton className="h-16 min-w-[240px] justify-center px-8 text-lg shadow-[0_24px_70px_rgba(59,130,246,0.24)]" />
                     </div>
                   </div>
                 </div>
@@ -353,9 +393,9 @@ export default function HomePage() {
             return (
               <article
                 key={card.title}
-                className="landing-glass-panel rounded-[30px] p-6 transition-transform duration-300 hover:-translate-y-1"
+                className="landing-feature-card rounded-[30px] p-6 transition-transform duration-300 hover:-translate-y-1"
               >
-                <div className="inline-flex rounded-[20px] border border-white/10 bg-white/8 p-3 text-sky-100 shadow-[0_14px_30px_rgba(59,130,246,0.12)]">
+                <div className="inline-flex rounded-[20px] border border-slate-200/80 bg-white/92 p-3 text-sky-700 shadow-[0_14px_30px_rgba(59,130,246,0.08)]">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-2xl font-bold tracking-[-0.05em] text-slate-950">
@@ -367,8 +407,7 @@ export default function HomePage() {
           })}
         </section>
 
-        <section className="mt-6 rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,rgba(103,232,249,0.14),rgba(99,102,241,0.14),rgba(16,185,129,0.14))] p-[1px] shadow-[0_28px_90px_rgba(37,99,235,0.16)]">
-          <div className="rounded-[33px] bg-[linear-gradient(135deg,rgba(8,17,32,0.96),rgba(14,25,47,0.96))] p-6 lg:p-8">
+        <section className="mt-6 rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(239,246,255,0.86),rgba(237,242,247,0.82))] p-6 shadow-[0_28px_90px_rgba(37,99,235,0.08)] lg:p-8">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/80">
@@ -395,7 +434,6 @@ export default function HomePage() {
                 </Button>
               </div>
             </div>
-          </div>
         </section>
       </div>
     </main>

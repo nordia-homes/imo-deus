@@ -6598,6 +6598,38 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
+.landing-metric-card {
+  border: 1px solid rgba(191, 206, 230, 0.74);
+  background:
+    radial-gradient(circle at top right, rgba(191, 219, 254, 0.24), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 246, 255, 0.9));
+  box-shadow:
+    0 20px 50px rgba(37, 55, 88, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.landing-section-band {
+  border: 1px solid rgba(191, 206, 230, 0.72);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(239, 246, 255, 0.84));
+  box-shadow:
+    0 16px 34px rgba(37, 55, 88, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.landing-inline-proof {
+  border: 1px solid rgba(191, 206, 230, 0.76);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.5rem 0.85rem;
+  color: #475569;
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 24px rgba(37, 55, 88, 0.04);
+}
+
 .landing-gradient-text {
   background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 38%, #2563eb 62%, #475569 100%);
   background-size: 200% 200%;
@@ -6703,6 +6735,48 @@
   box-shadow:
     0 28px 64px rgba(37, 55, 88, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.landing-feature-card {
+  border: 1px solid rgba(191, 206, 230, 0.82);
+  background:
+    radial-gradient(circle at top right, rgba(219, 234, 254, 0.2), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 247, 255, 0.86));
+  box-shadow:
+    0 24px 64px rgba(37, 55, 88, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.landing-feature-tile {
+  border: 1px solid rgba(191, 206, 230, 0.76);
+  background:
+    radial-gradient(circle at top right, rgba(219, 234, 254, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 247, 255, 0.9));
+  box-shadow:
+    0 18px 42px rgba(37, 55, 88, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.landing-feature-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(160, 184, 220, 0.86);
+  box-shadow:
+    0 24px 56px rgba(37, 55, 88, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.landing-demo-cta {
+  border: 1px solid rgba(191, 206, 230, 0.82);
+  background:
+    radial-gradient(circle at top right, rgba(191, 219, 254, 0.28), transparent 32%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(234, 244, 255, 0.9));
+  box-shadow:
+    0 24px 64px rgba(37, 55, 88, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
 .landing-card-emerald {
