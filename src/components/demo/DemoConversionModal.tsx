@@ -5,10 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   ArrowRight,
-  Check,
   ShieldCheck,
   Sparkles,
-  Star,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -92,7 +90,7 @@ function getModalCopy(variant: ModalVariant, pageLabel: string) {
 }
 
 export function DemoConversionModal() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const [open, setOpen] = useState(false);
   const [variant, setVariant] = useState<ModalVariant>('conversion');
   const evaluationFrameRef = useRef<number | null>(null);
@@ -147,115 +145,59 @@ export function DemoConversionModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[min(96vw,1320px)] max-w-none overflow-hidden rounded-[36px] border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
-        <div className="relative max-h-[92vh] overflow-auto rounded-[36px] border border-white/60 bg-[linear-gradient(180deg,rgba(244,248,255,0.98),rgba(234,242,252,0.98))] shadow-[0_40px_160px_rgba(37,55,88,0.28)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(129,161,255,0.20),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(126,224,185,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.36),rgba(255,255,255,0.06))]" />
+      <DialogContent className="w-[min(94vw,760px)] max-w-none overflow-hidden rounded-[32px] border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+        <div className="demo-conversion-modal relative max-h-[88vh] overflow-hidden rounded-[28px] sm:rounded-[32px]">
+          <DialogClose className="demo-conversion-modal__close">
+            <X className="h-4.5 w-4.5" />
+            <span className="sr-only">Inchide</span>
+          </DialogClose>
 
-          <div className="relative">
-            <div className="grid min-h-[min(780px,92vh)] grid-cols-1 lg:grid-cols-[1.12fr_0.88fr]">
-              <section className="flex flex-col justify-between border-b border-white/55 px-6 py-6 sm:px-8 sm:py-8 lg:border-b-0 lg:border-r lg:px-12 lg:py-12">
-                <div>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(144,165,205,0.22)] bg-white/84 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--primary)] shadow-[0_10px_24px_rgba(49,73,118,0.06)]">
-                        {variant === 'welcome' ? <ShieldCheck className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        {copy.badge}
-                      </div>
-                      <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(144,165,205,0.18)] bg-white/58 px-3.5 py-1.5 text-xs font-medium text-slate-600">
-                        <Star className="h-3.5 w-3.5 text-amber-500" />
-                        {copy.eyebrow}
-                      </div>
-                    </div>
+          <div className="relative flex max-h-[88vh] flex-col overflow-hidden">
+            <div className="overflow-y-auto px-5 pb-5 pt-5 sm:px-7 sm:pb-6 sm:pt-7">
+            <div className="demo-conversion-modal__badge-row">
+              <div className="demo-conversion-modal__badge">
+                {variant === 'welcome' ? <ShieldCheck className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {copy.badge}
+              </div>
+            </div>
 
-                    <DialogClose className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(144,165,205,0.16)] bg-white/84 text-slate-500 transition hover:bg-white hover:text-slate-900">
-                      <X className="h-4.5 w-4.5" />
-                      <span className="sr-only">Inchide</span>
-                    </DialogClose>
-                  </div>
+            <div className="demo-conversion-modal__content mt-7 flex flex-col items-center gap-5 text-center sm:mt-8">
+              <DialogHeader className="space-y-4 text-center">
+                <p className="demo-conversion-modal__eyebrow">{copy.eyebrow}</p>
+                <DialogTitle className="demo-conversion-modal__title">
+                  Devino un <span className="demo-conversion-modal__title-accent">SuperAgent</span>
+                  <br />
+                  <span className="demo-conversion-modal__title-inline">Incepe cu 30 de zile gratuite!</span>
+                </DialogTitle>
+                <DialogDescription className="demo-conversion-modal__description">
+                  Primeste 30 de zile gratuite si descopera cum lucreaza impreuna publicarea automata in grupurile Facebook si in portale (Imobiliare.ro, Storia, OLX, HomeZZ, Publi24, Trimbitasu Estate etc.), proprietarii deja contactati de noi, baza de date de cumparatori, AI matching, confirmarea automata a vizionarilor si multe altele.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            </div>
 
-                  <DialogHeader className="mt-8 max-w-[760px] space-y-5 text-left">
-                    <DialogTitle className="font-headline text-[2.45rem] font-bold leading-[0.96] tracking-[-0.05em] text-slate-950 sm:text-[3.15rem] lg:text-[4.4rem]">
-                      {copy.title}
-                    </DialogTitle>
-                    <DialogDescription className="max-w-[720px] text-base leading-8 text-slate-600 sm:text-lg">
-                      {copy.description}
-                    </DialogDescription>
-                  </DialogHeader>
+            <div className="demo-conversion-modal__footer-shell">
+            <DialogFooter className="flex-col items-center gap-3 sm:flex-row sm:justify-center sm:space-x-0">
+              <Button asChild className="demo-conversion-modal__primary-button">
+                <Link href="/register">
+                  <span className="inline-flex items-center gap-2">
+                    Creeaza contul agentiei tale
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="demo-conversion-modal__secondary-button"
+              >
+                {copy.dismissLabel}
+              </Button>
+            </DialogFooter>
 
-                  <div className="mt-10 grid gap-4 sm:grid-cols-3">
-                    {copy.highlights.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-[26px] border border-[rgba(146,166,206,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(246,249,255,0.8))] p-5 shadow-[0_16px_44px_rgba(49,73,118,0.06)]"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(180deg,rgba(236,246,255,0.92),rgba(224,241,255,0.9))] text-[var(--primary)] ring-1 ring-[rgba(146,166,206,0.18)]">
-                          <Check className="h-4.5 w-4.5" />
-                        </div>
-                        <p className="mt-4 text-base leading-7 text-slate-700">{item}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <DialogFooter className="mt-8 flex-col gap-3 sm:flex-row sm:justify-between sm:space-x-0">
-                  <Button
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                    className="h-12 rounded-full border-[rgba(146,166,206,0.22)] bg-white/84 px-6 text-slate-700 hover:bg-white"
-                  >
-                    {copy.dismissLabel}
-                  </Button>
-                  <Button
-                    asChild
-                    className="h-12 rounded-full border-0 bg-[var(--agentfinder-primary-button)] px-6 text-white shadow-[var(--agentfinder-primary-button-shadow)] hover:bg-[var(--agentfinder-primary-button-hover)]"
-                  >
-                    <Link href="/register">
-                      <span className="inline-flex items-center gap-2">
-                        Creeaza contul agentiei tale
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </Link>
-                  </Button>
-                </DialogFooter>
-              </section>
-
-              <aside className="flex flex-col justify-between px-6 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-12">
-                <div className="rounded-[30px] border border-[rgba(142,163,205,0.16)] bg-[linear-gradient(180deg,rgba(24,41,73,0.97),rgba(34,53,93,0.96))] p-6 text-white shadow-[0_24px_70px_rgba(25,38,69,0.26)] sm:p-7">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">
-                    Urmatorul pas
-                  </p>
-                  <h3 className="mt-4 font-headline text-3xl font-bold leading-[1.02] tracking-[-0.045em] text-white sm:text-[2.15rem]">
-                    {copy.sideTitle}
-                  </h3>
-                  <p className="mt-4 text-base leading-8 text-white/76">
-                    {copy.sideText}
-                  </p>
-
-                  <div className="mt-8 rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                    <p className="text-sm font-semibold text-white">{copy.offerTitle}</p>
-                    <p className="mt-3 text-sm leading-7 text-white/74">{copy.offerText}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-[30px] border border-[rgba(146,166,206,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(246,249,255,0.76))] p-5 shadow-[0_16px_44px_rgba(49,73,118,0.06)] sm:p-6">
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    {copy.panelTitle}
-                  </p>
-                  <div className="mt-5 space-y-3">
-                    {copy.highlights.map((item) => (
-                      <div
-                        key={`${item}-aside`}
-                        className="flex items-start gap-3 rounded-[18px] bg-white/72 px-4 py-3 ring-1 ring-[rgba(146,166,206,0.14)]"
-                      >
-                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(180deg,rgba(228,245,255,0.96),rgba(220,240,255,0.9))] text-[var(--primary)]">
-                          <Check className="h-3.5 w-3.5" />
-                        </div>
-                        <p className="text-sm leading-6 text-slate-700">{item}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </aside>
+            <p className="mt-3 text-center text-xs text-slate-400">
+              Fara presiune. Fara configurari complicate. Intri direct in contul real al agentiei tale.
+            </p>
             </div>
           </div>
         </div>
