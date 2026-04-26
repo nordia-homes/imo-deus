@@ -125,7 +125,7 @@ export default function HomePage() {
 
       <div className="relative mx-auto flex w-full max-w-[1380px] flex-col px-4 pb-16 pt-5 sm:px-6 lg:px-8 lg:pb-24 lg:pt-8">
         <header className="landing-glass-panel flex flex-col gap-4 rounded-[30px] px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
-          <ImoDeusTextLogo className="text-slate-950 [&_.text-white]:!text-slate-950 [&_.text-white\\/55]:!text-slate-500 [&>div:first-child]:border-slate-200 [&>div:first-child]:bg-white/90" />
+          <ImoDeusTextLogo className="w-[11.5rem] sm:w-[12.5rem]" />
           <div className="flex flex-wrap items-center gap-3">
             <DemoButton className="h-12 px-5 text-sm sm:text-base" />
             <Button
