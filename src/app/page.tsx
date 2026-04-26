@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   BarChart3,
@@ -54,6 +55,126 @@ const featureCards = [
     icon: BarChart3,
     title: "Claritate operationala instant",
     text: "Primele secunde iti arata daca produsul are sau nu substanta. Aici o vezi imediat.",
+  },
+];
+
+const showcaseCards = [
+  {
+    title: "Dashboard care arata pulsul agentiei",
+    eyebrow: "Dashboard",
+    text: "Comisioane, performanta, quick actions, evolutie lead-uri si conversie vizionari versus tranzactii dintr-un singur ecran.",
+    image: "/landing/screenshots/dashboard.png",
+    alt: "Dashboard ImoDeus cu KPI-uri, grafice si actiuni rapide",
+    tags: ["KPI live", "quick actions", "conversie"],
+    span: "lg:col-span-7",
+  },
+  {
+    title: "Cumparatori activi, filtrati si prioritizati",
+    eyebrow: "Lead-uri",
+    text: "Lista de lead-uri vine cu buget, zona, vechime si scor AI, astfel incat echipa stie imediat pe cine suna prima.",
+    image: "/landing/screenshots/buyers.png",
+    alt: "Lista de cumparatori cu buget, scor AI si filtre",
+    tags: ["filtrare", "scor AI", "prioritizare"],
+    span: "lg:col-span-5",
+  },
+  {
+    title: "Portofoliu complet de proprietati",
+    eyebrow: "Proprietati",
+    text: "Carduri vizuale pentru stocul activ, cu status comercial, caracteristici, pret si actiuni rapide direct din listare.",
+    image: "/landing/screenshots/properties-list.png",
+    alt: "Portofoliu proprietati afisat in carduri cu imagini si pret",
+    tags: ["stoc activ", "imagini", "actiuni rapide"],
+    span: "lg:col-span-4",
+  },
+  {
+    title: "Task-uri clare pentru ziua de azi",
+    eyebrow: "Workspace task-uri",
+    text: "Panou operational cu deschise, intarziate, finalizate si organizare pe board, lista sau calendar.",
+    image: "/landing/screenshots/tasks.png",
+    alt: "Pagina de task-uri cu KPI-uri si moduri de vizualizare",
+    tags: ["board", "lista", "calendar"],
+    span: "lg:col-span-4",
+  },
+  {
+    title: "Contracte si template-uri centralizate",
+    eyebrow: "Documente",
+    text: "Biblioteca de contracte editabile, template-uri, draft-uri si export operational dintr-un singur flux.",
+    image: "/landing/screenshots/contracts.png",
+    alt: "Modul de contracte si template-uri",
+    tags: ["template-uri", "draft", "PDF"],
+    span: "lg:col-span-4",
+  },
+  {
+    title: "Echipa agentiei intr-un singur loc",
+    eyebrow: "Agenti",
+    text: "Administrarea rolurilor, contactelor si activitatii agentilor fara sa intri prin meniuri de setari separate.",
+    image: "/landing/screenshots/agents.png",
+    alt: "Pagina cu echipa agentiei si carduri pentru agenti",
+    tags: ["roluri", "contacte", "administrare"],
+    span: "lg:col-span-6",
+  },
+  {
+    title: "Asistent AI gata de lucru, nu doar de demo",
+    eyebrow: "AI Assistant",
+    text: "Prompt-uri sugerate, comenzi comerciale si un chat care pleaca direct din contextul real al CRM-ului.",
+    image: "/landing/screenshots/ai-assistant.png",
+    alt: "Asistent AI cu sugestii si input de chat",
+    tags: ["prompt-uri", "context CRM", "automatizare"],
+    span: "lg:col-span-6",
+  },
+  {
+    title: "Potrivire AI explicata pe bune",
+    eyebrow: "Potrivire AI",
+    text: "Motorul de matching nu doar afiseaza rezultate, ci arata si scorul si motivul pentru care o proprietate se potriveste.",
+    image: "/landing/screenshots/ai-matching-results.png",
+    alt: "Rezultate de potrivire AI intre cumparator si proprietati",
+    tags: ["matching", "explicabilitate", "rezultate"],
+    span: "lg:col-span-6",
+  },
+  {
+    title: "Rapoarte care spun ce conteaza azi",
+    eyebrow: "Rapoarte",
+    text: "Puncte forte, riscuri, oportunitati si actiuni recomandate, formulate direct pentru decizii operationale.",
+    image: "/landing/screenshots/reports.png",
+    alt: "Raport operational cu puncte forte, riscuri si oportunitati",
+    tags: ["insights", "riscuri", "actiuni"],
+    span: "lg:col-span-6",
+  },
+  {
+    title: "Domeniu custom si instructiuni DNS fara frictiune",
+    eyebrow: "Website public",
+    text: "Agentia isi poate lega domeniul de backend-ul public si vede clar ce trebuie configurat pentru activare.",
+    image: "/landing/screenshots/custom-domain.png",
+    alt: "Configurare domeniu custom pentru website-ul agentiei",
+    tags: ["custom domain", "DNS", "hosting"],
+    span: "lg:col-span-4",
+  },
+  {
+    title: "Scorul unui lead devine explicabil",
+    eyebrow: "Lead scoring",
+    text: "Profilul cumparatorului, credibilitatea AI si proprietatile recomandate sunt puse in aceeasi vedere pentru vanzare asistata.",
+    image: "/landing/screenshots/lead-matching-detail.png",
+    alt: "Detaliu lead cu scor AI si proprietati potrivite",
+    tags: ["credibilitate AI", "profil buyer", "recomandari"],
+    span: "lg:col-span-8",
+  },
+  {
+    title: "Fisa proprietatii este un centru de operare",
+    eyebrow: "Detaliu proprietate",
+    text: "Galerie, pret, agent dedicat, proprietar, vizionari si distributie, toate in jurul aceleiasi proprietati.",
+    image: "/landing/screenshots/property-detail-overview.png",
+    alt: "Fisa unei proprietati cu galerie si panou de actiuni",
+    tags: ["fisa completa", "pret", "vizionari"],
+    span: "lg:col-span-7",
+  },
+  {
+    title: "Harta, publicare si promovare din acelasi flux",
+    eyebrow: "Distributie",
+    text: "Pozitionare pe harta, analiza CMA si publicare catre portaluri sau grupuri Facebook fara context switching.",
+    image: "/landing/screenshots/map-publishing.png",
+    alt: "Publicare proprietate in portaluri si promovare cu harta",
+    tags: ["portaluri", "Facebook", "CMA"],
+    span: "lg:col-span-5",
   },
 ];
 
@@ -304,7 +425,73 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section className="mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700/80">
+                Functionalitati reale
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-[-0.06em] text-slate-950 sm:text-4xl">
+                Fiecare card arata produsul real, nu mockup-uri inventate.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Am tratat fiecare screenshot ca o promisiune de produs: ce face, unde ajuta
+                echipa si de ce merita sa apesi pe demo.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <div className="landing-inline-proof">13 ecrane reale</div>
+              <div className="landing-inline-proof">crm + ai + website</div>
+              <div className="landing-inline-proof">wow layout</div>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-12">
+            {showcaseCards.map((card) => (
+              <article
+                key={card.title}
+                className={`landing-showcase-card group ${card.span} rounded-[30px] p-3 sm:p-4`}
+              >
+                <div className="relative overflow-hidden rounded-[24px] border border-white/60 bg-slate-100 shadow-[0_20px_50px_rgba(37,55,88,0.16)]">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-white/28 via-white/8 to-transparent" />
+                  <Image
+                    src={card.image}
+                    alt={card.alt}
+                    width={1600}
+                    height={900}
+                    className="h-auto w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
+                  />
+                </div>
+
+                <div className="px-1 pb-1 pt-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-emerald-300/60 bg-emerald-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-900">
+                      {card.eyebrow}
+                    </span>
+                    {card.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-slate-200/80 bg-white/88 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <h3 className="mt-4 font-[family-name:var(--font-space-grotesk)] text-[1.65rem] font-bold leading-[1.02] tracking-[-0.05em] text-slate-950">
+                    {card.title}
+                  </h3>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
+                    {card.text}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-4 lg:grid-cols-3">
           {featureCards.map((card) => {
             const Icon = card.icon;
             return (
