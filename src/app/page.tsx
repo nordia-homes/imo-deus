@@ -66,6 +66,7 @@ const showcaseCards = [
     image: "/landing/screenshots/dashboard.png",
     alt: "Dashboard ImoDeus cu KPI-uri, grafice si actiuni rapide",
     tags: ["KPI live", "quick actions", "conversie"],
+    floatingBadges: ["demo live", "overview total", "workflow clar"],
     span: "lg:col-span-7",
   },
   {
@@ -75,6 +76,7 @@ const showcaseCards = [
     image: "/landing/screenshots/buyers.png",
     alt: "Lista de cumparatori cu buget, scor AI si filtre",
     tags: ["filtrare", "scor AI", "prioritizare"],
+    floatingBadges: ["lead radar", "ai scoring", "pipeline activ"],
     span: "lg:col-span-5",
   },
   {
@@ -84,6 +86,7 @@ const showcaseCards = [
     image: "/landing/screenshots/properties-list.png",
     alt: "Portofoliu proprietati afisat in carduri cu imagini si pret",
     tags: ["stoc activ", "imagini", "actiuni rapide"],
+    floatingBadges: ["listari curate", "media ready", "status live"],
     span: "lg:col-span-4",
   },
   {
@@ -93,6 +96,7 @@ const showcaseCards = [
     image: "/landing/screenshots/tasks.png",
     alt: "Pagina de task-uri cu KPI-uri si moduri de vizualizare",
     tags: ["board", "lista", "calendar"],
+    floatingBadges: ["focus mode", "azi", "task flow"],
     span: "lg:col-span-4",
   },
   {
@@ -102,6 +106,7 @@ const showcaseCards = [
     image: "/landing/screenshots/contracts.png",
     alt: "Modul de contracte si template-uri",
     tags: ["template-uri", "draft", "PDF"],
+    floatingBadges: ["doc engine", "template ready", "semnare flow"],
     span: "lg:col-span-4",
   },
   {
@@ -111,6 +116,7 @@ const showcaseCards = [
     image: "/landing/screenshots/agents.png",
     alt: "Pagina cu echipa agentiei si carduri pentru agenti",
     tags: ["roluri", "contacte", "administrare"],
+    floatingBadges: ["team pulse", "roluri", "control"],
     span: "lg:col-span-6",
   },
   {
@@ -120,6 +126,7 @@ const showcaseCards = [
     image: "/landing/screenshots/ai-assistant.png",
     alt: "Asistent AI cu sugestii si input de chat",
     tags: ["prompt-uri", "context CRM", "automatizare"],
+    floatingBadges: ["ai ready", "context live", "copilot"],
     span: "lg:col-span-6",
   },
   {
@@ -129,6 +136,7 @@ const showcaseCards = [
     image: "/landing/screenshots/ai-matching-results.png",
     alt: "Rezultate de potrivire AI intre cumparator si proprietati",
     tags: ["matching", "explicabilitate", "rezultate"],
+    floatingBadges: ["match score", "explicabil", "next best"],
     span: "lg:col-span-6",
   },
   {
@@ -138,6 +146,7 @@ const showcaseCards = [
     image: "/landing/screenshots/reports.png",
     alt: "Raport operational cu puncte forte, riscuri si oportunitati",
     tags: ["insights", "riscuri", "actiuni"],
+    floatingBadges: ["insight flow", "claritate", "actiuni"],
     span: "lg:col-span-6",
   },
   {
@@ -147,6 +156,7 @@ const showcaseCards = [
     image: "/landing/screenshots/custom-domain.png",
     alt: "Configurare domeniu custom pentru website-ul agentiei",
     tags: ["custom domain", "DNS", "hosting"],
+    floatingBadges: ["domain ready", "go live", "public web"],
     span: "lg:col-span-4",
   },
   {
@@ -156,6 +166,7 @@ const showcaseCards = [
     image: "/landing/screenshots/lead-matching-detail.png",
     alt: "Detaliu lead cu scor AI si proprietati potrivite",
     tags: ["credibilitate AI", "profil buyer", "recomandari"],
+    floatingBadges: ["lead depth", "buyer fit", "confidence"],
     span: "lg:col-span-8",
   },
   {
@@ -165,6 +176,7 @@ const showcaseCards = [
     image: "/landing/screenshots/property-detail-overview.png",
     alt: "Fisa unei proprietati cu galerie si panou de actiuni",
     tags: ["fisa completa", "pret", "vizionari"],
+    floatingBadges: ["property hub", "owner view", "live actions"],
     span: "lg:col-span-7",
   },
   {
@@ -174,6 +186,7 @@ const showcaseCards = [
     image: "/landing/screenshots/map-publishing.png",
     alt: "Publicare proprietate in portaluri si promovare cu harta",
     tags: ["portaluri", "Facebook", "CMA"],
+    floatingBadges: ["publish flow", "map sync", "reach"],
     span: "lg:col-span-5",
   },
 ];
@@ -234,47 +247,48 @@ function DemoButton({ className = "" }: { className?: string }) {
 
 export default function HomePage() {
   return (
-    <main
-      data-app-theme="agentfinder"
-      className="landing-grid landing-dark-shell min-h-screen overflow-x-clip text-slate-950"
-    >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="landing-orb landing-orb-cyan" />
-        <div className="landing-orb landing-orb-violet" />
-        <div className="landing-orb landing-orb-emerald" />
-      </div>
+    <>
+      <main
+        data-app-theme="agentfinder"
+        className="landing-grid landing-dark-shell min-h-screen overflow-x-clip text-slate-950"
+      >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="landing-orb landing-orb-cyan" />
+          <div className="landing-orb landing-orb-violet" />
+          <div className="landing-orb landing-orb-emerald" />
+        </div>
 
-      <div className="relative mx-auto flex w-full max-w-[1380px] flex-col px-4 pb-16 pt-5 sm:px-6 lg:px-8 lg:pb-24 lg:pt-8">
-        <header className="landing-glass-panel flex flex-col gap-4 rounded-[30px] px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
-          <ImoDeusTextLogo className="w-[11.5rem] sm:w-[12.5rem]" />
-          <div className="flex flex-wrap items-center gap-3">
-            <DemoButton className="h-12 px-5 text-sm sm:text-base" />
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-full px-5 text-slate-600 hover:bg-white/80 hover:text-slate-950"
-            >
-              <Link href="/login">Autentificare</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-full border-slate-200 bg-white/82 px-5 text-slate-700 hover:bg-white"
-            >
-              <Link href="/register">
-                Creeaza cont
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </header>
-
-        <section className="relative grid gap-10 pb-16 pt-6 lg:grid-cols-[minmax(0,0.94fr)_minmax(560px,1.06fr)] lg:items-center lg:gap-10 lg:pb-24 lg:pt-10">
-          <div className="relative z-10 max-w-2xl self-start pt-2 lg:pt-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-100/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-800 shadow-[0_10px_30px_rgba(59,130,246,0.10)] backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Hero orientat spre demo
+        <div className="relative mx-auto flex w-full max-w-[1380px] flex-col px-4 pb-16 pt-5 sm:px-6 lg:px-8 lg:pb-24 lg:pt-8">
+          <header className="landing-glass-panel flex flex-col gap-4 rounded-[30px] px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <ImoDeusTextLogo className="w-[11.5rem] sm:w-[12.5rem]" />
+            <div className="flex flex-wrap items-center gap-3">
+              <DemoButton className="h-12 px-5 text-sm sm:text-base" />
+              <Button
+                asChild
+                variant="ghost"
+                className="rounded-full px-5 text-slate-600 hover:bg-white/80 hover:text-slate-950"
+              >
+                <Link href="/login">Autentificare</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-slate-200 bg-white/82 px-5 text-slate-700 hover:bg-white"
+              >
+                <Link href="/register">
+                  Creeaza cont
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
+          </header>
+
+          <section className="relative grid gap-10 pb-16 pt-6 lg:grid-cols-[minmax(0,0.94fr)_minmax(560px,1.06fr)] lg:items-center lg:gap-10 lg:pb-24 lg:pt-10">
+            <div className="relative z-10 max-w-2xl self-start pt-2 lg:pt-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-100/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-800 shadow-[0_10px_30px_rgba(59,130,246,0.10)] backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                Hero orientat spre demo
+              </div>
 
             <h1 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-[0.92] tracking-[-0.08em] text-slate-950 sm:text-5xl lg:text-[4.85rem]">
               <span className="block">Vezi un demo live,</span>
@@ -423,9 +437,9 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </section>
+          </section>
 
-        <section className="mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
+          <section className="mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700/80">
@@ -448,20 +462,51 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 grid gap-5 lg:grid-cols-12">
-            {showcaseCards.map((card) => (
+            {showcaseCards.map((card, index) => (
               <article
                 key={card.title}
                 className={`landing-showcase-card group ${card.span} rounded-[30px] p-3 sm:p-4`}
               >
-                <div className="relative overflow-hidden rounded-[24px] border border-white/60 bg-slate-100 shadow-[0_20px_50px_rgba(37,55,88,0.16)]">
-                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-white/28 via-white/8 to-transparent" />
-                  <Image
-                    src={card.image}
-                    alt={card.alt}
-                    width={1600}
-                    height={900}
-                    className="h-auto w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
-                  />
+                <div className="landing-showcase-frame relative">
+                  <div className="landing-showcase-glow landing-showcase-glow-left" />
+                  <div className="landing-showcase-glow landing-showcase-glow-right" />
+                  <div className="landing-showcase-screen-shell relative overflow-hidden rounded-[26px] p-3 sm:p-4">
+                    <div className="landing-showcase-toolbar">
+                      <div className="flex items-center gap-2">
+                        <span className="landing-showcase-dot bg-[#f97316]" />
+                        <span className="landing-showcase-dot bg-[#22c55e]" />
+                        <span className="landing-showcase-dot bg-[#38bdf8]" />
+                      </div>
+                      <div className="landing-showcase-toolbar-pill">
+                        {card.eyebrow}
+                      </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-slate-100 shadow-[0_24px_60px_rgba(37,55,88,0.16)]">
+                      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-white/36 via-white/10 to-transparent" />
+                      <Image
+                        src={card.image}
+                        alt={card.alt}
+                        width={1600}
+                        height={900}
+                        className="h-auto w-full object-cover object-top transition duration-700 group-hover:scale-[1.035]"
+                      />
+                    </div>
+
+                    <div className="pointer-events-none absolute inset-0 hidden lg:block">
+                      <div className={`landing-showcase-float landing-float-slow ${index % 2 === 0 ? 'left-5 top-20' : 'left-6 top-24'}`}>
+                        {card.floatingBadges[0]}
+                      </div>
+                      <div className={`landing-showcase-float landing-float-fast ${index % 3 === 0 ? 'right-5 top-14' : 'right-6 top-16'}`}>
+                        {card.floatingBadges[1]}
+                      </div>
+                      <div className={`landing-showcase-float landing-showcase-float-soft landing-float-slow ${index % 2 === 0 ? 'bottom-8 right-8' : 'bottom-10 left-8'}`}>
+                        {card.floatingBadges[2]}
+                      </div>
+                    </div>
+
+                    <div className="landing-showcase-ring" />
+                  </div>
                 </div>
 
                 <div className="px-1 pb-1 pt-4">
@@ -489,9 +534,9 @@ export default function HomePage() {
               </article>
             ))}
           </div>
-        </section>
+          </section>
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-3">
+          <section className="mt-6 grid gap-4 lg:grid-cols-3">
           {featureCards.map((card) => {
             const Icon = card.icon;
             return (
@@ -509,9 +554,9 @@ export default function HomePage() {
               </article>
             );
           })}
-        </section>
+          </section>
 
-        <section className="mt-6 rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(239,246,255,0.86),rgba(237,242,247,0.82))] p-6 shadow-[0_28px_90px_rgba(37,99,235,0.08)] lg:p-8">
+          <section className="mt-6 rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(239,246,255,0.86),rgba(237,242,247,0.82))] p-6 shadow-[0_28px_90px_rgba(37,99,235,0.08)] lg:p-8">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700/80">
@@ -538,8 +583,29 @@ export default function HomePage() {
                 </Button>
               </div>
             </div>
-        </section>
-      </div>
-    </main>
+          </section>
+        </div>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)]">
+        <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-4 px-4 py-6 text-sm text-slate-600 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <p>&copy; 2026 ImoDeus.ai CRM. Toate drepturile rezervate.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/termeni-si-conditii"
+              className="font-medium text-slate-700 transition-colors hover:text-sky-700"
+            >
+              Termeni si conditii
+            </Link>
+            <Link
+              href="/confidentialitate"
+              className="font-medium text-slate-700 transition-colors hover:text-sky-700"
+            >
+              Politica de confidentialitate
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </>
   );
 }
