@@ -67,6 +67,11 @@ const showcaseCards = [
     alt: "Dashboard ImoDeus cu KPI-uri, grafice si actiuni rapide",
     tags: ["KPI live", "quick actions", "conversie"],
     floatingBadges: ["demo live", "overview total", "workflow clar"],
+    heroMetrics: [
+      { value: "€100.681", label: "comisioane simulate" },
+      { value: "58", label: "cumparatori activi" },
+      { value: "1 click", label: "de la wow la demo" },
+    ],
     span: "lg:col-span-7",
   },
   {
@@ -440,37 +445,43 @@ export default function HomePage() {
           </section>
 
           <section className="mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700/80">
-                Functionalitati reale
-              </p>
-              <h2 className="mt-3 font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-[-0.06em] text-slate-950 sm:text-4xl">
-                Fiecare card arata produsul real, nu mockup-uri inventate.
+          <div className="flex flex-col gap-4">
+            <div className="max-w-[68rem]">
+              <div className="inline-flex items-center gap-3 rounded-full border border-sky-200/80 bg-white/82 px-4 py-2 shadow-[0_14px_30px_rgba(37,55,88,0.06)]">
+                <span className="h-2.5 w-2.5 rounded-full bg-sky-500 shadow-[0_0_0_6px_rgba(186,230,253,0.9)]" />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700/90">
+                  Functionalitati reale
+                </p>
+              </div>
+              <h2 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-3xl font-bold leading-[1.08] tracking-[-0.075em] text-slate-950 sm:text-4xl sm:leading-[1.12] lg:text-[3rem] lg:leading-[0.98] xl:text-[3.35rem]">
+                <span className="block lg:whitespace-nowrap">
+                  <span className="lg:inline">Nu vezi mockup-uri.</span>
+                  <span className="landing-gradient-text mt-2 block lg:ml-3 lg:mt-0 lg:inline">
+                    Vezi produsul in actiune.
+                  </span>
+                </span>
               </h2>
-              <p className="mt-4 text-base leading-7 text-slate-600">
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-[1.05rem]">
                 Am tratat fiecare screenshot ca o promisiune de produs: ce face, unde ajuta
                 echipa si de ce merita sa apesi pe demo.
               </p>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <div className="landing-inline-proof">13 ecrane reale</div>
-              <div className="landing-inline-proof">crm + ai + website</div>
-              <div className="landing-inline-proof">wow layout</div>
-            </div>
           </div>
 
           <div className="mt-8 grid gap-5 lg:grid-cols-12">
-            {showcaseCards.map((card, index) => (
+            {showcaseCards.map((card, index) => {
+              const isHeroShowcase = index === 0;
+
+              return (
               <article
                 key={card.title}
-                className={`landing-showcase-card group ${card.span} rounded-[30px] p-3 sm:p-4`}
+                className={`landing-showcase-card group ${card.span} ${isHeroShowcase ? 'landing-showcase-card-hero' : ''} rounded-[30px] p-3 sm:p-4`}
               >
                 <div className="landing-showcase-frame relative">
                   <div className="landing-showcase-glow landing-showcase-glow-left" />
                   <div className="landing-showcase-glow landing-showcase-glow-right" />
-                  <div className="landing-showcase-screen-shell relative overflow-hidden rounded-[26px] p-3 sm:p-4">
+                  {isHeroShowcase ? <div className="landing-showcase-hero-orbit" /> : null}
+                  <div className={`landing-showcase-screen-shell relative overflow-hidden rounded-[26px] p-3 sm:p-4 ${isHeroShowcase ? 'landing-showcase-screen-shell-hero' : ''}`}>
                     <div className="landing-showcase-toolbar">
                       <div className="flex items-center gap-2">
                         <span className="landing-showcase-dot bg-[#f97316]" />
@@ -492,6 +503,24 @@ export default function HomePage() {
                         className="h-auto w-full object-cover object-top transition duration-700 group-hover:scale-[1.035]"
                       />
                     </div>
+
+                    {isHeroShowcase ? (
+                      <div className="pointer-events-none absolute inset-x-5 bottom-5 z-[4] hidden gap-3 lg:grid lg:grid-cols-3">
+                        {card.heroMetrics?.map((metric) => (
+                          <div
+                            key={metric.label}
+                            className="landing-showcase-hero-metric landing-float-slow rounded-[22px] p-4"
+                          >
+                            <p className="text-[0.65rem] font-black uppercase tracking-[0.22em] text-slate-500">
+                              {metric.label}
+                            </p>
+                            <p className="mt-2 text-2xl font-bold tracking-[-0.05em] text-slate-950">
+                              {metric.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
                     <div className="pointer-events-none absolute inset-0 hidden lg:block">
                       <div className={`landing-showcase-float landing-float-slow ${index % 2 === 0 ? 'left-5 top-20' : 'left-6 top-24'}`}>
@@ -532,7 +561,7 @@ export default function HomePage() {
                   </p>
                 </div>
               </article>
-            ))}
+            )})}
           </div>
           </section>
 
