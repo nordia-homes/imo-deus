@@ -209,6 +209,13 @@ const disambiguateSpecialCase = (normalizedText: string) => {
     return getZoneByName('Drumul Fermei');
   }
 
+  if (
+    normalizedText.includes('malcoci') ||
+    (normalizedText.includes('petre ispirescu') && normalizedText.includes('sector 5'))
+  ) {
+    return getZoneByName('Sebastian');
+  }
+
   if (normalizedText.includes('biruintei')) {
     return getZoneByName('Biruintei');
   }
