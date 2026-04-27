@@ -263,7 +263,7 @@ export default function HomePage() {
           <div className="landing-orb landing-orb-emerald" />
         </div>
 
-        <div className="relative mx-auto flex w-full max-w-[1380px] flex-col px-4 pb-16 pt-5 sm:px-6 lg:px-8 lg:pb-24 lg:pt-8">
+        <div className="relative mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-16 pt-5 sm:px-5 lg:px-6 xl:px-8 lg:pb-24 lg:pt-8">
           <header className="landing-glass-panel flex flex-col gap-4 rounded-[30px] px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
             <ImoDeusTextLogo className="w-[11.5rem] sm:w-[12.5rem]" />
             <div className="flex flex-wrap items-center gap-3">
@@ -444,7 +444,7 @@ export default function HomePage() {
           </div>
           </section>
 
-          <section className="mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
+        <section className="landing-showcase-section-mobile mt-6 rounded-[38px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(239,246,255,0.92),rgba(236,253,245,0.9))] p-5 shadow-[0_32px_100px_rgba(37,55,88,0.1)] lg:p-7">
           <div className="flex flex-col gap-4">
             <div className="max-w-[68rem]">
               <div className="inline-flex items-center gap-3 rounded-full border border-sky-200/80 bg-white/82 px-4 py-2 shadow-[0_14px_30px_rgba(37,55,88,0.06)]">
@@ -468,7 +468,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-12">
+          <div className="landing-showcase-grid-mobile mt-8 grid gap-5 lg:grid-cols-12">
             {showcaseCards.map((card, index) => {
               const isHeroShowcase = index === 0;
 
@@ -617,7 +617,7 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-slate-200 bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)]">
-        <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-4 px-4 py-6 text-sm text-slate-600 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-4 px-4 py-6 text-sm text-slate-600 sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6 xl:px-8">
           <p>&copy; 2026 ImoDeus.ai CRM. Toate drepturile rezervate.</p>
           <div className="flex flex-wrap items-center gap-3">
             <Link
