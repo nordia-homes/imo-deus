@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateEmail, updateProfile } from 'firebase/auth';
 import { DEFAULT_THEME_PRESET, applyAgencyThemeToRoot, THEME_PRESET_OPTIONS } from '@/lib/theme';
+import { locations, type City } from '@/lib/locations';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -45,6 +46,7 @@ const agencySchema = z.object({
   termsAndConditions: z.string().optional(),
   privacyPolicy: z.string().optional(),
   customDomain: z.string().optional(),
+  city: z.string().optional(),
   email: z.string().email('Adresă de email invalidă.').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -90,6 +92,7 @@ export default function SettingsPage() {
         termsAndConditions: '',
         privacyPolicy: '',
         customDomain: '',
+        city: '',
         email: '', 
         phone: '', 
         address: '', 
@@ -134,6 +137,7 @@ export default function SettingsPage() {
             termsAndConditions: agency.termsAndConditions || '',
             privacyPolicy: agency.privacyPolicy || '',
             customDomain: agency.customDomain || '',
+            city: agency.city || '',
             email: agency.email || '',
             phone: agency.phone || '',
             address: agency.address || '',
@@ -262,6 +266,7 @@ export default function SettingsPage() {
     termsAndConditions: values.termsAndConditions || '',
     privacyPolicy: values.privacyPolicy || '',
     customDomain: values.customDomain || '',
+    city: values.city || '',
     email: values.email || '',
     phone: values.phone || '',
     address: values.address || '',
@@ -758,7 +763,30 @@ export default function SettingsPage() {
                                     <h5 className="text-base font-semibold text-white">Contact firmă</h5>
                                     <p className="text-sm text-white/60">Datele prin care clienții pot lua legătura cu agenția.</p>
                                   </div>
-                                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                    <FormField control={agencyForm.control} name="city" render={({ field }) => (
+                                      <FormItem className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/15 hover:bg-white/[0.06]">
+                                        <FormLabel className="text-white">Oras de lucru pentru scraping</FormLabel>
+                                        <FormControl>
+                                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                                            <SelectTrigger className="mt-3 !border-white/14 !bg-white/10 !text-white">
+                                              <SelectValue placeholder="Alege orasul" />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-white/10 bg-[var(--app-surface-solid)] text-white">
+                                              {(Object.keys(locations) as City[]).map((city) => (
+                                                <SelectItem key={city} value={city} className="focus:bg-white/10 focus:text-white">
+                                                  {city}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </FormControl>
+                                        <FormDescription className="text-white/62">
+                                          Momentan acest camp este folosit pentru owner listings doar pe Bucuresti-Ilfov, pe baza linkurilor dedicate de scraping.
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}/>
                                     <FormField control={agencyForm.control} name="email" render={({ field }) => ( <FormItem className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/15 hover:bg-white/[0.06]"><FormLabel className="text-white">Email contact</FormLabel><FormControl><Input {...field} placeholder="contact@agentie.ro" className="mt-3 !border-white/14 !bg-white/10 !text-white placeholder:!text-white/40" /></FormControl><FormMessage /></FormItem> )}/>
                                     <FormField control={agencyForm.control} name="phone" render={({ field }) => ( <FormItem className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/15 hover:bg-white/[0.06]"><FormLabel className="text-white">Telefon contact</FormLabel><FormControl><Input {...field} placeholder="+40 123 456 789" className="mt-3 !border-white/14 !bg-white/10 !text-white placeholder:!text-white/40" /></FormControl><FormMessage /></FormItem> )}/>
                                   </div>

@@ -601,6 +601,39 @@ function base64ToFile(base64: string, filename: string, mimeType: string) {
   return new File([bytes], filename, { type: mimeType });
 }
 
+function isBlockedExternalImage(url?: string | null) {
+  if (!url) return true;
+
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.toLowerCase();
+
+    if (parsed.hostname === 'maps.gstatic.com' && pathname.includes('/transparent.png')) {
+      return true;
+    }
+
+    if (pathname.endsWith('/transparent.png')) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+function sanitizeImageSource(source: ImageSource): ImageSource | null {
+  if (source instanceof File) {
+    return source;
+  }
+
+  if (!source?.url || isBlockedExternalImage(source.url)) {
+    return null;
+  }
+
+  return source;
+}
+
 function SortableImage({
   id,
   src,
@@ -632,7 +665,7 @@ function SortableImage({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative aspect-square group touch-none">
-      <Image src={src} alt={`Preview`} fill sizes="128px" className="object-cover rounded-xl" />
+      <Image src={src} alt={`Preview`} fill sizes="128px" className="object-cover rounded-xl" unoptimized={isBlockedExternalImage(src)} />
       <Button
         type="button"
         variant="secondary"
@@ -936,7 +969,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 commissionType: pickAllowedValue(propertyData.commissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
                 commissionValue: propertyData.commissionValue ?? 2,
             });
-            setImageSources(propertyData.images || []);
+            setImageSources((propertyData.images || []).map(sanitizeImageSource).filter((item): item is ImageSource => Boolean(item)));
             setSelectedCoordinates(
               typeof propertyData.latitude === 'number' && typeof propertyData.longitude === 'number'
                 ? { latitude: propertyData.latitude, longitude: propertyData.longitude }
@@ -967,7 +1000,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         const id = source instanceof File ? `${source.name}-${source.lastModified}-${index}` : source.url;
         const url = source instanceof File ? URL.createObjectURL(source) : source.url;
         return { id, url };
-    }), [imageSources]);
+    }).filter((item) => !isBlockedExternalImage(item.url)), [imageSources]);
     const imagePlaceholderSlots = useMemo(
         () => Array.from({ length: Math.max(0, 15 - imageItems.length) }, (_, index) => imageItems.length + index + 2),
         [imageItems.length]
@@ -1128,9 +1161,11 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
       if (files && files.length > 0) {
         const newFiles = Array.from(files);
         setImageSources((prevSources) => {
-          const updatedSources = [...prevSources, ...newFiles];
-          return updatedSources.slice(0, 16);
-        });
+            const updatedSources = [...prevSources, ...newFiles]
+              .map(sanitizeImageSource)
+              .filter((item): item is ImageSource => Boolean(item));
+            return updatedSources.slice(0, 16);
+          });
       }
       // Reset file input to allow re-selecting the same file(s)
       if (event.target) {
@@ -1284,7 +1319,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
 
       try {
           const newImageFiles = imageSources.filter((s): s is File => s instanceof File);
-          const existingImages = imageSources.filter((s): s is { url: string; alt: string; } => !(s instanceof File));
+          const existingImages = imageSources
+            .filter((s): s is { url: string; alt: string; } => !(s instanceof File))
+            .filter((image) => !isBlockedExternalImage(image.url));
           
           let uploadedImageUrls: { url: string; alt: string; }[] = [];
           const propertyId = isEditMode ? propertyData!.id : doc(collection(firestore, 'agencies', agencyId, 'properties')).id;

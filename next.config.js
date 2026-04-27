@@ -44,6 +44,11 @@ const nextConfig = {
         hostname: 'render.openstreetmap.org',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'maps.gstatic.com',
+        pathname: '/**',
+      },
 
       // Domenii reale OLX pentru imagini
       {

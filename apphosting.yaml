@@ -12,6 +12,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: OWNER_LISTINGS_CRON_SECRET
+    secret: OWNER_LISTINGS_CRON_SECRET
+    availability:
+      - RUNTIME
+
   - variable: OPENAI_ASSISTANT_MODEL
     value: gpt-4.1-mini
     availability:
