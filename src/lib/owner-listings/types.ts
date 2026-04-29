@@ -14,8 +14,8 @@ export type OwnerListingSummary = {
   postedAt: number;
   postedAtText?: string;
   rooms?: number | string;
-  constructionYear?: number;
-  year?: number;
+  constructionYear?: number | string;
+  year?: number | string;
   image?: string;
   imageUrl?: string;
   description?: string;
@@ -31,8 +31,8 @@ export type OwnerListingSummary = {
 export type OwnerListingDetail = OwnerListingSummary & {
   fullDescription?: string;
   images: string[];
-  constructionYear?: number;
-  year?: number;
+  constructionYear?: number | string;
+  year?: number | string;
   bathrooms?: number;
   propertyType?: string;
   transactionType?: string;

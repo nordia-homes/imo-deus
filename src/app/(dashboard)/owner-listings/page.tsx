@@ -37,8 +37,8 @@ type OwnerListing = {
   rooms?: number | string;
   image?: string;
   imageUrl?: string;
-  constructionYear?: number;
-  year?: number;
+  constructionYear?: number | string;
+  year?: number | string;
   description?: string;
 };
 
@@ -202,7 +202,7 @@ function OwnerListingCard({
             {roomsValue !== null ? (
               <div className="flex shrink-0 items-center gap-1">
                 <BedDouble className="h-3.5 w-3.5 shrink-0" />
-                <span>{roomsValue} camere</span>
+                <span>{roomsValue}</span>
               </div>
             ) : null}
 

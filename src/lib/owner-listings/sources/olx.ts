@@ -194,6 +194,34 @@ function extractAreaFromOlxBodyText(text: string) {
   return `${String(match[1]).replace('.', ',')} mp`;
 }
 
+function extractOlxConstructionYearLabel(value: string) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return undefined;
+
+  const exactYear = normalized.match(/^(19\d{2}|20\d{2})$/)?.[1];
+  if (exactYear) {
+    return exactYear;
+  }
+
+  if (
+    /^(?:inainte de|dup[aă])\s+(19\d{2}|20\d{2})$/i.test(normalized) ||
+    /^(19\d{2}|20\d{2})\s*[-–]\s*(19\d{2}|20\d{2})$/i.test(normalized)
+  ) {
+    return normalized;
+  }
+
+  return undefined;
+}
+
+function extractOlxConstructionYearFromBodyText(text: string) {
+  const normalized = normalizeComparableText(text);
+  const labeledMatch = normalized.match(
+    /an\s+construct(?:ie|iei|ii)\s*:?\s*(inainte de\s+\d{4}|dupa\s+\d{4}|\d{4}\s*[-–]\s*\d{4}|\d{4})/i
+  )?.[1];
+
+  return extractOlxConstructionYearLabel(labeledMatch || '');
+}
+
 function parseCard(title: string, text: string) {
   const combined = normalizeWhitespace(`${title} ${text}`);
   return {
@@ -293,12 +321,18 @@ function extractCardChunk(html: string, index: number, nextIndex: number) {
   const articleStart = html.lastIndexOf('<article', index);
   const articleEnd = html.indexOf('</article>', index);
   if (articleStart >= 0 && articleEnd > index && articleEnd - articleStart < 30000) {
-    return html.slice(articleStart, articleEnd + '</article>'.length);
+    return {
+      chunk: html.slice(articleStart, articleEnd + '</article>'.length),
+      isolated: true,
+    };
   }
 
   const snippetStart = Math.max(0, index - 2500);
   const snippetEnd = Math.min(html.length, nextIndex + 2500);
-  return html.slice(snippetStart, snippetEnd);
+  return {
+    chunk: html.slice(snippetStart, snippetEnd),
+    isolated: false,
+  };
 }
 
 function extractImageCandidatesFromChunk(chunk: string) {
@@ -307,9 +341,22 @@ function extractImageCandidatesFromChunk(chunk: string) {
   ).map((match) => decodeOlxEscaped(match[1]));
 }
 
+function extractPriceFromChunk(chunk: string) {
+  const priceMatches = [
+    ...Array.from(chunk.matchAll(/\b\d{2,3}(?:[.\s]\d{3})+(?:[.,]\d{1,2})?\s*(?:â‚¬|eur|Ã¢â€šÂ¬)\b/gi)).map((match) =>
+      normalizeWhitespace(match[0])
+    ),
+    ...Array.from(chunk.matchAll(/\b\d{2,3}(?:[.\s]\d{3})+(?:[.,]\d{1,2})?\b/g)).map((match) =>
+      normalizeWhitespace(match[0])
+    ),
+  ];
+
+  return priceMatches[0] || '';
+}
+
 function extractListPageFromHtml(html: string) {
   const hrefMatches = Array.from(html.matchAll(/href="([^"]*\/d\/oferta\/[^"]+)"/gi));
-  const cards: Array<{ href: string; title: string; text: string; imageCandidates: string[] }> = [];
+  const cards: Array<{ href: string; title: string; text: string; price: string; imageCandidates: string[]; isolated: boolean }> = [];
   const seen = new Set<string>();
 
   for (let index = 0; index < hrefMatches.length; index += 1) {
@@ -318,19 +365,20 @@ function extractListPageFromHtml(html: string) {
 
     const currentIndex = hrefMatches[index]?.index ?? 0;
     const nextIndex = hrefMatches[index + 1]?.index ?? Math.min(html.length, currentIndex + 8000);
-    const chunk = extractCardChunk(html, currentIndex, nextIndex);
+    const { chunk, isolated } = extractCardChunk(html, currentIndex, nextIndex);
     const title =
       decodeOlxEscaped(chunk.match(/\stitle="([^"]+)"/i)?.[1] || '') ||
       decodeOlxEscaped(chunk.match(/aria-label="([^"]+)"/i)?.[1] || '') ||
       stripHtml(chunk.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '') ||
       '';
     const text = stripHtml(chunk);
+    const price = extractPriceFromChunk(chunk);
     const imageCandidates = extractImageCandidatesFromChunk(chunk);
 
     if (!title) continue;
 
     seen.add(href);
-    cards.push({ href, title, text, imageCandidates });
+    cards.push({ href, title, text, price, imageCandidates, isolated });
   }
 
   return cards;
@@ -348,11 +396,12 @@ function extractOlxParamsFromHtml(html: string) {
   const roomsSource = extractOlxLabeledParam(html, ['Numar camere', 'Număr camere', 'Nr. camere']);
   const yearSource = extractOlxLabeledParam(html, ['An constructie', 'An construcție']);
   const bodyText = stripHtml(html);
+  const constructionYearFromPage = extractOlxConstructionYearLabel(yearSource) || extractOlxConstructionYearFromBodyText(bodyText);
 
   return {
     area: extractAreaTextFromLabeledValue(areaSource) || extractAreaFromOlxBodyText(bodyText),
     rooms: extractRoomCount(roomsSource) || extractRoomCount(bodyText),
-    constructionYear: extractConstructionYear(yearSource) || extractConstructionYear(bodyText),
+    constructionYear: constructionYearFromPage || extractConstructionYear(bodyText),
     price: extractOlxPriceFromHtml(html) || extractPriceText(bodyText),
   };
 }
@@ -413,7 +462,10 @@ async function extractOlxParamsFromDom(url: string) {
     return {
       area: extractAreaTextFromLabeledValue(params.area) || extractAreaFromOlxBodyText(params.bodyText),
       rooms: extractRoomCount(params.rooms) || extractRoomCount(params.bodyText),
-      constructionYear: extractConstructionYear(params.constructionYear) || extractConstructionYear(params.bodyText),
+      constructionYear:
+        extractOlxConstructionYearLabel(params.constructionYear) ||
+        extractOlxConstructionYearFromBodyText(params.bodyText) ||
+        extractConstructionYear(params.bodyText),
       price: extractPriceText(params.price),
       imageUrl: pickBestImageUrl(params.images),
       images: sortImageUrls(params.images.map((image) => pickBestImageUrl([image])).filter(Boolean)).slice(0, 12),
@@ -448,12 +500,15 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
 
         let resolvedTitle = card.title;
         let parsed = parseCard(card.title, card.text);
+        parsed.price = card.price || parsed.price;
         if (!matchesKeywords(`${parsed.location} ${card.title} ${card.text}`, options.searchKeywords)) {
           continue;
         }
 
         const listImageUrl = pickBestImageUrl(card.imageCandidates);
         const shouldHydrateFromDetail =
+          !card.isolated ||
+          !parsed.price ||
           !parsed.area ||
           !listImageUrl ||
           /;s=\d{2,4}x\d{2,4}/i.test(listImageUrl) ||
@@ -468,9 +523,10 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
             const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
             parsed = {
               ...parsed,
-              price: parsed.price || detailParams.price || extractPriceText(detailBody),
+              price: detailParams.price || extractPriceText(detailBody) || parsed.price,
               area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
               location: parsed.location || extractLocationText(detailBody),
+              constructionYear: detailParams.constructionYear || parsed.constructionYear,
             };
 
             if (detailTitle) {
@@ -524,7 +580,7 @@ export async function scrapeOlxListingDetail(url: string) {
   let detailParams = {
     area: '',
     rooms: '',
-    constructionYear: undefined as number | undefined,
+    constructionYear: undefined as string | number | undefined,
     price: '',
   };
   let images: string[] = [];
@@ -541,7 +597,7 @@ export async function scrapeOlxListingDetail(url: string) {
     | {
         area: string;
         rooms: string;
-        constructionYear?: number;
+        constructionYear?: string | number;
         price: string;
         imageUrl: string;
         images: string[];

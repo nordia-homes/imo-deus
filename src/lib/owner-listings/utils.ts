@@ -105,6 +105,24 @@ export function extractConstructionYear(value: string | null | undefined) {
   return typeof candidates === 'number' ? candidates : undefined;
 }
 
+export function parseExactConstructionYear(value: string | number | null | undefined) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  const normalized = stripDiacritics(normalizeWhitespace(value)).toLowerCase();
+  if (!normalized) return undefined;
+
+  const directMatch = normalized.match(/^(19\d{2}|20\d{2})$/);
+  if (!directMatch) {
+    return undefined;
+  }
+
+  const parsed = Number(directMatch[1]);
+  const currentYear = new Date().getFullYear() + 1;
+  return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
+}
+
 export function parseRomanianDateToUnix(value: string | null | undefined) {
   const normalized = stripDiacritics(normalizeWhitespace(value)).toLowerCase();
   if (!normalized) return Math.floor(Date.now() / 1000);
@@ -217,6 +235,8 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
 }
 
 export function toPropertySeed(detail: OwnerListingDetail) {
+  const constructionYear = parseExactConstructionYear(detail.constructionYear) ?? parseExactConstructionYear(detail.year);
+
   return {
     title: detail.title,
     price: parsePriceNumber(detail.price) ?? 0,
@@ -230,7 +250,7 @@ export function toPropertySeed(detail: OwnerListingDetail) {
     squareFootage: parseArea(detail.area) ?? 0,
     address: detail.location,
     location: detail.location,
-    constructionYear: detail.constructionYear || detail.year,
+    constructionYear,
     propertyType: detail.propertyType || 'Apartament',
     transactionType: detail.transactionType || 'Vanzare',
     floor: detail.floor || '',
