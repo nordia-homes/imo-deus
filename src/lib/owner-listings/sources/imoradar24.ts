@@ -2,6 +2,9 @@ import type { Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
+import { scrapePubli24ListingDetail } from '@/lib/owner-listings/sources/publi24';
+
+const imoradarPhoneCache = new Map<string, string>();
 
 function matchesKeywords(text: string, keywords: string[]) {
   const normalized = normalizeWhitespace(text)
@@ -63,6 +66,129 @@ function extractConstructionYearStrict(text: string) {
   const parsed = Number(direct);
   const currentYear = new Date().getFullYear() + 1;
   return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
+}
+
+function normalizePhoneCandidate(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) {
+    return '';
+  }
+
+  const compact = normalized.replace(/[^\d+]/g, '');
+  if (/^\+?\d{8,15}$/.test(compact)) {
+    return compact.startsWith('00') ? `+${compact.slice(2)}` : compact;
+  }
+
+  const localDigits = normalized.replace(/[^\d]/g, '');
+  if (/^\d{8,15}$/.test(localDigits)) {
+    return localDigits;
+  }
+
+  return '';
+}
+
+function extractImoradarSourceUrl(html: string, url: string) {
+  const explicitAnchor =
+    html.match(/href="(https?:\/\/[^"]+)"[\s\S]{0,300}?>\s*Vezi anunțul pe/i)?.[1] ||
+    html.match(/Vezi anunțul pe[\s\S]{0,300}?href="(https?:\/\/[^"]+)"/i)?.[1] ||
+    html.match(/href="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/i)?.[1] ||
+    '';
+
+  if (explicitAnchor) {
+    return normalizeUrl(explicitAnchor, url);
+  }
+
+  const embeddedTarget =
+    html.match(/"targetUrl"\s*:\s*"([^"]+)"/i)?.[1] ||
+    html.match(/targetUrl\\u0022:\s*\\u0022([^"]+)\\u0022/i)?.[1] ||
+    '';
+
+  return embeddedTarget ? normalizeUrl(embeddedTarget.replace(/\\\//g, '/'), url) : '';
+}
+
+function extractOlxExternalSourceUrl(html: string, url: string) {
+  const directExternal =
+    html.match(/data-testid="ad-contact-bar"[\s\S]{0,500}?href="(https?:\/\/(?:www\.)?(?:storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/i)?.[1] ||
+    html.match(/href="(https?:\/\/(?:www\.)?(?:storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/i)?.[1] ||
+    '';
+
+  if (directExternal) {
+    return normalizeUrl(directExternal, url);
+  }
+
+  const apiExternal =
+    html.match(/"external_url":"(https?:\\\/\\\/[^"]+)"/i)?.[1] ||
+    html.match(/"external_url"\s*:\s*"(https?:\/\/[^"]+)"/i)?.[1] ||
+    '';
+
+  return apiExternal ? normalizeUrl(apiExternal.replace(/\\\//g, '/'), url) : '';
+}
+
+function extractStoriaPhoneFromHtml(html: string) {
+  const patterns = [
+    /"contactDetails":\{"name":"[^"]*","type":"[^"]*","phones":\["([^"]+)"\]/i,
+    /"owner":\{[\s\S]*?"contacts":\[\{"name":"[^"]*","phone":"([^"]+)"/i,
+    /"phone":"([^"]+)"/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern)?.[1];
+    const phone = normalizePhoneCandidate(match?.replace(/\\\//g, '/'));
+    if (phone) {
+      return phone;
+    }
+  }
+
+  return '';
+}
+
+async function resolveImoradarPhoneFromSourceUrl(sourceUrl: string, seen = new Set<string>()): Promise<string> {
+  const absoluteUrl = normalizeUrl(sourceUrl);
+  if (!absoluteUrl || seen.has(absoluteUrl)) {
+    return '';
+  }
+
+  const cached = imoradarPhoneCache.get(absoluteUrl);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  seen.add(absoluteUrl);
+
+  let phone = '';
+  const hostname = (() => {
+    try {
+      return new URL(absoluteUrl).hostname.toLowerCase();
+    } catch {
+      return '';
+    }
+  })();
+
+  if (/storia\.ro$/.test(hostname)) {
+    const html = await fetchScraperHtml(absoluteUrl, 30000).catch(() => '');
+    phone = extractStoriaPhoneFromHtml(html);
+  } else if (/publi24\.ro$/.test(hostname)) {
+    const detail = await scrapePubli24ListingDetail(absoluteUrl).catch(() => null);
+    phone = normalizePhoneCandidate(detail?.contactPhone || detail?.ownerPhone || '');
+  } else if (/olx\.ro$/.test(hostname)) {
+    const html = await fetchScraperHtml(absoluteUrl, 30000).catch(() => '');
+    const externalSourceUrl = html ? extractOlxExternalSourceUrl(html, absoluteUrl) : '';
+    if (externalSourceUrl && externalSourceUrl !== absoluteUrl) {
+      phone = await resolveImoradarPhoneFromSourceUrl(externalSourceUrl, seen);
+    }
+  }
+
+  imoradarPhoneCache.set(absoluteUrl, phone);
+  return phone;
+}
+
+async function extractImoradarPhoneFromHtml(html: string, url: string) {
+  const sourceUrl = extractImoradarSourceUrl(html, url);
+  if (!sourceUrl) {
+    return '';
+  }
+
+  return resolveImoradarPhoneFromSourceUrl(sourceUrl);
 }
 
 function extractImoradarDetailFromHtml(html: string, url: string) {
@@ -220,6 +346,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
           const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
           if (detailHtml) {
             const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
+            const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
             enrichedCard = {
               ...enrichedCard,
               title: detail.title || enrichedCard.title,
@@ -228,6 +355,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
               rooms: enrichedCard.rooms || detail.rooms,
               constructionYear: detail.constructionYear || enrichedCard.constructionYear,
               image: enrichedCard.image || detail.images[0] || '',
+              ownerPhone,
             };
           }
         }
@@ -251,6 +379,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
             link: absoluteUrl,
             imageUrl: enrichedCard.image,
             description: normalizeWhitespace(`${enrichedCard.title} ${enrichedCard.location}`).slice(0, 500),
+            ownerPhone: normalizeWhitespace((enrichedCard as typeof enrichedCard & { ownerPhone?: string }).ownerPhone),
           })
         );
       }
@@ -268,6 +397,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
   const html = await fetchScraperHtml(url, 30000).catch(() => '');
   if (html) {
     const detail = extractImoradarDetailFromHtml(html, url);
+    const contactPhone = await extractImoradarPhoneFromHtml(html, url).catch(() => '');
     const summary = buildSummary({
       source: 'imoradar24',
       externalId: url,
@@ -282,6 +412,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       link: url,
       imageUrl: detail.images[0] || '',
       description: detail.description,
+      ownerPhone: contactPhone,
     });
 
     return {
@@ -289,7 +420,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       images: detail.images.slice(0, 12),
       fullDescription: detail.description,
       contactName: '',
-      contactPhone: '',
+      contactPhone,
     } satisfies OwnerListingDetail;
   }
 
@@ -312,6 +443,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
+    const contactPhone = await extractImoradarPhoneFromHtml(await page.content(), url).catch(() => '');
 
     const summary = buildSummary({
       source: 'imoradar24',
@@ -327,6 +459,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       link: url,
       imageUrl: payload.images[0] || '',
       description: payload.description,
+      ownerPhone: contactPhone,
     });
 
     return {
@@ -334,7 +467,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       images: Array.from(new Set(payload.images)).slice(0, 12),
       fullDescription: payload.description,
       contactName: '',
-      contactPhone: '',
+      contactPhone,
     } satisfies OwnerListingDetail;
   });
 }
