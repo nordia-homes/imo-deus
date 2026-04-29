@@ -153,9 +153,6 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         pageContainsOnlyOldListings = false;
         const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
         if (seenLinks.has(absoluteUrl)) continue;
-        if (!matchesKeywords(`${card.location} ${card.title}`, options.searchKeywords)) {
-          continue;
-        }
 
         seenLinks.add(absoluteUrl);
         listings.push(
