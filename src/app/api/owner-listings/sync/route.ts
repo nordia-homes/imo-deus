@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
     const result = await runOwnerListingsBackgroundSync({
       agencyId,
       sources,
+      maxPages: body.maxPages ?? undefined,
+      maxListingsPerSource: body.maxListingsPerSource,
       hardPageLimit: body.hardPageLimit,
     });
 

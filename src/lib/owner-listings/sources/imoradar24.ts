@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import { buildSummary, isOwnerText, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import { buildSummary, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 
@@ -15,31 +15,6 @@ function isWithinMaxAgeDays(unixTimestamp: number, maxAgeDays?: number | null) {
   if (!maxAgeDays) return true;
   const ageSeconds = Math.floor(Date.now() / 1000) - unixTimestamp;
   return ageSeconds <= maxAgeDays * 24 * 60 * 60;
-}
-
-async function extractListPage(page: Page) {
-  return page.evaluate(() => {
-    const anchors = Array.from(document.querySelectorAll('a[href]'));
-    return anchors
-      .map((anchor) => {
-        const href = anchor.getAttribute('href') || '';
-        const card = anchor.closest('article') || anchor.closest('[class*="card"]') || anchor.parentElement;
-        return {
-          href,
-          title:
-            anchor.getAttribute('title') ||
-            card?.querySelector('h2, h3, h4')?.textContent ||
-            anchor.textContent ||
-            '',
-          text: card?.textContent || anchor.textContent || '',
-          image:
-            card?.querySelector('img')?.getAttribute('src') ||
-            card?.querySelector('img')?.getAttribute('data-src') ||
-            '',
-        };
-      })
-      .filter((item) => item.href && !item.href.startsWith('#'));
-  });
 }
 
 function stripHtml(value: string) {
@@ -59,25 +34,61 @@ function extractArticleBlocks(html: string) {
   return Array.from(html.matchAll(/<article[\s\S]*?<\/article>/gi)).map((match) => match[0]);
 }
 
-function extractListPageFromHtml(html: string) {
+function extractRoomCount(text: string) {
+  const normalized = normalizeWhitespace(text);
+  return (
+    normalized.match(/\b(\d+)\s+camere?\b/i)?.[0] ||
+    normalized.match(/\bapartament\s+cu\s+(\d+)\s+camere?\b/i)?.[0] ||
+    ''
+  );
+}
+
+type ExtractedCard = {
+  href: string;
+  title: string;
+  price: string;
+  area: string;
+  rooms: string;
+  location: string;
+  postedAtText: string;
+  image: string;
+  text: string;
+};
+
+function extractListPageFromHtml(html: string): ExtractedCard[] {
   const listingMarkers = Array.from(html.matchAll(/id="listing-link-(\d+)"/gi));
   if (listingMarkers.length) {
     return listingMarkers
       .map((marker, index) => {
         const markerIndex = marker.index ?? 0;
-        const start = Math.max(0, html.lastIndexOf('<a', markerIndex));
+        const textContainerIndex = html.lastIndexOf('class="md:w-3/5', markerIndex);
+        const start = Math.max(0, textContainerIndex >= 0 ? html.lastIndexOf('<div', textContainerIndex) : html.lastIndexOf('<a', markerIndex));
         const nextIndex = index + 1 < listingMarkers.length ? (listingMarkers[index + 1].index ?? html.length) : html.length;
-        const end = Math.min(html.length, nextIndex + 500);
-        const chunk = html.slice(start, end);
+        const chunk = html.slice(start, nextIndex);
         const href = chunk.match(/href="([^"]*\/oferta\/[^"]+)"/i)?.[1] || '';
         const title =
-          stripHtml(chunk.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] || '') ||
-          stripHtml(chunk.match(/<span[^>]*>([\s\S]*?)<\/span>/i)?.[1] || '');
-        const text = stripHtml(chunk);
+          stripHtml(chunk.match(/<span class="relative top-\[2px\][^"]*>\s*([\s\S]*?)\s*<\/span>/i)?.[1] || '') ||
+          stripHtml(chunk.match(/<h3[^>]*class="hide-title[^"]*"[^>]*>([\s\S]*?)<\/h3>/i)?.[1] || '') ||
+          stripHtml(chunk.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] || '');
+        const plainText = stripHtml(chunk);
+        const price = title.match(/\d[\d.]*\s*€/i)?.[0] || plainText.match(/\b\d[\d.]*\s*€/i)?.[0] || '';
+        const location =
+          plainText.match(/\b([A-ZĂÂÎȘȚ][A-Za-zĂÂÎȘȚăâîșț\- ]+,\s*Sectorul\s*\d)\b/u)?.[1] ||
+          title.match(/în\s+([^0-9€]{2,50})/u)?.[1] ||
+          '';
+        const rooms = extractRoomCount(`${title} ${plainText}`);
+        const area = plainText.match(/\b\d+\s*mp\b/i)?.[0] || '';
+        const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
+        const text = [location, rooms, area, price, postedAtText].filter(Boolean).join(' • ');
 
         return {
           href,
           title,
+          price,
+          area,
+          rooms,
+          location,
+          postedAtText,
           text,
           image: chunk.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
         };
@@ -86,50 +97,30 @@ function extractListPageFromHtml(html: string) {
   }
 
   const articles = extractArticleBlocks(html);
-  if (articles.length) {
-    return articles
-      .map((article) => {
-        const href = article.match(/href="([^"]*\/oferta\/[^"]+)"/i)?.[1] || '';
-        const titleAttr = article.match(/\stitle="([^"]+)"/i)?.[1] || '';
-        const heading = article.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '';
+  return articles
+    .map((article) => {
+      const href = article.match(/href="([^"]*\/oferta\/[^"]+)"/i)?.[1] || '';
+      const title = stripHtml(article.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '');
+      const plainText = stripHtml(article);
+      const price = title.match(/\d[\d.]*\s*€/i)?.[0] || plainText.match(/\b\d[\d.]*\s*€/i)?.[0] || '';
+      const location = title.match(/în\s+([^0-9€]{2,50})/u)?.[1] || '';
+      const rooms = extractRoomCount(`${title} ${plainText}`);
+      const area = plainText.match(/\b\d+\s*mp\b/i)?.[0] || '';
+      const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
 
-        return {
-          href,
-          title: stripHtml(titleAttr || heading || article),
-          text: stripHtml(article),
-          image: article.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
-        };
-      })
-      .filter((item) => item.href);
-  }
-
-  const matches = Array.from(
-    html.matchAll(/<a[^>]+href="(?<href>[^"]*\/oferta\/[^"]+)"[^>]*>(?<inner>[\s\S]*?)<\/a>/gi)
-  );
-
-  return matches.map((match) => {
-    const inner = match.groups?.inner || '';
-    const titleAttr = match[0].match(/\stitle="([^"]+)"/i)?.[1] || '';
-    const heading = inner.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '';
-
-    return {
-      href: match.groups?.href || '',
-      title: stripHtml(titleAttr || heading || inner),
-      text: stripHtml(inner),
-      image: match[0].match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
-    };
-  });
-}
-
-function parseCardText(text: string) {
-  const normalized = normalizeWhitespace(text);
-  const parts = normalized.split('•').map((part) => normalizeWhitespace(part));
-  return {
-    price: parts.find((line) => /€|eur|lei|ron/i.test(line)) || '',
-    area: parts.find((line) => /\bmp\b|m²/i.test(line)) || '',
-    rooms: parts.find((line) => /camera/i.test(line)) || '',
-    location: parts.find((line) => /azi|ieri|actualizat|\d{1,2}[./-]\d{1,2}[./-]\d{4}/i.test(line)) || parts[0] || '',
-  };
+      return {
+        href,
+        title,
+        price,
+        area,
+        rooms,
+        location,
+        postedAtText,
+        text: [location, rooms, area, price, postedAtText].filter(Boolean).join(' • '),
+        image: article.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
+      };
+    })
+    .filter((item) => item.href && item.title);
 }
 
 export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
@@ -154,8 +145,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
         if (!/imoradar24\.ro/.test(card.href) && !card.href.startsWith('/')) continue;
 
-        const parsed = parseCardText(card.text);
-        const postedAt = parseRomanianDateToUnix(parsed.location);
+        const postedAt = parseRomanianDateToUnix(card.postedAtText || '');
         if (!isWithinMaxAgeDays(postedAt, maxAgeDays)) {
           continue;
         }
@@ -163,7 +153,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         pageContainsOnlyOldListings = false;
         const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
         if (seenLinks.has(absoluteUrl)) continue;
-        if (!matchesKeywords(`${parsed.location} ${card.text}`, options.searchKeywords)) {
+        if (!matchesKeywords(`${card.location} ${card.title}`, options.searchKeywords)) {
           continue;
         }
 
@@ -175,15 +165,15 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
             source: 'imoradar24',
             externalId: absoluteUrl,
             title: card.title,
-            price: parsed.price,
-            area: parsed.area,
-            rooms: parsed.rooms,
-            location: parsed.location,
+            price: card.price,
+            area: card.area,
+            rooms: card.rooms,
+            location: card.location,
             postedAt,
-            postedAtText: parsed.location,
+            postedAtText: card.postedAtText,
             link: absoluteUrl,
             imageUrl: card.image,
-            description: normalizeWhitespace(card.text).slice(0, 500),
+            description: normalizeWhitespace(`${card.title} ${card.location}`).slice(0, 500),
           })
         );
       }
@@ -217,10 +207,6 @@ export async function scrapeImoradar24ListingDetail(url: string) {
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
-
-    if (!isOwnerText(payload.bodyText)) {
-      throw new Error('Anuntul Imoradar24 nu pare sa fie listat ca proprietar.');
-    }
 
     const summary = buildSummary({
       source: 'imoradar24',

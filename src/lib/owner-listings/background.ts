@@ -13,6 +13,8 @@ export function isValidOwnerListingsCronSecret(secret: string | null | undefined
 type BackgroundSyncOptions = {
   agencyId?: string | null;
   sources?: OwnerListingSource[];
+  maxPages?: number;
+  maxListingsPerSource?: number;
   hardPageLimit?: number;
 };
 
@@ -42,7 +44,8 @@ async function executeOwnerListingsBackgroundSync(jobRef: DocumentReference, opt
     const agencyData = agencyDoc.data() as { name?: string } | undefined;
     try {
       const result = await syncOwnerListings(agencyDoc.id, sources, {
-        maxPages: null,
+        maxPages: options.maxPages ?? null,
+        maxListingsPerSource: options.maxListingsPerSource ?? null,
         hardPageLimit: options.hardPageLimit || 250,
         maxAgeDays: 60,
       });
@@ -109,6 +112,8 @@ export async function queueOwnerListingsBackgroundSync(options: QueuedBackground
     startedAt,
     agencyId: options.agencyId || null,
     sources,
+    maxPages: options.maxPages ?? null,
+    maxListingsPerSource: options.maxListingsPerSource ?? null,
     hardPageLimit: options.hardPageLimit || 250,
   });
 
@@ -141,6 +146,8 @@ export async function runOwnerListingsBackgroundSync(options: BackgroundSyncOpti
     startedAt,
     agencyId: options.agencyId || null,
     sources,
+    maxPages: options.maxPages ?? null,
+    maxListingsPerSource: options.maxListingsPerSource ?? null,
     hardPageLimit: options.hardPageLimit || 250,
   });
 

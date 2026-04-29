@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import { buildSummary, isOwnerText, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import { buildSummary, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 
@@ -94,13 +94,75 @@ function extractListPageFromHtml(html: string) {
   });
 }
 
+type StructuredOffer = {
+  url: string;
+  title: string;
+  price: string;
+  location: string;
+  imageUrl: string;
+};
+
+function collectStructuredOffers(node: unknown, target: StructuredOffer[]) {
+  if (!node || typeof node !== 'object') return;
+
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectStructuredOffers(item, target));
+    return;
+  }
+
+  const record = node as Record<string, unknown>;
+  if (record['@type'] === 'Offer' && typeof record.url === 'string' && record.url.includes('/d/oferta/')) {
+    const currency = typeof record.priceCurrency === 'string' ? record.priceCurrency : '';
+    const rawPrice = typeof record.price === 'number' || typeof record.price === 'string' ? String(record.price) : '';
+    const location =
+      typeof record.areaServed === 'object' && record.areaServed && typeof (record.areaServed as Record<string, unknown>).name === 'string'
+        ? ((record.areaServed as Record<string, unknown>).name as string)
+        : '';
+    const imageUrl = Array.isArray(record.image)
+      ? (record.image.find((item) => typeof item === 'string') as string | undefined) || ''
+      : typeof record.image === 'string'
+        ? record.image
+        : '';
+
+    target.push({
+      url: record.url,
+      title: typeof record.name === 'string' ? record.name : '',
+      price: rawPrice ? `${rawPrice} ${currency}`.trim() : '',
+      location,
+      imageUrl,
+    });
+  }
+
+  Object.values(record).forEach((value) => collectStructuredOffers(value, target));
+}
+
+function extractStructuredOffersFromHtml(html: string) {
+  const offers: StructuredOffer[] = [];
+  const scripts = Array.from(html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi));
+
+  for (const script of scripts) {
+    const payload = script[1]?.trim();
+    if (!payload) continue;
+    try {
+      collectStructuredOffers(JSON.parse(payload), offers);
+    } catch {
+      // Ignore invalid JSON-LD blocks.
+    }
+  }
+
+  return offers;
+}
+
 function parseCardText(text: string) {
   const normalized = normalizeWhitespace(text);
-  const lines = normalized.split(' • ').flatMap((part) => part.split(' | '));
+  const lines = normalized
+    .split(/[•|]/)
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
   const price = lines.find((line) => /€|eur|lei|ron/i.test(line)) || '';
   const area = lines.find((line) => /\bmp\b|m²/i.test(line)) || '';
-  const rooms = lines.find((line) => /camera/i.test(line)) || '';
-  const location = lines.find((line) => /azi|ieri|reactualizat|\d{1,2}\s+[a-zăâîșț]+/i.test(line)) || lines[lines.length - 1] || '';
+  const rooms = lines.find((line) => /\bcamera|\bcamere/i.test(line)) || '';
+  const location = lines.find((line) => /azi|ieri|reactualizat|\d{1,2}\s+[a-zăâîșţț]+/i.test(line)) || lines[lines.length - 1] || '';
   return { price, area, rooms, location };
 }
 
@@ -117,6 +179,45 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
       }
 
       const html = await fetchScraperHtml(pageUrl.toString(), 30000);
+      const structuredOffers = extractStructuredOffersFromHtml(html);
+
+      if (structuredOffers.length > 0) {
+        for (const offer of structuredOffers) {
+          if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
+
+          const absoluteUrl = normalizeUrl(offer.url, 'https://www.olx.ro');
+          if (seenLinks.has(absoluteUrl)) continue;
+          if (!matchesKeywords(`${offer.location} ${offer.title}`, options.searchKeywords)) {
+            continue;
+          }
+
+          const externalIdMatch = absoluteUrl.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/);
+          const externalId = externalIdMatch?.[1] || externalIdMatch?.[2] || absoluteUrl;
+
+          seenLinks.add(absoluteUrl);
+          listings.push(
+            buildSummary({
+              scopeKey: options.scopeKey,
+              scopeCity: options.scopeCity,
+              source: 'olx',
+              externalId,
+              title: offer.title,
+              price: offer.price,
+              area: '',
+              rooms: '',
+              location: offer.location,
+              postedAt: Math.floor(Date.now() / 1000),
+              postedAtText: '',
+              link: absoluteUrl,
+              imageUrl: offer.imageUrl,
+              description: `${offer.title} ${offer.location}`.trim(),
+            })
+          );
+        }
+
+        continue;
+      }
+
       const cards = extractListPageFromHtml(html);
       if (!cards.length) break;
 
@@ -195,10 +296,6 @@ export async function scrapeOlxListingDetail(url: string) {
         images,
       };
     });
-
-    if (!isOwnerText(payload.bodyText)) {
-      throw new Error('Anuntul OLX nu pare sa fie publicat de proprietar.');
-    }
 
     const summary = buildSummary({
       source: 'olx',

@@ -76,6 +76,16 @@ const nextConfig = {
         hostname: 'i.roamcdn.net',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'assets.imoradar24.ro',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 's3.publi24.ro',
+        pathname: '/**',
+      },
     ],
   },
 };

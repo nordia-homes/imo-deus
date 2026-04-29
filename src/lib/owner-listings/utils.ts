@@ -13,8 +13,36 @@ function stripDiacritics(value: string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function fixCommonMojibake(value: string) {
+  return value
+    .replace(/Ã¢â‚¬Â¢/g, '•')
+    .replace(/Ã¢â€šÂ¬/g, '€')
+    .replace(/mÃ‚Â²/g, 'm²')
+    .replace(/agenÃˆâ€ºie/gi, 'agentie')
+    .replace(/persoanÃ„Æ’/gi, 'persoana');
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&#(\d+);/g, (match, code) => {
+      const parsed = Number(code);
+      return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : match;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (match, code) => {
+      const parsed = Number.parseInt(code, 16);
+      return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : match;
+    })
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
 export function normalizeWhitespace(value: string | null | undefined) {
-  return String(value || '')
+  return fixCommonMojibake(decodeHtmlEntities(String(value || '')))
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -135,41 +163,6 @@ export function stripUndefined<T extends Record<string, unknown>>(value: T): T {
 export function docIdForListing(listing: Pick<OwnerListingSummary, 'source' | 'externalId' | 'fingerprint'>) {
   const sourceId = normalizeWhitespace(listing.externalId) || listing.fingerprint;
   return `${listing.source}_${sourceId.replace(/[^a-zA-Z0-9_-]+/g, '_')}`;
-}
-
-export function isOwnerText(text: string) {
-  const normalized = stripDiacritics(normalizeWhitespace(text)).toLowerCase();
-  const ownerSignals = [
-    'proprietar',
-    'direct proprietar',
-    'persoana fizica',
-    'particular',
-    'privat',
-    'vanzator privat',
-    'fara agentie',
-    'fara comision',
-  ];
-  const rejectSignals = [
-    'agentie',
-    'agenție',
-    'broker',
-    'dezvoltator',
-    'companie',
-    'firma',
-    'persoană juridică',
-  ];
-
-  const explicitlyWithoutAgency =
-    normalized.includes('fara agentie') ||
-    normalized.includes('fara agenție') ||
-    normalized.includes('fara broker') ||
-    normalized.includes('fara comision');
-
-  if (!explicitlyWithoutAgency && rejectSignals.some((signal) => normalized.includes(stripDiacritics(signal)))) {
-    return false;
-  }
-
-  return ownerSignals.some((signal) => normalized.includes(stripDiacritics(signal)));
 }
 
 export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'fingerprint' | 'scrapedAt' | 'lastSeenAt' | 'ownerType'>) {

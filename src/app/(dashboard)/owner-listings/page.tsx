@@ -48,6 +48,22 @@ function extractPrice(priceStr: string): number | null {
   return Number(match[0].replace(/\./g, ''));
 }
 
+function extractRoomsValue(rooms: number | string | null | undefined): number | null {
+  if (typeof rooms === 'number') {
+    return Number.isFinite(rooms) ? rooms : null;
+  }
+
+  if (typeof rooms !== 'string') {
+    return null;
+  }
+
+  const match = rooms.match(/\d+/);
+  if (!match) return null;
+
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function OwnerListingCard({
   listing,
   handleImport,
@@ -100,6 +116,7 @@ function OwnerListingCard({
   }, [listing.location]);
 
   const year = listing.constructionYear || listing.year;
+  const roomsValue = extractRoomsValue(listing.rooms);
 
   let displayPrice = 'Pret negociabil';
   if (listing.price) {
@@ -154,10 +171,10 @@ function OwnerListingCard({
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {listing.rooms ? (
+            {roomsValue !== null ? (
               <div className="flex items-center gap-1.5">
                 <Bed className="h-4 w-4" />
-                <span>{Number(listing.rooms)} camere</span>
+                <span>{roomsValue} camere</span>
               </div>
             ) : null}
 
@@ -238,7 +255,7 @@ export default function OwnerListingsPage() {
     }
 
     if (roomsFilter !== null) {
-      result = result.filter((listing) => Number(listing.rooms) === Number(roomsFilter));
+      result = result.filter((listing) => extractRoomsValue(listing.rooms) === roomsFilter);
     }
 
     const min = priceMin ? Number(priceMin) : null;
