@@ -11,6 +11,148 @@ function matchesKeywords(text: string, keywords: string[]) {
   return keywords.some((keyword) => normalized.includes(keyword));
 }
 
+function extractRoomCount(text: string) {
+  const normalized = normalizeWhitespace(text);
+  return (
+    normalized.match(/\b(\d+)\s+camere?\b/i)?.[0] ||
+    normalized.match(/\bapartament\s+cu\s+(\d+)\s+camere?\b/i)?.[0] ||
+    normalized.match(/\b(\d+)\s+camera\b/i)?.[0] ||
+    (/\bgarsoniera\b/i.test(normalized) ? '1 camera' : '') ||
+    (/\bstudio\b/i.test(normalized) ? '1 camera' : '') ||
+    ''
+  );
+}
+
+function extractRoomCountFromUrl(url: string) {
+  const normalized = normalizeWhitespace(url).toLowerCase();
+  const directMatch =
+    normalized.match(/apartamente-(\d+)-camere/i)?.[1] ||
+    normalized.match(/apartamente-(\d+)-camera/i)?.[1] ||
+    normalized.match(/(\d+)-camere/i)?.[1] ||
+    normalized.match(/(\d+)-camera/i)?.[1] ||
+    '';
+
+  if (directMatch) {
+    return `${directMatch} ${Number(directMatch) === 1 ? 'camera' : 'camere'}`;
+  }
+
+  if (/(?:\/|-)garsoniera(?:\/|-|$)/i.test(normalized) || /(?:\/|-)studio(?:\/|-|$)/i.test(normalized)) {
+    return '1 camera';
+  }
+
+  return '';
+}
+
+function extractAreaTextFlexible(text: string) {
+  const strictArea = extractAreaText(text);
+  if (strictArea) {
+    return strictArea;
+  }
+
+  const normalized = normalizeWhitespace(text)
+    .replace(/\bm\s*2\b/gi, 'm2')
+    .replace(/\bm\s*²\b/gi, 'm2')
+    .replace(/\s+/g, ' ');
+
+  const labeledMatch = normalized.match(
+    /\bsuprafata(?:\s+(?:utila|totala))?(?:\s+de)?\s*:?\s*([1-9]\d{1,2}(?:[.,]\d{1,2})?)\s*(?:mp|m2)\b/i
+  );
+  if (labeledMatch?.[1]) {
+    return `${labeledMatch[1].replace('.', ',')} mp`;
+  }
+
+  const genericMatch = normalized.match(/\b([1-9]\d{1,2}(?:[.,]\d{1,2})?)\s*(?:mp|m2)\b/i);
+  if (genericMatch?.[1]) {
+    return `${genericMatch[1].replace('.', ',')} mp`;
+  }
+
+  return '';
+}
+
+function extractPubli24BodyText(html: string) {
+  return normalizeWhitespace(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\u00a0/g, ' ')
+  )
+    .replace(/\bm\s+2\b/gi, 'm2')
+    .replace(/\bm\s+²\b/gi, 'm2');
+}
+
+function extractRoomCountFlexible(text: string, url?: string) {
+  return extractRoomCount(text) || extractRoomCountFromUrl(url || '');
+}
+
+function extractPubli24AreaAndRooms(text: string, url?: string) {
+  return {
+    area: extractAreaTextFlexible(text),
+    rooms: extractRoomCountFlexible(text, url),
+  };
+}
+
+function extractConstructionYearFlexible(text: string) {
+  const normalized = normalizeWhitespace(text);
+  const inferred =
+    extractConstructionYear(normalized) ||
+    extractConstructionYear(normalized.replace(/\banul\s+cons\b/gi, 'anul constructiei')) ||
+    undefined;
+
+  if (inferred) {
+    return inferred;
+  }
+
+  const directMatch =
+    normalized.match(/\ban(?:ul)?\s+construct(?:iei|ie|ii)?\s*:?\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    normalized.match(/\bbloc\s*(?:din|finalizat\s+in|construit\s+in)?\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    normalized.match(/\bedificat\s+in\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    '';
+
+  if (!directMatch) {
+    return undefined;
+  }
+
+  const parsed = Number(directMatch);
+  const currentYear = new Date().getFullYear() + 1;
+  return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
+}
+
+function extractPubli24DetailFromHtml(html: string, url: string) {
+  const bodyText = extractPubli24BodyText(html);
+  const title =
+    normalizeWhitespace(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '') ||
+    normalizeWhitespace(html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] || '') ||
+    '';
+  const description =
+    normalizeWhitespace(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    normalizeWhitespace(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    '';
+  const price =
+    normalizeWhitespace(html.match(/(\d[\d.\s]*)\s*(?:EUR|RON|LEI|€)/i)?.[0] || '') ||
+    '';
+  const images = Array.from(
+    new Set(
+      Array.from(html.matchAll(/<img[^>]+(?:src|data-src)="([^"]+)"/gi))
+        .map((match) => normalizeWhitespace(match[1]))
+        .filter((imageUrl) => imageUrl.startsWith('http'))
+    )
+  );
+  const inferred = extractPubli24AreaAndRooms(`${title} ${description} ${bodyText}`, url);
+
+  return {
+    title,
+    description,
+    bodyText,
+    price,
+    area: inferred.area,
+    rooms: inferred.rooms,
+    constructionYear: extractConstructionYearFlexible(`${title} ${description} ${bodyText}`),
+    images,
+  };
+}
+
 async function extractListPage(page: Page) {
   return page.evaluate(() => {
     const anchors = Array.from(document.querySelectorAll('a[href*="/anunturi/imobiliare/"]'));
@@ -55,6 +197,7 @@ type StructuredPubli24Offer = {
   price: string;
   location: string;
   area: string;
+  rooms: string;
   constructionYear?: number;
 };
 
@@ -93,8 +236,9 @@ function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]
           ? `${String(offers.price).replace(/\.00$/, '')} ${typeof offers.priceCurrency === 'string' ? offers.priceCurrency : ''}`.trim()
           : '',
       location: [locality, region].filter(Boolean).join(', '),
-      area: extractAreaText(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
-      constructionYear: extractConstructionYear(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
+      area: extractAreaTextFlexible(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
+      rooms: extractRoomCountFlexible(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`, typeof record.url === 'string' ? record.url : ''),
+      constructionYear: extractConstructionYearFlexible(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
     });
   }
 
@@ -127,8 +271,9 @@ function extractStructuredOffersFromHtml(html: string) {
       imageUrl,
       price: `${price.replace(/\.00$/, '')} ${currency}`.trim(),
       location: `${locality}, ${region}`.trim(),
-      area: extractAreaText(`${title} ${description}`),
-      constructionYear: extractConstructionYear(`${title} ${description}`),
+      area: extractAreaTextFlexible(`${title} ${description}`),
+      rooms: extractRoomCountFlexible(`${title} ${description}`, url),
+      constructionYear: extractConstructionYearFlexible(`${title} ${description}`),
     });
   }
 
@@ -161,6 +306,24 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
           continue;
         }
 
+        let enrichedOffer = { ...offer, url: absoluteUrl };
+        if (!enrichedOffer.area || !enrichedOffer.rooms || !enrichedOffer.constructionYear) {
+          const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+          if (detailHtml) {
+            const detail = extractPubli24DetailFromHtml(detailHtml, absoluteUrl);
+            enrichedOffer = {
+              ...enrichedOffer,
+              title: detail.title || enrichedOffer.title,
+              description: detail.description || enrichedOffer.description,
+              price: enrichedOffer.price || detail.price,
+              area: enrichedOffer.area || detail.area,
+              rooms: enrichedOffer.rooms || detail.rooms,
+              imageUrl: enrichedOffer.imageUrl || detail.images[0] || '',
+              constructionYear: enrichedOffer.constructionYear || detail.constructionYear,
+            };
+          }
+        }
+
         const idMatch = absoluteUrl.match(/\/([a-z0-9]+)\.html/i);
         seenLinks.add(absoluteUrl);
         listings.push(
@@ -169,18 +332,18 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
             scopeCity: options.scopeCity,
             source: 'publi24',
             externalId: idMatch?.[1] || absoluteUrl,
-            title: offer.title,
-            price: offer.price,
-            area: offer.area,
-            rooms: '',
-            constructionYear: offer.constructionYear,
-            year: offer.constructionYear,
-            location: offer.location,
+            title: enrichedOffer.title,
+            price: enrichedOffer.price,
+            area: enrichedOffer.area,
+            rooms: enrichedOffer.rooms,
+            constructionYear: enrichedOffer.constructionYear,
+            year: enrichedOffer.constructionYear,
+            location: enrichedOffer.location,
             postedAt: Math.floor(Date.now() / 1000),
             postedAtText: '',
             link: absoluteUrl,
-            imageUrl: offer.imageUrl,
-            description: normalizeWhitespace(offer.description).slice(0, 500),
+            imageUrl: enrichedOffer.imageUrl,
+            description: normalizeWhitespace(enrichedOffer.description).slice(0, 500),
           })
         );
       }
@@ -191,6 +354,34 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
 }
 
 export async function scrapePubli24ListingDetail(url: string) {
+  const html = await fetchScraperHtml(url, 30000).catch(() => '');
+  if (html) {
+    const detail = extractPubli24DetailFromHtml(html, url);
+    const summary = buildSummary({
+      source: 'publi24',
+      externalId: url.match(/\/([a-z0-9]+)\.html/i)?.[1] || url,
+      title: detail.title,
+      price: detail.price,
+      area: detail.area,
+      rooms: detail.rooms,
+      constructionYear: detail.constructionYear,
+      year: detail.constructionYear,
+      location: '',
+      postedAt: Math.floor(Date.now() / 1000),
+      link: url,
+      imageUrl: detail.images[0] || '',
+      description: detail.description,
+    });
+
+    return {
+      ...summary,
+      images: detail.images.slice(0, 12),
+      fullDescription: detail.description,
+      contactName: '',
+      contactPhone: '',
+    } satisfies OwnerListingDetail;
+  }
+
   return withScraperPage(async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForScraperReady(page, ['h1', 'meta[property="og:title"]', 'img'], 10000);
@@ -216,9 +407,10 @@ export async function scrapePubli24ListingDetail(url: string) {
       externalId: url.match(/\/([a-z0-9]+)\.html/i)?.[1] || url,
       title: payload.title,
       price: '',
-      area: extractAreaText(payload.description),
-      constructionYear: extractConstructionYear(`${payload.title} ${payload.description}`),
-      year: extractConstructionYear(`${payload.title} ${payload.description}`),
+      area: extractAreaTextFlexible(`${payload.title} ${payload.description} ${payload.bodyText}`),
+      rooms: extractRoomCountFlexible(`${payload.title} ${payload.description} ${payload.bodyText}`, url),
+      constructionYear: extractConstructionYearFlexible(`${payload.title} ${payload.description} ${payload.bodyText}`),
+      year: extractConstructionYearFlexible(`${payload.title} ${payload.description} ${payload.bodyText}`),
       location: '',
       postedAt: Math.floor(Date.now() / 1000),
       link: url,
