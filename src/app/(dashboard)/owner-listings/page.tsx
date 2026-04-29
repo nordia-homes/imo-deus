@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Clock, Home, Bed, Filter, Rocket, Loader2, Calendar, RefreshCw, Ruler } from 'lucide-react';
+import { Clock, Home, BedDouble, Filter, Loader2, Calendar, RefreshCw, Ruler, Rocket } from 'lucide-react';
 import { format, fromUnixTime, formatDistanceToNow, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { OwnerListingSource } from '@/lib/owner-listings/types';
 import { useAgency } from '@/context/AgencyContext';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { Badge } from '@/components/ui/badge';
 
 type OwnerListing = {
   id: string;
@@ -46,6 +47,12 @@ function extractPrice(priceStr: string): number | null {
   const match = priceStr.replace(/\s/g, '').match(/[\d.]+/);
   if (!match) return null;
   return Number(match[0].replace(/\./g, ''));
+}
+
+function formatPriceNumber(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 function extractRoomsValue(rooms: number | string | null | undefined): number | null {
@@ -128,9 +135,9 @@ function OwnerListingCard({
 
   let displayPrice = 'Pret negociabil';
   if (listing.price) {
-    const priceMatch = listing.price.match(/[\d.,\s]+/);
-    if (priceMatch && priceMatch[0] && /\d/.test(priceMatch[0])) {
-      displayPrice = `EUR ${priceMatch[0].trim()}`;
+    const numericPrice = extractPrice(listing.price);
+    if (numericPrice !== null) {
+      displayPrice = `EUR ${formatPriceNumber(numericPrice)}`;
     }
   }
 
@@ -142,16 +149,21 @@ function OwnerListingCard({
         : null;
 
   return (
-    <Card className="agentfinder-owner-listing-card group overflow-hidden rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 bg-card">
+    <Card className="agentfinder-owner-listing-card group overflow-hidden rounded-[1.75rem] border-none bg-[#152A47] text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <CardContent className="p-0">
         <div className="relative">
-          <div className="agentfinder-owner-listing-image block aspect-[16/10] relative overflow-hidden rounded-t-2xl bg-muted">
+          <Link
+            href={listing.link}
+            target="_blank"
+            rel="noreferrer"
+            className="agentfinder-owner-listing-image block aspect-[16/10] relative overflow-hidden rounded-t-[1.75rem] bg-muted"
+          >
             {imageToDisplay ? (
               <Image
                 src={imageToDisplay}
                 alt={listing.title}
                 fill
-                className="object-cover transition-transform group-hover:scale-105"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
             ) : (
@@ -159,59 +171,67 @@ function OwnerListingCard({
                 <Home className="h-16 w-16 text-muted-foreground/30" />
               </div>
             )}
+          </Link>
+          <div className="absolute left-3 top-3">
+            <Badge variant="outline" className="bg-white/90 text-black font-semibold border-white/30">
+              {listing.sourceLabel}
+            </Badge>
           </div>
         </div>
 
         <div className="p-4 space-y-3">
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/70">
-                {listing.sourceLabel}
-              </span>
+          <div className="flex justify-between items-start">
+            <div className="min-w-0 flex-1">
+              <Link href={listing.link} target="_blank" rel="noreferrer" className="block min-w-0">
+                <h3 className="truncate font-semibold text-white group-hover:text-primary/90" title={listing.title}>
+                  {listing.title}
+                </h3>
+                {listing.description ? (
+                  <p className="truncate text-sm text-white/70" title={listing.description}>
+                    {listing.description}
+                  </p>
+                ) : null}
+                <p className="truncate text-sm text-white/70" title={locationDisplay}>
+                  {locationDisplay}
+                </p>
+              </Link>
             </div>
-            <h3 className="font-semibold truncate">{listing.title}</h3>
-            {listing.description ? (
-              <p className="text-sm text-muted-foreground truncate" title={listing.description}>
-                {listing.description}
-              </p>
-            ) : null}
-            <p className="text-sm text-muted-foreground">{locationDisplay}</p>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap text-[13px] text-white/70">
             {roomsValue !== null ? (
-              <div className="flex items-center gap-1.5">
-                <Bed className="h-4 w-4" />
+              <div className="flex shrink-0 items-center gap-1">
+                <BedDouble className="h-3.5 w-3.5 shrink-0" />
                 <span>{roomsValue} camere</span>
               </div>
             ) : null}
 
             {areaValue ? (
-              <div className="flex items-center gap-1.5">
-                <Ruler className="h-4 w-4" />
+              <div className="flex shrink-0 items-center gap-1">
+                <Ruler className="h-3.5 w-3.5 shrink-0" />
                 <span>{areaValue}</span>
               </div>
             ) : null}
 
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
+            <div className="flex shrink-0 items-center gap-1">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{calculateTimeAgo(listing.postedAt)}</span>
             </div>
 
             {year ? (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
+              <div className="flex shrink-0 items-center gap-1 text-white/85">
+                <Calendar className="h-3.5 w-3.5 shrink-0" />
                 <span>{year}</span>
               </div>
             ) : null}
           </div>
 
-          <div className="flex justify-between items-center gap-3 pt-2">
-            <Button variant="default" size="sm" className="agentfinder-owner-listing-price pointer-events-none font-bold bg-[#f8f8f9] text-foreground hover:bg-muted border border-primary shadow-lg">
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <p className="min-w-0 flex-1 text-[1.05rem] font-bold leading-none tracking-[-0.01em] text-white sm:text-lg">
               {displayPrice}
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button className="agentfinder-owner-listing-import" size="sm" onClick={() => handleImport(listing)} disabled={isLoadingImport}>
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button className="agentfinder-owner-listing-import rounded-full border border-primary/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-4 text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]" size="sm" onClick={() => handleImport(listing)} disabled={isLoadingImport}>
                 {isLoadingImport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Importa anuntul
               </Button>

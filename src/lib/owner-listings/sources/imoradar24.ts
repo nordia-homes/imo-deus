@@ -30,6 +30,10 @@ function stripHtml(value: string) {
   );
 }
 
+function extractDetailText(html: string) {
+  return stripHtml(html).replace(/\bm\s+2\b/gi, 'm2').replace(/\bm\s+²\b/gi, 'm2');
+}
+
 function extractArticleBlocks(html: string) {
   return Array.from(html.matchAll(/<article[\s\S]*?<\/article>/gi)).map((match) => match[0]);
 }
@@ -41,6 +45,57 @@ function extractRoomCount(text: string) {
     normalized.match(/\bapartament\s+cu\s+(\d+)\s+camere?\b/i)?.[0] ||
     ''
   );
+}
+
+function extractConstructionYearStrict(text: string) {
+  const normalized = normalizeWhitespace(text);
+  const direct =
+    normalized.match(/\ban(?:ul)?\s+construct(?:iei|ie|ii)?\s*:?\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    normalized.match(/\bbloc\s*(?:din|finalizat\s+in|construit\s+in)?\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    normalized.match(/\bimobil\s*(?:din|finalizat\s+in|construit\s+in)?\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    normalized.match(/\bfinalizat\s+in\s*(19\d{2}|20\d{2})\b/i)?.[1] ||
+    '';
+
+  if (!direct) {
+    return undefined;
+  }
+
+  const parsed = Number(direct);
+  const currentYear = new Date().getFullYear() + 1;
+  return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
+}
+
+function extractImoradarDetailFromHtml(html: string, url: string) {
+  const text = extractDetailText(html);
+  const title =
+    stripHtml(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '') ||
+    normalizeWhitespace(html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] || '') ||
+    '';
+  const description =
+    normalizeWhitespace(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    normalizeWhitespace(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    '';
+  const price =
+    normalizeWhitespace(html.match(/(\d[\d.\s]*)\s*(?:EUR|RON|LEI|€|â‚¬)/i)?.[0] || '') ||
+    '';
+  const images = Array.from(
+    new Set(
+      Array.from(html.matchAll(/<img[^>]+(?:src|data-src)="([^"]+)"/gi))
+        .map((match) => normalizeWhitespace(match[1]))
+        .filter((imageUrl) => imageUrl.startsWith('http'))
+    )
+  );
+
+  return {
+    title,
+    description,
+    area: extractAreaText(`${title} ${description} ${text}`),
+    rooms: extractRoomCount(`${title} ${description} ${text}`),
+    constructionYear: extractConstructionYearStrict(`${title} ${description} ${text}`) || extractConstructionYear(`${title} ${description} ${text}`),
+    price,
+    images,
+    link: url,
+  };
 }
 
 type ExtractedCard = {
@@ -79,7 +134,8 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           '';
         const rooms = extractRoomCount(`${title} ${plainText}`);
         const area = extractAreaText(`${title} ${plainText}`);
-        const constructionYear = extractConstructionYear(`${title} ${plainText}`);
+        const explicitYear = extractConstructionYearStrict(plainText);
+        const constructionYear = explicitYear;
         const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
         const text = [location, rooms, area, price, postedAtText].filter(Boolean).join(' • ');
 
@@ -109,7 +165,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
       const location = title.match(/în\s+([^0-9€]{2,50})/u)?.[1] || '';
       const rooms = extractRoomCount(`${title} ${plainText}`);
       const area = extractAreaText(`${title} ${plainText}`);
-      const constructionYear = extractConstructionYear(`${title} ${plainText}`);
+      const constructionYear = extractConstructionYearStrict(plainText);
       const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
 
       return {
@@ -159,6 +215,23 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
         if (seenLinks.has(absoluteUrl)) continue;
 
+        let enrichedCard = { ...card, href: absoluteUrl };
+        if (!enrichedCard.constructionYear) {
+          const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+          if (detailHtml) {
+            const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
+            enrichedCard = {
+              ...enrichedCard,
+              title: detail.title || enrichedCard.title,
+              price: enrichedCard.price || detail.price,
+              area: enrichedCard.area || detail.area,
+              rooms: enrichedCard.rooms || detail.rooms,
+              constructionYear: detail.constructionYear || enrichedCard.constructionYear,
+              image: enrichedCard.image || detail.images[0] || '',
+            };
+          }
+        }
+
         seenLinks.add(absoluteUrl);
         listings.push(
           buildSummary({
@@ -166,18 +239,18 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
             scopeCity: options.scopeCity,
             source: 'imoradar24',
             externalId: absoluteUrl,
-            title: card.title,
-            price: card.price,
-            area: card.area,
-            constructionYear: card.constructionYear,
-            year: card.constructionYear,
-            rooms: card.rooms,
-            location: card.location,
+            title: enrichedCard.title,
+            price: enrichedCard.price,
+            area: enrichedCard.area,
+            constructionYear: enrichedCard.constructionYear,
+            year: enrichedCard.constructionYear,
+            rooms: enrichedCard.rooms,
+            location: enrichedCard.location,
             postedAt,
-            postedAtText: card.postedAtText,
+            postedAtText: enrichedCard.postedAtText,
             link: absoluteUrl,
-            imageUrl: card.image,
-            description: normalizeWhitespace(`${card.title} ${card.location}`).slice(0, 500),
+            imageUrl: enrichedCard.image,
+            description: normalizeWhitespace(`${enrichedCard.title} ${enrichedCard.location}`).slice(0, 500),
           })
         );
       }
@@ -192,6 +265,34 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
 }
 
 export async function scrapeImoradar24ListingDetail(url: string) {
+  const html = await fetchScraperHtml(url, 30000).catch(() => '');
+  if (html) {
+    const detail = extractImoradarDetailFromHtml(html, url);
+    const summary = buildSummary({
+      source: 'imoradar24',
+      externalId: url,
+      title: detail.title,
+      price: detail.price,
+      area: detail.area,
+      rooms: detail.rooms,
+      constructionYear: detail.constructionYear,
+      year: detail.constructionYear,
+      location: '',
+      postedAt: Math.floor(Date.now() / 1000),
+      link: url,
+      imageUrl: detail.images[0] || '',
+      description: detail.description,
+    });
+
+    return {
+      ...summary,
+      images: detail.images.slice(0, 12),
+      fullDescription: detail.description,
+      contactName: '',
+      contactPhone: '',
+    } satisfies OwnerListingDetail;
+  }
+
   return withScraperPage(async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForScraperReady(page, ['h1', 'meta[property="og:title"]', 'img'], 10000);
@@ -217,9 +318,10 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       externalId: url,
       title: payload.title,
       price: '',
-      area: extractAreaText(payload.description),
-      constructionYear: extractConstructionYear(`${payload.title} ${payload.description}`),
-      year: extractConstructionYear(`${payload.title} ${payload.description}`),
+      area: extractAreaText(`${payload.title} ${payload.description} ${payload.bodyText}`),
+      rooms: extractRoomCount(`${payload.title} ${payload.description} ${payload.bodyText}`),
+      constructionYear: extractConstructionYearStrict(`${payload.title} ${payload.description} ${payload.bodyText}`) || extractConstructionYear(`${payload.title} ${payload.description} ${payload.bodyText}`),
+      year: extractConstructionYearStrict(`${payload.title} ${payload.description} ${payload.bodyText}`) || extractConstructionYear(`${payload.title} ${payload.description} ${payload.bodyText}`),
       location: '',
       postedAt: Math.floor(Date.now() / 1000),
       link: url,
