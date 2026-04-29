@@ -1,7 +1,9 @@
-import type { Page } from 'playwright';
+import { chromium, type Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
+
+const publi24PhoneCache = new Map<string, string>();
 
 function matchesKeywords(text: string, keywords: string[]) {
   const normalized = normalizeWhitespace(text)
@@ -119,6 +121,341 @@ function extractConstructionYearFlexible(text: string) {
   return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
 }
 
+function extractPubli24PhoneRequest(html: string, url: string) {
+  const formAction = normalizeWhitespace(html.match(/<form action="([^"]*PhoneNumberImages[^"]*)"/i)?.[1] || '');
+  const encryptedPhone = normalizeWhitespace(html.match(/name="EncryptedPhone"[^>]*value="([^"]+)"/i)?.[1] || '');
+  const hintedLength = Number(formAction.match(/Length=(\d+)/i)?.[1] || '');
+
+  if (!formAction || !encryptedPhone) {
+    return null;
+  }
+
+  return {
+    cacheKey: `${formAction}|${encryptedPhone}`,
+    endpointUrl: normalizeUrl(formAction, url),
+    encryptedPhone,
+    hintedLength: Number.isFinite(hintedLength) && hintedLength > 0 ? hintedLength : null,
+  };
+}
+
+async function fetchPubli24PhoneImageBase64(html: string, url: string) {
+  const request = extractPubli24PhoneRequest(html, url);
+  if (!request) {
+    return null;
+  }
+
+  const cached = publi24PhoneCache.get(request.cacheKey);
+  if (cached) {
+    return { ...request, base64: cached };
+  }
+
+  const response = await fetch(request.endpointUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
+      Origin: 'https://www.publi24.ro',
+      Referer: url,
+    },
+    body: new URLSearchParams({ EncryptedPhone: request.encryptedPhone }).toString(),
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    return null;
+  }
+
+  const base64 = normalizeWhitespace(await response.text().catch(() => ''));
+  if (!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length < 200) {
+    return null;
+  }
+
+  publi24PhoneCache.set(request.cacheKey, base64);
+  return { ...request, base64 };
+}
+
+async function recognizePubli24PhoneFromBase64(base64: string, hintedLength?: number | null) {
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--disable-dev-shm-usage', '--no-sandbox'],
+  });
+
+  try {
+    const context = await browser.newContext({
+      locale: 'ro-RO',
+      timezoneId: 'Europe/Bucharest',
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      viewport: { width: 800, height: 600 },
+    });
+    const page = await context.newPage();
+    await page.setContent('<html><body></body></html>');
+
+    const result = await page.evaluate(
+      async ({ imageBase64, hintedLength }) => {
+        function toBinaryFromCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, threshold = 245) {
+          const { data } = ctx.getImageData(0, 0, width, height);
+          const bin = Array.from({ length: height }, () => Array(width).fill(0));
+
+          for (let y = 0; y < height; y += 1) {
+            for (let x = 0; x < width; x += 1) {
+              const index = (y * width + x) * 4;
+              const luminance = (data[index] + data[index + 1] + data[index + 2]) / 3;
+              bin[y][x] = luminance < threshold && data[index + 3] > 20 ? 1 : 0;
+            }
+          }
+
+          return bin;
+        }
+
+        function cropBounds(bin: number[][]) {
+          const height = bin.length;
+          const width = bin[0]?.length || 0;
+          let top = 0;
+          let bottom = height - 1;
+          let left = 0;
+          let right = width - 1;
+
+          const rowInk = (y: number) => bin[y]?.reduce((sum, pixel) => sum + pixel, 0) || 0;
+          const colInk = (x: number) => bin.reduce((sum, row) => sum + (row[x] || 0), 0);
+
+          while (top < height && rowInk(top) === 0) top += 1;
+          while (bottom > top && rowInk(bottom) === 0) bottom -= 1;
+          while (left < width && colInk(left) === 0) left += 1;
+          while (right > left && colInk(right) === 0) right -= 1;
+
+          return { top, bottom, left, right };
+        }
+
+        function sliceBin(bin: number[][], bounds: { top: number; bottom: number; left: number; right: number }) {
+          const out: number[][] = [];
+          for (let y = bounds.top; y <= bounds.bottom; y += 1) {
+            out.push(bin[y].slice(bounds.left, bounds.right + 1));
+          }
+          return out;
+        }
+
+        function resizeBin(bin: number[][], targetWidth = 20, targetHeight = 28) {
+          const srcHeight = bin.length;
+          const srcWidth = bin[0]?.length || 0;
+          if (!srcHeight || !srcWidth) {
+            return Array.from({ length: targetHeight }, () => Array(targetWidth).fill(0));
+          }
+
+          const out = Array.from({ length: targetHeight }, () => Array(targetWidth).fill(0));
+          for (let y = 0; y < targetHeight; y += 1) {
+            for (let x = 0; x < targetWidth; x += 1) {
+              const srcX = Math.min(srcWidth - 1, Math.floor((x * srcWidth) / targetWidth));
+              const srcY = Math.min(srcHeight - 1, Math.floor((y * srcHeight) / targetHeight));
+              out[y][x] = bin[srcY][srcX];
+            }
+          }
+
+          return out;
+        }
+
+        function diffBin(left: number[][], right: number[][]) {
+          let diff = 0;
+          for (let y = 0; y < left.length; y += 1) {
+            for (let x = 0; x < left[0].length; x += 1) {
+              if (left[y][x] !== right[y][x]) diff += 1;
+            }
+          }
+          return diff;
+        }
+
+        function buildTemplates() {
+          const templates: Array<{ digit: string; bin: number[][] }> = [];
+          const fonts = ['Arial', 'Helvetica', 'Verdana', 'Tahoma', 'sans-serif'];
+          const sizes = [22, 24, 26, 28, 30, 32];
+          const weights = ['normal', 'bold'];
+
+          for (const font of fonts) {
+            for (const size of sizes) {
+              for (const weight of weights) {
+                for (let digit = 0; digit <= 9; digit += 1) {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 26;
+                  canvas.height = 34;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) continue;
+
+                  ctx.fillStyle = 'white';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.fillStyle = 'black';
+                  ctx.font = `${weight} ${size}px ${font}`;
+                  ctx.textBaseline = 'middle';
+                  ctx.textAlign = 'center';
+                  ctx.fillText(String(digit), canvas.width / 2, canvas.height / 2 + 1);
+
+                  const binary = toBinaryFromCanvas(ctx, canvas.width, canvas.height);
+                  const bounds = cropBounds(binary);
+                  templates.push({
+                    digit: String(digit),
+                    bin: resizeBin(sliceBin(binary, bounds)),
+                  });
+                }
+              }
+            }
+          }
+
+          return templates;
+        }
+
+        function classifySegment(segment: number[][], templates: Array<{ digit: string; bin: number[][] }>) {
+          const bounds = cropBounds(segment);
+          const normalized = resizeBin(sliceBin(segment, bounds));
+          let bestDigit = '?';
+          let bestScore = Number.POSITIVE_INFINITY;
+
+          for (const template of templates) {
+            const score = diffBin(normalized, template.bin);
+            if (score < bestScore) {
+              bestScore = score;
+              bestDigit = template.digit;
+            }
+          }
+
+          return { digit: bestDigit, score: bestScore };
+        }
+
+        function scorePhoneCandidate(phone: string, averageTemplateScore: number) {
+          let penalty = 0;
+
+          if (!/^\d+$/.test(phone)) {
+            penalty += 500;
+          }
+
+          if (/^07\d{8}$/.test(phone)) {
+            penalty -= 35;
+          } else if (/^0(?:2|3)\d{8}$/.test(phone)) {
+            penalty -= 25;
+          } else if (/^0\d{9}$/.test(phone)) {
+            penalty -= 12;
+          } else if (/^\d{8}$/.test(phone)) {
+            penalty += 16;
+          } else if (/^\d{9}$/.test(phone)) {
+            penalty += 12;
+          } else if (/^\d{11,}$/.test(phone)) {
+            penalty += 40;
+          }
+
+          if (/(\d)\1{4,}/.test(phone)) {
+            penalty += 22;
+          }
+
+          return averageTemplateScore + penalty;
+        }
+
+        const image = new Image();
+        image.src = `data:image/png;base64,${imageBase64}`;
+        await image.decode();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return '';
+        }
+
+        ctx.drawImage(image, 0, 0);
+        const binary = toBinaryFromCanvas(ctx, canvas.width, canvas.height);
+        const cropped = sliceBin(binary, cropBounds(binary));
+        const croppedWidth = cropped[0]?.length || 0;
+        if (!cropped.length || !croppedWidth) {
+          return '';
+        }
+
+        const colInk = Array.from({ length: croppedWidth }, (_, x) => cropped.reduce((sum, row) => sum + row[x], 0));
+        const templates = buildTemplates();
+        const candidateCounts = Array.from(new Set([10, hintedLength || 0, 9, 8, 11].filter((value) => value >= 8 && value <= 11)));
+
+        let bestPhone = '';
+        let bestPhoneScore = Number.POSITIVE_INFINITY;
+
+        for (const count of candidateCounts) {
+          const averageWidth = croppedWidth / count;
+          const boundaries = [0];
+
+          for (let index = 1; index < count; index += 1) {
+            const center = Math.round(index * averageWidth);
+            let bestBoundary = center;
+            let bestBoundaryScore = Number.POSITIVE_INFINITY;
+
+            for (
+              let x = Math.max(boundaries[index - 1] + 6, center - 6);
+              x <= Math.min(croppedWidth - 6, center + 6);
+              x += 1
+            ) {
+              const score = colInk[x] + Math.abs(x - boundaries[index - 1] - averageWidth) * 0.7;
+              if (score < bestBoundaryScore) {
+                bestBoundaryScore = score;
+                bestBoundary = x;
+              }
+            }
+
+            boundaries.push(bestBoundary);
+          }
+
+          boundaries.push(croppedWidth);
+
+          const digits: string[] = [];
+          let totalTemplateScore = 0;
+
+          for (let index = 0; index < count; index += 1) {
+            const start = boundaries[index];
+            const end = boundaries[index + 1];
+            const segment = cropped.map((row) => row.slice(start, end));
+            const guess = classifySegment(segment, templates);
+            digits.push(guess.digit);
+            totalTemplateScore += guess.score;
+          }
+
+          const phoneCandidate = digits.join('');
+          const candidateScore = scorePhoneCandidate(phoneCandidate, totalTemplateScore / count);
+          if (candidateScore < bestPhoneScore) {
+            bestPhoneScore = candidateScore;
+            bestPhone = phoneCandidate;
+          }
+        }
+
+        return bestPhone;
+      },
+      { imageBase64: base64, hintedLength: hintedLength || 0 }
+    );
+
+    await context.close();
+    return result;
+  } catch {
+    return '';
+  } finally {
+    await browser.close().catch(() => undefined);
+  }
+}
+
+async function extractPubli24PhoneFromHtml(html: string, url: string) {
+  const phonePayload = await fetchPubli24PhoneImageBase64(html, url);
+  if (!phonePayload?.base64) {
+    return '';
+  }
+
+  const recognized = normalizeWhitespace(await recognizePubli24PhoneFromBase64(phonePayload.base64, phonePayload.hintedLength));
+  const digits = recognized.replace(/[^\d]/g, '');
+
+  if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {
+    return digits;
+  }
+
+  if (/^7\d{8}$/.test(digits)) {
+    return `0${digits}`;
+  }
+
+  return '';
+}
+
 function extractPubli24DetailFromHtml(html: string, url: string) {
   const bodyText = extractPubli24BodyText(html);
   const title =
@@ -199,6 +536,7 @@ type StructuredPubli24Offer = {
   area: string;
   rooms: string;
   constructionYear?: number;
+  ownerPhone?: string;
 };
 
 function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]) {
@@ -311,6 +649,7 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
           const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
           if (detailHtml) {
             const detail = extractPubli24DetailFromHtml(detailHtml, absoluteUrl);
+            const ownerPhone = await extractPubli24PhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
             enrichedOffer = {
               ...enrichedOffer,
               title: detail.title || enrichedOffer.title,
@@ -320,6 +659,7 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
               rooms: enrichedOffer.rooms || detail.rooms,
               imageUrl: enrichedOffer.imageUrl || detail.images[0] || '',
               constructionYear: enrichedOffer.constructionYear || detail.constructionYear,
+              ownerPhone,
             };
           }
         }
@@ -344,6 +684,7 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
             link: absoluteUrl,
             imageUrl: enrichedOffer.imageUrl,
             description: normalizeWhitespace(enrichedOffer.description).slice(0, 500),
+            ownerPhone: normalizeWhitespace(enrichedOffer.ownerPhone),
           })
         );
       }
@@ -357,6 +698,7 @@ export async function scrapePubli24ListingDetail(url: string) {
   const html = await fetchScraperHtml(url, 30000).catch(() => '');
   if (html) {
     const detail = extractPubli24DetailFromHtml(html, url);
+    const contactPhone = await extractPubli24PhoneFromHtml(html, url).catch(() => '');
     const summary = buildSummary({
       source: 'publi24',
       externalId: url.match(/\/([a-z0-9]+)\.html/i)?.[1] || url,
@@ -371,6 +713,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       link: url,
       imageUrl: detail.images[0] || '',
       description: detail.description,
+      ownerPhone: contactPhone,
     });
 
     return {
@@ -378,7 +721,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       images: detail.images.slice(0, 12),
       fullDescription: detail.description,
       contactName: '',
-      contactPhone: '',
+      contactPhone,
     } satisfies OwnerListingDetail;
   }
 
@@ -401,6 +744,7 @@ export async function scrapePubli24ListingDetail(url: string) {
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
+    const contactPhone = await extractPubli24PhoneFromHtml(await page.content(), url).catch(() => '');
 
     const summary = buildSummary({
       source: 'publi24',
@@ -416,6 +760,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       link: url,
       imageUrl: payload.images[0] || '',
       description: payload.description,
+      ownerPhone: contactPhone,
     });
 
     return {
@@ -423,7 +768,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       images: Array.from(new Set(payload.images)).slice(0, 12),
       fullDescription: payload.description,
       contactName: '',
-      contactPhone: '',
+      contactPhone,
     } satisfies OwnerListingDetail;
   });
 }
