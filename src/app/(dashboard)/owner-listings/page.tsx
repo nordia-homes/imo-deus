@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Clock, Home, Bed, Filter, Rocket, Loader2, Calendar, RefreshCw } from 'lucide-react';
+import { Clock, Home, Bed, Filter, Rocket, Loader2, Calendar, RefreshCw, Ruler } from 'lucide-react';
 import { format, fromUnixTime, formatDistanceToNow, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -64,6 +64,13 @@ function extractRoomsValue(rooms: number | string | null | undefined): number | 
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function formatAreaValue(area: string | null | undefined): string | null {
+  if (!area) return null;
+  const match = area.match(/\d+(?:[.,]\d+)?/);
+  if (!match) return null;
+  return `${match[0].replace('.', ',')} mp`;
+}
+
 function OwnerListingCard({
   listing,
   handleImport,
@@ -117,6 +124,7 @@ function OwnerListingCard({
 
   const year = listing.constructionYear || listing.year;
   const roomsValue = extractRoomsValue(listing.rooms);
+  const areaValue = formatAreaValue(listing.area);
 
   let displayPrice = 'Pret negociabil';
   if (listing.price) {
@@ -175,6 +183,13 @@ function OwnerListingCard({
               <div className="flex items-center gap-1.5">
                 <Bed className="h-4 w-4" />
                 <span>{roomsValue} camere</span>
+              </div>
+            ) : null}
+
+            {areaValue ? (
+              <div className="flex items-center gap-1.5">
+                <Ruler className="h-4 w-4" />
+                <span>{areaValue}</span>
               </div>
             ) : null}
 

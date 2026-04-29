@@ -83,6 +83,28 @@ export function parseArea(value: string | null | undefined) {
   return parseNumberFromText(value);
 }
 
+export function extractAreaText(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value);
+  const match = normalized.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:mp|m2|m²)\b/i);
+  if (!match) return '';
+  return normalizeWhitespace(match[0].replace(/m2/gi, 'm²').replace(/mp/gi, 'mp'));
+}
+
+export function extractConstructionYear(value: string | null | undefined) {
+  const normalized = stripDiacritics(normalizeWhitespace(value)).toLowerCase();
+  if (!normalized) return undefined;
+
+  const currentYear = new Date().getFullYear() + 1;
+  const candidates = [
+    normalized.match(/\b(?:an(?:ul)?\s*(?:de)?\s*construct(?:ie|iei|ii)|construit(?:a|i)?\s*(?:in)?|finalizat(?:a|i)?\s*(?:in)?|edificat(?:a|i)?\s*(?:in)?)\D{0,20}(19\d{2}|20\d{2})\b/i)?.[1],
+    normalized.match(/\b(19\d{2}|20\d{2})\b(?=\s*(?:constructie|constructiei|constructii|bloc|imobil|finalizat|renovat))/i)?.[1],
+  ]
+    .map((entry) => (entry ? Number(entry) : NaN))
+    .find((entry) => Number.isFinite(entry) && entry >= 1900 && entry <= currentYear);
+
+  return typeof candidates === 'number' ? candidates : undefined;
+}
+
 export function parseRomanianDateToUnix(value: string | null | undefined) {
   const normalized = stripDiacritics(normalizeWhitespace(value)).toLowerCase();
   if (!normalized) return Math.floor(Date.now() / 1000);
@@ -184,6 +206,8 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
     area: normalizeWhitespace(input.area),
     location: normalizeWhitespace(input.location),
     description: normalizeWhitespace(input.description),
+    constructionYear: input.constructionYear,
+    year: input.year,
     sourceLabel: sourceLabel(input.source),
     fingerprint,
     ownerType: 'owner' as const,

@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import { buildSummary, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 
@@ -54,6 +54,8 @@ type StructuredPubli24Offer = {
   imageUrl: string;
   price: string;
   location: string;
+  area: string;
+  constructionYear?: number;
 };
 
 function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]) {
@@ -91,6 +93,8 @@ function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]
           ? `${String(offers.price).replace(/\.00$/, '')} ${typeof offers.priceCurrency === 'string' ? offers.priceCurrency : ''}`.trim()
           : '',
       location: [locality, region].filter(Boolean).join(', '),
+      area: extractAreaText(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
+      constructionYear: extractConstructionYear(`${typeof record.name === 'string' ? record.name : ''} ${typeof record.description === 'string' ? record.description : ''}`),
     });
   }
 
@@ -123,6 +127,8 @@ function extractStructuredOffersFromHtml(html: string) {
       imageUrl,
       price: `${price.replace(/\.00$/, '')} ${currency}`.trim(),
       location: `${locality}, ${region}`.trim(),
+      area: extractAreaText(`${title} ${description}`),
+      constructionYear: extractConstructionYear(`${title} ${description}`),
     });
   }
 
@@ -165,8 +171,10 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
             externalId: idMatch?.[1] || absoluteUrl,
             title: offer.title,
             price: offer.price,
-            area: '',
+            area: offer.area,
             rooms: '',
+            constructionYear: offer.constructionYear,
+            year: offer.constructionYear,
             location: offer.location,
             postedAt: Math.floor(Date.now() / 1000),
             postedAtText: '',
@@ -208,7 +216,9 @@ export async function scrapePubli24ListingDetail(url: string) {
       externalId: url.match(/\/([a-z0-9]+)\.html/i)?.[1] || url,
       title: payload.title,
       price: '',
-      area: '',
+      area: extractAreaText(payload.description),
+      constructionYear: extractConstructionYear(`${payload.title} ${payload.description}`),
+      year: extractConstructionYear(`${payload.title} ${payload.description}`),
       location: '',
       postedAt: Math.floor(Date.now() / 1000),
       link: url,

@@ -14,6 +14,8 @@ export type OwnerListingSummary = {
   postedAt: number;
   postedAtText?: string;
   rooms?: number | string;
+  constructionYear?: number;
+  year?: number;
   image?: string;
   imageUrl?: string;
   description?: string;

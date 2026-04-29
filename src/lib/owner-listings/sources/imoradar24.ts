@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import { buildSummary, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 
@@ -48,6 +48,7 @@ type ExtractedCard = {
   title: string;
   price: string;
   area: string;
+  constructionYear?: number;
   rooms: string;
   location: string;
   postedAtText: string;
@@ -77,7 +78,8 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           title.match(/în\s+([^0-9€]{2,50})/u)?.[1] ||
           '';
         const rooms = extractRoomCount(`${title} ${plainText}`);
-        const area = plainText.match(/\b\d+\s*mp\b/i)?.[0] || '';
+        const area = extractAreaText(`${title} ${plainText}`);
+        const constructionYear = extractConstructionYear(`${title} ${plainText}`);
         const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
         const text = [location, rooms, area, price, postedAtText].filter(Boolean).join(' • ');
 
@@ -86,6 +88,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           title,
           price,
           area,
+          constructionYear,
           rooms,
           location,
           postedAtText,
@@ -105,7 +108,8 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
       const price = title.match(/\d[\d.]*\s*€/i)?.[0] || plainText.match(/\b\d[\d.]*\s*€/i)?.[0] || '';
       const location = title.match(/în\s+([^0-9€]{2,50})/u)?.[1] || '';
       const rooms = extractRoomCount(`${title} ${plainText}`);
-      const area = plainText.match(/\b\d+\s*mp\b/i)?.[0] || '';
+      const area = extractAreaText(`${title} ${plainText}`);
+      const constructionYear = extractConstructionYear(`${title} ${plainText}`);
       const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
 
       return {
@@ -113,6 +117,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
         title,
         price,
         area,
+        constructionYear,
         rooms,
         location,
         postedAtText,
@@ -164,6 +169,8 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
             title: card.title,
             price: card.price,
             area: card.area,
+            constructionYear: card.constructionYear,
+            year: card.constructionYear,
             rooms: card.rooms,
             location: card.location,
             postedAt,
@@ -210,7 +217,9 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       externalId: url,
       title: payload.title,
       price: '',
-      area: '',
+      area: extractAreaText(payload.description),
+      constructionYear: extractConstructionYear(`${payload.title} ${payload.description}`),
+      year: extractConstructionYear(`${payload.title} ${payload.description}`),
       location: '',
       postedAt: Math.floor(Date.now() / 1000),
       link: url,
