@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/owner-listings/index.ts",
+    "src/lib/owner-listings/types.ts",
+    "src/lib/owner-listings/utils.ts",
+    "src/lib/owner-listings/browser.ts",
+    "src/lib/owner-listings/sources/olx.ts",
+    "src/lib/owner-listings/sources/imoradar24.ts",
+    "src/lib/owner-listings/sources/publi24.ts",
+    "src/lib/owner-listings/scope.ts"
+  ],
+  "exclude": ["node_modules", ".next"]
+}

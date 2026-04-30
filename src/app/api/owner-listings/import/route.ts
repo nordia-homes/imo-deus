@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 const importSchema = z.object({
   source: z.enum(['olx', 'imoradar24', 'publi24']),
   url: z.string().url('URL-ul anuntului este invalid.'),
+  ownerPhone: z.string().optional(),
 });
 
 function formatError(error: unknown) {
@@ -39,7 +40,11 @@ export async function POST(request: NextRequest) {
     await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = importSchema.parse(await request.json().catch(() => ({})));
     const detail = await scrapeOwnerListingDetail(body.source, body.url);
-    const property = toPropertySeed(detail);
+    const fallbackOwnerPhone = body.ownerPhone?.trim() || '';
+    const property = {
+      ...toPropertySeed(detail),
+      ownerPhone: detail.contactPhone || detail.ownerPhone || fallbackOwnerPhone,
+    };
 
     return NextResponse.json({ detail, property }, { status: 200 });
   } catch (error) {

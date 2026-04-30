@@ -341,7 +341,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
         if (seenLinks.has(absoluteUrl)) continue;
 
-        let enrichedCard = { ...card, href: absoluteUrl };
+        let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
         if (!enrichedCard.constructionYear) {
           const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
           if (detailHtml) {
@@ -379,7 +379,7 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
             link: absoluteUrl,
             imageUrl: enrichedCard.image,
             description: normalizeWhitespace(`${enrichedCard.title} ${enrichedCard.location}`).slice(0, 500),
-            ownerPhone: normalizeWhitespace((enrichedCard as typeof enrichedCard & { ownerPhone?: string }).ownerPhone),
+            ownerPhone: normalizeWhitespace(enrichedCard.ownerPhone),
           })
         );
       }

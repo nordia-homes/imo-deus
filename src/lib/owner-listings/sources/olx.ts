@@ -354,6 +354,16 @@ function extractOlxPhoneFromHtml(html: string) {
     ...Array.from(html.matchAll(/href="tel:([^"]+)"/gi)).map((match) => match[1]),
     ...Array.from(html.matchAll(/"phone":"([^"]+)"/gi)).map((match) => decodeOlxEscaped(match[1])),
     ...Array.from(html.matchAll(/\\"phone\\":\\"([^\\"]+)\\"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/"telephone":"([^"]+)"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/\\"telephone\\":\\"([^\\"]+)\\"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/"phoneNumber":"([^"]+)"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/\\"phoneNumber\\":\\"([^\\"]+)\\"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/"phones":\[(.*?)\]/gi)).flatMap((match) =>
+      Array.from(match[1].matchAll(/"([^"]+)"/g)).map((phoneMatch) => decodeOlxEscaped(phoneMatch[1]))
+    ),
+    ...Array.from(html.matchAll(/\\"phones\\":\[(.*?)\]/gi)).flatMap((match) =>
+      Array.from(match[1].matchAll(/\\"([^\\"]+)\\"/g)).map((phoneMatch) => decodeOlxEscaped(phoneMatch[1]))
+    ),
   ];
 
   for (const value of telMatches) {
@@ -372,6 +382,19 @@ function extractOlxPhoneFromHtml(html: string) {
     .join(' ');
 
   return extractPhoneFromText(extractedText);
+}
+
+function extractOlxFrictionTokenFromHtml(html: string) {
+  const rawMatch =
+    html.match(/"frictionToken":"([^"]+)"/i)?.[1] ||
+    html.match(/\\"frictionToken\\":\\"([^\\"]+)\\"/i)?.[1] ||
+    html.match(/"friction_token":"([^"]+)"/i)?.[1] ||
+    html.match(/\\"friction_token\\":\\"([^\\"]+)\\"/i)?.[1] ||
+    html.match(/data-friction-token="([^"]+)"/i)?.[1] ||
+    html.match(/name="friction-token"[^>]*value="([^"]+)"/i)?.[1] ||
+    '';
+
+  return decodeOlxEscaped(rawMatch);
 }
 
 function extractOlxAdId(value: string) {
@@ -714,11 +737,40 @@ async function extractOlxPhoneFromDom(url: string) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForScraperReady(page, ['[data-testid="show-phone"]', 'h1'], 10000);
 
+    const capturedPhones: string[] = [];
+    const capturePhoneResponse = async (response: { url: () => string; text: () => Promise<string> }) => {
+      if (!/\/limited-phones(?:[/?#]|$)/i.test(response.url())) {
+        return;
+      }
+
+      const text = await response.text().catch(() => '');
+      if (!text) {
+        return;
+      }
+
+      const parsed = JSON.parse(text || '{}') as { data?: { phones?: string[] | null } | null };
+      const phone = parsed.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+      if (phone) {
+        capturedPhones.push(phone);
+      }
+    };
+
+    page.on('response', (response) => {
+      void capturePhoneResponse(response);
+    });
+
     const revealPhone = async () => {
       const showPhoneButton = page.locator('[data-testid="show-phone"]').last();
       if ((await showPhoneButton.count()) === 0) {
         return;
       }
+
+      const phoneResponsePromise = page
+        .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 8000 })
+        .then(async (response) => {
+          await capturePhoneResponse(response);
+        })
+        .catch(() => undefined);
 
       await showPhoneButton.click({ force: true, timeout: 10000 }).catch(() => undefined);
       await page.waitForTimeout(1200).catch(() => undefined);
@@ -727,9 +779,15 @@ async function extractOlxPhoneFromDom(url: string) {
         await callButton.click({ force: true, timeout: 5000 }).catch(() => undefined);
         await page.waitForTimeout(800).catch(() => undefined);
       }
+      await phoneResponsePromise;
     };
 
     await revealPhone();
+
+    const networkPhone = capturedPhones.find(Boolean) || '';
+    if (networkPhone) {
+      return networkPhone;
+    }
 
     const phoneFromDom = await page.evaluate(() => {
       const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
@@ -761,7 +819,8 @@ async function extractOlxPhoneFromDom(url: string) {
 
 async function resolveOlxPhone(url: string, html = '') {
   const adId = extractOlxAdId(url) || extractOlxAdId(html);
-  const apiPhone = adId ? await fetchOlxPhoneByAdId(adId).catch(() => '') : '';
+  const frictionToken = html ? extractOlxFrictionTokenFromHtml(html) : '';
+  const apiPhone = adId ? await fetchOlxPhoneByAdId(adId, frictionToken).catch(() => '') : '';
   if (apiPhone) {
     return apiPhone;
   }

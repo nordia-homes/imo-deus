@@ -40,6 +40,7 @@ type OwnerListing = {
   constructionYear?: number | string;
   year?: number | string;
   description?: string;
+  ownerPhone?: string;
 };
 
 function extractPrice(priceStr: string): number | null {
@@ -329,6 +330,7 @@ export default function OwnerListingsPage() {
         body: JSON.stringify({
           source: listing.source,
           url: listing.link,
+          ownerPhone: listing.ownerPhone || '',
         }),
       });
       const payload = await response.json().catch(() => ({}));

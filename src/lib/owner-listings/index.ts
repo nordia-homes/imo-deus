@@ -43,6 +43,51 @@ const SOURCES: Record<OwnerListingSource, SourceHandler> = {
   },
 };
 
+function preferIncomingValue<T>(incoming: T | null | undefined, existing: T | null | undefined): T | undefined {
+  if (incoming === undefined || incoming === null) {
+    return existing ?? undefined;
+  }
+
+  if (typeof incoming === 'string' && !incoming.trim()) {
+    return existing ?? undefined;
+  }
+
+  return incoming;
+}
+
+function mergeListingWithExisting(
+  listing: OwnerListingSummary,
+  existing?: Partial<OwnerListingSummary> | undefined
+): OwnerListingSummary {
+  if (!existing) {
+    return listing;
+  }
+
+  return {
+    ...existing,
+    ...listing,
+    scopeKey: preferIncomingValue(listing.scopeKey, existing.scopeKey),
+    scopeCity: preferIncomingValue(listing.scopeCity, existing.scopeCity),
+    title: preferIncomingValue(listing.title, existing.title) || '',
+    price: preferIncomingValue(listing.price, existing.price) || '',
+    link: preferIncomingValue(listing.link, existing.link) || '',
+    area: preferIncomingValue(listing.area, existing.area) || '',
+    location: preferIncomingValue(listing.location, existing.location) || '',
+    postedAtText: preferIncomingValue(listing.postedAtText, existing.postedAtText),
+    rooms: preferIncomingValue(listing.rooms, existing.rooms),
+    constructionYear: preferIncomingValue(listing.constructionYear, existing.constructionYear),
+    year: preferIncomingValue(listing.year, existing.year),
+    image: preferIncomingValue(listing.image, existing.image),
+    imageUrl: preferIncomingValue(listing.imageUrl, existing.imageUrl),
+    description: preferIncomingValue(listing.description, existing.description),
+    ownerName: preferIncomingValue(listing.ownerName, existing.ownerName),
+    ownerPhone: preferIncomingValue(listing.ownerPhone, existing.ownerPhone),
+    ownerConfidence: preferIncomingValue(listing.ownerConfidence, existing.ownerConfidence),
+    scrapedAt: Math.max(listing.scrapedAt || 0, existing.scrapedAt || 0),
+    lastSeenAt: Math.max(listing.lastSeenAt || 0, existing.lastSeenAt || 0),
+  } satisfies OwnerListingSummary;
+}
+
 export async function scrapeOwnerListingDetail(source: OwnerListingSource, url: string) {
   return SOURCES[source].scrapeDetail(url);
 }
@@ -105,9 +150,21 @@ export async function syncOwnerListings(
     }
   }
 
+  const listingsToStore = await Promise.all(
+    Array.from(unique.values()).map(async (listing) => {
+      const docRef = adminDb.collection('ownerListings').doc(docIdForListing(listing));
+      const existingSnapshot = await docRef.get();
+      const existing = existingSnapshot.exists ? (existingSnapshot.data() as Partial<OwnerListingSummary>) : undefined;
+      return {
+        docRef,
+        listing: mergeListingWithExisting(listing, existing),
+      };
+    })
+  );
+
   const batch = adminDb.batch();
-  for (const listing of unique.values()) {
-    const docRef = adminDb.collection('ownerListings').doc(docIdForListing(listing));
+  for (const entry of listingsToStore) {
+    const { docRef, listing } = entry;
     batch.set(
       docRef,
       stripUndefined({
