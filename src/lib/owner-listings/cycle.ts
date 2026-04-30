@@ -71,6 +71,10 @@ function getCycleLockStaleMs(existing: Partial<OwnerListingSyncCycleState>) {
   return Math.min(LOCK_STALE_MS, runtimeWindow);
 }
 
+function getCycleLockExpiresAtIso(existing: Partial<OwnerListingSyncCycleState>) {
+  return addMs(nowIso(), getCycleLockStaleMs(existing));
+}
+
 function buildBaseCycleState(input: {
   agencyId: string;
   agencyName: string;
@@ -181,9 +185,14 @@ async function acquireCycleLock(
     const lockedAtMs = existing.lockedAt ? new Date(existing.lockedAt).getTime() : 0;
     const lastHeartbeatMs = existing.lastHeartbeatAt ? new Date(existing.lastHeartbeatAt).getTime() : 0;
     const freshestActivityMs = Math.max(lockedAtMs, lastHeartbeatMs);
-    if (existing.lockedBy && freshestActivityMs && Date.now() - freshestActivityMs < staleAfterMs) {
+    const lockExpiresAtMs = existing.lockExpiresAt ? new Date(existing.lockExpiresAt).getTime() : 0;
+    const activityExpiryMs = freshestActivityMs ? freshestActivityMs + staleAfterMs : 0;
+    const effectiveLockExpiryMs = Math.max(lockExpiresAtMs, activityExpiryMs);
+    if (existing.lockedBy && effectiveLockExpiryMs && Date.now() < effectiveLockExpiryMs) {
       return null;
     }
+
+    const lockedAt = nowIso();
 
     const nextState: OwnerListingSyncCycleState = {
       ...existing,
@@ -197,9 +206,13 @@ async function acquireCycleLock(
       maxPagesPerTick: options.maxPagesPerTick ?? existing.maxPagesPerTick ?? DEFAULT_MAX_PAGES_PER_TICK,
       maxRuntimeMs: options.maxRuntimeMs ?? existing.maxRuntimeMs ?? DEFAULT_MAX_RUNTIME_MS,
       lockedBy: lockId,
-      lockedAt: nowIso(),
-      updatedAt: nowIso(),
-      createdAt: existing.createdAt || nowIso(),
+      lockedAt,
+      lockExpiresAt: getCycleLockExpiresAtIso({
+        ...existing,
+        maxRuntimeMs: options.maxRuntimeMs ?? existing.maxRuntimeMs ?? DEFAULT_MAX_RUNTIME_MS,
+      }),
+      updatedAt: lockedAt,
+      createdAt: existing.createdAt || lockedAt,
     };
 
     transaction.set(
@@ -235,11 +248,26 @@ async function releaseCycleLock(agencyId: string, lockId: string, patch: Partial
       ...patch,
       lockedBy: null,
       lockedAt: null,
+      lockExpiresAt: null,
       updatedAt: nowIso(),
       firestoreUpdatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
+}
+
+function buildCycleHeartbeatPatch(
+  state: Partial<OwnerListingSyncCycleState>,
+  patch: Partial<OwnerListingSyncCycleState> = {}
+) {
+  const heartbeatAt = nowIso();
+  return {
+    ...patch,
+    lastHeartbeatAt: heartbeatAt,
+    lockExpiresAt: getCycleLockExpiresAtIso(state),
+    updatedAt: heartbeatAt,
+    firestoreUpdatedAt: FieldValue.serverTimestamp(),
+  };
 }
 
 async function ensureCycleJobs(agencyId: string, cycleNumber: number) {
@@ -390,12 +418,10 @@ async function processAgencyCycleTick(
         state.currentSourceIndex += 1;
         state.currentSource = CYCLE_SOURCE_ORDER[state.currentSourceIndex] || null;
         await cycleDocRef(agencyId).set(
-          {
+          buildCycleHeartbeatPatch(state, {
             currentSourceIndex: state.currentSourceIndex,
             currentSource: state.currentSource,
-            lastHeartbeatAt: nowIso(),
-            firestoreUpdatedAt: FieldValue.serverTimestamp(),
-          },
+          }),
           { merge: true }
         );
         continue;
@@ -409,6 +435,16 @@ async function processAgencyCycleTick(
           updatedAt: nowIso(),
           firestoreUpdatedAt: FieldValue.serverTimestamp(),
         },
+        { merge: true }
+      );
+
+      await cycleDocRef(agencyId).set(
+        buildCycleHeartbeatPatch(state, {
+          status: 'running',
+          currentSourceIndex: state.currentSourceIndex,
+          currentSource,
+          lastError: null as never,
+        }),
         { merge: true }
       );
 
@@ -480,26 +516,22 @@ async function processAgencyCycleTick(
           state.currentSourceIndex += 1;
           state.currentSource = CYCLE_SOURCE_ORDER[state.currentSourceIndex] || null;
           await cycleDocRef(agencyId).set(
-            {
+            buildCycleHeartbeatPatch(state, {
               currentSourceIndex: state.currentSourceIndex,
               currentSource: state.currentSource,
-              lastHeartbeatAt: finishedAt,
-              lastError: null,
-              firestoreUpdatedAt: FieldValue.serverTimestamp(),
-            },
+              lastError: null as never,
+            }),
             { merge: true }
           );
           message = `${currentSource} a fost finalizat; trecem mai departe.`;
         } else {
           message = `${currentSource} a procesat pagina ${job.nextPage - 1}.`;
           await cycleDocRef(agencyId).set(
-            {
+            buildCycleHeartbeatPatch(state, {
               currentSourceIndex: state.currentSourceIndex,
               currentSource,
-              lastHeartbeatAt: finishedAt,
-              lastError: null,
-              firestoreUpdatedAt: FieldValue.serverTimestamp(),
-            },
+              lastError: null as never,
+            }),
             { merge: true }
           );
         }
@@ -534,14 +566,12 @@ async function processAgencyCycleTick(
           errorMessages: [error instanceof Error ? error.message : 'Procesarea paginii a esuat.'],
         });
         await cycleDocRef(agencyId).set(
-          {
+          buildCycleHeartbeatPatch(state, {
             status: 'running',
             currentSourceIndex: state.currentSourceIndex,
             currentSource,
-            lastHeartbeatAt: finishedAt,
             lastError: error instanceof Error ? error.message : 'Procesarea paginii a esuat.',
-            firestoreUpdatedAt: FieldValue.serverTimestamp(),
-          },
+          }),
           { merge: true }
         );
 

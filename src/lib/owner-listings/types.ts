@@ -119,6 +119,7 @@ export type OwnerListingSyncCycleState = {
   lastHeartbeatAt?: string;
   lastError?: string;
   lockedAt?: string;
+  lockExpiresAt?: string;
   lockedBy?: string;
   hardPageLimit: number;
   maxAgeDays: number;
