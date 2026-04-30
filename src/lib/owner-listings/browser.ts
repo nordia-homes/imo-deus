@@ -1,6 +1,7 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 
 let browserPromise: Promise<Browser> | null = null;
+const remoteBrowserPromises = new Map<string, Promise<Browser>>();
 
 async function getBrowser() {
   if (!browserPromise) {
@@ -13,14 +14,31 @@ async function getBrowser() {
   return browserPromise;
 }
 
+async function getRemoteBrowser(cdpUrl: string) {
+  const normalizedUrl = cdpUrl.trim();
+  if (!normalizedUrl) {
+    throw new Error('Missing CDP browser URL');
+  }
+
+  let remoteBrowserPromise = remoteBrowserPromises.get(normalizedUrl);
+  if (!remoteBrowserPromise) {
+    remoteBrowserPromise = chromium.connectOverCDP(normalizedUrl);
+    remoteBrowserPromises.set(normalizedUrl, remoteBrowserPromise);
+  }
+
+  return remoteBrowserPromise;
+}
+
 export async function withScraperPage<T>(handler: (page: Page, context: BrowserContext) => Promise<T>) {
   const browser = await getBrowser();
+  const storageStatePath = process.env.OLX_STORAGE_STATE_PATH;
   const context = await browser.newContext({
     locale: 'ro-RO',
     timezoneId: 'Europe/Bucharest',
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     viewport: { width: 1440, height: 2200 },
+    ...(storageStatePath ? { storageState: storageStatePath } : {}),
   });
 
   await context.route('**/*.{png,jpg,jpeg,gif,webp,avif,svg,woff,woff2,ttf,otf,mp4,webm}', (route) => route.abort());
@@ -30,6 +48,25 @@ export async function withScraperPage<T>(handler: (page: Page, context: BrowserC
     return await handler(page, context);
   } finally {
     await context.close();
+  }
+}
+
+export async function withRemoteBrowserPage<T>(
+  cdpUrl: string,
+  handler: (page: Page, context: BrowserContext) => Promise<T>
+) {
+  const browser = await getRemoteBrowser(cdpUrl);
+  const context = browser.contexts()[0];
+  if (!context) {
+    throw new Error(`No browser context available for CDP URL ${cdpUrl}`);
+  }
+
+  const page = await context.newPage();
+
+  try {
+    return await handler(page, context);
+  } finally {
+    await page.close().catch(() => undefined);
   }
 }
 

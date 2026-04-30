@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/owner-listings/browser.ts",
+    "src/lib/owner-listings/sources/olx.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}

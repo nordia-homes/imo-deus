@@ -5,7 +5,23 @@ import {
   normalizeWhitespace,
 } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
-import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
+import { fetchScraperHtml, waitForScraperReady, withRemoteBrowserPage, withScraperPage } from '@/lib/owner-listings/browser';
+
+const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
+  zero: '0',
+  unu: '1',
+  una: '1',
+  doi: '2',
+  doua: '2',
+  trei: '3',
+  patru: '4',
+  cinci: '5',
+  sase: '6',
+  sapte: '7',
+  opt: '8',
+  noua: '9',
+};
+const olxPhoneCache = new Map<string, string>();
 
 function matchesKeywords(text: string, keywords: string[]) {
   const normalized = normalizeWhitespace(text)
@@ -233,6 +249,14 @@ function parseCard(title: string, text: string) {
   };
 }
 
+type ParsedOlxCard = {
+  price: string;
+  area: string;
+  rooms: string;
+  location: string;
+  constructionYear?: string | number;
+};
+
 function decodeOlxEscaped(value: string) {
   return normalizeWhitespace(
     value
@@ -243,6 +267,218 @@ function decodeOlxEscaped(value: string) {
       .replace(/\\u00a0/gi, ' ')
       .replace(/\\\//g, '/')
   );
+}
+
+function normalizePhoneCandidate(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) {
+    return '';
+  }
+
+  const compact = normalized.replace(/[^\d+]/g, '');
+  if (/^\+?\d{8,15}$/.test(compact)) {
+    return compact.startsWith('00') ? `+${compact.slice(2)}` : compact;
+  }
+
+  const localDigits = normalized.replace(/[^\d]/g, '');
+  if (/^\d{8,15}$/.test(localDigits)) {
+    return localDigits;
+  }
+
+  return '';
+}
+
+function normalizeComparableWordText(value: string) {
+  return normalizeWhitespace(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function extractRomanianWordPhone(text: string) {
+  const normalized = normalizeComparableWordText(text).replace(/[^a-z0-9+]+/g, ' ');
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  let current = '';
+
+  const flush = () => {
+    const candidate = normalizePhoneCandidate(current);
+    current = '';
+    return candidate;
+  };
+
+  for (const token of tokens) {
+    const digit = ROMANIAN_PHONE_WORD_DIGITS[token];
+    if (digit) {
+      current += digit;
+      continue;
+    }
+
+    if (current.length >= 8) {
+      const candidate = flush();
+      if (candidate) {
+        return candidate;
+      }
+    } else {
+      current = '';
+    }
+  }
+
+  if (current.length >= 8) {
+    return normalizePhoneCandidate(current);
+  }
+
+  return '';
+}
+
+function extractPhoneFromText(text: string) {
+  const directPatterns = [
+    /(?:\+4|004)?07\d(?:[\s.-]?\d){7,8}/g,
+    /(?:\+4|004)?0(?:2|3)\d(?:[\s.-]?\d){7,8}/g,
+    /\b0\d(?:[\s.-]?\d){7,12}\b/g,
+  ];
+
+  for (const pattern of directPatterns) {
+    for (const match of text.matchAll(pattern)) {
+      const candidate = normalizePhoneCandidate(match[0]);
+      if (candidate) {
+        return candidate;
+      }
+    }
+  }
+
+  return extractRomanianWordPhone(text);
+}
+
+function extractOlxPhoneFromHtml(html: string) {
+  const telMatches = [
+    ...Array.from(html.matchAll(/href="tel:([^"]+)"/gi)).map((match) => match[1]),
+    ...Array.from(html.matchAll(/"phone":"([^"]+)"/gi)).map((match) => decodeOlxEscaped(match[1])),
+    ...Array.from(html.matchAll(/\\"phone\\":\\"([^\\"]+)\\"/gi)).map((match) => decodeOlxEscaped(match[1])),
+  ];
+
+  for (const value of telMatches) {
+    const candidate = normalizePhoneCandidate(value);
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  const extractedText = [
+    extractOlxDescriptionFromHtml(html),
+    decodeOlxEscaped(html.match(/"description":"([\s\S]*?)","validTo"/i)?.[1] || ''),
+    stripHtml(html),
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return extractPhoneFromText(extractedText);
+}
+
+function extractOlxAdId(value: string) {
+  const normalized = normalizeWhitespace(value);
+  return (
+    normalized.match(/"sku":"(\d{6,12})"/i)?.[1] ||
+    normalized.match(/"id":(\d{6,12}),"title":/i)?.[1] ||
+    normalized.match(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"id\\":(\d{6,12})/i)?.[1] ||
+    normalized.match(/\bad-id=(\d{6,12})\b/i)?.[1] ||
+    normalized.match(/\bID:\s*(\d{6,12})\b/i)?.[1] ||
+    ''
+  );
+}
+
+async function fetchOlxPhoneByAdId(adId: string, frictionToken?: string) {
+  const normalizedAdId = normalizeWhitespace(adId);
+  if (!normalizedAdId) {
+    return '';
+  }
+
+  const cacheKey = frictionToken ? `${normalizedAdId}:${frictionToken}` : normalizedAdId;
+  const cached = olxPhoneCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const cookieHeader = normalizeWhitespace(process.env.OLX_COOKIE || '');
+  const csrfToken = normalizeWhitespace(process.env.OLX_CSRF_TOKEN || '');
+  const response = await fetch(`https://www.olx.ro/api/v1/offers/${normalizedAdId}/limited-phones`, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
+      Accept: 'application/json, text/plain, */*',
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      ...(frictionToken ? { 'friction-token': frictionToken } : {}),
+    },
+    cache: 'no-store',
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    olxPhoneCache.set(cacheKey, '');
+    return '';
+  }
+
+  const payload = (await response.json().catch(() => null)) as
+    | { data?: { phones?: string[] | null } | null }
+    | null;
+
+  const phone = payload?.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+  olxPhoneCache.set(cacheKey, phone);
+  return phone;
+}
+
+async function fetchOlxPhoneViaRemoteBrowser(url: string, adId: string) {
+  const remoteBrowserUrl = normalizeWhitespace(
+    process.env.OLX_REMOTE_DEBUGGING_URL || process.env.OLX_CDP_URL || process.env.SCRAPER_CDP_URL || ''
+  );
+  if (!remoteBrowserUrl) {
+    return '';
+  }
+
+  const normalizedAdId = normalizeWhitespace(adId);
+  if (!normalizedAdId) {
+    return '';
+  }
+
+  const cacheKey = `remote:${normalizedAdId}`;
+  const cached = olxPhoneCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const phone = await withRemoteBrowserPage(remoteBrowserUrl, async (page) => {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await waitForScraperReady(page, ['h1', '[data-testid="show-phone"]'], 10000);
+
+    const payload = await page.evaluate(async ({ currentAdId }) => {
+      const response = await fetch(`https://www.olx.ro/api/v1/offers/${currentAdId}/limited-phones`, {
+        credentials: 'include',
+        headers: {
+          accept: 'application/json, text/plain, */*',
+        },
+      }).catch(() => null);
+
+      if (!response) {
+        return null;
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        text: await response.text().catch(() => ''),
+      };
+    }, { currentAdId: normalizedAdId });
+
+    if (!payload?.ok) {
+      return '';
+    }
+
+    const parsed = JSON.parse(payload.text || '{}') as { data?: { phones?: string[] | null } | null };
+    return parsed.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+  }).catch(() => '');
+
+  olxPhoneCache.set(cacheKey, phone);
+  return phone;
 }
 
 function extractOlxLabeledParam(html: string, labels: string[]) {
@@ -473,6 +709,76 @@ async function extractOlxParamsFromDom(url: string) {
   });
 }
 
+async function extractOlxPhoneFromDom(url: string) {
+  return withScraperPage(async (page) => {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await waitForScraperReady(page, ['[data-testid="show-phone"]', 'h1'], 10000);
+
+    const revealPhone = async () => {
+      const showPhoneButton = page.locator('[data-testid="show-phone"]').last();
+      if ((await showPhoneButton.count()) === 0) {
+        return;
+      }
+
+      await showPhoneButton.click({ force: true, timeout: 10000 }).catch(() => undefined);
+      await page.waitForTimeout(1200).catch(() => undefined);
+      const callButton = page.locator('[data-testid="ad-contact-phone"]').last();
+      if ((await callButton.count()) > 0) {
+        await callButton.click({ force: true, timeout: 5000 }).catch(() => undefined);
+        await page.waitForTimeout(800).catch(() => undefined);
+      }
+    };
+
+    await revealPhone();
+
+    const phoneFromDom = await page.evaluate(() => {
+      const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+      const telSources = Array.from(document.querySelectorAll('a[href^="tel:"]'))
+        .map((node) => node.getAttribute('href') || '')
+        .map((href) => href.replace(/^tel:/i, ''));
+      for (const value of telSources) {
+        if (value) {
+          return value;
+        }
+      }
+
+      const contactNodes = Array.from(document.querySelectorAll('[data-testid="contact-phone"], [data-testid="ad-contact-phone"]'))
+        .map((node) => clean(node.textContent || ''))
+        .filter(Boolean);
+      for (const value of contactNodes) {
+        if (/\d/.test(value)) {
+          return value;
+        }
+      }
+
+      return clean(document.body.innerText || '');
+    });
+
+    return extractPhoneFromText(phoneFromDom || (await page.content()));
+  }).catch(() => '');
+}
+
+async function resolveOlxPhone(url: string, html = '') {
+  const adId = extractOlxAdId(url) || extractOlxAdId(html);
+  const apiPhone = adId ? await fetchOlxPhoneByAdId(adId).catch(() => '') : '';
+  if (apiPhone) {
+    return apiPhone;
+  }
+
+  const remoteBrowserPhone = adId ? await fetchOlxPhoneViaRemoteBrowser(url, adId).catch(() => '') : '';
+  if (remoteBrowserPhone) {
+    return remoteBrowserPhone;
+  }
+
+  const htmlPhone = html ? extractOlxPhoneFromHtml(html) : '';
+  if (htmlPhone) {
+    return htmlPhone;
+  }
+
+  return extractOlxPhoneFromDom(url).catch(() => '');
+}
+
 export async function scrapeOlxListings(options: SourceScrapeOptions) {
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
@@ -499,20 +805,14 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
         if (seenLinks.has(absoluteUrl)) continue;
 
         let resolvedTitle = card.title;
-        let parsed = parseCard(card.title, card.text);
+        let parsed: ParsedOlxCard = parseCard(card.title, card.text);
+        let ownerPhone = '';
         parsed.price = card.price || parsed.price;
         if (!matchesKeywords(`${parsed.location} ${card.title} ${card.text}`, options.searchKeywords)) {
           continue;
         }
 
-        const listImageUrl = pickBestImageUrl(card.imageCandidates);
-        const shouldHydrateFromDetail =
-          !card.isolated ||
-          !parsed.price ||
-          !parsed.area ||
-          !listImageUrl ||
-          /;s=\d{2,4}x\d{2,4}/i.test(listImageUrl) ||
-          /^salveaza\s+ca\s+favorit/i.test(normalizeComparableText(resolvedTitle));
+        const shouldHydrateFromDetail = true;
 
         if (shouldHydrateFromDetail) {
           const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
@@ -520,6 +820,7 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
             const detailParams = extractOlxParamsFromHtml(detailHtml);
             const detailTitle = extractOlxTitleFromHtml(detailHtml);
             const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
+            ownerPhone = await resolveOlxPhone(absoluteUrl, detailHtml).catch(() => '');
             const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
             parsed = {
               ...parsed,
@@ -559,6 +860,7 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
             link: absoluteUrl,
             imageUrl: pickBestImageUrl(card.imageCandidates),
             description: '',
+            ownerPhone,
           })
         );
       }
@@ -584,12 +886,14 @@ export async function scrapeOlxListingDetail(url: string) {
     price: '',
   };
   let images: string[] = [];
+  let contactPhone = '';
 
   if (html) {
     title = extractOlxTitleFromHtml(html);
     description = extractOlxDescriptionFromHtml(html);
     detailParams = extractOlxParamsFromHtml(html);
     images = extractOlxImagesFromHtml(html);
+    contactPhone = await resolveOlxPhone(url, html).catch(() => '');
   }
 
   const parsed = parseCard(title, description);
@@ -607,7 +911,6 @@ export async function scrapeOlxListingDetail(url: string) {
   if (!title || !detailParams.area || !detailParams.price || !images.length) {
     domParams = await extractOlxParamsFromDom(url).catch(() => null);
   }
-
   const summary = buildSummary({
     source: 'olx',
     externalId: url.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/)?.[1] || url.match(/ID([A-Za-z0-9]+)/)?.[1] || url,
@@ -622,6 +925,7 @@ export async function scrapeOlxListingDetail(url: string) {
     link: url,
     imageUrl: pickBestImageUrl([...images, domParams?.imageUrl || '']),
     description,
+    ownerPhone: contactPhone,
   });
 
   return {
@@ -633,6 +937,6 @@ export async function scrapeOlxListingDetail(url: string) {
     ).slice(0, 12),
     fullDescription: description,
     contactName: '',
-    contactPhone: '',
+    contactPhone,
   } satisfies OwnerListingDetail;
 }

@@ -1,0 +1,723 @@
+{
+  "cookies": [
+    {
+      "name": "onap",
+      "value": "19ddd9ced71xde228383-1-19ddd9ced71xde228383-16-1777541375-19ddd9cf8b3x92600fb7-olx-ro_organic_1777539545_1780131545",
+      "domain": "tracking.olx-st.com",
+      "path": "/h",
+      "expires": 1812099575.459817,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "deviceGUID",
+      "value": "6aa0481d-ced5-45e3-8d95-64f7ab350a6b",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1812099539.423767,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "OptanonAlertBoxClosed",
+      "value": "2026-04-30T08:59:00.992Z",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075540,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "eupubconsent-v2",
+      "value": "CQjeG0gQjeG0gAcABBROCcF8AP_gAAAAAAYgKENR3G_fbXlj-TZ1abpkeYxf99hrrsQxBgbJk24FyLvW7JwC32E7NAxapqYKmRIAu3TBIQFlHIDUBUCgKIgVrTDMaEyEoTNKJ6BEiBMRQ2JYCFxvm4BDWQCY4srvZkd5mR-N7dr82dzyy4hnn3KpfmS1UJCcIYcgAAAAAAAAAAAAAEAQAAAAFAAAAAAIAAAAAAAAAAAAAAAAAAAAF-QAAAAABAAAAUEALAAOABIAQcAjgBNAErAJlATaApABYQCxAF5AL_AYgAxYBkIDRgGpgNoAbcA3QCAgSB_ABQAFQAOAAeABBAC8ANQAeABMACqAG8APwAhIBDAESAI4ATQArQBgADDgGUAZYA2QBzgDuAHtAPsA_QCAAEUgIuAjABGoCSgJNAT8BQYCoAKuAXMAvQBigDRAG0ANwAcQA9oCHYEegSIAnYBQ4CjwFIgKbAWwAuQBdgC7wF5gMNgZGBkgDJwGXAMzAZzA1cDWQGxgNvAbqA5MBy4ELh0EYABcAFAAVAA4ACCAFwAagA8ACYAFUALoAbwA_QCGAIkATQAowBWgDAAGGAMoAaIA2QBzgDuAHtAPsA_YCKAIxAR0BJoCfgKDAVEBVwCxAFzgLyAvQBigDaAG4AOIAeYA9oB9gEOgIvgR6BIgCZAE7AKHgUeBSACmwFWALFAWwAt0BcAC5IF2AXaAu8BeYC-gGGgMegZGBkkDJwMqgZYBlwDMwGcgNNgauBrADbwG6gOLAcmA5ccAmgAcAB4AFwASABoAEcAMsAcgBAICDgIQARwAmgBUADpAIQASsAmIBMoCbQFJgK7AWIAtQBf4DEAGLAMhAZMA0YBqYDXgG0ANsAbcA3QBx4DloHOgc-BAQhAaAAWABQAFwANQAqgBvAGAAOcAdwBFACUgFBgKiAq4BcwDFAG0AR6AqwBYoC0QFwALkAXYAyMBk4DOSABMAB4AaABlgDkAI4AWIBNoCkwFiALyAZ4A0YBqYDbAG3AN0AcsA58CAhKA6AAsACgAHAAeABMACrAIYAiQBHACjAFaAMAAbIA_ICogKuAXMAxQCHQEXwI9AkQBR4CxQFsALsAXnAyMDJAGTgM5AawA28kARAAuAO4AgABBwCOAFQASsAmIBNoCkwF_gMWAZYAzwBugDlgICFIG4AC4AKAAqABwAEAANAAeABMACqAH6AQwBEgCjAFaAMAAZQA0QBsgDnAHfAPwA_QCLAEYgI6AkoBQYCogKuAXMAvIBigDaAG4APaAfYBDoCL4EegSIAnYBQ4CkAFNgKsAWKAtgBcAC5AF2gLzAX0Aw2BkYGSAMngZYBlwDOYGsAayA28BuoDkygB0AC4AJAAXAAyAEcAMsAcgA7gB9gEAAIOAWIA14B2wD_gJiATaAqQBXYC8gGLAMmAZ4A0YBqYDXgG6AOWAgIAA.f_wAAAAAAAAA.IKENR3G_fbXlj-TZ16bpkeYxf99hrrsQxBgbJs24FyLvW7JwC32E7NExapqYKmRIAu3TBIQFtHIjUBUChKIgVrTDMaEyEoTNKJ6BEiDMRY2JYCFxvm4BDWQCZ4srvZkd5mR-N7dr-2dzyy5hnn3KtfuS1UJicKYcgAAAAAAAAAAAAAEAQAAAAFAAAAAAIAAAAAAAAAAAAgAAAAAAAF-QAAAAABAA",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075541,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "OTAdditionalConsentString",
+      "value": "2~89.320.959.1109.1421.1423.1659.1985.1987.2008.2072.2135.2275.2322.2465.2501.2627.2833.2958.2999.3028.3225.3226.3231.3234.3235.3236.3237.3238.3240.3244.3245.3250.3251.3253.3257.3260.3270.3272.3281.3288.3290.3292.3293.3296.3299.3300.3306.3307.3309.3314.3315.3316.3318.3324.3328.3330.3331.3531.3731.3831.4131.4531.4631.4731.4831.5231.6931.7235.7831.7931.8931.9731.10231.10631.10831.11031.11531.13632.13731.14034.14133.14237.14332.15731.16831.16931.21233.23031.25131.25931.26031.26631.26831.27731.27831.28031.28731.28831.29631.30532.32531.33931.34231.34631.36831.39131.39531.40632.41131.41531.43631.43731.43831.45931.47232.47531.48131.49231.49332.49431.50831.52831.54231.56831.56931.57131.57231~dv",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075541,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "st_uid",
+      "value": "019ddd9c-e9e7-72ff-a270-efd5a3ffc344",
+      "domain": ".seedtag.com",
+      "path": "/",
+      "expires": 1809075541.34734,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "st_ssp",
+      "value": "Y291bnRyeV9uYW1lPVJvbWFuaWEmY291bnRyeV9pc28yPVJPJmNvdW50cnlfaXNvMz1ST1UmcmVnaW9uX25hbWU9SWxmb3YmcmVnaW9uX2lzbzI9SUYmY2l0eV9pZD02Njk4NzAmY2l0eV9uYW1lPVBvcGXFn3RpLUxlb3JkZW5pJmxvbmdpdHVkZT0yNi4xNjI0JmxhdGl0dWRlPTQ0LjM4MzEmemlwPTA3NzE2MA==",
+      "domain": ".seedtag.com",
+      "path": "/",
+      "expires": 1780131541.347487,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "tt_viewer",
+      "value": "59bf019a-bca7-4631-affb-c821b5b6e6e2",
+      "domain": ".teads.tv",
+      "path": "/",
+      "expires": 1808989141.374168,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "khaos",
+      "value": "MOL95C7S-1C-39LR",
+      "domain": ".rubiconproject.com",
+      "path": "/",
+      "expires": 1809075541.419344,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "audit",
+      "value": "1|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",
+      "domain": ".rubiconproject.com",
+      "path": "/",
+      "expires": 1809075541.419489,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_pctx",
+      "value": "%7Bu%7DN4IgrgzgpgThIC4B2YA2qA05owMoBcBDfSREQpAeyRCwgEt8oBJAEzIEYOBmAVg4AMAJgEA2IQE5RAgBwCA7PP4gAvkA",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811667546,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_pcid",
+      "value": "%7B%22browserId%22%3A%22mol95c626u4alkxi%22%7D",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811667546,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "cX_P",
+      "value": "mol95c626u4alkxi",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811667547,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "nsr",
+      "value": "gamma",
+      "domain": "ninja.data.olxcdn.com",
+      "path": "/",
+      "expires": 1780217942.052315,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_hjSessionUser_2218929",
+      "value": "eyJpZCI6IjQ0MjQ0ZDNiLTUxODgtNTRkMS1hMjgxLWY4N2RkMzEyNmI3MSIsImNyZWF0ZWQiOjE3Nzc1Mzk1NDI4ODcsImV4aXN0aW5nIjpmYWxzZX0=",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075542,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_hjSession_2218929",
+      "value": "eyJpZCI6IjU4MzhhMWE1LTI2N2QtNDk4ZC1hNjhhLTU5NTQ0NGU5MDUzYiIsImMiOjE3Nzc1Mzk1NDI4ODksInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjoxLCJzcCI6MH0=",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1777541342,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "i",
+      "value": "25a4adc6-3ca5-4ce1-a8e1-3cfe3bdee912|1777539543",
+      "domain": ".openx.net",
+      "path": "/",
+      "expires": 1809075543.00265,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "uid",
+      "value": "0be28e29-84c1-4a22-a02f-4ebf3d739a34",
+      "domain": ".criteo.com",
+      "path": "/",
+      "expires": 1811235543.010733,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "gckp",
+      "value": "cx:ub94hc0eih141r3v9zdvo2tha:25u8bw2r9cdg4",
+      "domain": ".cxense.com",
+      "path": "/",
+      "expires": 1809075590.363134,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "cX_G",
+      "value": "cx%3Aub94hc0eih141r3v9zdvo2tha%3A25u8bw2r9cdg4",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811667543,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_legacy_a0.spajs.txs.7gantjdsv7233vniq4dthhm2hh",
+      "value": "{%22nonce%22:%22LVNpd01YVGJ0Yi5MR3doTmdZYWVXRzdLNUFmLmtvV2hWYTVncjNpdUJVUQ==%22%2C%22code_verifier%22:%22PfI-~zUSOX2OFUdZ1yvkE3bnbVvJ~pU9TkINVHE2W9k%22%2C%22scope%22:%22openid%20profile%20email%20offline_access%22%2C%22audience%22:%22default%22%2C%22redirect_uri%22:%22https://www.olx.ro/d/callback/%22%2C%22state%22:%22akVsR3RiZUxhY0Y3S0FOV004UnFndl9TdTlVaEhqT204Ni1LRzFXNkdEdg==%22%2C%22appState%22:{%22backUrl%22:%22/myaccount%22%2C%22referer%22:%22%22}}",
+      "domain": "www.olx.ro",
+      "path": "/",
+      "expires": 1777625943,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "a0.spajs.txs.7gantjdsv7233vniq4dthhm2hh",
+      "value": "{%22nonce%22:%22LVNpd01YVGJ0Yi5MR3doTmdZYWVXRzdLNUFmLmtvV2hWYTVncjNpdUJVUQ==%22%2C%22code_verifier%22:%22PfI-~zUSOX2OFUdZ1yvkE3bnbVvJ~pU9TkINVHE2W9k%22%2C%22scope%22:%22openid%20profile%20email%20offline_access%22%2C%22audience%22:%22default%22%2C%22redirect_uri%22:%22https://www.olx.ro/d/callback/%22%2C%22state%22:%22akVsR3RiZUxhY0Y3S0FOV004UnFndl9TdTlVaEhqT204Ni1LRzFXNkdEdg==%22%2C%22appState%22:{%22backUrl%22:%22/myaccount%22%2C%22referer%22:%22%22}}",
+      "domain": "www.olx.ro",
+      "path": "/",
+      "expires": 1777625943,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "IDE",
+      "value": "AHWqTUlMfviG1thUl70FKO4jRM5Wtv0fuZH05HeQZQSmejCJJPS1u8qB4aEYchh0BLA",
+      "domain": ".doubleclick.net",
+      "path": "/",
+      "expires": 1811235544.681829,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "laquesis",
+      "value": "eupp-3910@b#eupp-4152@c#oesx-5576@a#olxeu-42926@b#olxeu-42958@b#platf-22102@a#ream-2630@a#recpl-1402@b",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075547,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "laquesisff",
+      "value": "aut-1425#aut-388#buy-2279#buy-2489#carparts-312#cars-78563#dat-2874#dc-83#de-2724#decision-256#decision-657#do-3481#euonb-114#eus-1773#f8nrp-1779#jobs-7611#kuna-307#mart-1341#oec-1238#oesx-2798#oesx-4295#pay-287#pos-1043#pos-2021#pos-2216#posting-1419#posting-1638#rm-28#rm-707#rm-780#rm-824#rm-852#sd-3192#srt-1289#srt-1346#srt-1434#srt-1593#srt-1758#srt-684#uacc-529#udp-1535#up-90",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075547,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "AuthState",
+      "value": "unlogged",
+      "domain": "login.olx.ro",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "OptanonConsent",
+      "value": "isGpcEnabled=0&datestamp=Thu+Apr+30+2026+11%3A59%3A05+GMT%2B0300+(Ora+de+var%C4%83+a+Europei+de+Est)&version=202601.2.0&browserGpcFlag=0&isIABGlobal=false&hosts=&genVendors=V10%3A0%2C&consentId=5ae155fb-93ae-46ce-8d5d-3ceb66eda6d3&interactionCount=1&isAnonUser=1&prevHadToken=0&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1%2Cgad%3A1&intType=1&crTime=1777539541421&geolocation=RO%3BIF&AwaitingReconsent=false",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075545,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__gads",
+      "value": "ID=4fd15c3ba727f88f:T=1777539546:RT=1777539546:S=ALNI_MbSOA_S2al_Y7GAPikjgCrvbB40Xg",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811235546,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "__gpi",
+      "value": "UID=000013b197c482ad:T=1777539546:RT=1777539546:S=ALNI_MZaygVZ6FRSxDTx2SpNlM6Ku7mwlQ",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811235546,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "__eoi",
+      "value": "ID=067af770e680f1ca:T=1777539546:RT=1777539546:S=AA-AfjY4VGaKD-Aie-RmAuKuWNEM",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1793091546,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "lqstatus",
+      "value": "1777540627794|||||0|1777539547794|0",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075547,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "cto_bundle",
+      "value": "tze0B19veVBnUW9BVGpxZzlLckV0eVM0SmF5eFl3d0R2TjU2VTB3ZDR2dE9iVHpFWlNhTE1KWHZvN1JOQml2aXBjVmZjT1lFZWlGVWxpS2E0S2JIbUxzSEtvUlJpbGk3RXpmTkZieHBYVTQ5M2RPWnRqVVU0ZUk0NXMlMkIyUTZMbGtiVkow",
+      "domain": ".criteo.com",
+      "path": "/",
+      "expires": 1811235547.875877,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None",
+      "partitionKey": "https://olx.ro",
+      "_crHasCrossSiteAncestor": true
+    },
+    {
+      "name": "cto_bundle",
+      "value": "iDEyHV9YQTlTUUtQc0U2ViUyQnFPRm1BTzRMOTAlMkZuOU1PMW5kNEtaakdOdiUyQkZQN25jYlk3WEtTQ2JPNGN6N2JHRWJBczYyQXFiNFhWWjd1dUVPR0dDJTJGbThGcm1QcVB6Y3djOTRyUGx6RCUyRlNWWkk4RWViUkNjWUJEbUxTTnpFa1VDdmU2TDh3cUlQMkkxWnJDZ0JVRzRlV1dJM3JnJTNEJTNE",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1811235547,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.794304863.1777539548",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1812099550.467097,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__rtbh.lid",
+      "value": "%7B%22eventType%22%3A%22lid%22%2C%22id%22%3A%22LIu4KGiGYcyzs2nbTQkK%22%2C%22expiryDate%22%3A%222027-04-30T08%3A59%3A10.214Z%22%7D",
+      "domain": "login.olx.ro",
+      "path": "/",
+      "expires": 1809075550,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "g",
+      "value": "m6sAW0BXty3kWDfO3hkF_1777539550608",
+      "domain": ".creativecdn.com",
+      "path": "/",
+      "expires": 1809075550.430928,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "c",
+      "value": "m6sAW0BXty3kWDfO3hkF_8Zs4WXd3ihSJWNa8ruvE_1777539550608",
+      "domain": ".creativecdn.com",
+      "path": "/",
+      "expires": 1809075550.431031,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None",
+      "partitionKey": "https://olx.ro",
+      "_crHasCrossSiteAncestor": true
+    },
+    {
+      "name": "ts",
+      "value": "1777539550",
+      "domain": ".creativecdn.com",
+      "path": "/",
+      "expires": 1809075550.431091,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None",
+      "partitionKey": "https://olx.ro",
+      "_crHasCrossSiteAncestor": true
+    },
+    {
+      "name": "XANDR_PANID",
+      "value": "mWAKWNTBqOsmZBitEUkEuRyPgXC8ZZ68Zji1YPo_N5x9c7grBeEEHkzMjk4KbkZ5QNnWx41JDZ0WZRkh9phvVeRenhk22z731HLEWwNU0g8.",
+      "domain": ".adnxs.com",
+      "path": "/",
+      "expires": 1785315551.010243,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None",
+      "partitionKey": "https://olx.ro",
+      "_crHasCrossSiteAncestor": true
+    },
+    {
+      "name": "uuid2",
+      "value": "8834097066657019699",
+      "domain": ".adnxs.com",
+      "path": "/",
+      "expires": 1785315551.010542,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "anj",
+      "value": "dTM7k!M4/rD>6NRF']wIg2GVVv5K0c!]tbPl@/@8+nOv3UfYlYU.weRF5xB*D:fDt`w/2>[Lo?5G:?g$_EHEY=7o5r@R3ZAEB$D#Q<=+:FCrmX3If)y3KL9D3I?*`7@1e2",
+      "domain": ".adnxs.com",
+      "path": "/",
+      "expires": 1785315551.010457,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "datadome",
+      "value": "jOPwInwKFIGBLvalG3XpvM~O1uNZfNtnvxGXgPc86AfXMcMQz2IMkFGSdIcsi5L5EqCrjBm_RYcE9q3siajQIQBjnhMkuPlcYqWgbbAn9LpFaVV3B8ei4ZARCS~szM6S",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075559.58671,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_gcl_au",
+      "value": "1.1.1103295802.1777539549.84460233.1777539568.1777539573",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1785315549,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "udmts",
+      "value": "1777539574.0",
+      "domain": ".udmserve.net",
+      "path": "/",
+      "expires": 1809075574.817133,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "dt",
+      "value": "28435045-16ED-3406-A4BB-61D4465FEB33",
+      "domain": ".udmserve.net",
+      "path": "/",
+      "expires": 1809075574.817334,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "rtbh",
+      "value": "MkzO6BIz_WqtbiK-Ztu7T9efG0c4LUDil1zuIQYQ6K4",
+      "domain": ".udmserve.net",
+      "path": "/",
+      "expires": 1785315574.817444,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "aws-waf-token",
+      "value": "5217caf5-bc93-4e1a-85e7-dd6f7f94da77:DgoAhbE9qO4pAAAA:Xkf0HLm+MnBZiRYr0tKEZYdFRp5wzYHUPBuGzk2GQn2JcCmi6NqSKkTfp5zUgcfez2EsRxHjlB4YSK4weJ7ywW5RZp/fFuoRzioajIvep51ts3Hhg9AuI/BsaIBAA1iLcU4whMOiyJZHS2oK0ThH6brbAW2kzm1xOrGp3YCf/ARliTkUBJe5j2pTY3EvbKNpiEy5bs6SJ186ykGAKetd",
+      "domain": ".login.olx.ro",
+      "path": "/",
+      "expires": 1777885175,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_1XTP46N9VR",
+      "value": "GS2.1.s1777539548$o1$g1$t1777539590$j18$l0$h0",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1812099590.264655,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_NK3K3T1FT5",
+      "value": "GS2.1.s1777539550$o1$g1$t1777539590$j20$l0$h0",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1812099590.277993,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_Q0GQ41R48F",
+      "value": "GS2.1.s1777539550$o1$g1$t1777539590$j20$l0$h0",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1812099590.284497,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "onap",
+      "value": "19ddd9ced71xde228383-1-19ddd9ced71xde228383-18-1777541390295",
+      "domain": ".olx.ro",
+      "path": "/",
+      "expires": 1809075590,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://www.olx.ro",
+      "localStorage": [
+        {
+          "name": "BT_tpc",
+          "value": "{\"value\":1,\"expiresAt\":1777553940812}"
+        },
+        {
+          "name": "NRBA_SESSION",
+          "value": "{\"value\":\"e7a5d19d346927e0\",\"inactiveAt\":1777541343429,\"expiresAt\":1777553940288,\"updatedAt\":1777539544928,\"sessionReplayMode\":0,\"sessionReplaySentFirstChunk\":false,\"sessionTraceMode\":0,\"traceHarvestStarted\":false,\"custom\":{}}"
+        },
+        {
+          "name": "BT_AA_DETECTION",
+          "value": "{\"ab\":false,\"aa\":true,\"nlf\":false}"
+        },
+        {
+          "name": "_cX_lastP1Time",
+          "value": "1777539541517"
+        },
+        {
+          "name": "cto_bundle",
+          "value": "_41_pV92YnBpSXRtYkhLMXIlMkJGMGlvRjlZNHBZWDUxZFhJVTZaNVpPMGNkSjVZOUg4UDN3SVlBWXB6VmRzSkh4MUhveG5mT1VHS0JZNkp3azglMkY3clNLeWJJcUF6UmtCT3BIenZHTVh1dSUyRlJuNUJ1QSUzRA"
+        },
+        {
+          "name": "_cX_segmentInfo",
+          "value": "993f7e91f41899181a61f3b6fa338bd436cdd1b7_1777539544_"
+        },
+        {
+          "name": "employerStatus",
+          "value": "false"
+        },
+        {
+          "name": "_ls_ttl",
+          "value": "{\"_cX_lastP1Time\":\"mov98avi\",\"_cX_segmentInfo\":\"n49o2v54\"}"
+        },
+        {
+          "name": "ix_features",
+          "value": "{\"expiry\":1777543141524,\"features\":{\"pbjs_allow_all_eids\":{\"activated\":true},\"pbjs_enable_multiformat\":{\"activated\":true}}}"
+        },
+        {
+          "name": "_GESPSK-esp.criteo.com",
+          "value": "[\"esp.criteo.com\",null,1777539541395,null,null,null,null,null,null,[100]]"
+        },
+        {
+          "name": "websocketConnections",
+          "value": "{\"timeFrame\":\"2026-04-30T08:58:55.000Z\",\"attempts\":1}"
+        },
+        {
+          "name": "gtmData:currentPage",
+          "value": "homepage"
+        },
+        {
+          "name": "BT_device",
+          "value": "{\"value\":{\"os\":\"Windows\",\"osv\":\"10.0\",\"ext\":{\"fiftyonedegrees_deviceId\":\"15364-38914-132535-18092\"}},\"expiresAt\":1777553941407}"
+        },
+        {
+          "name": "_GESPSK-openx",
+          "value": "[\"openx\",\"eyJpIjoiSmFTdHhqeWxUT0dvNFR6K085N3BFZz09In0=\",1777539543164]"
+        },
+        {
+          "name": "jobs-cache",
+          "value": "[]"
+        },
+        {
+          "name": "_GESPSK-rtbhouse",
+          "value": "[\"rtbhouse\",\"fqnElxcfKegdELuxP22wrCF9ZEa9ao1m3U0wMGLLYko00X86yhh7v6bjs7CKi4jIMIcnUMNjP/4di+CxAX+nTENIQsZM7lEE1stIMvhs5BdFpV6NBC2/ur7/3sPeqAb0vDeemqiE0qJ5pZjRhx6ovRF5ge2mrVwSV8m8RDavpYc=\",1777539542169,null,null,null,null,null,0]"
+        },
+        {
+          "name": "baxter_page_id",
+          "value": "homepage"
+        },
+        {
+          "name": "rtbhouse-esp",
+          "value": "5822084a-3b93-4fc8-9aa5-5e95265ce159"
+        },
+        {
+          "name": "laquesissu",
+          "value": "[{\"id\":893,\"triggers\":[{\"event_name\":\"bundles_confirmpaid\",\"language\":null,\"conditions\":[[{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"posting_button\"},{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"bottom_bar_posting\"},{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"my_olx_posting\"}],[{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Posutochno-pochasovo\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"quartos-para-aluguer\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"cazare-turism\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Quartos-para-aluguer\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"posutochno-pochasovo\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"Noclegi\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Casas-de-ferias\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"noclegi\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"Cazare - Turism\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"casas-de-ferias\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"подобова оренда житла\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Подобова оренда житла\"}]]}],\"type\":\"default\"}]"
+        }
+      ]
+    },
+    {
+      "origin": "https://cdn.cxense.com",
+      "localStorage": [
+        {
+          "name": "_cX_lst",
+          "value": "36xaywkgqooif3g7f1w06sx06x"
+        },
+        {
+          "name": "_ls_ttl",
+          "value": "{\"_cX_lst\":\"n49o2uqo\"}"
+        }
+      ]
+    },
+    {
+      "origin": "https://login.olx.ro",
+      "localStorage": [
+        {
+          "name": "laquesissu",
+          "value": "[{\"id\":893,\"triggers\":[{\"event_name\":\"bundles_confirmpaid\",\"language\":null,\"conditions\":[[{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"posting_button\"},{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"bottom_bar_posting\"},{\"n\":\"touch_point_button\",\"o\":\"equals\",\"v\":\"my_olx_posting\"}],[{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Posutochno-pochasovo\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"quartos-para-aluguer\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"cazare-turism\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Quartos-para-aluguer\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"posutochno-pochasovo\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"Noclegi\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Casas-de-ferias\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"noclegi\"},{\"n\":\"cat_l1_name\",\"o\":\"equals\",\"v\":\"Cazare - Turism\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"casas-de-ferias\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"подобова оренда житла\"},{\"n\":\"cat_l2_name\",\"o\":\"equals\",\"v\":\"Подобова оренда житла\"}]]}],\"type\":\"default\"}]"
+        },
+        {
+          "name": "BT_tpc",
+          "value": "{\"value\":1,\"expiresAt\":1777553945223}"
+        },
+        {
+          "name": "__rtbh.lid",
+          "value": "{\"eventType\":\"lid\",\"id\":\"LIu4KGiGYcyzs2nbTQkK\",\"expiryDate\":\"2027-04-30T08:59:10.214Z\"}"
+        },
+        {
+          "name": "NRBA_SESSION",
+          "value": "{\"value\":\"b58ddfe8af4da96b\",\"inactiveAt\":1777541384156,\"expiresAt\":1777553950325,\"updatedAt\":1777539590296,\"sessionReplay\":0,\"sessionReplaySentFirstChunk\":false,\"sessionTraceMode\":0,\"custom\":{\"siteCode\":\"olxro\"}}"
+        },
+        {
+          "name": "_cX_segmentInfo",
+          "value": "993f7e91f41899181a61f3b6fa338bd436cdd1b7_1777539547_"
+        },
+        {
+          "name": "_cX_lastP1Time",
+          "value": "1777539547190"
+        },
+        {
+          "name": "cto_bundle",
+          "value": "iDEyHV9YQTlTUUtQc0U2ViUyQnFPRm1BTzRMOTAlMkZuOU1PMW5kNEtaakdOdiUyQkZQN25jYlk3WEtTQ2JPNGN6N2JHRWJBczYyQXFiNFhWWjd1dUVPR0dDJTJGbThGcm1QcVB6Y3djOTRyUGx6RCUyRlNWWkk4RWViUkNjWUJEbUxTTnpFa1VDdmU2TDh3cUlQMkkxWnJDZ0JVRzRlV1dJM3JnJTNEJTNE"
+        },
+        {
+          "name": "BT_AA_DETECTION",
+          "value": "{\"ab\":false,\"aa\":true,\"nlf\":false}"
+        },
+        {
+          "name": "lastAction",
+          "value": "{\"value\":\"Login\",\"expiry\":1777539874716}"
+        },
+        {
+          "name": "_ls_ttl",
+          "value": "{\"_cX_segmentInfo\":\"n49o2xw1\",\"_cX_lastP1Time\":\"mov98f92\"}"
+        },
+        {
+          "name": "amznfbgid",
+          "value": "X60-6880610-4326423:1777539576"
+        },
+        {
+          "name": "_GESPSK-esp.criteo.com",
+          "value": "[\"esp.criteo.com\",\"_41_pV92YnBpSXRtYkhLMXIlMkJGMGlvRjlZNHBZWDUxZFhJVTZaNVpPMGNkSjVZOUg4UDN3SVlBWXB6VmRzSkh4MUhveG5mT1VHS0JZNkp3azglMkY3clNLeWJJcUF6UmtCT3BIenZHTVh1dSUyRlJuNUJ1QSUzRA\",1777539547582,null,null,null,null,null,0]"
+        },
+        {
+          "name": "segmentationStore",
+          "value": "{\"userStatus\":0,\"id\":\"19ddd9ced71xde228383\",\"requestCount\":1,\"lastRequestTime\":1777539547115,\"segmentationData\":[]}"
+        },
+        {
+          "name": "_gcl_ls",
+          "value": "{\"schema\":\"gcl\",\"version\":1,\"gcl_ctr\":{\"value\":{\"value\":0,\"timeouts\":0,\"errors\":0,\"eopCount\":0,\"creationTimeMs\":1777539549398},\"expires\":1785315549398}}"
+        },
+        {
+          "name": "Amazon.AWS.Cognito.ContextData.LS_UBID",
+          "value": "q9bup3cmwlanr6y5bzdw:1777539574873"
+        },
+        {
+          "name": "ddSession",
+          "value": "jOPwInwKFIGBLvalG3XpvM~O1uNZfNtnvxGXgPc86AfXMcMQz2IMkFGSdIcsi5L5EqCrjBm_RYcE9q3siajQIQBjnhMkuPlcYqWgbbAn9LpFaVV3B8ei4ZARCS~szM6S"
+        },
+        {
+          "name": "btUserIsFromRestrictedCountry",
+          "value": "false"
+        },
+        {
+          "name": "BT_device",
+          "value": "{\"value\":{\"os\":\"Windows\",\"osv\":\"10.0\",\"ext\":{\"fiftyonedegrees_deviceId\":\"15364-38914-132535-18092\"}},\"expiresAt\":1777553945311}"
+        },
+        {
+          "name": "_GESPSK-openx",
+          "value": "[\"openx\",\"eyJpIjoiSmFTdHhqeWxUT0dvNFR6K085N3BFZz09In0=\",1777539547610]"
+        },
+        {
+          "name": "awswaf_token_refresh_timestamp",
+          "value": "1777539575247"
+        },
+        {
+          "name": "btUserCountryExpiry",
+          "value": "1777539851799"
+        },
+        {
+          "name": "btUserCountry",
+          "value": "RO"
+        },
+        {
+          "name": "_GESPSK-rtbhouse",
+          "value": "[\"rtbhouse\",\"4D6xmP3lETskq0fUEfqtsVUeDVxX8HamhCWKqGKnYVtcR/y+SrS4+RrQIZnR3TC0pKS9pDbjXH6pV2GRuGq6IlmGzAfSmnMCvGWfZv8+PkIlUfSjSBM4U+JpYYr0inO6UlSAHM+qVcXJX/ofkjjwppBErtgAEyJJYcInRiJRZnREvIenkpe7jjleVMnYvFGWWTiuXGWFh8QC5akvy8mgj4WE6Id79OXbrDp1Jn+dx9UI0dqpicBpj2HKlvFLzesgnlzFoZcimBvMVud8V7oTGwF8q7RzSSLcHknFAxEprb0jojxGSkUUAJWRfGPw3y8xaAdIF89uJyqrjlHwYfCpcr1b97WSAHBCHKeAnN/ahymeedg+iuIA7f8slKbmmqAOLhdfgse4T+y2Fu1PI/wN+99M3uwKFO/0dAM/+IM45clVsHHWwk0lwEnsN916qU2gcbw4a4ejTk7/rYXHMYI3sEKjB7XyCh+ww+TW/9HCPcmh9pJQVCzLLWpbC1YHg32xG4ZpJYoF0eylYu2NUFmPfF0lTEKG1lqBr0yNwGUv0TKz4z2ILJLGOTtszNmYpAXjatNwneoSpyKLcbGSNvZKsw==\",1777539547786,null,null,null,null,null,0]"
+        },
+        {
+          "name": "baxter_page_id",
+          "value": "account"
+        },
+        {
+          "name": "rtbhouse-esp",
+          "value": "dc0476c2-ebce-408b-85e3-3ed00917ccc0"
+        }
+      ]
+    }
+  ]
+}
