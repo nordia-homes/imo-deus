@@ -631,6 +631,23 @@ function sanitizeImageSource(source: ImageSource): ImageSource | null {
     return null;
   }
 
+  try {
+    const url = new URL(source.url);
+    const pathname = url.pathname.toLowerCase();
+    const looksLikeImage =
+      /\.(?:jpe?g|png|webp|avif|gif|bmp|svg)$/i.test(pathname) ||
+      /(?:image|img|photo|gallery|media)/i.test(pathname) ||
+      url.searchParams.has('w') ||
+      url.searchParams.has('width') ||
+      url.searchParams.has('format');
+
+    if (!looksLikeImage) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
   return source;
 }
 

@@ -33,6 +33,130 @@ function stripHtml(value: string) {
   );
 }
 
+function isLikelyImageUrl(value: string) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized.startsWith('http')) {
+    return false;
+  }
+
+  try {
+    const url = new URL(normalized);
+    const pathname = url.pathname.toLowerCase();
+    if (/\.(?:jpe?g|png|webp|avif|gif|bmp|svg)(?:$|\?)/i.test(pathname)) {
+      return true;
+    }
+
+    if (/(?:image|img|photo|gallery|media)/i.test(pathname)) {
+      return true;
+    }
+
+    if (url.searchParams.has('w') || url.searchParams.has('width') || url.searchParams.has('format')) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+function parseSrcSetCandidates(value: string) {
+  return value
+    .split(',')
+    .map((entry) => normalizeWhitespace(entry))
+    .filter(Boolean)
+    .map((entry) => {
+      const [url = '', descriptor = ''] = entry.split(/\s+/, 2);
+      return { url, descriptor };
+    })
+    .filter((entry) => isLikelyImageUrl(entry.url));
+}
+
+function inferImageScore(url: string, descriptor?: string) {
+  let score = 0;
+  const descriptorWidth = descriptor?.match(/(\d+)\s*w/i)?.[1];
+  if (descriptorWidth) {
+    score += Number(descriptorWidth) * 10;
+  }
+
+  const sizedParamMatch = url.match(/[?&](?:w|width|h|height)=(\d{2,4})/i);
+  if (sizedParamMatch) {
+    score += Number(sizedParamMatch[1]) * 4;
+  }
+
+  const dimensionsMatch = url.match(/(\d{2,4})x(\d{2,4})/i);
+  if (dimensionsMatch) {
+    score += Number(dimensionsMatch[1]) + Number(dimensionsMatch[2]);
+  }
+
+  if (/gallery-main|og-image-full|full|large|original|gallery|photo/i.test(url)) {
+    score += 3000;
+  }
+  if (/gallery-full/i.test(url)) {
+    score += 7000;
+  }
+  if (/gallery-main/i.test(url)) {
+    score += 5000;
+  }
+  if (/og-image-full/i.test(url)) {
+    score -= 2500;
+  }
+  if (/gallery-thumb|thumb|thumbnail|small|blur|placeholder|lazy/i.test(url)) {
+    score -= 5000;
+  }
+  if (/logo|icon|sprite/i.test(url) || /assets\.imoradar24\.ro/i.test(url)) {
+    score -= 15000;
+  }
+  if (/i\.roamcdn\.net/i.test(url)) {
+    score += 2000;
+  }
+
+  return score;
+}
+
+function sortImageUrls(candidates: string[]) {
+  const parsedCandidates = candidates
+    .flatMap((candidate) => {
+      const normalized = normalizeWhitespace(candidate);
+      if (!normalized) return [];
+
+      if (normalized.includes('http') && /\s+\d+w\b/i.test(normalized)) {
+        return parseSrcSetCandidates(normalized).map((entry) => ({
+          url: entry.url,
+          score: inferImageScore(entry.url, entry.descriptor),
+        }));
+      }
+
+      if (!isLikelyImageUrl(normalized)) return [];
+      return [{ url: normalized, score: inferImageScore(normalized) }];
+    })
+    .filter((entry) => isLikelyImageUrl(entry.url));
+
+  return Array.from(new Map(parsedCandidates.map((entry) => [entry.url, entry])).values())
+    .sort((left, right) => right.score - left.score)
+    .map((entry) => entry.url);
+}
+
+function extractImageCandidatesFromHtml(html: string) {
+  return Array.from(
+    html.matchAll(
+      /<(?:img|source)\b[^>]*?(?:src|data-src|data-lazy-src|data-original|data-full-image|data-image|srcset|data-srcset|data-large)="([^"]+)"/gi
+    )
+  ).map((match) => normalizeWhitespace(match[1]));
+}
+
+function extractCanonicalGalleryImages(html: string) {
+  const directMatches = [
+    ...Array.from(html.matchAll(/https:\/\/i\.roamcdn\.net\/prop\/rad\/gallery-full-[^"'\\\s<]+/gi)).map((match) => normalizeWhitespace(match[0])),
+    ...Array.from(html.matchAll(/https:\/\/i\.roamcdn\.net\/prop\/rad\/gallery-main-[^"'\\\s<]+/gi)).map((match) => normalizeWhitespace(match[0])),
+    ...Array.from(html.matchAll(/"@id":"(https:\/\/i\.roamcdn\.net\/[^"]+)"/gi)).map((match) => normalizeWhitespace(match[1])),
+    ...Array.from(html.matchAll(/"contentUrl":"(https:\/\/i\.roamcdn\.net\/[^"]+)"/gi)).map((match) => normalizeWhitespace(match[1])),
+    ...Array.from(html.matchAll(/<meta\s+property="og:image"\s+content="(https:\/\/[^"]+)"/gi)).map((match) => normalizeWhitespace(match[1])),
+  ];
+
+  return sortImageUrls(directMatches).slice(0, 20);
+}
+
 function extractDetailText(html: string) {
   return stripHtml(html).replace(/\bm\s+2\b/gi, 'm2').replace(/\bm\s+²\b/gi, 'm2');
 }
@@ -204,13 +328,7 @@ function extractImoradarDetailFromHtml(html: string, url: string) {
   const price =
     normalizeWhitespace(html.match(/(\d[\d.\s]*)\s*(?:EUR|RON|LEI|€|â‚¬)/i)?.[0] || '') ||
     '';
-  const images = Array.from(
-    new Set(
-      Array.from(html.matchAll(/<img[^>]+(?:src|data-src)="([^"]+)"/gi))
-        .map((match) => normalizeWhitespace(match[1]))
-        .filter((imageUrl) => imageUrl.startsWith('http'))
-    )
-  );
+  const images = sortImageUrls([...extractCanonicalGalleryImages(html), ...extractImageCandidatesFromHtml(html)]).slice(0, 20);
 
   return {
     title,
@@ -275,7 +393,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           location,
           postedAtText,
           text,
-          image: chunk.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
+          image: sortImageUrls(extractImageCandidatesFromHtml(chunk))[0] || '',
         };
       })
       .filter((item) => item.href && item.title);
@@ -304,7 +422,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
         location,
         postedAtText,
         text: [location, rooms, area, price, postedAtText].filter(Boolean).join(' • '),
-        image: article.match(/<img[^>]+(?:src|data-src)="([^"]+)"/i)?.[1] || '',
+        image: sortImageUrls(extractImageCandidatesFromHtml(article))[0] || '',
       };
     })
     .filter((item) => item.href && item.title);
@@ -342,22 +460,20 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
         if (seenLinks.has(absoluteUrl)) continue;
 
         let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
-        if (!enrichedCard.constructionYear) {
-          const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
-          if (detailHtml) {
-            const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
-            const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
-            enrichedCard = {
-              ...enrichedCard,
-              title: detail.title || enrichedCard.title,
-              price: enrichedCard.price || detail.price,
-              area: enrichedCard.area || detail.area,
-              rooms: enrichedCard.rooms || detail.rooms,
-              constructionYear: detail.constructionYear || enrichedCard.constructionYear,
-              image: enrichedCard.image || detail.images[0] || '',
-              ownerPhone,
-            };
-          }
+        const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+        if (detailHtml) {
+          const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
+          const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
+          enrichedCard = {
+            ...enrichedCard,
+            title: detail.title || enrichedCard.title,
+            price: enrichedCard.price || detail.price,
+            area: detail.area || enrichedCard.area,
+            rooms: detail.rooms || enrichedCard.rooms,
+            constructionYear: detail.constructionYear || enrichedCard.constructionYear,
+            image: detail.images[0] || enrichedCard.image || '',
+            ownerPhone,
+          };
         }
 
         seenLinks.add(absoluteUrl);
@@ -439,7 +555,17 @@ export async function scrapeImoradar24ListingDetail(url: string) {
         document.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
         '';
       const images = Array.from(document.querySelectorAll('img'))
-        .map((img) => img.getAttribute('src') || img.getAttribute('data-src') || '')
+        .flatMap((img) => [
+          img.getAttribute('src') || '',
+          img.currentSrc || '',
+          img.getAttribute('data-src') || '',
+          img.getAttribute('data-lazy-src') || '',
+          img.getAttribute('data-original') || '',
+          img.getAttribute('data-full-image') || '',
+          img.getAttribute('data-image') || '',
+          img.getAttribute('srcset') || '',
+          img.getAttribute('data-srcset') || '',
+        ])
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
@@ -457,14 +583,14 @@ export async function scrapeImoradar24ListingDetail(url: string) {
       location: '',
       postedAt: Math.floor(Date.now() / 1000),
       link: url,
-      imageUrl: payload.images[0] || '',
+      imageUrl: sortImageUrls([...extractCanonicalGalleryImages(await page.content()), ...payload.images])[0] || '',
       description: payload.description,
       ownerPhone: contactPhone,
     });
 
     return {
       ...summary,
-      images: Array.from(new Set(payload.images)).slice(0, 12),
+      images: sortImageUrls([...extractCanonicalGalleryImages(await page.content()), ...payload.images]).slice(0, 12),
       fullDescription: payload.description,
       contactName: '',
       contactPhone,
