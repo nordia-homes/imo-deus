@@ -63,6 +63,14 @@ function isFuture(dateIso?: string) {
   return Boolean(dateIso) && new Date(dateIso as string).getTime() > Date.now();
 }
 
+function getCycleLockStaleMs(existing: Partial<OwnerListingSyncCycleState>) {
+  const runtimeWindow = Math.max(
+    DEFAULT_MAX_RUNTIME_MS * 2,
+    (existing.maxRuntimeMs || DEFAULT_MAX_RUNTIME_MS) + 2 * 60 * 1000
+  );
+  return Math.min(LOCK_STALE_MS, runtimeWindow);
+}
+
 function buildBaseCycleState(input: {
   agencyId: string;
   agencyName: string;
@@ -169,8 +177,11 @@ async function acquireCycleLock(
           maxRuntimeMs: options.maxRuntimeMs,
         });
 
+    const staleAfterMs = getCycleLockStaleMs(existing);
     const lockedAtMs = existing.lockedAt ? new Date(existing.lockedAt).getTime() : 0;
-    if (existing.lockedBy && lockedAtMs && Date.now() - lockedAtMs < LOCK_STALE_MS) {
+    const lastHeartbeatMs = existing.lastHeartbeatAt ? new Date(existing.lastHeartbeatAt).getTime() : 0;
+    const freshestActivityMs = Math.max(lockedAtMs, lastHeartbeatMs);
+    if (existing.lockedBy && freshestActivityMs && Date.now() - freshestActivityMs < staleAfterMs) {
       return null;
     }
 
