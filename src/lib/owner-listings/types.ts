@@ -59,3 +59,31 @@ export type SourceScrapeOptions = {
   searchKeywords: string[];
   searchUrls: string[];
 };
+
+export type OlxPhoneQueueStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed';
+
+export type OlxPhoneQueueEntry = {
+  listingId: string;
+  source: 'olx';
+  link: string;
+  status: OlxPhoneQueueStatus;
+  attempts: number;
+  phone?: string;
+  error?: string;
+  lastAttemptAt?: string;
+  nextAttemptAt?: string;
+  lockedAt?: string;
+  lockedBy?: string;
+  updatedAt: string;
+  createdAt: string;
+  completedAt?: string;
+};
+
+export type OlxPhoneDrainResult = {
+  status: 'processed' | 'skipped' | 'empty';
+  queueId?: string;
+  listingId?: string;
+  phone?: string;
+  attempts?: number;
+  reason?: string;
+};

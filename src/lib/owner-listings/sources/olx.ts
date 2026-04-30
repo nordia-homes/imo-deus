@@ -838,6 +838,11 @@ async function resolveOlxPhone(url: string, html = '') {
   return extractOlxPhoneFromDom(url).catch(() => '');
 }
 
+export async function scrapeOlxPhoneNumber(url: string) {
+  const html = await fetchScraperHtml(url, 30000).catch(() => '');
+  return resolveOlxPhone(url, html).catch(() => '');
+}
+
 export async function scrapeOlxListings(options: SourceScrapeOptions) {
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
@@ -865,7 +870,6 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
 
         let resolvedTitle = card.title;
         let parsed: ParsedOlxCard = parseCard(card.title, card.text);
-        let ownerPhone = '';
         parsed.price = card.price || parsed.price;
         if (!matchesKeywords(`${parsed.location} ${card.title} ${card.text}`, options.searchKeywords)) {
           continue;
@@ -879,7 +883,6 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
             const detailParams = extractOlxParamsFromHtml(detailHtml);
             const detailTitle = extractOlxTitleFromHtml(detailHtml);
             const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
-            ownerPhone = await resolveOlxPhone(absoluteUrl, detailHtml).catch(() => '');
             const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
             parsed = {
               ...parsed,
@@ -919,7 +922,6 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
             link: absoluteUrl,
             imageUrl: pickBestImageUrl(card.imageCandidates),
             description: '',
-            ownerPhone,
           })
         );
       }
@@ -945,14 +947,12 @@ export async function scrapeOlxListingDetail(url: string) {
     price: '',
   };
   let images: string[] = [];
-  let contactPhone = '';
 
   if (html) {
     title = extractOlxTitleFromHtml(html);
     description = extractOlxDescriptionFromHtml(html);
     detailParams = extractOlxParamsFromHtml(html);
     images = extractOlxImagesFromHtml(html);
-    contactPhone = await resolveOlxPhone(url, html).catch(() => '');
   }
 
   const parsed = parseCard(title, description);
@@ -984,7 +984,6 @@ export async function scrapeOlxListingDetail(url: string) {
     link: url,
     imageUrl: pickBestImageUrl([...images, domParams?.imageUrl || '']),
     description,
-    ownerPhone: contactPhone,
   });
 
   return {
@@ -996,6 +995,6 @@ export async function scrapeOlxListingDetail(url: string) {
     ).slice(0, 12),
     fullDescription: description,
     contactName: '',
-    contactPhone,
+    contactPhone: '',
   } satisfies OwnerListingDetail;
 }

@@ -4,11 +4,14 @@
     "src/lib/owner-listings/index.ts",
     "src/lib/owner-listings/types.ts",
     "src/lib/owner-listings/utils.ts",
+    "src/lib/owner-listings/olx-phone-queue.ts",
+    "src/lib/owner-listings/background.ts",
     "src/lib/owner-listings/browser.ts",
     "src/lib/owner-listings/sources/olx.ts",
     "src/lib/owner-listings/sources/imoradar24.ts",
     "src/lib/owner-listings/sources/publi24.ts",
-    "src/lib/owner-listings/scope.ts"
+    "src/lib/owner-listings/scope.ts",
+    "src/app/api/owner-listings/olx-phone-drain/route.ts"
   ],
   "exclude": ["node_modules", ".next"]
 }

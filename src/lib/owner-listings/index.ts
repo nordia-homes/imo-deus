@@ -3,6 +3,7 @@ import { adminDb } from '@/firebase/admin';
 import { scrapeOlxListingDetail, scrapeOlxListings } from '@/lib/owner-listings/sources/olx';
 import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings } from '@/lib/owner-listings/sources/imoradar24';
 import { scrapePubli24ListingDetail, scrapePubli24Listings } from '@/lib/owner-listings/sources/publi24';
+import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type {
   OwnerListingDetail,
@@ -186,6 +187,9 @@ export async function syncOwnerListings(
 
   if (result.stored > 0) {
     await batch.commit();
+    await Promise.all(
+      listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing))
+    );
   }
 
   return result;

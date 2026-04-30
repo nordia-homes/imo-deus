@@ -1,13 +1,18 @@
 import type { DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { syncOwnerListings } from '@/lib/owner-listings';
-import type { OwnerListingSource, OwnerListingSyncResult } from '@/lib/owner-listings/types';
+import { drainNextOlxPhoneQueueItem } from '@/lib/owner-listings/olx-phone-queue';
+import type { OlxPhoneDrainResult, OwnerListingSource, OwnerListingSyncResult } from '@/lib/owner-listings/types';
 
 export const OWNER_LISTINGS_CRON_SECRET_HEADER = 'x-owner-listings-cron-secret';
 
 export function isValidOwnerListingsCronSecret(secret: string | null | undefined) {
   const expected = process.env.OWNER_LISTINGS_CRON_SECRET;
   return Boolean(expected) && Boolean(secret) && secret === expected;
+}
+
+export async function runOwnerListingsOlxPhoneDrain(): Promise<OlxPhoneDrainResult> {
+  return drainNextOlxPhoneQueueItem();
 }
 
 type BackgroundSyncOptions = {

@@ -133,6 +133,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /ownerListingOlxPhoneQueue/{queueId} {
+      allow read, write: if false;
+    }
+
     // --- Client Portals ---
     match /portals/{portalId} {
       // Anyone with the link can read portal and recommendation data.
