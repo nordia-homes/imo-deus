@@ -1,6 +1,6 @@
 import { chromium, type Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
-import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
+import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 
 const publi24PhoneCache = new Map<string, string>();
@@ -618,76 +618,101 @@ function extractStructuredOffersFromHtml(html: string) {
   return offers;
 }
 
-export async function scrapePubli24Listings(options: SourceScrapeOptions) {
+export async function scrapePubli24ListingsPage(
+  options: SourceScrapeOptions,
+  pageNumber = Math.max(1, options.startPage ?? 1)
+): Promise<OwnerListingSourcePageResult> {
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
-  const hardPageLimit = options.maxPages ?? options.hardPageLimit ?? 250;
+  let reachedEnd = true;
 
   for (const baseUrl of options.searchUrls) {
-    for (let pageNumber = 1; pageNumber <= hardPageLimit; pageNumber += 1) {
-      const pageUrl = new URL(baseUrl);
-      if (pageNumber > 1) {
-        pageUrl.searchParams.set('page', String(pageNumber));
+    const pageUrl = new URL(baseUrl);
+    if (pageNumber > 1) {
+      pageUrl.searchParams.set('page', String(pageNumber));
+    }
+
+    const html = await fetchScraperHtml(pageUrl.toString(), 30000).catch(() => '');
+    if (!html) {
+      continue;
+    }
+
+    const structuredOffers = extractStructuredOffersFromHtml(html);
+    if (!structuredOffers.length) {
+      continue;
+    }
+
+    reachedEnd = false;
+
+    for (const offer of structuredOffers) {
+      if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
+      if (!offer.url || !offer.title) continue;
+
+      const absoluteUrl = normalizeUrl(offer.url, 'https://www.publi24.ro');
+      if (seenLinks.has(absoluteUrl)) continue;
+      if (!matchesKeywords(`${offer.location} ${offer.title} ${offer.description}`, options.searchKeywords)) {
+        continue;
       }
 
-      const html = await fetchScraperHtml(pageUrl.toString(), 30000);
-      const structuredOffers = extractStructuredOffersFromHtml(html);
-      if (!structuredOffers.length) break;
-
-      for (const offer of structuredOffers) {
-        if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
-        if (!offer.url || !offer.title) continue;
-
-        const absoluteUrl = normalizeUrl(offer.url, 'https://www.publi24.ro');
-        if (seenLinks.has(absoluteUrl)) continue;
-        if (!matchesKeywords(`${offer.location} ${offer.title} ${offer.description}`, options.searchKeywords)) {
-          continue;
+      let enrichedOffer = { ...offer, url: absoluteUrl };
+      if (!enrichedOffer.area || !enrichedOffer.rooms || !enrichedOffer.constructionYear) {
+        const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+        if (detailHtml) {
+          const detail = extractPubli24DetailFromHtml(detailHtml, absoluteUrl);
+          const ownerPhone = await extractPubli24PhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
+          enrichedOffer = {
+            ...enrichedOffer,
+            title: detail.title || enrichedOffer.title,
+            description: detail.description || enrichedOffer.description,
+            price: enrichedOffer.price || detail.price,
+            area: enrichedOffer.area || detail.area,
+            rooms: enrichedOffer.rooms || detail.rooms,
+            imageUrl: enrichedOffer.imageUrl || detail.images[0] || '',
+            constructionYear: enrichedOffer.constructionYear || detail.constructionYear,
+            ownerPhone,
+          };
         }
-
-        let enrichedOffer = { ...offer, url: absoluteUrl };
-        if (!enrichedOffer.area || !enrichedOffer.rooms || !enrichedOffer.constructionYear) {
-          const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
-          if (detailHtml) {
-            const detail = extractPubli24DetailFromHtml(detailHtml, absoluteUrl);
-            const ownerPhone = await extractPubli24PhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
-            enrichedOffer = {
-              ...enrichedOffer,
-              title: detail.title || enrichedOffer.title,
-              description: detail.description || enrichedOffer.description,
-              price: enrichedOffer.price || detail.price,
-              area: enrichedOffer.area || detail.area,
-              rooms: enrichedOffer.rooms || detail.rooms,
-              imageUrl: enrichedOffer.imageUrl || detail.images[0] || '',
-              constructionYear: enrichedOffer.constructionYear || detail.constructionYear,
-              ownerPhone,
-            };
-          }
-        }
-
-        const idMatch = absoluteUrl.match(/\/([a-z0-9]+)\.html/i);
-        seenLinks.add(absoluteUrl);
-        listings.push(
-          buildSummary({
-            scopeKey: options.scopeKey,
-            scopeCity: options.scopeCity,
-            source: 'publi24',
-            externalId: idMatch?.[1] || absoluteUrl,
-            title: enrichedOffer.title,
-            price: enrichedOffer.price,
-            area: enrichedOffer.area,
-            rooms: enrichedOffer.rooms,
-            constructionYear: enrichedOffer.constructionYear,
-            year: enrichedOffer.constructionYear,
-            location: enrichedOffer.location,
-            postedAt: Math.floor(Date.now() / 1000),
-            postedAtText: '',
-            link: absoluteUrl,
-            imageUrl: enrichedOffer.imageUrl,
-            description: normalizeWhitespace(enrichedOffer.description).slice(0, 500),
-            ownerPhone: normalizeWhitespace(enrichedOffer.ownerPhone),
-          })
-        );
       }
+
+      const idMatch = absoluteUrl.match(/\/([a-z0-9]+)\.html/i);
+      seenLinks.add(absoluteUrl);
+      listings.push(
+        buildSummary({
+          scopeKey: options.scopeKey,
+          scopeCity: options.scopeCity,
+          source: 'publi24',
+          externalId: idMatch?.[1] || absoluteUrl,
+          title: enrichedOffer.title,
+          price: enrichedOffer.price,
+          area: enrichedOffer.area,
+          rooms: enrichedOffer.rooms,
+          constructionYear: enrichedOffer.constructionYear,
+          year: enrichedOffer.constructionYear,
+          location: enrichedOffer.location,
+          postedAt: Math.floor(Date.now() / 1000),
+          postedAtText: '',
+          link: absoluteUrl,
+          imageUrl: enrichedOffer.imageUrl,
+          description: normalizeWhitespace(enrichedOffer.description).slice(0, 500),
+          ownerPhone: normalizeWhitespace(enrichedOffer.ownerPhone),
+        })
+      );
+    }
+  }
+
+  return { listings, reachedEnd };
+}
+
+export async function scrapePubli24Listings(options: SourceScrapeOptions) {
+  const listings: OwnerListingSummary[] = [];
+  const startPage = Math.max(1, options.startPage ?? 1);
+  const pageCount = Math.max(1, options.maxPages ?? options.hardPageLimit ?? 250);
+
+  for (let pageNumber = startPage; pageNumber < startPage + pageCount; pageNumber += 1) {
+    const pageResult = await scrapePubli24ListingsPage(options, pageNumber);
+    listings.push(...pageResult.listings);
+    if (pageResult.reachedEnd || (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource)) {
+      break;
     }
   }
 

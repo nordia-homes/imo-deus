@@ -1,89 +1,82 @@
-# Owner Listings Background Sync
+# Owner Listings Crawl Cycle
 
-Aceasta implementare ruleaza scraping-ul in background astfel:
+Fluxul automat pentru `owner listings` ruleaza acum ca un `crawl cycle controller`, separat de sync-ul manual din UI.
 
-1. Firebase Scheduler declanseaza functia `ownerListingsBackgroundSync`
-2. Functia apeleaza ruta interna:
+## Ce face
+
+1. Schedulerul loveste periodic ruta:
    `/api/owner-listings/sync/background`
-3. Aplicatia Next executa scraping-ul cu Playwright
-4. Rezultatele si logurile se salveaza in Firestore
+2. Aplicatia verifica starea ciclului din Firestore pentru fiecare agentie eligibila.
+3. Daca nu exista ciclu activ si cooldown-ul a expirat, porneste un ciclu nou.
+4. Ciclul proceseaza sursele strict in ordinea:
+   - `OLX`
+   - `Publi24`
+   - `Imoradar24`
+5. Workerul proceseaza batch-uri mici de pagini din sursa curenta.
+6. Cand toate sursele sunt terminate, ciclul intra in `cooldown` pentru `2 ore`.
+7. Dupa expirarea cooldown-ului, urmatorul tick porneste un ciclu nou.
 
 ## Colectii Firestore
 
 - `ownerListings`
-- `ownerListingSyncJobs`
+- `ownerListingSyncCycles`
+- `ownerListingSyncCycleJobs`
+- `ownerListingSyncRuns`
+- `ownerListingOlxPhoneQueue`
 
-## Variabile necesare
+## Diferenta fata de sync-ul manual
 
-### In App Hosting / Next runtime
+- `POST /api/owner-listings/sync`
+  Ruleaza sync manual imediat pentru agentia curenta, ca pana acum.
+
+- `POST /api/owner-listings/sync/background`
+  Ruleaza doar `un tick` al controllerului automat.
+
+## Recomandare Scheduler
+
+Nu seta schedulerul la `2 ore`.
+
+Seteaza-l la `5 minute`, iar aplicatia decide singura:
+- daca exista deja ciclu activ
+- daca ciclul este in cooldown
+- daca trebuie pornit un ciclu nou
+
+Astfel obtii:
+- fara suprapuneri intre cicluri
+- reluare corecta dupa erori
+- repornire la `2 ore dupa terminarea completa`, nu la o ora fixa arbitrara
+
+## Parametri impliciti
+
+- `hardPageLimit`: `250`
+- `maxAgeDays`: `60`
+- `maxPagesPerTick`: `12`
+- `maxRuntimeMs`: `420000` (`7 minute`)
+- `cooldown`: `2 ore`
+
+## Payload optional pentru ruta de background
+
+```json
+{
+  "agencyId": "optional",
+  "hardPageLimit": 250,
+  "maxAgeDays": 60,
+  "maxListingsPerSource": null,
+  "maxPagesPerTick": 12,
+  "maxRuntimeMs": 420000
+}
+```
+
+## Secret necesar
 
 - `OWNER_LISTINGS_CRON_SECRET`
 
-### In Firebase Functions runtime
+Header-ul folosit de scheduler:
 
-- `OWNER_LISTINGS_APP_BASE_URL`
-  Exemplu:
-  `https://studio-652232171-42fb6.web.app`
-  sau URL-ul App Hosting real
+- `x-owner-listings-cron-secret`
 
-- `OWNER_LISTINGS_FUNCTIONS_CRON_SECRET`
-  Trebuie sa fie identic cu valoarea din App Hosting.
+## Observatii
 
-## Deploy
-
-1. Genereaza secretul comun:
-   `powershell -Command "[guid]::NewGuid().ToString('N')"`
-2. Seteaza secretul pentru App Hosting:
-   `firebase apphosting:secrets:set OWNER_LISTINGS_CRON_SECRET`
-3. Acorda acces backend-ului App Hosting la secret:
-   `firebase apphosting:secrets:grantaccess OWNER_LISTINGS_CRON_SECRET --backend studio --project studio-652232171-42fb6 --location us-central1`
-4. Seteaza secretul pentru Functions:
-   `firebase functions:secrets:set OWNER_LISTINGS_FUNCTIONS_CRON_SECRET`
-5. Seteaza URL-ul aplicatiei pentru Functions:
-   `firebase functions:secrets:set OWNER_LISTINGS_APP_BASE_URL`
-6. Instaleaza dependintele pentru functions:
-   `cd functions && npm install`
-7. Build:
-   `npm run build`
-8. Deploy:
-   `firebase deploy --only functions`
-
-## Script helper
-
-Poti rula direct:
-
-`powershell -ExecutionPolicy Bypass -File .\scripts\deploy-owner-listings-background.ps1`
-
-## Valori recomandate
-
-- `OWNER_LISTINGS_APP_BASE_URL`
-  `https://studio-652232171-42fb6.web.app`
-
-- `OWNER_LISTINGS_CRON_SECRET`
-  valoare random lunga, de exemplu:
-  `7f4f6f5f0c724f8f8f4d7d7d51c1a8ab`
-
-## Schedule
-
-Schedulerul este setat la:
-
-- `every 2 hours`
-- timezone: `Europe/Bucharest`
-
-## Scope curent
-
-Momentan jobul ruleaza pentru agentiile cu:
-
-- `agency.city == "Bucuresti-Ilfov"`
-
-si foloseste linkurile dedicate pentru:
-
-- `OLX`
-- `Publi24 Bucuresti`
-- `Publi24 Ilfov`
-- `Imoradar24 Bucuresti + Ilfov`
-
-## Reguli speciale
-
-- `Imoradar24` accepta doar anunturi cu vechime maxima de `60 zile`
-- jobul scrie un document de audit per rulare in `ownerListingSyncJobs`
+- telefonul `OLX` ramane separat, prin coada `ownerListingOlxPhoneQueue`
+- ciclul principal nu asteapta enrichments lente ca sa se considere terminat
+- `Imoradar24` ignora acum anunturile care au ca sursa reala `OLX` sau `Publi24`

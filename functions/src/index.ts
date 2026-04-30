@@ -7,7 +7,7 @@ const ownerListingsCronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECR
 
 export const ownerListingsBackgroundSync = onSchedule(
   {
-    schedule: 'every 2 hours',
+    schedule: 'every 5 minutes',
     timeZone: 'Europe/Bucharest',
     region: 'us-central1',
     memory: '1GiB',
@@ -26,6 +26,9 @@ export const ownerListingsBackgroundSync = onSchedule(
       },
       body: JSON.stringify({
         hardPageLimit: 250,
+        maxAgeDays: 60,
+        maxPagesPerTick: 12,
+        maxRuntimeMs: 420000,
       }),
     });
 

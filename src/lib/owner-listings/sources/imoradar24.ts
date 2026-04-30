@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
-import type { OwnerListingDetail, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
+import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
 import { scrapePubli24ListingDetail } from '@/lib/owner-listings/sources/publi24';
@@ -468,92 +468,117 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
     .filter((item) => item.href && item.title);
 }
 
-export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
+export async function scrapeImoradar24ListingsPage(
+  options: SourceScrapeOptions,
+  pageNumber = Math.max(1, options.startPage ?? 1)
+): Promise<OwnerListingSourcePageResult> {
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
-  const hardPageLimit = options.maxPages ?? options.hardPageLimit ?? 250;
   const maxAgeDays = options.maxAgeDays ?? 60;
+  let reachedEnd = true;
 
   for (const baseUrl of options.searchUrls) {
-    for (let pageNumber = 1; pageNumber <= hardPageLimit; pageNumber += 1) {
-      const pageUrl = new URL(baseUrl);
-      if (pageNumber > 1) {
-        pageUrl.searchParams.set('page', String(pageNumber));
+    const pageUrl = new URL(baseUrl);
+    if (pageNumber > 1) {
+      pageUrl.searchParams.set('page', String(pageNumber));
+    }
+
+    const html = await fetchScraperHtml(pageUrl.toString(), 30000).catch(() => '');
+    if (!html) {
+      continue;
+    }
+
+    const cards = extractListPageFromHtml(html);
+    if (!cards.length) {
+      continue;
+    }
+
+    reachedEnd = false;
+    let pageContainsOnlyOldListings = true;
+
+    for (const card of cards) {
+      if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
+      if (!/imoradar24\.ro/.test(card.href) && !card.href.startsWith('/')) continue;
+
+      const postedAt = parseRomanianDateToUnix(card.postedAtText || '');
+      if (!isWithinMaxAgeDays(postedAt, maxAgeDays)) {
+        continue;
       }
 
-      const html = await fetchScraperHtml(pageUrl.toString(), 30000);
-      const cards = extractListPageFromHtml(html);
-      if (!cards.length) break;
-      let pageContainsOnlyOldListings = true;
+      pageContainsOnlyOldListings = false;
+      const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
+      if (seenLinks.has(absoluteUrl)) continue;
 
-      for (const card of cards) {
-        if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
-        if (!/imoradar24\.ro/.test(card.href) && !card.href.startsWith('/')) continue;
-
-        const postedAt = parseRomanianDateToUnix(card.postedAtText || '');
-        if (!isWithinMaxAgeDays(postedAt, maxAgeDays)) {
+      let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
+      const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+      if (detailHtml) {
+        const sourceUrl = extractImoradarSourceUrl(detailHtml, absoluteUrl);
+        if (shouldSkipImoradarSourceUrl(sourceUrl)) {
+          seenLinks.add(absoluteUrl);
           continue;
         }
 
-        pageContainsOnlyOldListings = false;
-        const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
-        if (seenLinks.has(absoluteUrl)) continue;
-
-        let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
-        const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
-        if (detailHtml) {
-          const sourceUrl = extractImoradarSourceUrl(detailHtml, absoluteUrl);
-          if (shouldSkipImoradarSourceUrl(sourceUrl)) {
-            seenLinks.add(absoluteUrl);
-            continue;
-          }
-
-          const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
-          const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
-          const coverImage = pickImoradarCardCoverImage([
-            ...extractCanonicalGalleryImages(detailHtml),
-            ...extractImageCandidatesFromHtml(detailHtml),
-            enrichedCard.image,
-          ]);
-          enrichedCard = {
-            ...enrichedCard,
-            title: detail.title || enrichedCard.title,
-            price: enrichedCard.price || detail.price,
-            area: detail.area || enrichedCard.area,
-            rooms: detail.rooms || enrichedCard.rooms,
-            constructionYear: detail.constructionYear || enrichedCard.constructionYear,
-            image: coverImage || enrichedCard.image || '',
-            ownerPhone,
-          };
-        }
-
-        seenLinks.add(absoluteUrl);
-        listings.push(
-          buildSummary({
-            scopeKey: options.scopeKey,
-            scopeCity: options.scopeCity,
-            source: 'imoradar24',
-            externalId: absoluteUrl,
-            title: enrichedCard.title,
-            price: enrichedCard.price,
-            area: enrichedCard.area,
-            constructionYear: enrichedCard.constructionYear,
-            year: enrichedCard.constructionYear,
-            rooms: enrichedCard.rooms,
-            location: enrichedCard.location,
-            postedAt,
-            postedAtText: enrichedCard.postedAtText,
-            link: absoluteUrl,
-            imageUrl: enrichedCard.image,
-            description: normalizeWhitespace(`${enrichedCard.title} ${enrichedCard.location}`).slice(0, 500),
-            ownerPhone: normalizeWhitespace(enrichedCard.ownerPhone),
-          })
-        );
+        const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
+        const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
+        const coverImage = pickImoradarCardCoverImage([
+          ...extractCanonicalGalleryImages(detailHtml),
+          ...extractImageCandidatesFromHtml(detailHtml),
+          enrichedCard.image,
+        ]);
+        enrichedCard = {
+          ...enrichedCard,
+          title: detail.title || enrichedCard.title,
+          price: enrichedCard.price || detail.price,
+          area: detail.area || enrichedCard.area,
+          rooms: detail.rooms || enrichedCard.rooms,
+          constructionYear: detail.constructionYear || enrichedCard.constructionYear,
+          image: coverImage || enrichedCard.image || '',
+          ownerPhone,
+        };
       }
 
-      if (pageContainsOnlyOldListings) {
-        break;
-      }
+      seenLinks.add(absoluteUrl);
+      listings.push(
+        buildSummary({
+          scopeKey: options.scopeKey,
+          scopeCity: options.scopeCity,
+          source: 'imoradar24',
+          externalId: absoluteUrl,
+          title: enrichedCard.title,
+          price: enrichedCard.price,
+          area: enrichedCard.area,
+          constructionYear: enrichedCard.constructionYear,
+          year: enrichedCard.constructionYear,
+          rooms: enrichedCard.rooms,
+          location: enrichedCard.location,
+          postedAt,
+          postedAtText: enrichedCard.postedAtText,
+          link: absoluteUrl,
+          imageUrl: enrichedCard.image,
+          description: normalizeWhitespace(`${enrichedCard.title} ${enrichedCard.location}`).slice(0, 500),
+          ownerPhone: normalizeWhitespace(enrichedCard.ownerPhone),
+        })
+      );
+    }
+
+    if (pageContainsOnlyOldListings) {
+      return { listings, reachedEnd: true };
+    }
+  }
+
+  return { listings, reachedEnd };
+}
+
+export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
+  const listings: OwnerListingSummary[] = [];
+  const startPage = Math.max(1, options.startPage ?? 1);
+  const pageCount = Math.max(1, options.maxPages ?? options.hardPageLimit ?? 250);
+
+  for (let pageNumber = startPage; pageNumber < startPage + pageCount; pageNumber += 1) {
+    const pageResult = await scrapeImoradar24ListingsPage(options, pageNumber);
+    listings.push(...pageResult.listings);
+    if (pageResult.reachedEnd || (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource)) {
+      break;
     }
   }
 

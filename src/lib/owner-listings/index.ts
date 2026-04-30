@@ -1,12 +1,14 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
-import { scrapeOlxListingDetail, scrapeOlxListings } from '@/lib/owner-listings/sources/olx';
-import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings } from '@/lib/owner-listings/sources/imoradar24';
-import { scrapePubli24ListingDetail, scrapePubli24Listings } from '@/lib/owner-listings/sources/publi24';
+import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
+import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
+import { scrapePubli24ListingDetail, scrapePubli24Listings, scrapePubli24ListingsPage } from '@/lib/owner-listings/sources/publi24';
 import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type {
   OwnerListingDetail,
+  OwnerListingSourcePageResult,
+  OwnerListingSourceSyncResult,
   OwnerListingSource,
   OwnerListingSummary,
   OwnerListingSyncResult,
@@ -26,23 +28,127 @@ const DEFAULT_OPTIONS: SourceScrapeOptions = {
 
 type SourceHandler = {
   scrapeList: (options: SourceScrapeOptions) => Promise<OwnerListingSummary[]>;
+  scrapePage: (options: SourceScrapeOptions, pageNumber?: number) => Promise<OwnerListingSourcePageResult>;
   scrapeDetail: (url: string) => Promise<OwnerListingDetail>;
 };
 
 const SOURCES: Record<OwnerListingSource, SourceHandler> = {
   olx: {
     scrapeList: scrapeOlxListings,
+    scrapePage: scrapeOlxListingsPage,
     scrapeDetail: scrapeOlxListingDetail,
   },
   imoradar24: {
     scrapeList: scrapeImoradar24Listings,
+    scrapePage: scrapeImoradar24ListingsPage,
     scrapeDetail: scrapeImoradar24ListingDetail,
   },
   publi24: {
     scrapeList: scrapePubli24Listings,
+    scrapePage: scrapePubli24ListingsPage,
     scrapeDetail: scrapePubli24ListingDetail,
   },
 };
+
+async function resolveOwnerListingScope(agencyId: string) {
+  const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
+  const agency = agencySnapshot.data() as import('@/lib/types').Agency | undefined;
+  const scope = resolveAgencyOwnerListingScope(agency);
+
+  if (!scope) {
+    throw new Error('Momentan owner listings este configurat doar pentru agentii cu orasul Bucuresti-Ilfov.');
+  }
+
+  return {
+    agency,
+    agencyName: agency?.name || agencyId,
+    scope,
+  };
+}
+
+function buildSourceScrapeOptions(
+  source: OwnerListingSource,
+  scope: ReturnType<typeof resolveAgencyOwnerListingScope> extends infer _T ? NonNullable<_T> : never,
+  options: Partial<SourceScrapeOptions> = {}
+): SourceScrapeOptions {
+  return {
+    ...DEFAULT_OPTIONS,
+    ...options,
+    scopeKey: scope.key,
+    scopeCity: scope.displayName,
+    searchKeywords: scope.searchKeywords,
+    searchUrls:
+      source === 'olx'
+        ? scope.olxSearchUrls
+        : source === 'publi24'
+          ? scope.publi24SearchUrls
+          : scope.imoradar24SearchUrls,
+  };
+}
+
+async function storeOwnerListingsBatch(listings: OwnerListingSummary[]): Promise<Omit<OwnerListingSyncResult, 'scanned' | 'errors'>> {
+  const unique = new Map<string, OwnerListingSummary>();
+  const result = {
+    accepted: 0,
+    stored: 0,
+    skipped: 0,
+  };
+
+  for (const listing of listings) {
+    if (unique.has(listing.fingerprint)) {
+      result.skipped += 1;
+      continue;
+    }
+
+    unique.set(listing.fingerprint, listing);
+    result.accepted += 1;
+  }
+
+  const listingsToStore = await Promise.all(
+    Array.from(unique.values()).map(async (listing) => {
+      const docRef = adminDb.collection('ownerListings').doc(docIdForListing(listing));
+      const existingSnapshot = await docRef.get();
+      const existing = existingSnapshot.exists ? (existingSnapshot.data() as Partial<OwnerListingSummary>) : undefined;
+      return {
+        docRef,
+        listing: mergeListingWithExisting(listing, existing),
+      };
+    })
+  );
+
+  if (!listingsToStore.length) {
+    return result;
+  }
+
+  const batch = adminDb.batch();
+  for (const entry of listingsToStore) {
+    const { docRef, listing } = entry;
+    batch.set(
+      docRef,
+      stripUndefined({
+        ...listing,
+        updatedAt: new Date().toISOString(),
+        syncSource: 'scraper',
+        dedupeKey: listing.fingerprint,
+        searchText: [listing.title, listing.location, listing.price, listing.sourceLabel].join(' '),
+        syncMetadata: {
+          lastSeenAt: listing.lastSeenAt,
+          scrapedAt: listing.scrapedAt,
+        },
+        firestoreUpdatedAt: FieldValue.serverTimestamp(),
+      }),
+      { merge: true }
+    );
+    result.stored += 1;
+  }
+
+  await batch.commit();
+  await Promise.all(
+    listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing))
+  );
+
+  return result;
+}
 
 function preferIncomingValue<T>(incoming: T | null | undefined, existing: T | null | undefined): T | undefined {
   if (incoming === undefined || incoming === null) {
@@ -93,18 +199,40 @@ export async function scrapeOwnerListingDetail(source: OwnerListingSource, url: 
   return SOURCES[source].scrapeDetail(url);
 }
 
+export async function syncOwnerListingsSourcePage(
+  agencyId: string,
+  source: OwnerListingSource,
+  page: number,
+  options: Partial<SourceScrapeOptions> = {}
+): Promise<OwnerListingSourceSyncResult> {
+  const { scope } = await resolveOwnerListingScope(agencyId);
+  const resolvedOptions = buildSourceScrapeOptions(source, scope, {
+    ...options,
+    startPage: page,
+    maxPages: 1,
+  });
+
+  const pageResult = await SOURCES[source].scrapePage(resolvedOptions, page);
+  const persisted = await storeOwnerListingsBatch(pageResult.listings);
+
+  return {
+    source,
+    page,
+    reachedEnd: pageResult.reachedEnd,
+    scanned: pageResult.listings.length,
+    accepted: persisted.accepted,
+    stored: persisted.stored,
+    skipped: persisted.skipped,
+    errors: [],
+  };
+}
+
 export async function syncOwnerListings(
   agencyId: string,
   requestedSources: OwnerListingSource[] = ['olx', 'imoradar24', 'publi24'],
   options: Partial<SourceScrapeOptions> = {}
 ): Promise<OwnerListingSyncResult> {
-  const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
-  const agency = agencySnapshot.data() as import('@/lib/types').Agency | undefined;
-  const scope = resolveAgencyOwnerListingScope(agency);
-
-  if (!scope) {
-    throw new Error('Momentan owner listings este configurat doar pentru agentii cu orasul Bucuresti-Ilfov.');
-  }
+  const { scope } = await resolveOwnerListingScope(agencyId);
 
   const unique = new Map<string, OwnerListingSummary>();
   const result: OwnerListingSyncResult = {
@@ -117,19 +245,7 @@ export async function syncOwnerListings(
 
   for (const source of requestedSources) {
     try {
-      const resolvedOptions: SourceScrapeOptions = {
-        ...DEFAULT_OPTIONS,
-        ...options,
-        scopeKey: scope.key,
-        scopeCity: scope.displayName,
-        searchKeywords: scope.searchKeywords,
-        searchUrls:
-          source === 'olx'
-            ? scope.olxSearchUrls
-            : source === 'publi24'
-              ? scope.publi24SearchUrls
-              : scope.imoradar24SearchUrls,
-      };
+      const resolvedOptions = buildSourceScrapeOptions(source, scope, options);
 
       const listings = await SOURCES[source].scrapeList(resolvedOptions);
       result.scanned += listings.length;
@@ -151,46 +267,10 @@ export async function syncOwnerListings(
     }
   }
 
-  const listingsToStore = await Promise.all(
-    Array.from(unique.values()).map(async (listing) => {
-      const docRef = adminDb.collection('ownerListings').doc(docIdForListing(listing));
-      const existingSnapshot = await docRef.get();
-      const existing = existingSnapshot.exists ? (existingSnapshot.data() as Partial<OwnerListingSummary>) : undefined;
-      return {
-        docRef,
-        listing: mergeListingWithExisting(listing, existing),
-      };
-    })
-  );
-
-  const batch = adminDb.batch();
-  for (const entry of listingsToStore) {
-    const { docRef, listing } = entry;
-    batch.set(
-      docRef,
-      stripUndefined({
-        ...listing,
-        updatedAt: new Date().toISOString(),
-        syncSource: 'scraper',
-        dedupeKey: listing.fingerprint,
-        searchText: [listing.title, listing.location, listing.price, listing.sourceLabel].join(' '),
-        syncMetadata: {
-          lastSeenAt: listing.lastSeenAt,
-          scrapedAt: listing.scrapedAt,
-        },
-        firestoreUpdatedAt: FieldValue.serverTimestamp(),
-      }),
-      { merge: true }
-    );
-    result.stored += 1;
-  }
-
-  if (result.stored > 0) {
-    await batch.commit();
-    await Promise.all(
-      listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing))
-    );
-  }
+  const persisted = await storeOwnerListingsBatch(Array.from(unique.values()));
+  result.accepted = persisted.accepted;
+  result.stored = persisted.stored;
+  result.skipped += persisted.skipped;
 
   return result;
 }

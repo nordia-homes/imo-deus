@@ -9,7 +9,7 @@ param(
   [string]$BackendId = "studio",
 
   [Parameter(Mandatory = $false)]
-  [string]$AppBaseUrl = "https://studio-652232171-42fb6.web.app",
+  [string]$AppBaseUrl = "https://studio--studio-652232171-42fb6.us-central1.hosted.app",
 
   [Parameter(Mandatory = $false)]
   [string]$CronSecret = ""

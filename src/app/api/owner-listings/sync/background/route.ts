@@ -3,15 +3,18 @@ import { z } from 'zod';
 import {
   isValidOwnerListingsCronSecret,
   OWNER_LISTINGS_CRON_SECRET_HEADER,
-  runOwnerListingsBackgroundSync,
+  runOwnerListingsScheduledCycleTick,
 } from '@/lib/owner-listings/background';
 
 export const runtime = 'nodejs';
 
 const backgroundSchema = z.object({
   agencyId: z.string().trim().min(1).optional(),
-  sources: z.array(z.enum(['olx', 'imoradar24', 'publi24'])).optional(),
   hardPageLimit: z.number().int().min(1).max(1000).optional(),
+  maxAgeDays: z.number().int().min(1).max(365).optional(),
+  maxListingsPerSource: z.number().int().min(1).max(100).nullable().optional(),
+  maxPagesPerTick: z.number().int().min(1).max(100).optional(),
+  maxRuntimeMs: z.number().int().min(1000).max(15 * 60 * 1000).optional(),
 });
 
 function formatError(error: unknown) {
@@ -37,10 +40,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = backgroundSchema.parse(await request.json().catch(() => ({})));
-    const result = await runOwnerListingsBackgroundSync({
+    const result = await runOwnerListingsScheduledCycleTick({
       agencyId: body.agencyId,
-      sources: body.sources,
       hardPageLimit: body.hardPageLimit,
+      maxAgeDays: body.maxAgeDays,
+      maxListingsPerSource: body.maxListingsPerSource,
+      maxPagesPerTick: body.maxPagesPerTick,
+      maxRuntimeMs: body.maxRuntimeMs,
     });
 
     return NextResponse.json(result, { status: 200 });

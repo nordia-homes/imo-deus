@@ -137,6 +137,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /ownerListingSyncCycles/{cycleId} {
+      allow read, write: if false;
+    }
+
+    match /ownerListingSyncCycleJobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /ownerListingSyncRuns/{runId} {
+      allow read, write: if false;
+    }
+
     // --- Client Portals ---
     match /portals/{portalId} {
       // Anyone with the link can read portal and recommendation data.

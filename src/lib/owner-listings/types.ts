@@ -53,11 +53,17 @@ export type SourceScrapeOptions = {
   maxPages?: number | null;
   maxListingsPerSource?: number | null;
   hardPageLimit?: number;
+  startPage?: number;
   maxAgeDays?: number | null;
   scopeKey: string;
   scopeCity: string;
   searchKeywords: string[];
   searchUrls: string[];
+};
+
+export type OwnerListingSourcePageResult = {
+  listings: OwnerListingSummary[];
+  reachedEnd: boolean;
 };
 
 export type OlxPhoneQueueStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed';
@@ -86,4 +92,101 @@ export type OlxPhoneDrainResult = {
   phone?: string;
   attempts?: number;
   reason?: string;
+};
+
+export type OwnerListingSourceSyncResult = OwnerListingSyncResult & {
+  source: OwnerListingSource;
+  page: number;
+  reachedEnd: boolean;
+};
+
+export type OwnerListingSyncCycleStatus = 'idle' | 'running' | 'cooldown' | 'failed';
+export type OwnerListingSyncCycleJobStatus = 'pending' | 'running' | 'done' | 'failed';
+
+export type OwnerListingSyncCycleState = {
+  agencyId: string;
+  agencyName: string;
+  scopeKey: string;
+  scopeCity: string;
+  cycleNumber: number;
+  status: OwnerListingSyncCycleStatus;
+  sourcesOrder: OwnerListingSource[];
+  currentSourceIndex: number;
+  currentSource: OwnerListingSource | null;
+  cycleStartedAt?: string;
+  cycleFinishedAt?: string;
+  cooldownUntil?: string;
+  lastHeartbeatAt?: string;
+  lastError?: string;
+  lockedAt?: string;
+  lockedBy?: string;
+  hardPageLimit: number;
+  maxAgeDays: number;
+  maxListingsPerSource?: number | null;
+  maxPagesPerTick: number;
+  maxRuntimeMs: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OwnerListingSyncCycleJob = {
+  agencyId: string;
+  cycleNumber: number;
+  source: OwnerListingSource;
+  status: OwnerListingSyncCycleJobStatus;
+  nextPage: number;
+  pagesProcessed: number;
+  scanned: number;
+  accepted: number;
+  stored: number;
+  skipped: number;
+  errors: number;
+  lastRunAt?: string;
+  lastSuccessAt?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  lastError?: string;
+  updatedAt: string;
+  createdAt: string;
+};
+
+export type OwnerListingSyncRun = {
+  agencyId: string;
+  cycleNumber: number;
+  source: OwnerListingSource;
+  page: number;
+  scanned: number;
+  accepted: number;
+  stored: number;
+  skipped: number;
+  errors: number;
+  reachedEnd: boolean;
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  errorMessages: string[];
+};
+
+export type OwnerListingSyncTickAgencyResult = {
+  agencyId: string;
+  agencyName: string;
+  cycleNumber: number;
+  status: OwnerListingSyncCycleStatus;
+  currentSource: OwnerListingSource | null;
+  pagesProcessed: number;
+  cooldownUntil?: string;
+  summary: {
+    scanned: number;
+    accepted: number;
+    stored: number;
+    skipped: number;
+    errors: number;
+  };
+  message: string;
+};
+
+export type OwnerListingSyncTickResult = {
+  startedAt: string;
+  finishedAt: string;
+  agencies: OwnerListingSyncTickAgencyResult[];
 };

@@ -1,8 +1,9 @@
 import type { DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { syncOwnerListings } from '@/lib/owner-listings';
+import { runOwnerListingsSyncSchedulerTick } from '@/lib/owner-listings/cycle';
 import { drainNextOlxPhoneQueueItem } from '@/lib/owner-listings/olx-phone-queue';
-import type { OlxPhoneDrainResult, OwnerListingSource, OwnerListingSyncResult } from '@/lib/owner-listings/types';
+import type { OlxPhoneDrainResult, OwnerListingSource, OwnerListingSyncResult, OwnerListingSyncTickResult } from '@/lib/owner-listings/types';
 
 export const OWNER_LISTINGS_CRON_SECRET_HEADER = 'x-owner-listings-cron-secret';
 
@@ -13,6 +14,19 @@ export function isValidOwnerListingsCronSecret(secret: string | null | undefined
 
 export async function runOwnerListingsOlxPhoneDrain(): Promise<OlxPhoneDrainResult> {
   return drainNextOlxPhoneQueueItem();
+}
+
+type CycleTickOptions = {
+  agencyId?: string | null;
+  hardPageLimit?: number;
+  maxAgeDays?: number;
+  maxListingsPerSource?: number | null;
+  maxPagesPerTick?: number;
+  maxRuntimeMs?: number;
+};
+
+export async function runOwnerListingsScheduledCycleTick(options: CycleTickOptions = {}): Promise<OwnerListingSyncTickResult> {
+  return runOwnerListingsSyncSchedulerTick(options);
 }
 
 type BackgroundSyncOptions = {
