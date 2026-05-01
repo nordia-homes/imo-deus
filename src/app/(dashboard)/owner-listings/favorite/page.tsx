@@ -153,6 +153,7 @@ export default function FavoriteOwnerListingsPage() {
           subtitle="Pregatim lista agentului cu anunturile salvate pentru contact manual."
           currentScopeLabel={currentScope?.displayName}
           activeTab="favorite"
+          favoriteCount={favoriteEntries.length}
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, index) => (
@@ -173,6 +174,7 @@ export default function FavoriteOwnerListingsPage() {
         subtitle="Lista de lucru a agentilor pentru apeluri manuale, cu status de colaborare, comision si notite direct sub fiecare card."
         currentScopeLabel={currentScope?.displayName}
         activeTab="favorite"
+        favoriteCount={favoriteEntries.length}
       />
 
       {favoriteEntries.length > 0 ? (

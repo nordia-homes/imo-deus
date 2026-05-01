@@ -290,6 +290,7 @@ export default function OwnerListingsPage() {
           subtitle="Incarcam lista de proprietati si pregatim filtrele."
           currentScopeLabel={currentScope?.displayName}
           activeTab="listings"
+          favoriteCount={favorites?.length ?? 0}
         />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, index) => (
@@ -311,6 +312,7 @@ export default function OwnerListingsPage() {
         subtitle=""
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
+        favoriteCount={favorites?.length ?? 0}
       />
 
       <div className="sticky top-20 z-20 hidden md:block">

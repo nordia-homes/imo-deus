@@ -9,6 +9,7 @@ type OwnerListingHeaderProps = {
   subtitle: string;
   currentScopeLabel?: string | null;
   activeTab: 'listings' | 'favorite';
+  favoriteCount?: number;
 };
 
 export function OwnerListingHeader({
@@ -16,6 +17,7 @@ export function OwnerListingHeader({
   subtitle,
   currentScopeLabel,
   activeTab,
+  favoriteCount = 0,
 }: OwnerListingHeaderProps) {
   const tabs = [
     {
@@ -26,14 +28,14 @@ export function OwnerListingHeader({
     },
     {
       href: '/owner-listings/favorite',
-      label: 'Favorite',
+      label: `Favorite (${favoriteCount})`,
       icon: Heart,
       active: activeTab === 'favorite',
     },
   ];
 
   return (
-    <div className="rounded-[1.5rem] border border-white/75 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.98),rgba(255,255,255,0)_26%),radial-gradient(circle_at_top_right,rgba(191,219,254,0.34),rgba(191,219,254,0)_28%),linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(244,248,255,0.97)_48%,rgba(236,244,255,0.94)_100%)] px-5 py-4 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl sm:px-6">
+    <div className="rounded-[1.5rem] border border-white/75 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] px-5 py-4 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.24)] backdrop-blur-xl sm:px-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0 flex-1">
