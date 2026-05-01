@@ -26,6 +26,12 @@ const DEFAULT_OPTIONS: SourceScrapeOptions = {
   searchUrls: [],
 };
 
+const SOURCE_HARD_PAGE_LIMITS: Record<OwnerListingSource, number> = {
+  olx: 20,
+  imoradar24: 30,
+  publi24: 35,
+};
+
 type SourceHandler = {
   scrapeList: (options: SourceScrapeOptions) => Promise<OwnerListingSummary[]>;
   scrapePage: (options: SourceScrapeOptions, pageNumber?: number) => Promise<OwnerListingSourcePageResult>;
@@ -71,9 +77,15 @@ function buildSourceScrapeOptions(
   scope: ReturnType<typeof resolveAgencyOwnerListingScope> extends infer _T ? NonNullable<_T> : never,
   options: Partial<SourceScrapeOptions> = {}
 ): SourceScrapeOptions {
+  const sourceHardPageLimit = Math.min(
+    options.hardPageLimit ?? SOURCE_HARD_PAGE_LIMITS[source],
+    SOURCE_HARD_PAGE_LIMITS[source]
+  );
+
   return {
     ...DEFAULT_OPTIONS,
     ...options,
+    hardPageLimit: sourceHardPageLimit,
     scopeKey: scope.key,
     scopeCity: scope.displayName,
     searchKeywords: scope.searchKeywords,

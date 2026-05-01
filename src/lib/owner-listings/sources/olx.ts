@@ -847,6 +847,11 @@ export async function scrapeOlxListingsPage(
   options: SourceScrapeOptions,
   pageNumber = Math.max(1, options.startPage ?? 1)
 ): Promise<OwnerListingSourcePageResult> {
+  const hardPageLimit = Math.max(1, options.hardPageLimit ?? 250);
+  if (pageNumber > hardPageLimit) {
+    return { listings: [], reachedEnd: true };
+  }
+
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
   let reachedEnd = true;
@@ -942,8 +947,9 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
   const listings: OwnerListingSummary[] = [];
   const startPage = Math.max(1, options.startPage ?? 1);
   const pageCount = Math.max(1, options.maxPages ?? options.hardPageLimit ?? 250);
+  const hardPageLimit = Math.max(1, options.hardPageLimit ?? 250);
 
-  for (let pageNumber = startPage; pageNumber < startPage + pageCount; pageNumber += 1) {
+  for (let pageNumber = startPage; pageNumber < startPage + pageCount && pageNumber <= hardPageLimit; pageNumber += 1) {
     const pageResult = await scrapeOlxListingsPage(options, pageNumber);
     listings.push(...pageResult.listings);
     if (pageResult.reachedEnd || (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource)) {
