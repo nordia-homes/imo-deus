@@ -284,17 +284,12 @@ export default function OwnerListingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 px-3 pb-6 sm:px-4 xl:px-5">
+      <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
         <OwnerListingHeader
           title="Anunturi de la proprietari"
           subtitle="Incarcam lista de proprietati si pregatim filtrele."
           currentScopeLabel={currentScope?.displayName}
           activeTab="listings"
-          stats={[
-            { label: 'Gasite', value: '...' },
-            { label: 'Favorite', value: '...' },
-            { label: 'Afisare', value: '...' },
-          ]}
         />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, index) => (
@@ -310,21 +305,12 @@ export default function OwnerListingsPage() {
   }
 
   return (
-    <div className="space-y-6 px-3 pb-6 sm:px-4 xl:px-5">
+    <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
         title="Anunturi de la proprietari"
-        subtitle={
-          currentScope
-            ? 'Vezi rapid ce a aparut nou in zona activa, trimite in Favorite ce merita sunat si pastreaza contextul direct pe card.'
-            : 'Momentan scraping-ul este configurat doar pentru agentii setate pe Bucuresti-Ilfov.'
-        }
+        subtitle=""
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
-        stats={[
-          { label: 'Gasite', value: String(filteredListings.length) },
-          { label: 'Favorite', value: String(favorites?.length ?? 0) },
-          { label: 'Afisare', value: filteredListings.length > 0 ? `${pageStart}-${pageEnd} din ${filteredListings.length}` : 'Niciun rezultat' },
-        ]}
       />
 
       <div className="sticky top-20 z-20 hidden md:block">
@@ -436,6 +422,7 @@ export default function OwnerListingsPage() {
                 onToggleFavorite={handleToggleFavorite}
                 isFavorite={Boolean(favorite)}
                 collaborationStatus={favorite?.collaborationStatus ?? null}
+                collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
               />
             );

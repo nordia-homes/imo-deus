@@ -1,24 +1,30 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingFavoriteEditor } from '@/components/owner-listings/owner-listing-favorite-editor';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
 import type { CollaborationStatus, OwnerListing, OwnerListingFavorite } from '@/components/owner-listings/types';
+import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import type { Property } from '@/lib/types';
 
 export default function FavoriteOwnerListingsPage() {
+  const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { agency, agencyId, user } = useAgency();
+  const { user } = useUser();
+  const { agency, agencyId } = useAgency();
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
 
   const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc')), [firestore]);
@@ -85,6 +91,49 @@ export default function FavoriteOwnerListingsPage() {
     });
   };
 
+  const handleImport = async (listing: OwnerListing) => {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru import.' });
+      return;
+    }
+
+    setIsLoadingImport(listing.id);
+    toast({ title: 'Import in curs...', description: 'Se preiau datele reale din anunt.' });
+
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          source: listing.source,
+          url: listing.link,
+          ownerPhone: listing.ownerPhone || '',
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.message || 'Importul anuntului a esuat.');
+      }
+
+      setPropertyToImport(payload.property as Partial<Property>);
+      setIsImportDialogOpen(true);
+      toast({ title: 'Anunt importat', description: 'Datele reale au fost pregatite pentru adaugare.' });
+    } catch (error) {
+      toast({
+        title: 'Import esuat',
+        description: error instanceof Error ? error.message : 'Nu am putut importa anuntul.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingImport(null);
+    }
+  };
+
   const handleSaveFavorite = (listingId: string, updates: Partial<OwnerListingFavorite>) => {
     if (!agencyId) return;
 
@@ -98,17 +147,12 @@ export default function FavoriteOwnerListingsPage() {
 
   if (isListingsLoading || isFavoritesLoading) {
     return (
-      <div className="space-y-6 px-3 pb-6 sm:px-4 xl:px-5">
+      <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
         <OwnerListingHeader
           title="Favorite"
           subtitle="Pregatim lista agentului cu anunturile salvate pentru contact manual."
           currentScopeLabel={currentScope?.displayName}
           activeTab="favorite"
-          stats={[
-            { label: 'Favorite', value: '...' },
-            { label: 'Colaboreaza', value: '...' },
-            { label: 'Nu colaboreaza', value: '...' },
-          ]}
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, index) => (
@@ -123,17 +167,12 @@ export default function FavoriteOwnerListingsPage() {
   }
 
   return (
-    <div className="space-y-6 px-3 pb-6 sm:px-4 xl:px-5">
+    <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
         title="Favorite"
         subtitle="Lista de lucru a agentilor pentru apeluri manuale, cu status de colaborare, comision si notite direct sub fiecare card."
         currentScopeLabel={currentScope?.displayName}
         activeTab="favorite"
-        stats={[
-          { label: 'Favorite', value: String(favoriteEntries.length) },
-          { label: 'Colaboreaza', value: String(collaborationYesCount) },
-          { label: 'Nu colaboreaza', value: String(collaborationNoCount) },
-        ]}
       />
 
       {favoriteEntries.length > 0 ? (
@@ -143,11 +182,12 @@ export default function FavoriteOwnerListingsPage() {
               <OwnerListingCard
                 listing={listing}
                 isFavorite
+                onImport={handleImport}
                 onToggleFavorite={handleToggleFavorite}
                 collaborationStatus={favorite.collaborationStatus ?? null}
                 collaborationMode="interactive"
                 onSetCollaborationStatus={handleSetCollaborationStatus}
-                showImportAction={false}
+                isLoadingImport={isLoadingImport === listing.id}
               />
               <OwnerListingFavoriteEditor favorite={favorite} onSave={(updates) => handleSaveFavorite(listing.id, updates)} />
             </div>
@@ -164,6 +204,8 @@ export default function FavoriteOwnerListingsPage() {
           </Button>
         </div>
       )}
+
+      <AddPropertyDialog isOpen={isImportDialogOpen} onOpenChange={setIsImportDialogOpen} property={propertyToImport as Property | null} />
     </div>
   );
 }

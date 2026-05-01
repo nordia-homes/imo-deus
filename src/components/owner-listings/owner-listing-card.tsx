@@ -110,45 +110,59 @@ export function OwnerListingCard({
   const collaborationButtons =
     collaborationMode === 'hidden' ? null : (
       <div className="flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/55 px-2 py-2 shadow-[0_18px_34px_-24px_rgba(15,23,42,0.95)] backdrop-blur-md">
-        <button
-          type="button"
-          title="Proprietarul colaboreaza"
-          disabled={collaborationMode !== 'interactive'}
-          onClick={() =>
-            collaborationMode === 'interactive' && onSetCollaborationStatus
-              ? onSetCollaborationStatus(listing, collaborationStatus === 'collaborates' ? null : 'collaborates')
-              : undefined
-          }
-          className={cn(
-            'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-            collaborationStatus === 'collaborates'
-              ? 'border-[#93c5fd] bg-[#2563eb] text-white shadow-[0_0_0_2px_rgba(147,197,253,0.38),0_18px_38px_-18px_rgba(37,99,235,0.95)]'
-              : 'border-white/12 bg-white/10 text-white/78',
-            collaborationMode === 'interactive' ? 'hover:border-[#bfdbfe] hover:bg-[#1d4ed8]' : 'cursor-default',
-          )}
-        >
-          <CheckCircle2 className="h-4.5 w-4.5" />
-        </button>
+        {collaborationMode === 'readonly' ? (
+          collaborationStatus === 'collaborates' ? (
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#93c5fd] bg-[#2563eb] text-white shadow-[0_0_0_2px_rgba(147,197,253,0.38),0_18px_38px_-18px_rgba(37,99,235,0.95)]">
+              <CheckCircle2 className="h-4.5 w-4.5" />
+            </div>
+          ) : collaborationStatus === 'does_not_collaborate' ? (
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-400/70 bg-rose-500 text-white shadow-[0_14px_30px_-22px_rgba(244,63,94,0.92)]">
+              <XCircle className="h-4.5 w-4.5" />
+            </div>
+          ) : null
+        ) : (
+          <>
+            <button
+              type="button"
+              title="Proprietarul colaboreaza"
+              disabled={collaborationMode !== 'interactive'}
+              onClick={() =>
+                collaborationMode === 'interactive' && onSetCollaborationStatus
+                  ? onSetCollaborationStatus(listing, collaborationStatus === 'collaborates' ? null : 'collaborates')
+                  : undefined
+              }
+              className={cn(
+                'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+                collaborationStatus === 'collaborates'
+                  ? 'border-[#93c5fd] bg-[#2563eb] text-white shadow-[0_0_0_2px_rgba(147,197,253,0.38),0_18px_38px_-18px_rgba(37,99,235,0.95)]'
+                  : 'border-white/12 bg-white/10 text-white/78',
+                collaborationMode === 'interactive' ? 'hover:border-[#bfdbfe] hover:bg-[#1d4ed8]' : 'cursor-default',
+              )}
+            >
+              <CheckCircle2 className="h-4.5 w-4.5" />
+            </button>
 
-        <button
-          type="button"
-          title="Proprietarul nu colaboreaza"
-          disabled={collaborationMode !== 'interactive'}
-          onClick={() =>
-            collaborationMode === 'interactive' && onSetCollaborationStatus
-              ? onSetCollaborationStatus(listing, collaborationStatus === 'does_not_collaborate' ? null : 'does_not_collaborate')
-              : undefined
-          }
-          className={cn(
-            'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-            collaborationStatus === 'does_not_collaborate'
-              ? 'border-rose-400/70 bg-rose-500 text-white shadow-[0_14px_30px_-22px_rgba(244,63,94,0.92)]'
-              : 'border-white/12 bg-white/10 text-white/78',
-            collaborationMode === 'interactive' ? 'hover:border-rose-300 hover:bg-rose-500/90' : 'cursor-default',
-          )}
-        >
-          <XCircle className="h-4.5 w-4.5" />
-        </button>
+            <button
+              type="button"
+              title="Proprietarul nu colaboreaza"
+              disabled={collaborationMode !== 'interactive'}
+              onClick={() =>
+                collaborationMode === 'interactive' && onSetCollaborationStatus
+                  ? onSetCollaborationStatus(listing, collaborationStatus === 'does_not_collaborate' ? null : 'does_not_collaborate')
+                  : undefined
+              }
+              className={cn(
+                'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+                collaborationStatus === 'does_not_collaborate'
+                  ? 'border-rose-400/70 bg-rose-500 text-white shadow-[0_14px_30px_-22px_rgba(244,63,94,0.92)]'
+                  : 'border-white/12 bg-white/10 text-white/78',
+                collaborationMode === 'interactive' ? 'hover:border-rose-300 hover:bg-rose-500/90' : 'cursor-default',
+              )}
+            >
+              <XCircle className="h-4.5 w-4.5" />
+            </button>
+          </>
+        )}
       </div>
     );
 
@@ -261,7 +275,7 @@ export function OwnerListingCard({
             <div className="flex shrink-0 items-center gap-2">
               {showImportAction && onImport ? (
                 <Button
-                  className="rounded-full border border-primary/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-4 text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]"
+                  className="rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-4 text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)]"
                   size="sm"
                   onClick={() => onImport(listing)}
                   disabled={isLoadingImport}
