@@ -234,22 +234,60 @@ function normalizePhoneCandidate(value: string | null | undefined) {
   return '';
 }
 
+function getPortalLabelFromUrl(value: string | null | undefined) {
+  const normalized = normalizeUrl(value || '');
+  if (!normalized) {
+    return '';
+  }
+
+  try {
+    const hostname = new URL(normalized).hostname.toLowerCase().replace(/^www\./, '');
+    if (hostname === 'imobiliare.ro') return 'Imobiliare.ro';
+    if (hostname === 'olx.ro') return 'OLX';
+    if (hostname === 'publi24.ro') return 'Publi24';
+    if (hostname === 'storia.ro') return 'Storia';
+    if (hostname === 'autovit.ro') return 'Autovit';
+    if (hostname === 'imovirtual.ro') return 'Imovirtual';
+    return hostname;
+  } catch {
+    return '';
+  }
+}
+
+function getPortalLabelFromText(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (!normalized) return '';
+  if (normalized.includes('imobiliare.ro')) return 'Imobiliare.ro';
+  if (normalized.includes('olx')) return 'OLX';
+  if (normalized.includes('publi24')) return 'Publi24';
+  if (normalized.includes('storia')) return 'Storia';
+  if (normalized.includes('autovit')) return 'Autovit';
+  if (normalized.includes('imovirtual')) return 'Imovirtual';
+  return '';
+}
+
 function extractImoradarSourceUrls(html: string, url: string) {
   const candidates = [
     html.match(/href="(https?:\/\/[^"]+)"[\s\S]{0,300}?>\s*Vezi anunțul pe/i)?.[1] || '',
     html.match(/Vezi anunțul pe[\s\S]{0,300}?href="(https?:\/\/[^"]+)"/i)?.[1] || '',
+    html.match(/href="([^"]*\/link-extern\/\d+)"/i)?.[1] || '',
+    ...Array.from(html.matchAll(/(?:href|data-href)="([^"]*\/link-extern\/\d+)"/gi)).map((match) => match[1] || ''),
     html.match(/"targetUrl"\s*:\s*"([^"]+)"/i)?.[1] || '',
     html.match(/targetUrl\\u0022:\s*\\u0022([^"]+)\\u0022/i)?.[1] || '',
     html.match(/"external_url":"(https?:\\\/\\\/[^"]+)"/i)?.[1] || '',
     html.match(/"external_url"\s*:\s*"(https?:\/\/[^"]+)"/i)?.[1] || '',
     ...Array.from(
-      html.matchAll(/(?:href|data-href)="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/gi)
+      html.matchAll(/(?:href|data-href)="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"]+)"/gi)
     ).map((match) => match[1] || ''),
     ...Array.from(
-      html.matchAll(/https?:\\\/\\\/(?:www\\\/)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"'\\\s<]+/gi)
+      html.matchAll(/https?:\\\/\\\/(?:www\\\/)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"'\\\s<]+/gi)
     ).map((match) => match[0] || ''),
     ...Array.from(
-      html.matchAll(/https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"'\\\s<]+/gi)
+      html.matchAll(/https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"'\\\s<]+/gi)
     ).map((match) => match[0] || ''),
   ];
 
@@ -264,6 +302,30 @@ function extractImoradarSourceUrls(html: string, url: string) {
 
 function extractImoradarSourceUrl(html: string, url: string) {
   return extractImoradarSourceUrls(html, url)[0] || '';
+}
+
+function extractImoradarSourceLabel(html: string) {
+  const labelCandidates = [
+    stripHtml(html.match(/>\s*Vezi anun(?:È›|ț)ul pe\s*([^<]+?)\s*</i)?.[1] || ''),
+    stripHtml(html.match(/>\s*Vezi anuntul pe\s*([^<]+?)\s*</i)?.[1] || ''),
+    normalizeWhitespace(html.match(/"external_source_name"\s*:\s*"([^"]+)"/i)?.[1] || ''),
+    normalizeWhitespace(html.match(/"source_name"\s*:\s*"([^"]+)"/i)?.[1] || ''),
+  ];
+
+  for (const candidate of labelCandidates) {
+    const label = getPortalLabelFromText(candidate);
+    if (label) {
+      return label;
+    }
+  }
+
+  return '';
+}
+
+function extractImoradarSourceMetadata(html: string, url: string) {
+  const originSourceUrl = normalizeWhitespace(extractImoradarSourceUrl(html, url));
+  const originSourceLabel = getPortalLabelFromUrl(originSourceUrl) || extractImoradarSourceLabel(html);
+  return { originSourceUrl, originSourceLabel };
 }
 
 function shouldSkipImoradarSourceUrl(sourceUrl: string) {
@@ -410,6 +472,8 @@ type ExtractedCard = {
   postedAtText: string;
   image: string;
   text: string;
+  originSourceUrl?: string;
+  originSourceLabel?: string;
 };
 
 function extractListPageFromHtml(html: string): ExtractedCard[] {
@@ -438,6 +502,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
         const explicitYear = extractConstructionYearStrict(plainText);
         const constructionYear = explicitYear;
         const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
+        const sourceMetadata = extractImoradarSourceMetadata(chunk, 'https://www.imoradar24.ro');
         const text = [location, rooms, area, price, postedAtText].filter(Boolean).join(' • ');
 
         return {
@@ -451,6 +516,8 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           postedAtText,
           text,
           image: sortImageUrls(extractImageCandidatesFromHtml(chunk))[0] || '',
+          originSourceUrl: sourceMetadata.originSourceUrl,
+          originSourceLabel: sourceMetadata.originSourceLabel,
         };
       })
       .filter((item) => item.href && item.title);
@@ -468,6 +535,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
       const area = extractAreaText(`${title} ${plainText}`);
       const constructionYear = extractConstructionYearStrict(plainText);
       const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
+      const sourceMetadata = extractImoradarSourceMetadata(article, 'https://www.imoradar24.ro');
 
       return {
         href,
@@ -480,6 +548,8 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
         postedAtText,
         text: [location, rooms, area, price, postedAtText].filter(Boolean).join(' • '),
         image: sortImageUrls(extractImageCandidatesFromHtml(article))[0] || '',
+        originSourceUrl: sourceMetadata.originSourceUrl,
+        originSourceLabel: sourceMetadata.originSourceLabel,
       };
     })
     .filter((item) => item.href && item.title);
@@ -528,6 +598,8 @@ export async function scrapeImoradar24ListingsPage(
 
       let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
       const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+      let originSourceUrl = normalizeWhitespace(card.originSourceUrl);
+      let originSourceLabel = normalizeWhitespace(card.originSourceLabel);
       if (detailHtml) {
         const blockedSourceUrl = findBlockedImoradarSourceUrl(detailHtml, absoluteUrl);
         if (blockedSourceUrl) {
@@ -535,6 +607,9 @@ export async function scrapeImoradar24ListingsPage(
           continue;
         }
 
+        const sourceMetadata = extractImoradarSourceMetadata(detailHtml, absoluteUrl);
+        originSourceUrl = sourceMetadata.originSourceUrl || originSourceUrl;
+        originSourceLabel = sourceMetadata.originSourceLabel || originSourceLabel;
         const detail = extractImoradarDetailFromHtml(detailHtml, absoluteUrl);
         const ownerPhone = await extractImoradarPhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
         const coverImage = pickImoradarCardCoverImage([
@@ -560,6 +635,8 @@ export async function scrapeImoradar24ListingsPage(
           scopeKey: options.scopeKey,
           scopeCity: options.scopeCity,
           source: 'imoradar24',
+          originSourceUrl,
+          originSourceLabel: originSourceLabel || getPortalLabelFromUrl(originSourceUrl),
           externalId: absoluteUrl,
           title: enrichedCard.title,
           price: enrichedCard.price,
@@ -604,9 +681,12 @@ export async function scrapeImoradar24ListingDetail(url: string) {
   if (html) {
     const detail = extractImoradarDetailFromHtml(html, url);
     const contactPhone = await extractImoradarPhoneFromHtml(html, url).catch(() => '');
+    const sourceMetadata = extractImoradarSourceMetadata(html, url);
     const coverImage = pickImoradarCardCoverImage([...extractCanonicalGalleryImages(html), ...extractImageCandidatesFromHtml(html), detail.images[0] || '']);
     const summary = buildSummary({
       source: 'imoradar24',
+      originSourceUrl: sourceMetadata.originSourceUrl,
+      originSourceLabel: sourceMetadata.originSourceLabel || getPortalLabelFromUrl(sourceMetadata.originSourceUrl),
       externalId: url,
       title: detail.title,
       price: detail.price,
@@ -662,10 +742,13 @@ export async function scrapeImoradar24ListingDetail(url: string) {
     });
     const contactPhone = await extractImoradarPhoneFromHtml(await page.content(), url).catch(() => '');
     const pageHtml = await page.content();
+    const sourceMetadata = extractImoradarSourceMetadata(pageHtml, url);
     const coverImage = pickImoradarCardCoverImage([...extractCanonicalGalleryImages(pageHtml), ...payload.images]);
 
     const summary = buildSummary({
       source: 'imoradar24',
+      originSourceUrl: sourceMetadata.originSourceUrl,
+      originSourceLabel: sourceMetadata.originSourceLabel || getPortalLabelFromUrl(sourceMetadata.originSourceUrl),
       externalId: url,
       title: payload.title,
       price: '',

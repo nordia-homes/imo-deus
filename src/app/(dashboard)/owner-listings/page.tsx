@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const LISTINGS_PER_PAGE = 100;
 
 type PropertyTypeFilter = 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
+type SourceFilterValue = OwnerListingSource | 'imobiliare';
 
 type OwnerListing = {
   id: string;
@@ -33,6 +34,9 @@ type OwnerListing = {
   scopeCity?: string;
   source: OwnerListingSource;
   sourceLabel: string;
+  originSourceUrl?: string;
+  originSourceLabel?: string;
+  isNew?: boolean;
   title: string;
   price: string;
   link: string;
@@ -117,6 +121,18 @@ function matchesPropertyType(listing: OwnerListing, propertyTypeFilter: Property
   }
 }
 
+function matchesSourceFilter(listing: OwnerListing, sourceFilter: SourceFilterValue | null) {
+  if (!sourceFilter) {
+    return true;
+  }
+
+  if (sourceFilter === 'imobiliare') {
+    return normalizeText(listing.originSourceLabel) === 'imobiliare.ro';
+  }
+
+  return listing.source === sourceFilter;
+}
+
 function OwnerListingCard({
   listing,
   handleImport,
@@ -186,6 +202,7 @@ function OwnerListingCard({
       : listing.image && listing.image.startsWith('http')
         ? listing.image
         : null;
+  const badgeLabel = listing.originSourceLabel || listing.sourceLabel;
 
   return (
     <Card className="agentfinder-owner-listing-card group overflow-hidden rounded-[1.75rem] border-none bg-[#152A47] text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -213,9 +230,16 @@ function OwnerListingCard({
           </Link>
           <div className="absolute left-3 top-3">
             <Badge variant="outline" className="bg-white/90 text-black font-semibold border-white/30">
-              {listing.sourceLabel}
+              {badgeLabel}
             </Badge>
           </div>
+          {listing.isNew ? (
+            <div className="absolute right-3 top-3">
+              <Badge className="border-0 bg-emerald-500 text-white shadow-[0_10px_24px_-14px_rgba(16,185,129,0.95)]">
+                NOU
+              </Badge>
+            </div>
+          ) : null}
         </div>
 
         <div className="p-4 space-y-3">
@@ -293,7 +317,7 @@ export default function OwnerListingsPage() {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('apartamente');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<OwnerListingSource | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<SourceFilterValue | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
@@ -326,9 +350,7 @@ export default function OwnerListingsPage() {
       });
     }
 
-    if (sourceFilter) {
-      result = result.filter((listing) => listing.source === sourceFilter);
-    }
+    result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
 
     const normalizedSearchQuery = normalizeText(searchQuery);
     const numericSearchQuery = normalizeDigits(searchQuery);
@@ -451,7 +473,7 @@ export default function OwnerListingsPage() {
 
       <div>
         <Label className="font-semibold mb-2 block">Sursa</Label>
-        <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as OwnerListingSource))}>
+        <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -460,6 +482,7 @@ export default function OwnerListingsPage() {
             <SelectItem value="olx">OLX</SelectItem>
             <SelectItem value="imoradar24">Imoradar24</SelectItem>
             <SelectItem value="publi24">Publi24</SelectItem>
+            <SelectItem value="imobiliare">Imobiliare.ro</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -578,7 +601,7 @@ export default function OwnerListingsPage() {
           />
 
           <div className="flex gap-2">
-            <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as OwnerListingSource))}>
+            <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
               <SelectTrigger className="h-12 w-[180px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
                 <SelectValue />
               </SelectTrigger>
@@ -587,6 +610,7 @@ export default function OwnerListingsPage() {
                 <SelectItem value="olx">OLX</SelectItem>
                 <SelectItem value="imoradar24">Imoradar24</SelectItem>
                 <SelectItem value="publi24">Publi24</SelectItem>
+                <SelectItem value="imobiliare">Imobiliare.ro</SelectItem>
               </SelectContent>
             </Select>
 

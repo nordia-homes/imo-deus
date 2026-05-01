@@ -98,7 +98,15 @@ function buildSourceScrapeOptions(
   };
 }
 
-async function storeOwnerListingsBatch(listings: OwnerListingSummary[]): Promise<Omit<OwnerListingSyncResult, 'scanned' | 'errors'>> {
+type PersistOwnerListingsOptions = {
+  markNew?: boolean;
+  discoveredCycleNumber?: number | null;
+};
+
+async function storeOwnerListingsBatch(
+  listings: OwnerListingSummary[],
+  persistOptions: PersistOwnerListingsOptions = {}
+): Promise<Omit<OwnerListingSyncResult, 'scanned' | 'errors'>> {
   const unique = new Map<string, OwnerListingSummary>();
   const result = {
     accepted: 0,
@@ -121,9 +129,18 @@ async function storeOwnerListingsBatch(listings: OwnerListingSummary[]): Promise
       const docRef = adminDb.collection('ownerListings').doc(docIdForListing(listing));
       const existingSnapshot = await docRef.get();
       const existing = existingSnapshot.exists ? (existingSnapshot.data() as Partial<OwnerListingSummary>) : undefined;
+      const isNewListing = !existingSnapshot.exists;
       return {
         docRef,
-        listing: mergeListingWithExisting(listing, existing),
+        listing: mergeListingWithExisting(
+          {
+            ...listing,
+            isNew: isNewListing ? Boolean(persistOptions.markNew) : listing.isNew,
+            discoveredCycleNumber: isNewListing ? (persistOptions.discoveredCycleNumber ?? undefined) : listing.discoveredCycleNumber,
+            firstDiscoveredAt: isNewListing ? listing.scrapedAt : listing.firstDiscoveredAt,
+          },
+          existing
+        ),
       };
     })
   );
@@ -189,6 +206,8 @@ function mergeListingWithExisting(
     scopeCity: preferIncomingValue(listing.scopeCity, existing.scopeCity),
     title: preferIncomingValue(listing.title, existing.title) || '',
     price: preferIncomingValue(listing.price, existing.price) || '',
+    originSourceUrl: preferIncomingValue(listing.originSourceUrl, existing.originSourceUrl),
+    originSourceLabel: preferIncomingValue(listing.originSourceLabel, existing.originSourceLabel),
     link: preferIncomingValue(listing.link, existing.link) || '',
     area: preferIncomingValue(listing.area, existing.area) || '',
     location: preferIncomingValue(listing.location, existing.location) || '',
@@ -202,6 +221,9 @@ function mergeListingWithExisting(
     ownerName: preferIncomingValue(listing.ownerName, existing.ownerName),
     ownerPhone: preferIncomingValue(listing.ownerPhone, existing.ownerPhone),
     ownerConfidence: preferIncomingValue(listing.ownerConfidence, existing.ownerConfidence),
+    isNew: existing.isNew ?? listing.isNew,
+    discoveredCycleNumber: existing.discoveredCycleNumber ?? listing.discoveredCycleNumber,
+    firstDiscoveredAt: existing.firstDiscoveredAt ?? listing.firstDiscoveredAt,
     scrapedAt: Math.max(listing.scrapedAt || 0, existing.scrapedAt || 0),
     lastSeenAt: Math.max(listing.lastSeenAt || 0, existing.lastSeenAt || 0),
   } satisfies OwnerListingSummary;
@@ -215,7 +237,8 @@ export async function syncOwnerListingsSourcePage(
   agencyId: string,
   source: OwnerListingSource,
   page: number,
-  options: Partial<SourceScrapeOptions> = {}
+  options: Partial<SourceScrapeOptions> = {},
+  persistOptions: PersistOwnerListingsOptions = {}
 ): Promise<OwnerListingSourceSyncResult> {
   const { scope } = await resolveOwnerListingScope(agencyId);
   const resolvedOptions = buildSourceScrapeOptions(source, scope, {
@@ -225,7 +248,7 @@ export async function syncOwnerListingsSourcePage(
   });
 
   const pageResult = await SOURCES[source].scrapePage(resolvedOptions, page);
-  const persisted = await storeOwnerListingsBatch(pageResult.listings);
+  const persisted = await storeOwnerListingsBatch(pageResult.listings, persistOptions);
 
   return {
     source,

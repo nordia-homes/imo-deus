@@ -278,9 +278,39 @@ async function ensureCycleJobs(agencyId: string, cycleNumber: number) {
   await batch.commit();
 }
 
+async function clearScopeNewBadges(scopeKey: string) {
+  const snapshot = await adminDb.collection('ownerListings').where('scopeKey', '==', scopeKey).get();
+  if (snapshot.empty) {
+    return;
+  }
+
+  const docsToUpdate = snapshot.docs.filter((doc) => Boolean((doc.data() as { isNew?: boolean }).isNew));
+  if (!docsToUpdate.length) {
+    return;
+  }
+
+  for (let index = 0; index < docsToUpdate.length; index += 400) {
+    const batch = adminDb.batch();
+    for (const doc of docsToUpdate.slice(index, index + 400)) {
+      batch.set(
+        doc.ref,
+        {
+          isNew: false,
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+    await batch.commit();
+  }
+}
+
 async function startNewCycle(state: OwnerListingSyncCycleState) {
   const nextCycleNumber = (state.cycleNumber || 0) + 1;
   const startedAt = nowIso();
+  if (nextCycleNumber > 1) {
+    await clearScopeNewBadges(state.scopeKey);
+  }
   await ensureCycleJobs(state.agencyId, nextCycleNumber);
 
   const nextState: Partial<OwnerListingSyncCycleState> = {
@@ -454,6 +484,9 @@ async function processAgencyCycleTick(
           hardPageLimit: state.hardPageLimit,
           maxAgeDays: state.maxAgeDays,
           maxListingsPerSource: state.maxListingsPerSource ?? undefined,
+        }, {
+          markNew: state.cycleNumber > 1,
+          discoveredCycleNumber: state.cycleNumber,
         });
 
         totals.scanned += pageResult.scanned;

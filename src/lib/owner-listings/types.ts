@@ -5,6 +5,11 @@ export type OwnerListingSummary = {
   scopeCity?: string;
   source: OwnerListingSource;
   sourceLabel: string;
+  originSourceUrl?: string;
+  originSourceLabel?: string;
+  isNew?: boolean;
+  discoveredCycleNumber?: number;
+  firstDiscoveredAt?: number;
   externalId: string;
   title: string;
   price: string;
