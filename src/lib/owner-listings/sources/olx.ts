@@ -959,9 +959,7 @@ export async function scrapeOlxListingsPage(
 
       let resolvedTitle = card.title;
       let parsed: ParsedOlxCard = parseCard(card.title, card.text);
-      if (!card.isolated) {
-        parsed.location = '';
-      }
+      parsed.location = '';
       parsed.price = card.price || parsed.price;
 
       const shouldHydrateFromDetail = true;
@@ -978,7 +976,7 @@ export async function scrapeOlxListingsPage(
             ...parsed,
             price: detailParams.price || extractPriceText(detailBody) || parsed.price,
             area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
-            location: detailLocation || parsed.location,
+            location: detailLocation || '',
             constructionYear: detailParams.constructionYear || parsed.constructionYear,
           };
 

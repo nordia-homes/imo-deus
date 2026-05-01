@@ -138,9 +138,6 @@ export default function OwnerListingsPage() {
     return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
   }, [filteredListings, safeCurrentPage]);
 
-  const pageStart = filteredListings.length === 0 ? 0 : (safeCurrentPage - 1) * LISTINGS_PER_PAGE + 1;
-  const pageEnd = Math.min(safeCurrentPage * LISTINGS_PER_PAGE, filteredListings.length);
-
   const handleImport = async (listing: OwnerListing) => {
     if (!user) {
       toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru import.' });
@@ -287,13 +284,14 @@ export default function OwnerListingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
-        <OwnerListingHeader
-          title="Anunturi de la proprietari"
-          subtitle="Incarcam lista de proprietati si pregatim filtrele."
-          currentScopeLabel={currentScope?.displayName}
-          activeTab="listings"
-          favoriteCount={favorites?.length ?? 0}
-        />
+      <OwnerListingHeader
+        title="Anunturi de la proprietari"
+        subtitle="Incarcam lista de proprietati si pregatim filtrele."
+        currentScopeLabel={currentScope?.displayName}
+        activeTab="listings"
+        favoriteCount={favorites?.length ?? 0}
+        listingCount={null}
+      />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, index) => (
             <div key={index} className="space-y-3 p-4">
@@ -315,6 +313,7 @@ export default function OwnerListingsPage() {
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
         favoriteCount={favorites?.length ?? 0}
+        listingCount={filteredListings.length}
       />
 
       <div className="sticky top-20 z-20 hidden md:block">
@@ -394,25 +393,6 @@ export default function OwnerListingsPage() {
           </SheetContent>
         </Sheet>
       </div>
-
-      {filteredListings.length > 0 ? (
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-white/65">
-            Afisezi {pageStart}-{pageEnd} din {filteredListings.length} anunturi
-          </p>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safeCurrentPage === 1}>
-              Anterioara
-            </Button>
-            <span className="text-sm text-white/75">
-              Pagina {safeCurrentPage} din {totalPages}
-            </span>
-            <Button variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages}>
-              Urmatoare
-            </Button>
-          </div>
-        </div>
-      ) : null}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredListings.length > 0 ? (

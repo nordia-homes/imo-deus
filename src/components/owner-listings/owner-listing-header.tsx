@@ -10,6 +10,7 @@ type OwnerListingHeaderProps = {
   currentScopeLabel?: string | null;
   activeTab: 'listings' | 'favorite';
   favoriteCount?: number;
+  listingCount?: number | null;
 };
 
 export function OwnerListingHeader({
@@ -18,11 +19,12 @@ export function OwnerListingHeader({
   currentScopeLabel,
   activeTab,
   favoriteCount = 0,
+  listingCount,
 }: OwnerListingHeaderProps) {
   const tabs = [
     {
       href: '/owner-listings',
-      label: 'Anunturi',
+      label: `Anunturi${typeof listingCount === 'number' ? ` (${listingCount})` : ''}`,
       icon: LayoutGrid,
       active: activeTab === 'listings',
     },

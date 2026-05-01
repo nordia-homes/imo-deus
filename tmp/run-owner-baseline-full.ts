@@ -51,9 +51,6 @@ async function main() {
 
   const cycleDoc = await adminDb.collection('ownerListingSyncCycles').doc('bucuresti-ilfov').get();
   const jobDoc = await adminDb.collection('ownerListingSyncJobs').doc(result.jobId).get();
-  const totalCountSnap = await adminDb.collection('ownerListings').count().get();
-  const baselineCountSnap = await adminDb.collection('ownerListings').where('isBaselineListing', '==', true).count().get();
-  const isNewCountSnap = await adminDb.collection('ownerListings').where('isNew', '==', true).count().get();
   const bySourceSnap = await adminDb.collection('ownerListings').orderBy('lastSeenAt', 'desc').limit(200).get();
 
   const countsByOrigin = bySourceSnap.docs.reduce<Record<string, number>>((acc, doc) => {
@@ -70,9 +67,6 @@ async function main() {
         cycle: cycleDoc.exists ? cycleDoc.data() : null,
         job: jobDoc.exists ? jobDoc.data() : null,
         counts: {
-          total: totalCountSnap.data().count,
-          baseline: baselineCountSnap.data().count,
-          isNewTrue: isNewCountSnap.data().count,
           recentSampleSize: bySourceSnap.size,
           recentCountsByOrigin: countsByOrigin,
         },
