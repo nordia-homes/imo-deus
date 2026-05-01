@@ -480,7 +480,6 @@ export async function scrapeImoradar24ListingsPage(
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
   const maxAgeDays = options.maxAgeDays ?? 60;
-  let reachedEnd = true;
 
   for (const baseUrl of options.searchUrls) {
     const pageUrl = new URL(baseUrl);
@@ -498,9 +497,6 @@ export async function scrapeImoradar24ListingsPage(
       continue;
     }
 
-    reachedEnd = false;
-    let pageContainsOnlyOldListings = true;
-
     for (const card of cards) {
       if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
       if (!/imoradar24\.ro/.test(card.href) && !card.href.startsWith('/')) continue;
@@ -510,7 +506,6 @@ export async function scrapeImoradar24ListingsPage(
         continue;
       }
 
-      pageContainsOnlyOldListings = false;
       const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
       if (seenLinks.has(absoluteUrl)) continue;
 
@@ -565,13 +560,9 @@ export async function scrapeImoradar24ListingsPage(
         })
       );
     }
-
-    if (pageContainsOnlyOldListings) {
-      return { listings, reachedEnd: true };
-    }
   }
 
-  return { listings, reachedEnd };
+  return { listings, reachedEnd: pageNumber >= hardPageLimit };
 }
 
 export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {

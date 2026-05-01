@@ -629,7 +629,6 @@ export async function scrapePubli24ListingsPage(
 
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
-  let reachedEnd = true;
 
   for (const baseUrl of options.searchUrls) {
     const pageUrl = new URL(baseUrl);
@@ -646,8 +645,6 @@ export async function scrapePubli24ListingsPage(
     if (!structuredOffers.length) {
       continue;
     }
-
-    reachedEnd = false;
 
     for (const offer of structuredOffers) {
       if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
@@ -705,7 +702,7 @@ export async function scrapePubli24ListingsPage(
     }
   }
 
-  return { listings, reachedEnd };
+  return { listings, reachedEnd: pageNumber >= hardPageLimit };
 }
 
 export async function scrapePubli24Listings(options: SourceScrapeOptions) {
