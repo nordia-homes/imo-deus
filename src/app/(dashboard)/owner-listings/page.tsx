@@ -21,19 +21,21 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
-import { Filter } from 'lucide-react';
+import { Filter, RotateCcw } from 'lucide-react';
 
 const LISTINGS_PER_PAGE = 100;
+const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 
 export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('apartamente');
+  const [constructionYearFilter, setConstructionYearFilter] = useState<string>('all');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue | null>(null);
@@ -42,11 +44,13 @@ export default function OwnerListingsPage() {
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
+  const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
-  const { agency, agencyId } = useAgency();
+  const { agency, agencyId, userProfile } = useAgency();
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
+  const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
   const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
   const favoritesQuery = useMemoFirebase(
@@ -64,6 +68,21 @@ export default function OwnerListingsPage() {
     }
     return map;
   }, [favorites]);
+
+  const validFavoriteCount = useMemo(() => {
+    if (!Array.isArray(listings) || !Array.isArray(favorites)) return 0;
+
+    const validListingIds = new Set(
+      listings.filter((listing) => !currentScope || listing.scopeKey === currentScope.key).map((listing) => listing.id),
+    );
+
+    return favorites.filter((favorite) => validListingIds.has(favorite.ownerListingId)).length;
+  }, [currentScope, favorites, listings]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
@@ -101,6 +120,27 @@ export default function OwnerListingsPage() {
       result = result.filter((listing) => extractRoomsValue(listing.rooms) === Number(roomsFilter));
     }
 
+    if (constructionYearFilter !== 'all') {
+      result = result.filter((listing) => {
+        const year = Number(listing.constructionYear);
+        if (!Number.isFinite(year)) return false;
+
+        if (constructionYearFilter === '1977-1990') {
+          return year >= 1977 && year <= 1990;
+        }
+
+        if (constructionYearFilter === '1990-2000') {
+          return year >= 1990 && year <= 2000;
+        }
+
+        if (constructionYearFilter === 'after-2000') {
+          return year > 2000;
+        }
+
+        return true;
+      });
+    }
+
     const min = priceMin ? Number(priceMin) : null;
     const max = priceMax ? Number(priceMax) : null;
 
@@ -125,11 +165,11 @@ export default function OwnerListingsPage() {
     });
 
     return result;
-  }, [currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter]);
+  }, [constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roomsFilter, propertyTypeFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
+  }, [searchQuery, roomsFilter, propertyTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -137,6 +177,16 @@ export default function OwnerListingsPage() {
     const startIndex = (safeCurrentPage - 1) * LISTINGS_PER_PAGE;
     return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
   }, [filteredListings, safeCurrentPage]);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setRoomsFilter('all');
+    setPropertyTypeFilter('apartamente');
+    setConstructionYearFilter('all');
+    setPriceMin('');
+    setPriceMax('');
+    setSourceFilter(null);
+  };
 
   const handleImport = async (listing: OwnerListing) => {
     if (!user) {
@@ -201,6 +251,19 @@ export default function OwnerListingsPage() {
       favoriteRef,
       {
         ownerListingId: listing.id,
+        reservedByAgentId: user?.uid ?? null,
+        reservedByAgentName: currentAgentName,
+        reservedAt: timestamp,
+        calledByAgentId: null,
+        calledByAgentName: null,
+        calledAt: null,
+        takenByAgentId: null,
+        takenByAgentName: null,
+        takenAt: null,
+        contactOutcome: null,
+        contactOutcomeAt: null,
+        contactOutcomeByAgentId: null,
+        contactOutcomeByAgentName: null,
         collaborationStatus: null,
         commissionValue: '',
         propertyAddress: '',
@@ -214,6 +277,157 @@ export default function OwnerListingsPage() {
     );
 
     toast({ title: 'Adaugat in Favorite', description: 'Anuntul este pregatit pentru urmarire in pagina Favorite.' });
+  };
+
+  const upsertFavoriteBase = (listing: OwnerListing) => {
+    if (!agencyId) return;
+
+    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
+    const timestamp = new Date().toISOString();
+    const existingFavorite = favoritesByListingId.get(listing.id);
+    return { favoriteRef, timestamp, existingFavorite };
+  };
+
+  const writeFavoriteStatus = (favoriteRef: ReturnType<typeof doc>, existingFavorite: OwnerListingFavorite | undefined, data: Record<string, unknown>) => {
+    if (existingFavorite) {
+      updateDocumentNonBlocking(favoriteRef, data);
+      return;
+    }
+
+    setDocumentNonBlocking(
+      favoriteRef,
+      {
+        ownerListingId: String(data.ownerListingId ?? ''),
+        collaborationStatus: null,
+        commissionValue: '',
+        propertyAddress: '',
+        notes: '',
+        createdAt: String(data.createdAt ?? new Date().toISOString()),
+        createdBy: data.createdBy ?? user?.uid ?? null,
+        updatedAt: String(data.updatedAt ?? new Date().toISOString()),
+        updatedBy: data.updatedBy ?? user?.uid ?? null,
+        ...data,
+      },
+      {},
+    );
+  };
+
+  const canCurrentAgentUpdateStatus = (favorite?: OwnerListingFavorite | null) => {
+    if (!favorite) return true;
+
+    const now = Date.now();
+    const reservationExpiresAt = favorite.reservedAt ? new Date(favorite.reservedAt).getTime() + RESERVATION_TTL_MS : null;
+    const reservationExpired = Boolean(
+      favorite.reservedByAgentId && !favorite.takenByAgentId && !favorite.contactOutcome && reservationExpiresAt && now >= reservationExpiresAt,
+    );
+
+    if (reservationExpired) return true;
+    if (favorite.takenByAgentId) return favorite.takenByAgentId === user?.uid;
+    if (favorite.contactOutcomeByAgentId && favorite.contactOutcome) return favorite.contactOutcomeByAgentId === user?.uid;
+    if (favorite.reservedByAgentId) return favorite.reservedByAgentId === user?.uid;
+    return true;
+  };
+
+  const handleSetReserved = (listing: OwnerListing) => {
+    const base = upsertFavoriteBase(listing);
+    if (!base) return;
+
+    const { favoriteRef, timestamp, existingFavorite } = base;
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    writeFavoriteStatus(favoriteRef, existingFavorite, {
+      ownerListingId: listing.id,
+      reservedByAgentId: user?.uid ?? null,
+      reservedByAgentName: currentAgentName,
+      reservedAt: timestamp,
+      takenByAgentId: null,
+      takenByAgentName: null,
+      takenAt: null,
+      contactOutcome: null,
+      contactOutcomeAt: null,
+      contactOutcomeByAgentId: null,
+      contactOutcomeByAgentName: null,
+      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
+      commissionValue: existingFavorite?.commissionValue ?? '',
+      propertyAddress: existingFavorite?.propertyAddress ?? '',
+      notes: existingFavorite?.notes ?? '',
+      createdAt: existingFavorite?.createdAt ?? timestamp,
+      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({ title: 'Status actualizat', description: 'Anuntul este marcat ca rezervat.' });
+  };
+
+  const handleSetTaken = (listing: OwnerListing) => {
+    const base = upsertFavoriteBase(listing);
+    if (!base) return;
+
+    const { favoriteRef, timestamp, existingFavorite } = base;
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    writeFavoriteStatus(favoriteRef, existingFavorite, {
+      ownerListingId: listing.id,
+      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
+      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
+      reservedAt: existingFavorite?.reservedAt ?? timestamp,
+      takenByAgentId: user?.uid ?? null,
+      takenByAgentName: currentAgentName,
+      takenAt: timestamp,
+      contactOutcome: null,
+      contactOutcomeAt: null,
+      contactOutcomeByAgentId: null,
+      contactOutcomeByAgentName: null,
+      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
+      commissionValue: existingFavorite?.commissionValue ?? '',
+      propertyAddress: existingFavorite?.propertyAddress ?? '',
+      notes: existingFavorite?.notes ?? '',
+      createdAt: existingFavorite?.createdAt ?? timestamp,
+      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({ title: 'Lead preluat', description: 'Anuntul este marcat ca preluat de agent.' });
+  };
+
+  const handleSetOutcome = (listing: OwnerListing, outcome: 'negative' | 'follow_up') => {
+    const base = upsertFavoriteBase(listing);
+    if (!base) return;
+
+    const { favoriteRef, timestamp, existingFavorite } = base;
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    writeFavoriteStatus(favoriteRef, existingFavorite, {
+      ownerListingId: listing.id,
+      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
+      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
+      reservedAt: existingFavorite?.reservedAt ?? timestamp,
+      takenByAgentId: null,
+      takenByAgentName: null,
+      takenAt: null,
+      contactOutcome: outcome,
+      contactOutcomeAt: timestamp,
+      contactOutcomeByAgentId: user?.uid ?? null,
+      contactOutcomeByAgentName: currentAgentName,
+      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
+      commissionValue: existingFavorite?.commissionValue ?? '',
+      propertyAddress: existingFavorite?.propertyAddress ?? '',
+      notes: existingFavorite?.notes ?? '',
+      createdAt: existingFavorite?.createdAt ?? timestamp,
+      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({
+      title: 'Status actualizat',
+      description: outcome === 'negative' ? 'Anuntul a fost marcat negativ.' : 'Anuntul a fost trecut in follow-up.',
+    });
   };
 
   const FilterControls = () => (
@@ -272,11 +486,33 @@ export default function OwnerListingsPage() {
       </div>
 
       <div>
+        <Label className="mb-2 block font-semibold">An constructie</Label>
+        <Select value={constructionYearFilter} onValueChange={setConstructionYearFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">An constructie</SelectItem>
+            <SelectItem value="1977-1990">1977-1990</SelectItem>
+            <SelectItem value="1990-2000">1990-2000</SelectItem>
+            <SelectItem value="after-2000">Dupa 2000</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label className="mb-2 block font-semibold">Pret</Label>
         <div className="flex gap-2">
           <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} />
           <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} />
         </div>
+      </div>
+
+      <div>
+        <Label className="mb-2 block font-semibold">Resetare</Label>
+        <Button type="button" variant="outline" size="icon" onClick={resetFilters} aria-label="Reseteaza filtrele">
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -289,7 +525,7 @@ export default function OwnerListingsPage() {
         subtitle="Incarcam lista de proprietati si pregatim filtrele."
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
-        favoriteCount={favorites?.length ?? 0}
+        favoriteCount={validFavoriteCount}
         listingCount={null}
       />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -312,7 +548,7 @@ export default function OwnerListingsPage() {
         subtitle=""
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
-        favoriteCount={favorites?.length ?? 0}
+        favoriteCount={validFavoriteCount}
         listingCount={filteredListings.length}
       />
 
@@ -322,12 +558,12 @@ export default function OwnerListingsPage() {
             placeholder="Cauta dupa titlu, zona, telefon sau pret"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="h-12 w-full max-w-md rounded-2xl border-slate-200/80 bg-white/90 text-base"
+            className="h-12 w-full max-w-[320px] rounded-2xl border-slate-200/80 bg-white/90 text-base"
           />
 
           <div className="flex gap-2">
             <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
-              <SelectTrigger className="h-12 w-[180px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -340,7 +576,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
-              <SelectTrigger className="h-12 w-[190px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -352,7 +588,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className="h-12 w-[160px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className="h-12 w-[146px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -364,11 +600,33 @@ export default function OwnerListingsPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={constructionYearFilter} onValueChange={setConstructionYearFilter}>
+              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+                <SelectValue placeholder="An constructie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">An constructie</SelectItem>
+                <SelectItem value="1977-1990">1977-1990</SelectItem>
+                <SelectItem value="1990-2000">1990-2000</SelectItem>
+                <SelectItem value="after-2000">Dupa 2000</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2">
-            <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} className="w-32" />
-            <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} className="w-32" />
+            <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} className="w-[124px]" />
+            <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} className="w-[124px]" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={resetFilters}
+              aria-label="Reseteaza filtrele"
+              className="h-12 w-12 rounded-2xl border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -402,8 +660,14 @@ export default function OwnerListingsPage() {
               <OwnerListingCard
                 key={listing.id || index}
                 listing={listing}
+                favoriteMeta={favorite ?? null}
+                currentAgentId={user?.uid ?? null}
+                currentTimestamp={currentTimestamp}
                 onImport={handleImport}
                 onToggleFavorite={handleToggleFavorite}
+                onSetReserved={handleSetReserved}
+                onSetTaken={handleSetTaken}
+                onSetOutcome={handleSetOutcome}
                 isFavorite={Boolean(favorite)}
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}

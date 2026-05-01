@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
@@ -17,15 +17,19 @@ import { useToast } from '@/hooks/use-toast';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 
+const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
+
 export default function FavoriteOwnerListingsPage() {
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
+  const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
-  const { agency, agencyId } = useAgency();
+  const { agency, agencyId, userProfile } = useAgency();
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
+  const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
   const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
   const favoritesQuery = useMemoFirebase(
@@ -59,8 +63,26 @@ export default function FavoriteOwnerListingsPage() {
       .filter((entry): entry is { favorite: OwnerListingFavorite; listing: OwnerListing } => Boolean(entry));
   }, [favorites, listingsById]);
 
-  const collaborationYesCount = favoriteEntries.filter((entry) => entry.favorite.collaborationStatus === 'collaborates').length;
-  const collaborationNoCount = favoriteEntries.filter((entry) => entry.favorite.collaborationStatus === 'does_not_collaborate').length;
+  useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const canCurrentAgentUpdateStatus = (favorite?: OwnerListingFavorite | null) => {
+    if (!favorite) return true;
+
+    const now = Date.now();
+    const reservationExpiresAt = favorite.reservedAt ? new Date(favorite.reservedAt).getTime() + RESERVATION_TTL_MS : null;
+    const reservationExpired = Boolean(
+      favorite.reservedByAgentId && !favorite.takenByAgentId && !favorite.contactOutcome && reservationExpiresAt && now >= reservationExpiresAt,
+    );
+
+    if (reservationExpired) return true;
+    if (favorite.takenByAgentId) return favorite.takenByAgentId === user?.uid;
+    if (favorite.contactOutcomeByAgentId && favorite.contactOutcome) return favorite.contactOutcomeByAgentId === user?.uid;
+    if (favorite.reservedByAgentId) return favorite.reservedByAgentId === user?.uid;
+    return true;
+  };
 
   const handleToggleFavorite = (listing: OwnerListing) => {
     if (!agencyId) {
@@ -139,6 +161,87 @@ export default function FavoriteOwnerListingsPage() {
     });
   };
 
+  const handleSetReserved = (listingId: string) => {
+    if (!agencyId) return;
+
+    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
+    const timestamp = new Date().toISOString();
+    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    updateDocumentNonBlocking(favoriteRef, {
+      reservedByAgentId: user?.uid ?? null,
+      reservedByAgentName: currentAgentName,
+      reservedAt: timestamp,
+      takenByAgentId: null,
+      takenByAgentName: null,
+      takenAt: null,
+      contactOutcome: null,
+      contactOutcomeAt: null,
+      contactOutcomeByAgentId: null,
+      contactOutcomeByAgentName: null,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({ title: 'Status actualizat', description: 'Anuntul este marcat ca rezervat.' });
+  };
+
+  const handleSetTaken = (listingId: string) => {
+    if (!agencyId) return;
+
+    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
+    const timestamp = new Date().toISOString();
+    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    updateDocumentNonBlocking(favoriteRef, {
+      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
+      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
+      reservedAt: existingFavorite?.reservedAt ?? timestamp,
+      takenByAgentId: user?.uid ?? null,
+      takenByAgentName: currentAgentName,
+      takenAt: timestamp,
+      contactOutcome: null,
+      contactOutcomeAt: null,
+      contactOutcomeByAgentId: null,
+      contactOutcomeByAgentName: null,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({ title: 'Lead preluat', description: 'Anuntul este marcat ca preluat de agent.' });
+  };
+
+  const handleSetOutcome = (listingId: string, outcome: 'negative' | 'follow_up') => {
+    if (!agencyId) return;
+
+    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
+    const timestamp = new Date().toISOString();
+    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
+    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
+      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
+      return;
+    }
+    updateDocumentNonBlocking(favoriteRef, {
+      takenByAgentId: null,
+      takenByAgentName: null,
+      takenAt: null,
+      contactOutcome: outcome,
+      contactOutcomeAt: timestamp,
+      contactOutcomeByAgentId: user?.uid ?? null,
+      contactOutcomeByAgentName: currentAgentName,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({
+      title: 'Status actualizat',
+      description: outcome === 'negative' ? 'Anuntul a fost marcat negativ.' : 'Anuntul a fost trecut in follow-up.',
+    });
+  };
+
   if (isListingsLoading || isFavoritesLoading) {
     return (
       <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
@@ -177,9 +280,15 @@ export default function FavoriteOwnerListingsPage() {
             <div key={favorite.id} className="space-y-3">
               <OwnerListingCard
                 listing={listing}
+                favoriteMeta={favorite}
+                currentAgentId={user?.uid ?? null}
+                currentTimestamp={currentTimestamp}
                 isFavorite
                 onImport={handleImport}
                 onToggleFavorite={handleToggleFavorite}
+                onSetReserved={() => handleSetReserved(listing.id)}
+                onSetTaken={() => handleSetTaken(listing.id)}
+                onSetOutcome={(selectedListing, outcome) => handleSetOutcome(selectedListing.id, outcome)}
                 collaborationStatus={favorite.collaborationStatus ?? null}
                 collaborationMode="interactive"
                 onSetCollaborationStatus={handleSetCollaborationStatus}

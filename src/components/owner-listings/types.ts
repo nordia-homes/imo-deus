@@ -3,6 +3,7 @@ import type { OwnerListingSource } from '@/lib/owner-listings/types';
 export type PropertyTypeFilter = 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
 export type SourceFilterValue = OwnerListingSource | 'imobiliare';
 export type CollaborationStatus = 'collaborates' | 'does_not_collaborate';
+export type OwnerListingContactOutcome = 'negative' | 'follow_up';
 
 export type OwnerListing = {
   id: string;
@@ -37,6 +38,19 @@ export type OwnerListingFavorite = {
   id: string;
   ownerListingId: string;
   collaborationStatus?: CollaborationStatus | null;
+  reservedByAgentId?: string | null;
+  reservedByAgentName?: string | null;
+  reservedAt?: string | null;
+  calledByAgentId?: string | null;
+  calledByAgentName?: string | null;
+  calledAt?: string | null;
+  takenByAgentId?: string | null;
+  takenByAgentName?: string | null;
+  takenAt?: string | null;
+  contactOutcome?: OwnerListingContactOutcome | null;
+  contactOutcomeAt?: string | null;
+  contactOutcomeByAgentId?: string | null;
+  contactOutcomeByAgentName?: string | null;
   commissionValue?: string;
   propertyAddress?: string;
   notes?: string;

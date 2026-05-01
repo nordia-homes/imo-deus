@@ -6,25 +6,44 @@ import Link from 'next/link';
 import { format, formatDistanceToNow, fromUnixTime, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import {
+  ArrowDownToLine,
   BedDouble,
   Calendar,
   CheckCircle2,
   Clock,
-  Heart,
   Home,
   Loader2,
   Rocket,
   Ruler,
+  UserCheck,
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import type { CollaborationStatus, OwnerListing } from '@/components/owner-listings/types';
+import type { CollaborationStatus, OwnerListing, OwnerListingContactOutcome, OwnerListingFavorite } from '@/components/owner-listings/types';
 import { extractPrice, extractRoomsValue, formatAreaValue, formatPriceNumber, isListingNew } from '@/components/owner-listings/utils';
+
+function FavoriteHeartIcon({ filled = false }: { filled?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5" fill={filled ? 'currentColor' : 'none'}>
+      <path
+        d="M12 20.4c-.3 0-.6-.1-.8-.3C7.1 16.7 4 13.9 4 10.3 4 7.7 5.9 6 8.3 6c1.5 0 2.9.7 3.7 1.9A4.46 4.46 0 0 1 15.7 6C18.1 6 20 7.7 20 10.3c0 3.6-3.1 6.4-7.2 9.8-.2.2-.5.3-.8.3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 type OwnerListingCardProps = {
   listing: OwnerListing;
+  favoriteMeta?: OwnerListingFavorite | null;
+  currentAgentId?: string | null;
+  currentTimestamp?: number;
   collaborationStatus?: CollaborationStatus | null;
   isFavorite?: boolean;
   isLoadingImport?: boolean;
@@ -33,10 +52,16 @@ type OwnerListingCardProps = {
   onImport?: (listing: OwnerListing) => void;
   onToggleFavorite?: (listing: OwnerListing) => void;
   onSetCollaborationStatus?: (listing: OwnerListing, status: CollaborationStatus | null) => void;
+  onSetReserved?: (listing: OwnerListing) => void;
+  onSetTaken?: (listing: OwnerListing) => void;
+  onSetOutcome?: (listing: OwnerListing, outcome: OwnerListingContactOutcome) => void;
 };
 
 export function OwnerListingCard({
   listing,
+  favoriteMeta,
+  currentAgentId,
+  currentTimestamp,
   collaborationStatus,
   isFavorite = false,
   isLoadingImport = false,
@@ -45,6 +70,9 @@ export function OwnerListingCard({
   onImport,
   onToggleFavorite,
   onSetCollaborationStatus,
+  onSetReserved,
+  onSetTaken,
+  onSetOutcome,
 }: OwnerListingCardProps) {
   const locationDisplay = useMemo(() => {
     if (!listing.location) {
@@ -107,6 +135,56 @@ export function OwnerListingCard({
       displayPrice = `EUR ${formatPriceNumber(numericPrice)}`;
     }
   }
+
+  const now = currentTimestamp ?? Date.now();
+  const reservationExpiresAt = favoriteMeta?.reservedAt ? new Date(favoriteMeta.reservedAt).getTime() + 4 * 60 * 60 * 1000 : null;
+  const isReservationExpired = Boolean(
+    favoriteMeta?.reservedByAgentId && !favoriteMeta?.takenByAgentId && !favoriteMeta?.contactOutcome && reservationExpiresAt && now >= reservationExpiresAt,
+  );
+
+  const activeWorkflowStatus = useMemo(() => {
+    if (isReservationExpired) return 'expired_reserved';
+    if (favoriteMeta?.takenByAgentName) return 'taken';
+    if (favoriteMeta?.contactOutcome === 'follow_up') return 'follow_up';
+    if (favoriteMeta?.contactOutcome === 'negative') return 'negative';
+    if (favoriteMeta?.reservedByAgentName) return 'reserved';
+    return 'none';
+  }, [favoriteMeta, isReservationExpired]);
+  const canShowWorkflowActions = Boolean(onSetReserved || onSetTaken || onSetOutcome);
+  const outcomeValue = favoriteMeta?.contactOutcome ?? 'none';
+  const statusOwnerAgentId =
+    activeWorkflowStatus === 'reserved'
+      ? favoriteMeta?.reservedByAgentId
+      : activeWorkflowStatus === 'taken'
+        ? favoriteMeta?.takenByAgentId
+        : activeWorkflowStatus === 'follow_up' || activeWorkflowStatus === 'negative'
+          ? favoriteMeta?.contactOutcomeByAgentId
+          : null;
+  const canInteractWithStatus = activeWorkflowStatus === 'none' || activeWorkflowStatus === 'expired_reserved' || statusOwnerAgentId === currentAgentId;
+  const workflowDescription = useMemo(() => {
+    if (activeWorkflowStatus === 'expired_reserved' && favoriteMeta?.reservedByAgentName) {
+      return `Rezervarea lui ${favoriteMeta.reservedByAgentName} a expirat. Anuntul este disponibil din nou.`;
+    }
+
+    if (activeWorkflowStatus === 'reserved' && favoriteMeta?.reservedByAgentName) {
+      return `Proprietate rezervata de ${favoriteMeta.reservedByAgentName}`;
+    }
+
+    if (activeWorkflowStatus === 'taken' && favoriteMeta?.takenByAgentName) {
+      return `Proprietate preluata de ${favoriteMeta.takenByAgentName}`;
+    }
+
+    if (activeWorkflowStatus === 'follow_up') {
+      const agentName = favoriteMeta?.contactOutcomeByAgentName || favoriteMeta?.reservedByAgentName;
+      return agentName ? `Follow-up necesar pentru ${agentName}` : 'Follow-up necesar';
+    }
+
+    if (activeWorkflowStatus === 'negative') {
+      return 'Indisponibil pentru colaborare';
+    }
+
+    return '';
+  }, [activeWorkflowStatus, favoriteMeta]);
 
   const collaborationButtons =
     collaborationMode === 'hidden' ? null : (
@@ -206,11 +284,11 @@ export function OwnerListingCard({
               className={cn(
                 'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] backdrop-blur-md transition-colors',
                 isFavorite
-                  ? 'border-rose-300/70 bg-rose-500 text-white'
+                  ? 'border-emerald-300/70 bg-green-500 text-white'
                   : 'border-white/30 bg-white/92 text-slate-800 hover:bg-white',
               )}
             >
-              <Heart className={cn('h-4.5 w-4.5', isFavorite ? 'fill-current' : '')} />
+              <FavoriteHeartIcon filled={isFavorite} />
             </button>
 
             {showNewBadge ? (
@@ -276,12 +354,12 @@ export function OwnerListingCard({
             <div className="flex shrink-0 items-center gap-2">
               {showImportAction && onImport ? (
                 <Button
-                  className="rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-4 text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)]"
+                  className="rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-3 text-[13px] text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)]"
                   size="sm"
                   onClick={() => onImport(listing)}
                   disabled={isLoadingImport}
                 >
-                  {isLoadingImport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isLoadingImport ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="mr-1 h-3.5 w-3.5" />}
                   Importa anuntul
                 </Button>
               ) : null}
@@ -293,6 +371,70 @@ export function OwnerListingCard({
               </Button>
             </div>
           </div>
+
+          {canShowWorkflowActions ? (
+            <div className="grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-[auto_auto_1fr]">
+              <Button
+                type="button"
+                variant={activeWorkflowStatus === 'reserved' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onSetReserved?.(listing)}
+                disabled={!canInteractWithStatus}
+                className={cn(
+                  'rounded-full text-[12px]',
+                  activeWorkflowStatus === 'reserved'
+                    ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
+                    : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
+                )}
+              >
+                Rezervat
+              </Button>
+
+              <Button
+                type="button"
+                variant={activeWorkflowStatus === 'taken' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onSetTaken?.(listing)}
+                disabled={!canInteractWithStatus}
+                className={cn(
+                  'rounded-full text-[12px]',
+                  activeWorkflowStatus === 'taken'
+                    ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
+                    : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
+                )}
+              >
+                Preluat
+              </Button>
+
+              <Select
+                value={outcomeValue}
+                onValueChange={(value) => value !== 'none' && onSetOutcome?.(listing, value as OwnerListingContactOutcome)}
+                disabled={!canInteractWithStatus}
+              >
+                <SelectTrigger
+                  className={cn(
+                    'h-9 rounded-full border-white/15 text-[12px] text-stone-100',
+                    activeWorkflowStatus === 'follow_up'
+                      ? '!border-emerald-300 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)]'
+                      : activeWorkflowStatus === 'negative'
+                        ? '!border-emerald-300 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)]'
+                        : 'bg-white/5',
+                  )}
+                >
+                  <SelectValue placeholder="Status final" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Status</SelectItem>
+                  <SelectItem value="negative">Negativ</SelectItem>
+                  <SelectItem value="follow_up">Follow-up</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {workflowDescription ? (
+            <p className={cn('text-[12px]', activeWorkflowStatus === 'expired_reserved' ? 'text-amber-300' : 'text-stone-300')}>{workflowDescription}</p>
+          ) : null}
         </div>
       </CardContent>
     </Card>

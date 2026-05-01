@@ -63,10 +63,10 @@ export function OwnerListingHeader({
                   key={tab.href}
                   href={tab.href}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                    'inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-all',
                     tab.active
-                      ? 'bg-white text-slate-950 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.38)]'
-                      : 'text-slate-600 hover:bg-white/92 hover:text-slate-900',
+                      ? 'border-white bg-white text-slate-950 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.38)]'
+                      : 'border-slate-200/70 bg-white/55 text-slate-700 shadow-[0_8px_22px_-20px_rgba(15,23,42,0.35)] hover:border-white hover:bg-white/92 hover:text-slate-900',
                   )}
                 >
                   <Icon className="h-4 w-4" />
