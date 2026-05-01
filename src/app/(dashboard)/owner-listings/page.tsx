@@ -48,7 +48,7 @@ export default function OwnerListingsPage() {
   const { agency, agencyId } = useAgency();
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
 
-  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc')), [firestore]);
+  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
     [agencyId, firestore],
@@ -70,15 +70,7 @@ export default function OwnerListingsPage() {
     let result = [...listings];
 
     if (currentScope) {
-      const scopeTerms = ['bucuresti', 'sector', 'ilfov', 'popesti', 'voluntari', 'otopeni', 'bragadiru', 'chiajna'];
-      result = result.filter((listing) => {
-        if (listing.scopeKey === currentScope.key) {
-          return true;
-        }
-
-        const text = `${listing.location || ''} ${listing.title || ''} ${listing.description || ''}`.toLowerCase();
-        return scopeTerms.some((term) => text.includes(term));
-      });
+      result = result.filter((listing) => listing.scopeKey === currentScope.key);
     }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
@@ -121,6 +113,16 @@ export default function OwnerListingsPage() {
         return true;
       });
     }
+
+    result.sort((left, right) => {
+      const leftFirstSeen = left.firstDiscoveredAt || 0;
+      const rightFirstSeen = right.firstDiscoveredAt || 0;
+      if (rightFirstSeen !== leftFirstSeen) {
+        return rightFirstSeen - leftFirstSeen;
+      }
+
+      return (right.postedAt || 0) - (left.postedAt || 0);
+    });
 
     return result;
   }, [currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter]);

@@ -5,14 +5,6 @@ import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/ow
 
 const publi24PhoneCache = new Map<string, string>();
 
-function matchesKeywords(text: string, keywords: string[]) {
-  const normalized = normalizeWhitespace(text)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  return keywords.some((keyword) => normalized.includes(keyword));
-}
-
 function extractRoomCount(text: string) {
   const normalized = normalizeWhitespace(text);
   return (
@@ -652,9 +644,6 @@ export async function scrapePubli24ListingsPage(
 
       const absoluteUrl = normalizeUrl(offer.url, 'https://www.publi24.ro');
       if (seenLinks.has(absoluteUrl)) continue;
-      if (!matchesKeywords(`${offer.location} ${offer.title} ${offer.description}`, options.searchKeywords)) {
-        continue;
-      }
 
       let enrichedOffer = { ...offer, url: absoluteUrl };
       if (!enrichedOffer.area || !enrichedOffer.rooms || !enrichedOffer.constructionYear) {

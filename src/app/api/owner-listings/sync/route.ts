@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 
 const syncSchema = z.object({
   sources: z.array(z.enum(['olx', 'imoradar24', 'publi24'])).optional(),
+  scopeKey: z.string().trim().min(1).optional(),
   maxPages: z.number().int().min(1).max(1000).nullable().optional(),
   maxListingsPerSource: z.number().int().min(1).max(100).optional(),
   hardPageLimit: z.number().int().min(1).max(1000).optional(),
@@ -38,11 +39,11 @@ function formatError(error: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = syncSchema.parse(await request.json().catch(() => ({})));
     const sources = (body.sources || ['olx', 'imoradar24', 'publi24']) as OwnerListingSource[];
     const result = await runOwnerListingsBackgroundSync({
-      agencyId,
+      scopeKey: body.scopeKey,
       sources,
       maxPages: body.maxPages ?? undefined,
       maxListingsPerSource: body.maxListingsPerSource,

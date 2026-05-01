@@ -49,6 +49,18 @@ export function normalizeDigits(value?: string | null) {
   return (value ?? '').replace(/\D/g, '');
 }
 
+export function isListingNew(listing: Pick<OwnerListing, 'isNew' | 'newUntilAt'>, referenceUnix = Math.floor(Date.now() / 1000)) {
+  if (!listing.isNew) {
+    return false;
+  }
+
+  if (typeof listing.newUntilAt !== 'number') {
+    return true;
+  }
+
+  return listing.newUntilAt > referenceUnix;
+}
+
 export function matchesPropertyType(listing: OwnerListing, propertyTypeFilter: PropertyTypeFilter) {
   const listingType = normalizeText(listing.propertyType);
   const listingText = normalizeText(`${listing.title || ''} ${listing.description || ''}`);

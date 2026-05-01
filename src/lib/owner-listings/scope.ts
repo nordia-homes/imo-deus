@@ -5,6 +5,7 @@ export type OwnerListingScope = {
   key: string;
   cityKey: City;
   displayName: string;
+  defaultCityKeys: City[];
   searchKeywords: string[];
   olxSearchUrls: string[];
   publi24SearchUrls: string[];
@@ -19,10 +20,6 @@ function normalizeText(value?: string | null) {
     .trim();
 }
 
-function slugify(value: string) {
-  return normalizeText(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
 function agencyCityFromText(value?: string | null): City | null {
   const normalized = normalizeText(value);
   if (!normalized) return null;
@@ -31,15 +28,63 @@ function agencyCityFromText(value?: string | null): City | null {
     return 'Bucuresti-Ilfov';
   }
 
-  const match = (Object.keys(locations) as City[]).find((city) => normalizeText(city) === normalized);
-  if (match) return match;
+  const exactMatch = (Object.keys(locations) as City[]).find((city) => normalizeText(city) === normalized);
+  if (exactMatch) {
+    return exactMatch;
+  }
 
-  const fuzzy = (Object.keys(locations) as City[]).find((city) => {
+  const fuzzyMatch = (Object.keys(locations) as City[]).find((city) => {
     const cityNormalized = normalizeText(city);
     return normalized.includes(cityNormalized) || cityNormalized.includes(normalized);
   });
 
-  return fuzzy || null;
+  return fuzzyMatch || null;
+}
+
+const OWNER_LISTING_SCOPE_REGISTRY: OwnerListingScope[] = [
+  {
+    key: 'bucuresti-ilfov',
+    cityKey: 'Bucuresti-Ilfov',
+    displayName: 'Bucuresti-Ilfov',
+    defaultCityKeys: ['Bucuresti-Ilfov'],
+    searchKeywords: [
+      'bucuresti',
+      'sector',
+      'ilfov',
+      'popesti-leordeni',
+      'voluntari',
+      'otopeni',
+      'bragadiru',
+      'chiajna',
+      'dobroesti',
+      'mogosoaia',
+      'pantelimon',
+      'corbeanca',
+      'tunari',
+    ],
+    olxSearchUrls: [
+      'https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private',
+    ],
+    publi24SearchUrls: [
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/ilfov/?commercial=false',
+    ],
+    imoradar24SearchUrls: [
+      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
+    ],
+  },
+];
+
+export function listOwnerListingScopes() {
+  return OWNER_LISTING_SCOPE_REGISTRY.map((scope) => ({ ...scope }));
+}
+
+export function getOwnerListingScope(scopeKey: string) {
+  return OWNER_LISTING_SCOPE_REGISTRY.find((scope) => scope.key === scopeKey) || null;
+}
+
+export function getOwnerListingScopeKeys() {
+  return OWNER_LISTING_SCOPE_REGISTRY.map((scope) => scope.key);
 }
 
 export function resolveAgencyOwnerListingScope(agency: Agency | null | undefined): OwnerListingScope | null {
@@ -53,49 +98,7 @@ export function resolveAgencyOwnerListingScope(agency: Agency | null | undefined
     return null;
   }
 
-  if (cityKey !== 'Bucuresti-Ilfov') {
-    return null;
-  }
-
-  const citySlug = slugify(cityKey);
-  const searchKeywords = [
-    'bucuresti',
-    'sector',
-    'ilfov',
-    'popesti-leordeni',
-    'voluntari',
-    'otopeni',
-    'bragadiru',
-    'chiajna',
-    'dobroesti',
-    'mogosoaia',
-    'pantelimon',
-    'corbeanca',
-    'tunari',
-  ];
-
-  const olxSearchUrls = [
-    'https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private',
-  ];
-
-  const publi24SearchUrls = [
-    'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
-    'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/ilfov/?commercial=false',
-  ];
-
-  const imoradar24SearchUrls = [
-    'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
-  ];
-
-  return {
-    key: citySlug,
-    cityKey,
-    displayName: cityKey,
-    searchKeywords,
-    olxSearchUrls,
-    publi24SearchUrls,
-    imoradar24SearchUrls,
-  };
+  return OWNER_LISTING_SCOPE_REGISTRY.find((scope) => scope.defaultCityKeys.includes(cityKey)) || null;
 }
 
 export function matchesScopeLocation(scope: OwnerListingScope, text?: string | null) {

@@ -1,9 +1,15 @@
-import type { DocumentReference } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
-import { syncOwnerListings } from '@/lib/owner-listings';
-import { runOwnerListingsSyncSchedulerTick } from '@/lib/owner-listings/cycle';
 import { drainNextOlxPhoneQueueItem } from '@/lib/owner-listings/olx-phone-queue';
-import type { OlxPhoneDrainResult, OwnerListingSource, OwnerListingSyncResult, OwnerListingSyncTickResult } from '@/lib/owner-listings/types';
+import { getNewBadgeLifetimeUnix, syncOwnerListings } from '@/lib/owner-listings';
+import { runOwnerListingsSyncSchedulerTick } from '@/lib/owner-listings/cycle';
+import { getOwnerListingScope, listOwnerListingScopes } from '@/lib/owner-listings/scope';
+import type {
+  OlxPhoneDrainResult,
+  OwnerListingSource,
+  OwnerListingSyncResult,
+  OwnerListingSyncTickResult,
+} from '@/lib/owner-listings/types';
 
 export const OWNER_LISTINGS_CRON_SECRET_HEADER = 'x-owner-listings-cron-secret';
 
@@ -17,7 +23,7 @@ export async function runOwnerListingsOlxPhoneDrain(): Promise<OlxPhoneDrainResu
 }
 
 type CycleTickOptions = {
-  agencyId?: string | null;
+  scopeKey?: string | null;
   hardPageLimit?: number;
   maxAgeDays?: number;
   maxListingsPerSource?: number | null;
@@ -30,16 +36,16 @@ export async function runOwnerListingsScheduledCycleTick(options: CycleTickOptio
 }
 
 type BackgroundSyncOptions = {
-  agencyId?: string | null;
+  scopeKey?: string | null;
   sources?: OwnerListingSource[];
   maxPages?: number;
   maxListingsPerSource?: number;
   hardPageLimit?: number;
 };
 
-type AgencyJobResult = {
-  agencyId: string;
-  agencyName: string;
+type ScopeJobResult = {
+  scopeKey: string;
+  scopeLabel: string;
   result?: OwnerListingSyncResult;
   error?: string;
 };
@@ -50,50 +56,154 @@ type QueuedBackgroundSyncOptions = BackgroundSyncOptions & {
   mode?: BackgroundJobMode;
 };
 
+function listTargetScopes(scopeKey?: string | null) {
+  if (scopeKey) {
+    const scope = getOwnerListingScope(scopeKey);
+    return scope ? [scope] : [];
+  }
+
+  return listOwnerListingScopes();
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function addMs(dateIso: string, milliseconds: number) {
+  return new Date(new Date(dateIso).getTime() + milliseconds).toISOString();
+}
+
+async function loadScopeCycleState(scopeKey: string) {
+  const snapshot = await adminDb.collection('ownerListingSyncCycles').doc(scopeKey).get();
+  return snapshot.exists
+    ? snapshot.data() as { baselineStatus?: string; baselineCompletedAt?: string; cycleNumber?: number; scopeLabel?: string }
+    : null;
+}
+
+async function markManualScopeRunStarted(scopeKey: string, scopeLabel: string, nextCycleNumber: number, isBaselineRun: boolean) {
+  const startedAt = nowIso();
+  await adminDb.collection('ownerListingSyncCycles').doc(scopeKey).set(
+    {
+      scopeKey,
+      scopeLabel,
+      cycleNumber: nextCycleNumber,
+      baselineStatus: isBaselineRun ? 'running' : 'completed',
+      status: 'running',
+      currentSourceIndex: 0,
+      currentSource: null,
+      sourcesOrder: ['olx', 'publi24', 'imoradar24'],
+      cycleStartedAt: startedAt,
+      cycleFinishedAt: null,
+      cooldownUntil: null,
+      lastHeartbeatAt: startedAt,
+      lastError: null,
+      updatedAt: startedAt,
+      createdAt: startedAt,
+      firestoreUpdatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+async function markManualScopeRunFinished(scopeKey: string, nextCycleNumber: number, isBaselineRun: boolean) {
+  const finishedAt = nowIso();
+  await adminDb.collection('ownerListingSyncCycles').doc(scopeKey).set(
+    {
+      scopeKey,
+      cycleNumber: nextCycleNumber,
+      baselineStatus: isBaselineRun ? 'completed' : 'completed',
+      ...(isBaselineRun ? { baselineCycleNumber: nextCycleNumber, baselineCompletedAt: finishedAt } : {}),
+      status: 'cooldown',
+      currentSourceIndex: 3,
+      currentSource: null,
+      cycleFinishedAt: finishedAt,
+      cooldownUntil: addMs(finishedAt, 2 * 60 * 60 * 1000),
+      lastHeartbeatAt: finishedAt,
+      lastError: null,
+      updatedAt: finishedAt,
+      firestoreUpdatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+async function markManualScopeRunFailed(scopeKey: string, nextCycleNumber: number, errorMessage: string) {
+  const failedAt = nowIso();
+  await adminDb.collection('ownerListingSyncCycles').doc(scopeKey).set(
+    {
+      scopeKey,
+      cycleNumber: nextCycleNumber,
+      status: 'failed',
+      lastError: errorMessage,
+      lastHeartbeatAt: failedAt,
+      updatedAt: failedAt,
+      firestoreUpdatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
 async function executeOwnerListingsBackgroundSync(jobRef: DocumentReference, options: QueuedBackgroundSyncOptions) {
   const sources = options.sources || ['olx', 'imoradar24', 'publi24'];
+  const scopes = listTargetScopes(options.scopeKey);
+  const scopeResults: ScopeJobResult[] = [];
 
-  const agenciesSnapshot = options.agencyId
-    ? await adminDb.collection('agencies').where('__name__', '==', options.agencyId).get()
-    : await adminDb.collection('agencies').where('city', '==', 'Bucuresti-Ilfov').get();
-
-  const agencyResults: AgencyJobResult[] = [];
-
-  for (const agencyDoc of agenciesSnapshot.docs) {
-    const agencyData = agencyDoc.data() as { name?: string } | undefined;
+  for (const scope of scopes) {
     try {
-      const result = await syncOwnerListings(agencyDoc.id, sources, {
-        maxPages: options.maxPages ?? null,
-        maxListingsPerSource: options.maxListingsPerSource ?? null,
-        hardPageLimit: options.hardPageLimit || 250,
-        maxAgeDays: 60,
-      });
-      agencyResults.push({
-        agencyId: agencyDoc.id,
-        agencyName: agencyData?.name || agencyDoc.id,
+      const cycleState = await loadScopeCycleState(scope.key);
+      const isBaselineCompleted = cycleState?.baselineStatus === 'completed';
+      const nextCycleNumber = Math.max(1, (cycleState?.cycleNumber || 0) + 1);
+      await markManualScopeRunStarted(scope.key, scope.displayName, nextCycleNumber, !isBaselineCompleted);
+      const result = await syncOwnerListings(
+        scope.key,
+        sources,
+        {
+          maxPages: options.maxPages ?? null,
+          maxListingsPerSource: options.maxListingsPerSource ?? null,
+          hardPageLimit: options.hardPageLimit || 250,
+          maxAgeDays: 60,
+        },
+        {
+          markNew: isBaselineCompleted,
+          isBaselineListing: !isBaselineCompleted,
+          discoveredCycleNumber: nextCycleNumber,
+          newUntilAt: isBaselineCompleted ? getNewBadgeLifetimeUnix() : null,
+        }
+      );
+      await markManualScopeRunFinished(scope.key, nextCycleNumber, !isBaselineCompleted);
+      scopeResults.push({
+        scopeKey: scope.key,
+        scopeLabel: scope.displayName,
         result,
       });
     } catch (error) {
-      agencyResults.push({
-        agencyId: agencyDoc.id,
-        agencyName: agencyData?.name || agencyDoc.id,
-        error: error instanceof Error ? error.message : 'Sincronizarea agentiei a esuat.',
+      const cycleState = await loadScopeCycleState(scope.key);
+      const nextCycleNumber = Math.max(1, (cycleState?.cycleNumber || 0));
+      await markManualScopeRunFailed(
+        scope.key,
+        nextCycleNumber,
+        error instanceof Error ? error.message : 'Sincronizarea scope-ului a esuat.'
+      );
+      scopeResults.push({
+        scopeKey: scope.key,
+        scopeLabel: scope.displayName,
+        error: error instanceof Error ? error.message : 'Sincronizarea scope-ului a esuat.',
       });
     }
   }
 
   const finishedAt = new Date().toISOString();
-  const summary = agencyResults.reduce(
-    (accumulator, agencyResult) => {
-      if (agencyResult.result) {
-        accumulator.scanned += agencyResult.result.scanned;
-        accumulator.accepted += agencyResult.result.accepted;
-        accumulator.stored += agencyResult.result.stored;
-        accumulator.skipped += agencyResult.result.skipped;
-        accumulator.errors += agencyResult.result.errors.length;
+  const summary = scopeResults.reduce(
+    (accumulator, scopeResult) => {
+      if (scopeResult.result) {
+        accumulator.scanned += scopeResult.result.scanned;
+        accumulator.accepted += scopeResult.result.accepted;
+        accumulator.stored += scopeResult.result.stored;
+        accumulator.skipped += scopeResult.result.skipped;
+        accumulator.errors += scopeResult.result.errors.length;
       }
 
-      if (agencyResult.error) {
+      if (scopeResult.error) {
         accumulator.errors += 1;
       }
 
@@ -107,7 +217,7 @@ async function executeOwnerListingsBackgroundSync(jobRef: DocumentReference, opt
       status: 'completed',
       finishedAt,
       summary,
-      agencies: agencyResults,
+      scopes: scopeResults,
     },
     { merge: true }
   );
@@ -116,7 +226,7 @@ async function executeOwnerListingsBackgroundSync(jobRef: DocumentReference, opt
     jobId: jobRef.id,
     finishedAt,
     summary,
-    agencies: agencyResults,
+    scopes: scopeResults,
   };
 }
 
@@ -129,7 +239,7 @@ export async function queueOwnerListingsBackgroundSync(options: QueuedBackground
     type: options.mode || 'manual',
     status: 'running',
     startedAt,
-    agencyId: options.agencyId || null,
+    scopeKey: options.scopeKey || null,
     sources,
     maxPages: options.maxPages ?? null,
     maxListingsPerSource: options.maxListingsPerSource ?? null,
@@ -163,7 +273,7 @@ export async function runOwnerListingsBackgroundSync(options: BackgroundSyncOpti
     type: 'background',
     status: 'running',
     startedAt,
-    agencyId: options.agencyId || null,
+    scopeKey: options.scopeKey || null,
     sources,
     maxPages: options.maxPages ?? null,
     maxListingsPerSource: options.maxListingsPerSource ?? null,

@@ -1,15 +1,15 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
-import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
-import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
-import { scrapePubli24ListingDetail, scrapePubli24Listings, scrapePubli24ListingsPage } from '@/lib/owner-listings/sources/publi24';
 import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
-import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { getOwnerListingScope } from '@/lib/owner-listings/scope';
+import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
+import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
+import { scrapePubli24ListingDetail, scrapePubli24Listings, scrapePubli24ListingsPage } from '@/lib/owner-listings/sources/publi24';
 import type {
   OwnerListingDetail,
+  OwnerListingSource,
   OwnerListingSourcePageResult,
   OwnerListingSourceSyncResult,
-  OwnerListingSource,
   OwnerListingSummary,
   OwnerListingSyncResult,
   SourceScrapeOptions,
@@ -31,6 +31,8 @@ const SOURCE_HARD_PAGE_LIMITS: Record<OwnerListingSource, number> = {
   imoradar24: 30,
   publi24: 35,
 };
+
+const NEW_BADGE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 type SourceHandler = {
   scrapeList: (options: SourceScrapeOptions) => Promise<OwnerListingSummary[]>;
@@ -56,25 +58,18 @@ const SOURCES: Record<OwnerListingSource, SourceHandler> = {
   },
 };
 
-async function resolveOwnerListingScope(agencyId: string) {
-  const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
-  const agency = agencySnapshot.data() as import('@/lib/types').Agency | undefined;
-  const scope = resolveAgencyOwnerListingScope(agency);
-
+function resolveOwnerListingScope(scopeKey: string) {
+  const scope = getOwnerListingScope(scopeKey);
   if (!scope) {
-    throw new Error('Momentan owner listings este configurat doar pentru agentii cu orasul Bucuresti-Ilfov.');
+    throw new Error(`Nu am gasit configuratia de scraping pentru scope-ul ${scopeKey}.`);
   }
 
-  return {
-    agency,
-    agencyName: agency?.name || agencyId,
-    scope,
-  };
+  return scope;
 }
 
 function buildSourceScrapeOptions(
   source: OwnerListingSource,
-  scope: ReturnType<typeof resolveAgencyOwnerListingScope> extends infer _T ? NonNullable<_T> : never,
+  scope: NonNullable<ReturnType<typeof getOwnerListingScope>>,
   options: Partial<SourceScrapeOptions> = {}
 ): SourceScrapeOptions {
   const sourceHardPageLimit = Math.min(
@@ -101,6 +96,8 @@ function buildSourceScrapeOptions(
 type PersistOwnerListingsOptions = {
   markNew?: boolean;
   discoveredCycleNumber?: number | null;
+  isBaselineListing?: boolean;
+  newUntilAt?: number | null;
 };
 
 async function storeOwnerListingsBatch(
@@ -135,9 +132,16 @@ async function storeOwnerListingsBatch(
         listing: mergeListingWithExisting(
           {
             ...listing,
-            isNew: isNewListing ? Boolean(persistOptions.markNew) : listing.isNew,
-            discoveredCycleNumber: isNewListing ? (persistOptions.discoveredCycleNumber ?? undefined) : listing.discoveredCycleNumber,
-            firstDiscoveredAt: isNewListing ? listing.scrapedAt : listing.firstDiscoveredAt,
+            isNew: isNewListing ? Boolean(persistOptions.markNew) : undefined,
+            isBaselineListing: isNewListing ? Boolean(persistOptions.isBaselineListing) : undefined,
+            discoveredCycleNumber: isNewListing ? (persistOptions.discoveredCycleNumber ?? undefined) : undefined,
+            firstDiscoveredAt: isNewListing ? listing.scrapedAt : undefined,
+            newUntilAt:
+              isNewListing && persistOptions.markNew && persistOptions.newUntilAt
+                ? persistOptions.newUntilAt
+                : isNewListing
+                  ? undefined
+                  : existing?.newUntilAt,
           },
           existing
         ),
@@ -159,10 +163,11 @@ async function storeOwnerListingsBatch(
         updatedAt: new Date().toISOString(),
         syncSource: 'scraper',
         dedupeKey: listing.fingerprint,
-        searchText: [listing.title, listing.location, listing.price, listing.sourceLabel].join(' '),
+        searchText: [listing.title, listing.location, listing.price, listing.sourceLabel, listing.scopeCity].join(' '),
         syncMetadata: {
           lastSeenAt: listing.lastSeenAt,
           scrapedAt: listing.scrapedAt,
+          firstDiscoveredAt: listing.firstDiscoveredAt,
         },
         firestoreUpdatedAt: FieldValue.serverTimestamp(),
       }),
@@ -172,9 +177,7 @@ async function storeOwnerListingsBatch(
   }
 
   await batch.commit();
-  await Promise.all(
-    listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing))
-  );
+  await Promise.all(listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing)));
 
   return result;
 }
@@ -192,11 +195,11 @@ function preferIncomingValue<T>(incoming: T | null | undefined, existing: T | nu
 }
 
 function mergeListingWithExisting(
-  listing: OwnerListingSummary,
-  existing?: Partial<OwnerListingSummary> | undefined
+  listing: Partial<OwnerListingSummary> & Pick<OwnerListingSummary, 'source' | 'externalId' | 'title' | 'price' | 'link' | 'area' | 'location' | 'postedAt' | 'fingerprint' | 'sourceLabel' | 'ownerType' | 'scrapedAt' | 'lastSeenAt'>,
+  existing?: Partial<OwnerListingSummary>
 ): OwnerListingSummary {
   if (!existing) {
-    return listing;
+    return listing as OwnerListingSummary;
   }
 
   return {
@@ -221,12 +224,51 @@ function mergeListingWithExisting(
     ownerName: preferIncomingValue(listing.ownerName, existing.ownerName),
     ownerPhone: preferIncomingValue(listing.ownerPhone, existing.ownerPhone),
     ownerConfidence: preferIncomingValue(listing.ownerConfidence, existing.ownerConfidence),
-    isNew: existing.isNew ?? listing.isNew,
-    discoveredCycleNumber: existing.discoveredCycleNumber ?? listing.discoveredCycleNumber,
-    firstDiscoveredAt: existing.firstDiscoveredAt ?? listing.firstDiscoveredAt,
+    isNew: listing.isNew ?? existing.isNew,
+    isBaselineListing: listing.isBaselineListing ?? existing.isBaselineListing,
+    discoveredCycleNumber: preferIncomingValue(listing.discoveredCycleNumber, existing.discoveredCycleNumber),
+    firstDiscoveredAt: preferIncomingValue(listing.firstDiscoveredAt, existing.firstDiscoveredAt),
+    newUntilAt: preferIncomingValue(listing.newUntilAt, existing.newUntilAt),
     scrapedAt: Math.max(listing.scrapedAt || 0, existing.scrapedAt || 0),
     lastSeenAt: Math.max(listing.lastSeenAt || 0, existing.lastSeenAt || 0),
   } satisfies OwnerListingSummary;
+}
+
+export async function expireScopeNewBadges(scopeKey: string, nowUnix = Math.floor(Date.now() / 1000)) {
+  const snapshot = await adminDb.collection('ownerListings').where('scopeKey', '==', scopeKey).get();
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  const docsToUpdate = snapshot.docs.filter((doc) => {
+    const data = doc.data() as Partial<OwnerListingSummary>;
+    return Boolean(data.isNew) && typeof data.newUntilAt === 'number' && data.newUntilAt <= nowUnix;
+  });
+
+  if (!docsToUpdate.length) {
+    return 0;
+  }
+
+  for (let index = 0; index < docsToUpdate.length; index += 400) {
+    const batch = adminDb.batch();
+    for (const doc of docsToUpdate.slice(index, index + 400)) {
+      batch.set(
+        doc.ref,
+        {
+          isNew: false,
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+    await batch.commit();
+  }
+
+  return docsToUpdate.length;
+}
+
+export function getNewBadgeLifetimeUnix(referenceUnix = Math.floor(Date.now() / 1000)) {
+  return referenceUnix + Math.floor(NEW_BADGE_LIFETIME_MS / 1000);
 }
 
 export async function scrapeOwnerListingDetail(source: OwnerListingSource, url: string) {
@@ -234,13 +276,13 @@ export async function scrapeOwnerListingDetail(source: OwnerListingSource, url: 
 }
 
 export async function syncOwnerListingsSourcePage(
-  agencyId: string,
+  scopeKey: string,
   source: OwnerListingSource,
   page: number,
   options: Partial<SourceScrapeOptions> = {},
   persistOptions: PersistOwnerListingsOptions = {}
 ): Promise<OwnerListingSourceSyncResult> {
-  const { scope } = await resolveOwnerListingScope(agencyId);
+  const scope = resolveOwnerListingScope(scopeKey);
   const resolvedOptions = buildSourceScrapeOptions(source, scope, {
     ...options,
     startPage: page,
@@ -263,12 +305,12 @@ export async function syncOwnerListingsSourcePage(
 }
 
 export async function syncOwnerListings(
-  agencyId: string,
+  scopeKey: string,
   requestedSources: OwnerListingSource[] = ['olx', 'imoradar24', 'publi24'],
-  options: Partial<SourceScrapeOptions> = {}
+  options: Partial<SourceScrapeOptions> = {},
+  persistOptions: PersistOwnerListingsOptions = {}
 ): Promise<OwnerListingSyncResult> {
-  const { scope } = await resolveOwnerListingScope(agencyId);
-
+  const scope = resolveOwnerListingScope(scopeKey);
   const unique = new Map<string, OwnerListingSummary>();
   const result: OwnerListingSyncResult = {
     scanned: 0,
@@ -281,7 +323,6 @@ export async function syncOwnerListings(
   for (const source of requestedSources) {
     try {
       const resolvedOptions = buildSourceScrapeOptions(source, scope, options);
-
       const listings = await SOURCES[source].scrapeList(resolvedOptions);
       result.scanned += listings.length;
 
@@ -302,7 +343,7 @@ export async function syncOwnerListings(
     }
   }
 
-  const persisted = await storeOwnerListingsBatch(Array.from(unique.values()));
+  const persisted = await storeOwnerListingsBatch(Array.from(unique.values()), persistOptions);
   result.accepted = persisted.accepted;
   result.stored = persisted.stored;
   result.skipped += persisted.skipped;

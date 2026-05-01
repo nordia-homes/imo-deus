@@ -110,3 +110,15 @@ export async function fetchScraperHtml(url: string, timeoutMs = 30000) {
     clearTimeout(timeout);
   }
 }
+
+export async function fetchScraperHtmlViaBrowser(
+  url: string,
+  selectors: string[] = ['body'],
+  timeoutMs = 30000
+) {
+  return withScraperPage(async (page) => {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+    await waitForScraperReady(page, selectors, Math.min(timeoutMs, 12000));
+    return page.content();
+  });
+}

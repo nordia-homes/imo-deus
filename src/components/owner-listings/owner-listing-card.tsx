@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { CollaborationStatus, OwnerListing } from '@/components/owner-listings/types';
-import { extractPrice, extractRoomsValue, formatAreaValue, formatPriceNumber } from '@/components/owner-listings/utils';
+import { extractPrice, extractRoomsValue, formatAreaValue, formatPriceNumber, isListingNew } from '@/components/owner-listings/utils';
 
 type OwnerListingCardProps = {
   listing: OwnerListing;
@@ -98,6 +98,7 @@ export function OwnerListingCard({
         ? listing.image
         : null;
   const badgeLabel = listing.originSourceLabel || listing.sourceLabel;
+  const showNewBadge = isListingNew(listing);
 
   let displayPrice = 'Pret negociabil';
   if (listing.price) {
@@ -212,7 +213,7 @@ export function OwnerListingCard({
               <Heart className={cn('h-4.5 w-4.5', isFavorite ? 'fill-current' : '')} />
             </button>
 
-            {listing.isNew ? (
+            {showNewBadge ? (
               <div className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_-14px_rgba(16,185,129,0.95)]">
                 NOU
               </div>

@@ -1,16 +1,17 @@
 import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
-import { syncOwnerListingsSourcePage } from '@/lib/owner-listings/index';
-import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { expireScopeNewBadges, getNewBadgeLifetimeUnix, syncOwnerListingsSourcePage } from '@/lib/owner-listings/index';
+import { getOwnerListingScope, listOwnerListingScopes } from '@/lib/owner-listings/scope';
 import type {
+  OwnerListingBaselineStatus,
   OwnerListingSource,
   OwnerListingSyncCycleJob,
   OwnerListingSyncCycleJobStatus,
   OwnerListingSyncCycleState,
   OwnerListingSyncRun,
-  OwnerListingSyncTickAgencyResult,
   OwnerListingSyncTickResult,
+  OwnerListingSyncTickScopeResult,
 } from '@/lib/owner-listings/types';
 
 const CYCLE_COLLECTION = 'ownerListingSyncCycles';
@@ -26,7 +27,7 @@ const DEFAULT_MAX_PAGES_PER_TICK = 12;
 const DEFAULT_MAX_RUNTIME_MS = 7 * 60 * 1000;
 
 type SchedulerTickOptions = {
-  agencyId?: string | null;
+  scopeKey?: string | null;
   hardPageLimit?: number;
   maxAgeDays?: number;
   maxListingsPerSource?: number | null;
@@ -39,12 +40,12 @@ type AcquireCycleLockResult = {
   state: OwnerListingSyncCycleState;
 };
 
-function cycleDocRef(agencyId: string) {
-  return adminDb.collection(CYCLE_COLLECTION).doc(agencyId);
+function cycleDocRef(scopeKey: string) {
+  return adminDb.collection(CYCLE_COLLECTION).doc(scopeKey);
 }
 
-function cycleJobDocRef(agencyId: string, source: OwnerListingSource) {
-  return adminDb.collection(CYCLE_JOB_COLLECTION).doc(`${agencyId}_${source}`);
+function cycleJobDocRef(scopeKey: string, source: OwnerListingSource) {
+  return adminDb.collection(CYCLE_JOB_COLLECTION).doc(`${scopeKey}_${source}`);
 }
 
 function nowIso() {
@@ -76,11 +77,10 @@ function getCycleLockExpiresAtIso(existing: Partial<OwnerListingSyncCycleState>)
 }
 
 function buildBaseCycleState(input: {
-  agencyId: string;
-  agencyName: string;
   scopeKey: string;
-  scopeCity: string;
+  scopeLabel: string;
   cycleNumber: number;
+  baselineStatus?: OwnerListingBaselineStatus;
   hardPageLimit?: number;
   maxAgeDays?: number;
   maxListingsPerSource?: number | null;
@@ -90,11 +90,10 @@ function buildBaseCycleState(input: {
 }): OwnerListingSyncCycleState {
   const timestamp = input.createdAt || nowIso();
   return {
-    agencyId: input.agencyId,
-    agencyName: input.agencyName,
     scopeKey: input.scopeKey,
-    scopeCity: input.scopeCity,
+    scopeLabel: input.scopeLabel,
     cycleNumber: input.cycleNumber,
+    baselineStatus: input.baselineStatus || 'pending',
     status: 'idle',
     sourcesOrder: CYCLE_SOURCE_ORDER,
     currentSourceIndex: 0,
@@ -110,14 +109,14 @@ function buildBaseCycleState(input: {
 }
 
 function buildCycleJobState(
-  agencyId: string,
+  scopeKey: string,
   cycleNumber: number,
   source: OwnerListingSource,
   status: OwnerListingSyncCycleJobStatus = 'pending'
 ): OwnerListingSyncCycleJob {
   const timestamp = nowIso();
   return {
-    agencyId,
+    scopeKey,
     cycleNumber,
     source,
     status,
@@ -133,34 +132,21 @@ function buildCycleJobState(
   };
 }
 
-async function listTargetAgencies(agencyId?: string | null) {
-  const agenciesSnapshot = agencyId
-    ? await adminDb.collection('agencies').where('__name__', '==', agencyId).get()
-    : await adminDb.collection('agencies').where('city', '==', 'Bucuresti-Ilfov').get();
+function listTargetScopes(scopeKey?: string | null) {
+  if (scopeKey) {
+    const scope = getOwnerListingScope(scopeKey);
+    return scope ? [scope] : [];
+  }
 
-  return agenciesSnapshot.docs.map((doc) => {
-    const data = doc.data() as { name?: string; city?: string } | undefined;
-    return {
-      agencyId: doc.id,
-      agencyName: data?.name || doc.id,
-      city: data?.city || '',
-      agency: data,
-    };
-  });
+  return listOwnerListingScopes();
 }
 
-async function acquireCycleLock(
-  agencyId: string,
-  agencyName: string,
-  options: SchedulerTickOptions
-): Promise<AcquireCycleLockResult | null> {
-  const stateRef = cycleDocRef(agencyId);
+async function acquireCycleLock(scopeKey: string, options: SchedulerTickOptions): Promise<AcquireCycleLockResult | null> {
+  const stateRef = cycleDocRef(scopeKey);
   const lockId = crypto.randomUUID();
 
   return adminDb.runTransaction(async (transaction) => {
-    const agencySnapshot = await transaction.get(adminDb.collection('agencies').doc(agencyId));
-    const agency = agencySnapshot.data() as import('@/lib/types').Agency | undefined;
-    const scope = resolveAgencyOwnerListingScope(agency);
+    const scope = getOwnerListingScope(scopeKey);
     if (!scope) {
       return null;
     }
@@ -169,10 +155,8 @@ async function acquireCycleLock(
     const existing = existingSnapshot.exists
       ? (existingSnapshot.data() as OwnerListingSyncCycleState)
       : buildBaseCycleState({
-          agencyId,
-          agencyName,
-          scopeKey: scope.key,
-          scopeCity: scope.displayName,
+          scopeKey,
+          scopeLabel: scope.displayName,
           cycleNumber: 0,
           hardPageLimit: options.hardPageLimit,
           maxAgeDays: options.maxAgeDays,
@@ -193,13 +177,10 @@ async function acquireCycleLock(
     }
 
     const lockedAt = nowIso();
-
     const nextState: OwnerListingSyncCycleState = {
       ...existing,
-      agencyId,
-      agencyName,
-      scopeKey: scope.key,
-      scopeCity: scope.displayName,
+      scopeKey,
+      scopeLabel: scope.displayName,
       hardPageLimit: options.hardPageLimit ?? existing.hardPageLimit ?? DEFAULT_HARD_PAGE_LIMIT,
       maxAgeDays: options.maxAgeDays ?? existing.maxAgeDays ?? DEFAULT_MAX_AGE_DAYS,
       maxListingsPerSource: options.maxListingsPerSource ?? existing.maxListingsPerSource ?? null,
@@ -231,8 +212,8 @@ async function acquireCycleLock(
   });
 }
 
-async function releaseCycleLock(agencyId: string, lockId: string, patch: Partial<OwnerListingSyncCycleState>) {
-  const stateRef = cycleDocRef(agencyId);
+async function releaseCycleLock(scopeKey: string, lockId: string, patch: Partial<OwnerListingSyncCycleState>) {
+  const stateRef = cycleDocRef(scopeKey);
   const snapshot = await stateRef.get();
   if (!snapshot.exists) {
     return;
@@ -270,51 +251,24 @@ function buildCycleHeartbeatPatch(
   };
 }
 
-async function ensureCycleJobs(agencyId: string, cycleNumber: number) {
+async function ensureCycleJobs(scopeKey: string, cycleNumber: number) {
   const batch = adminDb.batch();
   for (const source of CYCLE_SOURCE_ORDER) {
-    batch.set(cycleJobDocRef(agencyId, source), buildCycleJobState(agencyId, cycleNumber, source));
+    batch.set(cycleJobDocRef(scopeKey, source), buildCycleJobState(scopeKey, cycleNumber, source));
   }
   await batch.commit();
-}
-
-async function clearScopeNewBadges(scopeKey: string) {
-  const snapshot = await adminDb.collection('ownerListings').where('scopeKey', '==', scopeKey).get();
-  if (snapshot.empty) {
-    return;
-  }
-
-  const docsToUpdate = snapshot.docs.filter((doc) => Boolean((doc.data() as { isNew?: boolean }).isNew));
-  if (!docsToUpdate.length) {
-    return;
-  }
-
-  for (let index = 0; index < docsToUpdate.length; index += 400) {
-    const batch = adminDb.batch();
-    for (const doc of docsToUpdate.slice(index, index + 400)) {
-      batch.set(
-        doc.ref,
-        {
-          isNew: false,
-          firestoreUpdatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-    }
-    await batch.commit();
-  }
 }
 
 async function startNewCycle(state: OwnerListingSyncCycleState) {
   const nextCycleNumber = (state.cycleNumber || 0) + 1;
   const startedAt = nowIso();
-  if (nextCycleNumber > 1) {
-    await clearScopeNewBadges(state.scopeKey);
-  }
-  await ensureCycleJobs(state.agencyId, nextCycleNumber);
+  await expireScopeNewBadges(state.scopeKey);
+  await ensureCycleJobs(state.scopeKey, nextCycleNumber);
 
+  const isBaselineCycle = state.baselineStatus !== 'completed';
   const nextState: Partial<OwnerListingSyncCycleState> = {
     cycleNumber: nextCycleNumber,
+    baselineStatus: isBaselineCycle ? 'running' : state.baselineStatus,
     status: 'running',
     currentSourceIndex: 0,
     currentSource: CYCLE_SOURCE_ORDER[0],
@@ -325,7 +279,7 @@ async function startNewCycle(state: OwnerListingSyncCycleState) {
     lastHeartbeatAt: startedAt,
   };
 
-  await cycleDocRef(state.agencyId).set(
+  await cycleDocRef(state.scopeKey).set(
     {
       ...nextState,
       firestoreUpdatedAt: FieldValue.serverTimestamp(),
@@ -339,14 +293,14 @@ async function startNewCycle(state: OwnerListingSyncCycleState) {
   } as OwnerListingSyncCycleState;
 }
 
-async function getCycleJob(agencyId: string, source: OwnerListingSource, cycleNumber: number) {
-  const jobRef = cycleJobDocRef(agencyId, source);
+async function getCycleJob(scopeKey: string, source: OwnerListingSource, cycleNumber: number) {
+  const jobRef = cycleJobDocRef(scopeKey, source);
   const snapshot = await jobRef.get();
   if (snapshot.exists) {
     return snapshot.data() as OwnerListingSyncCycleJob;
   }
 
-  const nextJob = buildCycleJobState(agencyId, cycleNumber, source);
+  const nextJob = buildCycleJobState(scopeKey, cycleNumber, source);
   await jobRef.set(nextJob, { merge: true });
   return nextJob;
 }
@@ -362,7 +316,9 @@ async function writeRunLog(run: OwnerListingSyncRun) {
 async function markCycleCooldown(state: OwnerListingSyncCycleState) {
   const finishedAt = nowIso();
   const cooldownUntil = addMs(finishedAt, CYCLE_COOLDOWN_MS);
-  await cycleDocRef(state.agencyId).set(
+  const baselineCompleted = state.baselineStatus !== 'completed' && state.cycleNumber > 0;
+
+  await cycleDocRef(state.scopeKey).set(
     {
       status: 'cooldown',
       currentSource: null,
@@ -371,27 +327,36 @@ async function markCycleCooldown(state: OwnerListingSyncCycleState) {
       cooldownUntil,
       lastHeartbeatAt: finishedAt,
       lastError: null,
+      baselineStatus: baselineCompleted ? 'completed' : state.baselineStatus,
+      baselineCycleNumber: baselineCompleted ? state.cycleNumber : state.baselineCycleNumber,
+      baselineCompletedAt: baselineCompleted ? finishedAt : state.baselineCompletedAt,
       firestoreUpdatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
 
-  return cooldownUntil;
+  return {
+    cooldownUntil,
+    baselineStatus: baselineCompleted ? 'completed' as const : state.baselineStatus,
+    baselineCycleNumber: baselineCompleted ? state.cycleNumber : state.baselineCycleNumber,
+    baselineCompletedAt: baselineCompleted ? finishedAt : state.baselineCompletedAt,
+  };
 }
 
-async function processAgencyCycleTick(
-  agencyId: string,
-  agencyName: string,
+async function processScopeCycleTick(
+  scopeKey: string,
+  scopeLabel: string,
   options: SchedulerTickOptions
-): Promise<OwnerListingSyncTickAgencyResult> {
-  const acquired = await acquireCycleLock(agencyId, agencyName, options);
+): Promise<OwnerListingSyncTickScopeResult> {
+  const acquired = await acquireCycleLock(scopeKey, options);
   if (!acquired) {
-    const snapshot = await cycleDocRef(agencyId).get();
+    const snapshot = await cycleDocRef(scopeKey).get();
     const current = snapshot.exists ? (snapshot.data() as OwnerListingSyncCycleState) : null;
     return {
-      agencyId,
-      agencyName,
+      scopeKey,
+      scopeLabel,
       cycleNumber: current?.cycleNumber || 0,
+      baselineStatus: current?.baselineStatus || 'pending',
       status: current?.status || 'idle',
       currentSource: current?.currentSource || null,
       pagesProcessed: 0,
@@ -410,9 +375,10 @@ async function processAgencyCycleTick(
   try {
     if (state.status === 'cooldown' && isFuture(state.cooldownUntil)) {
       return {
-        agencyId,
-        agencyName,
+        scopeKey,
+        scopeLabel,
         cycleNumber: state.cycleNumber,
+        baselineStatus: state.baselineStatus,
         status: state.status,
         currentSource: state.currentSource,
         pagesProcessed: 0,
@@ -424,30 +390,35 @@ async function processAgencyCycleTick(
 
     if (state.status !== 'running') {
       state = await startNewCycle(state);
-      message = 'A fost pornit un ciclu nou.';
+      message = state.baselineStatus === 'running' ? 'A fost pornit ciclul de baseline.' : 'A fost pornit un ciclu nou.';
     }
 
     while (pagesProcessed < (state.maxPagesPerTick || DEFAULT_MAX_PAGES_PER_TICK) && Date.now() - tickStartedAt < (state.maxRuntimeMs || DEFAULT_MAX_RUNTIME_MS)) {
       const currentSource = state.currentSource || CYCLE_SOURCE_ORDER[state.currentSourceIndex] || null;
       if (!currentSource) {
-        const cooldownUntil = await markCycleCooldown(state);
+        const cooldownState = await markCycleCooldown(state);
         state = {
           ...state,
           status: 'cooldown',
           currentSource: null,
           currentSourceIndex: CYCLE_SOURCE_ORDER.length,
           cycleFinishedAt: nowIso(),
-          cooldownUntil,
+          cooldownUntil: cooldownState.cooldownUntil,
+          baselineStatus: cooldownState.baselineStatus,
+          baselineCycleNumber: cooldownState.baselineCycleNumber,
+          baselineCompletedAt: cooldownState.baselineCompletedAt,
         };
-        message = 'Ciclul s-a incheiat si a intrat in cooldown.';
+        message = cooldownState.baselineStatus === 'completed' && state.cycleNumber === cooldownState.baselineCycleNumber
+          ? 'Baseline-ul s-a incheiat si a intrat in cooldown.'
+          : 'Ciclul s-a incheiat si a intrat in cooldown.';
         break;
       }
 
-      let job = await getCycleJob(agencyId, currentSource, state.cycleNumber);
+      let job = await getCycleJob(scopeKey, currentSource, state.cycleNumber);
       if (job.status === 'done') {
         state.currentSourceIndex += 1;
         state.currentSource = CYCLE_SOURCE_ORDER[state.currentSourceIndex] || null;
-        await cycleDocRef(agencyId).set(
+        await cycleDocRef(scopeKey).set(
           buildCycleHeartbeatPatch(state, {
             currentSourceIndex: state.currentSourceIndex,
             currentSource: state.currentSource,
@@ -457,7 +428,7 @@ async function processAgencyCycleTick(
         continue;
       }
 
-      await cycleJobDocRef(agencyId, currentSource).set(
+      await cycleJobDocRef(scopeKey, currentSource).set(
         {
           status: 'running',
           startedAt: job.startedAt || nowIso(),
@@ -468,7 +439,7 @@ async function processAgencyCycleTick(
         { merge: true }
       );
 
-      await cycleDocRef(agencyId).set(
+      await cycleDocRef(scopeKey).set(
         buildCycleHeartbeatPatch(state, {
           status: 'running',
           currentSourceIndex: state.currentSourceIndex,
@@ -480,14 +451,22 @@ async function processAgencyCycleTick(
 
       const runStartedAt = Date.now();
       try {
-        const pageResult = await syncOwnerListingsSourcePage(agencyId, currentSource, job.nextPage, {
-          hardPageLimit: state.hardPageLimit,
-          maxAgeDays: state.maxAgeDays,
-          maxListingsPerSource: state.maxListingsPerSource ?? undefined,
-        }, {
-          markNew: state.cycleNumber > 1,
-          discoveredCycleNumber: state.cycleNumber,
-        });
+        const pageResult = await syncOwnerListingsSourcePage(
+          scopeKey,
+          currentSource,
+          job.nextPage,
+          {
+            hardPageLimit: state.hardPageLimit,
+            maxAgeDays: state.maxAgeDays,
+            maxListingsPerSource: state.maxListingsPerSource ?? undefined,
+          },
+          {
+            markNew: state.baselineStatus === 'completed',
+            isBaselineListing: state.baselineStatus !== 'completed',
+            discoveredCycleNumber: state.cycleNumber,
+            newUntilAt: state.baselineStatus === 'completed' ? getNewBadgeLifetimeUnix() : null,
+          }
+        );
 
         totals.scanned += pageResult.scanned;
         totals.accepted += pageResult.accepted;
@@ -498,7 +477,7 @@ async function processAgencyCycleTick(
 
         const finishedAt = nowIso();
         await writeRunLog({
-          agencyId,
+          scopeKey,
           cycleNumber: state.cycleNumber,
           source: currentSource,
           page: job.nextPage,
@@ -532,7 +511,7 @@ async function processAgencyCycleTick(
           updatedAt: finishedAt,
         };
 
-        await cycleJobDocRef(agencyId, currentSource).set(
+        await cycleJobDocRef(scopeKey, currentSource).set(
           withoutUndefined({
             ...nextJobPatch,
             firestoreUpdatedAt: FieldValue.serverTimestamp(),
@@ -548,7 +527,7 @@ async function processAgencyCycleTick(
         if (pageResult.reachedEnd) {
           state.currentSourceIndex += 1;
           state.currentSource = CYCLE_SOURCE_ORDER[state.currentSourceIndex] || null;
-          await cycleDocRef(agencyId).set(
+          await cycleDocRef(scopeKey).set(
             buildCycleHeartbeatPatch(state, {
               currentSourceIndex: state.currentSourceIndex,
               currentSource: state.currentSource,
@@ -559,7 +538,7 @@ async function processAgencyCycleTick(
           message = `${currentSource} a fost finalizat; trecem mai departe.`;
         } else {
           message = `${currentSource} a procesat pagina ${job.nextPage - 1}.`;
-          await cycleDocRef(agencyId).set(
+          await cycleDocRef(scopeKey).set(
             buildCycleHeartbeatPatch(state, {
               currentSourceIndex: state.currentSourceIndex,
               currentSource,
@@ -571,7 +550,7 @@ async function processAgencyCycleTick(
       } catch (error) {
         const finishedAt = nowIso();
         totals.errors += 1;
-        await cycleJobDocRef(agencyId, currentSource).set(
+        await cycleJobDocRef(scopeKey, currentSource).set(
           {
             status: 'failed',
             errors: job.errors + 1,
@@ -582,8 +561,9 @@ async function processAgencyCycleTick(
           },
           { merge: true }
         );
+
         await writeRunLog({
-          agencyId,
+          scopeKey,
           cycleNumber: state.cycleNumber,
           source: currentSource,
           page: job.nextPage,
@@ -598,7 +578,8 @@ async function processAgencyCycleTick(
           durationMs: Date.now() - runStartedAt,
           errorMessages: [error instanceof Error ? error.message : 'Procesarea paginii a esuat.'],
         });
-        await cycleDocRef(agencyId).set(
+
+        await cycleDocRef(scopeKey).set(
           buildCycleHeartbeatPatch(state, {
             status: 'running',
             currentSourceIndex: state.currentSourceIndex,
@@ -614,24 +595,26 @@ async function processAgencyCycleTick(
     }
 
     if (!state.currentSource && state.status === 'running') {
-      const cooldownUntil = await markCycleCooldown(state);
+      const cooldownState = await markCycleCooldown(state);
       state = {
         ...state,
         status: 'cooldown',
-        cooldownUntil,
+        cooldownUntil: cooldownState.cooldownUntil,
+        baselineStatus: cooldownState.baselineStatus,
+        baselineCycleNumber: cooldownState.baselineCycleNumber,
+        baselineCompletedAt: cooldownState.baselineCompletedAt,
       };
       message = 'Ciclul s-a incheiat si a intrat in cooldown.';
     }
 
-    const latestStateSnapshot = await cycleDocRef(agencyId).get();
-    const latestState = latestStateSnapshot.exists
-      ? (latestStateSnapshot.data() as OwnerListingSyncCycleState)
-      : state;
+    const latestStateSnapshot = await cycleDocRef(scopeKey).get();
+    const latestState = latestStateSnapshot.exists ? (latestStateSnapshot.data() as OwnerListingSyncCycleState) : state;
 
     return {
-      agencyId,
-      agencyName,
+      scopeKey,
+      scopeLabel,
       cycleNumber: latestState.cycleNumber,
+      baselineStatus: latestState.baselineStatus,
       status: latestState.status,
       currentSource: latestState.currentSource,
       pagesProcessed,
@@ -640,7 +623,7 @@ async function processAgencyCycleTick(
       message,
     };
   } finally {
-    await releaseCycleLock(agencyId, acquired.lockId, {});
+    await releaseCycleLock(scopeKey, acquired.lockId, {});
   }
 }
 
@@ -648,16 +631,16 @@ export async function runOwnerListingsSyncSchedulerTick(
   options: SchedulerTickOptions = {}
 ): Promise<OwnerListingSyncTickResult> {
   const startedAt = nowIso();
-  const targets = await listTargetAgencies(options.agencyId);
-  const agencies: OwnerListingSyncTickAgencyResult[] = [];
+  const targets = listTargetScopes(options.scopeKey);
+  const scopes: OwnerListingSyncTickScopeResult[] = [];
 
-  for (const target of targets) {
-    agencies.push(await processAgencyCycleTick(target.agencyId, target.agencyName, options));
+  for (const scope of targets) {
+    scopes.push(await processScopeCycleTick(scope.key, scope.displayName, options));
   }
 
   return {
     startedAt,
     finishedAt: nowIso(),
-    agencies,
+    scopes,
   };
 }

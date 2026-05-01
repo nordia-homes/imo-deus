@@ -9,7 +9,7 @@ import {
 export const runtime = 'nodejs';
 
 const backgroundSchema = z.object({
-  agencyId: z.string().trim().min(1).optional(),
+  scopeKey: z.string().trim().min(1).optional(),
   hardPageLimit: z.number().int().min(1).max(1000).optional(),
   maxAgeDays: z.number().int().min(1).max(365).optional(),
   maxListingsPerSource: z.number().int().min(1).max(100).nullable().optional(),
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     const body = backgroundSchema.parse(await request.json().catch(() => ({})));
     const result = await runOwnerListingsScheduledCycleTick({
-      agencyId: body.agencyId,
+      scopeKey: body.scopeKey,
       hardPageLimit: body.hardPageLimit,
       maxAgeDays: body.maxAgeDays,
       maxListingsPerSource: body.maxListingsPerSource,

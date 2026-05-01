@@ -8,8 +8,10 @@ export type OwnerListingSummary = {
   originSourceUrl?: string;
   originSourceLabel?: string;
   isNew?: boolean;
+  isBaselineListing?: boolean;
   discoveredCycleNumber?: number;
   firstDiscoveredAt?: number;
+  newUntilAt?: number;
   externalId: string;
   title: string;
   price: string;
@@ -107,13 +109,15 @@ export type OwnerListingSourceSyncResult = OwnerListingSyncResult & {
 
 export type OwnerListingSyncCycleStatus = 'idle' | 'running' | 'cooldown' | 'failed';
 export type OwnerListingSyncCycleJobStatus = 'pending' | 'running' | 'done' | 'failed';
+export type OwnerListingBaselineStatus = 'pending' | 'running' | 'completed';
 
 export type OwnerListingSyncCycleState = {
-  agencyId: string;
-  agencyName: string;
   scopeKey: string;
-  scopeCity: string;
+  scopeLabel: string;
   cycleNumber: number;
+  baselineStatus: OwnerListingBaselineStatus;
+  baselineCycleNumber?: number;
+  baselineCompletedAt?: string;
   status: OwnerListingSyncCycleStatus;
   sourcesOrder: OwnerListingSource[];
   currentSourceIndex: number;
@@ -136,7 +140,7 @@ export type OwnerListingSyncCycleState = {
 };
 
 export type OwnerListingSyncCycleJob = {
-  agencyId: string;
+  scopeKey: string;
   cycleNumber: number;
   source: OwnerListingSource;
   status: OwnerListingSyncCycleJobStatus;
@@ -157,7 +161,7 @@ export type OwnerListingSyncCycleJob = {
 };
 
 export type OwnerListingSyncRun = {
-  agencyId: string;
+  scopeKey: string;
   cycleNumber: number;
   source: OwnerListingSource;
   page: number;
@@ -173,10 +177,11 @@ export type OwnerListingSyncRun = {
   errorMessages: string[];
 };
 
-export type OwnerListingSyncTickAgencyResult = {
-  agencyId: string;
-  agencyName: string;
+export type OwnerListingSyncTickScopeResult = {
+  scopeKey: string;
+  scopeLabel: string;
   cycleNumber: number;
+  baselineStatus: OwnerListingBaselineStatus;
   status: OwnerListingSyncCycleStatus;
   currentSource: OwnerListingSource | null;
   pagesProcessed: number;
@@ -194,5 +199,5 @@ export type OwnerListingSyncTickAgencyResult = {
 export type OwnerListingSyncTickResult = {
   startedAt: string;
   finishedAt: string;
-  agencies: OwnerListingSyncTickAgencyResult[];
+  scopes: OwnerListingSyncTickScopeResult[];
 };

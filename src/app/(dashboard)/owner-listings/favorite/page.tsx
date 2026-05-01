@@ -27,7 +27,7 @@ export default function FavoriteOwnerListingsPage() {
   const { agency, agencyId } = useAgency();
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
 
-  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('postedAt', 'desc')), [firestore]);
+  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('createdAt', 'desc')) : null),
     [agencyId, firestore],
@@ -40,13 +40,7 @@ export default function FavoriteOwnerListingsPage() {
     const map = new Map<string, OwnerListing>();
 
     for (const listing of listings ?? []) {
-      if (
-        currentScope &&
-        listing.scopeKey !== currentScope.key &&
-        !['bucuresti', 'sector', 'ilfov', 'popesti', 'voluntari', 'otopeni', 'bragadiru', 'chiajna'].some((term) =>
-          `${listing.location || ''} ${listing.title || ''} ${listing.description || ''}`.toLowerCase().includes(term),
-        )
-      ) {
+      if (currentScope && listing.scopeKey !== currentScope.key) {
         continue;
       }
 

@@ -13,6 +13,10 @@ export type OwnerListing = {
   originSourceUrl?: string;
   originSourceLabel?: string;
   isNew?: boolean;
+  isBaselineListing?: boolean;
+  newUntilAt?: number;
+  firstDiscoveredAt?: number;
+  discoveredCycleNumber?: number;
   title: string;
   price: string;
   link: string;

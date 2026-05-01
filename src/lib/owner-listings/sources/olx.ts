@@ -23,14 +23,6 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
 };
 const olxPhoneCache = new Map<string, string>();
 
-function matchesKeywords(text: string, keywords: string[]) {
-  const normalized = normalizeWhitespace(text)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  return keywords.some((keyword) => normalized.includes(keyword));
-}
-
 function normalizeComparableText(value: string) {
   return normalizeWhitespace(value)
     .normalize('NFD')
@@ -172,6 +164,90 @@ function extractLocationText(text: string) {
     /\b(Bucuresti(?:,\s*Sectorul\s*\d)?|Sectorul\s*\d|Ilfov|Popesti(?:-Leordeni)?|Voluntari|Otopeni|Bragadiru|Chiajna|Baneasa|Titan|Pallady|Domenii|Dristor)\b/i
   );
   return match ? normalizeWhitespace(match[0]) : '';
+}
+
+function uniqueLocationParts(parts: Array<string | null | undefined>) {
+  const unique: string[] = [];
+
+  for (const part of parts.map((entry) => normalizeWhitespace(entry)).filter(Boolean)) {
+    const comparable = normalizeComparableText(part);
+    if (!comparable || unique.some((entry) => normalizeComparableText(entry) === comparable)) {
+      continue;
+    }
+
+    unique.push(part);
+  }
+
+  return unique;
+}
+
+function joinOlxLocationParts(parts: Array<string | null | undefined>) {
+  return uniqueLocationParts(parts).join(', ');
+}
+
+function extractOlxJsonStringCandidates(html: string, fieldNames: string[]) {
+  const values: string[] = [];
+
+  for (const fieldName of fieldNames) {
+    const escapedFieldName = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const patterns = [
+      new RegExp(`"${escapedFieldName}"\\s*:\\s*"([^"]+)"`, 'gi'),
+      new RegExp(`\\\\"${escapedFieldName}\\\\"\\s*:\\s*\\\\"([^\\\\"]+)\\\\"`, 'gi'),
+    ];
+
+    for (const pattern of patterns) {
+      for (const match of html.matchAll(pattern)) {
+        const candidate = decodeOlxEscaped(match[1] || '');
+        if (candidate) {
+          values.push(candidate);
+        }
+      }
+    }
+  }
+
+  return uniqueLocationParts(values);
+}
+
+function extractOlxLocationFromHtml(html: string) {
+  const district = extractOlxJsonStringCandidates(html, [
+    'districtName',
+    'district_name',
+    'neighbourhoodName',
+    'neighborhoodName',
+    'neighbourhood_name',
+    'neighborhood_name',
+    'quarterName',
+    'quarter_name',
+  ]);
+  const city = extractOlxJsonStringCandidates(html, [
+    'cityName',
+    'city_name',
+    'municipalityName',
+    'municipality_name',
+    'locationName',
+    'location_name',
+  ]);
+  const county = extractOlxJsonStringCandidates(html, [
+    'countyName',
+    'county_name',
+    'regionName',
+    'region_name',
+  ]);
+
+  const structuredLocation = joinOlxLocationParts([...district, ...city, ...county]);
+  if (structuredLocation) {
+    return structuredLocation;
+  }
+
+  const locationLabel =
+    stripHtml(
+      html.match(/(?:Locatie|Locație|Zona|Adres[aă])[\s\S]{0,200}?<\/[^>]+>\s*<[^>]*>([\s\S]*?)<\/[^>]+>/i)?.[1] || ''
+    ) ||
+    stripHtml(
+      html.match(/(?:data-testid|data-cy)="(?:ad-location|location-breadcrumbs|breadcrumb-item)[^"]*"[\s\S]{0,300}?>([\s\S]*?)</i)?.[1] || ''
+    );
+
+  return locationLabel || '';
 }
 
 function extractAreaTextFromLabeledValue(text: string) {
@@ -883,10 +959,10 @@ export async function scrapeOlxListingsPage(
 
       let resolvedTitle = card.title;
       let parsed: ParsedOlxCard = parseCard(card.title, card.text);
-      parsed.price = card.price || parsed.price;
-      if (!matchesKeywords(`${parsed.location} ${card.title} ${card.text}`, options.searchKeywords)) {
-        continue;
+      if (!card.isolated) {
+        parsed.location = '';
       }
+      parsed.price = card.price || parsed.price;
 
       const shouldHydrateFromDetail = true;
 
@@ -897,11 +973,12 @@ export async function scrapeOlxListingsPage(
           const detailTitle = extractOlxTitleFromHtml(detailHtml);
           const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
           const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
+          const detailLocation = extractOlxLocationFromHtml(detailHtml) || extractLocationText(detailTitle);
           parsed = {
             ...parsed,
             price: detailParams.price || extractPriceText(detailBody) || parsed.price,
             area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
-            location: parsed.location || extractLocationText(detailBody),
+            location: detailLocation || parsed.location,
             constructionYear: detailParams.constructionYear || parsed.constructionYear,
           };
 
@@ -981,6 +1058,7 @@ export async function scrapeOlxListingDetail(url: string) {
   }
 
   const parsed = parseCard(title, description);
+  const detailLocation = html ? extractOlxLocationFromHtml(html) || extractLocationText(title) : '';
   let domParams:
     | {
         area: string;
@@ -1004,7 +1082,7 @@ export async function scrapeOlxListingDetail(url: string) {
     rooms: detailParams.rooms || parsed.rooms || domParams?.rooms || '',
     constructionYear: detailParams.constructionYear || parsed.constructionYear || domParams?.constructionYear,
     year: detailParams.constructionYear || parsed.constructionYear || domParams?.constructionYear,
-    location: parsed.location,
+    location: detailLocation || parsed.location,
     postedAt: Math.floor(Date.now() / 1000),
     link: url,
     imageUrl: pickBestImageUrl([...images, domParams?.imageUrl || '']),
