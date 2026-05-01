@@ -234,23 +234,36 @@ function normalizePhoneCandidate(value: string | null | undefined) {
   return '';
 }
 
+function extractImoradarSourceUrls(html: string, url: string) {
+  const candidates = [
+    html.match(/href="(https?:\/\/[^"]+)"[\s\S]{0,300}?>\s*Vezi anunțul pe/i)?.[1] || '',
+    html.match(/Vezi anunțul pe[\s\S]{0,300}?href="(https?:\/\/[^"]+)"/i)?.[1] || '',
+    html.match(/"targetUrl"\s*:\s*"([^"]+)"/i)?.[1] || '',
+    html.match(/targetUrl\\u0022:\s*\\u0022([^"]+)\\u0022/i)?.[1] || '',
+    html.match(/"external_url":"(https?:\\\/\\\/[^"]+)"/i)?.[1] || '',
+    html.match(/"external_url"\s*:\s*"(https?:\/\/[^"]+)"/i)?.[1] || '',
+    ...Array.from(
+      html.matchAll(/(?:href|data-href)="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/gi)
+    ).map((match) => match[1] || ''),
+    ...Array.from(
+      html.matchAll(/https?:\\\/\\\/(?:www\\\/)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"'\\\s<]+/gi)
+    ).map((match) => match[0] || ''),
+    ...Array.from(
+      html.matchAll(/https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"'\\\s<]+/gi)
+    ).map((match) => match[0] || ''),
+  ];
+
+  return Array.from(
+    new Set(
+      candidates
+        .map((candidate) => normalizeUrl(candidate.replace(/\\\//g, '/'), url))
+        .filter(Boolean)
+    )
+  );
+}
+
 function extractImoradarSourceUrl(html: string, url: string) {
-  const explicitAnchor =
-    html.match(/href="(https?:\/\/[^"]+)"[\s\S]{0,300}?>\s*Vezi anunțul pe/i)?.[1] ||
-    html.match(/Vezi anunțul pe[\s\S]{0,300}?href="(https?:\/\/[^"]+)"/i)?.[1] ||
-    html.match(/href="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro)[^"]+)"/i)?.[1] ||
-    '';
-
-  if (explicitAnchor) {
-    return normalizeUrl(explicitAnchor, url);
-  }
-
-  const embeddedTarget =
-    html.match(/"targetUrl"\s*:\s*"([^"]+)"/i)?.[1] ||
-    html.match(/targetUrl\\u0022:\s*\\u0022([^"]+)\\u0022/i)?.[1] ||
-    '';
-
-  return embeddedTarget ? normalizeUrl(embeddedTarget.replace(/\\\//g, '/'), url) : '';
+  return extractImoradarSourceUrls(html, url)[0] || '';
 }
 
 function shouldSkipImoradarSourceUrl(sourceUrl: string) {
@@ -265,6 +278,10 @@ function shouldSkipImoradarSourceUrl(sourceUrl: string) {
   } catch {
     return false;
   }
+}
+
+function findBlockedImoradarSourceUrl(html: string, url: string) {
+  return extractImoradarSourceUrls(html, url).find((candidate) => shouldSkipImoradarSourceUrl(candidate)) || '';
 }
 
 function extractOlxExternalSourceUrl(html: string, url: string) {
@@ -512,8 +529,8 @@ export async function scrapeImoradar24ListingsPage(
       let enrichedCard: typeof card & { href: string; ownerPhone?: string } = { ...card, href: absoluteUrl };
       const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
       if (detailHtml) {
-        const sourceUrl = extractImoradarSourceUrl(detailHtml, absoluteUrl);
-        if (shouldSkipImoradarSourceUrl(sourceUrl)) {
+        const blockedSourceUrl = findBlockedImoradarSourceUrl(detailHtml, absoluteUrl);
+        if (blockedSourceUrl) {
           seenLinks.add(absoluteUrl);
           continue;
         }
