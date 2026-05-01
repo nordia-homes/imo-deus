@@ -270,10 +270,16 @@ export function OwnerListingCard({
             )}
           </Link>
 
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-3 top-3 flex items-center gap-2">
             <div className="inline-flex items-center rounded-full border border-white bg-white px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]">
               {badgeLabel}
             </div>
+
+            {showNewBadge ? (
+              <div className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_-14px_rgba(16,185,129,0.95)]">
+                NOU
+              </div>
+            ) : null}
           </div>
 
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
@@ -290,12 +296,6 @@ export function OwnerListingCard({
             >
               <FavoriteHeartIcon filled={isFavorite} />
             </button>
-
-            {showNewBadge ? (
-              <div className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_-14px_rgba(16,185,129,0.95)]">
-                NOU
-              </div>
-            ) : null}
           </div>
 
           {collaborationButtons ? <div className="absolute bottom-3 right-3">{collaborationButtons}</div> : null}
@@ -373,7 +373,7 @@ export function OwnerListingCard({
           </div>
 
           {canShowWorkflowActions ? (
-            <div className="grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-[auto_auto_1fr]">
+            <div className="flex items-center gap-2 border-t border-white/10 pt-3">
               <Button
                 type="button"
                 variant={activeWorkflowStatus === 'reserved' ? 'default' : 'outline'}
@@ -381,7 +381,7 @@ export function OwnerListingCard({
                 onClick={() => onSetReserved?.(listing)}
                 disabled={!canInteractWithStatus}
                 className={cn(
-                  'rounded-full text-[12px]',
+                  'h-10 shrink-0 rounded-full px-4 text-[12px]',
                   activeWorkflowStatus === 'reserved'
                     ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
                     : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
@@ -397,7 +397,7 @@ export function OwnerListingCard({
                 onClick={() => onSetTaken?.(listing)}
                 disabled={!canInteractWithStatus}
                 className={cn(
-                  'rounded-full text-[12px]',
+                  'h-10 shrink-0 rounded-full px-4 text-[12px]',
                   activeWorkflowStatus === 'taken'
                     ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
                     : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
@@ -413,7 +413,7 @@ export function OwnerListingCard({
               >
                 <SelectTrigger
                   className={cn(
-                    'h-9 rounded-full border-white/15 text-[12px] text-stone-100',
+                    'h-10 min-w-0 flex-1 rounded-full border-white/15 text-[12px] text-stone-100',
                     activeWorkflowStatus === 'follow_up'
                       ? '!border-emerald-300 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)]'
                       : activeWorkflowStatus === 'negative'
