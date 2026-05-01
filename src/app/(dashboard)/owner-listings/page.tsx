@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Clock, Home, BedDouble, Filter, Loader2, Calendar, RefreshCw, Ruler, Rocket } from 'lucide-react';
+import { Clock, Home, BedDouble, Filter, Loader2, Calendar, Ruler, Rocket } from 'lucide-react';
 import { format, fromUnixTime, formatDistanceToNow, parse } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -21,6 +21,11 @@ import type { OwnerListingSource } from '@/lib/owner-listings/types';
 import { useAgency } from '@/context/AgencyContext';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const LISTINGS_PER_PAGE = 100;
+
+type PropertyTypeFilter = 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
 
 type OwnerListing = {
   id: string;
@@ -41,6 +46,7 @@ type OwnerListing = {
   year?: number | string;
   description?: string;
   ownerPhone?: string;
+  propertyType?: string;
 };
 
 function extractPrice(priceStr: string): number | null {
@@ -77,6 +83,38 @@ function formatAreaValue(area: string | null | undefined): string | null {
   const match = area.match(/\d+(?:[.,]\d+)?/);
   if (!match) return null;
   return `${match[0].replace('.', ',')} mp`;
+}
+
+function normalizeText(value?: string | null) {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeDigits(value?: string | null) {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+function matchesPropertyType(listing: OwnerListing, propertyTypeFilter: PropertyTypeFilter) {
+  const listingType = normalizeText(listing.propertyType);
+  const listingText = normalizeText(`${listing.title || ''} ${listing.description || ''}`);
+  const searchableText = `${listingType} ${listingText}`;
+
+  switch (propertyTypeFilter) {
+    case 'apartamente':
+      return searchableText.includes('apartament') || searchableText.includes('garsoniera') || searchableText.includes('studio');
+    case 'case':
+      return searchableText.includes('casa') || searchableText.includes('vila') || searchableText.includes('duplex') || searchableText.includes('triplex');
+    case 'terenuri':
+      return searchableText.includes('teren');
+    case 'spatii-comerciale':
+      return searchableText.includes('spatiu comercial') || searchableText.includes('spatii comerciale') || searchableText.includes('birou') || searchableText.includes('hala') || searchableText.includes('magazin');
+    default:
+      return true;
+  }
 }
 
 function OwnerListingCard({
@@ -250,15 +288,17 @@ function OwnerListingCard({
 }
 
 export default function OwnerListingsPage() {
-  const [roomsFilter, setRoomsFilter] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roomsFilter, setRoomsFilter] = useState<string>('all');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('apartamente');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sourceFilter, setSourceFilter] = useState<OwnerListingSource | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
@@ -290,8 +330,38 @@ export default function OwnerListingsPage() {
       result = result.filter((listing) => listing.source === sourceFilter);
     }
 
-    if (roomsFilter !== null) {
-      result = result.filter((listing) => extractRoomsValue(listing.rooms) === roomsFilter);
+    const normalizedSearchQuery = normalizeText(searchQuery);
+    const numericSearchQuery = normalizeDigits(searchQuery);
+
+    if (normalizedSearchQuery) {
+      const searchTerms = normalizedSearchQuery.split(' ').filter(Boolean);
+      result = result.filter((listing) => {
+        const numericPrice = extractPrice(listing.price);
+        const searchableText = normalizeText([
+          listing.title,
+          listing.location,
+          listing.ownerPhone,
+          listing.price,
+          numericPrice !== null ? String(numericPrice) : '',
+        ].join(' '));
+        const searchableDigits = [
+          normalizeDigits(listing.ownerPhone),
+          normalizeDigits(listing.price),
+          numericPrice !== null ? String(numericPrice) : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        const matchesText = searchTerms.every((term) => searchableText.includes(term));
+        const matchesDigits = numericSearchQuery ? searchableDigits.includes(numericSearchQuery) : false;
+        return matchesText || matchesDigits;
+      });
+    }
+
+    result = result.filter((listing) => matchesPropertyType(listing, propertyTypeFilter));
+
+    if (roomsFilter !== 'all') {
+      result = result.filter((listing) => extractRoomsValue(listing.rooms) === Number(roomsFilter));
     }
 
     const min = priceMin ? Number(priceMin) : null;
@@ -308,7 +378,22 @@ export default function OwnerListingsPage() {
     }
 
     return result;
-  }, [currentScope, listings, priceMax, priceMin, roomsFilter, sourceFilter]);
+  }, [currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roomsFilter, propertyTypeFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedListings = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * LISTINGS_PER_PAGE;
+    return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
+  }, [filteredListings, safeCurrentPage]);
+
+  const totalListingsCount = Array.isArray(listings) ? filteredListings.length : 0;
+  const pageStart = filteredListings.length === 0 ? 0 : (safeCurrentPage - 1) * LISTINGS_PER_PAGE + 1;
+  const pageEnd = Math.min(safeCurrentPage * LISTINGS_PER_PAGE, filteredListings.length);
 
   const handleImport = async (listing: OwnerListing) => {
     if (!user) {
@@ -353,79 +438,62 @@ export default function OwnerListingsPage() {
     }
   };
 
-  const handleSync = async () => {
-    if (!user) {
-      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru sincronizare.' });
-      return;
-    }
-
-    if (!currentScope) {
-      toast({ title: 'Oras lipsa', description: 'Seteaza orasul agentiei din Setari inainte de sincronizare.' });
-      return;
-    }
-
-    setIsSyncing(true);
-    toast({ title: 'Sincronizare pornita', description: 'Cautam anunturi noi de la proprietari.' });
-
-    try {
-      const token = await user.getIdToken(true);
-      const response = await fetch('/api/owner-listings/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          sources: sourceFilter ? [sourceFilter] : ['olx', 'imoradar24', 'publi24'],
-          maxPages: null,
-          hardPageLimit: 250,
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(payload.message || 'Sincronizarea a esuat.');
-      }
-
-      toast({
-        title: 'Sincronizare finalizata',
-        description: payload.summary
-          ? `Scanate: ${payload.summary.scanned || 0}, salvate: ${payload.summary.stored || 0}, erori: ${payload.summary.errors || 0}.`
-          : `Job ${payload.jobId || ''} finalizat.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Sincronizare esuata',
-        description: error instanceof Error ? error.message : 'Nu am putut sincroniza anunturile.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   const FilterControls = () => (
     <div className="flex flex-col gap-6">
       <div>
-        <Label className="font-semibold mb-3 block">Sursa</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button variant={sourceFilter === null ? 'default' : 'outline'} onClick={() => setSourceFilter(null)}>Toate</Button>
-          <Button variant={sourceFilter === 'olx' ? 'default' : 'outline'} onClick={() => setSourceFilter('olx')}>OLX</Button>
-          <Button variant={sourceFilter === 'imoradar24' ? 'default' : 'outline'} onClick={() => setSourceFilter('imoradar24')}>Imoradar24</Button>
-          <Button variant={sourceFilter === 'publi24' ? 'default' : 'outline'} onClick={() => setSourceFilter('publi24')}>Publi24</Button>
-        </div>
+        <Label className="font-semibold mb-2 block">Cautare</Label>
+        <Input
+          placeholder="Cauta dupa titlu, zona, telefon sau pret"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
       </div>
 
       <div>
-        <Label className="font-semibold mb-3 block">Numar camere</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button variant={roomsFilter === null ? 'default' : 'outline'} onClick={() => setRoomsFilter(null)}>Toate</Button>
-          {[1, 2, 3, 4].map((room) => (
-            <Button key={room} variant={roomsFilter === room ? 'default' : 'outline'} onClick={() => setRoomsFilter(room)}>
-              {room} camere
-            </Button>
-          ))}
-        </div>
+        <Label className="font-semibold mb-2 block">Sursa</Label>
+        <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as OwnerListingSource))}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toate sursele</SelectItem>
+            <SelectItem value="olx">OLX</SelectItem>
+            <SelectItem value="imoradar24">Imoradar24</SelectItem>
+            <SelectItem value="publi24">Publi24</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label className="font-semibold mb-2 block">Tip proprietate</Label>
+        <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="apartamente">Apartamente</SelectItem>
+            <SelectItem value="case">Case</SelectItem>
+            <SelectItem value="terenuri">Terenuri</SelectItem>
+            <SelectItem value="spatii-comerciale">Spatii comerciale</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label className="font-semibold mb-2 block">Numar camere</Label>
+        <Select value={roomsFilter} onValueChange={setRoomsFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toate</SelectItem>
+            {[1, 2, 3, 4].map((room) => (
+              <SelectItem key={room} value={String(room)}>
+                {room} camere
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
@@ -457,39 +525,102 @@ export default function OwnerListingsPage() {
 
   return (
     <div className="agentfinder-owner-listings-page space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl md:text-3xl font-headline font-bold">Anunturi de la proprietari</h1>
-          <p className="text-sm text-white/60 mt-1">
-            {currentScope ? `Scop activ: ${currentScope.displayName}` : 'Momentan scraping-ul este configurat doar pentru agentii setate pe Bucuresti-Ilfov.'}
-          </p>
+      <div className="rounded-[1.5rem] border border-white/50 bg-white/78 px-6 py-5 shadow-[0_22px_60px_-46px_rgba(15,23,42,0.38)] backdrop-blur-xl">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="border-slate-300/90 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700">
+              Owner listings
+            </Badge>
+            {currentScope ? (
+              <Badge variant="outline" className="border-slate-300/90 bg-slate-50/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700">
+                {currentScope.displayName}
+              </Badge>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-[-0.03em] text-slate-950">Anunturi de la proprietari</h1>
+              <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                {currentScope
+                  ? 'Lista centralizata cu anunturile noi din zona activa, gata pentru cautare, filtrare si import in CRM.'
+                  : 'Momentan scraping-ul este configurat doar pentru agentii setate pe Bucuresti-Ilfov.'}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-700">
+                <span className="font-medium text-slate-500">Gasite:</span>{' '}
+                <span className="font-semibold text-slate-950">{totalListingsCount}</span>
+              </div>
+              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-700">
+                <span className="font-medium text-slate-500">Pagina:</span>{' '}
+                <span className="font-semibold text-slate-950">{safeCurrentPage} / {totalPages}</span>
+              </div>
+              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-700">
+                <span className="font-medium text-slate-500">Afisare:</span>{' '}
+                <span className="font-semibold text-slate-950">
+                  {filteredListings.length > 0 ? `${pageStart}-${pageEnd} din ${filteredListings.length}` : 'Niciun rezultat'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        <Button onClick={handleSync} disabled={isSyncing || !currentScope}>
-          {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-          Sincronizeaza anunturi
-        </Button>
       </div>
 
-      <div className="agentfinder-owner-listings-filters hidden md:flex flex-wrap gap-4 items-center">
-        <div className="flex gap-2">
-          <Button variant={sourceFilter === null ? 'default' : 'outline'} onClick={() => setSourceFilter(null)}>Toate sursele</Button>
-          <Button variant={sourceFilter === 'olx' ? 'default' : 'outline'} onClick={() => setSourceFilter('olx')}>OLX</Button>
-          <Button variant={sourceFilter === 'imoradar24' ? 'default' : 'outline'} onClick={() => setSourceFilter('imoradar24')}>Imoradar24</Button>
-          <Button variant={sourceFilter === 'publi24' ? 'default' : 'outline'} onClick={() => setSourceFilter('publi24')}>Publi24</Button>
-        </div>
+      <div className="sticky top-20 z-20 hidden md:block">
+        <div className="agentfinder-owner-listings-filters rounded-[1.75rem] border border-white/50 bg-white/82 p-5 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)] backdrop-blur-xl md:flex md:flex-wrap md:items-center md:gap-4">
+          <Input
+            placeholder="Cauta dupa titlu, zona, telefon sau pret"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="h-12 w-full max-w-md rounded-2xl border-slate-200/80 bg-white/90 text-base"
+          />
 
-        <div className="flex gap-2">
-          <Button variant={roomsFilter === null ? 'default' : 'outline'} onClick={() => setRoomsFilter(null)}>Toate</Button>
-          {[1, 2, 3, 4].map((room) => (
-            <Button key={room} variant={roomsFilter === room ? 'default' : 'outline'} onClick={() => setRoomsFilter(room)}>
-              {room} camere
-            </Button>
-          ))}
-        </div>
+          <div className="flex gap-2">
+            <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as OwnerListingSource))}>
+              <SelectTrigger className="h-12 w-[180px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate sursele</SelectItem>
+                <SelectItem value="olx">OLX</SelectItem>
+                <SelectItem value="imoradar24">Imoradar24</SelectItem>
+                <SelectItem value="publi24">Publi24</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <div className="flex gap-2">
-          <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} className="w-32" />
-          <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} className="w-32" />
+            <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
+              <SelectTrigger className="h-12 w-[190px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="apartamente">Apartamente</SelectItem>
+                <SelectItem value="case">Case</SelectItem>
+                <SelectItem value="terenuri">Terenuri</SelectItem>
+                <SelectItem value="spatii-comerciale">Spatii comerciale</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
+              <SelectTrigger className="h-12 w-[160px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate</SelectItem>
+                {[1, 2, 3, 4].map((room) => (
+                  <SelectItem key={room} value={String(room)}>
+                    {room} camere
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-2">
+            <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} className="w-32" />
+            <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} className="w-32" />
+          </div>
         </div>
       </div>
 
@@ -514,9 +645,36 @@ export default function OwnerListingsPage() {
         </Sheet>
       </div>
 
+      {filteredListings.length > 0 ? (
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <p className="text-sm text-white/65">
+            Afisezi {pageStart}-{pageEnd} din {filteredListings.length} anunturi
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safeCurrentPage === 1}
+            >
+              Anterioara
+            </Button>
+            <span className="text-sm text-white/75">
+              Pagina {safeCurrentPage} din {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safeCurrentPage === totalPages}
+            >
+              Urmatoare
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredListings.length > 0 ? (
-          filteredListings.map((listing, index) => (
+          paginatedListings.map((listing, index) => (
             <OwnerListingCard
               key={listing.id || index}
               listing={listing}
@@ -530,6 +688,28 @@ export default function OwnerListingsPage() {
           </div>
         )}
       </div>
+
+      {filteredListings.length > 0 && totalPages > 1 ? (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={safeCurrentPage === 1}
+          >
+            Anterioara
+          </Button>
+          <span className="text-sm text-white/75">
+            Pagina {safeCurrentPage} din {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            disabled={safeCurrentPage === totalPages}
+          >
+            Urmatoare
+          </Button>
+        </div>
+      ) : null}
 
       <AddPropertyDialog
         isOpen={isImportDialogOpen}
