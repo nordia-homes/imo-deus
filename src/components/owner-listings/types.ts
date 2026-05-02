@@ -37,6 +37,11 @@ export type OwnerListing = {
 export type OwnerListingFavorite = {
   id: string;
   ownerListingId: string;
+  isFavoriteActive?: boolean;
+  wasRemovedFromFavorites?: boolean;
+  removedAt?: string | null;
+  removedBy?: string | null;
+  removedByName?: string | null;
   collaborationStatus?: CollaborationStatus | null;
   reservedByAgentId?: string | null;
   reservedByAgentName?: string | null;

@@ -185,6 +185,7 @@ export function OwnerListingCard({
 
     return '';
   }, [activeWorkflowStatus, favoriteMeta]);
+  const showRemovedFavoriteWarning = Boolean(favoriteMeta?.wasRemovedFromFavorites && !favoriteMeta?.isFavoriteActive);
 
   const collaborationButtons =
     collaborationMode === 'hidden' ? null : (
@@ -434,6 +435,12 @@ export function OwnerListingCard({
 
           {workflowDescription ? (
             <p className={cn('text-[12px]', activeWorkflowStatus === 'expired_reserved' ? 'text-amber-300' : 'text-stone-300')}>{workflowDescription}</p>
+          ) : null}
+
+          {showRemovedFavoriteWarning ? (
+            <p className="text-[12px] font-medium text-rose-400">
+              Atentie: aceasta proprietate a fost deja in Favorite si a fost scoasa.
+            </p>
           ) : null}
         </div>
       </CardContent>

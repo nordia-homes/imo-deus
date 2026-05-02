@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
@@ -56,6 +56,7 @@ export default function FavoriteOwnerListingsPage() {
 
   const favoriteEntries = useMemo(() => {
     return (favorites ?? [])
+      .filter((favorite) => favorite.isFavoriteActive !== false)
       .map((favorite) => {
         const listing = listingsById.get(favorite.ownerListingId);
         return listing ? { favorite, listing } : null;
@@ -91,8 +92,17 @@ export default function FavoriteOwnerListingsPage() {
     }
 
     const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
-    deleteDocumentNonBlocking(favoriteRef);
-    toast({ title: 'Scos din Favorite', description: 'Anuntul nu mai apare in lista de contact manual.' });
+    const timestamp = new Date().toISOString();
+    updateDocumentNonBlocking(favoriteRef, {
+      isFavoriteActive: false,
+      wasRemovedFromFavorites: true,
+      removedAt: timestamp,
+      removedBy: user?.uid ?? null,
+      removedByName: currentAgentName,
+      updatedAt: timestamp,
+      updatedBy: user?.uid ?? null,
+    });
+    toast({ title: 'Scos din Favorite', description: 'Anuntul a fost scos, dar istoricul si statusul au fost pastrate.' });
   };
 
   const handleSetCollaborationStatus = (listing: OwnerListing, status: CollaborationStatus | null) => {
@@ -172,6 +182,11 @@ export default function FavoriteOwnerListingsPage() {
       return;
     }
     updateDocumentNonBlocking(favoriteRef, {
+      isFavoriteActive: true,
+      wasRemovedFromFavorites: existingFavorite?.wasRemovedFromFavorites ?? false,
+      removedAt: null,
+      removedBy: null,
+      removedByName: null,
       reservedByAgentId: user?.uid ?? null,
       reservedByAgentName: currentAgentName,
       reservedAt: timestamp,
@@ -199,6 +214,7 @@ export default function FavoriteOwnerListingsPage() {
       return;
     }
     updateDocumentNonBlocking(favoriteRef, {
+      isFavoriteActive: true,
       reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
       reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
       reservedAt: existingFavorite?.reservedAt ?? timestamp,
@@ -226,6 +242,7 @@ export default function FavoriteOwnerListingsPage() {
       return;
     }
     updateDocumentNonBlocking(favoriteRef, {
+      isFavoriteActive: true,
       takenByAgentId: null,
       takenByAgentName: null,
       takenAt: null,

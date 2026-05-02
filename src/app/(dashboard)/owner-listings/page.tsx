@@ -21,7 +21,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
@@ -76,7 +76,7 @@ export default function OwnerListingsPage() {
       listings.filter((listing) => !currentScope || listing.scopeKey === currentScope.key).map((listing) => listing.id),
     );
 
-    return favorites.filter((favorite) => validListingIds.has(favorite.ownerListingId)).length;
+    return favorites.filter((favorite) => favorite.isFavoriteActive !== false && validListingIds.has(favorite.ownerListingId)).length;
   }, [currentScope, favorites, listings]);
 
   useEffect(() => {
@@ -240,17 +240,44 @@ export default function OwnerListingsPage() {
     const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
     const existingFavorite = favoritesByListingId.get(listing.id);
 
-    if (existingFavorite) {
-      deleteDocumentNonBlocking(favoriteRef);
-      toast({ title: 'Scos din Favorite', description: 'Anuntul nu mai apare in lista de contact manual.' });
+    if (existingFavorite?.isFavoriteActive !== false && existingFavorite) {
+      updateDocumentNonBlocking(favoriteRef, {
+        isFavoriteActive: false,
+        wasRemovedFromFavorites: true,
+        removedAt: new Date().toISOString(),
+        removedBy: user?.uid ?? null,
+        removedByName: currentAgentName,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.uid ?? null,
+      });
+      toast({ title: 'Scos din Favorite', description: 'Anuntul a fost scos, dar istoricul si statusul au fost pastrate.' });
       return;
     }
 
     const timestamp = new Date().toISOString();
+    if (existingFavorite) {
+      updateDocumentNonBlocking(favoriteRef, {
+        isFavoriteActive: true,
+        wasRemovedFromFavorites: existingFavorite.wasRemovedFromFavorites ?? true,
+        removedAt: null,
+        removedBy: null,
+        removedByName: null,
+        updatedAt: timestamp,
+        updatedBy: user?.uid ?? null,
+      });
+      toast({ title: 'Readaugat in Favorite', description: 'Anuntul a fost reactivat in Favorite cu istoricul anterior pastrat.' });
+      return;
+    }
+
     setDocumentNonBlocking(
       favoriteRef,
       {
         ownerListingId: listing.id,
+        isFavoriteActive: true,
+        wasRemovedFromFavorites: false,
+        removedAt: null,
+        removedBy: null,
+        removedByName: null,
         reservedByAgentId: user?.uid ?? null,
         reservedByAgentName: currentAgentName,
         reservedAt: timestamp,
@@ -668,7 +695,7 @@ export default function OwnerListingsPage() {
                 onSetReserved={handleSetReserved}
                 onSetTaken={handleSetTaken}
                 onSetOutcome={handleSetOutcome}
-                isFavorite={Boolean(favorite)}
+                isFavorite={favorite?.isFavoriteActive !== false && Boolean(favorite)}
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
