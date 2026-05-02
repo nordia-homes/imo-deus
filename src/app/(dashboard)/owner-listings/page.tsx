@@ -209,6 +209,7 @@ export default function OwnerListingsPage() {
           source: listing.source,
           url: listing.link,
           ownerPhone: listing.ownerPhone || '',
+          sourceDescription: listing.description || '',
         }),
       });
       const payload = await response.json().catch(() => ({}));

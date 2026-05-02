@@ -138,6 +138,7 @@ export default function FavoriteOwnerListingsPage() {
           source: listing.source,
           url: listing.link,
           ownerPhone: listing.ownerPhone || '',
+          sourceDescription: listing.description || '',
         }),
       });
       const payload = await response.json().catch(() => ({}));

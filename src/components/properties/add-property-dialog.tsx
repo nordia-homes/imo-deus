@@ -1272,6 +1272,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     async function handleGenerateDescription() {
         setIsGenerating(true);
         const values = form.getValues();
+        const selectedAgent = agents.find(agent => agent.id === values.agentId);
         
         try {
             const result = await generatePropertyDescription({
@@ -1307,6 +1308,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 nearMetro: values.nearMetro,
                 keyFeatures: values.keyFeatures,
                 description: values.description,
+                agentName: selectedAgent?.name || null,
+                agentPhone: selectedAgent?.phone || agency?.phone || null,
             });
             
             form.setValue('description', result.description);

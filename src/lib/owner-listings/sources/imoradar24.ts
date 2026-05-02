@@ -26,6 +26,40 @@ function stripHtml(value: string) {
   );
 }
 
+function pickLongestTextCandidate(candidates: Array<string | null | undefined>) {
+  return candidates
+    .map((candidate) => normalizeWhitespace(candidate))
+    .filter((candidate) => candidate.length >= 40)
+    .sort((left, right) => right.length - left.length)[0] || '';
+}
+
+function extractImoradarDescriptionFromHtml(html: string) {
+  const sectionMatches = Array.from(
+    html.matchAll(
+      /<(section|div|article)[^>]*(?:id|class)="[^"]*(?:descriere|description|detalii|details|content)[^"]*"[^>]*>([\s\S]*?)<\/\1>/gi
+    )
+  ).map((match) => stripHtml(match[2] || ''));
+
+  const structuredMatches = Array.from(
+    html.matchAll(/"description"\s*:\s*"([\s\S]*?)"/gi)
+  ).map((match) =>
+    normalizeWhitespace(
+      (match[1] || '')
+        .replace(/\\"/g, '"')
+        .replace(/\\n/g, ' ')
+        .replace(/\\r/g, ' ')
+        .replace(/\\t/g, ' ')
+    )
+  );
+
+  const metaDescription =
+    normalizeWhitespace(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    normalizeWhitespace(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    '';
+
+  return pickLongestTextCandidate([...sectionMatches, ...structuredMatches, metaDescription]);
+}
+
 function isLikelyImageUrl(value: string) {
   const normalized = normalizeWhitespace(value);
   if (!normalized.startsWith('http')) {
@@ -535,10 +569,7 @@ function extractImoradarDetailFromHtml(html: string, url: string) {
     stripHtml(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '') ||
     normalizeWhitespace(html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] || '') ||
     '';
-  const description =
-    normalizeWhitespace(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
-    normalizeWhitespace(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
-    '';
+  const description = extractImoradarDescriptionFromHtml(html);
   const price =
     normalizeWhitespace(html.match(/(\d[\d.\s]*)\s*(?:EUR|RON|LEI|€|â‚¬)/i)?.[0] || '') ||
     '';
@@ -840,15 +871,27 @@ export async function scrapeImoradar24ListingDetail(url: string) {
     await waitForScraperReady(page, ['h1', 'meta[property="og:title"]', 'img'], 10000);
 
     const payload = await page.evaluate(() => {
+      const normalizeText = (value?: string | null) => (value || '').replace(/\s+/g, ' ').trim();
+      const pickLongest = (values: Array<string | null | undefined>) =>
+        values
+          .map((value) => normalizeText(value))
+          .filter((value) => value.length >= 40)
+          .sort((left, right) => right.length - left.length)[0] || '';
+
       const bodyText = document.body.innerText || '';
       const title =
         document.querySelector('h1')?.textContent ||
         document.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
         '';
-      const description =
-        document.querySelector('meta[name="description"]')?.getAttribute('content') ||
-        document.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
-        '';
+      const description = pickLongest([
+        ...Array.from(
+          document.querySelectorAll<HTMLElement>(
+            '[class*="descr"], [id*="descr"], [class*="description"], [id*="description"], [class*="detail"], [id*="detail"]'
+          )
+        ).map((node) => node.innerText),
+        document.querySelector('meta[name="description"]')?.getAttribute('content'),
+        document.querySelector('meta[property="og:description"]')?.getAttribute('content'),
+      ]);
       const images = Array.from(document.querySelectorAll('img'))
         .flatMap((img) => [
           img.getAttribute('src') || '',

@@ -633,12 +633,21 @@ function extractOlxTitleFromHtml(html: string) {
 }
 
 function extractOlxDescriptionFromHtml(html: string) {
-  return (
-    decodeOlxEscaped(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
-    decodeOlxEscaped(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
-    decodeOlxEscaped(html.match(/"description":"([\s\S]*?)","validTo"/i)?.[1] || '') ||
-    ''
-  );
+  const candidates = [
+    decodeOlxEscaped(html.match(/"description":"([\s\S]*?)","validTo"/i)?.[1] || ''),
+    decodeOlxEscaped(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || ''),
+    decodeOlxEscaped(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || ''),
+    stripHtml(
+      html.match(
+        /<(section|div|article)[^>]*(?:id|class)="[^"]*(?:descriere|description|ad-description|offer-description)[^"]*"[^>]*>([\s\S]*?)<\/\1>/i
+      )?.[2] || ''
+    ),
+  ]
+    .map((candidate) => normalizeWhitespace(candidate))
+    .filter((candidate) => candidate.length >= 40)
+    .sort((left, right) => right.length - left.length);
+
+  return candidates[0] || '';
 }
 
 function extractOlxImagesFromHtml(html: string) {

@@ -4,8 +4,8 @@ export const runtime = 'nodejs';
 
 const OPENAI_IMAGE_EDIT_URL = 'https://api.openai.com/v1/images/edits';
 const ENHANCE_PROMPT =
-  'Enhance this picture for selling the apartment. Do not change, move, replace or invent furniture, windows, doors, walls. Keep the output looking as a real picture, do not make it robotic.';
-const OPENAI_IMAGE_EDIT_MODEL = 'gpt-image-1-mini';
+  'Only improve lighting, clarity, exposure, white balance and sharpness. Do not make any other changes.';
+const OPENAI_IMAGE_EDIT_MODEL = 'gpt-image-2';
 const OPENAI_IMAGE_EDIT_QUALITY = 'low';
 
 export async function POST(request: Request) {
