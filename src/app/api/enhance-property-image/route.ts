@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const OPENAI_IMAGE_EDIT_URL = 'https://api.openai.com/v1/images/edits';
-const ENHANCE_PROMPT = 'Enhance this photo for selling the apartment.';
+const ENHANCE_PROMPT =
+  'Enhance this picture for selling the apartment. Do not change, move, replace or invent furniture, windows, doors, walls. Keep the output looking as a real picture, do not make it robotic.';
+const OPENAI_IMAGE_EDIT_MODEL = 'gpt-image-1-mini';
+const OPENAI_IMAGE_EDIT_QUALITY = 'low';
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -37,7 +40,8 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-image-1',
+          model: OPENAI_IMAGE_EDIT_MODEL,
+          quality: OPENAI_IMAGE_EDIT_QUALITY,
           prompt: ENHANCE_PROMPT,
           images: [{ image_url: imageUrl }],
           output_format: 'png',
@@ -55,7 +59,8 @@ export async function POST(request: Request) {
       }
 
       const outbound = new FormData();
-      outbound.append('model', 'gpt-image-1');
+      outbound.append('model', OPENAI_IMAGE_EDIT_MODEL);
+      outbound.append('quality', OPENAI_IMAGE_EDIT_QUALITY);
       outbound.append('prompt', ENHANCE_PROMPT);
       outbound.append('output_format', 'png');
       outbound.append('image', image, image.name || 'property-photo.png');
