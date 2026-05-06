@@ -1,6 +1,6 @@
 import type { OwnerListingSource } from '@/lib/owner-listings/types';
 
-export type PropertyTypeFilter = 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
+export type PropertyTypeFilter = 'all' | 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
 export type SourceFilterValue = OwnerListingSource | 'imobiliare';
 export type CollaborationStatus = 'collaborates' | 'does_not_collaborate';
 export type OwnerListingContactOutcome = 'negative' | 'follow_up';

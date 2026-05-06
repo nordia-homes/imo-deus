@@ -64,13 +64,16 @@ const OWNER_LISTING_SCOPE_REGISTRY: OwnerListingScope[] = [
     ],
     olxSearchUrls: [
       'https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private',
+      'https://www.olx.ro/imobiliare/case-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at:desc',
     ],
     publi24SearchUrls: [
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/ilfov/?commercial=false',
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/case/bucuresti/?commercial=false',
     ],
     imoradar24SearchUrls: [
       'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
+      'https://www.imoradar24.ro/case-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
     ],
   },
 ];

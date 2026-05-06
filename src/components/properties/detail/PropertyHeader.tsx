@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Property } from '@/lib/types';
+import type { Property, PropertyStatusEvent } from '@/lib/types';
 import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone, CalendarCheck } from 'lucide-react';
 import {
   DropdownMenu,
@@ -16,22 +16,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAgency } from '@/context/AgencyContext';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from './actions/cardStyles';
+import {
+  PropertyStatusChangeDialog,
+  type PropertyStatusChangePayload,
+} from '@/components/properties/PropertyStatusChangeDialog';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<'Rezervat' | 'Vândut' | null>(null);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
-    const handleStatusChange = (newStatus: Property['status']) => {
+    const persistSimpleStatusChange = (newStatus: Property['status']) => {
         if (!agencyId || !property) return;
-        
+
         if (agencyId && firestore) {
             const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
             updateDocumentNonBlocking(propertyDocRef, {
@@ -44,6 +50,75 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
             title: "Status actualizat!",
             description: `Proprietatea este acum: ${newStatus}.`,
         });
+    };
+
+    const handleStatusChange = (newStatus: Property['status']) => {
+        if (newStatus === 'Rezervat' || newStatus === 'Vândut') {
+            setPendingStatus(newStatus);
+            return;
+        }
+
+        persistSimpleStatusChange(newStatus);
+    };
+
+    const handleStructuredStatusChange = async (payload: PropertyStatusChangePayload) => {
+        if (!agencyId || !property || isStatusUpdating) return;
+
+        setIsStatusUpdating(true);
+
+        try {
+            const changedAt = new Date().toISOString();
+            const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
+            const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
+            const nextPropertySnapshot: Property = {
+                ...property,
+                status: payload.nextStatus,
+                statusUpdatedAt: changedAt,
+                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : property.soldPrice ?? null,
+            };
+
+            const statusEvent: PropertyStatusEvent = {
+                id: statusEventRef.id,
+                agencyId,
+                propertyId: property.id,
+                changedAt,
+                previousStatus: property.status ?? null,
+                nextStatus: payload.nextStatus,
+                reason: payload.reason,
+                reasonLabel: payload.reasonLabel,
+                agentMessage: payload.agentMessage,
+                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : null,
+                marketAnalysisEligible: payload.nextStatus === 'Vândut',
+                propertySnapshot: nextPropertySnapshot,
+            };
+
+            const batch = writeBatch(firestore);
+            batch.update(propertyRef, {
+                status: payload.nextStatus,
+                statusUpdatedAt: changedAt,
+                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : null,
+            });
+            batch.set(statusEventRef, statusEvent);
+            await batch.commit();
+
+            toast({
+                title: 'Status actualizat!',
+                description:
+                    payload.nextStatus === 'Vândut'
+                        ? `Proprietatea este acum Vândut, iar pretul final a fost salvat pentru analiza de piata.`
+                        : `Proprietatea este acum Rezervat.`,
+            });
+            setPendingStatus(null);
+        } catch (error) {
+            console.error('Failed to update property status:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Actualizarea a esuat',
+                description: 'Nu am reusit sa actualizam statusul proprietatii.',
+            });
+        } finally {
+            setIsStatusUpdating(false);
+        }
     };
 
     const creationDate = property.createdAt ? new Date(property.createdAt) : new Date();
@@ -164,6 +239,14 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
             property={property}
             isOpen={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
+        />
+        <PropertyStatusChangeDialog
+            property={property}
+            targetStatus={pendingStatus}
+            isOpen={!!pendingStatus}
+            isSubmitting={isStatusUpdating}
+            onOpenChange={(open) => !open && setPendingStatus(null)}
+            onConfirm={handleStructuredStatusChange}
         />
     </>
   );

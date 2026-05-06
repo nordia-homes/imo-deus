@@ -67,6 +67,8 @@ export function matchesPropertyType(listing: OwnerListing, propertyTypeFilter: P
   const searchableText = `${listingType} ${listingText}`;
 
   switch (propertyTypeFilter) {
+    case 'all':
+      return true;
     case 'apartamente':
       return searchableText.includes('apartament') || searchableText.includes('garsoniera') || searchableText.includes('studio');
     case 'case':

@@ -32,10 +32,10 @@ import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
-import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import type { Property } from '@/lib/types';
+import type { Property, PropertyStatusEvent } from '@/lib/types';
 import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -45,6 +45,10 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
 import { useAgencyAgents } from '@/hooks/use-agency-agents';
+import {
+  PropertyStatusChangeDialog,
+  type PropertyStatusChangePayload,
+} from './PropertyStatusChangeDialog';
 
 type AddressSuggestion = {
   label: string;
@@ -735,6 +739,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pendingStatusDialogTarget, setPendingStatusDialogTarget] = useState<'Rezervat' | 'Vândut' | null>(null);
+    const [pendingSubmitValues, setPendingSubmitValues] = useState<z.infer<typeof propertySchema> | null>(null);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
     const [enhancingImageIds, setEnhancingImageIds] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -1330,13 +1336,24 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         }
     }
 
-    async function onSubmit(values: z.infer<typeof propertySchema>) {
-      setIsSubmitting(true);
+    async function saveProperty(values: z.infer<typeof propertySchema>, statusPayload?: PropertyStatusChangePayload) {
       if (!user || !agencyId) {
           toast({ variant: 'destructive', title: 'Eroare de autentificare', description: 'Nu am putut identifica agenția. Reîncărcați pagina și reîncercați.' });
-          setIsSubmitting(false);
           return;
       }
+
+      const normalizedStatus = normalizeText(values.status);
+      const resolvedStatus: Property['status'] =
+        statusPayload?.nextStatus ||
+        (normalizedStatus === 'rezervat'
+          ? 'Rezervat'
+          : normalizedStatus === 'vandut'
+            ? 'Vândut'
+            : normalizedStatus === 'inchiriat'
+              ? 'Închiriat'
+              : normalizedStatus === 'inactiv'
+                ? 'Inactiv'
+                : 'Activ');
 
       try {
           const newImageFiles = imageSources.filter((s): s is File => s instanceof File);
@@ -1431,7 +1448,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               images: finalImages,
               tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
               amenities: (values.keyFeatures || '').split(',').map((f) => f.trim()).filter(Boolean),
-              status: values.status,
+              status: resolvedStatus,
               featured: values.featured,
               ownerName: values.ownerName,
               ownerPhone: values.ownerPhone,
@@ -1453,6 +1470,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               nearMetro: values.nearMetro,
               commissionType: values.commissionType,
               commissionValue: values.commissionValue,
+              soldPrice: resolvedStatus === 'Vândut' ? statusPayload?.soldPrice ?? propertyData?.soldPrice ?? null : null,
               portalProfiles: {
                 ...(propertyData?.portalProfiles || {}),
                 imobiliare: nextPortalProfile,
@@ -1461,11 +1479,69 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
       
           if (isEditMode) {
               const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', propertyData!.id);
-              await updateDoc(propertyRef, propertyDataToSave);
+              if (statusPayload && (statusPayload.nextStatus === 'Rezervat' || statusPayload.nextStatus === 'Vândut')) {
+                  const changedAt = new Date().toISOString();
+                  const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
+                  const statusEvent: PropertyStatusEvent = {
+                      id: statusEventRef.id,
+                      agencyId,
+                      propertyId: propertyData!.id,
+                      changedAt,
+                      previousStatus: propertyData?.status ?? null,
+                      nextStatus: statusPayload.nextStatus,
+                      reason: statusPayload.reason,
+                      reasonLabel: statusPayload.reasonLabel,
+                      agentMessage: statusPayload.agentMessage,
+                      soldPrice: statusPayload.nextStatus === 'Vândut' ? statusPayload.soldPrice ?? null : null,
+                      marketAnalysisEligible: statusPayload.nextStatus === 'Vândut',
+                      propertySnapshot: {
+                        ...propertyDataToSave,
+                        id: propertyData!.id,
+                        createdAt: propertyData?.createdAt,
+                        statusUpdatedAt: changedAt,
+                      } as Property,
+                  };
+
+                  const batch = writeBatch(firestore);
+                  batch.update(propertyRef, { ...propertyDataToSave, statusUpdatedAt: changedAt });
+                  batch.set(statusEventRef, statusEvent);
+                  await batch.commit();
+              } else {
+                  await updateDoc(propertyRef, propertyDataToSave);
+              }
               toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
           } else {
               const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
-              await setDoc(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt: new Date().toISOString() });
+              const createdAt = new Date().toISOString();
+              if (statusPayload && (statusPayload.nextStatus === 'Rezervat' || statusPayload.nextStatus === 'Vândut')) {
+                  const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
+                  const statusEvent: PropertyStatusEvent = {
+                      id: statusEventRef.id,
+                      agencyId,
+                      propertyId: newPropertyRef.id,
+                      changedAt: createdAt,
+                      previousStatus: null,
+                      nextStatus: statusPayload.nextStatus,
+                      reason: statusPayload.reason,
+                      reasonLabel: statusPayload.reasonLabel,
+                      agentMessage: statusPayload.agentMessage,
+                      soldPrice: statusPayload.nextStatus === 'Vândut' ? statusPayload.soldPrice ?? null : null,
+                      marketAnalysisEligible: statusPayload.nextStatus === 'Vândut',
+                      propertySnapshot: {
+                        ...propertyDataToSave,
+                        id: newPropertyRef.id,
+                        createdAt,
+                        statusUpdatedAt: createdAt,
+                      } as Property,
+                  };
+
+                  const batch = writeBatch(firestore);
+                  batch.set(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt, statusUpdatedAt: createdAt });
+                  batch.set(statusEventRef, statusEvent);
+                  await batch.commit();
+              } else {
+                  await setDoc(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt });
+              }
               toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
           }
           
@@ -1474,6 +1550,40 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
       } catch (error: any) {
           console.error("Failed to save property:", error);
           toast({ variant: 'destructive', title: 'Salvare eșuată', description: error.message || 'A apărut o eroare neașteptată.' });
+      }
+    }
+
+    async function onSubmit(values: z.infer<typeof propertySchema>) {
+      const normalizedStatus = normalizeText(values.status);
+      const requiresStatusDialog = normalizedStatus === 'rezervat' || normalizedStatus === 'vandut';
+
+      if (requiresStatusDialog && propertyData?.id) {
+          const canonicalTarget = normalizedStatus === 'rezervat' ? 'Rezervat' : 'Vândut';
+          const currentNormalizedStatus = normalizeText(propertyData?.status);
+
+          if (currentNormalizedStatus !== normalizeText(canonicalTarget)) {
+              setPendingSubmitValues(values);
+              setPendingStatusDialogTarget(canonicalTarget);
+              return;
+          }
+      }
+
+      setIsSubmitting(true);
+      try {
+          await saveProperty(values);
+      } finally {
+          setIsSubmitting(false);
+      }
+    }
+
+    async function handleStructuredStatusConfirm(payload: PropertyStatusChangePayload) {
+      if (!pendingSubmitValues) return;
+
+      setIsSubmitting(true);
+      try {
+          await saveProperty(pendingSubmitValues, payload);
+          setPendingSubmitValues(null);
+          setPendingStatusDialogTarget(null);
       } finally {
           setIsSubmitting(false);
       }
@@ -1953,6 +2063,19 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     </div>
                 </DialogFooter>
             </form>
+            <PropertyStatusChangeDialog
+                property={propertyData}
+                targetStatus={pendingStatusDialogTarget}
+                isOpen={!!pendingStatusDialogTarget}
+                isSubmitting={isSubmitting}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingStatusDialogTarget(null);
+                        setPendingSubmitValues(null);
+                    }
+                }}
+                onConfirm={handleStructuredStatusConfirm}
+            />
         </Form>
     );
 }

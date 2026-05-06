@@ -7,17 +7,15 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
-import type { Property, Viewing } from '@/lib/types';
+import type { Property, PropertyDeletionEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
-import { deleteDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { DeletePropertyAlert } from "@/components/properties/DeletePropertyAlert";
+import { DeletePropertyAlert, type DeletePropertyPayload } from "@/components/properties/DeletePropertyAlert";
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
 
 const REPORT_PRESET_LABELS: Record<string, string> = {
@@ -36,6 +34,7 @@ export default function PropertiesPage() {
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const [isDeletingProperty, setIsDeletingProperty] = useState(false);
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
   const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
@@ -54,7 +53,7 @@ export default function PropertiesPage() {
   
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
-    const agentIdFilter = searchParams.get('agentId');
+    const agentIdFilter = searchParams?.get('agentId');
     const dialogFiltered = !filters ? properties : properties.filter(prop => {
       if (filters.transactionType && filters.transactionType !== 'all' && prop.transactionType !== filters.transactionType) return false;
       if (filters.rooms && filters.rooms !== 4 && prop.rooms !== filters.rooms) return false;
@@ -88,7 +87,7 @@ export default function PropertiesPage() {
       return hasPublishedPromotion('storia') || hasPublishedPromotion('publi24') || hasPublishedPromotion('olx');
     });
 
-    const reportPreset = searchParams.get('reportPreset');
+    const reportPreset = searchParams?.get('reportPreset');
     const activeViewingPropertyIds = new Set(
       (viewings || [])
         .filter((item) => item.status === 'completed' || item.status === 'scheduled')
@@ -137,22 +136,71 @@ export default function PropertiesPage() {
     });
   }, [properties, filters, portalQuickFilter, searchParams, viewings]);
 
-  const handleDelete = () => {
-    if (!agencyId || !deletingProperty) return;
-    const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', deletingProperty.id);
-    deleteDocumentNonBlocking(propertyRef);
-    toast({
+  const handleDelete = async ({ reason, soldPrice, agentMessage }: DeletePropertyPayload) => {
+    if (!agencyId || !deletingProperty || isDeletingProperty) return;
+
+    setIsDeletingProperty(true);
+
+    try {
+      const deletedAt = new Date().toISOString();
+      const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', deletingProperty.id);
+      const deletionEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyDeletionEvents'));
+      const propertySnapshot: Property = {
+        ...deletingProperty,
+        price: reason === 'sold' && soldPrice ? soldPrice : deletingProperty.price,
+        status: reason === 'sold' ? 'Vândut' : deletingProperty.status ?? 'Inactiv',
+        statusUpdatedAt: deletedAt,
+      };
+
+      const deletionEvent: PropertyDeletionEvent = {
+        id: deletionEventRef.id,
+        agencyId,
+        propertyId: deletingProperty.id,
+        deletedAt,
+        reason,
+        reasonLabel:
+          reason === 'sold'
+            ? 'Proprietate vanduta'
+            : reason === 'collaboration_ended'
+              ? 'Colaborare incetata'
+              : 'Nu prezinta interes',
+        agentMessage,
+        soldPrice: reason === 'sold' ? soldPrice ?? null : null,
+        listingPriceAtDeletion: deletingProperty.price,
+        marketAnalysisEligible: reason === 'sold',
+        propertySnapshot,
+      };
+
+      const batch = writeBatch(firestore);
+      batch.set(deletionEventRef, deletionEvent);
+      batch.delete(propertyRef);
+      await batch.commit();
+
+      toast({
+        title: reason === 'sold' ? 'Proprietate arhivata ca vanduta' : 'Proprietate stearsa',
+        description:
+          reason === 'sold'
+            ? `Am salvat vanzarea pentru "${deletingProperty.title}" si o vom folosi in analiza de piata.`
+            : `Proprietatea "${deletingProperty.title}" a fost scoasa din portofoliu.`,
+      });
+
+      setDeletingProperty(null);
+    } catch (error) {
+      console.error('Property deletion failed:', error);
+      toast({
         variant: 'destructive',
-        title: "Proprietate ștearsă!",
-        description: `Proprietatea "${deletingProperty.title}" a fost ștearsă.`,
-    });
-    setDeletingProperty(null);
+        title: 'Stergerea a esuat',
+        description: 'Nu am reusit sa sterg proprietatea. Incearca din nou.',
+      });
+    } finally {
+      setIsDeletingProperty(false);
+    }
   };
 
   const isPageLoading = isLoading || areViewingsLoading;
-  const reportPreset = searchParams.get('reportPreset');
+  const reportPreset = searchParams?.get('reportPreset');
   const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
-  const agentNameFilter = searchParams.get('agentName');
+  const agentNameFilter = searchParams?.get('agentName');
   const isImobiliareQuickFilterActive = portalQuickFilter === 'imobiliare';
   const isStoriaOlxQuickFilterActive = portalQuickFilter === 'storia-olx';
 
@@ -312,6 +360,7 @@ export default function PropertiesPage() {
             isOpen={!!deletingProperty}
             onOpenChange={(isOpen) => !isOpen && setDeletingProperty(null)}
             property={deletingProperty}
+            isDeleting={isDeletingProperty}
             onDelete={handleDelete}
         />
     </div>

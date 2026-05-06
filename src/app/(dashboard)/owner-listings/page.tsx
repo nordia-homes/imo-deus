@@ -36,7 +36,7 @@ const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('apartamente');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('all');
   const [constructionYearFilter, setConstructionYearFilter] = useState<string>('all');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -184,7 +184,7 @@ export default function OwnerListingsPage() {
   const resetFilters = () => {
     setSearchQuery('');
     setRoomsFilter('all');
-    setPropertyTypeFilter('apartamente');
+    setPropertyTypeFilter('all');
     setConstructionYearFilter('all');
     setPriceMin('');
     setPriceMax('');
@@ -485,12 +485,13 @@ export default function OwnerListingsPage() {
       </div>
 
       <div>
-        <Label className="mb-2 block font-semibold">Tip proprietate</Label>
+        <Label className="mb-2 block font-semibold">Categorie</Label>
         <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Toate proprietatile</SelectItem>
             <SelectItem value="apartamente">Apartamente</SelectItem>
             <SelectItem value="case">Case</SelectItem>
             <SelectItem value="terenuri">Terenuri</SelectItem>
@@ -500,13 +501,13 @@ export default function OwnerListingsPage() {
       </div>
 
       <div>
-        <Label className="mb-2 block font-semibold">Numar camere</Label>
+        <Label className="mb-2 block font-semibold">Nr. camere</Label>
         <Select value={roomsFilter} onValueChange={setRoomsFilter}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toate</SelectItem>
+            <SelectItem value="all">Nr. camere</SelectItem>
             {[1, 2, 3, 4].map((room) => (
               <SelectItem key={room} value={String(room)}>
                 {room} camere
@@ -621,10 +622,11 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
-              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+              <SelectTrigger className={cn("h-12 w-[192px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Toate proprietatile</SelectItem>
                 <SelectItem value="apartamente">Apartamente</SelectItem>
                 <SelectItem value="case">Case</SelectItem>
                 <SelectItem value="terenuri">Terenuri</SelectItem>
@@ -637,7 +639,7 @@ export default function OwnerListingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toate</SelectItem>
+                <SelectItem value="all">Nr. camere</SelectItem>
                 {[1, 2, 3, 4].map((room) => (
                   <SelectItem key={room} value={String(room)}>
                     {room} camere

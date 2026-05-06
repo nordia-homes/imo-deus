@@ -1,5 +1,5 @@
 import { adminDb } from '@/firebase/admin';
-import type { Property } from '@/lib/types';
+import type { Property, PropertyDeletionEvent } from '@/lib/types';
 import { buildPropertyZoneFact } from '@/lib/zones/matching';
 import { getAdjacentZones, getClusterPeers, normalizeRomanianText } from '@/lib/zones/ontology';
 
@@ -70,6 +70,10 @@ export type PricingAnalysisResult = {
 
 type InternalComparableCandidate = Property & {
   agencyId?: string | null;
+};
+
+type ArchivedDeletionComparable = PropertyDeletionEvent & {
+  propertySnapshot: Property;
 };
 
 type PortalComparableCandidate = {
@@ -812,18 +816,58 @@ async function fetchPortalComparables(subject: Property, subjectFeatures: Proper
 }
 
 async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: PropertyFeatures) {
-  const snapshot = await adminDb.collectionGroup('properties').get();
+  const [snapshot, archivedSnapshot] = await Promise.all([
+    adminDb.collectionGroup('properties').get(),
+    adminDb.collectionGroup('propertyDeletionEvents').where('marketAnalysisEligible', '==', true).get(),
+  ]);
   const soldComparables: PricingComparable[] = [];
+  const seenArchivedKeys = new Set<string>();
 
   for (const docSnapshot of snapshot.docs) {
     const data = { id: docSnapshot.id, ...docSnapshot.data() } as InternalComparableCandidate;
     if (data.id === subject.id) continue;
     if (!isSoldStatus(data.status)) continue;
-    if (!isInternalComparable(subject, subjectFeatures, data)) continue;
+    const soldCandidate: InternalComparableCandidate = {
+      ...data,
+      price: typeof data.soldPrice === 'number' && data.soldPrice > 0 ? data.soldPrice : data.price,
+    };
+    if (!isInternalComparable(subject, subjectFeatures, soldCandidate)) continue;
 
     const agencyId = docSnapshot.ref.path.split('/')[1] || null;
     soldComparables.push(
-      createPricingComparable('platform_sold', subject, subjectFeatures, { ...data, agencyId }, 'Vandut')
+      createPricingComparable('platform_sold', subject, subjectFeatures, { ...soldCandidate, agencyId }, 'Vandut')
+    );
+  }
+
+  for (const docSnapshot of archivedSnapshot.docs) {
+    const data = { id: docSnapshot.id, ...docSnapshot.data() } as ArchivedDeletionComparable;
+    const snapshotProperty = data.propertySnapshot;
+    if (!snapshotProperty || snapshotProperty.id === subject.id) continue;
+
+    const comparablePrice =
+      typeof data.soldPrice === 'number' && data.soldPrice > 0
+        ? data.soldPrice
+        : typeof snapshotProperty.price === 'number'
+          ? snapshotProperty.price
+          : 0;
+
+    const archivedCandidate: InternalComparableCandidate = {
+      ...snapshotProperty,
+      id: data.propertyId || snapshotProperty.id || docSnapshot.id,
+      agencyId: data.agencyId || docSnapshot.ref.path.split('/')[1] || null,
+      price: comparablePrice,
+      status: 'Vândut',
+      statusUpdatedAt: data.deletedAt || snapshotProperty.statusUpdatedAt,
+    };
+
+    const dedupeKey = `${archivedCandidate.agencyId || 'unknown'}:${archivedCandidate.id}:${archivedCandidate.price}`;
+    if (seenArchivedKeys.has(dedupeKey)) continue;
+    seenArchivedKeys.add(dedupeKey);
+
+    if (!isInternalComparable(subject, subjectFeatures, archivedCandidate)) continue;
+
+    soldComparables.push(
+      createPricingComparable('platform_sold', subject, subjectFeatures, archivedCandidate, 'Vandut arhivat')
     );
   }
 

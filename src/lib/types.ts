@@ -238,6 +238,49 @@ export type Property = {
   // Commission fields
   commissionType?: 'percentage' | 'fixed';
   commissionValue?: number;
+  soldPrice?: number | null;
+};
+
+export type PropertyDeletionReason =
+  | 'not_interesting'
+  | 'collaboration_ended'
+  | 'sold';
+
+export type PropertyDeletionEvent = {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  deletedAt: string;
+  reason: PropertyDeletionReason;
+  reasonLabel: string;
+  agentMessage: string;
+  soldPrice?: number | null;
+  listingPriceAtDeletion: number;
+  marketAnalysisEligible: boolean;
+  propertySnapshot: Property;
+};
+
+export type PropertyStatusChangeReason =
+  | 'reservation_offer_accepted'
+  | 'reservation_financing_pending'
+  | 'reservation_documents_pending'
+  | 'sale_completed'
+  | 'sale_cash'
+  | 'sale_financed';
+
+export type PropertyStatusEvent = {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  changedAt: string;
+  previousStatus?: Property['status'] | null;
+  nextStatus: 'Rezervat' | 'Vândut';
+  reason: PropertyStatusChangeReason;
+  reasonLabel: string;
+  agentMessage: string;
+  soldPrice?: number | null;
+  marketAnalysisEligible: boolean;
+  propertySnapshot: Property;
 };
 
 export type ZoneDebugBreakdown = {
