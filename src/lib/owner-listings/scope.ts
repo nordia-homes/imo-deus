@@ -72,8 +72,10 @@ const OWNER_LISTING_SCOPE_REGISTRY: OwnerListingScope[] = [
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/case/bucuresti/?commercial=false',
     ],
     imoradar24SearchUrls: [
-      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
-      'https://www.imoradar24.ro/case-de-vanzare/bucuresti/proprietar?location=8608,8276&sort=latest',
+      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar',
+      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti-ilfov/proprietar',
+      'https://www.imoradar24.ro/case-de-vanzare/bucuresti/proprietar',
+      'https://www.imoradar24.ro/case-de-vanzare/bucuresti-ilfov/proprietar',
     ],
   },
 ];

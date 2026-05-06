@@ -28,7 +28,7 @@ const DEFAULT_OPTIONS: SourceScrapeOptions = {
 
 const SOURCE_HARD_PAGE_LIMITS: Record<OwnerListingSource, number> = {
   olx: 20,
-  imoradar24: 30,
+  imoradar24: 6,
   publi24: 35,
 };
 
