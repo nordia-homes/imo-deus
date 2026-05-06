@@ -820,7 +820,7 @@ async function extractOlxParamsFromDom(url: string) {
 async function extractOlxPhoneFromDom(url: string) {
   return withScraperPage(async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await waitForScraperReady(page, ['[data-testid="show-phone"]', 'h1'], 10000);
+    await waitForScraperReady(page, ['[data-testid="show-phone"]', '[data-testid="ad-contact-phone"]', 'button', 'h1'], 10000);
 
     const capturedPhones: string[] = [];
     const capturePhoneResponse = async (response: { url: () => string; text: () => Promise<string> }) => {
@@ -845,10 +845,11 @@ async function extractOlxPhoneFromDom(url: string) {
     });
 
     const revealPhone = async () => {
-      const showPhoneButton = page.locator('[data-testid="show-phone"]').last();
-      if ((await showPhoneButton.count()) === 0) {
-        return;
-      }
+      const showPhoneButtonCandidates = [
+        page.locator('[data-testid="show-phone"]').last(),
+        page.getByRole('button', { name: /arata numarul|afișează numărul|afiseaza numarul|numar telefon|telefon/i }).last(),
+        page.locator('button').filter({ hasText: /arata numarul|afișează numărul|afiseaza numarul|telefon/i }).last(),
+      ];
 
       const phoneResponsePromise = page
         .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 8000 })
@@ -857,13 +858,29 @@ async function extractOlxPhoneFromDom(url: string) {
         })
         .catch(() => undefined);
 
-      await showPhoneButton.click({ force: true, timeout: 10000 }).catch(() => undefined);
-      await page.waitForTimeout(1200).catch(() => undefined);
-      const callButton = page.locator('[data-testid="ad-contact-phone"]').last();
-      if ((await callButton.count()) > 0) {
-        await callButton.click({ force: true, timeout: 5000 }).catch(() => undefined);
-        await page.waitForTimeout(800).catch(() => undefined);
+      for (const button of showPhoneButtonCandidates) {
+        if ((await button.count()) > 0) {
+          await button.click({ force: true, timeout: 10000 }).catch(() => undefined);
+          await page.waitForTimeout(1200).catch(() => undefined);
+          break;
+        }
       }
+
+      const callButtonCandidates = [
+        page.locator('[data-testid="ad-contact-phone"]').last(),
+        page.locator('[data-testid="contact-phone"]').last(),
+        page.locator('a[href^="tel:"]').last(),
+        page.getByRole('button', { name: /suna|sună|apeleaza|apelează|telefon/i }).last(),
+      ];
+
+      for (const button of callButtonCandidates) {
+        if ((await button.count()) > 0) {
+          await button.click({ force: true, timeout: 5000 }).catch(() => undefined);
+          await page.waitForTimeout(800).catch(() => undefined);
+          break;
+        }
+      }
+
       await phoneResponsePromise;
     };
 

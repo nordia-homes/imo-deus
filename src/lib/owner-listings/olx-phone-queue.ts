@@ -213,7 +213,7 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
         nextAttemptAt,
         lockedAt: FieldValue.delete(),
         lockedBy: FieldValue.delete(),
-        error: 'Numarul de telefon nu a putut fi extras din OLX.',
+        error: 'Numarul de telefon nu a putut fi extras din OLX. Fallback-urile API/DOM nu au returnat niciun numar.',
       },
       { merge: true }
     );

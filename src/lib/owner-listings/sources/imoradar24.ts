@@ -333,10 +333,75 @@ function parseImoradarEmbeddedJsonPayload(rawPayload: string) {
   }
 }
 
+function formatImoradarPrice(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '';
+  }
+
+  return `EUR ${Math.round(value).toLocaleString('en-US')}`;
+}
+
+function normalizeImoradarSurface(value: string | number | null | undefined) {
+  const normalized = normalizeWhitespace(String(value ?? ''));
+  if (!normalized) {
+    return '';
+  }
+
+  const numeric = normalized.match(/\d+[.,]?\d*/)?.[0] || '';
+  return numeric ? `${numeric.replace(',', '.')} mp` : '';
+}
+
+function parseImoradarYear(value: unknown) {
+  const normalized = normalizeWhitespace(String(value ?? ''));
+  if (!normalized) {
+    return undefined;
+  }
+
+  const parsed = Number(normalized.match(/\b(19\d{2}|20\d{2})\b/)?.[1] || '');
+  const currentYear = new Date().getFullYear() + 1;
+  return Number.isFinite(parsed) && parsed >= 1900 && parsed <= currentYear ? parsed : undefined;
+}
+
+function extractImoradarCardPayload(chunk: string, listingId = '') {
+  const escapedListingId = listingId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match =
+    chunk.match(
+      new RegExp(
+        `ga4Items'\\)\\.register\\(\\s*'${escapedListingId}',\\s*JSON\\.parse\\('\\{([\\s\\S]*?)\\}'\\),\\s*JSON\\.parse\\('\\{[\\s\\S]*?\\}'\\)`,
+        'i'
+      )
+    ) ||
+    chunk.match(/ga4Items'\)\.register\(\s*'\d+',\s*JSON\.parse\('\{([\s\S]*?)\}'\),\s*JSON\.parse\('\{[\s\S]*?\}'\)/i);
+
+  const payload = parseImoradarEmbeddedJsonPayload(match?.[1] || '');
+  if (!payload) {
+    return null;
+  }
+
+  const sourceName = normalizeWhitespace(typeof payload.sourceName === 'string' ? payload.sourceName : '');
+  const originSourceLabel = getPortalLabelFromText(sourceName) || sourceName;
+  const rawPrice =
+    typeof payload.itemPrice === 'number'
+      ? payload.itemPrice
+      : Number(String(payload.itemPrice ?? '').replace(/[^\d.,-]/g, '').replace(',', '.'));
+
+  return {
+    originSourceLabel,
+    originSourceUrl: getPortalBaseUrlFromLabel(originSourceLabel),
+    price: formatImoradarPrice(rawPrice),
+    area: normalizeImoradarSurface(
+      typeof payload.propertySurface === 'string' || typeof payload.propertySurface === 'number'
+        ? payload.propertySurface
+        : ''
+    ),
+    constructionYear: parseImoradarYear(payload.propertyYear),
+  };
+}
+
 function extractImoradarListSourceMetadataMap(html: string) {
   const metadataByListingId = new Map<string, { originSourceLabel?: string; originSourceUrl?: string }>();
   const payloadMatches = html.matchAll(
-    /'(\d+)',\s*JSON\.parse\('\{([\s\S]*?)\}'\),\s*JSON\.parse\('\{[\s\S]*?\}'\)\s*\)"/g
+    /ga4Items'\)\.register\(\s*'(\d+)',\s*JSON\.parse\('\{([\s\S]*?)\}'\),\s*JSON\.parse\('\{[\s\S]*?\}'\)/gi
   );
 
   for (const match of payloadMatches) {
@@ -622,6 +687,7 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
         );
         const nextIndex = index + 1 < listingMarkers.length ? (listingMarkers[index + 1].index ?? html.length) : html.length;
         const chunk = html.slice(start, nextIndex);
+        const payload = extractImoradarCardPayload(chunk, listingId);
         const href =
           chunk.match(/id="listing-link-\d+"[^>]*href="([^"]*(?:\/oferta\/[^"]+|\/link-extern\/\d+))"/i)?.[1] ||
           chunk.match(/href="([^"]*(?:\/oferta\/[^"]+|\/link-extern\/\d+))"/i)?.[1] ||
@@ -632,19 +698,23 @@ function extractListPageFromHtml(html: string): ExtractedCard[] {
           stripHtml(chunk.match(/<h3[^>]*class="hide-title[^"]*"[^>]*>([\s\S]*?)<\/h3>/i)?.[1] || '') ||
           stripHtml(chunk.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] || '');
         const plainText = stripHtml(chunk);
-        const price = title.match(/\d[\d.]*\s*€/i)?.[0] || plainText.match(/\b\d[\d.]*\s*€/i)?.[0] || '';
+        const price =
+          payload?.price ||
+          plainText.match(/\b(?:eur|€)\s*\d[\d.,]*/i)?.[0] ||
+          plainText.match(/\b\d[\d.]*\s*(?:€|eur)\b/i)?.[0] ||
+          '';
         const location =
           plainText.match(/\b([A-ZĂÂÎȘȚ][A-Za-zĂÂÎȘȚăâîșț\- ]+,\s*Sectorul\s*\d)\b/u)?.[1] ||
           title.match(/în\s+([^0-9€]{2,50})/u)?.[1] ||
           '';
         const rooms = extractRoomCount(`${title} ${plainText}`);
-        const area = extractAreaText(`${title} ${plainText}`);
-        const explicitYear = extractConstructionYearStrict(plainText);
+        const area = payload?.area || extractAreaText(`${title} ${plainText}`);
+        const explicitYear = payload?.constructionYear || extractConstructionYearStrict(plainText);
         const constructionYear = explicitYear;
         const postedAtText = plainText.match(/\b(Azi|Ieri|\d{1,2}[./-]\d{1,2}[./-]\d{4})\b/i)?.[1] || '';
         const sourceMetadata = mergeImoradarSourceMetadata(
           extractImoradarSourceMetadata(chunk, 'https://www.imoradar24.ro'),
-          sourceMetadataByListingId.get(listingId) || {}
+          payload || sourceMetadataByListingId.get(listingId) || {}
         );
         const text = [location, rooms, area, price, postedAtText].filter(Boolean).join(' • ');
 
