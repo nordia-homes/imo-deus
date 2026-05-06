@@ -54,12 +54,12 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
   const normalizedScore = Math.max(0, Math.min(100, property.matchScore || 0));
   const scoreTone =
     normalizedScore >= 75
-      ? 'agentfinder-lead-score-fill--high'
+      ? 'agentfinder-lead-score-fill--high bg-emerald-500'
       : normalizedScore >= 60
-        ? 'agentfinder-lead-score-fill--good'
+        ? 'agentfinder-lead-score-fill--good bg-sky-500'
         : normalizedScore >= 40
-          ? 'agentfinder-lead-score-fill--mid'
-          : 'agentfinder-lead-score-fill--low';
+          ? 'agentfinder-lead-score-fill--mid bg-amber-400'
+          : 'agentfinder-lead-score-fill--low bg-rose-500';
   
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,7 +95,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             style={{ background: 'linear-gradient(180deg, rgba(9, 17, 27, 0.04) 0%, rgba(9, 17, 27, 0.22) 48%, rgba(9, 17, 27, 0.78) 100%)' }}
           />
           <div className="agentfinder-recommended-score-meter absolute left-4 right-4 top-4 rounded-2xl border border-white/10 px-3.5 py-2.5 backdrop-blur-md shadow-[0_16px_40px_-18px_rgba(0,0,0,0.85)]">
-            <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full">
+            <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full bg-white/55 shadow-inner shadow-slate-900/10">
               <div
                 className={`agentfinder-lead-score-fill h-full rounded-full transition-all duration-500 ${scoreTone}`}
                 style={{ width: `${normalizedScore}%` }}

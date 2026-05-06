@@ -31,12 +31,12 @@ export function AiLeadScoreCard({
   const normalizedScore = typeof contact.leadScore === 'number' ? Math.max(0, Math.min(100, contact.leadScore)) : 0;
   const scoreTone =
     normalizedScore >= 80
-      ? 'agentfinder-lead-score-fill--high'
+      ? 'agentfinder-lead-score-fill--high bg-emerald-500'
       : normalizedScore >= 60
-        ? 'agentfinder-lead-score-fill--good'
+        ? 'agentfinder-lead-score-fill--good bg-sky-500'
         : normalizedScore >= 40
-          ? 'agentfinder-lead-score-fill--mid'
-          : 'agentfinder-lead-score-fill--low';
+          ? 'agentfinder-lead-score-fill--mid bg-amber-400'
+          : 'agentfinder-lead-score-fill--low bg-rose-500';
   const scoreLabel =
     normalizedScore >= 80 ? 'Foarte bun' : normalizedScore >= 60 ? 'Bun' : normalizedScore >= 40 ? 'Mediu' : 'Scăzut';
 
@@ -206,7 +206,7 @@ export function AiLeadScoreCard({
               </div>
             </div>
             <div className="agentfinder-lead-score-panel__meter mt-4 space-y-2">
-              <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full">
+              <div className="agentfinder-lead-score-track h-2.5 overflow-hidden rounded-full bg-slate-200/75 shadow-inner shadow-slate-900/5 dark:bg-white/12">
                 <div
                   className={`agentfinder-lead-score-fill h-full rounded-full transition-all duration-500 ${scoreTone}`}
                   style={{ width: `${normalizedScore}%` }}

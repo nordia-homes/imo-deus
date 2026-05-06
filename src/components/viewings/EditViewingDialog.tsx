@@ -44,6 +44,7 @@ type EditViewingDialogProps = {
 
 export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewing, properties, contacts }: EditViewingDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const isMobile = useIsMobile();
   
   const form = useForm<z.infer<typeof viewingSchema>>({
@@ -64,6 +65,12 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
         });
     }
   }, [viewing, form]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDatePickerOpen(false);
+    }
+  }, [isOpen]);
 
   const timeSlots = useMemo(() => {
       const slots = [];
@@ -146,7 +153,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-white/80">Data</FormLabel>
-                            <Popover modal={true}>
+                            <Popover modal={true} open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
@@ -166,7 +173,12 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
                                 <Calendar
                                   mode="single"
                                   selected={field.value}
-                                  onSelect={field.onChange}
+                                  onSelect={(date) => {
+                                    field.onChange(date);
+                                    if (date) {
+                                      setIsDatePickerOpen(false);
+                                    }
+                                  }}
                                   locale={ro}
                                   initialFocus
                                 />

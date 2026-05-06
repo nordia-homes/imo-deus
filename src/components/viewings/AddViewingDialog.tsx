@@ -59,6 +59,7 @@ type AddViewingDialogProps = {
 export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, onOpenChange }: AddViewingDialogProps) {
   const [isNewContact, setIsNewContact] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { toast } = useToast();
   const { agencyId } = useAgency();
   const { user } = useUser();
@@ -91,6 +92,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
         newContactPhone: '',
       });
       setIsNewContact(false); // Reset to existing contact view
+      setIsDatePickerOpen(false);
     }
   }, [isOpen, defaultContactId, defaultPropertyId, form]);
 
@@ -254,7 +256,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel className="text-white/80">Data</FormLabel>
-                                    <Popover modal={true}>
+                                    <Popover modal={true} open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                         <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button
@@ -274,7 +276,12 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                         <Calendar
                                             mode="single"
                                             selected={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(date) => {
+                                                field.onChange(date);
+                                                if (date) {
+                                                    setIsDatePickerOpen(false);
+                                                }
+                                            }}
                                             locale={ro}
                                             disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                                             initialFocus
