@@ -53,6 +53,7 @@ export function PropertyCard({
   const shareImageUrl = agencyId
     ? `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`
     : undefined;
+  const isReserved = property.status === 'Rezervat';
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
 
@@ -141,8 +142,20 @@ export function PropertyCard({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </Link>
-            <div className="absolute top-3 left-3">
+            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
                <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-[#22c55e]/25 bg-black/55 text-[#86efac]" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
+               {isReserved ? (
+                <Badge
+                  className={cn(
+                    "font-semibold",
+                    isPublicCard
+                      ? "border border-amber-300/25 bg-amber-500/85 text-white"
+                      : "bg-amber-500 text-white"
+                  )}
+                >
+                  Rezervat
+                </Badge>
+               ) : null}
             </div>
             <Button
               size="icon"

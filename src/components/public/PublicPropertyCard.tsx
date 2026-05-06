@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Bath, BedDouble, MapPin, Ruler, Share2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { Property } from '@/lib/types';
 import { usePublicPath } from '@/context/PublicAgencyContext';
 
@@ -31,6 +32,7 @@ export function PublicPropertyCard({
   const [isCopied, setIsCopied] = useState(false);
   const propertyUrl = publicPath(`/properties/${property.id}`);
   const shareImageUrl = `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
+  const isReserved = property.status === 'Rezervat';
   const priceClassName =
     variant === 'compact'
       ? 'text-xl font-semibold tracking-tight text-white md:text-[1.45rem]'
@@ -104,8 +106,15 @@ export function PublicPropertyCard({
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,6,6,0.05)_0%,rgba(5,6,6,0.18)_42%,rgba(5,6,6,0.72)_100%)]" />
           <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-            <div className="inline-flex items-center rounded-full border [border-color:var(--public-card-border)] bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--public-accent-soft)] backdrop-blur-sm">
-              {property.transactionType}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center rounded-full border [border-color:var(--public-card-border)] bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--public-accent-soft)] backdrop-blur-sm">
+                {property.transactionType}
+              </div>
+              {isReserved ? (
+                <Badge className="border border-amber-300/25 bg-amber-500/90 text-white backdrop-blur-sm">
+                  Rezervat
+                </Badge>
+              ) : null}
             </div>
             <div className="rounded-full border border-white/10 bg-black/25 p-2 text-white/80 backdrop-blur-sm transition-transform duration-300 group-hover:translate-x-0.5">
               <ArrowRight className="h-4 w-4" />
