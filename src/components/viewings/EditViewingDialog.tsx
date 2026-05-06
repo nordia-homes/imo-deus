@@ -19,6 +19,7 @@ import type { Viewing, Property, Contact } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '../ui/card';
+import { PropertyPicker, type PropertyPickerOption } from './PropertyPicker';
 
 const viewingSchema = z.object({
   propertyId: z.string().min(1, 'Selectează o proprietate.'),
@@ -30,7 +31,16 @@ const viewingSchema = z.object({
   notes: z.string().optional(),
 });
 
-type PropertyStub = { id: string; title: string; };
+type PropertyStub = {
+  id: string;
+  title: string;
+  address?: string;
+  location?: string;
+  price?: number;
+  city?: string;
+  zone?: string;
+  images?: { url: string; alt: string }[];
+};
 type ContactStub = { id: string; name: string; };
 
 type EditViewingDialogProps = {
@@ -139,7 +149,24 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
               <div className="flex-1 space-y-6 overflow-y-auto bg-[#0F1E33] px-4 py-4 md:px-6">
                 <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-xl">
                   <CardContent className="space-y-4 pt-6">
-                    <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField
+                      control={form.control}
+                      name="propertyId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-white/80">Proprietate</FormLabel>
+                          <FormControl>
+                            <PropertyPicker
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              properties={properties as PropertyPickerOption[]}
+                              placeholder="Selecteaza proprietatea"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField control={form.control} name="contactId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează clientul" /></SelectTrigger></FormControl><SelectContent>{contacts?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                   </CardContent>
                 </Card>

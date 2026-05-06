@@ -24,6 +24,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '../ui/card';
+import { PropertyPicker, type PropertyPickerOption } from './PropertyPicker';
 
 
 const viewingSchema = z.object({
@@ -42,9 +43,12 @@ const viewingSchema = z.object({
 type PropertyStub = {
   id: string;
   title: string;
+  address?: string;
+  location?: string;
   price?: number;
   city?: string;
   zone?: string;
+  images?: { url: string; alt: string }[];
 };
 type ContactStub = { id: string; name: string; };
 
@@ -204,7 +208,24 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                 <div className="agentfinder-add-viewing-dialog__body flex-1 space-y-6 overflow-y-auto bg-[#0F1E33] px-4 py-4 md:px-6">
                     <Card className={panelClassName}>
                         <CardContent className="pt-6 space-y-4">
-                            <FormField control={form.control} name="propertyId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Proprietate</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează proprietatea" /></SelectTrigger></FormControl><SelectContent>{properties?.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField
+                              control={form.control}
+                              name="propertyId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white/80">Proprietate</FormLabel>
+                                  <FormControl>
+                                    <PropertyPicker
+                                      value={field.value}
+                                      onValueChange={field.onChange}
+                                      properties={properties as PropertyPickerOption[]}
+                                      placeholder="Selecteaza proprietatea"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                             {isNewContact ? (
                                 <div className="space-y-4 pt-4 border-t border-border">
                                     <h4 className="font-semibold text-sm">Detalii Client Nou</h4>
