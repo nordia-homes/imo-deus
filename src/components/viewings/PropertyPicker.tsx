@@ -6,6 +6,7 @@ import { Check, ChevronsUpDown, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 export type PropertyPickerOption = {
@@ -46,6 +47,7 @@ export function PropertyPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const isMobile = useIsMobile();
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === value) || null,
@@ -121,7 +123,13 @@ export function PropertyPicker({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[var(--radix-popover-trigger-width)] min-w-[320px] border-white/10 bg-[#13243b] p-0 text-white shadow-2xl"
+        sideOffset={8}
+        className={cn(
+          "border-white/10 bg-[#13243b] p-0 text-white shadow-2xl",
+          isMobile
+            ? "w-[calc(100vw-4rem)] max-w-[calc(100vw-4rem)] overflow-hidden rounded-2xl"
+            : "w-[var(--radix-popover-trigger-width)] min-w-[320px]"
+        )}
       >
         <div className="border-b border-white/10 p-3">
           <div className="relative">
@@ -136,8 +144,12 @@ export function PropertyPicker({
         </div>
 
         <div
-          className="max-h-[340px] overflow-y-auto overscroll-contain p-2"
+          className={cn(
+            "overflow-y-auto overscroll-contain p-2 touch-pan-y [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]",
+            isMobile ? "max-h-[50vh]" : "max-h-[340px]"
+          )}
           onWheel={(event) => event.stopPropagation()}
+          onTouchMove={(event) => event.stopPropagation()}
         >
           {filteredProperties.length === 0 ? (
             <div className="px-3 py-6 text-center text-sm text-white/60">
