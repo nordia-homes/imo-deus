@@ -14,6 +14,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { getAgencyThemePreset } from '@/lib/theme';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 
@@ -28,6 +29,7 @@ export default function FavoriteOwnerListingsPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { agency, agencyId, userProfile } = useAgency();
+  const isClassicTheme = getAgencyThemePreset(agency) === 'classic';
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
@@ -269,6 +271,7 @@ export default function FavoriteOwnerListingsPage() {
           currentScopeLabel={currentScope?.displayName}
           activeTab="favorite"
           favoriteCount={favoriteEntries.length}
+          adminClassic={isClassicTheme}
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, index) => (
@@ -290,6 +293,7 @@ export default function FavoriteOwnerListingsPage() {
         currentScopeLabel={currentScope?.displayName}
         activeTab="favorite"
         favoriteCount={favoriteEntries.length}
+        adminClassic={isClassicTheme}
       />
 
       {favoriteEntries.length > 0 ? (
@@ -298,6 +302,7 @@ export default function FavoriteOwnerListingsPage() {
             <div key={favorite.id} className="space-y-3">
               <OwnerListingCard
                 listing={listing}
+                adminClassic={isClassicTheme}
                 favoriteMeta={favorite}
                 currentAgentId={user?.uid ?? null}
                 currentTimestamp={currentTimestamp}

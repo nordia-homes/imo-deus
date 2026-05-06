@@ -373,7 +373,7 @@ const propertySchema = z.object({
   furnishing: z.string().optional(),
   heatingSystem: z.string().optional(),
   parking: z.string().optional(),
-  keyFeatures: z.string().min(1, { message: "Caracteristicile cheie sunt obligatorii pentru generarea AI." }),
+  keyFeatures: z.string().optional().default(''),
 
   description: z.string().optional(),
   status: z.string().optional(),
@@ -753,7 +753,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
       useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } })
     );
 
-    const isEditMode = !!propertyData;
+    const hasPrefilledProperty = !!propertyData;
+    const isEditMode = !!propertyData?.id;
 
     const initialFormValues = useMemo(
         () => getPropertyFormValues(propertyData ?? null, user?.uid),
@@ -770,7 +771,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedCity = form.watch('city');
     const watchedZone = form.watch('zone');
     const watchedAddress = form.watch('address');
-    const watchedCommissionType = form.watch('commissionType', isEditMode ? propertyData?.commissionType : 'percentage');
+    const watchedCommissionType = form.watch('commissionType', propertyData?.commissionType || 'percentage');
     const watchedTitle = form.watch('title');
     const watchedPropertyType = form.watch('propertyType');
     const watchedTransactionType = form.watch('transactionType');
@@ -888,15 +889,15 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     }, [form, imobiliareLocations, propertyData, watchedImobiliareLocationId]);
 
     useEffect(() => {
-        if (!isEditMode || !propertyData) {
+        if (!hasPrefilledProperty || !propertyData) {
             return;
         }
 
         form.reset(initialFormValues);
-    }, [form, initialFormValues, isEditMode, propertyData]);
+    }, [form, hasPrefilledProperty, initialFormValues, propertyData]);
 
     useEffect(() => {
-        if (isEditMode && propertyData) {
+        if (propertyData) {
             const fallbackLocation = deriveCityZoneFromLocation(propertyData.location);
             const normalizedCity = normalizeCityValue(propertyData.city) || fallbackLocation.city;
             const normalizedZone = normalizeZoneValue(propertyData.zone, normalizedCity || propertyData.city) || fallbackLocation.zone || '';
@@ -1011,7 +1012,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             setSelectedAddressLabel('');
             setLocationSearch('');
         }
-    }, [form, isEditMode, propertyData, user?.uid]);
+    }, [form, propertyData, user?.uid]);
     
     const imageItems = useMemo(() => imageSources.map((source, index) => {
         const id = source instanceof File ? `${source.name}-${source.lastModified}-${index}` : source.url;
@@ -1322,7 +1323,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             toast({
                 variant: "destructive",
                 title: "A apărut o eroare",
-                description: "Nu am putut genera descrierea. Asigură-te că ai completat câmpurile cheie (ex: titlu, preț, caracteristici).",
+                description: "Nu am putut genera descrierea. Verifică dacă ai completat informațiile principale, cum ar fi titlul și prețul.",
             });
         } finally {
             setIsGenerating(false);
@@ -1429,7 +1430,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               description: values.description || '',
               images: finalImages,
               tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
-              amenities: values.keyFeatures.split(',').map((f) => f.trim()),
+              amenities: (values.keyFeatures || '').split(',').map((f) => f.trim()).filter(Boolean),
               status: values.status,
               featured: values.featured,
               ownerName: values.ownerName,
@@ -1594,7 +1595,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     name="keyFeatures"
                                     render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-white/80">Caracteristici Cheie pentru AI *</FormLabel>
+                                        <FormLabel className="text-white/80">Caracteristici Cheie pentru AI</FormLabel>
                                         <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
                                         <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
                                         <FormMessage />
@@ -1967,7 +1968,7 @@ export function AddPropertyDialog({
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const isEditMode = !!property;
+  const isEditMode = !!property?.id;
   const isMobile = useIsMobile();
   
   const formKey = useMemo(() => {

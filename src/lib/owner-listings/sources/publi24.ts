@@ -80,7 +80,29 @@ function pickLongestTextCandidate(candidates: Array<string | null | undefined>) 
   return candidates
     .map((candidate) => normalizeWhitespace(candidate))
     .filter((candidate) => candidate.length >= 40)
+    .filter((candidate) => !looksLikeInjectedScriptText(candidate))
     .sort((left, right) => right.length - left.length)[0] || '';
+}
+
+function looksLikeInjectedScriptText(value: string) {
+  return [
+    /(?:^|\s)var\s+\w+\s*=/i,
+    /imageList/i,
+    /maxImgHeight/i,
+    /document\.getElementsByClassName/i,
+    /offsetWidth/i,
+    /push\(\{src:/i,
+    /function\s*\(/i,
+  ].some((pattern) => pattern.test(value));
+}
+
+function sanitizePubli24Description(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) {
+    return '';
+  }
+
+  return looksLikeInjectedScriptText(normalized) ? '' : normalized;
 }
 
 function extractPubli24DescriptionFromHtml(html: string) {
@@ -88,12 +110,20 @@ function extractPubli24DescriptionFromHtml(html: string) {
     html.matchAll(
       /<(section|div|article)[^>]*(?:id|class)="[^"]*(?:descriere|description|detalii|details|content)[^"]*"[^>]*>([\s\S]*?)<\/\1>/gi
     )
-  ).map((match) => normalizeWhitespace((match[2] || '').replace(/<[^>]+>/g, ' ')));
+  ).map((match) =>
+    normalizeWhitespace(
+      (match[2] || '')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+    )
+  );
 
   const structuredMatches = Array.from(
     html.matchAll(/"description"\s*:\s*"([\s\S]*?)"/gi)
   ).map((match) =>
-    normalizeWhitespace(
+    sanitizePubli24Description(
       (match[1] || '')
         .replace(/\\"/g, '"')
         .replace(/\\n/g, ' ')
@@ -103,8 +133,8 @@ function extractPubli24DescriptionFromHtml(html: string) {
   );
 
   const metaDescription =
-    normalizeWhitespace(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
-    normalizeWhitespace(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    sanitizePubli24Description(html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '') ||
+    sanitizePubli24Description(html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] || '') ||
     '';
 
   return pickLongestTextCandidate([...sectionMatches, ...structuredMatches, metaDescription]);
@@ -589,7 +619,7 @@ function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]
 
     target.push({
       title: typeof record.name === 'string' ? record.name : '',
-      description: typeof record.description === 'string' ? record.description : '',
+      description: sanitizePubli24Description(typeof record.description === 'string' ? record.description : ''),
       url: record.url,
       imageUrl: typeof image === 'string' ? image : '',
       price:
@@ -627,7 +657,7 @@ function extractStructuredOffersFromHtml(html: string) {
     if (!title || !url) continue;
     offers.push({
       title: normalizeWhitespace(title),
-      description: normalizeWhitespace(description.replace(/\\"/g, '"')),
+      description: sanitizePubli24Description(description.replace(/\\"/g, '"')),
       url,
       imageUrl,
       price: `${price.replace(/\.00$/, '')} ${currency}`.trim(),

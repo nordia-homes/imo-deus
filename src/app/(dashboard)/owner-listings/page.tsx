@@ -23,8 +23,10 @@ import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { getAgencyThemePreset } from '@/lib/theme';
 import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 
@@ -49,6 +51,7 @@ export default function OwnerListingsPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { agency, agencyId, userProfile } = useAgency();
+  const isClassicTheme = getAgencyThemePreset(agency) === 'classic';
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
@@ -555,6 +558,7 @@ export default function OwnerListingsPage() {
         activeTab="listings"
         favoriteCount={validFavoriteCount}
         listingCount={null}
+        adminClassic={isClassicTheme}
       />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, index) => (
@@ -578,20 +582,33 @@ export default function OwnerListingsPage() {
         activeTab="listings"
         favoriteCount={validFavoriteCount}
         listingCount={filteredListings.length}
+        adminClassic={isClassicTheme}
       />
 
       <div className="sticky top-20 z-20 hidden md:block">
-        <div className="rounded-[1.75rem] border border-white/50 bg-white/82 p-5 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)] backdrop-blur-xl md:flex md:flex-wrap md:items-center md:gap-4">
+        <div
+          className={cn(
+            "rounded-[1.75rem] p-5 backdrop-blur-xl md:flex md:flex-wrap md:items-center md:gap-4",
+            isClassicTheme
+              ? "border border-white/8 bg-[#152A47] text-white shadow-2xl"
+              : "border border-white/50 bg-white/82 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)]",
+          )}
+        >
           <Input
             placeholder="Cauta dupa titlu, zona, telefon sau pret"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="h-12 w-full max-w-[320px] rounded-2xl border-slate-200/80 bg-white/90 text-base"
+            className={cn(
+              "h-12 w-full max-w-[320px] rounded-2xl text-base",
+              isClassicTheme
+                ? "border-white/20 bg-white/10 text-white placeholder:text-white/55"
+                : "border-slate-200/80 bg-white/90",
+            )}
           />
 
           <div className="flex gap-2">
             <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
-              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -604,7 +621,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
-              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -616,7 +633,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className="h-12 w-[146px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className={cn("h-12 w-[146px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -630,7 +647,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={constructionYearFilter} onValueChange={setConstructionYearFilter}>
-              <SelectTrigger className="h-12 w-[168px] rounded-2xl border-slate-200/80 bg-white/90 text-base">
+              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue placeholder="An constructie" />
               </SelectTrigger>
               <SelectContent>
@@ -643,15 +660,32 @@ export default function OwnerListingsPage() {
           </div>
 
           <div className="flex gap-2">
-            <Input placeholder="Pret minim" type="number" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} className="w-[124px]" />
-            <Input placeholder="Pret maxim" type="number" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} className="w-[124px]" />
+            <Input
+              placeholder="Pret minim"
+              type="number"
+              value={priceMin}
+              onChange={(event) => setPriceMin(event.target.value)}
+              className={cn("w-[124px]", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "")}
+            />
+            <Input
+              placeholder="Pret maxim"
+              type="number"
+              value={priceMax}
+              onChange={(event) => setPriceMax(event.target.value)}
+              className={cn("w-[124px]", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "")}
+            />
             <Button
               type="button"
               variant="outline"
               size="icon"
               onClick={resetFilters}
               aria-label="Reseteaza filtrele"
-              className="h-12 w-12 rounded-2xl border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white"
+              className={cn(
+                "h-12 w-12 rounded-2xl",
+                isClassicTheme
+                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                  : "border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white",
+              )}
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
@@ -688,6 +722,7 @@ export default function OwnerListingsPage() {
               <OwnerListingCard
                 key={listing.id || index}
                 listing={listing}
+                adminClassic={isClassicTheme}
                 favoriteMeta={favorite ?? null}
                 currentAgentId={user?.uid ?? null}
                 currentTimestamp={currentTimestamp}

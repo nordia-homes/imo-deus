@@ -49,6 +49,7 @@ type OwnerListingCardProps = {
   isLoadingImport?: boolean;
   collaborationMode?: 'hidden' | 'readonly' | 'interactive';
   showImportAction?: boolean;
+  adminClassic?: boolean;
   onImport?: (listing: OwnerListing) => void;
   onToggleFavorite?: (listing: OwnerListing) => void;
   onSetCollaborationStatus?: (listing: OwnerListing, status: CollaborationStatus | null) => void;
@@ -67,6 +68,7 @@ export function OwnerListingCard({
   isLoadingImport = false,
   collaborationMode = 'readonly',
   showImportAction = true,
+  adminClassic = false,
   onImport,
   onToggleFavorite,
   onSetCollaborationStatus,
@@ -126,6 +128,9 @@ export function OwnerListingCard({
         ? listing.image
         : null;
   const badgeLabel = listing.originSourceLabel || listing.sourceLabel;
+  const badgeClassName = adminClassic
+    ? 'border-white/16 bg-[#0f1e33]/88 text-white shadow-[0_16px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-md'
+    : 'border-white/85 bg-white/96 text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]';
   const showNewBadge = isListingNew(listing);
 
   let displayPrice = 'Pret negociabil';
@@ -247,7 +252,14 @@ export function OwnerListingCard({
     );
 
   return (
-    <Card className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]">
+    <Card
+      className={cn(
+        "group overflow-hidden rounded-[1.75rem] transition-all duration-300 hover:-translate-y-1",
+        adminClassic
+          ? "agentfinder-property-list-card border-none bg-[#152A47] text-white shadow-2xl hover:shadow-xl"
+          : "border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]",
+      )}
+    >
       <CardContent className="p-0">
         <div className="relative">
           <Link
@@ -272,7 +284,7 @@ export function OwnerListingCard({
           </Link>
 
           <div className="absolute left-3 top-3 flex items-center gap-2">
-            <div className="inline-flex items-center rounded-full border border-white bg-white px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]">
+            <div className={cn("inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]", badgeClassName)}>
               {badgeLabel}
             </div>
 
@@ -292,7 +304,9 @@ export function OwnerListingCard({
                 'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] backdrop-blur-md transition-colors',
                 isFavorite
                   ? 'border-emerald-300/70 bg-green-500 text-white'
-                  : 'border-white/30 bg-white/92 text-slate-800 hover:bg-white',
+                  : adminClassic
+                    ? 'border-white/20 bg-black/30 text-white hover:bg-black/45'
+                    : 'border-white/30 bg-white/92 text-slate-800 hover:bg-white',
               )}
             >
               <FavoriteHeartIcon filled={isFavorite} />
@@ -305,21 +319,21 @@ export function OwnerListingCard({
         <div className="space-y-3 p-4">
           <div className="min-w-0">
             <Link href={listing.link} target="_blank" rel="noreferrer" className="block min-w-0">
-              <h3 className="truncate font-semibold text-stone-100 group-hover:text-[#86efac]" title={listing.title}>
+              <h3 className={cn("truncate font-semibold", adminClassic ? "text-white group-hover:text-primary/90" : "text-stone-100 group-hover:text-[#86efac]")} title={listing.title}>
                 {listing.title}
               </h3>
               {listing.description ? (
-                <p className="truncate text-sm text-stone-400" title={listing.description}>
+                <p className={cn("truncate text-sm", adminClassic ? "text-white/70" : "text-stone-400")} title={listing.description}>
                   {listing.description}
                 </p>
               ) : null}
-              <p className="truncate text-sm text-stone-400" title={locationDisplay}>
+              <p className={cn("truncate text-sm", adminClassic ? "text-white/70" : "text-stone-400")} title={locationDisplay}>
                 {locationDisplay}
               </p>
             </Link>
           </div>
 
-          <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap text-[13px] text-stone-400">
+          <div className={cn("flex items-center gap-3 overflow-hidden whitespace-nowrap text-[13px]", adminClassic ? "text-white/70" : "text-stone-400")}>
             {roomsValue !== null ? (
               <div className="flex shrink-0 items-center gap-1">
                 <BedDouble className="h-3.5 w-3.5 shrink-0" />
@@ -340,7 +354,7 @@ export function OwnerListingCard({
             </div>
 
             {year ? (
-              <div className="flex shrink-0 items-center gap-1 text-stone-300">
+              <div className={cn("flex shrink-0 items-center gap-1", adminClassic ? "text-white/80" : "text-stone-300")}>
                 <Calendar className="h-3.5 w-3.5 shrink-0" />
                 <span>{year}</span>
               </div>
@@ -348,7 +362,7 @@ export function OwnerListingCard({
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-2">
-            <p className="min-w-0 flex-1 text-[0.96rem] font-bold leading-none tracking-[-0.01em] text-stone-100 sm:text-[1rem]">
+            <p className={cn("min-w-0 flex-1 text-[0.96rem] font-bold leading-none tracking-[-0.01em] sm:text-[1rem]", adminClassic ? "text-white" : "text-stone-100")}>
               {displayPrice}
             </p>
 
@@ -365,7 +379,7 @@ export function OwnerListingCard({
                 </Button>
               ) : null}
 
-              <Button asChild size="icon" className="bg-green-500 text-white hover:bg-green-600">
+              <Button asChild size="icon" className={cn(adminClassic ? "bg-white/10 text-white hover:bg-white/20" : "bg-green-500 text-white hover:bg-green-600")}>
                 <Link href={listing.link} target="_blank">
                   <Rocket className="h-4 w-4" />
                 </Link>
@@ -374,7 +388,7 @@ export function OwnerListingCard({
           </div>
 
           {canShowWorkflowActions ? (
-            <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+            <div className={cn("flex items-center gap-2 border-t pt-3", adminClassic ? "border-white/12" : "border-white/10")}>
               <Button
                 type="button"
                 variant={activeWorkflowStatus === 'reserved' ? 'default' : 'outline'}
@@ -385,7 +399,9 @@ export function OwnerListingCard({
                   'h-10 shrink-0 rounded-full px-4 text-[12px]',
                   activeWorkflowStatus === 'reserved'
                     ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
-                    : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
+                    : adminClassic
+                      ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
+                      : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
                 )}
               >
                 Rezervat
@@ -401,7 +417,9 @@ export function OwnerListingCard({
                   'h-10 shrink-0 rounded-full px-4 text-[12px]',
                   activeWorkflowStatus === 'taken'
                     ? '!border-emerald-400 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)] hover:!bg-emerald-500'
-                    : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
+                    : adminClassic
+                      ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
+                      : 'border-white/15 bg-white/5 text-stone-100 hover:bg-white/10',
                 )}
               >
                 Preluat
@@ -419,7 +437,9 @@ export function OwnerListingCard({
                       ? '!border-emerald-300 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)]'
                       : activeWorkflowStatus === 'negative'
                         ? '!border-emerald-300 !bg-emerald-500 !text-white shadow-[0_16px_34px_-20px_rgba(34,197,94,0.95)]'
-                        : 'bg-white/5',
+                        : adminClassic
+                          ? 'bg-white/10'
+                          : 'bg-white/5',
                   )}
                 >
                   <SelectValue placeholder="Status final" />
@@ -434,7 +454,7 @@ export function OwnerListingCard({
           ) : null}
 
           {workflowDescription ? (
-            <p className={cn('text-[12px]', activeWorkflowStatus === 'expired_reserved' ? 'text-amber-300' : 'text-stone-300')}>{workflowDescription}</p>
+            <p className={cn('text-[12px]', activeWorkflowStatus === 'expired_reserved' ? 'text-amber-300' : adminClassic ? 'text-white/80' : 'text-stone-300')}>{workflowDescription}</p>
           ) : null}
 
           {showRemovedFavoriteWarning ? (
