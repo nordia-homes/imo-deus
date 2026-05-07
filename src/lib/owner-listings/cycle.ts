@@ -25,6 +25,8 @@ const DEFAULT_HARD_PAGE_LIMIT = 250;
 const DEFAULT_MAX_AGE_DAYS = 60;
 const DEFAULT_MAX_PAGES_PER_TICK = 12;
 const DEFAULT_MAX_RUNTIME_MS = 7 * 60 * 1000;
+const MIN_SOURCE_PAGE_TIMEOUT_MS = 45 * 1000;
+const MAX_SOURCE_PAGE_TIMEOUT_MS = 2 * 60 * 1000;
 
 type SchedulerTickOptions = {
   scopeKey?: string | null;
@@ -54,6 +56,37 @@ function nowIso() {
 
 function addMs(dateIso: string, milliseconds: number) {
   return new Date(new Date(dateIso).getTime() + milliseconds).toISOString();
+}
+
+function createTimeoutError(scopeKey: string, source: OwnerListingSource, page: number, timeoutMs: number) {
+  return new Error(
+    `Timeout la sincronizarea ${source} pentru scope-ul ${scopeKey}, pagina ${page}, dupa ${timeoutMs}ms.`
+  );
+}
+
+async function withPageProcessingTimeout<T>(
+  promise: Promise<T>,
+  scopeKey: string,
+  source: OwnerListingSource,
+  page: number,
+  timeoutMs: number
+) {
+  let timeoutHandle: NodeJS.Timeout | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(createTimeoutError(scopeKey, source, page, timeoutMs));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 }
 
 function withoutUndefined<T extends Record<string, unknown>>(value: T): T {
@@ -451,21 +484,35 @@ async function processScopeCycleTick(
 
       const runStartedAt = Date.now();
       try {
-        const pageResult = await syncOwnerListingsSourcePage(
+        const remainingRuntimeMs = Math.max(
+          1000,
+          (state.maxRuntimeMs || DEFAULT_MAX_RUNTIME_MS) - (Date.now() - tickStartedAt) - 5000
+        );
+        const sourcePageTimeoutMs = Math.max(
+          MIN_SOURCE_PAGE_TIMEOUT_MS,
+          Math.min(MAX_SOURCE_PAGE_TIMEOUT_MS, remainingRuntimeMs)
+        );
+        const pageResult = await withPageProcessingTimeout(
+          syncOwnerListingsSourcePage(
+            scopeKey,
+            currentSource,
+            job.nextPage,
+            {
+              hardPageLimit: state.hardPageLimit,
+              maxAgeDays: state.maxAgeDays,
+              maxListingsPerSource: state.maxListingsPerSource ?? undefined,
+            },
+            {
+              markNew: state.baselineStatus === 'completed',
+              isBaselineListing: state.baselineStatus !== 'completed',
+              discoveredCycleNumber: state.cycleNumber,
+              newUntilAt: state.baselineStatus === 'completed' ? getNewBadgeLifetimeUnix() : null,
+            }
+          ),
           scopeKey,
           currentSource,
           job.nextPage,
-          {
-            hardPageLimit: state.hardPageLimit,
-            maxAgeDays: state.maxAgeDays,
-            maxListingsPerSource: state.maxListingsPerSource ?? undefined,
-          },
-          {
-            markNew: state.baselineStatus === 'completed',
-            isBaselineListing: state.baselineStatus !== 'completed',
-            discoveredCycleNumber: state.cycleNumber,
-            newUntilAt: state.baselineStatus === 'completed' ? getNewBadgeLifetimeUnix() : null,
-          }
+          sourcePageTimeoutMs
         );
 
         totals.scanned += pageResult.scanned;
