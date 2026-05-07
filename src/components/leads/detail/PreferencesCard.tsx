@@ -15,6 +15,7 @@ import { locations, type City } from '@/lib/locations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ImobiliareLocationPreferencePicker } from './ImobiliareLocationPreferencePicker';
 
 
 const preferencesSchema = z.object({
@@ -65,8 +66,9 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
     const value = form.getValues(fieldName);
     
     if (fieldName === 'city') {
-        if (value !== contact.city) {
-            onUpdateContact({ city: value });
+        const nextCity = typeof value === 'string' ? value : '';
+        if (nextCity !== contact.city) {
+            onUpdateContact({ city: nextCity });
         }
     } else { // Fields that belong in `preferences`
         if (value !== (contact.preferences?.[fieldName as keyof ContactPreferences] || '')) {
@@ -84,6 +86,20 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
     onUpdateContact({ zones: newZones });
   }
 
+  const handleCanonicalLocationsChange = (payload: {
+    locationPreferencesV2: Contact['locationPreferencesV2'];
+    city: string | null;
+    zones: string[];
+  }) => {
+    form.setValue('city', payload.city || '');
+    form.setValue('zones', payload.zones);
+    onUpdateContact({
+      city: payload.city || undefined,
+      zones: payload.zones,
+      locationPreferencesV2: payload.locationPreferencesV2,
+    });
+  };
+
   const onSubmit = (values: z.infer<typeof preferencesSchema>) => {
     const fullPreferences: ContactPreferences = {
       desiredPriceRangeMin: 0,
@@ -99,7 +115,7 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
   };
   
   const currentZones = form.watch('zones') || [];
-  const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
+  const availableZones = (watchedCity && locations[watchedCity]) ? [...locations[watchedCity]].sort() : [];
 
   return (
     <Card className="rounded-2xl shadow-2xl">
@@ -150,7 +166,7 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
                             <ScrollArea className="h-72">
-                                {availableZones.map(zone => (
+                                {availableZones.map((zone: string) => (
                                     <DropdownMenuCheckboxItem
                                         key={zone}
                                         checked={currentZones.includes(zone)}
@@ -167,6 +183,17 @@ export function PreferencesCard({ contact, onUpdateContact, onRematch, isMatchin
             </div>
              <div>
               <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2}/></FormControl></FormItem> )}/>
+            </div>
+            <div>
+              <FormLabel>Zone exacte Imobiliare.ro</FormLabel>
+              <p className="mb-2 text-xs text-muted-foreground">
+                Aceste selecții devin sursa principală pentru matching-ul exact dintre cumpărători și proprietăți.
+              </p>
+              <ImobiliareLocationPreferencePicker
+                value={contact.locationPreferencesV2}
+                fallbackCity={contact.city}
+                onChange={handleCanonicalLocationsChange}
+              />
             </div>
           </CardContent>
           <CardFooter>

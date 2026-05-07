@@ -24,6 +24,40 @@ const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty'
   return 'text-white/40';
 };
 
+const formatZoneReasoning = (zoneReasoning?: string | null) => {
+  if (!zoneReasoning) {
+    return '';
+  }
+
+  const rawParts = zoneReasoning
+    .split(/·|Â·/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const parts: string[] = [];
+  let hasExactMatch = false;
+
+  for (const part of rawParts) {
+    const normalized = part.toLowerCase();
+    const isExactVariant =
+      normalized.includes('locație exactă imobiliare.ro') ||
+      normalized.includes('locatie exacta imobiliare.ro') ||
+      normalized.includes('zonă exactă') ||
+      normalized.includes('zona exacta');
+
+    if (isExactVariant) {
+      hasExactMatch = true;
+      continue;
+    }
+
+    if (!parts.includes(part)) {
+      parts.push(part);
+    }
+  }
+
+  return (hasExactMatch ? ['Exact Match', ...parts] : parts).join(' · ');
+};
+
 export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps) {
   return (
     <Card className={ACTION_CARD_CLASSNAME}>
@@ -50,10 +84,11 @@ export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps)
                 <div className="min-w-0">
                   <p className="font-semibold text-sm group-hover:text-primary truncate">{lead.name}</p>
                   <p className="text-xs text-white/70">Buget: €{lead.budget?.toLocaleString()} · Scor {lead.matchScore}/100</p>
-                  {lead.zoneReasoning && <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-300/90 truncate">{lead.zoneReasoning}</p>}
+                  {lead.zoneReasoning && <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-300/90 truncate">{formatZoneReasoning(lead.zoneReasoning)}</p>}
                   {lead.zoneDebug && (
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] truncate">
-                      <span className={toneClass('exact', lead.zoneDebug.exact)}>E {lead.zoneDebug.exact}</span>
+                      <span className={toneClass('exact', lead.zoneDebug.exact)}>I {lead.zoneDebug.exact}</span>
+                      <span className={toneClass('exact', lead.zoneDebug.semanticExact || 0)}>Z {lead.zoneDebug.semanticExact || 0}</span>
                       <span className={toneClass('adjacent', lead.zoneDebug.adjacent)}>A {lead.zoneDebug.adjacent}</span>
                       <span className={toneClass('cluster', lead.zoneDebug.cluster)}>C {lead.zoneDebug.cluster}</span>
                       <span className={toneClass('macro', lead.zoneDebug.macro)}>M {lead.zoneDebug.macro}</span>

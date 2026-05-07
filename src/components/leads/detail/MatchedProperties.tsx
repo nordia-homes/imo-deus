@@ -48,7 +48,72 @@ const getMatchedPropertyImageUrl = (property: Property, agencyId?: string | null
   return 'https://placehold.co/800x600?text=Imagine+lipsa';
 };
 
-const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: Property, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
+const normalizeZoneReasoningParts = (zoneReasoning?: string | null) => {
+  if (!zoneReasoning) {
+    return [];
+  }
+
+  const rawParts = zoneReasoning
+    .split(/\u00B7/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const parts: string[] = [];
+  let hasExactMatch = false;
+
+  for (const part of rawParts) {
+    const normalized = part
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const isExactVariant =
+      normalized.includes('locatie exacta imobiliare.ro') ||
+      normalized.includes('locatie exacta') ||
+      normalized.includes('zona exacta');
+
+    const isHiddenVariant =
+      normalized.includes('aceeasi localitate') ||
+      normalized.includes('acelasi cluster');
+
+    if (isExactVariant) {
+      hasExactMatch = true;
+      continue;
+    }
+
+    if (isHiddenVariant) {
+      continue;
+    }
+
+    if (!parts.includes(part)) {
+      parts.push(part);
+    }
+  }
+
+  return hasExactMatch ? ['Exact Match', ...parts] : parts;
+};
+
+const normalizeMatchReasoningText = (reasoning?: string | null) => {
+  if (!reasoning) {
+    return '';
+  }
+
+  return reasoning
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/potrivire exacta pe locatia canonica imobiliare\.ro/gi, 'Potrivire exacta pe locatie')
+    .replace(/potrivire exacta pe locatie/gi, 'Potrivire exacta pe locatie')
+    .replace(/in buget\.\s*potrivire in aceeasi localitate\.?\s*/gi, 'in buget. ')
+    .replace(/potrivire in aceeasi localitate\.?\s*/gi, '')
+    .replace(/aceeasi localitate\.?\s*/gi, '')
+    .replace(/zona este adiacenta unei preferinte importante/gi, 'Zona este adiacenta')
+    .replace(/potrivire la nivel de judet/gi, 'Potrivire la nivel de judet')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .trim();
+};
+
+const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: MatchedProperty, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
   const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
   const constructionYear = property.constructionYear;
   const normalizedScore = Math.max(0, Math.min(100, property.matchScore || 0));
@@ -73,7 +138,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
       if (!agencyId || !contact?.phone) return;
 
       const propertyUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
-      const message = `Salut, ${contact.name}! Cred că această proprietate ți s-ar potrivi: ${propertyUrl}`;
+      const message = `Salut, ${contact.name}! Cred ca aceasta proprietate ti s-ar potrivi: ${propertyUrl}`;
       const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
       const whatsappUrl = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
@@ -115,7 +180,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)' }}
             >
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
-              <span className="truncate">{property.reasoning}</span>
+              <span className="truncate">{normalizeMatchReasoningText(property.reasoning)}</span>
             </div>
           </div>
       </div>
@@ -162,7 +227,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">De ce se potriveste</p>
           {property.zoneReasoning && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {property.zoneReasoning.split('·').map((item) => (
+              {normalizeZoneReasoningParts(property.zoneReasoning).map((item) => (
                 <Badge
                   key={item}
                   variant="outline"
@@ -173,7 +238,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
               ))}
             </div>
           )}
-          <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-white/88">{property.reasoning}</p>
+          <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-white/88">{normalizeMatchReasoningText(property.reasoning)}</p>
         </div>
 
         <ZoneDebugPanel zoneDebug={property.zoneDebug} />
@@ -181,7 +246,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.16em] text-white/45">Pret</p>
-            <p className="mt-1 text-2xl font-black text-white">€{property.price.toLocaleString()}</p>
+            <p className="mt-1 text-2xl font-black text-white">EUR {property.price.toLocaleString()}</p>
           </div>
           <div className="flex items-center gap-2">
             {contact?.phone && agencyId && (
@@ -203,7 +268,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
 const ZoneDebugPanel = ({
   zoneDebug,
 }: {
-  zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+  zoneDebug?: { exact: number; semanticExact?: number; adjacent: number; cluster: number; macro: number; penalty: number; conflict?: number } | null;
 }) => {
   if (!zoneDebug) return null;
 
@@ -221,7 +286,7 @@ const ZoneDebugPanel = ({
   };
 
   const items = [
-    { label: 'Exact', value: zoneDebug.exact },
+    { label: 'Exact', value: Math.max(zoneDebug.exact, zoneDebug.semanticExact || 0) },
     { label: 'Adjacent', value: zoneDebug.adjacent },
     { label: 'Macro', value: zoneDebug.macro },
     { label: 'Penalty', value: zoneDebug.penalty },
@@ -229,7 +294,7 @@ const ZoneDebugPanel = ({
 
   return (
     <div className="agentfinder-zone-debug-panel rounded-2xl border border-white/8 bg-[#07101a]/72 p-3">
-      <p className="agentfinder-zone-debug-title text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Debug zone</p>
+      <p className="agentfinder-zone-debug-title text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Potrivire zona</p>
       <div className="mt-2 grid grid-cols-[0.9fr_1.15fr_0.9fr_0.9fr] gap-2">
         {items.map((item) => (
           <div key={item.label} className={`agentfinder-zone-debug-item rounded-xl border px-2 py-2 text-center ${toneForValue(item.label, item.value)}`}>
@@ -302,10 +367,10 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
     return (
         <Card className="rounded-2xl shadow-2xl bg-[#152A47] text-white border-none mx-2 lg:mx-0">
             <CardHeader className="p-4">
-                <CardTitle className="font-semibold text-white text-base">Proprietăți Potrivite</CardTitle>
+                <CardTitle className="font-semibold text-white text-base">Proprietati Potrivite</CardTitle>
             </CardHeader>
             <CardContent className="text-center text-white/70 py-6">
-            Nicio proprietate potrivită găsită.
+            Nicio proprietate potrivita gasita.
             </CardContent>
             {showPortalManager && agency && contact && (
                 <>
@@ -317,7 +382,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                         </CardTitle>
                         <div className="space-y-3">
                             <p className="text-xs text-white/70">
-                                Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
+                                Ofera clientului un link unde poate vedea proprietatile recomandate si oferi feedback.
                             </p>
                             {contact.portalId ? (
                             <>
@@ -345,7 +410,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                             ) : (
                             <Button onClick={() => handlePortalAction('activate')} disabled={isLoadingPortal} className="w-full bg-primary hover:bg-primary/90 text-white">
                                 {isLoadingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
-                                Activează Portalul
+                                Activeaza Portalul
                             </Button>
                             )}
                         </div>
@@ -370,8 +435,8 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
       <div className="agentfinder-recommendations-floating-grid relative mx-2 grid grid-cols-1 gap-6 lg:mx-0 lg:grid-cols-3">
         <div className="hidden lg:flex absolute top-5 left-5 z-10 items-start">
           <div className="agentfinder-recommended-image-label rounded-2xl border border-white/10 bg-[#09111b]/38 px-4 py-2.5 backdrop-blur-md">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">SelecÈ›ie AI</p>
-            <p className="mt-1 text-sm font-semibold text-white">ProprietÄƒÈ›i Potrivite</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/72">Selectie AI</p>
+            <p className="mt-1 text-sm font-semibold text-white">Proprietati Potrivite</p>
           </div>
         </div>
         {properties.map((prop) => (
@@ -399,8 +464,8 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
         {false && (
         <div className="hidden">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selecție AI</p>
-              <h3 className="font-semibold text-white text-base">Proprietăți Potrivite</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">Selectie AI</p>
+              <h3 className="font-semibold text-white text-base">Proprietati Potrivite</h3>
             </div>
         </div>
         
@@ -447,7 +512,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                     </CardTitle>
                     <div className="space-y-3">
                         <p className="agentfinder-client-portal-description text-xs text-white/70">
-                        Oferă clientului un link unde poate vedea proprietățile recomandate și oferi feedback.
+                        Ofera clientului un link unde poate vedea proprietatile recomandate si oferi feedback.
                         </p>
                         {contact.portalId ? (
                         <>
@@ -491,7 +556,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                             ) : (
                               <Star className="mr-2 h-4 w-4" />
                             )}
-                            Activează Portalul
+                            Activeaza Portalul
                         </Button>
                         )}
                     </div>
@@ -501,3 +566,8 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
       </RecommendationsShell>
     );
 }
+
+
+
+
+

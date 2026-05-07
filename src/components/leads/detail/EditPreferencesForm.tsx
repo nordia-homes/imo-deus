@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
+import { ImobiliareLocationPreferencePicker } from './ImobiliareLocationPreferencePicker';
 
 const preferencesSchema = z.object({
   desiredRooms: z.coerce.number().optional(),
@@ -61,8 +62,9 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
     const value = form.getValues(fieldName);
     
     if (fieldName === 'city') {
-        if (value !== contact.city) {
-            onUpdateContact({ city: value });
+        const nextCity = typeof value === 'string' ? value : '';
+        if (nextCity !== contact.city) {
+            onUpdateContact({ city: nextCity });
         }
     } else {
         if (value !== (contact.preferences?.[fieldName as keyof ContactPreferences] || '')) {
@@ -80,6 +82,20 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
     onUpdateContact({ zones: newZones });
   }
 
+  const handleCanonicalLocationsChange = (payload: {
+    locationPreferencesV2: Contact['locationPreferencesV2'];
+    city: string | null;
+    zones: string[];
+  }) => {
+    form.setValue('city', payload.city || '');
+    form.setValue('zones', payload.zones);
+    onUpdateContact({
+      city: payload.city || undefined,
+      zones: payload.zones,
+      locationPreferencesV2: payload.locationPreferencesV2,
+    });
+  };
+
   const onSubmit = (values: z.infer<typeof preferencesSchema>) => {
     const fullPreferences: ContactPreferences = {
       desiredPriceRangeMin: 0,
@@ -95,7 +111,7 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
   };
   
   const currentZones = form.watch('zones') || [];
-  const availableZones = (watchedCity && locations[watchedCity]) ? locations[watchedCity].sort() : [];
+  const availableZones = (watchedCity && locations[watchedCity]) ? [...locations[watchedCity]].sort() : [];
 
   return (
     <div className="lg:p-6 bg-[#0F1E33] lg:bg-transparent text-white lg:text-inherit h-full lg:h-auto">
@@ -152,7 +168,7 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
                                 <ScrollArea className="h-72">
-                                    {availableZones.map(zone => (
+                                    {availableZones.map((zone: string) => (
                                         <DropdownMenuCheckboxItem
                                             key={zone}
                                             checked={currentZones.includes(zone)}
@@ -171,6 +187,19 @@ export function EditPreferencesForm({ contact, onUpdateContact, onRematch, isMat
             <Card className="bg-[#152A47] border-none text-white rounded-2xl">
                 <CardContent className="pt-6">
                     <FormField control={form.control} name="desiredFeatures" render={({ field }) => ( <FormItem><FormLabel>Caracteristici dorite</FormLabel><FormControl><Textarea {...field} onBlur={() => handleBlur('desiredFeatures')} rows={2} className="bg-white/10 border-white/20" /></FormControl></FormItem> )}/>
+                </CardContent>
+            </Card>
+            <Card className="bg-[#152A47] border-none text-white rounded-2xl">
+                <CardContent className="pt-6">
+                    <FormLabel>Zone exacte Imobiliare.ro</FormLabel>
+                    <p className="mb-2 text-xs text-white/70">
+                      Aceste selecții sunt folosite prioritar pentru matching-ul exact.
+                    </p>
+                    <ImobiliareLocationPreferencePicker
+                      value={contact.locationPreferencesV2}
+                      fallbackCity={contact.city}
+                      onChange={handleCanonicalLocationsChange}
+                    />
                 </CardContent>
             </Card>
           </div>

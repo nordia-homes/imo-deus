@@ -33,6 +33,35 @@ export type ImobiliareMediaLink = {
   link: string;
 };
 
+export type CanonicalLocationRef = {
+  provider: 'imobiliare';
+  locationId: number;
+  oldId?: number | null;
+  depth: 2 | 3;
+  county: string;
+  locality: string;
+  zone?: string | null;
+  display: string;
+  searchText?: string;
+};
+
+export type BuyerLocationPreference = {
+  preference: 'preferred' | 'acceptable' | 'excluded';
+  scope: 'location' | 'locality';
+  location?: CanonicalLocationRef | null;
+  locality?: string | null;
+  source?: 'manual' | 'legacy_zone' | 'legacy_city' | 'legacy_general_zone' | 'legacy_text' | 'migration';
+  sourceText?: string | null;
+  weight?: number;
+};
+
+export type PropertyLocationProfile = {
+  primary: CanonicalLocationRef | null;
+  publishLocationId?: number | null;
+  source: 'manual' | 'derived' | 'migrated';
+  confidence?: number | null;
+};
+
 export type ImobiliarePortalProfile = {
   enabled?: boolean;
   customReference?: string;
@@ -234,6 +263,7 @@ export type Property = {
   portalProfiles?: {
     imobiliare?: ImobiliarePortalProfile;
   };
+  locationProfile?: PropertyLocationProfile | null;
 
   // Commission fields
   commissionType?: 'percentage' | 'fixed';
@@ -285,10 +315,12 @@ export type PropertyStatusEvent = {
 
 export type ZoneDebugBreakdown = {
   exact: number;
+  semanticExact?: number;
   adjacent: number;
   cluster: number;
   macro: number;
   penalty: number;
+  conflict?: number;
 };
 
 export type MatchedProperty = Property & {
@@ -379,6 +411,7 @@ export type Contact = {
     preferencesLinkId?: string;
     preferencesChatHistory?: { role: 'user' | 'model'; content: string; }[];
     generalZone?: 'Nord' | 'Sud' | 'Est' | 'Vest' | 'Central' | 'Oricare' | 'all' | null;
+    locationPreferencesV2?: BuyerLocationPreference[] | null;
     archivedAt?: string | null;
     archivedByAge?: boolean;
 };

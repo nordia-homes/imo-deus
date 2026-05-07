@@ -45,6 +45,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
 import { useAgencyAgents } from '@/hooks/use-agency-agents';
+import { buildPropertyLocationProfileFromLocationLike } from '@/lib/location-catalog/shapes';
 import {
   PropertyStatusChangeDialog,
   type PropertyStatusChangePayload,
@@ -1416,6 +1417,9 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               locationId: selectedImobiliareLocation?.id || null,
               locationLabel: selectedImobiliareLocation?.display || null,
           };
+          const nextLocationProfile = selectedImobiliareLocation
+            ? buildPropertyLocationProfileFromLocationLike(selectedImobiliareLocation, 'manual')
+            : propertyData?.locationProfile || null;
 
           const propertyDataToSave = {
               title: values.title,
@@ -1475,6 +1479,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 ...(propertyData?.portalProfiles || {}),
                 imobiliare: nextPortalProfile,
               },
+              locationProfile: nextLocationProfile,
           };
       
           if (isEditMode) {

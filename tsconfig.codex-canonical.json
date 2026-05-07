@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/types.ts",
+    "src/lib/matching-engine.ts",
+    "src/lib/location-catalog/**/*.ts",
+    "src/lib/location-catalog/**/*.test.ts",
+    "src/lib/zones/**/*.ts",
+    "src/components/leads/detail/PreferencesCard.tsx",
+    "src/components/leads/detail/EditPreferencesForm.tsx",
+    "src/components/leads/detail/ImobiliareLocationPreferencePicker.tsx",
+    "src/components/leads/detail/MatchedProperties.tsx",
+    "src/components/properties/detail/MatchedLeadsTab.tsx",
+    "src/components/properties/detail/actions/PotentialBuyersCard.tsx",
+    "src/ai/flows/property-matcher.ts",
+    "src/ai/flows/update-buyer-preferences.ts",
+    "src/lib/locations.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}

@@ -1,6 +1,11 @@
-import type { Contact, ContactPreferences, MatchedBuyer, MatchedProperty, Property } from '@/lib/types';
+import type { BuyerLocationPreference, CanonicalLocationRef, Contact, ContactPreferences, MatchedBuyer, MatchedProperty, Property } from '@/lib/types';
+import {
+  deriveCanonicalBuyerLocationPreferences,
+  getCanonicalPropertyLocationContext,
+} from '@/lib/location-catalog/imobiliare-canonical';
+import { scoreCanonicalLocationAgainstPreferences } from '@/lib/location-catalog/location-scoring';
 import { buildPropertyZoneFact, scorePropertyAgainstZonePreferences } from '@/lib/zones/matching';
-import { normalizeRomanianText, preparedBucurestiIlfovOntology } from '@/lib/zones/ontology';
+import { normalizeRomanianText, preparedBucurestiIlfovOntology, type PreparedZone } from '@/lib/zones/ontology';
 import { normalizeZoneInput } from '@/lib/zones/normalization';
 import type { ClientZonePreference } from '@/lib/zones/types';
 
@@ -52,11 +57,12 @@ const formatReasoning = (positives: string[], caution?: string) => {
 };
 
 const getZonePriority = (item: {
-  zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+  zoneDebug?: { exact: number; semanticExact?: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
 }) => {
   const debug = item.zoneDebug;
   if (!debug) return 0;
-  if (debug.exact > 0) return 4;
+  if (debug.exact > 0) return 5;
+  if ((debug.semanticExact || 0) > 0) return 4;
   if (debug.adjacent > 0) return 3;
   if (debug.cluster > 0) return 2;
   if (debug.macro > 0) return 1;
@@ -68,7 +74,7 @@ export function compareMatchedItemsByZonePriority<
     matchScore: number;
     price?: number;
     budgetScore?: number;
-    zoneDebug?: { exact: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
+    zoneDebug?: { exact: number; semanticExact?: number; adjacent: number; cluster: number; macro: number; penalty: number } | null;
   }
 >(left: T, right: T) {
   const priorityDelta = getZonePriority(right) - getZonePriority(left);
@@ -338,9 +344,68 @@ function parseZonePreferenceFragment(fragment: string, defaultPreference: Client
   };
 }
 
+const parseSectorNumber = (value?: string | null) => {
+  const match = normalizeRomanianText(value).match(/^sector\s+([1-6])$/);
+  return match ? Number(match[1]) : null;
+};
+
+function mapCanonicalLocationToOntologyZone(location?: CanonicalLocationRef | null): PreparedZone | null {
+  if (!location?.zone) {
+    return null;
+  }
+
+  const zoneNorm = normalizeRomanianText(location.zone);
+  const localityNorm = normalizeRomanianText(location.locality);
+  const countyNorm = normalizeRomanianText(location.county);
+  const sectorNumber = parseSectorNumber(location.locality);
+  const candidates = preparedBucurestiIlfovOntology.zoneByNormalizedName.get(zoneNorm) ?? [];
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  const ranked = candidates
+    .map((zone) => {
+      let score = 0;
+      if (normalizeRomanianText(zone.county) === countyNorm) score += 2;
+      if (normalizeRomanianText(zone.locality) === localityNorm) score += 3;
+      if (normalizeRomanianText(zone.parent) === localityNorm) score += 4;
+      if (sectorNumber && zone.sector === sectorNumber) score += 5;
+      if (normalizeRomanianText(zone.name) === zoneNorm) score += 2;
+      return { zone, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score);
+
+  return ranked[0]?.zone ?? (candidates.length === 1 ? candidates[0] : null);
+}
+
+function buildCanonicalPropertyZoneFact(propertyId: string, location?: CanonicalLocationRef | null) {
+  const matchedZone = mapCanonicalLocationToOntologyZone(location);
+  return {
+    propertyId,
+    rawZoneText: location?.display || '',
+    zoneId: matchedZone?.zone_id ?? null,
+    zoneName: matchedZone?.name ?? location?.zone ?? null,
+    locality: location?.locality ?? null,
+    county: location?.county ?? null,
+    sector: matchedZone?.sector ?? parseSectorNumber(location?.locality),
+    macroAreas: matchedZone?.macro_area ?? [],
+    commercialClusters: matchedZone?.commercial_clusters ?? [],
+    normalization: {
+      matched_zone_id: matchedZone?.zone_id ?? null,
+      matched_zone_name: matchedZone?.name ?? null,
+      match_type: matchedZone ? ('exact' as const) : ('ambiguous' as const),
+      confidence: matchedZone ? 1 : 0,
+      alternatives: [],
+    },
+  };
+}
+
 export function deriveZonePreferencesFromContact(contact: Contact, preferences: ContactPreferences): ClientZonePreference[] {
   const collected: ClientZonePreference[] = [];
   const seen = new Set<string>();
+  const canonicalPreferences = deriveCanonicalBuyerLocationPreferences(contact);
 
   const pushPreference = (preference: ClientZonePreference) => {
     const key = [
@@ -426,6 +491,40 @@ export function deriveZonePreferencesFromContact(contact: Contact, preferences: 
     }
   };
 
+  const addCanonicalPreference = (preference: BuyerLocationPreference) => {
+    if (preference.scope === 'location' && preference.location) {
+      const mappedZone = mapCanonicalLocationToOntologyZone(preference.location);
+
+      if (mappedZone) {
+        pushPreference({
+          scope: 'zone',
+          preference: preference.preference,
+          zoneId: mappedZone.zone_id,
+          sourceText: preference.sourceText || preference.location.display,
+          weight: preference.weight ?? (preference.preference === 'acceptable' ? 0.72 : 1),
+        });
+        return;
+      }
+    }
+
+    const locality = preference.location?.locality || preference.locality;
+    if (locality) {
+      pushPreference({
+        scope: 'locality',
+        preference: preference.preference,
+        locality,
+        sourceText: preference.sourceText || locality,
+        weight: preference.weight ?? (preference.preference === 'acceptable' ? 0.72 : 1),
+      });
+    }
+  };
+
+  for (const canonicalPreference of canonicalPreferences) {
+    addCanonicalPreference(canonicalPreference);
+  }
+
+  return collected;
+
   for (const zone of contact.zones || []) {
     addZoneTextAsPreference(zone, 'preferred');
   }
@@ -482,43 +581,81 @@ function locationScore(property: Property, preferences: ContactPreferences, cont
   let zoneDebug:
     | {
         exact: number;
+        semanticExact?: number;
         adjacent: number;
         cluster: number;
         macro: number;
         penalty: number;
+        conflict?: number;
       }
     | null = null;
 
   if (contact) {
-    const propertyFact = buildPropertyZoneFact({
-      propertyId: property.id,
-      rawZoneText: joinDefined([property.zone, property.location, property.address, property.city]),
-      locality: property.city || property.location.split(',')[0],
-      address: property.address,
-      title: property.title,
-      description: property.description,
+    const canonicalLocationContext = getCanonicalPropertyLocationContext(property);
+    const canonicalPropertyLocation = canonicalLocationContext.location;
+    const canonicalPreferences = deriveCanonicalBuyerLocationPreferences(contact);
+    const canonicalMatch = scoreCanonicalLocationAgainstPreferences({
+      propertyLocation: canonicalPropertyLocation,
+      preferences: canonicalPreferences,
     });
+
+    if (!canonicalMatch.accepted) {
+      zoneDebug = {
+        exact: canonicalMatch.breakdown.exact,
+        semanticExact: 0,
+        adjacent: 0,
+        cluster: 0,
+        macro: canonicalMatch.breakdown.locality,
+        penalty: 0,
+        conflict: canonicalLocationContext.hasConflict ? 1 : 0,
+      };
+
+      return {
+        score: 0,
+        positives,
+        zoneReasons: canonicalMatch.hardRejectReason ? [canonicalMatch.hardRejectReason] : [],
+        zoneDebug,
+      };
+    }
+
+    const canonicalPoints = Math.round((canonicalMatch.score / 100) * 16);
+    score += canonicalPoints;
+    positives.push(...canonicalMatch.reasons);
+
+    if (canonicalMatch.breakdown.exact > 0) {
+      zoneReasons.push('locație exactă imobiliare.ro');
+    } else if (canonicalMatch.breakdown.locality > 0) {
+      zoneReasons.push('aceeași localitate');
+    }
+
+    const propertyFact = buildCanonicalPropertyZoneFact(property.id, canonicalPropertyLocation);
 
     const zonePreferences = deriveZonePreferencesFromContact(contact, preferences);
     const zoneMatch = scorePropertyAgainstZonePreferences({
       propertyFact,
       preferences: zonePreferences,
     });
+    const graphZoneScore =
+      100 *
+      (
+        0.45 * zoneMatch.breakdown.adjacency_fit +
+        0.3 * zoneMatch.breakdown.cluster_fit +
+        0.15 * zoneMatch.breakdown.macro_fit +
+        0.1 * zoneMatch.breakdown.penalty_component
+      );
     zoneDebug = {
-      exact: zoneMatch.breakdown.exact_or_alias_fit,
+      exact: canonicalMatch.breakdown.exact,
+      semanticExact: 0,
       adjacent: zoneMatch.breakdown.adjacency_fit,
       cluster: zoneMatch.breakdown.cluster_fit,
       macro: zoneMatch.breakdown.macro_fit,
       penalty: zoneMatch.breakdown.penalty_component,
+      conflict: canonicalLocationContext.hasConflict ? 1 : 0,
     };
 
-    const zonePoints = Math.round((zoneMatch.zoneScore / 100) * 18);
+    const zonePoints = Math.round((graphZoneScore / 100) * 8);
     score += zonePoints;
-
-    if (zoneMatch.breakdown.exact_or_alias_fit > 0) {
-      positives.push('zona se potrivește direct cu preferințele clientului');
-      zoneReasons.push('zonă exactă');
-    } else if (zoneMatch.breakdown.adjacency_fit > 0) {
+    if (zoneMatch.breakdown.adjacency_fit > 0) {
       positives.push('zona este adiacentă unei preferințe importante');
       zoneReasons.push('zonă adiacentă');
     }
@@ -528,14 +665,12 @@ function locationScore(property: Property, preferences: ContactPreferences, cont
       zoneReasons.push('același cluster');
     }
 
-    if (zoneMatch.breakdown.macro_fit > 0 && zoneMatch.breakdown.exact_or_alias_fit === 0) {
+    if (zoneMatch.breakdown.macro_fit > 0) {
       positives.push('macro-zona este compatibilă cu căutarea');
       zoneReasons.push('macro-zonă compatibilă');
     }
 
-    if (!zoneMatch.explanation.accepted) {
-      score = Math.max(0, score - 14);
-    } else if (zoneMatch.breakdown.penalty_component < 1) {
+    if (zoneMatch.breakdown.penalty_component < 1) {
       score = Math.max(0, score - Math.round((1 - zoneMatch.breakdown.penalty_component) * 6));
     }
   } else {
@@ -674,3 +809,4 @@ export function getDeterministicMatchedBuyers(
     .sort(compareMatchedItemsByZonePriority)
     .slice(0, limit);
 }
+

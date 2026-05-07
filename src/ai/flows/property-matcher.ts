@@ -97,6 +97,7 @@ async function rankWithOpenAI<
     zoneReasoning?: string;
     zoneDebug?: {
       exact: number;
+      semanticExact?: number;
       adjacent: number;
       cluster: number;
       macro: number;
@@ -239,7 +240,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
     matchScore: property.matchScore,
     reasoning: property.reasoning,
     zoneReasoning: property.zoneReasoning || '',
-    zoneDebug: property.zoneDebug || { exact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
+    zoneDebug: property.zoneDebug || { exact: 0, semanticExact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
     title: property.title,
     price: property.price,
     rooms: property.rooms,
@@ -289,7 +290,7 @@ export async function propertyMatcher(input: PropertyMatcherInput): Promise<Prop
           reasoning: mergeDeterministicBudgetReasoning(item.reasoning, (original as typeof original & { budgetReasoning?: string }).budgetReasoning),
         };
       })
-      .filter(Boolean)
+      .filter((item): item is MatchedProperty => item !== null)
       .sort(compareMatchedItemsByZonePriority) as MatchedProperty[];
 
     return { matchedProperties };
@@ -316,7 +317,7 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
     matchScore: buyer.matchScore,
     reasoning: buyer.reasoning,
     zoneReasoning: buyer.zoneReasoning || '',
-    zoneDebug: buyer.zoneDebug || { exact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
+    zoneDebug: buyer.zoneDebug || { exact: 0, semanticExact: 0, adjacent: 0, cluster: 0, macro: 0, penalty: 1 },
     name: buyer.name,
     budget: buyer.budget || 0,
     city: buyer.city || '',
@@ -370,7 +371,7 @@ export async function buyerMatcher(input: BuyerMatcherInput): Promise<BuyerMatch
           reasoning: mergeDeterministicBudgetReasoning(item.reasoning, (original as typeof original & { budgetReasoning?: string }).budgetReasoning),
         };
       })
-      .filter(Boolean)
+      .filter((item): item is MatchedBuyer => item !== null)
       .sort(compareMatchedItemsByZonePriority) as MatchedBuyer[];
 
     return { matchedBuyers };

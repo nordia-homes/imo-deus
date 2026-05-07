@@ -11,6 +11,7 @@ import { z } from 'genkit';
 import { adminDb } from '@/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Interaction } from '@/lib/types';
+import { deriveCanonicalBuyerLocationPreferences } from '@/lib/location-catalog/imobiliare-canonical';
 
 // Schemas remain the same
 const UpdateBuyerPreferencesInputSchema = z.object({
@@ -98,6 +99,14 @@ const updateBuyerPreferencesFlow = ai.defineFlow(
             desiredPriceRangeMax: Math.round(formData.budget * 1.2),
           };
         }
+
+        const projectedContact = {
+          ...existingContactData,
+          ...('city' in dataToUpdate ? { city: dataToUpdate.city } : {}),
+          ...('generalZone' in dataToUpdate ? { generalZone: dataToUpdate.generalZone } : {}),
+          ...('zones' in dataToUpdate ? { zones: dataToUpdate.zones } : {}),
+        };
+        dataToUpdate.locationPreferencesV2 = deriveCanonicalBuyerLocationPreferences(projectedContact as any);
         
         // Step 4: If there are notes, add them to the interaction history using FieldValue.arrayUnion
         if (mentiuni) {
