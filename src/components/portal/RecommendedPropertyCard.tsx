@@ -120,8 +120,8 @@ export function RecommendedPropertyCard({
   };
 
   return (
-    <article className="space-y-0">
-      <Card className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]">
+    <article className="space-y-0 overflow-hidden rounded-[1.75rem]">
+      <Card className="group overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)] md:rounded-[1.75rem]">
         <CardContent className="p-0">
           <div className="relative">
             <Link href={detailHref} className="relative block aspect-[16/10] overflow-hidden rounded-t-[1.75rem]" target="_blank" rel="noopener noreferrer">
@@ -210,7 +210,7 @@ export function RecommendedPropertyCard({
         </CardContent>
       </Card>
 
-      <div className="-mt-1 rounded-b-[1.6rem] rounded-t-[1.25rem] border border-[var(--app-surface-border)] bg-[var(--agentfinder-shell-panel)] p-3 shadow-[0_22px_44px_rgba(37,55,88,0.14)]">
+      <div className="-mt-px rounded-b-[1.6rem] rounded-t-none border border-t-0 border-[var(--app-surface-border)] bg-[var(--agentfinder-shell-panel)] p-3 shadow-none md:-mt-1 md:rounded-t-[1.25rem] md:border-t md:shadow-[0_22px_44px_rgba(37,55,88,0.14)]">
         <div className="mb-2 flex items-center justify-between px-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#59709b]">Feedback rapid</p>
           <p className="text-xs font-medium text-slate-500">Alege o reactie</p>

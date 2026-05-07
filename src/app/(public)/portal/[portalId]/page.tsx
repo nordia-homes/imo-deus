@@ -119,30 +119,33 @@ function PortalContent({ portalId }: { portalId: string }) {
             })}
           </div>
 
-          <div className="overflow-hidden rounded-[28px] border border-[#d7e0ee] bg-[linear-gradient(135deg,#f8fbff_0%,#eef4ff_100%)] shadow-[0_22px_44px_rgba(37,55,88,0.10)]">
-            <div className="grid gap-0 lg:grid-cols-[1.4fr_0.9fr]">
-              <div className="p-6 lg:p-8">
-                <div className="inline-flex items-center rounded-full border border-[#d7e0ee] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#59709b]">
-                  Vezi mai mult
+          <div className="relative overflow-hidden rounded-[30px] border border-[#0f223e] bg-[linear-gradient(135deg,#06101f_0%,#0c1d36_46%,#14345c_100%)] shadow-[0_38px_110px_rgba(6,16,31,0.42)] ring-1 ring-[#d8e7ff]/12">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0)_24%),radial-gradient(circle_at_78%_50%,rgba(96,165,250,0.34)_0%,rgba(96,165,250,0)_22%),radial-gradient(circle_at_bottom_left,rgba(52,211,153,0.24)_0%,rgba(52,211,153,0)_20%)]" />
+            <div className="absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.92),rgba(255,255,255,0))]" />
+            <div className="absolute inset-y-5 left-5 right-5 hidden rounded-[24px] border border-white/8 lg:block" />
+
+            <div className="relative flex flex-col gap-8 p-7 lg:flex-row lg:items-center lg:justify-between lg:px-10 lg:py-9">
+              <div className="min-w-0 flex-1 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/78 shadow-[0_10px_24px_rgba(7,13,24,0.18)] backdrop-blur-sm">
+                  <Home className="h-3.5 w-3.5" />
+                  Portofoliu extins
                 </div>
-                <h3 className="mt-4 max-w-xl font-headline text-[clamp(1.45rem,3vw,2.15rem)] font-bold tracking-[-0.04em] text-slate-950">
-                  Exploreaza tot portofoliul disponibil
+                <h3 className="mt-5 font-headline text-[clamp(1.85rem,2.55vw,2.7rem)] font-bold tracking-[-0.05em] text-white lg:whitespace-nowrap">
+                  Exploreaza tot portofoliul disponibil.
                 </h3>
-                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                  Daca vrei sa compari mai multe optiuni, intra in toate proprietatile publice si continua selectia fara sa pierzi nimic relevant.
+                <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-8 text-slate-200/84 md:text-base lg:mx-0">
+                  Daca vrei mai mult context inainte de decizie, vezi toate proprietatile publice ale agentiei intr-o
+                  experienta mai ampla, clara si usor de comparat.
                 </p>
               </div>
 
-              <div className="flex items-center border-t border-[#d7e0ee] bg-[linear-gradient(180deg,#eef4ff_0%,#e5eefc_100%)] p-5 lg:border-l lg:border-t-0 lg:p-8">
-                <div className="w-full rounded-[22px] border border-white/70 bg-white/92 p-4 shadow-[0_16px_30px_rgba(37,55,88,0.08)]">
-                  <p className="text-sm font-medium leading-6 text-slate-600">
-                    Vezi rapid toate proprietatile disponibile ale agentiei si descopera mai multe variante potrivite pentru tine.
-                  </p>
+              <div className="w-full shrink-0 lg:max-w-[360px] lg:self-center">
+                <div className="p-0 lg:rounded-[26px] lg:border lg:border-white/16 lg:bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] lg:p-4 lg:shadow-[0_30px_54px_rgba(3,8,18,0.34)] lg:ring-1 lg:ring-white/12 lg:backdrop-blur-md">
                   <Button
                     asChild
-                    className="mt-4 h-14 w-full rounded-[16px] border-0 bg-[linear-gradient(135deg,#4b6592_0%,#3f567f_100%)] px-6 text-base font-semibold text-white shadow-[0_18px_34px_rgba(47,66,104,0.26)] hover:bg-[linear-gradient(135deg,#5672a3_0%,#47618e_100%)]"
+                    className="relative h-16 w-full overflow-visible rounded-[18px] border border-[#f8fbff] bg-[linear-gradient(135deg,#ffffff_0%,#f4f8ff_100%)] px-6 text-base font-semibold text-[#0f2747] shadow-[inset_0_1px_0_rgba(255,255,255,0.98),0_22px_38px_rgba(2,6,16,0.30)] transition-all duration-200 hover:scale-[1.01] hover:bg-[linear-gradient(135deg,#ffffff_0%,#e8f0ff_100%)] before:absolute before:inset-[-10px] before:-z-10 before:rounded-[28px] before:border before:border-[#dbe8ff]/70 before:opacity-70 before:content-[''] before:animate-ping after:absolute after:inset-[-20px] after:-z-20 after:rounded-[38px] after:bg-[radial-gradient(circle,rgba(255,255,255,0.32)_0%,rgba(160,199,255,0.18)_38%,rgba(160,199,255,0)_72%)] after:content-['']"
                   >
-                    <Link href={`/agencies/${portal.agencyId}/properties`} className="inline-flex items-center justify-center gap-2 text-white no-underline">
+                    <Link href={`/agencies/${portal.agencyId}/properties`} className="inline-flex items-center justify-center gap-2 no-underline">
                       Vezi toate proprietatile
                       <ArrowRight className="h-4 w-4" />
                     </Link>
