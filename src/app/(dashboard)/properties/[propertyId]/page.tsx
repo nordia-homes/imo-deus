@@ -6,6 +6,7 @@ import { useParams, notFound } from 'next/navigation';
 import type { Property, Viewing, Contact, MatchedBuyer } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { buyerMatcherFromProperty } from '@/ai/flows/property-matcher';
+import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
 // UI Components
 import { Skeleton } from '@/components/ui/skeleton';
@@ -175,9 +176,7 @@ export default function PropertyDetailPage() {
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
     const displaySurface = property.totalSurface ?? property.squareFootage;
     const publicPropertyUrl = agencyId
-        ? agency?.customDomain
-            ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}/properties/${propertyId}`
-            : `https://studio--studio-652232171-42fb6.us-central1.hosted.app/agencies/${agencyId}/properties/${propertyId}`
+        ? buildAgencyPublicUrl(agency ?? { id: agencyId }, `/properties/${propertyId}`)
         : undefined;
 
     if (isMobile) {

@@ -1,4 +1,5 @@
 import { firebaseConfig } from '@/firebase/config';
+import type { Agency } from '@/lib/types';
 
 export function normalizeDomain(input?: string | null): string {
   if (!input) return '';
@@ -77,4 +78,38 @@ export function buildPublicPath(basePath: string, path = ''): string {
   }
 
   return `${basePath}${normalizedPath}`;
+}
+
+function normalizeDomainForUrl(input?: string | null): string {
+  return getCanonicalCustomDomain(input).replace(/^https?:\/\//, '').replace(/\/+$/, '');
+}
+
+export function buildAgencyPublicUrl(agency?: Pick<Agency, 'id' | 'customDomain'> | null, path = ''): string {
+  const normalizedPath = path
+    ? path.startsWith('/')
+      ? path
+      : `/${path}`
+    : '';
+
+  const customDomain = normalizeDomainForUrl(agency?.customDomain);
+  if (customDomain) {
+    return `https://${customDomain}${normalizedPath}`;
+  }
+
+  if (!agency?.id) {
+    return normalizedPath || '/';
+  }
+
+  return `/agencies/${agency.id}${normalizedPath}`;
+}
+
+export function buildClientPortalUrl(agency?: Pick<Agency, 'id' | 'customDomain'> | null, portalId?: string | null): string {
+  if (!portalId) return '';
+
+  const customDomain = normalizeDomainForUrl(agency?.customDomain);
+  if (customDomain) {
+    return `https://${customDomain}/portal/${portalId}`;
+  }
+
+  return `/portal/${portalId}`;
 }

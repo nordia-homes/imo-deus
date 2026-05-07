@@ -2,6 +2,9 @@
   "functions": {
     "source": "functions"
   },
+  "firestore": {
+    "rules": "src/firestore.rules"
+  },
   "hosting": {
     "public": "desktop-downloads",
     "ignore": [

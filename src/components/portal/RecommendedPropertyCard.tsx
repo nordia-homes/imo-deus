@@ -12,6 +12,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Bath, BedDouble, Calendar, Heart, MapPin, MessageCircle, Ruler, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 
 interface RecommendedPropertyCardProps {
   property: Property;
@@ -30,6 +31,8 @@ export function RecommendedPropertyCard({
 }: RecommendedPropertyCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { isCustomDomain } = usePublicAgency();
+  const publicPath = usePublicPath();
   const [comment, setComment] = useState(recommendation.clientComment || '');
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | 'none'>(recommendation.clientFeedback);
   const [isCommentDirty, setIsCommentDirty] = useState(false);
@@ -38,7 +41,9 @@ export function RecommendedPropertyCard({
 
   const recommendationRef = doc(firestore, 'portals', portalId, 'recommendations', recommendation.id);
   const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
-  const detailHref = `/agencies/${agencyId}/properties/${property.id}`;
+  const detailHref = isCustomDomain
+    ? publicPath(`/properties/${property.id}`)
+    : `/agencies/${agencyId}/properties/${property.id}`;
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
   const displaySurface = property.totalSurface ?? property.squareFootage;
   const shareImageUrl = `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;

@@ -14,6 +14,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
 const sanitizeForWhatsapp = (phone?: string | null) => {
     if (!phone) return '';
@@ -52,7 +53,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
       e.stopPropagation();
       if (!agencyId || !contact?.phone) return;
 
-      const propertyUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
+      const propertyUrl = buildAgencyPublicUrl({ id: agencyId }, `/properties/${property.id}`);
       const message = `Salut, ${contact.name}! Cred că această proprietate ți s-ar potrivi: ${propertyUrl}`;
       const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
       const whatsappUrl = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;

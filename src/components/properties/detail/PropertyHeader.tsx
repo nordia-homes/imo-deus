@@ -20,6 +20,7 @@ import { collection, doc, writeBatch } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { ACTION_CARD_CLASSNAME, ACTION_PILL_CLASSNAME } from './actions/cardStyles';
 import {
@@ -28,7 +29,7 @@ import {
 } from '@/components/properties/PropertyStatusChangeDialog';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
-    const { agencyId } = useAgency();
+    const { agencyId, agency } = useAgency();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -221,7 +222,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                         Editează
                                     </DropdownMenuItem>
                                      <DropdownMenuItem asChild>
-                                        <Link href={`/agencies/${agencyId}/properties/${property.id}`} target="_blank" rel="noopener noreferrer">
+                                        <Link href={buildAgencyPublicUrl(agency ?? (agencyId ? { id: agencyId } : null), `/properties/${property.id}`)} target="_blank" rel="noopener noreferrer">
                                             <Globe className="mr-2 h-4 w-4"/> 
                                             Vezi pe Website
                                         </Link>

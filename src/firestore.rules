@@ -39,26 +39,11 @@ service cloud.firestore {
     }
 
     function isPublicPreferencesUpdate(agencyId, contactId) {
-      // Public form update must be unauthenticated
-      if (request.auth != null) {
-        return false;
-      }
-      
-      // Check for the validation token
-      if (!('validationLinkId' in request.resource.data)) {
-        return false;
-      }
-      
-      let linkId = request.resource.data.validationLinkId;
-      
-      // Validate the token exists and maps to the correct contact/agency
-      if (!exists(/databases/$(database)/documents/buyer-preferences-links/$(linkId))) {
-        return false;
-      }
-      let linkData = get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data;
-
-      // Check if the link data matches the document being written to
-      return linkData.contactId == contactId && linkData.agencyId == agencyId;
+      return request.auth == null &&
+             'validationLinkId' in request.resource.data &&
+             exists(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)) &&
+             get(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)).data.contactId == contactId &&
+             get(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)).data.agencyId == agencyId;
     }
 
     // --- User Profiles ---
@@ -154,8 +139,10 @@ service cloud.firestore {
       // Anyone with the link can read portal and recommendation data.
       allow get, list: if true;
       
-      // Agency members can create/delete portals for contacts in their agency.
-      allow create, delete: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
+      // Agency members can create portals for contacts in their agency.
+      allow create: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
+      // Deletes must read the existing document because request.resource is null on delete.
+      allow delete: if isSignedIn() && isUserInAgency(resource.data.agencyId);
 
       // --- Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {

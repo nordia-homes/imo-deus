@@ -1,4 +1,5 @@
-import type { Agency, Property } from '@/lib/types';
+import type { Agency, ClientPortal, Property } from '@/lib/types';
+import type { Metadata } from 'next';
 import { firebaseConfig } from '@/firebase/config';
 import { getCanonicalCustomDomain } from '@/lib/domain-routing';
 
@@ -89,6 +90,12 @@ export async function getAgencyById(agencyId: string): Promise<Agency | null> {
   return { id: agencyId, ...agencyData } as Agency;
 }
 
+export async function getClientPortalById(portalId: string): Promise<ClientPortal | null> {
+  const portalData = await getServerDocument<Omit<ClientPortal, 'id'>>(`portals/${portalId}`);
+  if (!portalData) return null;
+  return { id: portalId, ...portalData } as ClientPortal;
+}
+
 export async function getPropertyForAgency(agencyId: string, propertyId: string): Promise<Property | null> {
   const propertyData = await getServerDocument<Omit<Property, 'id'>>(`agencies/${agencyId}/properties/${propertyId}`);
   if (!propertyData) return null;
@@ -97,6 +104,19 @@ export async function getPropertyForAgency(agencyId: string, propertyId: string)
 
 export function buildPublicPropertyImageUrl(baseUrl: string, agencyId: string, propertyId: string): string {
   return `${baseUrl.replace(/\/$/, '')}/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(propertyId)}`;
+}
+
+function getDefaultPublicBaseUrl(): string {
+  return 'https://studio--studio-652232171-42fb6.us-central1.hosted.app';
+}
+
+function buildAbsoluteUrl(baseUrl: string, value?: string | null): string | undefined {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
+  const normalizedValue = value.startsWith('/') ? value : `/${value}`;
+  return `${normalizedBase}${normalizedValue}`;
 }
 
 export function getFirstPropertyImage(property?: Property | null): string | undefined {
@@ -115,4 +135,46 @@ export function getFirstPropertyImage(property?: Property | null): string | unde
   }
 
   return undefined;
+}
+
+export function buildClientPortalMetadata({
+  portal,
+  agency,
+  domain,
+}: {
+  portal: ClientPortal;
+  agency: Agency | null;
+  domain?: string;
+}): Metadata {
+  const title = agency?.name
+    ? `${agency.name} | Selectie personalizata pentru ${portal.contactName}`
+    : `Selectie personalizata pentru ${portal.contactName}`;
+  const description = `Buna ${portal.contactName}, gasesti aici o selectie personalizata de proprietati, fara comision, recomandate pentru cerintele tale.`;
+  const baseUrl = domain
+    ? `https://${domain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`
+    : agency?.customDomain
+      ? `https://${getCanonicalCustomDomain(agency.customDomain)}`
+      : getDefaultPublicBaseUrl();
+  const image = buildAbsoluteUrl(baseUrl, agency?.shareImageUrl || agency?.logoUrl) || `${baseUrl}/imodeus-logo.png`;
+  const url = baseUrl ? `${baseUrl}/portal/${portal.id}` : undefined;
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: agency?.name || 'Portal Client',
+      type: 'website',
+      url,
+      images: [{ url: image, alt: agency?.name || portal.contactName }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
+  };
 }

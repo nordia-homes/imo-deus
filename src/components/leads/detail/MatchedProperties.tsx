@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { buildAgencyPublicUrl, buildClientPortalUrl } from '@/lib/domain-routing';
 
 const sanitizeForWhatsapp = (phone?: string | null) => {
     if (!phone) return '';
@@ -113,8 +114,18 @@ const normalizeMatchReasoningText = (reasoning?: string | null) => {
     .trim();
 };
 
-const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact }: { property: MatchedProperty, onAddRecommendation: (property: Property) => void, agencyId: string | null | undefined, contact: Contact | null }) => {
-  const imageUrl = getMatchedPropertyImageUrl(property, agencyId);
+const MatchedPropertyCard = ({
+  property,
+  onAddRecommendation,
+  agency,
+  contact,
+}: {
+  property: MatchedProperty,
+  onAddRecommendation: (property: Property) => void,
+  agency: Pick<Agency, 'id' | 'customDomain'> | null,
+  contact: Contact | null
+}) => {
+  const imageUrl = getMatchedPropertyImageUrl(property, agency?.id);
   const constructionYear = property.constructionYear;
   const normalizedScore = Math.max(0, Math.min(100, property.matchScore || 0));
   const scoreTone =
@@ -135,9 +146,9 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
   const handleWhatsAppShare = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!agencyId || !contact?.phone) return;
+      if (!agency?.id || !contact?.phone) return;
 
-      const propertyUrl = `${window.location.origin}/agencies/${agencyId}/properties/${property.id}`;
+      const propertyUrl = buildAgencyPublicUrl(agency, `/properties/${property.id}`);
       const message = `Salut, ${contact.name}! Cred ca aceasta proprietate ti s-ar potrivi: ${propertyUrl}`;
       const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
       const whatsappUrl = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
@@ -249,7 +260,7 @@ const MatchedPropertyCard = ({ property, onAddRecommendation, agencyId, contact 
             <p className="mt-1 text-2xl font-black text-white">EUR {property.price.toLocaleString()}</p>
           </div>
           <div className="flex items-center gap-2">
-            {contact?.phone && agencyId && (
+            {contact?.phone && agency?.id && (
               <Button onClick={handleWhatsAppShare} size="icon" className="agentfinder-button-secondary h-10 w-10 rounded-full border border-emerald-300/24 bg-emerald-500 text-white shadow-[0_12px_28px_-12px_rgba(34,197,94,0.8)] hover:bg-emerald-400">
                 <WhatsappIcon className="h-5 w-5" />
               </Button>
@@ -316,7 +327,18 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
   const [copied, setCopied] = useState(false);
   const isAgentfinderTheme = agency?.themePreset === 'agentfinder';
 
-  const portalLink = contact?.portalId ? `${window.location.origin}/portal/${contact.portalId}` : '';
+  const rawPortalLink = buildClientPortalUrl(agency, contact?.portalId);
+  const portalLink =
+    rawPortalLink && rawPortalLink.startsWith('/') && typeof window !== 'undefined'
+      ? new URL(rawPortalLink, window.location.origin).toString()
+      : rawPortalLink;
+  const sanitizedPortalPhone = sanitizeForWhatsapp(contact?.phone);
+  const portalWhatsappMessage = portalLink && contact?.name
+    ? `Buna ${contact.name}, pentru ca ati fost recent interesat(a) de una dintre proprietatile noastre, va rugam sa gasiti aici o selectie personalizata de proprietati, fara comision, care credem ca se potrivesc cerintelor dvs.\n\n${portalLink}`
+    : '';
+  const portalWhatsappHref = sanitizedPortalPhone && portalLink
+    ? `https://wa.me/${sanitizedPortalPhone}?text=${encodeURIComponent(portalWhatsappMessage)}`
+    : '';
 
   const handlePortalAction = (action: 'activate' | 'regenerate' | 'deactivate') => {
     if (!user || !agency || !contact) return;
@@ -396,6 +418,13 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                                 </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                {portalWhatsappHref ? (
+                                  <Button asChild size="icon" variant="secondary" className="bg-emerald-500 hover:bg-emerald-400 text-white">
+                                    <a href={portalWhatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Trimite portalul pe WhatsApp">
+                                      <WhatsappIcon className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                ) : null}
                                 <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="bg-white/90 text-black hover:bg-white flex-1">
                                     <LinkIcon className="mr-2 h-4 w-4" /> Deschide
                                 </Button>
@@ -444,7 +473,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
             key={prop.id}
             property={prop}
             onAddRecommendation={onAddRecommendation}
-            agencyId={agency?.id}
+            agency={agency ? { id: agency.id, customDomain: agency.customDomain } : null}
             contact={contact}
           />
         ))}
@@ -475,7 +504,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
           style={isAgentfinderTheme ? { background: 'transparent' } : undefined}
         >
             {singleProperty ? (
-                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
+                <MatchedPropertyCard property={properties[0]} onAddRecommendation={onAddRecommendation} agency={agency ? { id: agency.id, customDomain: agency.customDomain } : null} contact={contact} />
             ) : (
                 <Carousel
                   opts={{
@@ -492,7 +521,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                     {properties.map((prop) => (
                       <CarouselItem key={prop.id} className="pl-2 md:basis-1/2 lg:basis-1/3 lg:pl-3">
                         <div className="h-full">
-                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agencyId={agency?.id} contact={contact} />
+                          <MatchedPropertyCard property={prop} onAddRecommendation={onAddRecommendation} agency={agency ? { id: agency.id, customDomain: agency.customDomain } : null} contact={contact} />
                         </div>
                       </CarouselItem>
                     ))}
@@ -529,7 +558,14 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
                                 </Button>
                             </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            {portalWhatsappHref ? (
+                              <Button asChild size="icon" variant="secondary" className="agentfinder-client-portal-icon-button bg-emerald-500 text-white hover:bg-emerald-400">
+                                <a href={portalWhatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Trimite portalul pe WhatsApp">
+                                  <WhatsappIcon className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            ) : null}
                             <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoadingPortal} className="agentfinder-client-portal-button bg-white/90 text-black hover:bg-white flex-1">
                                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
                             </Button>

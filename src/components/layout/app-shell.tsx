@@ -41,16 +41,15 @@ import { BottomNavbar } from './BottomNavbar';
 import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
 import { PushNotificationsBanner } from '@/components/notifications/PushNotificationsBanner';
 import { DemoConversionModal } from '@/components/demo/DemoConversionModal';
+import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
   const pathname = usePathname();
   const showSidebarHeaderTrigger = pathname.startsWith('/leads') || pathname.startsWith('/properties');
-  const publicWebsiteHref = agency?.customDomain
-    ? `https://${agency.customDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`
-    : agencyId
-      ? `/agencies/${agencyId}`
-      : null;
+  const publicWebsiteHref = agencyId
+    ? buildAgencyPublicUrl(agency ?? { id: agencyId })
+    : null;
   
   return (
     <SidebarProvider>

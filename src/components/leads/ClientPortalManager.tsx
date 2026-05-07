@@ -10,11 +10,22 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Check, Copy, Link as LinkIcon, Loader2, RefreshCw, Star, Trash2 } from 'lucide-react';
 import { Label } from '../ui/label';
+import { buildClientPortalUrl } from '@/lib/domain-routing';
+import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 
 interface ClientPortalManagerProps {
   contact: Contact;
   agency: Agency;
 }
+
+const sanitizeForWhatsapp = (phone?: string | null) => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10 && digits.startsWith('07')) {
+    return `40${digits.substring(1)}`;
+  }
+  return digits;
+};
 
 export function ClientPortalManager({ contact, agency }: ClientPortalManagerProps) {
   const { toast } = useToast();
@@ -23,7 +34,19 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const portalLink = contact.portalId ? `${window.location.origin}/portal/${contact.portalId}` : '';
+  const rawPortalLink = buildClientPortalUrl(agency, contact.portalId);
+  const portalLink =
+    rawPortalLink && rawPortalLink.startsWith('/') && typeof window !== 'undefined'
+      ? new URL(rawPortalLink, window.location.origin).toString()
+      : rawPortalLink;
+
+  const sanitizedPhone = sanitizeForWhatsapp(contact.phone);
+  const whatsappMessage = portalLink
+    ? `Buna ${contact.name}, pentru ca ati fost recent interesat(a) de una dintre proprietatile noastre, va rugam sa gasiti aici o selectie personalizata de proprietati, fara comision, care credem ca se potrivesc cerintelor dvs.\n\n${portalLink}`
+    : '';
+  const whatsappHref = sanitizedPhone && portalLink
+    ? `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(whatsappMessage)}`
+    : '';
 
   const handlePortalAction = (action: 'activate' | 'regenerate' | 'deactivate') => {
     if (!user) return;
@@ -94,6 +117,13 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              {whatsappHref ? (
+                <Button asChild size="icon" className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                  <a href={whatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Trimite portalul pe WhatsApp">
+                    <WhatsappIcon className="h-4 w-4" />
+                  </a>
+                </Button>
+              ) : null}
               <Button size="sm" variant="secondary" onClick={() => window.open(portalLink, '_blank')} disabled={isLoading}>
                 <LinkIcon className="mr-2 h-4 w-4" /> Deschide
               </Button>

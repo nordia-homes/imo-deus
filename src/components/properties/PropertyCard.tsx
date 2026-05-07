@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAgency } from "@/context/AgencyContext";
 import { useToast } from "@/hooks/use-toast";
+import { buildAgencyPublicUrl } from "@/lib/domain-routing";
 
 export function PropertyCard({
   property,
@@ -34,7 +35,7 @@ export function PropertyCard({
   const [isFavorite, setIsFavorite] = useState(false);
   const isMobile = useIsMobile();
   const displaySurface = property.totalSurface ?? property.squareFootage;
-  const { agencyId: dashboardAgencyId } = useAgency();
+  const { agencyId: dashboardAgencyId, agency: dashboardAgency } = useAgency();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
@@ -66,7 +67,10 @@ export function PropertyCard({
         });
         return;
     }
-    const url = `${window.location.origin}/agencies/${dashboardAgencyId}/properties/${property.id}`;
+    const url = buildAgencyPublicUrl(
+      dashboardAgency ?? (dashboardAgencyId ? { id: dashboardAgencyId } : null),
+      `/properties/${property.id}`
+    );
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast({ title: "Link copiat!" });
