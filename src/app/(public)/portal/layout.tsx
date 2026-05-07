@@ -51,7 +51,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         return (
             <>
                 <PublicHeader agency={null} isLoading={true} />
-                <main className="min-h-screen bg-background container mx-auto max-w-5xl py-12 px-4 space-y-8">
+                <main className="min-h-screen bg-[var(--app-shell-bg-gradient)] container mx-auto max-w-5xl py-12 px-4 space-y-8">
                   <Skeleton className="h-10 w-2/3" />
                   <Skeleton className="h-6 w-1/2" />
                   <div className="grid md:grid-cols-2 gap-8">
@@ -66,7 +66,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     return (
         <>
             <PublicHeader agency={agency} isLoading={isLoading} />
-            <main className="min-h-screen bg-background">{children}</main>
+            <main className="min-h-screen bg-[var(--app-shell-bg-gradient)]">{children}</main>
         </>
     );
 }

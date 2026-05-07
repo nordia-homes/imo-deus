@@ -1,24 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import type { Property, PortalRecommendation } from '@/lib/types';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
-import { Textarea } from '../ui/textarea';
-import { Bath, BedDouble, ExternalLink, Heart, MessageSquareText, Ruler, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Badge } from '../ui/badge';
-import Link from 'next/link';
-import Image from 'next/image';
+import { Card, CardContent } from '../ui/card';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Bath, BedDouble, Calendar, Heart, MapPin, MessageCircle, Ruler, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 
 interface RecommendedPropertyCardProps {
   property: Property;
@@ -28,28 +21,32 @@ interface RecommendedPropertyCardProps {
   contactId: string;
 }
 
-export function RecommendedPropertyCard({ property, recommendation, portalId, agencyId, contactId }: RecommendedPropertyCardProps) {
+export function RecommendedPropertyCard({
+  property,
+  recommendation,
+  portalId,
+  agencyId,
+  contactId,
+}: RecommendedPropertyCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [comment, setComment] = useState(recommendation.clientComment || '');
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | 'none'>(recommendation.clientFeedback);
   const [isCommentDirty, setIsCommentDirty] = useState(false);
+  const [isCommentOpen, setIsCommentOpen] = useState(Boolean(recommendation.clientComment?.trim()));
+  const [isFavorite] = useState(false);
 
   const recommendationRef = doc(firestore, 'portals', portalId, 'recommendations', recommendation.id);
   const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
-  const hasImages = Boolean(property.images?.length);
   const detailHref = `/agencies/${agencyId}/properties/${property.id}`;
+  const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
   const displaySurface = property.totalSurface ?? property.squareFootage;
-  const summaryItems = [
-    { icon: <BedDouble className="h-4 w-4" />, label: 'Camere', value: property.rooms || property.bedrooms || '-' },
-    { icon: <Bath className="h-4 w-4" />, label: 'Băi', value: property.bathrooms || '-' },
-    { icon: <Ruler className="h-4 w-4" />, label: 'Suprafață', value: displaySurface ? `${displaySurface} mp` : '-' },
-  ];
+  const shareImageUrl = `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`;
 
   const feedbackLabel = useMemo(() => {
-    if (feedback === 'liked') return 'Ți-a plăcut';
-    if (feedback === 'disliked') return 'Nu ți se potrivește';
-    return 'Așteaptă feedback';
+    if (feedback === 'liked') return 'Apreciata';
+    if (feedback === 'disliked') return 'Respinsa';
+    return 'Asteapta feedback';
   }, [feedback]);
 
   const handleFeedback = (newFeedback: 'liked' | 'disliked') => {
@@ -61,7 +58,7 @@ export function RecommendedPropertyCard({ property, recommendation, portalId, ag
       [`recommendationHistory.${recommendation.id}.clientFeedback`]: finalFeedback,
     });
 
-    toast({ title: 'Feedback trimis', description: 'Agentul tău vede acum preferința ta.' });
+    toast({ title: 'Feedback trimis', description: 'Agentul tau vede acum preferinta ta.' });
   };
 
   const handleSaveComment = () => {
@@ -71,153 +68,249 @@ export function RecommendedPropertyCard({ property, recommendation, portalId, ag
     });
 
     setIsCommentDirty(false);
-    toast({ title: 'Comentariu salvat', description: 'Mesajul tău a fost trimis agentului.' });
+    toast({ title: 'Comentariu salvat', description: 'Mesajul tau a fost trimis agentului.' });
+  };
+
+  const handleShare = async () => {
+    if (typeof window === 'undefined') return;
+
+    const absoluteUrl = new URL(detailHref, window.location.origin).toString();
+    const shareData: ShareData = {
+      title: property.title,
+      text: `Aceasta proprietate este acum disponibila si poate fi vizionata: ${property.title}`,
+      url: absoluteUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        try {
+          const imageResponse = await fetch(shareImageUrl, { cache: 'no-store' });
+          if (imageResponse.ok) {
+            const blob = await imageResponse.blob();
+            const fileExtension = blob.type.split('/')[1] || 'jpg';
+            const file = new File([blob], `proprietate-${property.id}.${fileExtension}`, {
+              type: blob.type || 'image/jpeg',
+            });
+            const shareDataWithFile: ShareData = {
+              files: [file],
+              title: property.title,
+              text: `${shareData.text}\n${absoluteUrl}`,
+            };
+
+            if (!navigator.canShare || navigator.canShare(shareDataWithFile)) {
+              await navigator.share(shareDataWithFile);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Portal property card image share failed:', error);
+        }
+
+        await navigator.share(shareData);
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(absoluteUrl);
+        toast({ title: 'Link copiat!' });
+      }
+    } catch (error) {
+      console.error('Portal property card share failed:', error);
+    }
   };
 
   return (
-    <article className="group overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.12),transparent_28%),linear-gradient(180deg,rgba(14,18,17,0.98)_0%,rgba(10,12,12,0.99)_100%)] text-stone-100 shadow-[0_26px_80px_-42px_rgba(0,0,0,0.92)]">
-      <Carousel opts={{ loop: hasImages }} className="relative">
-        <CarouselContent>
-          {hasImages ? property.images.map((image, index) => (
-            <CarouselItem key={index}>
-              <div className="relative aspect-[16/10] overflow-hidden bg-[#101113]">
-                <Image
-                  src={image.url}
-                  alt={image.alt || property.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,6,0.08)_0%,rgba(4,6,6,0.22)_48%,rgba(4,6,6,0.78)_100%)]" />
-              </div>
-            </CarouselItem>
-          )) : (
-            <CarouselItem>
-              <div className="flex aspect-[16/10] items-center justify-center bg-[#101113] text-sm text-stone-500">
-                Imagine indisponibilă
-              </div>
-            </CarouselItem>
-          )}
-        </CarouselContent>
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-5">
-          <Badge className="rounded-full border border-emerald-300/18 bg-emerald-400/14 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-100 shadow-none">
-            Recomandare selectată
-          </Badge>
-          <div className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-medium text-white/78 backdrop-blur-md">
-            {feedbackLabel}
-          </div>
-        </div>
-        {hasImages && property.images.length > 1 && (
-          <>
-            <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 border-white/12 bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/60" />
-            <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 border-white/12 bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/60" />
-          </>
-        )}
-      </Carousel>
-
-      <div className="space-y-6 p-6">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight text-white">{property.title}</h2>
-              <p className="max-w-2xl text-sm leading-6 text-stone-300">{property.address}</p>
+    <article className="space-y-0">
+      <Card className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_-34px_rgba(0,0,0,0.85)]">
+        <CardContent className="p-0">
+          <div className="relative">
+            <Link href={detailHref} className="relative block aspect-[16/10] overflow-hidden rounded-t-[1.75rem]" target="_blank" rel="noopener noreferrer">
+              <Image
+                src={primaryImageUrl}
+                alt={property.title || 'Proprietate'}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </Link>
+            <div className="absolute left-3 top-3">
+              <Badge
+                variant="outline"
+                className="border border-transparent bg-[#f8fbff] px-3 py-1 text-[12px] font-semibold tracking-[-0.01em] text-[#1f67c5] shadow-[0_10px_24px_rgba(15,23,42,0.10)]"
+              >
+                Recomandat
+              </Badge>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/78">Preț propus</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-white">€{property.price.toLocaleString()}</p>
+            <div className="absolute right-3 top-3 flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-8 w-8 rounded-full bg-black/45 text-stone-100 backdrop-blur-sm hover:bg-black/70"
+              >
+                <Heart className={cn('h-4 w-4', isFavorite && 'fill-red-500 text-red-500')} />
+              </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {summaryItems.map((item) => (
-              <div key={item.label} className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] px-3 py-4 text-center">
-                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
-                  {item.icon}
+          <div className="space-y-3 p-4">
+            <div className="flex justify-between items-start">
+              <Link href={detailHref} className="min-w-0 flex-1" target="_blank" rel="noopener noreferrer">
+                <h3 className="truncate font-semibold text-stone-100 transition-colors group-hover:text-[#86efac]" title={property.title}>
+                  {property.title}
+                </h3>
+                <div className="mt-1 flex items-center gap-2 text-sm text-stone-400">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <p className="truncate" title={property.address}>{property.address}</p>
                 </div>
-                <p className="mt-3 text-base font-semibold text-white">{item.value}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-stone-400">{item.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-[1.45rem] border border-white/8 bg-black/15 p-4">
-            <p className="line-clamp-5 whitespace-pre-wrap text-sm leading-7 text-stone-300">
-              {property.description || 'Agentul tău a considerat această proprietate relevantă pentru ce cauți.'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant={feedback === 'liked' ? 'default' : 'outline'}
-              onClick={() => handleFeedback('liked')}
-              className={cn(
-                "rounded-full border px-5",
-                feedback === 'liked'
-                  ? 'border-emerald-300/16 bg-emerald-400 text-black hover:bg-emerald-300'
-                  : 'border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.08]'
-              )}
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" />
-              Îmi place
-            </Button>
-            <Button
-              type="button"
-              variant={feedback === 'disliked' ? 'default' : 'outline'}
-              onClick={() => handleFeedback('disliked')}
-              className={cn(
-                "rounded-full border px-5",
-                feedback === 'disliked'
-                  ? 'border-white/16 bg-white text-black hover:bg-stone-200'
-                  : 'border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.08]'
-              )}
-            >
-              <ThumbsDown className="mr-2 h-4 w-4" />
-              Nu e pentru mine
-            </Button>
-            <Button asChild variant="outline" className="rounded-full border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.08]">
-              <Link href={detailHref} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Vezi detalii complete
               </Link>
-            </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm text-stone-400">
+              <div className="flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" />
+                <span>{property.rooms}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Bath className="h-4 w-4" />
+                <span>{property.bathrooms}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Ruler className="h-4 w-4" />
+                <span>{displaySurface} mp</span>
+              </div>
+              {property.constructionYear ? (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4" />
+                  <span>{property.constructionYear}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xl font-bold text-[#4ade80]">€{property.price.toLocaleString()}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  title="Distribuie proprietatea"
+                  aria-label="Distribuie proprietatea"
+                  onClick={handleShare}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-stone-100 transition-colors hover:bg-white/[0.12] hover:text-white"
+                >
+                  <Share2 className="h-4 w-4" strokeWidth={2.2} />
+                </button>
+                <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
+                  <Link href={detailHref} className="inline-flex items-center gap-2" target="_blank" rel="noopener noreferrer">
+                    Vezi Detalii
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <div className="-mt-1 rounded-b-[1.6rem] rounded-t-[1.25rem] border border-[var(--app-surface-border)] bg-[var(--agentfinder-shell-panel)] p-3 shadow-[0_22px_44px_rgba(37,55,88,0.14)]">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#59709b]">Feedback rapid</p>
+          <p className="text-xs font-medium text-slate-500">Alege o reactie</p>
         </div>
 
-        <div className="rounded-[1.6rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,rgba(255,255,255,0.015)_100%)] p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/16 bg-emerald-400/10 text-emerald-200">
-              <MessageSquareText className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-base font-semibold text-white">Mesaj pentru agent</p>
-              <p className="text-sm text-stone-400">Spune ce îți place sau ce ai vrea diferit.</p>
-            </div>
-          </div>
-          <Textarea
-            placeholder="Ex: îmi place zona și compartimentarea, dar aș prefera mai multă lumină sau un etaj mai înalt..."
-            value={comment}
-            onChange={(e) => {
-              setComment(e.target.value);
-              setIsCommentDirty(true);
-            }}
-            className="min-h-[120px] rounded-[1.2rem] border-white/10 bg-black/20 text-stone-100 placeholder:text-stone-500"
-          />
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm text-stone-400">
-              <Heart className="h-4 w-4 text-emerald-300" />
-              Agentul poate folosi feedbackul tău pentru selecții mai bune.
-            </div>
-            <Button
-              type="button"
-              onClick={handleSaveComment}
-              disabled={!comment.trim() || !isCommentDirty}
-              className="rounded-full bg-emerald-400 px-5 text-black hover:bg-emerald-300"
-            >
-              Salvează comentariul
-            </Button>
-          </div>
+        <div className="grid grid-cols-3 gap-2.5">
+          <button
+            type="button"
+            onClick={() => handleFeedback('liked')}
+            className={cn(
+              'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
+              feedback === 'liked'
+                ? 'border-emerald-300/80 bg-[linear-gradient(180deg,#ecfdf3_0%,#d9fbe8_100%)] text-emerald-900 shadow-[0_16px_30px_rgba(34,197,94,0.18)]'
+                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+            )}
+          >
+            <span className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+              feedback === 'liked'
+                ? 'border-emerald-300 bg-white/75 text-emerald-700'
+                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+            )}>
+              <ThumbsUp className="h-4 w-4" strokeWidth={2.4} />
+            </span>
+            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Like</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFeedback('disliked')}
+            className={cn(
+              'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
+              feedback === 'disliked'
+                ? 'border-rose-300/80 bg-[linear-gradient(180deg,#fff1f3_0%,#ffe0e6_100%)] text-rose-900 shadow-[0_16px_30px_rgba(244,63,94,0.15)]'
+                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+            )}
+          >
+            <span className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+              feedback === 'disliked'
+                ? 'border-rose-300 bg-white/75 text-rose-700'
+                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+            )}>
+              <ThumbsDown className="h-4 w-4" strokeWidth={2.4} />
+            </span>
+            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Dislike</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCommentOpen((current) => !current)}
+            className={cn(
+              'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
+              isCommentOpen
+                ? 'border-[#9bb0d5] bg-[linear-gradient(180deg,#eef4ff_0%,#dde8fb_100%)] text-[#263754] shadow-[0_16px_30px_rgba(68,91,132,0.16)]'
+                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+            )}
+          >
+            <span className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+              isCommentOpen
+                ? 'border-[#b7c7e3] bg-white/75 text-[#445b84]'
+                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+            )}>
+              <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
+            </span>
+            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Comentariu</span>
+          </button>
         </div>
+
+        {isCommentOpen ? (
+          <div className="mt-3 rounded-[1.15rem] border border-[var(--app-surface-border)] bg-transparent p-0 shadow-none">
+            <textarea
+              placeholder="Scrie aici feedbackul tau pentru agent..."
+              value={comment}
+              onChange={(event) => {
+                setComment(event.target.value);
+                setIsCommentDirty(true);
+              }}
+              className="block min-h-[128px] w-full resize-none rounded-[1.25rem] border border-[#d8e2f1] bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] px-4 py-3 text-base text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_10px_20px_rgba(37,55,88,0.06)] outline-none placeholder:text-slate-400 focus:border-[#9bb0d5] focus:ring-2 focus:ring-[#dbe7fb]"
+              style={{
+                background: 'linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%)',
+                color: '#1e293b',
+              }}
+            />
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleSaveComment}
+                disabled={!comment.trim() || !isCommentDirty}
+                className={cn(
+                  'block w-full rounded-[1rem] px-5 py-3 text-base font-semibold transition-all duration-200',
+                  !comment.trim() || !isCommentDirty
+                    ? 'cursor-not-allowed border border-[#d3ddea] bg-[linear-gradient(180deg,#eef3f9_0%,#e3eaf4_100%)] text-[#6d7f9f] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
+                    : 'border border-[#4b6592] bg-[linear-gradient(135deg,#4b6592_0%,#3f567f_100%)] text-white shadow-[0_18px_34px_rgba(47,66,104,0.26)] hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#5570a0_0%,#465f8c_100%)] hover:shadow-[0_20px_38px_rgba(47,66,104,0.3)]'
+                )}
+              >
+                Salveaza comentariul
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </article>
   );

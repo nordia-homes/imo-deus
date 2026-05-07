@@ -44,8 +44,8 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[var(--public-header-bg)] text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)] backdrop-blur-xl">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
-        <Link href={publicPath()} className="flex min-w-0 items-center gap-3">
+      <div className="container relative mx-auto flex h-16 items-center justify-between px-4 md:h-20">
+        <Link href={publicPath()} className="flex min-w-0 items-center gap-3 text-left">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
             <>
               {agency?.logoUrl ? (
@@ -85,7 +85,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
         </nav>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden">
+        <div className="absolute right-4 md:hidden">
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-white/10 bg-[#18191d] text-stone-200 hover:bg-[#202126] hover:text-white">
