@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PublicContactForm } from '@/components/public/PublicContactForm';
 import { Button } from '@/components/ui/button';
 import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 export default function AgencyContactPage() {
   const { agency, agencyId, isAgencyLoading } = usePublicAgency();
@@ -20,6 +21,14 @@ export default function AgencyContactPage() {
   const softCardClassName = isAgentfinderTheme
     ? 'public-premium-soft-panel rounded-[1.6rem]'
     : 'rounded-[1.6rem] border border-white/8 bg-white/[0.03] shadow-[0_20px_60px_-42px_rgba(0,0,0,0.72)]';
+  const eyebrowClassName = isAgentfinderTheme ? 'text-sky-700/80' : 'text-emerald-300/70';
+  const headingClassName = isAgentfinderTheme ? 'text-slate-950' : 'text-white';
+  const bodyClassName = isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/72';
+  const iconWrapClassName = isAgentfinderTheme
+    ? 'border-sky-200 bg-sky-50 text-sky-700'
+    : 'border-emerald-300/18 bg-emerald-400/10 text-emerald-300';
+  const labelClassName = isAgentfinderTheme ? 'text-slate-500' : 'text-emerald-300/72';
+  const valueClassName = isAgentfinderTheme ? 'text-slate-950' : 'text-white';
 
   if (isAgencyLoading || !agency || !agencyId) {
     return (
@@ -47,10 +56,10 @@ export default function AgencyContactPage() {
           <article className={`${sectionShellClassName} p-6 md:p-7`}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Contact rapid</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Orice decizie incepe cu un prim pas!</h2>
+                <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Contact rapid</p>
+                <h2 className={cn("mt-3 text-3xl font-semibold tracking-tight", headingClassName)}>Orice decizie incepe cu un prim pas!</h2>
               </div>
-              <p className="text-sm leading-7 text-emerald-50/72">
+              <p className={cn("text-sm leading-7", bodyClassName)}>
                 Uneori e mai simplu sa ne suni decat sa ne scrii. Daca ai deja o proprietate in minte, spune-ne asta din start si mergem mai repede spre pasul urmator.
               </p>
             </div>
@@ -58,38 +67,38 @@ export default function AgencyContactPage() {
             <div className="mt-6 space-y-3">
               <div className={`${softCardClassName} p-4`}>
                 <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-emerald-300">
+                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border", iconWrapClassName)}>
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/72">Telefon</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{agency.phone || 'Disponibil la cerere'}</p>
+                    <p className={cn("text-xs font-semibold uppercase tracking-[0.18em]", labelClassName)}>Telefon</p>
+                    <p className={cn("mt-2 text-lg font-semibold", valueClassName)}>{agency.phone || 'Disponibil la cerere'}</p>
                   </div>
                 </div>
               </div>
 
               <div className={`${softCardClassName} p-4`}>
                 <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-emerald-300">
+                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border", iconWrapClassName)}>
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/72">Email</p>
+                    <p className={cn("text-xs font-semibold uppercase tracking-[0.18em]", labelClassName)}>Email</p>
                     {agency.email ? (
                       isEmailVisible ? (
-                        <p className="mt-2 break-all text-lg font-semibold text-white">{agency.email}</p>
+                        <p className={cn("mt-2 break-all text-lg font-semibold", valueClassName)}>{agency.email}</p>
                       ) : (
                         <Button
                           type="button"
                           variant="ghost"
                           onClick={() => setIsEmailVisible(true)}
-                          className="mt-1 h-auto px-0 py-0 text-left text-base font-semibold text-emerald-200 hover:bg-transparent hover:text-emerald-100"
+                          className={cn("mt-1 h-auto px-0 py-0 text-left text-base font-semibold hover:bg-transparent", isAgentfinderTheme ? "text-sky-700 hover:text-sky-800" : "text-emerald-200 hover:text-emerald-100")}
                         >
                           Afiseaza adresa de email
                         </Button>
                       )
                     ) : (
-                      <p className="mt-2 text-lg font-semibold text-white">Disponibil la cerere</p>
+                      <p className={cn("mt-2 text-lg font-semibold", valueClassName)}>Disponibil la cerere</p>
                     )}
                   </div>
                 </div>
@@ -98,12 +107,12 @@ export default function AgencyContactPage() {
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
               {agency.phone ? (
-                <Button asChild className="h-12 rounded-full border border-white/10 bg-white px-6 text-sm font-semibold text-black shadow-[0_18px_40px_-22px_rgba(255,255,255,0.35)] hover:bg-stone-100">
+                <Button asChild className={cn("h-12 rounded-full px-6 text-sm font-semibold", isAgentfinderTheme ? "public-premium-primary-button border-0 shadow-none" : "border border-white/10 bg-white text-black shadow-[0_18px_40px_-22px_rgba(255,255,255,0.35)] hover:bg-stone-100")}>
                   <Link href={`tel:${agency.phone}`}>Suna acum</Link>
                 </Button>
               ) : null}
               {agency.email ? (
-                <Button asChild variant="outline" className="h-12 rounded-full border border-white/10 bg-white/[0.04] px-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.08]">
+                <Button asChild variant="outline" className={cn("h-12 rounded-full px-6 text-sm font-semibold", isAgentfinderTheme ? "public-premium-outline-button text-slate-700" : "border border-white/10 bg-white/[0.04] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.08]")}>
                   <Link href={`mailto:${agency.email}`}>Trimite email</Link>
                 </Button>
               ) : null}
@@ -113,11 +122,11 @@ export default function AgencyContactPage() {
           <article className={`${softCardClassName} overflow-hidden p-5 md:p-6`}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Mai multe optiuni</p>
-                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-white">Vrei sa vezi tot portofoliul?</h3>
+                <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Mai multe optiuni</p>
+                <h3 className={cn("mt-2 text-2xl font-semibold tracking-tight", headingClassName)}>Vrei sa vezi tot portofoliul?</h3>
               </div>
 
-              <p className="text-sm leading-7 text-stone-300">
+              <p className={cn("text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-stone-300")}>
                 Daca vrei sa compari mai multe zone, bugete sau tipuri de proprietati, poti merge direct in lista completa si
                 continua cautarea in ritmul tau.
               </p>
@@ -125,7 +134,7 @@ export default function AgencyContactPage() {
               <Button
                 asChild
                 variant="outline"
-                className="h-12 w-full rounded-full border border-emerald-300/18 bg-emerald-400/8 px-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-emerald-400/12"
+                className={cn("h-12 w-full rounded-full px-6 text-sm font-semibold", isAgentfinderTheme ? "public-premium-outline-button text-slate-700" : "border border-emerald-300/18 bg-emerald-400/8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-emerald-400/12")}
               >
                 <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
                   Vezi toate proprietatile

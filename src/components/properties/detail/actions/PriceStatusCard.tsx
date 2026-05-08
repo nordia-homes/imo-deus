@@ -6,19 +6,27 @@ import type { Property } from "@/lib/types";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TrendingUp } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
+import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 export function PriceStatusCard({
     property,
     isMobile = false,
     variant = 'public',
+    isAgentfinderTheme: isAgentfinderThemeProp,
 }: {
     property: Property,
     isMobile?: boolean,
     variant?: 'public' | 'admin',
+    isAgentfinderTheme?: boolean,
 }) {
+    const { agency } = usePublicAgency();
+    const isAgentfinderTheme =
+        variant === 'public' && (isAgentfinderThemeProp ?? getAgencyThemePreset(agency) === 'agentfinder');
     const publicCardClassName = isMobile
-        ? "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d] before:absolute before:left-5 before:right-5 before:top-0 before:h-px before:bg-white/10 before:content-[''] after:absolute after:bottom-0 after:left-8 after:right-8 after:h-px after:bg-white/10 after:content-['']"
-        : "relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent bg-[#0b0f0d]";
+        ? cn("relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent before:absolute before:left-5 before:right-5 before:top-0 before:h-px before:content-[''] after:absolute after:bottom-0 after:left-8 after:right-8 after:h-px after:content-['']", isAgentfinderTheme ? "bg-white before:bg-slate-200 after:bg-slate-200" : "bg-[#0b0f0d] before:bg-white/10 after:bg-white/10")
+        : cn("relative isolate overflow-hidden rounded-b-[2rem] rounded-t-none border-0 border-transparent", isAgentfinderTheme ? "bg-white" : "bg-[#0b0f0d]");
     const adminCardClassName = isMobile
         ? `${ACTION_CARD_INNER_CLASSNAME} overflow-hidden rounded-[1.65rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]`
         : `${ACTION_CARD_CLASSNAME} rounded-[1.85rem]`;
@@ -106,12 +114,12 @@ export function PriceStatusCard({
         return (
             <Card className={publicCardClassName}>
                 <CardContent className="relative flex items-baseline justify-center gap-2 p-3 text-center">
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]" />
-                    <span className="text-xl font-bold text-[#4ade80]">
+                    <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
+                    <span className={cn("relative z-10 text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
                         €{property.price.toLocaleString()}
                     </span>
                     {pricePerSqm && (
-                        <span className="text-sm font-medium text-stone-400">
+                        <span className={cn("relative z-10 text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
                             (€{pricePerSqm}/m²)
                         </span>
                     )}
@@ -123,20 +131,20 @@ export function PriceStatusCard({
     return (
         <Dialog>
             <Card className={publicCardClassName}>
-                <CardContent className="relative flex flex-col items-center justify-center gap-1 p-4 text-center">
-                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]" />
-                     <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-bold text-[#4ade80]">
+                <CardContent className={cn("relative flex flex-col items-center justify-center gap-1 p-4 text-center", isAgentfinderTheme && "bg-[linear-gradient(180deg,#ffffff_0%,#f4f8ff_100%)] shadow-[0_18px_36px_-28px_rgba(15,23,42,0.45)]")}>
+                     <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
+                     <div className="relative z-10 flex items-baseline gap-2">
+                        <span className={cn("text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
                             €{property.price.toLocaleString()}
                         </span>
                         {pricePerSqm && (
-                            <span className="text-sm font-medium text-stone-400">
+                            <span className={cn("text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
                                (€{pricePerSqm}/m²)
                             </span>
                         )}
                     </div>
                      <DialogTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-1 text-[#86efac]">
+                        <div className={cn("relative z-10 flex cursor-pointer items-center gap-1", isAgentfinderTheme ? "text-sky-700" : "text-[#86efac]")}>
                             <TrendingUp className="h-4 w-4" />
                             <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
                         </div>

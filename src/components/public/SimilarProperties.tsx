@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PublicPropertyCard } from './PublicPropertyCard';
+import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 
 function SimilarPropertyCard({ property }: { property: Property }) {
@@ -53,8 +55,9 @@ function SimilarPropertyCard({ property }: { property: Property }) {
 }
 
 export function SimilarProperties({ properties }: { properties: Property[] }) {
-  const { agencyId } = usePublicAgency();
+  const { agencyId, agency } = usePublicAgency();
   const isMobile = useIsMobile();
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
 
   if (properties.length === 0) {
     return null;
@@ -63,7 +66,7 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
   if (!isMobile && agencyId) {
     return (
       <div className="space-y-5">
-        <h2 className="text-center text-2xl font-bold text-stone-50">Proprietati similare</h2>
+        <h2 className={cn("text-center text-2xl font-bold", isAgentfinderTheme ? "text-slate-950" : "text-stone-50")}>Proprietati similare</h2>
         <Carousel
           opts={{
             align: 'start',
@@ -82,8 +85,8 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
           </CarouselContent>
           {properties.length > 3 && (
             <>
-              <CarouselPrevious className="-left-4 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
-              <CarouselNext className="-right-4 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
+              <CarouselPrevious className={cn("-left-4", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
+              <CarouselNext className={cn("-right-4", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
             </>
           )}
         </Carousel>
@@ -93,7 +96,7 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
 
   return (
     <div className="space-y-4 px-2">
-        <h2 className="text-center text-xl font-bold text-stone-50">Proprietati similare</h2>
+        <h2 className={cn("text-center text-xl font-bold", isAgentfinderTheme ? "text-slate-950" : "text-stone-50")}>Proprietati similare</h2>
         <Carousel
             opts={{
                 align: "start",
@@ -110,8 +113,8 @@ export function SimilarProperties({ properties }: { properties: Property[] }) {
             </CarouselContent>
             {properties.length > 1 && (
                 <>
-                    <CarouselPrevious className="left-2 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
-                    <CarouselNext className="right-2 border-white/10 bg-black/70 text-stone-100 hover:bg-black/85" />
+                    <CarouselPrevious className={cn("left-2", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
+                    <CarouselNext className={cn("right-2", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
                 </>
             )}
         </Carousel>

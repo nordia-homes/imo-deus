@@ -5,6 +5,7 @@ import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, Shi
 import { Button } from '@/components/ui/button';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 const ownersIntroVideoUrl =
   'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Video%20introducere%20pentru%20proprietari.mp4?alt=media&token=f4163f0e-2265-4d02-b2ef-3f3a70fa2c48';
@@ -19,6 +20,30 @@ export default function AgencyOwnersPage() {
   const highlightCardClassName = isAgentfinderTheme
     ? 'public-premium-soft-panel rounded-[1.75rem]'
     : 'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
+  const eyebrowClassName = isAgentfinderTheme ? 'text-sky-700/80' : 'text-emerald-300/70';
+  const titleClassName = isAgentfinderTheme ? 'text-slate-950' : 'text-white';
+  const bodyClassName = isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/78';
+  const chipClassName = isAgentfinderTheme
+    ? 'border-sky-200 bg-sky-50 text-sky-700'
+    : 'border-emerald-300/20 bg-emerald-400/10 text-emerald-200';
+  const primaryButtonClassName = isAgentfinderTheme
+    ? 'public-premium-primary-button border-0 shadow-none'
+    : 'rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300';
+  const outlineButtonClassName = isAgentfinderTheme
+    ? 'public-premium-outline-button text-slate-700'
+    : 'rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]';
+  const infoPillClassName = isAgentfinderTheme
+    ? 'rounded-2xl border border-slate-200 bg-white/84 px-4 py-4 text-sm text-slate-600'
+    : 'rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80';
+  const featureLeadCardClassName = isAgentfinderTheme
+    ? 'public-premium-panel rounded-[1.9rem] md:col-span-2 xl:col-span-2'
+    : 'rounded-[1.9rem] border border-emerald-300/25 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] md:col-span-2 xl:col-span-2';
+  const darkFeatureSectionClassName = isAgentfinderTheme
+    ? 'public-premium-panel rounded-[2rem] p-6 md:p-8'
+    : 'rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8';
+  const stepCardClassName = isAgentfinderTheme
+    ? 'flex gap-4 rounded-[1.5rem] border border-slate-200 bg-white/84 p-4'
+    : 'flex gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 shadow-[0_18px_48px_-38px_rgba(0,0,0,0.7)]';
 
   const ownerServices = [
     {
@@ -98,38 +123,38 @@ export default function AgencyOwnersPage() {
       <section className={`${sectionShellClassName} overflow-hidden rounded-t-none border-t-0 p-6 md:rounded-t-[2rem] md:border-t md:p-8`}>
         <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
+            <div className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium", chipClassName)}>
               <Sparkles className="h-4 w-4" />
               Pentru proprietari
             </div>
-            <h1 className="mt-5 max-w-3xl text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.12] tracking-tight text-white">
+            <h1 className={cn("mt-5 max-w-3xl text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.12] tracking-tight", titleClassName)}>
               Servicii dedicate proprietarilor care vor mai multa claritate si mai putin stres.
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/78 md:text-lg">
+            <p className={cn("mt-4 max-w-2xl text-base leading-7 md:text-lg", bodyClassName)}>
               Daca vrei sa vinzi sau sa inchiriezi, {agency?.name || 'echipa noastra'} te ajuta sa stabilesti corect pretul,
               sa iti promovezi proprietatea relevant si sa mergi mai sigur spre clientul potrivit si spre tranzactie.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300">
+              <Button asChild size="lg" className={cn("rounded-full px-7", primaryButtonClassName)}>
                 <Link href={publicPath('/contact')}>
                   Discutam despre proprietatea ta
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="hidden rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08] sm:inline-flex">
+              <Button asChild size="lg" variant="outline" className={cn("hidden rounded-full px-7 sm:inline-flex", outlineButtonClassName)}>
                 <Link href={publicPath('/properties')}>Vezi proprietatile active</Link>
               </Button>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
+              <div className={infoPillClassName}>
                 Pret stabilit in functie de piata, nu din presupuneri.
               </div>
-              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
+              <div className={infoPillClassName}>
                 Promovare care atrage interes relevant, nu doar trafic.
               </div>
-              <div className="rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80">
+              <div className={infoPillClassName}>
                 Comunicare clara si pasii importanti explicati din timp.
               </div>
             </div>
@@ -153,11 +178,11 @@ export default function AgencyOwnersPage() {
       <section className="space-y-8">
         <div className={`${sectionShellClassName} p-6 md:p-8`}>
           <div className="max-w-4xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Ce oferim proprietarilor</p>
-            <h2 className="mt-3 text-[clamp(1.7rem,4vw,3.2rem)] font-semibold tracking-tight text-white">
+            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Ce oferim proprietarilor</p>
+            <h2 className={cn("mt-3 text-[clamp(1.7rem,4vw,3.2rem)] font-semibold tracking-tight", titleClassName)}>
               Servicii gandite pentru rezultate, nu doar pentru prezenta in piata.
             </h2>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-emerald-50/78 md:text-lg">
+            <p className={cn("mt-4 max-w-3xl text-base leading-7 md:text-lg", bodyClassName)}>
               Fiecare proprietate are un context diferit. De aceea, modul in care o prezentam, o promovam si o negociem trebuie adaptat, nu tratat generic.
             </p>
           </div>
@@ -169,32 +194,32 @@ export default function AgencyOwnersPage() {
               key={service.title}
               className={`p-6 ${
                 index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii'
-                  ? 'rounded-[1.9rem] border border-emerald-300/25 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] md:col-span-2 xl:col-span-2'
+                  ? featureLeadCardClassName
                   : highlightCardClassName
               }`}
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+              <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]", chipClassName)}>
                 {service.icon}
                 {service.badge}
               </div>
-              <h3 className={`mt-4 font-semibold tracking-tight text-white ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'text-3xl md:max-w-xl' : 'text-2xl'}`}>
+              <h3 className={cn(`mt-4 font-semibold tracking-tight ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'text-3xl md:max-w-xl' : 'text-2xl'}`, titleClassName)}>
                 {service.title}
               </h3>
-              <p className={`mt-3 leading-7 ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'max-w-2xl text-base text-emerald-50/82' : 'text-sm text-emerald-50/72'}`}>
+              <p className={cn(`mt-3 leading-7 ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'max-w-2xl text-base' : 'text-sm'}`, isAgentfinderTheme ? 'text-slate-600' : index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'text-emerald-50/82' : 'text-emerald-50/72')}>
                 {service.description}
               </p>
             </article>
           ))}
         </div>
 
-        <article className="rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8">
+        <article className={darkFeatureSectionClassName}>
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">De ce proprietarii lucreaza cu noi</p>
-              <h3 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+              <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>De ce proprietarii lucreaza cu noi</p>
+              <h3 className={cn("mt-3 text-3xl font-semibold tracking-tight", titleClassName)}>
                 Nu ne limitam la publicarea unui anunt.
               </h3>
-              <p className="mt-3 text-base leading-7 text-emerald-50/76">
+              <p className={cn("mt-3 text-base leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/76")}>
                 Construim un proces complet: pozitionare, prezentare, selectie de clienti, negociere si coordonare pana la semnare.
               </p>
             </div>
@@ -202,7 +227,7 @@ export default function AgencyOwnersPage() {
             <Button
               asChild
               size="lg"
-              className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
+              className={cn("rounded-full px-7", primaryButtonClassName)}
             >
               <Link href={publicPath('/contact')}>
                 Cere o evaluare initiala
@@ -214,28 +239,28 @@ export default function AgencyOwnersPage() {
 
         <article className={`${sectionShellClassName} p-6 md:p-8`}>
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Intrebari frecvente ale proprietarilor</p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Intrebari frecvente ale proprietarilor</p>
+            <h3 className={cn("mt-3 text-3xl font-semibold tracking-tight", titleClassName)}>
               Cele mai importante lucruri se clarifica de la inceput.
             </h3>
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             <article className={`${highlightCardClassName} p-5`}>
-              <h4 className="text-lg font-semibold text-white">Cum stabilim pretul?</h4>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum stabilim pretul?</h4>
+              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
                 Ne uitam la proprietate, la concurenta si la ritmul real al pietei, nu doar la preturile cerute in jur.
               </p>
             </article>
             <article className={`${highlightCardClassName} p-5`}>
-              <h4 className="text-lg font-semibold text-white">Cum filtram interesul?</h4>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum filtram interesul?</h4>
+              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
                 Calificam discutiile si programam doar interactiuni care au sens, astfel incat sa nu iti consumi timpul inutil.
               </p>
             </article>
             <article className={`${highlightCardClassName} p-5`}>
-              <h4 className="text-lg font-semibold text-white">Cum arata colaborarea?</h4>
-              <p className="mt-3 text-sm leading-7 text-emerald-50/72">
+              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum arata colaborarea?</h4>
+              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
                 Clar, ordonat si cu pasi explicati din timp, de la promovare si vizionari pana la negociere si inchiderea tranzactiei.
               </p>
             </article>
@@ -243,25 +268,25 @@ export default function AgencyOwnersPage() {
         </article>
       </section>
 
-      <section className="rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.12),transparent_32%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8">
+      <section className={darkFeatureSectionClassName}>
         <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300/70">Cum lucram</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Cum lucram</p>
+            <h2 className={cn("mt-3 text-3xl font-semibold tracking-tight md:text-4xl", titleClassName)}>
               Un proces clar pentru proprietari care vor sa stie ce urmeaza.
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-7 text-emerald-50/76">
+            <p className={cn("mt-4 max-w-xl text-base leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/76")}>
               Comunicarea buna si organizarea conteaza la fel de mult ca promovarea. De aceea, iti explicam de la inceput cum arata drumul pana la tranzactie.
             </p>
           </div>
 
           <div className="grid gap-3">
             {ownerSteps.map((step, index) => (
-              <article key={step} className="flex gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 shadow-[0_18px_48px_-38px_rgba(0,0,0,0.7)]">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/18 bg-emerald-400/10 text-sm font-semibold text-emerald-200">
+              <article key={step} className={stepCardClassName}>
+                <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold", isAgentfinderTheme ? "border-sky-200 bg-sky-50 text-sky-700" : "border-emerald-300/18 bg-emerald-400/10 text-emerald-200")}>
                   0{index + 1}
                 </div>
-                <p className="text-sm leading-7 text-emerald-50/78">{step}</p>
+                <p className={cn("text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/78")}>{step}</p>
               </article>
             ))}
           </div>
@@ -269,26 +294,26 @@ export default function AgencyOwnersPage() {
       </section>
 
       <section className="pt-4 md:pt-6">
-        <article className="rounded-[2rem] border border-emerald-300/20 bg-[radial-gradient(circle_at_top_right,rgba(74,222,128,0.16),transparent_30%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(12,22,16,0.98)_100%)] p-6 shadow-[0_34px_100px_-42px_rgba(0,0,0,0.92)] md:p-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/12 px-4 py-1.5 text-sm font-semibold text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <article className={darkFeatureSectionClassName}>
+          <div className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]", chipClassName)}>
             <Sparkles className="h-4 w-4" />
             Pentru proprietari
           </div>
-          <h2 className="mt-5 max-w-3xl text-3xl font-semibold tracking-tight text-white md:text-5xl">
+          <h2 className={cn("mt-5 max-w-3xl text-3xl font-semibold tracking-tight md:text-5xl", titleClassName)}>
             Daca vrei sa discutam despre proprietatea ta, putem incepe simplu.
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50/80 md:text-lg">
+          <p className={cn("mt-4 max-w-2xl text-base leading-7 md:text-lg", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/80")}>
             Spune-ne ce tip de proprietate ai, ce obiectiv urmaresti si in ce orizont de timp vrei sa te misti. De acolo construim pasii potriviti.
           </p>
 
           <div className="mt-8 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+            <div className={infoPillClassName}>
               Stabilim daca discutam despre vanzare, inchiriere sau repozitionare in piata.
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+            <div className={infoPillClassName}>
               Iti spunem ce putem face concret pentru proprietatea ta si cum ar arata colaborarea.
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-emerald-50/80">
+            <div className={infoPillClassName}>
               Intri rapid intr-o discutie clara, fara pasi inutili si fara promisiuni vagi.
             </div>
           </div>
@@ -297,7 +322,7 @@ export default function AgencyOwnersPage() {
             <Button
               asChild
               size="lg"
-              className="rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300"
+              className={cn("rounded-full px-7", primaryButtonClassName)}
             >
               <Link href={publicPath('/contact')}>
                 Stabilim urmatorii pasi
@@ -308,7 +333,7 @@ export default function AgencyOwnersPage() {
               asChild
               size="lg"
               variant="outline"
-              className="rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]"
+              className={cn("rounded-full px-7", outlineButtonClassName)}
             >
               <Link href={publicPath()}>Inapoi la prima pagina</Link>
             </Button>

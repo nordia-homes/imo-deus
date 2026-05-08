@@ -4,9 +4,14 @@ import type { Property } from "@/lib/types";
 import { Layers, BedDouble, Calendar, Ruler, Paintbrush, Sofa, Maximize, ArrowUpDown, Thermometer } from "lucide-react";
 import { Button } from "../ui/button";
 import { useState } from 'react';
+import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 
 export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
+    const { agency } = usePublicAgency();
+    const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const displaySurface = property.totalSurface ?? property.squareFootage;
     const TRUNCATION_LENGTH = 250;
@@ -67,39 +72,39 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     ];
 
     const CreditBrokerCard = () => (
-        <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]">
+        <Card className={cn("overflow-hidden rounded-[2rem] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]", isAgentfinderTheme ? "public-premium-panel" : "border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)]")}>
             <CardContent className="p-0">
                 <div className="relative overflow-hidden p-6 md:p-7">
                     <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(134,239,172,0.16),transparent_48%)]" />
                     <div className="relative space-y-4">
-                        <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                        <div className={cn("inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em]", isAgentfinderTheme ? "border border-sky-200 bg-sky-50 text-sky-700" : "border border-emerald-300/20 bg-emerald-400/10 text-emerald-200")}>
                             Finantare premium
                         </div>
                         <div className="space-y-2">
-                            <h3 className="max-w-2xl text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                            <h3 className={cn("max-w-2xl text-2xl font-semibold tracking-tight md:text-3xl", isAgentfinderTheme ? "text-slate-950" : "text-white")}>
                                 Proprietatea potrivita merita si finantarea potrivita.
                             </h3>
-                            <p className="max-w-2xl text-sm leading-7 text-emerald-50/85 md:text-base">
+                            <p className={cn("max-w-2xl text-sm leading-7 md:text-base", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/85")}>
                                 Iti oferim acces la servicii de broker de credite, astfel incat sa compari rapid variantele bancare,
                                 sa intelegi costul real al finantarii si sa alegi solutia care iti protejeaza bugetul pe termen lung.
                             </p>
                         </div>
-                        <div className="grid gap-3 text-sm text-emerald-100/90 md:grid-cols-3">
-                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                        <div className={cn("grid gap-3 text-sm md:grid-cols-3", isAgentfinderTheme ? "text-slate-600" : "text-emerald-100/90")}>
+                            <div className={cn("rounded-2xl px-4 py-3 backdrop-blur-sm", isAgentfinderTheme ? "border border-slate-200 bg-white" : "border border-white/10 bg-white/5")}>
                                 Analiza gratuita a eligibilitatii
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                            <div className={cn("rounded-2xl px-4 py-3 backdrop-blur-sm", isAgentfinderTheme ? "border border-slate-200 bg-white" : "border border-white/10 bg-white/5")}>
                                 Oferte comparate din mai multe banci
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                            <div className={cn("rounded-2xl px-4 py-3 backdrop-blur-sm", isAgentfinderTheme ? "border border-slate-200 bg-white" : "border border-white/10 bg-white/5")}>
                                 Suport complet pana la semnare
                             </div>
                         </div>
                         <div className="flex flex-col gap-3 pt-1 md:flex-row md:items-center md:justify-between">
-                            <p className="max-w-xl text-sm text-stone-300">
+                            <p className={cn("max-w-xl text-sm", isAgentfinderTheme ? "text-slate-600" : "text-stone-300")}>
                                 Daca vrei, te punem in legatura cu un partener de incredere care te poate ghida de la preaprobare pana la aprobare finala.
                             </p>
-                            <div className="inline-flex items-center rounded-full border border-emerald-300/25 bg-emerald-400/12 px-5 py-2 text-sm font-semibold text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                            <div className={cn("inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", isAgentfinderTheme ? "border border-sky-200 bg-white text-sky-700" : "border border-emerald-300/25 bg-emerald-400/12 text-emerald-200")}>
                                 Cere consultanta financiara
                             </div>
                         </div>
@@ -109,15 +114,15 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         </Card>
     );
 
-    const panelClassName = "overflow-hidden rounded-[2rem] border [border-color:var(--public-card-border)] [background:var(--public-card-bg)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
-    const detailsCardClassName = "overflow-hidden rounded-[2rem] border border-white/8 bg-[var(--public-header-bg)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.82)]";
+    const panelClassName = cn("overflow-hidden rounded-[2rem] border shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]", isAgentfinderTheme ? "public-premium-panel" : "[border-color:var(--public-card-border)] [background:var(--public-card-bg)]");
+    const detailsCardClassName = cn("overflow-hidden rounded-[2rem] border shadow-[0_24px_70px_-42px_rgba(0,0,0,0.82)]", isAgentfinderTheme ? "public-premium-soft-panel" : "border-white/8 bg-[var(--public-header-bg)]");
     const panelHeaderClassName = "p-4 md:p-6";
-    const panelTitleClassName = "text-white";
+    const panelTitleClassName = isAgentfinderTheme ? "text-slate-950" : "text-white";
     const panelBodyClassName = "px-4 pb-4 pt-0 md:px-6 md:pb-6";
 
     const DescriptionText = ({ mobile = false }: { mobile?: boolean }) => (
-        <div className={`whitespace-pre-wrap leading-7 text-emerald-50/85 ${mobile ? 'text-sm' : 'text-sm md:text-base'}`}>
-            <span className="font-semibold text-white">{descriptionIntro}</span>
+        <div className={cn(`whitespace-pre-wrap leading-7 ${mobile ? 'text-sm' : 'text-sm md:text-base'}`, isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/85')}>
+            <span className={cn("font-semibold", isAgentfinderTheme ? "text-slate-950" : "text-white")}>{descriptionIntro}</span>
             {descriptionBody ? ` ${descriptionBody}` : null}
         </div>
     );
@@ -125,9 +130,9 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     if (!isMobile) {
         return (
             <div className="space-y-6">
-                <Card className="overflow-hidden rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]">
+                <Card className={cn("overflow-hidden rounded-[2rem] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]", isAgentfinderTheme ? "public-premium-soft-panel" : "border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)]")}>
                     <CardHeader className={panelHeaderClassName}>
-                        <CardTitle className="max-w-2xl text-2xl font-semibold tracking-tight text-white md:text-3xl">Descriere</CardTitle>
+                        <CardTitle className={cn("max-w-2xl text-2xl font-semibold tracking-tight md:text-3xl", panelTitleClassName)}>Descriere</CardTitle>
                     </CardHeader>
                     <CardContent className={panelBodyClassName}>
                         <div>
@@ -135,7 +140,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                             {property.description && property.description.length > TRUNCATION_LENGTH && (
                                 <Button
                                     variant="link"
-                                    className="mt-2 h-auto p-0 text-[#22c55e] hover:text-[#86efac]"
+                                    className={cn("mt-2 h-auto p-0", isAgentfinderTheme ? "text-sky-700 hover:text-sky-800" : "text-[#22c55e] hover:text-[#86efac]")}
                                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                                 >
                                     {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -151,10 +156,10 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     <CardContent className={`${panelBodyClassName} pt-6 md:pt-7`}>
                         <div className="space-y-5">
                             <div className="space-y-3">
-                                <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                <div className={cn("inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em]", isAgentfinderTheme ? "border border-sky-200 bg-sky-50 text-sky-700" : "border border-emerald-300/20 bg-emerald-400/10 text-emerald-200")}>
                                     Informatii detaliate
                                 </div>
-                                <h3 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                                <h3 className={cn("text-2xl font-semibold tracking-tight md:text-3xl", panelTitleClassName)}>
                                     Tot ce merita sa stii, dintr-o privire.
                                 </h3>
                             </div>
@@ -162,18 +167,18 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {infoItems.map(item => {
                             if (!item.value && item.value !== 0) return null;
                             return (
-                                <div key={item.label} className="rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                                <div key={item.label} className={cn("rounded-[1.6rem] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]", isAgentfinderTheme ? "border border-slate-200 bg-white" : "bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)]")}>
                                     <div className="flex w-full items-start gap-4">
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.025] text-[#86efac]">
+                                        <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", isAgentfinderTheme ? "bg-sky-50 text-sky-700" : "bg-white/[0.025] text-[#86efac]")}>
                                             {item.icon}
                                         </span>
                                         <span className="flex min-w-0 flex-1 flex-col">
-                                            <span className="flex flex-wrap items-baseline gap-2 text-[1.05rem] font-semibold text-white md:text-[1.08rem]">
-                                                <span className="text-white/95">{item.label}</span>
-                                                <span className="text-white/80">:</span>
-                                                <span className="text-white">{item.value}</span>
+                                            <span className={cn("flex flex-wrap items-baseline gap-2 text-[1.05rem] font-semibold md:text-[1.08rem]", isAgentfinderTheme ? "text-slate-950" : "text-white")}>
+                                                <span className={isAgentfinderTheme ? "text-slate-950" : "text-white/95"}>{item.label}</span>
+                                                <span className={isAgentfinderTheme ? "text-slate-400" : "text-white/80"}>:</span>
+                                                <span className={isAgentfinderTheme ? "text-slate-950" : "text-white"}>{item.value}</span>
                                             </span>
-                                            <span className="mt-2 text-sm leading-6 text-stone-300">
+                                            <span className={cn("mt-2 text-sm leading-6", isAgentfinderTheme ? "text-slate-600" : "text-stone-300")}>
                                                 {getInfoDescription(item.label, item.value)}
                                             </span>
                                         </span>
@@ -193,7 +198,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
         <div className="space-y-4">
                 <Card className={detailsCardClassName}>
                 <CardHeader className="p-4">
-                    <CardTitle className="text-2xl font-semibold tracking-tight text-white">Descriere</CardTitle>
+                    <CardTitle className={cn("text-2xl font-semibold tracking-tight", panelTitleClassName)}>Descriere</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <div>
@@ -201,7 +206,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                         {property.description && property.description.length > TRUNCATION_LENGTH && (
                             <Button
                                 variant="link"
-                                className="mt-2 h-auto p-0 text-[#22c55e] hover:text-[#86efac]"
+                                className={cn("mt-2 h-auto p-0", isAgentfinderTheme ? "text-sky-700 hover:text-sky-800" : "text-[#22c55e] hover:text-[#86efac]")}
                                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                             >
                                 {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
@@ -217,10 +222,10 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                 <CardContent className="p-4 pt-5">
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            <div className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                            <div className={cn("inline-flex items-center rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em]", isAgentfinderTheme ? "border border-sky-200 bg-sky-50 text-sky-700" : "border border-emerald-300/20 bg-emerald-400/10 text-emerald-200")}>
                                 Informatii detaliate
                             </div>
-                            <h3 className="text-xl font-semibold tracking-tight text-white">
+                            <h3 className={cn("text-xl font-semibold tracking-tight", panelTitleClassName)}>
                                 Tot ce merita sa stii, dintr-o privire.
                             </h3>
                         </div>
@@ -228,18 +233,18 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
                     {infoItems.map(item => {
                         if (!item.value && item.value !== 0) return null;
                         return (
-                            <div key={item.label} className="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                            <div key={item.label} className={cn("rounded-[1.45rem] px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]", isAgentfinderTheme ? "border border-slate-200 bg-white" : "bg-[linear-gradient(180deg,rgba(9,10,11,0.98)_0%,rgba(12,13,14,0.99)_100%)]")}>
                                 <div className="flex w-full items-start gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.025] text-[#86efac]">
+                                    <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl", isAgentfinderTheme ? "bg-sky-50 text-sky-700" : "bg-white/[0.025] text-[#86efac]")}>
                                         {item.icon}
                                     </span>
                                     <span className="flex min-w-0 flex-1 flex-col">
-                                        <span className="flex flex-wrap items-baseline gap-2 text-[0.98rem] font-semibold text-white">
-                                            <span className="text-white/95">{item.label}</span>
-                                            <span className="text-white/80">:</span>
-                                            <span className="text-white">{item.value}</span>
+                                        <span className={cn("flex flex-wrap items-baseline gap-2 text-[0.98rem] font-semibold", isAgentfinderTheme ? "text-slate-950" : "text-white")}>
+                                            <span className={isAgentfinderTheme ? "text-slate-950" : "text-white/95"}>{item.label}</span>
+                                            <span className={isAgentfinderTheme ? "text-slate-400" : "text-white/80"}>:</span>
+                                            <span className={isAgentfinderTheme ? "text-slate-950" : "text-white"}>{item.value}</span>
                                         </span>
-                                        <span className="mt-2 text-xs leading-6 text-stone-300">
+                                        <span className={cn("mt-2 text-xs leading-6", isAgentfinderTheme ? "text-slate-600" : "text-stone-300")}>
                                             {getInfoDescription(item.label, item.value)}
                                         </span>
                                     </span>

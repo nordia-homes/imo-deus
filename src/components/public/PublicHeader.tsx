@@ -98,7 +98,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
               <span
                 className={cn(
                   'whitespace-nowrap pl-1 md:pl-2',
-                  isAgentfinderTheme ? 'text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 md:text-xs' : 'text-lg text-[var(--public-accent)] md:text-2xl'
+                  isAgentfinderTheme ? 'text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500 sm:text-[10px] md:text-xs md:tracking-[0.16em]' : 'text-lg text-[var(--public-accent)] md:text-2xl'
                 )}
                 style={isAgentfinderTheme ? undefined : { fontFamily: '"Brush Script MT", "Segoe Script", cursive', lineHeight: 1 }}
               >
