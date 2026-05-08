@@ -44,14 +44,14 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
         <Link
           href={href}
           className={cn(
-            'flex items-center gap-4 rounded-2xl p-4 text-lg font-medium transition-colors',
+            'flex items-center gap-4 rounded-2xl border p-4 text-lg font-medium transition-colors',
             isAgentfinderTheme
               ? isActive
-                ? 'border border-slate-200/80 bg-white text-slate-950 shadow-[0_12px_30px_rgba(37,55,88,0.08)]'
-                : 'text-slate-600 hover:bg-white hover:text-slate-950 active:bg-slate-50'
+                ? 'border-slate-200 bg-white text-slate-950 shadow-[0_12px_30px_rgba(37,55,88,0.08)]'
+                : 'border-slate-200/70 bg-white/72 text-slate-600 shadow-[0_10px_24px_rgba(37,55,88,0.04)] hover:border-slate-300 hover:bg-white hover:text-slate-950 active:bg-slate-50'
               : isActive
-                ? 'bg-white/10 text-white'
-                : 'text-stone-300 hover:bg-white/5 hover:text-white'
+                ? 'border-white/10 bg-white/10 text-white'
+                : 'border-transparent text-stone-300 hover:bg-white/5 hover:text-white'
           )}
           onClick={onClick}
         >
@@ -151,15 +151,27 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
             </SheetTrigger>
             <SheetContent
               side="left"
+              hideClose={isAgentfinderTheme}
               className={cn(
                 'p-4',
                 isAgentfinderTheme
-                  ? 'w-[86vw] max-w-[360px] border-r border-slate-200 bg-[#f7fbff] p-5 pt-20 text-slate-950 shadow-[0_24px_64px_rgba(37,55,88,0.18)] [&>button]:right-5 [&>button]:top-5 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-full [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-slate-500 [&>button]:opacity-100 [&>button]:shadow-none [&>button]:ring-0 [&>button]:ring-offset-0 [&>button]:outline-none hover:[&>button]:bg-slate-100 hover:[&>button]:text-slate-950 focus-visible:[&>button]:ring-0 data-[state=open]:[&>button]:bg-transparent'
+                  ? 'w-[86vw] max-w-[360px] border-r border-slate-200 bg-[#f7fbff] p-5 pt-20 text-slate-950 shadow-[0_24px_64px_rgba(37,55,88,0.18)]'
                   : 'w-[80vw] border-r border-white/10 bg-[#101113]/98 text-stone-100 backdrop-blur-xl'
               )}
             >
                <SheetTitle className="sr-only">Meniu navigare</SheetTitle>
                <div className="flex h-full flex-col">
+                  {isAgentfinderTheme ? (
+                    <SheetClose asChild>
+                      <button
+                        type="button"
+                        aria-label="Inchide meniul"
+                        className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-[0_12px_30px_rgba(37,55,88,0.12)] transition-colors hover:bg-slate-50 hover:text-slate-950"
+                      >
+                        <span className="text-2xl leading-none">×</span>
+                      </button>
+                    </SheetClose>
+                  ) : null}
                   <div className={cn('rounded-2xl border p-4', isAgentfinderTheme ? 'border-slate-200 bg-white pr-14 shadow-[0_16px_36px_rgba(37,55,88,0.08)]' : 'border-white/10 bg-[#18191d]')}>
                      {headerLogoUrl ? (
                         <div className="relative h-12 w-40 px-1">
