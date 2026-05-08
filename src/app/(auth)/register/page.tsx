@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { AuthError, User } from 'firebase/auth';
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { arrayUnion, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { arrayUnion, deleteDoc, doc, getDoc, increment, setDoc, updateDoc } from 'firebase/firestore';
 import {
   ArrowRight,
   BadgeCheck,
@@ -159,10 +159,11 @@ export default function RegisterPage() {
         const userDocRef = doc(firestore, 'users', newUser.uid);
         await setDoc(userDocRef, userProfile, { merge: true });
 
-        const agencyRef = doc(firestore, 'agencies', inviteData.agencyId);
-        await updateDoc(agencyRef, {
-          agentIds: arrayUnion(newUser.uid),
-        });
+          const agencyRef = doc(firestore, 'agencies', inviteData.agencyId);
+          await updateDoc(agencyRef, {
+            agentIds: arrayUnion(newUser.uid),
+            seatUsageCount: increment(1),
+          });
 
         await deleteDoc(inviteRef);
 

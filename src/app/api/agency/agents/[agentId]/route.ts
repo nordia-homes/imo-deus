@@ -64,6 +64,9 @@ export async function GET(
   try {
     const authContext = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const { agentId } = await context.params;
+    if (!authContext.agencyId) {
+      return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
+    }
 
     if (authContext.role !== 'admin' && authContext.uid !== agentId) {
       return NextResponse.json(
@@ -234,6 +237,10 @@ export async function PATCH(
   try {
     const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const { agentId } = await context.params;
+    if (!agencyId) {
+      return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
+    }
+
     const body = updateAgentSchema.parse(await request.json().catch(() => ({})));
 
     const userRef = adminDb.collection('users').doc(agentId);
@@ -315,6 +322,9 @@ export async function DELETE(
   try {
     const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const { agentId } = await context.params;
+    if (!agencyId) {
+      return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
+    }
 
     const userRef = adminDb.collection('users').doc(agentId);
     const userSnapshot = await userRef.get();
@@ -342,6 +352,7 @@ export async function DELETE(
       adminDb.collection('agencies').doc(agencyId),
       {
         agentIds: FieldValue.arrayRemove(agentId),
+        seatUsageCount: FieldValue.increment(-1),
       },
       { merge: true }
     );

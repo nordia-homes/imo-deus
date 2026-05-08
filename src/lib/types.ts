@@ -460,11 +460,33 @@ export type Task = {
 };
 
 export type Agency = {
-  id: string;
-  name: string;
-  ownerId: string;
-  themePreset?: ThemePreset;
-  agencyDescription?: string;
+    id: string;
+    name: string;
+    ownerId: string;
+    billingProvider?: 'stripe';
+    billingPlan?: 'esential' | 'avansat' | 'profesional';
+    billingStatus?: 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
+    billingInterval?: 'month';
+    billingCurrency?: 'EUR';
+    purchasedSeats?: number;
+    seatUsageCount?: number;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    stripeSubscriptionItemId?: string;
+    billingEmail?: string;
+    billingCompanyName?: string;
+    billingTaxId?: string;
+    billingAddress?: string;
+    billingLastSyncAt?: string;
+    billingCurrentPeriodStart?: string;
+    billingCurrentPeriodEnd?: string;
+    billingCancelAtPeriodEnd?: boolean;
+    billingDefaultPaymentMethodBrand?: string;
+    billingDefaultPaymentMethodLast4?: string;
+    smartbillCustomerId?: string;
+    smartbillLastDocumentNumber?: string;
+    themePreset?: ThemePreset;
+    agencyDescription?: string;
   facebookGroups?: FacebookGroup[];
   shareImageUrl?: string;
   legalCompanyName?: string;

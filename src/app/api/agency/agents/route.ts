@@ -61,6 +61,10 @@ async function emailExistsInAuth(email: string) {
 export async function GET(request: NextRequest) {
   try {
     const { agencyId, adminDb } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    if (!agencyId) {
+      return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
+    }
+
     const [usersSnapshot, propertiesSnapshot] = await Promise.all([
       adminDb
         .collection('users')
@@ -86,9 +90,24 @@ export async function GET(request: NextRequest) {
     });
 
     const agents = usersSnapshot.docs
-      .map((docSnapshot) => ({
+      .map((docSnapshot): {
+        id: string;
+        name?: string;
+        role?: 'admin' | 'agent' | 'platform_admin';
+        email?: string;
+        phone?: string;
+        photoUrl?: string;
+        activeListingsCount: number;
+        activePortfolioValue: number;
+      } => ({
         id: docSnapshot.id,
-        ...docSnapshot.data(),
+        ...(docSnapshot.data() as {
+          name?: string;
+          role?: 'admin' | 'agent' | 'platform_admin';
+          email?: string;
+          phone?: string;
+          photoUrl?: string;
+        }),
         activeListingsCount: activeListingsByAgentId.get(docSnapshot.id) || 0,
         activePortfolioValue: activePortfolioValueByAgentId.get(docSnapshot.id) || 0,
       }))
@@ -113,6 +132,10 @@ export async function POST(request: NextRequest) {
   try {
     const { agencyId, adminDb, adminAuth, runtimeMode } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     resolvedAdminAuth = adminAuth;
+    if (!agencyId) {
+      return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
+    }
+
     const body = createAgentSchema.parse(await request.json().catch(() => ({})));
 
     const email = normalizeAgentEmail(body.email);
@@ -131,10 +154,35 @@ export async function POST(request: NextRequest) {
         ? false
         : await emailExistsInAuth(email);
 
-    const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
+    const [agencySnapshot, agencyUsersSnapshot] = await Promise.all([
+      adminDb.collection('agencies').doc(agencyId).get(),
+      adminDb.collection('users').where('agencyId', '==', agencyId).get(),
+    ]);
 
     if (!agencySnapshot.exists) {
       return NextResponse.json({ message: 'Agentia nu a fost gasita.' }, { status: 404 });
+    }
+
+    const agencyData = agencySnapshot.data() as {
+      billingStatus?: 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
+      purchasedSeats?: number;
+    } | undefined;
+
+    const seatUsageCount = agencyUsersSnapshot.docs.filter((docSnapshot) => {
+      const userData = docSnapshot.data() as { role?: string } | undefined;
+      return userData?.role === 'admin' || userData?.role === 'agent';
+    }).length;
+    const purchasedSeats = Math.max(1, Number(agencyData?.purchasedSeats || seatUsageCount || 1));
+    if (seatUsageCount >= purchasedSeats) {
+      return NextResponse.json(
+        {
+          message: `Ai atins limita de ${purchasedSeats} utilizatori inclusi in abonamentul curent. Creste numarul de seats din Facturare pentru a adauga un agent nou.`,
+          code: 'seat_limit_reached',
+          purchasedSeats,
+          seatUsageCount,
+        },
+        { status: 409 }
+      );
     }
 
     if (authEmailExists) {
@@ -186,6 +234,7 @@ export async function POST(request: NextRequest) {
       agencyRef,
       {
         agentIds: FieldValue.arrayUnion(createdUid),
+        seatUsageCount: FieldValue.increment(1),
       },
       { merge: true }
     );

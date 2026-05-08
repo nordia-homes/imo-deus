@@ -319,6 +319,13 @@ export default function SettingsPage() {
             ...values,
             ownerId: user.uid,
             agentIds: [user.uid],
+            billingProvider: 'stripe',
+            billingPlan: 'esential',
+            billingStatus: 'inactive',
+            billingInterval: 'month',
+            billingCurrency: 'EUR',
+            purchasedSeats: 1,
+            seatUsageCount: 1,
             id: newAgencyRef.id,
         });
         
