@@ -331,7 +331,7 @@ export default function PublicPropertyDetailPage() {
     if (isMobile) {
         return (
           <div className={cn("min-h-screen bg-transparent pb-24", isAgentfinderTheme ? "text-slate-950" : "text-stone-100")}>
-             <div className={cn("space-y-0", isAgentfinderTheme && "pt-2")}>
+             <div className="space-y-0">
                  <MediaColumn property={property} showMatchPrompt={true} shareImageUrl={propertyShareImageUrl} />
 
                 <div className="space-y-4 px-2">
@@ -415,11 +415,20 @@ export default function PublicPropertyDetailPage() {
                             </Button>
                         )}
                         {sanitizedPhone && whatsappHref && (
-                            <Button variant="outline" size="icon" className={cn("h-12 w-12 rounded-full", isAgentfinderTheme ? "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100" : "border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20")} asChild>
-                                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" aria-label="Trimite mesaj pe WhatsApp">
+                            <a
+                                href={whatsappHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Trimite mesaj pe WhatsApp"
+                                className={cn(
+                                    "flex h-12 w-12 items-center justify-center rounded-full transition-colors",
+                                    isAgentfinderTheme
+                                        ? "animate-pulse bg-[#25d366] text-white shadow-[0_0_0_6px_rgba(37,211,102,0.16)] hover:bg-[#1fba57]"
+                                        : "border border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20"
+                                )}
+                            >
                                     <WhatsappIcon className="h-6 w-6" />
-                                </a>
-                            </Button>
+                            </a>
                         )}
                     </div>
                 </div>

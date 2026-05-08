@@ -47,8 +47,8 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
             'flex items-center gap-4 rounded-2xl p-4 text-lg font-medium transition-colors',
             isAgentfinderTheme
               ? isActive
-                ? 'border border-slate-200/80 bg-white/92 text-slate-950'
-                : 'text-slate-600 hover:bg-white/70 hover:text-slate-950'
+                ? 'border border-slate-200/80 bg-white text-slate-950 shadow-[0_12px_30px_rgba(37,55,88,0.08)]'
+                : 'text-slate-600 hover:bg-white hover:text-slate-950 active:bg-slate-50'
               : isActive
                 ? 'bg-white/10 text-white'
                 : 'text-stone-300 hover:bg-white/5 hover:text-white'
@@ -66,7 +66,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
       className={cn(
         'sticky top-0 z-50 backdrop-blur-xl',
         isAgentfinderTheme
-          ? 'bg-transparent px-4 pt-5 sm:px-5 lg:px-6 xl:px-8'
+          ? 'bg-transparent px-4 py-2.5 sm:px-5 sm:py-3 lg:px-6 xl:px-8'
           : 'border-b border-white/10 bg-[var(--public-header-bg)] text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)]'
       )}
     >
@@ -78,7 +78,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
             : 'h-16 px-4 md:h-20'
         )}
       >
-        <Link href={publicPath()} className="flex min-w-0 items-center gap-3 text-left">
+        <Link href={publicPath()} className="flex min-w-0 items-center gap-3 self-center text-left">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
             <>
               {headerLogoUrl ? (
@@ -98,7 +98,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
               <span
                 className={cn(
                   'whitespace-nowrap pl-1 md:pl-2',
-                  isAgentfinderTheme ? 'text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500 sm:text-[10px] md:text-xs md:tracking-[0.16em]' : 'text-lg text-[var(--public-accent)] md:text-2xl'
+                  isAgentfinderTheme ? 'text-[8px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:text-[9px] md:text-[11px] md:tracking-[0.14em]' : 'text-lg text-[var(--public-accent)] md:text-2xl'
                 )}
                 style={isAgentfinderTheme ? undefined : { fontFamily: '"Brush Script MT", "Segoe Script", cursive', lineHeight: 1 }}
               >
@@ -132,7 +132,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
           })}
         </nav>
 
-        <div className="absolute right-4 md:hidden">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 md:hidden">
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button
@@ -152,13 +152,15 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
             <SheetContent
               side="left"
               className={cn(
-                'w-[80vw] border-r border-white/10 p-4 backdrop-blur-xl',
-                isAgentfinderTheme ? 'bg-[#f8fbff]/98 text-slate-950' : 'bg-[#101113]/98 text-stone-100'
+                'p-4',
+                isAgentfinderTheme
+                  ? 'w-[86vw] max-w-[360px] border-r border-slate-200 bg-[#f7fbff] p-5 pt-20 text-slate-950 shadow-[0_24px_64px_rgba(37,55,88,0.18)] [&>button]:right-5 [&>button]:top-5 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-full [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-slate-500 [&>button]:opacity-100 [&>button]:shadow-none [&>button]:ring-0 [&>button]:ring-offset-0 [&>button]:outline-none hover:[&>button]:bg-slate-100 hover:[&>button]:text-slate-950 focus-visible:[&>button]:ring-0 data-[state=open]:[&>button]:bg-transparent'
+                  : 'w-[80vw] border-r border-white/10 bg-[#101113]/98 text-stone-100 backdrop-blur-xl'
               )}
             >
                <SheetTitle className="sr-only">Meniu navigare</SheetTitle>
                <div className="flex h-full flex-col">
-                  <div className={cn('rounded-2xl border border-white/10 p-4', isAgentfinderTheme ? 'border-slate-200/80 bg-white/92' : 'bg-[#18191d]')}>
+                  <div className={cn('rounded-2xl border p-4', isAgentfinderTheme ? 'border-slate-200 bg-white pr-14 shadow-[0_16px_36px_rgba(37,55,88,0.08)]' : 'border-white/10 bg-[#18191d]')}>
                      {headerLogoUrl ? (
                         <div className="relative h-12 w-40 px-1">
                           <Image src={headerLogoUrl} alt={agency?.name || 'Logo agentie'} fill className="object-contain" />
@@ -167,7 +169,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
                         <span className={cn('text-2xl font-bold tracking-tight', isAgentfinderTheme ? 'text-slate-950' : 'text-stone-100')}>{agency?.name}</span>
                       )}
                   </div>
-                 <nav className="mt-8 flex flex-col gap-2">
+                 <nav className="mt-8 flex flex-col gap-3">
                   {agencyId && navLinks.map(link => (
                     <MobileNavLink key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)}>
                       {React.cloneElement(link.icon as React.ReactElement, { className: 'h-5 w-5' })}
