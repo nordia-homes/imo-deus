@@ -46,14 +46,20 @@ export function isPlatformHost(hostname: string): boolean {
   const normalized = normalizeDomain(hostname);
   if (!normalized) return false;
 
-  const envHosts = (process.env.NEXT_PUBLIC_PLATFORM_HOSTS || '')
-    .split(',')
+  const envHosts = [
+    process.env.NEXT_PUBLIC_PLATFORM_HOSTS || '',
+    process.env.NEXT_PUBLIC_APP_URL || '',
+    process.env.APP_BASE_URL || '',
+  ]
+    .flatMap((value) => value.split(','))
     .map((host) => normalizeDomain(host))
     .filter(Boolean);
 
   const knownHosts = new Set<string>([
     'localhost',
     '127.0.0.1',
+    'imodeus.ro',
+    'www.imodeus.ro',
     normalizeDomain(firebaseConfig.authDomain),
     ...envHosts,
   ]);
