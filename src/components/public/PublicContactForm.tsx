@@ -183,7 +183,7 @@ export function PublicContactForm({ propertyId = '', agencyId }: PublicContactFo
 
             <Button
               type="submit"
-              className="h-14 w-full rounded-full bg-[#22c55e] text-base font-semibold text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-[#4ade80]"
+              className="public-premium-primary-button h-14 w-full rounded-full text-base font-semibold"
               disabled={isSubmitting}
             >
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}

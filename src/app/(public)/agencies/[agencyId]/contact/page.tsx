@@ -7,17 +7,19 @@ import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PublicContactForm } from '@/components/public/PublicContactForm';
 import { Button } from '@/components/ui/button';
-
-const sectionShellClassName =
-  'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
-
-const softCardClassName =
-  'rounded-[1.6rem] border border-white/8 bg-white/[0.03] shadow-[0_20px_60px_-42px_rgba(0,0,0,0.72)]';
+import { getAgencyThemePreset } from '@/lib/theme';
 
 export default function AgencyContactPage() {
   const { agency, agencyId, isAgencyLoading } = usePublicAgency();
   const publicPath = usePublicPath();
   const [isEmailVisible, setIsEmailVisible] = useState(false);
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
+  const sectionShellClassName = isAgentfinderTheme
+    ? 'public-premium-panel rounded-[2rem]'
+    : 'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
+  const softCardClassName = isAgentfinderTheme
+    ? 'public-premium-soft-panel rounded-[1.6rem]'
+    : 'rounded-[1.6rem] border border-white/8 bg-white/[0.03] shadow-[0_20px_60px_-42px_rgba(0,0,0,0.72)]';
 
   if (isAgencyLoading || !agency || !agencyId) {
     return (

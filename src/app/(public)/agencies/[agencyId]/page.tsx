@@ -15,18 +15,21 @@ import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 import { Hero } from '@/components/public/Hero';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import type { Property } from '@/lib/types';
-
-const sectionShellClassName =
-  'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
-
-const highlightCardClassName =
-  'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
 
 export default function AgencyHomePage() {
   const { agency, agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
   const publicPath = usePublicPath();
   const firestore = useFirestore();
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
+  const sectionShellClassName = isAgentfinderTheme
+    ? 'public-premium-panel rounded-[2rem]'
+    : 'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
+  const highlightCardClassName = isAgentfinderTheme
+    ? 'public-premium-soft-panel rounded-[1.75rem]'
+    : 'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
 
   const propertiesQuery = useMemoFirebase(() => {
     if (!agencyId) return null;
@@ -112,7 +115,7 @@ export default function AgencyHomePage() {
   return (
     <>
       <Hero />
-      <div className="container mx-auto space-y-8 px-4 pb-5 pt-8 md:space-y-12 md:pb-8 md:pt-12">
+      <div className={cn("container mx-auto space-y-8 px-4 pb-5 md:space-y-12 md:pb-8", isAgentfinderTheme ? "pt-0 md:pt-1" : "pt-8 md:pt-12")}>
         <section className="rounded-[1.9rem] border border-emerald-300/22 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(145deg,rgba(10,19,14,0.98)_0%,rgba(9,11,11,0.99)_55%,rgba(15,26,19,0.97)_100%)] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,0.9)] md:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-3xl">

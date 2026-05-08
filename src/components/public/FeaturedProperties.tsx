@@ -4,6 +4,9 @@ import type { Property } from '@/lib/types';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import { Home } from 'lucide-react';
 import { usePublicPath } from '@/context/PublicAgencyContext';
+import { usePublicAgency } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 interface FeaturedPropertiesProps {
   properties: Property[];
@@ -12,6 +15,8 @@ interface FeaturedPropertiesProps {
 
 export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesProps) {
   const publicPath = usePublicPath();
+  const { agency } = usePublicAgency();
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
 
   if (!properties || properties.length === 0) {
     return null;
@@ -24,8 +29,8 @@ export function FeaturedProperties({ properties, agencyId }: FeaturedPropertiesP
           <Home className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#22c55e]/80">Sugestiile noastre</p>
-          <h2 className="whitespace-nowrap text-[clamp(1.32rem,5.35vw,2.3rem)] leading-none font-bold tracking-tight text-stone-100">
+          <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", isAgentfinderTheme ? "text-emerald-500" : "text-[#22c55e]/80")}>Sugestiile noastre</p>
+          <h2 className={cn("whitespace-nowrap text-[clamp(1.32rem,5.35vw,2.3rem)] leading-none font-bold tracking-tight", isAgentfinderTheme ? "text-slate-700" : "text-stone-100")}>
             Proprietati recomandate
           </h2>
         </div>

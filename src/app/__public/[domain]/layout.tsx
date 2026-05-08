@@ -109,6 +109,7 @@ export default async function PublicDomainLayout({
   const agency = { id: agencyId, ...agencyData } as Agency;
   const themePreset = getAgencyThemePreset(agency);
   const themeStyle = getAgencyThemeStyle(agency);
+  const isAgentfinderPremium = themePreset === 'agentfinder';
 
   return (
     <PublicAgencyProvider
@@ -122,7 +123,20 @@ export default async function PublicDomainLayout({
     >
       <div data-app-theme={themePreset} style={themeStyle as CSSProperties}>
         <PublicHeader agency={agency} isLoading={false} />
-        <main className="min-h-screen [background:var(--public-shell-bg)] text-stone-100">
+        <main
+          className={`min-h-screen text-stone-100 ${
+            isAgentfinderPremium
+              ? 'landing-grid landing-dark-shell overflow-x-clip text-slate-950'
+              : '[background:var(--public-shell-bg)]'
+          }`}
+        >
+          {isAgentfinderPremium ? (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="landing-orb landing-orb-cyan" />
+              <div className="landing-orb landing-orb-emerald" />
+              <div className="landing-orb landing-orb-violet" />
+            </div>
+          ) : null}
           {children}
         </main>
         <PublicFooter />

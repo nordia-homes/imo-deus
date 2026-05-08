@@ -19,6 +19,8 @@ import {
 import { useAgency } from "@/context/AgencyContext";
 import { useToast } from "@/hooks/use-toast";
 import { buildAgencyPublicUrl } from "@/lib/domain-routing";
+import { usePublicAgency } from "@/context/PublicAgencyContext";
+import { getAgencyThemePreset } from "@/lib/theme";
 
 export function PropertyCard({
   property,
@@ -36,9 +38,11 @@ export function PropertyCard({
   const isMobile = useIsMobile();
   const displaySurface = property.totalSurface ?? property.squareFootage;
   const { agencyId: dashboardAgencyId, agency: dashboardAgency } = useAgency();
+  const { agency: publicAgency } = usePublicAgency();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
+  const isAgentfinderTheme = isPublicCard && getAgencyThemePreset(publicAgency) === 'agentfinder';
   const normalizedPublicBasePath =
     publicBasePath && publicBasePath !== '/'
       ? publicBasePath.endsWith('/')
@@ -147,13 +151,15 @@ export function PropertyCard({
               />
             </Link>
             <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
-               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? "border-[#22c55e]/25 bg-black/55 text-[#86efac]" : "bg-white/90 text-black")}>{property.transactionType}</Badge>
+               <Badge variant="outline" className={cn("font-semibold", isPublicCard ? (isAgentfinderTheme ? "border-white bg-white text-slate-900" : "border-[#22c55e]/25 bg-black/55 text-[#86efac]") : "bg-white/90 text-black")}>{property.transactionType}</Badge>
                {isReserved ? (
                 <Badge
                   className={cn(
                     "font-semibold",
                     isPublicCard
-                      ? "border border-amber-300/25 bg-amber-500/85 text-white"
+                      ? isAgentfinderTheme
+                        ? "border border-white bg-white text-slate-900"
+                        : "border border-amber-300/25 bg-amber-500/85 text-white"
                       : "bg-amber-500 text-white"
                   )}
                 >
@@ -164,7 +170,7 @@ export function PropertyCard({
             <Button
               size="icon"
               variant="secondary"
-              className={cn("absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? "bg-black/45 text-stone-100 hover:bg-black/70" : "bg-black/30 text-white hover:bg-black/50")}
+              className={cn("absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? (isAgentfinderTheme ? "border border-white bg-white text-slate-700 hover:bg-white hover:text-slate-900" : "bg-black/45 text-stone-100 hover:bg-black/70") : "bg-black/30 text-white hover:bg-black/50")}
               onClick={() => setIsFavorite(!isFavorite)}
             >
               <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />

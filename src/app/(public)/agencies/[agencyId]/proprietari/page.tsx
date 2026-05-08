@@ -4,12 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
-
-const sectionShellClassName =
-  'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
-
-const highlightCardClassName =
-  'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
+import { getAgencyThemePreset } from '@/lib/theme';
 
 const ownersIntroVideoUrl =
   'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Video%20introducere%20pentru%20proprietari.mp4?alt=media&token=f4163f0e-2265-4d02-b2ef-3f3a70fa2c48';
@@ -17,6 +12,13 @@ const ownersIntroVideoUrl =
 export default function AgencyOwnersPage() {
   const { agency, agencyId } = usePublicAgency();
   const publicPath = usePublicPath();
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
+  const sectionShellClassName = isAgentfinderTheme
+    ? 'public-premium-panel rounded-[2rem]'
+    : 'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
+  const highlightCardClassName = isAgentfinderTheme
+    ? 'public-premium-soft-panel rounded-[1.75rem]'
+    : 'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
 
   const ownerServices = [
     {

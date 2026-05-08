@@ -13,13 +13,15 @@ import { PropertyFilters, type PropertyFiltersType } from "@/components/properti
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { usePublicPath } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
 
 export default function AgencyAllPropertiesPage() {
-  const { agencyId, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
+  const { agencyId, agency, isAgencyLoading: isAgencyContextLoading } = usePublicAgency();
   const publicPath = usePublicPath();
   const firestore = useFirestore();
   const isMobile = useIsMobile();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
 
   // Fetch properties from Firestore
   const propertiesQuery = useMemoFirebase(() => {
@@ -61,7 +63,9 @@ export default function AgencyAllPropertiesPage() {
   return (
     <div className={cn("space-y-6 text-stone-100", isMobile ? "p-0 pb-4" : "p-4 pb-6 lg:p-6 lg:pb-8")}>
       <section className={cn(
-        "overflow-hidden rounded-[2rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_28%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(10,11,12,0.98)_52%,rgba(15,24,18,0.96)_100%)] shadow-[0_28px_90px_-44px_rgba(0,0,0,0.86)]",
+        isAgentfinderTheme
+          ? "public-premium-panel overflow-hidden rounded-[2rem]"
+          : "overflow-hidden rounded-[2rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_28%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(10,11,12,0.98)_52%,rgba(15,24,18,0.96)_100%)] shadow-[0_28px_90px_-44px_rgba(0,0,0,0.86)]",
         isMobile ? "rounded-b-[1.9rem] rounded-t-none border-x-0 border-t-0 px-4 pb-6 pt-5" : "px-6 py-7 md:px-8"
       )}>
         <div className="mx-auto max-w-3xl text-center">
@@ -81,9 +85,9 @@ export default function AgencyAllPropertiesPage() {
       </section>
 
       {/* Mobile & Tablet View */}
-      <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-4">
         <div className="px-2">
-          <div className="overflow-hidden rounded-[1.75rem] border border-emerald-400/15 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_28%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(10,11,12,0.98)_52%,rgba(15,24,18,0.96)_100%)] p-3 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.86)]">
+          <div className={cn("overflow-hidden rounded-[1.75rem] p-3", isAgentfinderTheme ? "public-premium-panel" : "border border-emerald-400/15 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_28%),linear-gradient(145deg,rgba(10,18,14,0.98)_0%,rgba(10,11,12,0.98)_52%,rgba(15,24,18,0.96)_100%)] shadow-[0_24px_70px_-40px_rgba(0,0,0,0.86)]")}>
             <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
               <Button variant="outline" className="w-full rounded-full border-emerald-300/18 bg-emerald-400/10 text-stone-100 shadow-sm hover:bg-emerald-400/14">
                 <Filter className="mr-2 h-4 w-4" /> Filtrează
@@ -95,7 +99,7 @@ export default function AgencyAllPropertiesPage() {
           <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} publicBasePath={publicPath()} />
         </div>
         <div className="px-2">
-          <Card className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] shadow-[0_26px_70px_-42px_rgba(0,0,0,0.86)]">
+          <Card className={cn("overflow-hidden rounded-[1.75rem]", isAgentfinderTheme ? "public-premium-soft-panel" : "border border-white/10 bg-white/[0.04] shadow-[0_26px_70px_-42px_rgba(0,0,0,0.86)]")}>
             <CardHeader className="space-y-3 text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200/75">Contact</p>
               <CardTitle className="text-2xl font-semibold tracking-tight text-white">
@@ -117,7 +121,7 @@ export default function AgencyAllPropertiesPage() {
 
       {/* Desktop View */}
       <div className="hidden lg:block space-y-6 px-3">
-        <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-white/[0.04] shadow-[0_30px_90px_-45px_rgba(0,0,0,0.85)]">
+        <Card className={cn("overflow-hidden rounded-[2rem]", isAgentfinderTheme ? "public-premium-soft-panel" : "border-white/10 bg-white/[0.04] shadow-[0_30px_90px_-45px_rgba(0,0,0,0.85)]")}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -141,7 +145,7 @@ export default function AgencyAllPropertiesPage() {
         
         <PropertyList properties={filteredProperties} isLoading={isLoading} agencyId={agencyId!} publicBasePath={publicPath()} />
 
-        <Card className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_28px_90px_-45px_rgba(0,0,0,0.85)]">
+        <Card className={cn("overflow-hidden rounded-[2rem]", isAgentfinderTheme ? "public-premium-soft-panel" : "border border-white/10 bg-white/[0.04] shadow-[0_28px_90px_-45px_rgba(0,0,0,0.85)]")}>
           <CardHeader className="flex flex-row items-center justify-between gap-6">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200/75">Contact</p>
