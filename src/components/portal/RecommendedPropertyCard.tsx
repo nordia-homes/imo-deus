@@ -152,7 +152,12 @@ export function RecommendedPropertyCard({
               <Button
                 size="icon"
                 variant="secondary"
-                className="h-8 w-8 rounded-full bg-black/45 text-stone-100 backdrop-blur-sm hover:bg-black/70"
+                className={cn(
+                  'h-8 w-8 rounded-full',
+                  isAgentfinderTheme
+                    ? 'border border-white/90 bg-white text-[#5f7296] shadow-[0_12px_28px_rgba(37,55,88,0.12)] hover:bg-white'
+                    : 'bg-black/45 text-stone-100 backdrop-blur-sm hover:bg-black/70'
+                )}
               >
                 <Heart className={cn('h-4 w-4', isFavorite && 'fill-red-500 text-red-500')} />
               </Button>

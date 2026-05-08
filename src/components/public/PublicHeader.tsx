@@ -10,7 +10,8 @@ import type { Agency } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import Image from 'next/image';
 import { ModernMenuIcon } from '../icons/ModernMenuIcon';
-import { usePublicPath } from '@/context/PublicAgencyContext';
+import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
 
 interface PublicHeaderProps {
   agency: Agency | null;
@@ -22,7 +23,12 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const displayPath = pathname.replace(/^\/__public\/[^/]+/, '') || '/';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const agencyId = agency?.id;
+  const { agency: contextAgency } = usePublicAgency();
   const publicPath = usePublicPath();
+  const isAgentfinderTheme = getAgencyThemePreset(contextAgency || agency) === 'agentfinder';
+  const headerLogoUrl = isAgentfinderTheme
+    ? 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Nordia%20Homes%20Logo%20Website.png?alt=media&token=811adda4-aae5-4b3f-ae38-616f3e1685e8'
+    : agency?.logoUrl;
 
   const navLinks = [
     { href: publicPath(), label: 'Acasă', icon: <Home /> },
@@ -48,9 +54,14 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
         <Link href={publicPath()} className="flex min-w-0 items-center gap-3 text-left">
           {isLoading ? <Skeleton className="h-10 w-40" /> : (
             <>
-              {agency?.logoUrl ? (
-                <div className="relative h-9 w-28 rounded-xl bg-[#18191d] px-1 md:h-12 md:w-60">
-                   <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
+              {headerLogoUrl ? (
+                <div
+                  className={cn(
+                    'relative h-9 w-28 px-1 md:h-12 md:w-60',
+                    isAgentfinderTheme ? 'bg-transparent' : 'rounded-xl bg-[#18191d]'
+                  )}
+                >
+                   <Image src={headerLogoUrl} alt={agency?.name || 'Logo agentie'} fill className="object-contain" />
                 </div>
               ) : (
                  <span className="truncate text-base font-semibold tracking-[0.02em] text-stone-100 md:text-xl">{agency?.name || 'Agentie Imobiliara'}</span>
@@ -97,9 +108,14 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
                <SheetTitle className="sr-only">Meniu navigare</SheetTitle>
                <div className="flex flex-col h-full">
                   <div className="rounded-2xl border border-white/10 bg-[#18191d] p-4">
-                     {agency?.logoUrl ? (
-                        <div className="relative h-12 w-40 rounded-xl bg-[#111214] px-1">
-                          <Image src={agency.logoUrl} alt={agency.name} fill className="object-contain" />
+                     {headerLogoUrl ? (
+                        <div
+                          className={cn(
+                            'relative h-12 w-40 px-1',
+                            isAgentfinderTheme ? 'bg-transparent' : 'rounded-xl bg-[#111214]'
+                          )}
+                        >
+                          <Image src={headerLogoUrl} alt={agency?.name || 'Logo agentie'} fill className="object-contain" />
                         </div>
                       ) : (
                         <span className="text-2xl font-bold tracking-tight text-stone-100">{agency?.name}</span>

@@ -212,7 +212,7 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
                   className={cn(
                     'p-0',
                     isAgentfinderTheme
-                      ? 'lg:rounded-[26px] lg:border lg:border-white/16 lg:bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] lg:p-4 lg:shadow-[0_30px_54px_rgba(3,8,18,0.34)] lg:ring-1 lg:ring-white/12 lg:backdrop-blur-md'
+                      ? 'rounded-[26px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.08)_100%)] p-4 shadow-[0_24px_44px_rgba(3,8,18,0.24)] ring-1 ring-white/10 backdrop-blur-md lg:shadow-[0_30px_54px_rgba(3,8,18,0.34)] lg:ring-white/12'
                       : 'lg:rounded-[22px] lg:border lg:border-white/8 lg:bg-transparent lg:p-0 lg:shadow-none'
                   )}
                 >
@@ -221,7 +221,7 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
                     className={cn(
                       'relative h-16 w-full overflow-visible rounded-[18px] px-6 text-base font-semibold transition-all duration-200 hover:scale-[1.01]',
                       isAgentfinderTheme
-                        ? 'border border-[#f8fbff] bg-[linear-gradient(135deg,#ffffff_0%,#f4f8ff_100%)] text-[#0f2747] shadow-[inset_0_1px_0_rgba(255,255,255,0.98),0_22px_38px_rgba(2,6,16,0.30)] hover:bg-[linear-gradient(135deg,#ffffff_0%,#e8f0ff_100%)] before:absolute before:inset-[-10px] before:-z-10 before:rounded-[28px] before:border before:border-[#dbe8ff]/70 before:opacity-70 before:content-[\'\'] before:animate-ping after:absolute after:inset-[-20px] after:-z-20 after:rounded-[38px] after:bg-[radial-gradient(circle,rgba(255,255,255,0.32)_0%,rgba(160,199,255,0.18)_38%,rgba(160,199,255,0)_72%)] after:content-[\'\']'
+                        ? 'border border-[#f8fbff] bg-[linear-gradient(135deg,#ffffff_0%,#f4f8ff_100%)] text-[#0f2747] shadow-[inset_0_1px_0_rgba(255,255,255,0.98),0_22px_38px_rgba(2,6,16,0.30)] hover:bg-[linear-gradient(135deg,#ffffff_0%,#e8f0ff_100%)] before:absolute before:inset-[-8px] before:-z-10 before:rounded-[26px] before:border before:border-[#dbe8ff]/70 before:opacity-80 before:content-[\'\'] before:animate-ping after:absolute after:inset-[-16px] after:-z-20 after:rounded-[34px] after:bg-[radial-gradient(circle,rgba(255,255,255,0.34)_0%,rgba(160,199,255,0.22)_38%,rgba(160,199,255,0)_72%)] after:content-[\'\']'
                         : 'border border-emerald-300/25 bg-[linear-gradient(135deg,#22c55e_0%,#16a34a_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_18px_34px_rgba(22,163,74,0.28)] hover:bg-[linear-gradient(135deg,#2dd468_0%,#17924a_100%)] before:hidden after:hidden'
                     )}
                   >
