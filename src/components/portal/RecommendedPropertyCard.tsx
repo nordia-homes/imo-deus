@@ -13,6 +13,7 @@ import { Card, CardContent } from '../ui/card';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Bath, BedDouble, Calendar, Heart, MapPin, MessageCircle, Ruler, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
+import { getAgencyThemePreset } from '@/lib/theme';
 
 interface RecommendedPropertyCardProps {
   property: Property;
@@ -31,8 +32,9 @@ export function RecommendedPropertyCard({
 }: RecommendedPropertyCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { isCustomDomain } = usePublicAgency();
+  const { isCustomDomain, agency } = usePublicAgency();
   const publicPath = usePublicPath();
+  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
   const [comment, setComment] = useState(recommendation.clientComment || '');
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | 'none'>(recommendation.clientFeedback);
   const [isCommentDirty, setIsCommentDirty] = useState(false);
@@ -215,10 +217,19 @@ export function RecommendedPropertyCard({
         </CardContent>
       </Card>
 
-      <div className="-mt-px rounded-b-[1.6rem] rounded-t-none border border-t-0 border-[var(--app-surface-border)] bg-[var(--agentfinder-shell-panel)] p-3 shadow-none md:-mt-1 md:rounded-t-[1.25rem] md:border-t md:shadow-[0_22px_44px_rgba(37,55,88,0.14)]">
+      <div
+        className={cn(
+          '-mt-px rounded-b-[1.6rem] rounded-t-none p-3 shadow-none md:-mt-1 md:rounded-t-[1.25rem] md:border-t',
+          isAgentfinderTheme
+            ? 'border border-t-0 border-[var(--app-surface-border)] bg-[var(--agentfinder-shell-panel)] md:shadow-[0_22px_44px_rgba(37,55,88,0.14)]'
+            : 'border border-t-0 border-white/10 bg-[#0f1013] md:shadow-[0_22px_44px_-28px_rgba(0,0,0,0.72)]'
+        )}
+      >
         <div className="mb-2 flex items-center justify-between px-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#59709b]">Feedback rapid</p>
-          <p className="text-xs font-medium text-slate-500">Alege o reactie</p>
+          <p className={cn('text-[11px] font-semibold uppercase tracking-[0.18em]', isAgentfinderTheme ? 'text-[#59709b]' : 'text-stone-300')}>
+            Feedback rapid
+          </p>
+          <p className={cn('text-xs font-medium', isAgentfinderTheme ? 'text-slate-500' : 'text-stone-400')}>Alege o reactie</p>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5">
@@ -228,19 +239,27 @@ export function RecommendedPropertyCard({
             className={cn(
               'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
               feedback === 'liked'
-                ? 'border-emerald-300/80 bg-[linear-gradient(180deg,#ecfdf3_0%,#d9fbe8_100%)] text-emerald-900 shadow-[0_16px_30px_rgba(34,197,94,0.18)]'
-                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                ? isAgentfinderTheme
+                  ? 'border-emerald-300/80 bg-[linear-gradient(180deg,#ecfdf3_0%,#d9fbe8_100%)] text-emerald-900 shadow-[0_16px_30px_rgba(34,197,94,0.18)]'
+                  : 'border-emerald-300/35 bg-emerald-500/12 text-emerald-100 shadow-[0_16px_30px_rgba(34,197,94,0.12)]'
+                : isAgentfinderTheme
+                  ? 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                  : 'border-white/10 bg-white/[0.04] text-stone-300 shadow-[0_12px_22px_rgba(0,0,0,0.16)] hover:border-emerald-300/25 hover:bg-white/[0.06] hover:text-white'
             )}
           >
             <span className={cn(
               'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
               feedback === 'liked'
-                ? 'border-emerald-300 bg-white/75 text-emerald-700'
-                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                ? isAgentfinderTheme
+                  ? 'border-emerald-300 bg-white/75 text-emerald-700'
+                  : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'
+                : isAgentfinderTheme
+                  ? 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                  : 'border-white/10 bg-white/[0.05] text-stone-200 group-hover:border-emerald-300/20 group-hover:bg-white/[0.08]'
             )}>
               <ThumbsUp className="h-4 w-4" strokeWidth={2.4} />
             </span>
-            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Like</span>
+            <span className={cn('text-[13px] font-semibold leading-none tracking-[-0.01em]', isAgentfinderTheme ? 'text-slate-900' : 'text-stone-100')}>Like</span>
           </button>
           <button
             type="button"
@@ -248,19 +267,27 @@ export function RecommendedPropertyCard({
             className={cn(
               'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
               feedback === 'disliked'
-                ? 'border-rose-300/80 bg-[linear-gradient(180deg,#fff1f3_0%,#ffe0e6_100%)] text-rose-900 shadow-[0_16px_30px_rgba(244,63,94,0.15)]'
-                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                ? isAgentfinderTheme
+                  ? 'border-rose-300/80 bg-[linear-gradient(180deg,#fff1f3_0%,#ffe0e6_100%)] text-rose-900 shadow-[0_16px_30px_rgba(244,63,94,0.15)]'
+                  : 'border-rose-300/35 bg-rose-500/12 text-rose-100 shadow-[0_16px_30px_rgba(244,63,94,0.12)]'
+                : isAgentfinderTheme
+                  ? 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                  : 'border-white/10 bg-white/[0.04] text-stone-300 shadow-[0_12px_22px_rgba(0,0,0,0.16)] hover:border-rose-300/25 hover:bg-white/[0.06] hover:text-white'
             )}
           >
             <span className={cn(
               'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
               feedback === 'disliked'
-                ? 'border-rose-300 bg-white/75 text-rose-700'
-                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                ? isAgentfinderTheme
+                  ? 'border-rose-300 bg-white/75 text-rose-700'
+                  : 'border-rose-300/30 bg-rose-500/10 text-rose-100'
+                : isAgentfinderTheme
+                  ? 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                  : 'border-white/10 bg-white/[0.05] text-stone-200 group-hover:border-rose-300/20 group-hover:bg-white/[0.08]'
             )}>
               <ThumbsDown className="h-4 w-4" strokeWidth={2.4} />
             </span>
-            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Dislike</span>
+            <span className={cn('text-[13px] font-semibold leading-none tracking-[-0.01em]', isAgentfinderTheme ? 'text-slate-900' : 'text-stone-100')}>Dislike</span>
           </button>
           <button
             type="button"
@@ -268,24 +295,37 @@ export function RecommendedPropertyCard({
             className={cn(
               'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
               isCommentOpen
-                ? 'border-[#9bb0d5] bg-[linear-gradient(180deg,#eef4ff_0%,#dde8fb_100%)] text-[#263754] shadow-[0_16px_30px_rgba(68,91,132,0.16)]'
-                : 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                ? isAgentfinderTheme
+                  ? 'border-[#9bb0d5] bg-[linear-gradient(180deg,#eef4ff_0%,#dde8fb_100%)] text-[#263754] shadow-[0_16px_30px_rgba(68,91,132,0.16)]'
+                  : 'border-blue-300/35 bg-blue-500/12 text-blue-100 shadow-[0_16px_30px_rgba(59,130,246,0.12)]'
+                : isAgentfinderTheme
+                  ? 'border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7faff_100%)] text-slate-700 shadow-[0_12px_22px_rgba(37,55,88,0.08)] hover:border-[#9bb0d5] hover:text-slate-900 hover:shadow-[0_16px_28px_rgba(37,55,88,0.12)]'
+                  : 'border-white/10 bg-white/[0.04] text-stone-300 shadow-[0_12px_22px_rgba(0,0,0,0.16)] hover:border-blue-300/25 hover:bg-white/[0.06] hover:text-white'
             )}
           >
             <span className={cn(
               'flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
               isCommentOpen
-                ? 'border-[#b7c7e3] bg-white/75 text-[#445b84]'
-                : 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                ? isAgentfinderTheme
+                  ? 'border-[#b7c7e3] bg-white/75 text-[#445b84]'
+                  : 'border-blue-300/30 bg-blue-500/10 text-blue-100'
+                : isAgentfinderTheme
+                  ? 'border-slate-200 bg-slate-50 text-[#445b84] group-hover:border-[#b7c7e3] group-hover:bg-white'
+                  : 'border-white/10 bg-white/[0.05] text-stone-200 group-hover:border-blue-300/20 group-hover:bg-white/[0.08]'
             )}>
               <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
             </span>
-            <span className="text-[13px] font-semibold leading-none tracking-[-0.01em] text-slate-900">Comentariu</span>
+            <span className={cn('text-[13px] font-semibold leading-none tracking-[-0.01em]', isAgentfinderTheme ? 'text-slate-900' : 'text-stone-100')}>Comentariu</span>
           </button>
         </div>
 
         {isCommentOpen ? (
-          <div className="mt-3 rounded-[1.15rem] border border-[var(--app-surface-border)] bg-transparent p-0 shadow-none">
+          <div
+            className={cn(
+              'mt-3 rounded-[1.15rem] p-0 shadow-none',
+              isAgentfinderTheme ? 'border border-[var(--app-surface-border)] bg-transparent' : 'border border-white/10 bg-transparent'
+            )}
+          >
             <textarea
               placeholder="Scrie aici feedbackul tau pentru agent..."
               value={comment}
@@ -293,10 +333,15 @@ export function RecommendedPropertyCard({
                 setComment(event.target.value);
                 setIsCommentDirty(true);
               }}
-              className="block min-h-[128px] w-full resize-none rounded-[1.25rem] border border-[#d8e2f1] bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] px-4 py-3 text-base text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_10px_20px_rgba(37,55,88,0.06)] outline-none placeholder:text-slate-400 focus:border-[#9bb0d5] focus:ring-2 focus:ring-[#dbe7fb]"
+              className={cn(
+                'block min-h-[128px] w-full resize-none rounded-[1.25rem] px-4 py-3 text-base outline-none',
+                isAgentfinderTheme
+                  ? 'border border-[#d8e2f1] bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_10px_20px_rgba(37,55,88,0.06)] placeholder:text-slate-400 focus:border-[#9bb0d5] focus:ring-2 focus:ring-[#dbe7fb]'
+                  : 'border border-white/10 bg-[#131722] text-stone-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] placeholder:text-stone-500 focus:border-emerald-300/30 focus:ring-2 focus:ring-emerald-400/10'
+              )}
               style={{
-                background: 'linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%)',
-                color: '#1e293b',
+                background: isAgentfinderTheme ? 'linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%)' : '#131722',
+                color: isAgentfinderTheme ? '#1e293b' : '#f5f5f4',
               }}
             />
             <div className="mt-3">
@@ -307,8 +352,12 @@ export function RecommendedPropertyCard({
                 className={cn(
                   'block w-full rounded-[1rem] px-5 py-3 text-base font-semibold transition-all duration-200',
                   !comment.trim() || !isCommentDirty
-                    ? 'cursor-not-allowed border border-[#d3ddea] bg-[linear-gradient(180deg,#eef3f9_0%,#e3eaf4_100%)] text-[#6d7f9f] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
-                    : 'border border-[#4b6592] bg-[linear-gradient(135deg,#4b6592_0%,#3f567f_100%)] text-white shadow-[0_18px_34px_rgba(47,66,104,0.26)] hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#5570a0_0%,#465f8c_100%)] hover:shadow-[0_20px_38px_rgba(47,66,104,0.3)]'
+                    ? isAgentfinderTheme
+                      ? 'cursor-not-allowed border border-[#d3ddea] bg-[linear-gradient(180deg,#eef3f9_0%,#e3eaf4_100%)] text-[#6d7f9f] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
+                      : 'cursor-not-allowed border border-white/10 bg-white/[0.05] text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+                    : isAgentfinderTheme
+                      ? 'border border-[#4b6592] bg-[linear-gradient(135deg,#4b6592_0%,#3f567f_100%)] text-white shadow-[0_18px_34px_rgba(47,66,104,0.26)] hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#5570a0_0%,#465f8c_100%)] hover:shadow-[0_20px_38px_rgba(47,66,104,0.3)]'
+                      : 'border border-emerald-300/25 bg-[linear-gradient(135deg,#22c55e_0%,#16a34a_100%)] text-white shadow-[0_18px_34px_rgba(22,163,74,0.24)] hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#2dd468_0%,#17924a_100%)] hover:shadow-[0_20px_38px_rgba(22,163,74,0.3)]'
                 )}
               >
                 Salveaza comentariul
