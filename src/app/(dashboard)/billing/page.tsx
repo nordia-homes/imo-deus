@@ -5,12 +5,10 @@ import PlanCard from '@/components/billing/PlanCard';
 import UsageMeter from '@/components/billing/UsageMeter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { changeBillingPlan, changeBillingSeats, redirectToBillingPortal, redirectToCheckout } from '@/lib/stripe';
 import { type BillingPlanId } from '@/lib/billing/plans';
 import { type BillingSummary, getPlanComparisonRows, getSeatPricing } from '@/lib/billing/entitlements';
-import { CreditCard, Loader2, Lock, RefreshCw, Users } from 'lucide-react';
+import { CreditCard, Loader2, Lock, Users } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -114,6 +112,7 @@ export default function BillingPage() {
     setData(payload as BillingResponse);
   }
 
+  const seatOptions = Array.from({ length: 150 }, (_, index) => index + 1);
   const safeSeats = Math.max(1, Math.min(500, Math.floor(requestedSeats || 1)));
   const planCards = useMemo(() => {
     if (!data) return [];
@@ -272,47 +271,11 @@ export default function BillingPage() {
         </CardFooter>
       </Card>
 
-      <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
-        <CardHeader>
-          <CardTitle className="text-white">Configureaza simularea de pret</CardTitle>
-          <CardDescription className="text-white/70">
-            Alege numarul de utilizatori pentru a vedea costul per seat si totalul lunar pe fiecare plan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-[220px_1fr] md:items-end">
-          <div className="space-y-2">
-            <Label htmlFor="requested-seats" className="text-white/80">
-              Numar utilizatori
-            </Label>
-            <Input
-              id="requested-seats"
-              type="number"
-              min={1}
-              max={500}
-              value={safeSeats}
-              onChange={(event) => setRequestedSeats(Number(event.target.value))}
-              className="border-white/20 bg-white/10 text-white"
-            />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-            Pentru {safeSeats} utilizatori, discountul se aplica automat la tot planul in functie de tier-ul de volum. Valorile de mai jos sunt pregatite pentru integrarea cu Stripe tiered pricing.
-          </div>
-        </CardContent>
-        <CardFooter className="justify-end">
-          <Button
-            type="button"
-            onClick={handleSeatUpdate}
-            disabled={isUpdatingSeats || !data.stripe.subscriptionId || safeSeats === data.summary.purchasedSeats}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {isUpdatingSeats ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Actualizeaza seats
-          </Button>
-        </CardFooter>
-      </Card>
-
       <div className="agentfinder-billing-plans-section space-y-4">
         <h2 className="text-2xl font-headline font-semibold text-white">Alege planul potrivit</h2>
+        <div className="rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm text-white/75 shadow-2xl">
+          Pentru {safeSeats} utilizatori, discountul se aplica automat la tot planul in functie de tier-ul de volum. Daca ai deja un abonament activ, schimbarea planului pastreaza si numarul de seats selectat.
+        </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {planCards.map((plan) => (
             <div key={plan.id} className="space-y-2">
@@ -325,6 +288,9 @@ export default function BillingPage() {
                 recommended={plan.recommended}
                 disabled={Boolean(isSubmitting)}
                 buttonLabel={data.stripe.subscriptionId ? 'Schimba planul' : 'Alege planul'}
+                seats={safeSeats}
+                seatOptions={seatOptions}
+                onSeatsChange={(value) => setRequestedSeats(value)}
                 onChoosePlan={() => handleCheckout(plan.id)}
               />
               <p className="px-2 text-sm text-white/65">{plan.billingNote}</p>
