@@ -134,6 +134,71 @@ const PUBLIC_PROPERTY_MAP_STYLES = [
   },
 ];
 
+const PUBLIC_PROPERTY_MAP_STYLES_LIGHT = [
+  {
+    elementType: 'geometry',
+    stylers: [{ color: '#edf3fb' }],
+  },
+  {
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#445a7d' }],
+  },
+  {
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#f8fbff' }],
+  },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#c7d5e8' }],
+  },
+  {
+    featureType: 'landscape.natural',
+    elementType: 'geometry',
+    stylers: [{ color: '#e4efe6' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'geometry',
+    stylers: [{ color: '#f4f7fb' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#6e82a4' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#ffffff' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#d5e0ef' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#d7e7ff' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#9dbceb' }],
+  },
+  {
+    featureType: 'transit',
+    elementType: 'geometry',
+    stylers: [{ color: '#dfe7f4' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#cfe5ff' }],
+  },
+];
+
 function formatCurrency(value?: number) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return 'Pret indisponibil';
@@ -227,19 +292,31 @@ export function PropertiesMap({
   const [isAgentfinderTheme, setIsAgentfinderTheme] = useState(false);
   const activeMapStyles =
     appearance === 'public-property-detail'
-      ? PUBLIC_PROPERTY_MAP_STYLES
+      ? isAgentfinderTheme
+        ? PUBLIC_PROPERTY_MAP_STYLES_LIGHT
+        : PUBLIC_PROPERTY_MAP_STYLES
       : appearance !== 'public-property-detail' && isAgentfinderTheme
         ? undefined
         : MAP_STYLES;
 
   useEffect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => setIsAgentfinderTheme(root.dataset.appTheme === 'agentfinder');
+    const syncTheme = () => {
+      const themedContainer =
+        mapRef.current?.closest('[data-app-theme]') ??
+        document.querySelector('[data-app-theme]');
+      const theme = themedContainer?.getAttribute('data-app-theme') ?? document.documentElement.dataset.appTheme;
+
+      setIsAgentfinderTheme(theme === 'agentfinder');
+    };
 
     syncTheme();
 
     const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-app-theme'] });
+    observer.observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['data-app-theme'],
+    });
 
     return () => observer.disconnect();
   }, []);
@@ -890,17 +967,31 @@ export function PropertiesMap({
 
   if (appearance === 'public-property-detail') {
     return (
-      <div className="public-property-map relative h-full rounded-[2rem] bg-[#08120c] shadow-none">
-        <div className="absolute inset-0 overflow-hidden rounded-[inherit] bg-[#08120c]">
+      <div
+        className={`public-property-map relative h-full rounded-[2rem] shadow-none ${
+          isAgentfinderTheme ? 'border border-slate-200/80 bg-[#eef4fb]' : 'bg-[#08120c]'
+        }`}
+      >
+        <div
+          className={`absolute inset-0 overflow-hidden rounded-[inherit] ${
+            isAgentfinderTheme ? 'bg-[#eef4fb]' : 'bg-[#08120c]'
+          }`}
+        >
           <div ref={mapRef} className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-end p-4">
-          <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-[#0f1d15]/84 p-2 shadow-xl backdrop-blur">
+          <div
+            className={`pointer-events-auto flex items-center gap-2 rounded-2xl p-2 shadow-xl backdrop-blur ${
+              isAgentfinderTheme ? 'border border-slate-200/80 bg-white/92' : 'bg-[#0f1d15]/84'
+            }`}
+          >
             <Button
               type="button"
               size="icon"
               variant="ghost"
-              className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+              className={`h-9 w-9 rounded-xl ${
+                isAgentfinderTheme ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
+              }`}
               onClick={handleZoomIn}
             >
               <Plus className="h-4 w-4" />
@@ -909,7 +1000,9 @@ export function PropertiesMap({
               type="button"
               size="icon"
               variant="ghost"
-              className="h-9 w-9 rounded-xl text-white hover:bg-white/10"
+              className={`h-9 w-9 rounded-xl ${
+                isAgentfinderTheme ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
+              }`}
               onClick={handleZoomOut}
             >
               <Minus className="h-4 w-4" />
@@ -928,7 +1021,7 @@ export function PropertiesMap({
           }
 
           .public-property-map .gm-style {
-            background: #08120c !important;
+            background: ${isAgentfinderTheme ? '#eef4fb' : '#08120c'} !important;
           }
         `}</style>
       </div>
