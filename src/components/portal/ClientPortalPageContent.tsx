@@ -82,21 +82,42 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
 
   return (
     <div data-app-theme={themePreset} className="agentfinder-properties-page space-y-6 px-4 pb-10 pt-6 text-white md:px-6 lg:px-8">
-      <section className="agentfinder-properties-hero-card overflow-hidden rounded-[30px] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]">
+      <section
+        className={cn(
+          'agentfinder-properties-hero-card overflow-hidden rounded-[30px] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]',
+          isAgentfinderTheme
+            ? 'border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)]'
+            : 'border border-emerald-300/18 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.18),_transparent_24%),radial-gradient(circle_at_85%_20%,_rgba(16,185,129,0.14),_transparent_22%),linear-gradient(135deg,_#0b2b26_0%,_#0a221d_52%,_#071814_100%)] shadow-[0_30px_72px_-34px_rgba(0,0,0,0.78)]'
+        )}
+      >
         <div className="flex flex-col gap-6 px-7 py-6 text-center lg:flex-row lg:items-end lg:justify-between lg:text-left">
           <div className="min-w-0">
-            <div className="agentfinder-properties-eyebrow mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85 lg:mx-0">
+            <div
+              className={cn(
+                'agentfinder-properties-eyebrow mx-auto inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] lg:mx-0',
+                isAgentfinderTheme
+                  ? 'border border-emerald-300/15 bg-emerald-400/10 text-emerald-100/85'
+                  : 'border border-emerald-300/24 bg-emerald-400/12 text-emerald-50'
+              )}
+            >
               Portal client
             </div>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white">
               Recomandari pentru {portal.contactName}
             </h1>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-white/68 lg:max-w-2xl">
+            <p className={cn('mt-2 max-w-2xl text-base leading-7 lg:max-w-2xl', isAgentfinderTheme ? 'text-white/68' : 'text-emerald-50/80')}>
               {portal.agentName} a selectat proprietatile cu cel mai bun potential pentru tine. Intra in detalii si lasa feedback direct sub fiecare proprietate.
             </p>
           </div>
-          <div className="agentfinder-properties-count-card mx-auto shrink-0 rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] lg:mx-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
+          <div
+            className={cn(
+              'agentfinder-properties-count-card mx-auto shrink-0 rounded-3xl px-5 py-4 text-center lg:mx-0',
+              isAgentfinderTheme
+                ? 'border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                : 'border border-emerald-300/16 bg-emerald-400/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_36px_rgba(0,0,0,0.18)]'
+            )}
+          >
+            <p className={cn('text-[11px] font-semibold uppercase tracking-[0.18em]', isAgentfinderTheme ? 'text-white/45' : 'text-emerald-100/70')}>Total</p>
             <p className="mt-1 text-3xl font-semibold text-white">{recommendations?.length || 0}</p>
           </div>
         </div>
@@ -135,7 +156,7 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
               'relative overflow-hidden rounded-[30px] shadow-[0_38px_110px_rgba(6,16,31,0.42)]',
               isAgentfinderTheme
                 ? 'border border-[#0f223e] bg-[linear-gradient(135deg,#06101f_0%,#0c1d36_46%,#14345c_100%)] ring-1 ring-[#d8e7ff]/12'
-                : 'border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14)_0%,rgba(34,197,94,0)_28%),linear-gradient(135deg,#0d1018_0%,#111522_52%,#171d2b_100%)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.72)]'
+                : 'border border-emerald-300/16 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.16)_0%,rgba(74,222,128,0)_24%),radial-gradient(circle_at_82%_18%,rgba(16,185,129,0.12)_0%,rgba(16,185,129,0)_22%),linear-gradient(135deg,#0b2b26_0%,#0a221d_50%,#071814_100%)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.76)]'
             )}
           >
             <div
@@ -143,7 +164,7 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
                 'absolute inset-0',
                 isAgentfinderTheme
                   ? 'bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.20)_0%,rgba(255,255,255,0)_24%),radial-gradient(circle_at_78%_50%,rgba(96,165,250,0.34)_0%,rgba(96,165,250,0)_22%),radial-gradient(circle_at_bottom_left,rgba(52,211,153,0.24)_0%,rgba(52,211,153,0)_20%)]'
-                  : 'bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_20%),radial-gradient(circle_at_86%_50%,rgba(74,222,128,0.18)_0%,rgba(74,222,128,0)_18%),radial-gradient(circle_at_30%_100%,rgba(59,130,246,0.14)_0%,rgba(59,130,246,0)_22%)]'
+                  : 'bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0)_20%),radial-gradient(circle_at_86%_50%,rgba(74,222,128,0.18)_0%,rgba(74,222,128,0)_18%),radial-gradient(circle_at_22%_100%,rgba(20,184,166,0.14)_0%,rgba(20,184,166,0)_22%)]'
               )}
             />
             <div className="absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.92),rgba(255,255,255,0))]" />
