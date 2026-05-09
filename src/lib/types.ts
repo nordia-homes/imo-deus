@@ -5,7 +5,7 @@ export type PromotionStatus = {
   lastSync?: string;
   link?: string;
   views?: number;
-  remoteId?: number;
+  remoteId?: number | string;
   errorMessage?: string;
   remoteState?: string;
 }
@@ -170,6 +170,41 @@ export type ImobiliareIntegrationPrivate = {
   agentMappings?: ImobiliareAgentMapping[] | null;
 };
 
+export type StoriaPortalProfile = {
+  enabled?: boolean;
+  customReference?: string;
+  titleOverride?: string;
+  descriptionOverride?: string;
+  categoryUrn?: string | null;
+  market?: 'primary' | 'secondary' | null;
+  remoteUuid?: string | null;
+  remoteUrl?: string | null;
+  locationExact?: boolean;
+  lastValidationError?: string | null;
+  lastPublishedAt?: string | null;
+  lastPayloadHash?: string | null;
+  lastTransactionId?: string | null;
+  lastPublishAuditHistory?: Array<{
+    attemptedAt: string;
+    stage?: string | null;
+    responseStatus?: number | null;
+    errorMessage?: string | null;
+  }> | null;
+};
+
+export type StoriaIntegrationPrivate = {
+  provider: 'storia';
+  agencyId: string;
+  accessToken: string;
+  accessTokenExpiresAt: string | null;
+  refreshToken: string | null;
+  connectedAt: string;
+  updatedAt: string;
+  authorizationState?: string | null;
+  lastAuthorizedByUid?: string | null;
+  lastAuthorizedAt?: string | null;
+};
+
 export type FacebookGroup = {
   name: string;
   url: string;
@@ -262,6 +297,7 @@ export type Property = {
   rlvUrl?: string;
   portalProfiles?: {
     imobiliare?: ImobiliarePortalProfile;
+    storia?: StoriaPortalProfile;
   };
   locationProfile?: PropertyLocationProfile | null;
 

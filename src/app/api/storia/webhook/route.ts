@@ -5,12 +5,19 @@ export const runtime = 'nodejs';
 async function buildWebhookAck(request: NextRequest) {
   const rawBody = await request.text().catch(() => '');
 
-  console.info('[storia] webhook received', {
-    method: request.method,
-    userAgent: request.headers.get('user-agent'),
-    hasSignature: Boolean(request.headers.get('x-signature')),
-    bodyLength: rawBody.length,
-  });
+  try {
+    if (request.method === 'POST' && rawBody) {
+      const { handleStoriaWebhookNotification } = await import('@/lib/storia');
+      await handleStoriaWebhookNotification(
+        JSON.parse(rawBody) as Record<string, unknown>,
+        request.headers.get('x-signature')
+      );
+    }
+  } catch (error) {
+    console.error('[storia] webhook processing failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   return NextResponse.json(
     {

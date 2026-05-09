@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 function buildHtmlResponse(params: {
-  codePresent: boolean;
+  success: boolean;
   state: string | null;
   error: string | null;
+  message: string;
 }) {
-  const { codePresent, state, error } = params;
+  const { success, state, error, message } = params;
 
   return `<!DOCTYPE html>
 <html lang="ro">
@@ -53,11 +54,11 @@ function buildHtmlResponse(params: {
   </head>
   <body>
     <main>
-      <h1>Callback Storia primit</h1>
-      <p>Endpoint-ul OAuth pentru Storia este activ si a raspuns corect.</p>
-      <p>Integrarea completa a schimbului de cod OAuth va fi adaugata in pasul urmator.</p>
+      <h1>${success ? 'Cont Storia conectat' : 'Conectare Storia esuata'}</h1>
+      <p>${message}</p>
+      <p>Poti inchide aceasta fereastra si te poti intoarce in ImoDeus.</p>
       <div class="meta">
-        <p><strong>authorization code primit:</strong> ${codePresent ? 'da' : 'nu'}</p>
+        <p><strong>status:</strong> <code>${success ? 'success' : 'error'}</code></p>
         <p><strong>state:</strong> <code>${state || '-'}</code></p>
         <p><strong>error:</strong> <code>${error || '-'}</code></p>
       </div>
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state');
   const error = request.nextUrl.searchParams.get('error');
+  const errorDescription = request.nextUrl.searchParams.get('error_description');
 
   console.info('[storia] oauth callback received', {
     hasCode: Boolean(code),
@@ -77,18 +79,58 @@ export async function GET(request: NextRequest) {
     error,
   });
 
-  return new NextResponse(
-    buildHtmlResponse({
-      codePresent: Boolean(code),
-      state,
-      error,
-    }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-store',
-      },
-    }
-  );
+  if (!code || !state || error) {
+    return new NextResponse(
+      buildHtmlResponse({
+        success: false,
+        state,
+        error: error || errorDescription,
+        message: errorDescription || error || 'Storia nu a returnat un cod OAuth valid.',
+      }),
+      {
+        status: 400,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  }
+
+  try {
+    const { finalizeStoriaAuthorization } = await import('@/lib/storia');
+    await finalizeStoriaAuthorization({ code, state });
+
+    return new NextResponse(
+      buildHtmlResponse({
+        success: true,
+        state,
+        error: null,
+        message: 'Autorizarea OAuth a fost finalizata si contul agentiei este acum conectat la Storia.',
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  } catch (callbackError) {
+    return new NextResponse(
+      buildHtmlResponse({
+        success: false,
+        state,
+        error: callbackError instanceof Error ? callbackError.message : 'authorization_failed',
+        message: callbackError instanceof Error ? callbackError.message : 'Nu am putut finaliza conectarea Storia.',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  }
 }

@@ -321,6 +321,27 @@ function deriveImobiliareUiStatus(property: Property): ImobiliareUiStatus {
   return 'unpublished';
 }
 
+function deriveGenericPortalUiStatus(property: Property, portalId: string): ImobiliareUiStatus {
+  const promotion = property.promotions?.[portalId];
+  const rawStatus = promotion?.status;
+  const remoteState = typeof promotion?.remoteState === 'string' ? promotion.remoteState.toLowerCase() : '';
+  const remoteId = promotion?.remoteId;
+  const remoteLink = promotion?.link;
+
+  if (rawStatus === 'error') return 'error';
+  if (rawStatus === 'unpublished') return 'unpublished';
+  if (rawStatus === 'published') return 'published';
+  if (rawStatus === 'pending') {
+    return remoteId || remoteLink || remoteState === 'active' ? 'published' : 'pending';
+  }
+  if (remoteId || remoteLink || remoteState === 'active') return 'published';
+  return 'unpublished';
+}
+
+function getGenericPortalError(propertyLike: Property, portalId: string) {
+  return propertyLike.promotions?.[portalId]?.errorMessage || '';
+}
+
 async function authorizedFetch(
   user: NonNullable<ReturnType<typeof useUser>['user']>,
   auth: ReturnType<typeof useAuth>,
@@ -566,12 +587,14 @@ export function PublishCard({ property }: { property: Property }) {
   }, [agencyId, firestore, property.id]);
 
   const serverStatus = deriveImobiliareUiStatus(property);
+  const storiaStatus = deriveGenericPortalUiStatus(property, 'storia');
   const isSyncing = syncTarget !== null;
   const effectiveStatus: ImobiliareUiStatus = isSyncing ? 'pending' : optimisticStatus || serverStatus;
   const isPublished = effectiveStatus === 'published';
   const isPending = effectiveStatus === 'pending';
   const isErrored = effectiveStatus === 'error';
   const persistedError = getPersistedImobiliareError(property);
+  const persistedStoriaError = getGenericPortalError(property, 'storia');
   const publishAuditHistory =
     property.portalProfiles?.imobiliare?.lastPublishAuditHistory?.slice(-5).reverse() || [];
   const heroImage = getPrimaryImage(property);
@@ -731,6 +754,42 @@ export function PublishCard({ property }: { property: Property }) {
   }
 
   async function handlePublishToggle(portalId: string, checked: boolean) {
+    if (portalId === 'storia') {
+      if (!user) {
+        toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru a publica.', variant: 'destructive' });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const endpoint = checked ? '/api/storia/publish' : '/api/storia/unpublish';
+        const response = await authorizedFetch(user, auth, endpoint, {
+          method: 'POST',
+          body: JSON.stringify({ propertyId: property.id }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Actiunea Storia nu a putut fi finalizata.');
+        }
+
+        toast({
+          title: checked ? 'Publicare reusita' : 'Anunt retras',
+          description: checked
+            ? 'Proprietatea a fost trimisa spre publicare pe Storia.'
+            : 'Proprietatea a fost retrasa din Storia.',
+        });
+      } catch (error) {
+        toast({
+          title: checked ? 'Publicare esuata' : 'Retragere esuata',
+          description: error instanceof Error ? error.message : 'A aparut o eroare neasteptata.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (portalId !== 'imobiliare') {
       toast({ title: 'In curand', description: `${portalId} nu este integrat inca.` });
       return;
@@ -812,6 +871,36 @@ export function PublishCard({ property }: { property: Property }) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || typeof payload?.url !== 'string' || !payload.url) {
         throw new Error(payload?.message || 'Nu am putut rezolva linkul public al anuntului.');
+      }
+
+      window.open(payload.url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      toast({
+        title: 'Link indisponibil',
+        description: error instanceof Error ? error.message : 'Nu am putut deschide anuntul.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleOpenStoriaListing() {
+    if (!user) {
+      toast({
+        title: 'Autentificare necesara',
+        description: 'Trebuie sa fii autentificat pentru a deschide anuntul.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const response = await authorizedFetch(user, auth, '/api/storia/property-link', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || typeof payload?.url !== 'string' || !payload.url) {
+        throw new Error(payload?.message || 'Nu am putut rezolva linkul public al anuntului din Storia.');
       }
 
       window.open(payload.url, '_blank', 'noopener,noreferrer');
@@ -949,9 +1038,13 @@ export function PublishCard({ property }: { property: Property }) {
 
         {PORTALS.map((portal) => {
           const isImobiliare = portal.id === 'imobiliare';
+          const isStoria = portal.id === 'storia';
           const published = isImobiliare && isPublished;
           const pending = isImobiliare && isPending;
           const errored = isImobiliare && isErrored;
+          const storiaPublished = isStoria && storiaStatus === 'published';
+          const storiaPending = isStoria && property.promotions?.storia?.status === 'pending';
+          const storiaErrored = isStoria && storiaStatus === 'error';
 
           return (
             <div
@@ -965,22 +1058,22 @@ export function PublishCard({ property }: { property: Property }) {
                 {portal.logo}
               </Label>
               <div className="flex items-center justify-center">
-                {published ? (
+                {published || storiaPublished ? (
                   <span className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
                     Publicat
                   </span>
                 ) : null}
-                {pending ? (
+                {pending || storiaPending ? (
                   <span className="rounded-full border border-yellow-300/18 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-yellow-200">
                     In curs...
                   </span>
                 ) : null}
-                {errored ? (
+                {errored || storiaErrored ? (
                   <span className="rounded-full border border-red-300/18 bg-red-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-200">
                     Eroare
                   </span>
                 ) : null}
-                {!published && !pending && !errored ? (
+                {!published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored ? (
                   <span
                     className={cn(
                       "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55",
@@ -1014,6 +1107,27 @@ export function PublishCard({ property }: { property: Property }) {
                       Publica
                     </Button>
                   )
+                ) : isStoria ? (
+                  storiaPublished ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      onClick={handleOpenStoriaListing}
+                    >
+                      Deschide
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      disabled={isSubmitting || storiaPending}
+                      onClick={() => handlePublishToggle(portal.id, true)}
+                    >
+                      Publica
+                    </Button>
+                  )
                 ) : (
                   <Button
                     type="button"
@@ -1033,6 +1147,12 @@ export function PublishCard({ property }: { property: Property }) {
         {persistedError ? (
           <div className="rounded-xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
             {persistedError}
+          </div>
+        ) : null}
+
+        {persistedStoriaError ? (
+          <div className="rounded-xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+            Storia: {persistedStoriaError}
           </div>
         ) : null}
 
