@@ -190,6 +190,21 @@ function slugifyTitle(value?: string | null) {
     .replace(/-{2,}/g, '-') || 'anunt-imobiliar';
 }
 
+function normalizeStoriaPublicUrl(rawUrl?: string | null, title?: string | null) {
+  const normalized = (rawUrl || '').trim();
+  if (!normalized) return null;
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    return normalized;
+  }
+  if (normalized.startsWith('/')) {
+    return `${STORIA_SITE_URL}${normalized}`;
+  }
+  if (/^[A-Za-z0-9_-]{4,32}$/.test(normalized)) {
+    return `${STORIA_SITE_URL}/${STORIA_LOCALE}/oferta/${slugifyTitle(title)}-${normalized}`;
+  }
+  return `${STORIA_SITE_URL}/${normalized.replace(/^\/+/, '')}`;
+}
+
 function sanitizeStoriaText(value?: string | null) {
   return (value || '')
     .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
@@ -1268,16 +1283,94 @@ export async function resolvePropertyStoriaPublicUrl(params: { agencyId: string;
 
   const metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
     method: 'GET',
-  });
-  const remoteUrl = metadata.data?.url || property.portalProfiles?.storia?.remoteUrl || null;
+  }).catch(() => null);
+  const remoteUrl = normalizeStoriaPublicUrl(
+    metadata?.data?.url ||
+      property.portalProfiles?.storia?.remoteUrl ||
+      property.promotions?.storia?.link ||
+      null,
+    property.title
+  );
+
+  if (metadata?.data?.url) {
+    await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+      {
+        promotions: {
+          storia: {
+            link: normalizeStoriaPublicUrl(metadata.data.url, property.title),
+          },
+        },
+        portalProfiles: {
+          storia: {
+            remoteUrl: normalizeStoriaPublicUrl(metadata.data.url, property.title),
+          },
+        },
+      },
+      { merge: true }
+    );
+  }
 
   if (!remoteUrl) {
-    throw new Error('Nu am putut determina linkul public al anuntului din Storia.');
+    throw new Error('Anuntul este publicat, dar Storia nu a returnat inca URL-ul public al anuntului. Reincearca dupa sincronizarea webhook-ului.');
   }
 
   return {
-    url: remoteUrl.startsWith('http') ? remoteUrl : `${STORIA_SITE_URL}/${slugifyTitle(property.title)}`,
+    url: remoteUrl,
     remoteUuid,
+  };
+}
+
+export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string; propertyId: string }) {
+  const { agencyId, propertyId } = params;
+  const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId);
+  const propertySnapshot = await propertyRef.get();
+  if (!propertySnapshot.exists) {
+    throw new Error('Proprietatea nu a fost gasita.');
+  }
+
+  const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
+  const remoteUuid =
+    property.portalProfiles?.storia?.remoteUuid ||
+    (typeof property.promotions?.storia?.remoteId === 'string' ? property.promotions.storia.remoteId : null);
+
+  if (!remoteUuid) {
+    throw new Error('Nu exista UUID remote salvat pentru acest anunt Storia.');
+  }
+
+  const metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
+    method: 'GET',
+  });
+
+  const remoteUrl = normalizeStoriaPublicUrl(metadata.data?.url || null, property.title);
+  const remoteCode = metadata.data?.code || null;
+
+  await propertyRef.set(
+    {
+      promotions: {
+        storia: {
+          link: remoteUrl,
+          remoteId: remoteUuid,
+          remoteState: remoteCode,
+          status: remoteCode ? mapRemoteCodeToPromotionStatus(remoteCode) : property.promotions?.storia?.status || 'pending',
+          lastSync: nowIso(),
+        },
+      },
+      portalProfiles: {
+        storia: {
+          remoteUuid,
+          remoteUrl,
+          lastPublishedAt: remoteUrl ? nowIso() : property.portalProfiles?.storia?.lastPublishedAt || null,
+          lastValidationError: remoteUrl ? null : property.portalProfiles?.storia?.lastValidationError || null,
+        },
+      },
+    },
+    { merge: true }
+  );
+
+  return {
+    remoteUuid,
+    remoteCode,
+    remoteUrl,
   };
 }
 
@@ -1367,10 +1460,12 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
   }
 
   const remoteCode = notification.data?.code || null;
-  const remoteUrl = notification.data?.url || null;
+  const rawRemoteUrl = notification.data?.url || null;
 
   const batch = adminDb.batch();
   snapshot.docs.forEach((docSnapshot) => {
+    const property = { id: docSnapshot.id, ...docSnapshot.data() } as Property;
+    const remoteUrl = normalizeStoriaPublicUrl(rawRemoteUrl, property.title);
     batch.set(
       docSnapshot.ref,
       {

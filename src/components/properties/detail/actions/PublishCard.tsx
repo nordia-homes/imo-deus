@@ -72,6 +72,7 @@ const PORTALS = [
 type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
 type ImobiliareSyncTarget = 'published' | 'unpublished' | null;
 type PublishModalStep = 'confirm' | 'syncing' | 'published';
+type StoriaPublishModalStep = 'confirm' | 'syncing' | 'published';
 type PromotionFormState = {
   status: 'draft' | 'online';
   imoradarStatus: 'draft' | 'online';
@@ -379,18 +380,35 @@ function deriveGenericPortalUiStatus(property: Property, portalId: string): Imob
   const remoteState = typeof promotion?.remoteState === 'string' ? promotion.remoteState.toLowerCase() : '';
   const remoteId = promotion?.remoteId;
   const remoteLink = promotion?.link;
+  const profile = property.portalProfiles?.[portalId as keyof NonNullable<Property['portalProfiles']>] as
+    | { remoteUuid?: string | null; remoteUrl?: string | null }
+    | null
+    | undefined;
+  const hasRemoteListing = Boolean(
+    remoteId ||
+    remoteLink ||
+    profile?.remoteUuid ||
+    profile?.remoteUrl ||
+    remoteState === 'active' ||
+    remoteState === 'published'
+  );
 
+  if (hasRemoteListing && rawStatus !== 'unpublished') return 'published';
   if (rawStatus === 'error') return 'error';
   if (rawStatus === 'unpublished') return 'unpublished';
   if (rawStatus === 'published') return 'published';
   if (rawStatus === 'pending') {
-    return remoteId || remoteLink || remoteState === 'active' ? 'published' : 'pending';
+    return hasRemoteListing ? 'published' : 'pending';
   }
-  if (remoteId || remoteLink || remoteState === 'active') return 'published';
+  if (hasRemoteListing) return 'published';
   return 'unpublished';
 }
 
 function getGenericPortalError(propertyLike: Property, portalId: string) {
+  const status = deriveGenericPortalUiStatus(propertyLike, portalId);
+  if (status === 'published') {
+    return '';
+  }
   return propertyLike.promotions?.[portalId]?.errorMessage || '';
 }
 
@@ -626,6 +644,9 @@ export function PublishCard({ property }: { property: Property }) {
   });
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
   const [isStoriaPromotionModalOpen, setIsStoriaPromotionModalOpen] = useState(false);
+  const [isStoriaPublishModalOpen, setIsStoriaPublishModalOpen] = useState(false);
+  const [storiaPublishModalStep, setStoriaPublishModalStep] = useState<StoriaPublishModalStep>('confirm');
+  const [storiaPublishModalError, setStoriaPublishModalError] = useState('');
   const [publishModalStep, setPublishModalStep] = useState<PublishModalStep>(() => readPersistedPublishModalStep(property.id) || 'confirm');
   const [publishModalError, setPublishModalError] = useState('');
   const [promotionForm, setPromotionForm] = useState<PromotionFormState>(
@@ -639,6 +660,7 @@ export function PublishCard({ property }: { property: Property }) {
   const [isLoadingStoriaPromotions, setIsLoadingStoriaPromotions] = useState(false);
   const [isSavingStoriaPromotions, setIsSavingStoriaPromotions] = useState(false);
   const [isApplyingStoriaPromotions, setIsApplyingStoriaPromotions] = useState(false);
+  const [isRefreshingStoriaLink, setIsRefreshingStoriaLink] = useState(false);
   const propertyRef = useMemo(() => {
     if (!agencyId) {
       return null;
@@ -701,6 +723,49 @@ export function PublishCard({ property }: { property: Property }) {
   useEffect(() => {
     setStoriaActivePromotions(property.portalProfiles?.storia?.activePromotions || []);
   }, [property.id, property.portalProfiles?.storia?.activePromotions]);
+
+  useEffect(() => {
+    const hasDirectStoriaLink = Boolean(property.portalProfiles?.storia?.remoteUrl || property.promotions?.storia?.link);
+    const shouldRefresh =
+      storiaStatus === 'published' &&
+      !hasDirectStoriaLink &&
+      Boolean(user) &&
+      !isRefreshingStoriaLink;
+
+    if (!shouldRefresh) {
+      return;
+    }
+
+    let cancelled = false;
+    const currentUser = user;
+    if (!currentUser) {
+      return;
+    }
+    setIsRefreshingStoriaLink(true);
+
+    void authorizedFetch(currentUser, auth, '/api/storia/refresh-link', {
+      method: 'POST',
+      body: JSON.stringify({ propertyId: property.id }),
+    })
+      .catch(() => null)
+      .finally(() => {
+        if (!cancelled) {
+          setIsRefreshingStoriaLink(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    auth,
+    isRefreshingStoriaLink,
+    property.id,
+    property.portalProfiles?.storia?.remoteUrl,
+    property.promotions?.storia?.link,
+    storiaStatus,
+    user,
+  ]);
 
   useEffect(() => {
     if (syncTarget) {
@@ -825,10 +890,17 @@ export function PublishCard({ property }: { property: Property }) {
         return;
       }
 
+      if (checked) {
+        setStoriaPublishModalError('');
+        setStoriaPublishModalStep('confirm');
+        await loadStoriaPromotions({ openModal: false });
+        setIsStoriaPublishModalOpen(true);
+        return;
+      }
+
       setIsSubmitting(true);
       try {
-        const endpoint = checked ? '/api/storia/publish' : '/api/storia/unpublish';
-        const response = await authorizedFetch(user, auth, endpoint, {
+        const response = await authorizedFetch(user, auth, '/api/storia/unpublish', {
           method: 'POST',
           body: JSON.stringify({ propertyId: property.id }),
         });
@@ -849,14 +921,12 @@ export function PublishCard({ property }: { property: Property }) {
         }
 
         toast({
-          title: checked ? 'Publicare reusita' : 'Anunt retras',
-          description: checked
-            ? 'Proprietatea a fost trimisa spre publicare pe Storia.'
-            : 'Proprietatea a fost retrasa din Storia.',
+          title: 'Anunt retras',
+          description: 'Proprietatea a fost retrasa din Storia.',
         });
       } catch (error) {
         toast({
-          title: checked ? 'Publicare esuata' : 'Retragere esuata',
+          title: 'Retragere esuata',
           description: error instanceof Error ? error.message : 'A aparut o eroare neasteptata.',
           variant: 'destructive',
         });
@@ -888,6 +958,69 @@ export function PublishCard({ property }: { property: Property }) {
     setIsPublishModalOpen(true);
     writePersistedPublishModalStep(property.id, 'syncing');
     await runImobiliarePublishAction(true, { keepModalOpen: true });
+  }
+
+  async function handleConfirmStoriaPublish() {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru a publica.', variant: 'destructive' });
+      return;
+    }
+
+    setStoriaPublishModalError('');
+    setStoriaPublishModalStep('syncing');
+    setIsSubmitting(true);
+
+    try {
+      const promotionSettings = buildStoriaPromotionSettingsPayload(storiaPromotionForm);
+      const saveResponse = await authorizedFetch(user, auth, '/api/storia/property-promotion-settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          propertyId: property.id,
+          promotionSettings,
+        }),
+      });
+      const savePayload = await saveResponse.json().catch(() => ({}));
+      if (!saveResponse.ok) {
+        throw new Error(savePayload?.message || 'Nu am putut salva selectia de promovare pentru Storia.');
+      }
+
+      const publishResponse = await authorizedFetch(user, auth, '/api/storia/publish', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const publishPayload = await publishResponse.json().catch(() => ({}));
+      if (!publishResponse.ok) {
+        const details =
+          typeof publishPayload?.details === 'string'
+            ? publishPayload.details
+            : typeof publishPayload?.details?.detail === 'string'
+              ? publishPayload.details.detail
+              : Array.isArray(publishPayload?.details?.data?.validation)
+                ? publishPayload.details.data.validation
+                    .map((item: { field?: string; detail?: string }) => [item?.field, item?.detail].filter(Boolean).join(': '))
+                    .filter(Boolean)
+                    .join(' | ')
+                : '';
+        throw new Error([publishPayload?.message, details].filter(Boolean).join(' | ') || 'Publicarea pe Storia nu a putut fi finalizata.');
+      }
+
+      toast({
+        title: 'Publicare reusita',
+        description: 'Proprietatea a fost trimisa spre publicare pe Storia, cu setarile de promovare salvate.',
+      });
+      setStoriaPublishModalStep('published');
+    } catch (error) {
+      const description = error instanceof Error ? error.message : 'A aparut o eroare neasteptata.';
+      toast({
+        title: 'Publicare esuata',
+        description,
+        variant: 'destructive',
+      });
+      setStoriaPublishModalError(description);
+      setStoriaPublishModalStep('confirm');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleSavePromotionSettings() {
@@ -989,7 +1122,7 @@ export function PublishCard({ property }: { property: Property }) {
     }
   }
 
-  async function loadStoriaPromotions() {
+  async function loadStoriaPromotions(options?: { openModal?: boolean }) {
     if (!user) {
       toast({
         title: 'Autentificare necesara',
@@ -1023,7 +1156,9 @@ export function PublishCard({ property }: { property: Property }) {
       setStoriaPromotionOptions(availablePromotions);
       setStoriaPromotionForm(buildStoriaPromotionFormEntries(availablePromotions, selectedPromotions));
       setStoriaActivePromotions(activePromotions);
-      setIsStoriaPromotionModalOpen(true);
+      if (options?.openModal !== false) {
+        setIsStoriaPromotionModalOpen(true);
+      }
     } catch (error) {
       toast({
         title: 'Incarcare esuata',
@@ -1372,6 +1507,8 @@ export function PublishCard({ property }: { property: Property }) {
           const storiaPublished = isStoria && storiaStatus === 'published';
           const storiaPending = isStoria && property.promotions?.storia?.status === 'pending';
           const storiaErrored = isStoria && storiaStatus === 'error';
+          const hasStoriaDirectLink = Boolean(property.portalProfiles?.storia?.remoteUrl || property.promotions?.storia?.link);
+          const storiaLinkSyncing = isStoria && storiaPublished && !hasStoriaDirectLink && isRefreshingStoriaLink;
 
           return (
             <div
@@ -1390,9 +1527,9 @@ export function PublishCard({ property }: { property: Property }) {
                     Publicat
                   </span>
                 ) : null}
-                {pending || storiaPending ? (
+                {pending || storiaPending || storiaLinkSyncing ? (
                   <span className="rounded-full border border-yellow-300/18 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-yellow-200">
-                    In curs...
+                    {storiaLinkSyncing ? 'Link...' : 'In curs...'}
                   </span>
                 ) : null}
                 {errored || storiaErrored ? (
@@ -1400,7 +1537,7 @@ export function PublishCard({ property }: { property: Property }) {
                     Eroare
                   </span>
                 ) : null}
-                {!published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored ? (
+                {!published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored && !storiaLinkSyncing ? (
                   <span
                     className={cn(
                       "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55",
@@ -1440,9 +1577,10 @@ export function PublishCard({ property }: { property: Property }) {
                       type="button"
                       size="sm"
                       className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      disabled={!hasStoriaDirectLink}
                       onClick={handleOpenStoriaListing}
                     >
-                      Deschide
+                      {hasStoriaDirectLink ? 'Deschide' : 'Link...'}
                     </Button>
                   ) : (
                     <Button
@@ -1521,7 +1659,7 @@ export function PublishCard({ property }: { property: Property }) {
 
         <Button
           type="button"
-          onClick={loadStoriaPromotions}
+          onClick={() => void loadStoriaPromotions()}
           disabled={isLoadingStoriaPromotions}
           className="h-12 w-full rounded-2xl border border-white/12 bg-[#111927] text-white hover:bg-[#1F2A37]"
         >
@@ -1753,6 +1891,176 @@ export function PublishCard({ property }: { property: Property }) {
           </DialogHeader>
           <div className="p-6">
             {renderPromotionEditor()}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isStoriaPublishModalOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && (storiaPublishModalStep === 'syncing' || isSubmitting)) {
+            return;
+          }
+          setIsStoriaPublishModalOpen(nextOpen);
+          if (!nextOpen) {
+            setStoriaPublishModalStep('confirm');
+            setStoriaPublishModalError('');
+          }
+        }}
+      >
+        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,560px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
+          <DialogHeader
+            className={cn(
+              "imobiliare-publish-modal__header border-b border-white/10 px-6 py-5 text-center sm:text-center",
+              storiaPublishModalStep === 'published' ? "bg-[linear-gradient(180deg,rgba(48,55,79,0.32),rgba(17,25,39,0.94))]" : "bg-[#111927]"
+            )}
+          >
+            {storiaPublishModalStep === 'published' ? (
+              <>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-400/12 shadow-[0_0_40px_rgba(56,189,248,0.18)]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-400 text-[#081426]">
+                    <CheckCircle2 className="h-6 w-6" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-[2rem] font-semibold leading-tight text-white">
+                  Anuntul Storia este publicat
+                </DialogTitle>
+                <DialogDescription className="mx-auto max-w-md text-center text-base leading-7 text-white/72">
+                  Anuntul a fost trimis pe Storia, iar promovarea poate fi ajustata oricand din acelasi CRM.
+                </DialogDescription>
+              </>
+            ) : (
+              <>
+                <DialogTitle className="text-center text-xl text-white">
+                  {storiaPublishModalStep === 'confirm' ? 'Publicare pe Storia.ro' : 'Publicam pe Storia.ro'}
+                </DialogTitle>
+                <DialogDescription className="mx-auto max-w-md text-center text-white/65">
+                  Verifica anuntul, alege promovarea dorita si confirma publicarea intr-un singur flux.
+                </DialogDescription>
+              </>
+            )}
+          </DialogHeader>
+          <div className="space-y-5 p-6">
+            {storiaPublishModalStep === 'confirm' ? (
+              <>
+                <div className="imobiliare-publish-modal__preview-card mx-auto w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
+                  {heroImage ? (
+                    <div
+                      className="h-56 w-full bg-cover bg-center"
+                      style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.08), rgba(8,20,38,0.56)), url(${heroImage})` }}
+                    />
+                  ) : (
+                    <div className="flex h-56 items-center justify-center bg-[#16304f] text-white/45">
+                      Fara imagine principala
+                    </div>
+                  )}
+                  <div className="space-y-4 p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-sky-300/16 bg-sky-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200">
+                        Preview Storia
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
+                        {property.transactionType}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold leading-tight text-white">{property.title}</h3>
+                      <p className="text-sm leading-6 text-white/60">{propertyLocationLine}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {propertyHighlights.map((highlight) => (
+                        <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Pret</p>
+                      <p className="text-3xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                    </div>
+                  </div>
+                </div>
+
+                {storiaPublishModalError ? (
+                  <div className="rounded-2xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+                    {storiaPublishModalError}
+                  </div>
+                ) : null}
+
+                <div className="mx-auto w-full max-w-[430px]">
+                  {renderStoriaPromotionEditor()}
+                </div>
+
+                <div className="mx-auto flex w-full max-w-[430px] flex-col gap-3">
+                  <Button
+                    type="button"
+                    className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                    onClick={handleConfirmStoriaPublish}
+                    disabled={isSubmitting || isSavingStoriaPromotions || isApplyingStoriaPromotions}
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Confirma publicarea pe Storia.ro
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                    onClick={() => setIsStoriaPublishModalOpen(false)}
+                  >
+                    Anuleaza
+                  </Button>
+                </div>
+              </>
+            ) : null}
+
+            {storiaPublishModalStep === 'syncing' ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-300" />
+                <div className="space-y-1">
+                  <p className="text-base font-semibold text-white">Publicam anuntul pe Storia.ro</p>
+                  <p className="text-sm text-white/60">Salvam promovarea aleasa si trimitem anuntul catre Storia.</p>
+                </div>
+              </div>
+            ) : null}
+
+            {storiaPublishModalStep === 'published' ? (
+              <div className="space-y-5">
+                <div className="mx-auto w-full max-w-[430px] rounded-3xl border border-white/10 bg-[#111927] p-5 shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
+                  <div className="space-y-4 text-white">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
+                        Publicat pe Storia.ro
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-semibold leading-tight">{property.title}</h3>
+                      <p className="text-sm text-white/60">{propertyLocationLine}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleOpenStoriaListing}
+                      className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                    >
+                      Deschide anuntul pe Storia.ro
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mx-auto w-full max-w-[430px]">
+                  {renderStoriaPromotionEditor()}
+                </div>
+
+                <div className="mx-auto w-full max-w-[430px]">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                    onClick={() => setIsStoriaPublishModalOpen(false)}
+                  >
+                    Inchide
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
