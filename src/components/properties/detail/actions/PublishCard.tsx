@@ -1589,6 +1589,15 @@ export function PublishCard({ property }: { property: Property }) {
     );
   }
 
+  const portalGridClassName = isMobile
+    ? "grid-cols-[minmax(76px,1fr)_auto_auto] gap-2"
+    : "grid-cols-[minmax(0,1fr)_140px_150px] gap-4";
+  const portalRowPaddingClassName = isMobile ? "p-2" : "p-3";
+  const portalActionButtonClassName = isMobile
+    ? "h-8 rounded-full px-3 text-xs"
+    : "h-9 rounded-full px-4 text-sm";
+  const portalIconButtonClassName = isMobile ? "h-8 w-8" : "h-9 w-9";
+
   return (
     <>
     <Card className={cn(ACTION_CARD_CLASSNAME)}>
@@ -1598,9 +1607,9 @@ export function PublishCard({ property }: { property: Property }) {
         </CardTitle>
       </CardHeader>
       <CardContent className={cn("space-y-2 pt-0", isMobile ? "p-4" : "p-4")}>
-        <div className="grid grid-cols-[minmax(0,1fr)_140px_150px] items-center gap-4 border-b border-white/8 px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">
+        <div className={cn("grid items-center border-b border-white/8 px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45", portalGridClassName)}>
           <span>Portal</span>
-          <span className="justify-self-start pl-4">Status</span>
+          <span className={cn("justify-self-center", !isMobile && "justify-self-start pl-4")}>Status</span>
           <span className="text-right">Actiuni</span>
         </div>
 
@@ -1620,14 +1629,16 @@ export function PublishCard({ property }: { property: Property }) {
             <div
               key={portal.id}
               className={cn(
-                "grid grid-cols-[minmax(0,1fr)_140px_150px] gap-4 rounded-xl p-3 text-sm hover:bg-white/[0.06]",
+                "grid items-center overflow-hidden rounded-xl text-sm hover:bg-white/[0.06]",
+                portalGridClassName,
+                portalRowPaddingClassName,
                 ACTION_CARD_INNER_CLASSNAME
               )}
             >
-              <Label className="font-medium flex-1 flex items-center gap-2 min-w-0">
+              <Label className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden font-medium [&_img]:max-w-full">
                 {portal.logo}
               </Label>
-              <div className="flex items-center justify-center">
+              <div className="flex min-w-0 items-center justify-center">
                 {published || storiaPublished ? (
                   isMobile ? (
                     <span
@@ -1689,21 +1700,28 @@ export function PublishCard({ property }: { property: Property }) {
                   )
                 ) : null}
               </div>
-              <div className="flex items-center justify-end gap-2">
+              <div className={cn("flex min-w-0 shrink-0 items-center justify-end", isMobile ? "gap-1" : "gap-2")}>
                 {isImobiliare ? (
                   isSyncing ? (
-                    <div className="flex h-9 items-center justify-center rounded-full border border-yellow-300/18 bg-yellow-400/10 px-3 text-yellow-200">
+                    <div className={cn("flex items-center justify-center rounded-full border border-yellow-300/18 bg-yellow-400/10 text-yellow-200", isMobile ? "h-8 w-8 px-0" : "h-9 px-3")}>
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
                   ) : published ? (
-                    <span className="inline-flex h-9 items-center justify-center rounded-full border border-emerald-300/18 bg-emerald-400/12 px-3 text-sm font-semibold text-emerald-100">
-                      Publicat
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center rounded-full border border-emerald-300/18 bg-emerald-400/12 font-semibold text-emerald-100",
+                        isMobile ? "h-8 w-8 px-0" : "h-9 px-3 text-sm"
+                      )}
+                      title="Publicat"
+                      aria-label="Publicat"
+                    >
+                      {isMobile ? <CheckCircle2 className="h-4 w-4" /> : 'Publicat'}
                     </span>
                   ) : (
                     <Button
                       type="button"
                       size="sm"
-                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
                       disabled={isSubmitting || pending}
                       onClick={() => handlePublishToggle(portal.id, true)}
                     >
@@ -1717,7 +1735,7 @@ export function PublishCard({ property }: { property: Property }) {
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="h-9 w-9 rounded-full border border-rose-300/24 bg-rose-400/10 text-rose-100 shadow-[0_12px_26px_-16px_rgba(244,63,94,0.65)] hover:bg-rose-400/16"
+                        className={cn("rounded-full border border-rose-300/24 bg-rose-400/10 text-rose-100 shadow-[0_12px_26px_-16px_rgba(244,63,94,0.65)] hover:bg-rose-400/16", portalIconButtonClassName)}
                         disabled={isUpdatingStoria || isSubmitting}
                         onClick={() => setIsStoriaDeactivateConfirmOpen(true)}
                         title="Dezactiveaza anuntul de pe Storia"
@@ -1730,7 +1748,8 @@ export function PublishCard({ property }: { property: Property }) {
                         size="icon"
                         variant="ghost"
                         className={cn(
-                          "relative h-9 w-9 rounded-full border border-sky-300/24 bg-sky-400/12 text-sky-100 shadow-[0_12px_26px_-16px_rgba(56,189,248,0.7)] hover:bg-sky-400/18",
+                          "relative rounded-full border border-sky-300/24 bg-sky-400/12 text-sky-100 shadow-[0_12px_26px_-16px_rgba(56,189,248,0.7)] hover:bg-sky-400/18",
+                          portalIconButtonClassName,
                           storiaHasUnsyncedChanges && "border-amber-300/30 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16"
                         )}
                         disabled={isUpdatingStoria || isSubmitting}
@@ -1746,7 +1765,7 @@ export function PublishCard({ property }: { property: Property }) {
                       <Button
                         type="button"
                         size="sm"
-                        className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                        className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
                         disabled={!hasStoriaDirectLink || isUpdatingStoria}
                         onClick={handleOpenStoriaListing}
                       >
@@ -1757,7 +1776,7 @@ export function PublishCard({ property }: { property: Property }) {
                     <Button
                       type="button"
                       size="sm"
-                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                      className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
                       disabled={isSubmitting || storiaPending}
                       onClick={() => handlePublishToggle(portal.id, true)}
                     >
@@ -1769,7 +1788,7 @@ export function PublishCard({ property }: { property: Property }) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-9 rounded-full border border-white/10 bg-white/[0.04] px-3 text-white/55 hover:bg-white/[0.04] hover:text-white/55"
+                    className={cn("rounded-full border border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.04] hover:text-white/55", isMobile ? "h-8 px-2 text-xs" : "h-9 px-3")}
                     disabled
                   >
                     Curand

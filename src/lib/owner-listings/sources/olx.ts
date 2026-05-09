@@ -22,8 +22,10 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
   noua: '9',
 };
 const olxPhoneCache = new Map<string, string>();
-const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = 6;
-const OLX_DETAIL_HYDRATION_TIMEOUT_MS = 8000;
+const MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE = 24;
+const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = 2;
+const OLX_LIST_PAGE_TIMEOUT_MS = 15000;
+const OLX_DETAIL_HYDRATION_TIMEOUT_MS = 5000;
 
 function normalizeComparableText(value: string) {
   return normalizeWhitespace(value)
@@ -334,6 +336,25 @@ type ParsedOlxCard = {
   location: string;
   constructionYear?: string | number;
 };
+
+function resolveOlxVirtualPage(searchUrls: string[], pageNumber: number, hardPageLimit: number) {
+  const urls = searchUrls.filter(Boolean);
+  if (!urls.length) {
+    return null;
+  }
+
+  const virtualHardPageLimit = hardPageLimit * urls.length;
+  if (pageNumber > virtualHardPageLimit) {
+    return null;
+  }
+
+  const urlIndex = (pageNumber - 1) % urls.length;
+  const sourcePageNumber = Math.floor((pageNumber - 1) / urls.length) + 1;
+  return {
+    baseUrl: urls[urlIndex],
+    sourcePageNumber,
+  };
+}
 
 function decodeOlxEscaped(value: string) {
   return normalizeWhitespace(
@@ -952,101 +973,101 @@ export async function scrapeOlxListingsPage(
   pageNumber = Math.max(1, options.startPage ?? 1)
 ): Promise<OwnerListingSourcePageResult> {
   const hardPageLimit = Math.max(1, options.hardPageLimit ?? 250);
-  if (pageNumber > hardPageLimit) {
+  const virtualPage = resolveOlxVirtualPage(options.searchUrls, pageNumber, hardPageLimit);
+  if (!virtualPage) {
     return { listings: [], reachedEnd: true };
   }
 
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
-  let reachedEnd = true;
   let detailHydrations = 0;
+  const effectiveListingLimit = Math.min(
+    options.maxListingsPerSource ?? MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE,
+    MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE
+  );
 
-  for (const baseUrl of options.searchUrls) {
-    const pageUrl = new URL(baseUrl);
-    if (pageNumber > 1) {
-      pageUrl.searchParams.set('page', String(pageNumber));
-    }
-
-    const html = await fetchScraperHtml(pageUrl.toString(), 30000).catch(() => '');
-    if (!html) {
-      continue;
-    }
-
-    const cards = extractListPageFromHtml(html);
-    if (!cards.length) {
-      continue;
-    }
-
-    reachedEnd = false;
-
-    for (const card of cards) {
-      if (options.maxListingsPerSource && listings.length >= options.maxListingsPerSource) break;
-      if (!card.href || !card.title) continue;
-
-      const absoluteUrl = normalizeUrl(card.href, 'https://www.olx.ro');
-      if (seenLinks.has(absoluteUrl)) continue;
-
-      let resolvedTitle = card.title;
-      let parsed: ParsedOlxCard = parseCard(card.title, card.text);
-      parsed.price = card.price || parsed.price;
-
-      const shouldHydrateFromDetail =
-        detailHydrations < MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE &&
-        (!parsed.area || !parsed.location || !card.imageCandidates.length);
-
-      if (shouldHydrateFromDetail) {
-        detailHydrations += 1;
-        const detailHtml = await fetchScraperHtml(absoluteUrl, OLX_DETAIL_HYDRATION_TIMEOUT_MS).catch(() => '');
-        if (detailHtml) {
-          const detailParams = extractOlxParamsFromHtml(detailHtml);
-          const detailTitle = extractOlxTitleFromHtml(detailHtml);
-          const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
-          const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
-          const detailLocation = extractOlxLocationFromHtml(detailHtml) || extractLocationText(detailTitle);
-          parsed = {
-            ...parsed,
-            price: detailParams.price || extractPriceText(detailBody) || parsed.price,
-            area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
-            location: detailLocation || parsed.location,
-            constructionYear: detailParams.constructionYear || parsed.constructionYear,
-          };
-
-          if (detailTitle) {
-            resolvedTitle = detailTitle;
-          }
-
-          card.imageCandidates.push(...extractOlxImagesFromHtml(detailHtml));
-        }
-      }
-
-      const externalIdMatch = card.href.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/);
-      const externalId = externalIdMatch?.[1] || externalIdMatch?.[2] || card.href;
-
-      seenLinks.add(absoluteUrl);
-      listings.push(
-        buildSummary({
-          scopeKey: options.scopeKey,
-          scopeCity: options.scopeCity,
-          source: 'olx',
-          externalId,
-          title: resolvedTitle,
-          price: parsed.price,
-          area: parsed.area,
-          rooms: parsed.rooms,
-          constructionYear: parsed.constructionYear,
-          year: parsed.constructionYear,
-          location: parsed.location,
-          postedAt: Math.floor(Date.now() / 1000),
-          postedAtText: '',
-          link: absoluteUrl,
-          imageUrl: pickBestImageUrl(card.imageCandidates),
-          description: '',
-        })
-      );
-    }
+  const pageUrl = new URL(virtualPage.baseUrl);
+  if (virtualPage.sourcePageNumber > 1) {
+    pageUrl.searchParams.set('page', String(virtualPage.sourcePageNumber));
   }
 
-  return { listings, reachedEnd };
+  const html = await fetchScraperHtml(pageUrl.toString(), OLX_LIST_PAGE_TIMEOUT_MS).catch(() => '');
+  if (!html) {
+    return { listings, reachedEnd: false };
+  }
+
+  const cards = extractListPageFromHtml(html);
+  if (!cards.length) {
+    return { listings, reachedEnd: false };
+  }
+
+  for (const card of cards) {
+    if (listings.length >= effectiveListingLimit) break;
+    if (!card.href || !card.title) continue;
+
+    const absoluteUrl = normalizeUrl(card.href, 'https://www.olx.ro');
+    if (seenLinks.has(absoluteUrl)) continue;
+
+    let resolvedTitle = card.title;
+    let parsed: ParsedOlxCard = parseCard(card.title, card.text);
+    parsed.price = card.price || parsed.price;
+
+    const shouldHydrateFromDetail =
+      detailHydrations < MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE &&
+      (!parsed.area || !parsed.location || !card.imageCandidates.length);
+
+    if (shouldHydrateFromDetail) {
+      detailHydrations += 1;
+      const detailHtml = await fetchScraperHtml(absoluteUrl, OLX_DETAIL_HYDRATION_TIMEOUT_MS).catch(() => '');
+      if (detailHtml) {
+        const detailParams = extractOlxParamsFromHtml(detailHtml);
+        const detailTitle = extractOlxTitleFromHtml(detailHtml);
+        const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
+        const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
+        const detailLocation = extractOlxLocationFromHtml(detailHtml) || extractLocationText(detailTitle);
+        parsed = {
+          ...parsed,
+          price: detailParams.price || extractPriceText(detailBody) || parsed.price,
+          area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
+          location: detailLocation || parsed.location,
+          constructionYear: detailParams.constructionYear || parsed.constructionYear,
+        };
+
+        if (detailTitle) {
+          resolvedTitle = detailTitle;
+        }
+
+        card.imageCandidates.push(...extractOlxImagesFromHtml(detailHtml));
+      }
+    }
+
+    const externalIdMatch = card.href.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/);
+    const externalId = externalIdMatch?.[1] || externalIdMatch?.[2] || card.href;
+
+    seenLinks.add(absoluteUrl);
+    listings.push(
+      buildSummary({
+        scopeKey: options.scopeKey,
+        scopeCity: options.scopeCity,
+        source: 'olx',
+        externalId,
+        title: resolvedTitle,
+        price: parsed.price,
+        area: parsed.area,
+        rooms: parsed.rooms,
+        constructionYear: parsed.constructionYear,
+        year: parsed.constructionYear,
+        location: parsed.location,
+        postedAt: Math.floor(Date.now() / 1000),
+        postedAtText: '',
+        link: absoluteUrl,
+        imageUrl: pickBestImageUrl(card.imageCandidates),
+        description: '',
+      })
+    );
+  }
+
+  return { listings, reachedEnd: false };
 }
 
 export async function scrapeOlxListings(options: SourceScrapeOptions) {

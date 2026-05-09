@@ -27,6 +27,7 @@ const DEFAULT_MAX_PAGES_PER_TICK = 12;
 const DEFAULT_MAX_RUNTIME_MS = 7 * 60 * 1000;
 const MIN_SOURCE_PAGE_TIMEOUT_MS = 45 * 1000;
 const MAX_SOURCE_PAGE_TIMEOUT_MS = 2 * 60 * 1000;
+const MAX_PAGE_FAILURES_BEFORE_SKIP = 3;
 
 type SchedulerTickOptions = {
   scopeKey?: string | null;
@@ -596,16 +597,23 @@ async function processScopeCycleTick(
         }
       } catch (error) {
         const finishedAt = nowIso();
+        const nextErrorCount = job.errors + 1;
+        const shouldSkipFailedPage = nextErrorCount >= MAX_PAGE_FAILURES_BEFORE_SKIP;
+        const errorMessage = error instanceof Error ? error.message : 'Procesarea paginii a esuat.';
         totals.errors += 1;
         await cycleJobDocRef(scopeKey, currentSource).set(
-          {
-            status: 'failed',
-            errors: job.errors + 1,
+          withoutUndefined({
+            status: shouldSkipFailedPage ? 'running' : 'failed',
+            errors: nextErrorCount,
+            nextPage: shouldSkipFailedPage ? job.nextPage + 1 : undefined,
+            pagesProcessed: shouldSkipFailedPage ? job.pagesProcessed + 1 : undefined,
             lastRunAt: finishedAt,
-            lastError: error instanceof Error ? error.message : 'Procesarea paginii a esuat.',
+            lastError: shouldSkipFailedPage
+              ? `${errorMessage} Pagina ${job.nextPage} a fost sarita dupa ${nextErrorCount} esecuri, ca sa nu blocheze ciclul.`
+              : errorMessage,
             updatedAt: finishedAt,
             firestoreUpdatedAt: FieldValue.serverTimestamp(),
-          },
+          }),
           { merge: true }
         );
 
@@ -623,7 +631,11 @@ async function processScopeCycleTick(
           startedAt: new Date(runStartedAt).toISOString(),
           finishedAt,
           durationMs: Date.now() - runStartedAt,
-          errorMessages: [error instanceof Error ? error.message : 'Procesarea paginii a esuat.'],
+          errorMessages: [
+            shouldSkipFailedPage
+              ? `${errorMessage} Pagina a fost sarita dupa ${nextErrorCount} esecuri.`
+              : errorMessage,
+          ],
         });
 
         await cycleDocRef(scopeKey).set(
@@ -631,12 +643,16 @@ async function processScopeCycleTick(
             status: 'running',
             currentSourceIndex: state.currentSourceIndex,
             currentSource,
-            lastError: error instanceof Error ? error.message : 'Procesarea paginii a esuat.',
+            lastError: shouldSkipFailedPage
+              ? `${errorMessage} Pagina ${job.nextPage} a fost sarita dupa ${nextErrorCount} esecuri.`
+              : errorMessage,
           }),
           { merge: true }
         );
 
-        message = `${currentSource} a esuat pe pagina ${job.nextPage}; va fi reincercat la urmatorul tick.`;
+        message = shouldSkipFailedPage
+          ? `${currentSource} a sarit pagina ${job.nextPage} dupa ${nextErrorCount} esecuri si va continua.`
+          : `${currentSource} a esuat pe pagina ${job.nextPage}; va fi reincercat la urmatorul tick.`;
         break;
       }
     }

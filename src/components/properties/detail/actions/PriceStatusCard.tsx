@@ -43,12 +43,12 @@ export function PriceStatusCard({
                 <CardContent className={isMobile ? "flex flex-col items-center justify-center gap-1 p-4 text-center" : "space-y-4 p-5"}>
                     {isMobile ? (
                         <>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-[2rem] font-bold text-primary">
+                            <div className="flex max-w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1">
+                                <span className="whitespace-nowrap text-[clamp(1.75rem,9vw,2rem)] font-bold text-primary">
                                     EUR {property.price.toLocaleString()}
                                 </span>
                                 {pricePerSqm ? (
-                                    <span className="text-base font-medium text-white/80">
+                                    <span className="shrink-0 whitespace-nowrap text-sm font-medium text-white/80">
                                         (EUR {pricePerSqm}/m²)
                                     </span>
                                 ) : null}
@@ -64,9 +64,9 @@ export function PriceStatusCard({
                                 <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100/90 ${ACTION_PILL_CLASSNAME}`}>
                                     Pret listare
                                 </div>
-                                <div className="flex items-end justify-between gap-3">
-                                    <div className="space-y-1">
-                                        <div className="text-[2.2rem] font-bold tracking-tight text-emerald-300">
+                                <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+                                    <div className="min-w-0 space-y-1">
+                                        <div className="whitespace-nowrap text-[clamp(1.8rem,8vw,2.2rem)] font-bold tracking-tight text-emerald-300">
                                             EUR {property.price.toLocaleString()}
                                         </div>
                                         <p className="text-sm text-white/58">
@@ -74,7 +74,7 @@ export function PriceStatusCard({
                                         </p>
                                     </div>
                                     {pricePerSqm ? (
-                                        <div className="shrink-0 rounded-full border border-white/8 bg-[#19293f] px-3 py-1.5 text-sm font-semibold text-white/78">
+                                        <div className="shrink-0 whitespace-nowrap rounded-full border border-white/8 bg-[#19293f] px-3 py-1.5 text-sm font-semibold text-white/78">
                                             EUR {pricePerSqm}/m²
                                         </div>
                                     ) : null}
@@ -105,11 +105,11 @@ export function PriceStatusCard({
             <Card className={publicCardClassName}>
                 <CardContent className="relative flex items-baseline justify-center gap-2 p-3 text-center">
                     <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
-                    <span className={cn("relative z-10 text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
+                    <span className={cn("relative z-10 whitespace-nowrap text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
                         EUR {property.price.toLocaleString()}
                     </span>
                     {pricePerSqm ? (
-                        <span className={cn("relative z-10 text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
+                        <span className={cn("relative z-10 shrink-0 whitespace-nowrap text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
                             (EUR {pricePerSqm}/m²)
                         </span>
                     ) : null}
@@ -123,12 +123,12 @@ export function PriceStatusCard({
             <Card className={publicCardClassName}>
                 <CardContent className={cn("relative flex flex-col items-center justify-center gap-1 p-4 text-center", isAgentfinderTheme && "bg-[linear-gradient(180deg,#ffffff_0%,#f4f8ff_100%)] shadow-[0_18px_36px_-28px_rgba(15,23,42,0.45)]")}>
                     <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
-                    <div className="relative z-10 flex items-baseline gap-2">
-                        <span className={cn("text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
+                    <div className="relative z-10 flex max-w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1">
+                        <span className={cn("whitespace-nowrap text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
                             EUR {property.price.toLocaleString()}
                         </span>
                         {pricePerSqm ? (
-                            <span className={cn("text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
+                            <span className={cn("shrink-0 whitespace-nowrap text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
                                 (EUR {pricePerSqm}/m²)
                             </span>
                         ) : null}
