@@ -15,8 +15,8 @@ Module._resolveFilename = function patchedResolveFilename(request, parent, isMai
 };
 
 async function main() {
-  const { runOwnerListingsBackgroundSync } = await import('../src/lib/owner-listings/background');
-  const { adminDb } = await import('../src/firebase/admin');
+  const { runOwnerListingsBackgroundSync } = await import('../src/lib/owner-listings/background.ts');
+  const { adminDb } = await import('../src/firebase/admin.ts');
 
   const result = await runOwnerListingsBackgroundSync({
     scopeKey: 'bucuresti-ilfov',

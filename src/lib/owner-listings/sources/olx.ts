@@ -22,6 +22,8 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
   noua: '9',
 };
 const olxPhoneCache = new Map<string, string>();
+const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = 6;
+const OLX_DETAIL_HYDRATION_TIMEOUT_MS = 8000;
 
 function normalizeComparableText(value: string) {
   return normalizeWhitespace(value)
@@ -957,6 +959,7 @@ export async function scrapeOlxListingsPage(
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
   let reachedEnd = true;
+  let detailHydrations = 0;
 
   for (const baseUrl of options.searchUrls) {
     const pageUrl = new URL(baseUrl);
@@ -985,13 +988,15 @@ export async function scrapeOlxListingsPage(
 
       let resolvedTitle = card.title;
       let parsed: ParsedOlxCard = parseCard(card.title, card.text);
-      parsed.location = '';
       parsed.price = card.price || parsed.price;
 
-      const shouldHydrateFromDetail = true;
+      const shouldHydrateFromDetail =
+        detailHydrations < MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE &&
+        (!parsed.area || !parsed.location || !card.imageCandidates.length);
 
       if (shouldHydrateFromDetail) {
-        const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
+        detailHydrations += 1;
+        const detailHtml = await fetchScraperHtml(absoluteUrl, OLX_DETAIL_HYDRATION_TIMEOUT_MS).catch(() => '');
         if (detailHtml) {
           const detailParams = extractOlxParamsFromHtml(detailHtml);
           const detailTitle = extractOlxTitleFromHtml(detailHtml);
@@ -1002,7 +1007,7 @@ export async function scrapeOlxListingsPage(
             ...parsed,
             price: detailParams.price || extractPriceText(detailBody) || parsed.price,
             area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
-            location: detailLocation || '',
+            location: detailLocation || parsed.location,
             constructionYear: detailParams.constructionYear || parsed.constructionYear,
           };
 
