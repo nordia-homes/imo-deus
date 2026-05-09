@@ -10,6 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type {
   ImobiliarePromotionSettings,
@@ -35,7 +45,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CheckCircle2, EyeOff, Loader2, Rocket, Sparkles, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, EyeOff, Loader2, RefreshCcw, Rocket, Sparkles, Trash2, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
 
@@ -404,12 +414,37 @@ function deriveGenericPortalUiStatus(property: Property, portalId: string): Imob
   return 'unpublished';
 }
 
+function parseIsoTimestamp(value?: string | null) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function hasUnsyncedStoriaChanges(property: Property) {
+  const propertyUpdatedAt = parseIsoTimestamp((property as Property & { updatedAt?: string | null }).updatedAt || property.createdAt || null);
+  const lastPublishedAt = parseIsoTimestamp(property.portalProfiles?.storia?.lastPublishedAt || property.promotions?.storia?.lastSync || null);
+
+  if (!propertyUpdatedAt || !lastPublishedAt) {
+    return false;
+  }
+
+  return propertyUpdatedAt > lastPublishedAt;
+}
+
 function getGenericPortalError(propertyLike: Property, portalId: string) {
   const status = deriveGenericPortalUiStatus(propertyLike, portalId);
   if (status === 'published') {
     return '';
   }
   return propertyLike.promotions?.[portalId]?.errorMessage || '';
+}
+
+function mapStoriaRemoteCodeToUiStatus(code?: string | null): ImobiliareUiStatus {
+  const normalized = (code || '').toLowerCase();
+  if (normalized === 'active') return 'published';
+  if (normalized === 'new' || normalized === 'unpaid' || normalized === 'blocked') return 'pending';
+  if (normalized.startsWith('removed') || normalized === 'outdated' || normalized === 'moderated') return 'unpublished';
+  return 'error';
 }
 
 async function authorizedFetch(
@@ -661,6 +696,9 @@ export function PublishCard({ property }: { property: Property }) {
   const [isSavingStoriaPromotions, setIsSavingStoriaPromotions] = useState(false);
   const [isApplyingStoriaPromotions, setIsApplyingStoriaPromotions] = useState(false);
   const [isRefreshingStoriaLink, setIsRefreshingStoriaLink] = useState(false);
+  const [isUpdatingStoria, setIsUpdatingStoria] = useState(false);
+  const [isStoriaDeactivateConfirmOpen, setIsStoriaDeactivateConfirmOpen] = useState(false);
+  const [storiaOptimisticStatus, setStoriaOptimisticStatus] = useState<ImobiliareUiStatus | null>(null);
   const propertyRef = useMemo(() => {
     if (!agencyId) {
       return null;
@@ -670,7 +708,8 @@ export function PublishCard({ property }: { property: Property }) {
   }, [agencyId, firestore, property.id]);
 
   const serverStatus = deriveImobiliareUiStatus(property);
-  const storiaStatus = deriveGenericPortalUiStatus(property, 'storia');
+  const storiaServerStatus = deriveGenericPortalUiStatus(property, 'storia');
+  const storiaStatus = storiaOptimisticStatus || storiaServerStatus;
   const isSyncing = syncTarget !== null;
   const effectiveStatus: ImobiliareUiStatus = isSyncing ? 'pending' : optimisticStatus || serverStatus;
   const isPublished = effectiveStatus === 'published';
@@ -678,6 +717,7 @@ export function PublishCard({ property }: { property: Property }) {
   const isErrored = effectiveStatus === 'error';
   const persistedError = getPersistedImobiliareError(property);
   const persistedStoriaError = getGenericPortalError(property, 'storia');
+  const storiaHasUnsyncedChanges = storiaStatus === 'published' && hasUnsyncedStoriaChanges(property);
   const publishAuditHistory =
     property.portalProfiles?.imobiliare?.lastPublishAuditHistory?.slice(-5).reverse() || [];
   const heroImage = getPrimaryImage(property);
@@ -700,6 +740,7 @@ export function PublishCard({ property }: { property: Property }) {
   useEffect(() => {
     setSyncTarget(readPersistedSyncTarget(property.id));
     setOptimisticStatus(null);
+    setStoriaOptimisticStatus(null);
     setIsSubmitting(false);
   }, [property.id]);
 
@@ -723,6 +764,21 @@ export function PublishCard({ property }: { property: Property }) {
   useEffect(() => {
     setStoriaActivePromotions(property.portalProfiles?.storia?.activePromotions || []);
   }, [property.id, property.portalProfiles?.storia?.activePromotions]);
+
+  useEffect(() => {
+    if (!storiaOptimisticStatus) {
+      return;
+    }
+
+    if (!isSubmitting && storiaOptimisticStatus === storiaServerStatus) {
+      setStoriaOptimisticStatus(null);
+      return;
+    }
+
+    if (!isSubmitting && storiaServerStatus === 'error') {
+      setStoriaOptimisticStatus('error');
+    }
+  }, [isSubmitting, storiaOptimisticStatus, storiaServerStatus]);
 
   useEffect(() => {
     const hasDirectStoriaLink = Boolean(property.portalProfiles?.storia?.remoteUrl || property.promotions?.storia?.link);
@@ -920,11 +976,12 @@ export function PublishCard({ property }: { property: Property }) {
           throw new Error([payload?.message, details].filter(Boolean).join(' | ') || 'Actiunea Storia nu a putut fi finalizata.');
         }
 
-        toast({
-          title: 'Anunt retras',
-          description: 'Proprietatea a fost retrasa din Storia.',
-        });
-      } catch (error) {
+      toast({
+        title: 'Anunt retras',
+        description: 'Proprietatea a fost retrasa din Storia.',
+      });
+      setStoriaOptimisticStatus('unpublished');
+    } catch (error) {
         toast({
           title: 'Retragere esuata',
           description: error instanceof Error ? error.message : 'A aparut o eroare neasteptata.',
@@ -1008,6 +1065,7 @@ export function PublishCard({ property }: { property: Property }) {
         title: 'Publicare reusita',
         description: 'Proprietatea a fost trimisa spre publicare pe Storia, cu setarile de promovare salvate.',
       });
+      setStoriaOptimisticStatus(mapStoriaRemoteCodeToUiStatus(typeof publishPayload?.remoteCode === 'string' ? publishPayload.remoteCode : 'active'));
       setStoriaPublishModalStep('published');
     } catch (error) {
       const description = error instanceof Error ? error.message : 'A aparut o eroare neasteptata.';
@@ -1119,6 +1177,54 @@ export function PublishCard({ property }: { property: Property }) {
         description: error instanceof Error ? error.message : 'Nu am putut deschide anuntul.',
         variant: 'destructive',
       });
+    }
+  }
+
+  async function handleUpdateStoriaListing() {
+    if (!user) {
+      toast({
+        title: 'Autentificare necesara',
+        description: 'Trebuie sa fii autentificat pentru a actualiza anuntul.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUpdatingStoria(true);
+    try {
+      const response = await authorizedFetch(user, auth, '/api/storia/publish', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const details =
+          typeof payload?.details === 'string'
+            ? payload.details
+            : typeof payload?.details?.detail === 'string'
+              ? payload.details.detail
+              : Array.isArray(payload?.details?.data?.validation)
+                ? payload.details.data.validation
+                    .map((item: { field?: string; detail?: string }) => [item?.field, item?.detail].filter(Boolean).join(': '))
+                    .filter(Boolean)
+                    .join(' | ')
+                : '';
+        throw new Error([payload?.message, details].filter(Boolean).join(' | ') || 'Actualizarea pe Storia nu a putut fi finalizata.');
+      }
+
+      toast({
+        title: 'Anunt actualizat',
+        description: 'Modificarile proprietatii au fost retrimise catre Storia.',
+      });
+      setStoriaOptimisticStatus(mapStoriaRemoteCodeToUiStatus(typeof payload?.remoteCode === 'string' ? payload.remoteCode : 'active'));
+    } catch (error) {
+      toast({
+        title: 'Actualizare esuata',
+        description: error instanceof Error ? error.message : 'A aparut o eroare neasteptata.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingStoria(false);
     }
   }
 
@@ -1492,7 +1598,7 @@ export function PublishCard({ property }: { property: Property }) {
         </CardTitle>
       </CardHeader>
       <CardContent className={cn("space-y-2 pt-0", isMobile ? "p-4" : "p-4")}>
-        <div className="grid grid-cols-[minmax(0,1fr)_140px_90px] items-center gap-4 border-b border-white/8 px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">
+        <div className="grid grid-cols-[minmax(0,1fr)_140px_150px] items-center gap-4 border-b border-white/8 px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">
           <span>Portal</span>
           <span className="justify-self-start pl-4">Status</span>
           <span className="text-right">Actiuni</span>
@@ -1514,7 +1620,7 @@ export function PublishCard({ property }: { property: Property }) {
             <div
               key={portal.id}
               className={cn(
-                "grid grid-cols-[minmax(0,1fr)_140px_90px] gap-4 rounded-xl p-3 text-sm hover:bg-white/[0.06]",
+                "grid grid-cols-[minmax(0,1fr)_140px_150px] gap-4 rounded-xl p-3 text-sm hover:bg-white/[0.06]",
                 ACTION_CARD_INNER_CLASSNAME
               )}
             >
@@ -1523,8 +1629,27 @@ export function PublishCard({ property }: { property: Property }) {
               </Label>
               <div className="flex items-center justify-center">
                 {published || storiaPublished ? (
-                  <span className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-                    Publicat
+                  isMobile ? (
+                    <span
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200"
+                      title="Publicat"
+                      aria-label="Publicat"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                      Publicat
+                    </span>
+                  )
+                ) : null}
+                {isStoria && storiaHasUnsyncedChanges ? (
+                  <span
+                    className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-300/18 bg-amber-400/10 text-amber-200"
+                    title="Exista modificari locale nesincronizate. Apasa Actualizeaza."
+                    aria-label="Exista modificari locale nesincronizate. Apasa Actualizeaza."
+                  >
+                    <AlertCircle className="h-4 w-4" />
                   </span>
                 ) : null}
                 {pending || storiaPending || storiaLinkSyncing ? (
@@ -1538,16 +1663,30 @@ export function PublishCard({ property }: { property: Property }) {
                   </span>
                 ) : null}
                 {!published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored && !storiaLinkSyncing ? (
-                  <span
-                    className={cn(
-                      "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55",
-                      isImobiliare && "inline-flex h-8 w-10 items-center justify-center px-0"
-                    )}
-                    aria-label={isImobiliare ? 'Nepublicat' : undefined}
-                    title={isImobiliare ? 'Nepublicat' : undefined}
-                  >
-                    {isImobiliare ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : 'Curand'}
-                  </span>
+                  isMobile ? (
+                    <span
+                      className={cn(
+                        "rounded-full border border-white/10 bg-white/[0.04] text-white/55",
+                        isImobiliare
+                          ? "inline-flex h-8 w-10 items-center justify-center px-0"
+                          : "inline-flex h-8 w-8 items-center justify-center"
+                      )}
+                      aria-label="Nepublicat"
+                      title="Nepublicat"
+                    >
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55"
+                      )}
+                      aria-label="Nepublicat"
+                      title="Nepublicat"
+                    >
+                      Nepublicat
+                    </span>
+                  )
                 ) : null}
               </div>
               <div className="flex items-center justify-end gap-2">
@@ -1573,15 +1712,47 @@ export function PublishCard({ property }: { property: Property }) {
                   )
                 ) : isStoria ? (
                   storiaPublished ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
-                      disabled={!hasStoriaDirectLink}
-                      onClick={handleOpenStoriaListing}
-                    >
-                      {hasStoriaDirectLink ? 'Deschide' : 'Link...'}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 rounded-full border border-rose-300/24 bg-rose-400/10 text-rose-100 shadow-[0_12px_26px_-16px_rgba(244,63,94,0.65)] hover:bg-rose-400/16"
+                        disabled={isUpdatingStoria || isSubmitting}
+                        onClick={() => setIsStoriaDeactivateConfirmOpen(true)}
+                        title="Dezactiveaza anuntul de pe Storia"
+                        aria-label="Dezactiveaza anuntul de pe Storia"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className={cn(
+                          "relative h-9 w-9 rounded-full border border-sky-300/24 bg-sky-400/12 text-sky-100 shadow-[0_12px_26px_-16px_rgba(56,189,248,0.7)] hover:bg-sky-400/18",
+                          storiaHasUnsyncedChanges && "border-amber-300/30 bg-amber-400/10 text-amber-100 hover:bg-amber-400/16"
+                        )}
+                        disabled={isUpdatingStoria || isSubmitting}
+                        onClick={handleUpdateStoriaListing}
+                        title={storiaHasUnsyncedChanges ? 'Exista modificari nesincronizate. Actualizeaza anuntul pe Storia.' : 'Actualizeaza anuntul pe Storia'}
+                        aria-label={storiaHasUnsyncedChanges ? 'Exista modificari nesincronizate. Actualizeaza anuntul pe Storia.' : 'Actualizeaza anuntul pe Storia'}
+                      >
+                        {storiaHasUnsyncedChanges ? (
+                          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_0_2px_rgba(15,23,42,0.9)]" />
+                        ) : null}
+                        <RefreshCcw className={cn("h-4 w-4", isUpdatingStoria && "animate-spin")} />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-9 rounded-full border border-emerald-300/24 bg-emerald-400/16 px-4 text-sm font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22"
+                        disabled={!hasStoriaDirectLink || isUpdatingStoria}
+                        onClick={handleOpenStoriaListing}
+                      >
+                        {hasStoriaDirectLink ? 'Deschide' : 'Link...'}
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       type="button"
@@ -1641,18 +1812,6 @@ export function PublishCard({ property }: { property: Property }) {
               className="underline underline-offset-4"
             >
               Vezi anuntul pe imobiliare.ro
-            </button>
-          </div>
-        ) : null}
-
-        {storiaStatus === 'published' ? (
-          <div className="rounded-xl border border-sky-300/18 bg-sky-400/10 px-4 py-3 text-sm text-sky-50">
-            <button
-              type="button"
-              onClick={handleOpenStoriaListing}
-              className="underline underline-offset-4"
-            >
-              Vezi anuntul pe Storia.ro
             </button>
           </div>
         ) : null}
@@ -1894,6 +2053,25 @@ export function PublishCard({ property }: { property: Property }) {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isStoriaDeactivateConfirmOpen} onOpenChange={setIsStoriaDeactivateConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dezactivezi anuntul de pe Storia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anuntul va fi retras de pe Storia si nu va mai fi vizibil public pana cand il publici din nou.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuleaza</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void handlePublishToggle('storia', false)}
+            >
+              Dezactiveaza
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Dialog
         open={isStoriaPublishModalOpen}
         onOpenChange={(nextOpen) => {

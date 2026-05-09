@@ -66,12 +66,25 @@ type AdvertMetadataResponse = {
   transaction_id?: string;
   message?: string;
   data?: {
+    uuid?: string | null;
+    last_action_status?: string | null;
+    last_action_at?: string | null;
     code?: string | null;
     url?: string | null;
     visible_in_profile?: boolean;
     created_at?: string | null;
     modified_at?: string | null;
     activated_at?: string | null;
+    state?: {
+      code?: string | null;
+      url?: string | null;
+      visible_in_profile?: boolean;
+      created_at?: string | null;
+      modified_at?: string | null;
+      activated_at?: string | null;
+      recorded_at?: string | null;
+      ttl?: string | null;
+    } | null;
   };
 };
 
@@ -203,6 +216,59 @@ function normalizeStoriaPublicUrl(rawUrl?: string | null, title?: string | null)
     return `${STORIA_SITE_URL}/${STORIA_LOCALE}/oferta/${slugifyTitle(title)}-${normalized}`;
   }
   return `${STORIA_SITE_URL}/${normalized.replace(/^\/+/, '')}`;
+}
+
+function getAdvertMetadataState(metadata?: AdvertMetadataResponse | null) {
+  const state = metadata?.data?.state || null;
+
+  return {
+    code: state?.code || metadata?.data?.code || metadata?.data?.last_action_status || null,
+    url: state?.url || metadata?.data?.url || null,
+    visibleInProfile:
+      typeof state?.visible_in_profile === 'boolean'
+        ? state.visible_in_profile
+        : typeof metadata?.data?.visible_in_profile === 'boolean'
+          ? metadata.data.visible_in_profile
+          : null,
+    createdAt: state?.created_at || metadata?.data?.created_at || null,
+    modifiedAt: state?.modified_at || metadata?.data?.modified_at || null,
+    activatedAt: state?.activated_at || metadata?.data?.activated_at || null,
+  };
+}
+
+async function waitForAdvertMetadataState(params: {
+  agencyId: string;
+  remoteUuid: string;
+  targetCodes: string[];
+  attempts?: number;
+  delayMs?: number;
+}) {
+  const {
+    agencyId,
+    remoteUuid,
+    targetCodes,
+    attempts = 4,
+    delayMs = 1200,
+  } = params;
+
+  let latestMetadata: AdvertMetadataResponse | null = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    latestMetadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
+      method: 'GET',
+    }).catch(() => latestMetadata);
+
+    const latestState = getAdvertMetadataState(latestMetadata);
+    if (targetCodes.includes((latestState.code || '').toLowerCase())) {
+      return latestMetadata;
+    }
+
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return latestMetadata;
 }
 
 function sanitizeStoriaText(value?: string | null) {
@@ -696,6 +762,16 @@ async function persistPropertyPublishState(params: {
   } = params;
 
   const promotionStatus = errorMessage ? 'error' : mapRemoteCodeToPromotionStatus(remoteCode);
+  const storiaProfilePatch = compactObject({
+    remoteUuid,
+    remoteUrl,
+    ...(categoryUrn ? { categoryUrn } : {}),
+    ...(market ? { market } : {}),
+    lastValidationError: errorMessage || null,
+    lastPublishedAt: !errorMessage && remoteUrl ? nowIso() : null,
+    lastPayloadHash: payloadHash || null,
+    lastTransactionId: transactionId || null,
+  });
 
   await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
     {
@@ -710,16 +786,7 @@ async function persistPropertyPublishState(params: {
         },
       },
       portalProfiles: {
-        storia: {
-          remoteUuid,
-          remoteUrl,
-          categoryUrn: categoryUrn ?? undefined,
-          market: market ?? undefined,
-          lastValidationError: errorMessage || null,
-          lastPublishedAt: !errorMessage && remoteUrl ? nowIso() : null,
-          lastPayloadHash: payloadHash || null,
-          lastTransactionId: transactionId || null,
-        },
+        storia: storiaProfilePatch,
       },
     },
     { merge: true }
@@ -1128,6 +1195,12 @@ export async function publishPropertyToStoria(params: {
     (typeof property.promotions?.storia?.remoteId === 'string' ? property.promotions.storia.remoteId : null);
   const requestPath = existingRemoteUuid ? `/advert/v1/${encodeURIComponent(existingRemoteUuid)}` : '/advert/v1';
   const requestMethod = existingRemoteUuid ? 'PUT' : 'POST';
+  const currentMetadata = existingRemoteUuid
+    ? await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(existingRemoteUuid)}/meta`, {
+        method: 'GET',
+      }).catch(() => null)
+    : null;
+  const currentMetadataState = getAdvertMetadataState(currentMetadata);
 
   await persistPublishAudit({
     agencyId,
@@ -1149,12 +1222,34 @@ export async function publishPropertyToStoria(params: {
       throw new Error('Storia nu a returnat UUID-ul anuntului.');
     }
 
-    const metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
+    let metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
       method: 'GET',
     }).catch(() => null);
 
-    const remoteCode = metadata?.data?.code || publishResponse.data?.last_action_status || 'new';
-    const remoteUrl = metadata?.data?.url || null;
+    let metadataState = getAdvertMetadataState(metadata);
+    const shouldActivateAfterPublish =
+      Boolean(existingRemoteUuid) &&
+      ['removed_by_user', 'outdated'].includes((currentMetadataState.code || '').toLowerCase()) &&
+      currentMetadataState.visibleInProfile !== false;
+
+    if (shouldActivateAfterPublish) {
+      await storiaRequest(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/activate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      metadata = await waitForAdvertMetadataState({
+        agencyId,
+        remoteUuid,
+        targetCodes: ['active'],
+      }).catch(() => metadata);
+      metadataState = getAdvertMetadataState(metadata);
+    }
+
+    const remoteCode = metadataState.code || publishResponse.data?.last_action_status || 'new';
+    const remoteUrl = metadataState.url || null;
 
     await persistPropertyPublishState({
       agencyId,
@@ -1172,7 +1267,7 @@ export async function publishPropertyToStoria(params: {
       propertyId,
       entry: {
         attemptedAt: nowIso(),
-        stage: requestMethod === 'PUT' ? 'updated' : 'success',
+        stage: shouldActivateAfterPublish ? 'reactivated' : requestMethod === 'PUT' ? 'updated' : 'success',
         responseStatus: requestMethod === 'PUT' ? 200 : 201,
       },
     });
@@ -1284,25 +1379,26 @@ export async function resolvePropertyStoriaPublicUrl(params: { agencyId: string;
   const metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(remoteUuid)}/meta`, {
     method: 'GET',
   }).catch(() => null);
+  const metadataState = getAdvertMetadataState(metadata);
   const remoteUrl = normalizeStoriaPublicUrl(
-    metadata?.data?.url ||
+    metadataState.url ||
       property.portalProfiles?.storia?.remoteUrl ||
       property.promotions?.storia?.link ||
       null,
     property.title
   );
 
-  if (metadata?.data?.url) {
+  if (metadataState.url) {
     await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
       {
         promotions: {
           storia: {
-            link: normalizeStoriaPublicUrl(metadata.data.url, property.title),
+            link: normalizeStoriaPublicUrl(metadataState.url, property.title),
           },
         },
         portalProfiles: {
           storia: {
-            remoteUrl: normalizeStoriaPublicUrl(metadata.data.url, property.title),
+            remoteUrl: normalizeStoriaPublicUrl(metadataState.url, property.title),
           },
         },
       },
@@ -1341,8 +1437,9 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
     method: 'GET',
   });
 
-  const remoteUrl = normalizeStoriaPublicUrl(metadata.data?.url || null, property.title);
-  const remoteCode = metadata.data?.code || null;
+  const metadataState = getAdvertMetadataState(metadata);
+  const remoteUrl = normalizeStoriaPublicUrl(metadataState.url || null, property.title);
+  const remoteCode = metadataState.code || null;
 
   await propertyRef.set(
     {

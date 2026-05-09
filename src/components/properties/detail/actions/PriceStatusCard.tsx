@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
 import type { Property } from "@/lib/types";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { TrendingUp } from 'lucide-react';
+import { ArrowRight, TrendingUp } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import { getAgencyThemePreset } from '@/lib/theme';
@@ -38,75 +39,64 @@ export function PriceStatusCard({
 
     if (variant === 'admin') {
         return (
-            <Dialog>
-                <Card className={adminCardClassName}>
-                    <CardContent className={isMobile ? "flex flex-col items-center justify-center gap-1 p-4 text-center" : "space-y-4 p-5"}>
-                        {isMobile ? (
-                          <>
+            <Card className={adminCardClassName}>
+                <CardContent className={isMobile ? "flex flex-col items-center justify-center gap-1 p-4 text-center" : "space-y-4 p-5"}>
+                    {isMobile ? (
+                        <>
                             <div className="flex items-baseline gap-2">
-                              <span className="text-[2rem] font-bold text-primary">
-                                €{property.price.toLocaleString()}
-                              </span>
-                              {pricePerSqm && (
-                                <span className="text-base font-medium text-white/80">
-                                    (€{pricePerSqm}/m²)
+                                <span className="text-[2rem] font-bold text-primary">
+                                    EUR {property.price.toLocaleString()}
                                 </span>
-                              )}
+                                {pricePerSqm ? (
+                                    <span className="text-base font-medium text-white/80">
+                                        (EUR {pricePerSqm}/m²)
+                                    </span>
+                                ) : null}
                             </div>
-                            <DialogTrigger asChild>
-                              <div className="flex cursor-pointer items-center gap-1.5 text-primary">
+                            <Link href={`/properties/${property.id}/analiza-pret`} className="flex items-center gap-1.5 text-primary">
                                 <TrendingUp className="h-4.5 w-4.5" />
                                 <span className="text-sm font-semibold tracking-[0.01em]">Evalueaza Pretul cu ImoDeus.ai</span>
-                              </div>
-                            </DialogTrigger>
-                          </>
-                        ) : (
-                          <>
+                            </Link>
+                        </>
+                    ) : (
+                        <>
                             <div className="space-y-2 text-left">
-                              <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100/90 ${ACTION_PILL_CLASSNAME}`}>
-                                Pret listare
-                              </div>
-                              <div className="flex items-end justify-between gap-3">
-                                <div className="space-y-1">
-                                  <div className="text-[2.2rem] font-bold tracking-tight text-emerald-300">
-                                    €{property.price.toLocaleString()}
-                                  </div>
-                                  <p className="text-sm text-white/58">
-                                    Valoarea afisata in anuntul public.
-                                  </p>
+                                <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100/90 ${ACTION_PILL_CLASSNAME}`}>
+                                    Pret listare
                                 </div>
-                                {pricePerSqm && (
-                                  <div className="shrink-0 rounded-full border border-white/8 bg-[#19293f] px-3 py-1.5 text-sm font-semibold text-white/78">
-                                    €{pricePerSqm}/m²
-                                  </div>
-                                )}
-                              </div>
+                                <div className="flex items-end justify-between gap-3">
+                                    <div className="space-y-1">
+                                        <div className="text-[2.2rem] font-bold tracking-tight text-emerald-300">
+                                            EUR {property.price.toLocaleString()}
+                                        </div>
+                                        <p className="text-sm text-white/58">
+                                            Valoarea afisata in anuntul public.
+                                        </p>
+                                    </div>
+                                    {pricePerSqm ? (
+                                        <div className="shrink-0 rounded-full border border-white/8 bg-[#19293f] px-3 py-1.5 text-sm font-semibold text-white/78">
+                                            EUR {pricePerSqm}/m²
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
-                            <DialogTrigger asChild>
-                              <div className={`flex cursor-pointer items-center justify-between rounded-[1.2rem] px-4 py-3 text-emerald-200 transition-colors ${ACTION_PILL_CLASSNAME}`}>
+                            <Link
+                                href={`/properties/${property.id}/analiza-pret`}
+                                className={`flex items-center justify-between rounded-[1.2rem] px-4 py-3 text-emerald-200 transition-colors ${ACTION_PILL_CLASSNAME}`}
+                            >
                                 <div className="flex items-center gap-2">
-                                  <TrendingUp className="h-4 w-4" />
-                                  <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
+                                    <TrendingUp className="h-4 w-4" />
+                                    <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
                                 </div>
-                                <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/58">
-                                  Deschide
+                                <span className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-white/58">
+                                    Deschide
+                                    <ArrowRight className="h-3.5 w-3.5" />
                                 </span>
-                              </div>
-                            </DialogTrigger>
-                          </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <DialogContent className="border-white/10 bg-[#101113] text-stone-100">
-                    <DialogHeader>
-                        <DialogTitle>Evaluare Preț AI (Demo)</DialogTitle>
-                        <DialogDescription className="text-stone-400">
-                            Această funcționalitate este în curs de dezvoltare. Într-o versiune viitoare, aici veți vedea o analiză detaliată a prețului proprietății, comparat cu piața.
-                        </DialogDescription>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
+                            </Link>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
         );
     }
 
@@ -116,34 +106,34 @@ export function PriceStatusCard({
                 <CardContent className="relative flex items-baseline justify-center gap-2 p-3 text-center">
                     <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
                     <span className={cn("relative z-10 text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
-                        €{property.price.toLocaleString()}
+                        EUR {property.price.toLocaleString()}
                     </span>
-                    {pricePerSqm && (
+                    {pricePerSqm ? (
                         <span className={cn("relative z-10 text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
-                            (€{pricePerSqm}/m²)
+                            (EUR {pricePerSqm}/m²)
                         </span>
-                    )}
+                    ) : null}
                 </CardContent>
             </Card>
         );
     }
-    
+
     return (
         <Dialog>
             <Card className={publicCardClassName}>
                 <CardContent className={cn("relative flex flex-col items-center justify-center gap-1 p-4 text-center", isAgentfinderTheme && "bg-[linear-gradient(180deg,#ffffff_0%,#f4f8ff_100%)] shadow-[0_18px_36px_-28px_rgba(15,23,42,0.45)]")}>
-                     <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
-                     <div className="relative z-10 flex items-baseline gap-2">
+                    <div className={cn("pointer-events-none absolute inset-0 z-0", isAgentfinderTheme ? "bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.10),transparent_42%)]" : "bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.14),transparent_42%)]")} />
+                    <div className="relative z-10 flex items-baseline gap-2">
                         <span className={cn("text-xl font-bold", isAgentfinderTheme ? "!text-slate-950" : "text-[#4ade80]")}>
-                            €{property.price.toLocaleString()}
+                            EUR {property.price.toLocaleString()}
                         </span>
-                        {pricePerSqm && (
+                        {pricePerSqm ? (
                             <span className={cn("text-sm font-medium", isAgentfinderTheme ? "!text-slate-500" : "text-stone-400")}>
-                               (€{pricePerSqm}/m²)
+                                (EUR {pricePerSqm}/m²)
                             </span>
-                        )}
+                        ) : null}
                     </div>
-                     <DialogTrigger asChild>
+                    <DialogTrigger asChild>
                         <div className={cn("relative z-10 flex cursor-pointer items-center gap-1", isAgentfinderTheme ? "text-sky-700" : "text-[#86efac]")}>
                             <TrendingUp className="h-4 w-4" />
                             <span className="text-sm font-semibold">Evalueaza Pretul cu ImoDeus.ai</span>
@@ -154,9 +144,9 @@ export function PriceStatusCard({
 
             <DialogContent className="border-white/10 bg-[#101113] text-stone-100">
                 <DialogHeader>
-                    <DialogTitle>Evaluare Preț AI (Demo)</DialogTitle>
+                    <DialogTitle>Evaluare Pret AI (Demo)</DialogTitle>
                     <DialogDescription className="text-stone-400">
-                        Această funcționalitate este în curs de dezvoltare. Într-o versiune viitoare, aici veți vedea o analiză detaliată a prețului proprietății, comparat cu piața.
+                        Aceasta functionalitate este in curs de dezvoltare. Intr-o versiune viitoare, aici vei vedea o analiza detaliata a pretului proprietatii, comparat cu piata.
                     </DialogDescription>
                 </DialogHeader>
             </DialogContent>

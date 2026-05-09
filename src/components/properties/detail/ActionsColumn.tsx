@@ -4,12 +4,9 @@ import type { MatchedBuyer, Property, Viewing, UserProfile } from "@/lib/types";
 import { PriceStatusCard } from "./actions/PriceStatusCard";
 import { AgentCard } from "./actions/AgentCard";
 import { PublishCard } from "./actions/PublishCard";
-import { CmaCard } from "./actions/CmaCard";
 import { WebsiteToggleCard } from "./actions/WebsiteToggleCard";
-import { ScheduledViewingsCard } from "./actions/ScheduledViewingsCard";
 import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { FacebookGroupPromotionLauncherCard } from "./actions/FacebookGroupPromotionLauncherCard";
-import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
 
@@ -27,8 +24,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <PriceStatusCard property={property} variant="admin" />
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
-            <ScheduledViewingsCard viewings={viewings} />
-            <CmaCard property={property} allProperties={allProperties} />
             <PublishCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />
             <FacebookPromotionCard />
