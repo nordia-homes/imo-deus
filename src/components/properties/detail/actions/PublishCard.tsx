@@ -11,7 +11,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { ImobiliarePromotionSettings, Property } from "@/lib/types";
+import type {
+  ImobiliarePromotionSettings,
+  Property,
+  StoriaActivePromotion,
+  StoriaPromotionOption,
+  StoriaPromotionSelection,
+  StoriaPromotionSettings,
+} from "@/lib/types";
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -79,6 +86,12 @@ type PromotionFormState = {
   similar_properties: boolean;
   promo_zones: string;
   energy: string;
+};
+
+type StoriaPromotionFormEntry = {
+  promotionCode: string;
+  enabled: boolean;
+  durationDays: string;
 };
 
 const PROMOTION_BOOLEAN_FIELDS: Array<{ key: keyof Pick<
@@ -205,6 +218,45 @@ function buildPromotionSettingsPayload(form: PromotionFormState): ImobiliareProm
     imoradarStatus: form.imoradarStatus,
     ...(Object.keys(promotions).length ? { promotions } : {}),
   };
+}
+
+function buildStoriaPromotionFormEntries(
+  availablePromotions: StoriaPromotionOption[],
+  selectedPromotions: StoriaPromotionSelection[]
+): StoriaPromotionFormEntry[] {
+  const selectedMap = new Map(
+    (selectedPromotions || []).map((selection) => [selection.promotionCode, selection])
+  );
+
+  return availablePromotions.map((promotion) => {
+    const selected = selectedMap.get(promotion.promotionCode);
+    const defaultDuration =
+      typeof selected?.durationDays === 'number'
+        ? String(selected.durationDays)
+        : Array.isArray(promotion.durationDays) && promotion.durationDays.length
+          ? String(promotion.durationDays[0])
+          : '';
+
+    return {
+      promotionCode: promotion.promotionCode,
+      enabled: Boolean(selected),
+      durationDays: defaultDuration,
+    };
+  });
+}
+
+function buildStoriaPromotionSettingsPayload(formEntries: StoriaPromotionFormEntry[]): StoriaPromotionSettings {
+  const selections = formEntries
+    .filter((entry) => entry.enabled)
+    .map((entry) => {
+      const parsedDuration = Number(entry.durationDays);
+      return {
+        promotionCode: entry.promotionCode,
+        durationDays: Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : null,
+      };
+    });
+
+  return { selections };
 }
 
 function formatApiErrorDetails(details: unknown): string {
@@ -573,11 +625,20 @@ export function PublishCard({ property }: { property: Property }) {
     return persistedStep === 'syncing' || persistedStep === 'published';
   });
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
+  const [isStoriaPromotionModalOpen, setIsStoriaPromotionModalOpen] = useState(false);
   const [publishModalStep, setPublishModalStep] = useState<PublishModalStep>(() => readPersistedPublishModalStep(property.id) || 'confirm');
   const [publishModalError, setPublishModalError] = useState('');
   const [promotionForm, setPromotionForm] = useState<PromotionFormState>(
     buildPromotionFormState(property.portalProfiles?.imobiliare?.promotionSettings)
   );
+  const [storiaPromotionOptions, setStoriaPromotionOptions] = useState<StoriaPromotionOption[]>([]);
+  const [storiaPromotionForm, setStoriaPromotionForm] = useState<StoriaPromotionFormEntry[]>([]);
+  const [storiaActivePromotions, setStoriaActivePromotions] = useState<StoriaActivePromotion[]>(
+    property.portalProfiles?.storia?.activePromotions || []
+  );
+  const [isLoadingStoriaPromotions, setIsLoadingStoriaPromotions] = useState(false);
+  const [isSavingStoriaPromotions, setIsSavingStoriaPromotions] = useState(false);
+  const [isApplyingStoriaPromotions, setIsApplyingStoriaPromotions] = useState(false);
   const propertyRef = useMemo(() => {
     if (!agencyId) {
       return null;
@@ -636,6 +697,10 @@ export function PublishCard({ property }: { property: Property }) {
   useEffect(() => {
     setPromotionForm(buildPromotionFormState(property.portalProfiles?.imobiliare?.promotionSettings));
   }, [property.id, property.portalProfiles?.imobiliare?.promotionSettings]);
+
+  useEffect(() => {
+    setStoriaActivePromotions(property.portalProfiles?.storia?.activePromotions || []);
+  }, [property.id, property.portalProfiles?.storia?.activePromotions]);
 
   useEffect(() => {
     if (syncTarget) {
@@ -769,7 +834,18 @@ export function PublishCard({ property }: { property: Property }) {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(payload?.message || 'Actiunea Storia nu a putut fi finalizata.');
+          const details =
+            typeof payload?.details === 'string'
+              ? payload.details
+              : typeof payload?.details?.detail === 'string'
+                ? payload.details.detail
+                : Array.isArray(payload?.details?.data?.validation)
+                  ? payload.details.data.validation
+                      .map((item: { field?: string; detail?: string }) => [item?.field, item?.detail].filter(Boolean).join(': '))
+                      .filter(Boolean)
+                      .join(' | ')
+                  : '';
+          throw new Error([payload?.message, details].filter(Boolean).join(' | ') || 'Actiunea Storia nu a putut fi finalizata.');
         }
 
         toast({
@@ -913,6 +989,140 @@ export function PublishCard({ property }: { property: Property }) {
     }
   }
 
+  async function loadStoriaPromotions() {
+    if (!user) {
+      toast({
+        title: 'Autentificare necesara',
+        description: 'Trebuie sa fii autentificat pentru a gestiona promovarile Storia.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoadingStoriaPromotions(true);
+    try {
+      const response = await authorizedFetch(user, auth, '/api/storia/property-promotions', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut incarca promotiile disponibile pentru Storia.');
+      }
+
+      const availablePromotions = Array.isArray(payload?.availablePromotions)
+        ? (payload.availablePromotions as StoriaPromotionOption[])
+        : [];
+      const selectedPromotions = Array.isArray(payload?.selectedPromotions)
+        ? (payload.selectedPromotions as StoriaPromotionSelection[])
+        : [];
+      const activePromotions = Array.isArray(payload?.activePromotions)
+        ? (payload.activePromotions as StoriaActivePromotion[])
+        : [];
+
+      setStoriaPromotionOptions(availablePromotions);
+      setStoriaPromotionForm(buildStoriaPromotionFormEntries(availablePromotions, selectedPromotions));
+      setStoriaActivePromotions(activePromotions);
+      setIsStoriaPromotionModalOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Incarcare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut incarca promotiile Storia.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingStoriaPromotions(false);
+    }
+  }
+
+  function updateStoriaPromotionForm(promotionCode: string, patch: Partial<StoriaPromotionFormEntry>) {
+    setStoriaPromotionForm((current) =>
+      current.map((entry) =>
+        entry.promotionCode === promotionCode
+          ? {
+              ...entry,
+              ...patch,
+            }
+          : entry
+      )
+    );
+  }
+
+  async function handleSaveStoriaPromotionSettings() {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru a salva promovarile.', variant: 'destructive' });
+      return;
+    }
+
+    setIsSavingStoriaPromotions(true);
+    try {
+      const promotionSettings = buildStoriaPromotionSettingsPayload(storiaPromotionForm);
+      const response = await authorizedFetch(user, auth, '/api/storia/property-promotion-settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          propertyId: property.id,
+          promotionSettings,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut salva promovarile Storia.');
+      }
+
+      toast({
+        title: 'Promovari salvate',
+        description: payload?.appliedRemotely
+          ? 'Setarile au fost salvate si trimise catre Storia.'
+          : payload?.message || 'Setarile au fost salvate pentru publicarea urmatoare.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Salvare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut salva promovarile Storia.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingStoriaPromotions(false);
+    }
+  }
+
+  async function handleApplyStoriaPromotions() {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru a aplica promovarile.', variant: 'destructive' });
+      return;
+    }
+
+    setIsApplyingStoriaPromotions(true);
+    try {
+      const promotionSettings = buildStoriaPromotionSettingsPayload(storiaPromotionForm);
+      const response = await authorizedFetch(user, auth, '/api/storia/apply-promotions', {
+        method: 'POST',
+        body: JSON.stringify({
+          propertyId: property.id,
+          promotionSettings,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut aplica promovarile Storia.');
+      }
+
+      toast({
+        title: 'Promovari trimise',
+        description: 'Cererea de promovare a fost trimisa catre Storia.',
+      });
+      await loadStoriaPromotions();
+    } catch (error) {
+      toast({
+        title: 'Aplicare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut aplica promovarile Storia.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApplyingStoriaPromotions(false);
+    }
+  }
+
   function updatePromotionForm<K extends keyof PromotionFormState>(key: K, value: PromotionFormState[K]) {
     setPromotionForm((current) => ({
       ...current,
@@ -1015,6 +1225,123 @@ export function PublishCard({ property }: { property: Property }) {
           >
             {isSavingPromotionSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salveaza promovarea
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderStoriaPromotionEditor() {
+    return (
+      <div className="imobiliare-publish-modal__promotion-editor rounded-[24px] border border-white/10 bg-[#111927] p-4">
+        <div className="mb-4 text-center">
+          <p className="text-lg font-semibold text-white">Promovare Storia.ro</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-white/55">
+            Selecteaza promotiile dorite pentru anuntul Storia. Dupa activarea scope-urilor VAS, aceleasi alegeri se aplica direct din CRM.
+          </p>
+        </div>
+
+        {isLoadingStoriaPromotions ? (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#1F2A37] px-4 py-6 text-sm text-white/70">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Incarcam promotiile disponibile...
+          </div>
+        ) : null}
+
+        {!isLoadingStoriaPromotions && !storiaPromotionOptions.length ? (
+          <div className="rounded-2xl border border-amber-300/18 bg-amber-400/10 px-4 py-4 text-sm text-amber-100">
+            Nu am primit inca lista de promotii disponibile de la Storia pentru acest cont sau pentru acest mediu.
+          </div>
+        ) : null}
+
+        {!isLoadingStoriaPromotions && storiaPromotionOptions.length ? (
+          <div className="space-y-3">
+            {storiaPromotionOptions.map((promotion) => {
+              const formEntry = storiaPromotionForm.find((entry) => entry.promotionCode === promotion.promotionCode);
+              const activeMatch = storiaActivePromotions.find((entry) => entry.promotionCode === promotion.promotionCode);
+
+              return (
+                <div key={promotion.promotionCode} className="rounded-2xl border border-white/8 bg-[#1F2A37] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white">{promotion.promotionCode}</p>
+                      <p className="text-xs leading-5 text-white/60">
+                        {promotion.description || 'Promotie disponibila prin VAS API pentru anunturile Storia.'}
+                      </p>
+                      {activeMatch ? (
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200">
+                          Activ: {activeMatch.status}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Checkbox
+                      checked={Boolean(formEntry?.enabled)}
+                      onCheckedChange={(checked) =>
+                        updateStoriaPromotionForm(promotion.promotionCode, { enabled: Boolean(checked) })
+                      }
+                    />
+                  </div>
+
+                  {Array.isArray(promotion.durationDays) && promotion.durationDays.length ? (
+                    <div className="mt-3 space-y-2">
+                      <Label className="text-white/75">Durata</Label>
+                      <Select
+                        value={formEntry?.durationDays || String(promotion.durationDays[0])}
+                        onValueChange={(value) =>
+                          updateStoriaPromotionForm(promotion.promotionCode, { durationDays: value })
+                        }
+                      >
+                        <SelectTrigger className="border-white/15 bg-[#111927] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {promotion.durationDays.map((days) => (
+                            <SelectItem key={`${promotion.promotionCode}-${days}`} value={String(days)}>
+                              {days} zile
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {storiaActivePromotions.length ? (
+          <div className="mt-4 rounded-2xl border border-emerald-300/18 bg-emerald-400/10 p-4">
+            <p className="text-sm font-semibold text-emerald-100">Promovari active sau cerute recent</p>
+            <div className="mt-3 space-y-2 text-xs text-emerald-50/90">
+              {storiaActivePromotions.slice(0, 6).map((promotion) => (
+                <div key={`${promotion.promotionCode}-${promotion.vasUuid || promotion.status}`} className="flex items-center justify-between gap-3">
+                  <span>{promotion.promotionCode}</span>
+                  <span>{promotion.durationDays ? `${promotion.durationDays} zile` : promotion.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap justify-end gap-3">
+          <Button
+            type="button"
+            onClick={handleSaveStoriaPromotionSettings}
+            disabled={isSavingStoriaPromotions || isApplyingStoriaPromotions || isLoadingStoriaPromotions}
+            className="imobiliare-publish-modal__secondary-button border border-white/20 bg-white/10 text-white hover:bg-white/20"
+          >
+            {isSavingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Salveaza selectia
+          </Button>
+          <Button
+            type="button"
+            onClick={handleApplyStoriaPromotions}
+            disabled={isApplyingStoriaPromotions || isSavingStoriaPromotions || isLoadingStoriaPromotions}
+            className="imobiliare-publish-modal__primary-button bg-[#e11d48] text-white hover:bg-[#be123c]"
+          >
+            {isApplyingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-200" />}
+            Aplica promovarea
           </Button>
         </div>
       </div>
@@ -1179,6 +1506,28 @@ export function PublishCard({ property }: { property: Property }) {
             </button>
           </div>
         ) : null}
+
+        {storiaStatus === 'published' ? (
+          <div className="rounded-xl border border-sky-300/18 bg-sky-400/10 px-4 py-3 text-sm text-sky-50">
+            <button
+              type="button"
+              onClick={handleOpenStoriaListing}
+              className="underline underline-offset-4"
+            >
+              Vezi anuntul pe Storia.ro
+            </button>
+          </div>
+        ) : null}
+
+        <Button
+          type="button"
+          onClick={loadStoriaPromotions}
+          disabled={isLoadingStoriaPromotions}
+          className="h-12 w-full rounded-2xl border border-white/12 bg-[#111927] text-white hover:bg-[#1F2A37]"
+        >
+          {isLoadingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-amber-300" /> : <Zap className="mr-2 h-4 w-4 text-amber-300" />}
+          Promovare Storia.ro
+        </Button>
 
         <Button
           type="button"
@@ -1404,6 +1753,19 @@ export function PublishCard({ property }: { property: Property }) {
           </DialogHeader>
           <div className="p-6">
             {renderPromotionEditor()}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isStoriaPromotionModalOpen} onOpenChange={setIsStoriaPromotionModalOpen}>
+        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
+          <DialogHeader className="imobiliare-publish-modal__header border-b border-white/10 bg-[#111927] px-6 py-5 text-center sm:text-center">
+            <DialogTitle className="text-center text-xl text-white">Promovare Storia.ro</DialogTitle>
+            <DialogDescription className="mx-auto max-w-md text-center text-white/65">
+              Selecteaza promovarile dorite pentru anuntul publicat pe Storia din acelasi tip de modal folosit pentru portalurile deja integrate.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-6">
+            {renderStoriaPromotionEditor()}
           </div>
         </DialogContent>
       </Dialog>

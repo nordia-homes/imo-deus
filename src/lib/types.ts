@@ -180,6 +180,11 @@ export type StoriaPortalProfile = {
   remoteUuid?: string | null;
   remoteUrl?: string | null;
   locationExact?: boolean;
+  promotionSettings?: StoriaPromotionSettings | null;
+  promotionRequests?: StoriaPromotionRequest[] | null;
+  activePromotions?: StoriaActivePromotion[] | null;
+  lastPromotionSyncAt?: string | null;
+  lastPromotionError?: string | null;
   lastValidationError?: string | null;
   lastPublishedAt?: string | null;
   lastPayloadHash?: string | null;
@@ -203,6 +208,43 @@ export type StoriaIntegrationPrivate = {
   authorizationState?: string | null;
   lastAuthorizedByUid?: string | null;
   lastAuthorizedAt?: string | null;
+};
+
+export type StoriaPromotionOption = {
+  promotionCode: string;
+  description?: string | null;
+  durationDays?: number[];
+  accountType?: string[];
+};
+
+export type StoriaPromotionSelection = {
+  promotionCode: string;
+  durationDays?: number | null;
+};
+
+export type StoriaPromotionSettings = {
+  selections: StoriaPromotionSelection[];
+};
+
+export type StoriaPromotionRequest = {
+  transactionId: string;
+  promotionCode: string;
+  durationDays?: number | null;
+  vasUuid?: string | null;
+  status: 'requested' | 'applied' | 'error' | 'unknown';
+  createdAt: string;
+  updatedAt: string;
+  errorMessage?: string | null;
+};
+
+export type StoriaActivePromotion = {
+  vasUuid?: string | null;
+  promotionCode: string;
+  durationDays?: number | null;
+  status: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  errorMessage?: string | null;
 };
 
 export type FacebookGroup = {
