@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
-import type { OwnerListing, OwnerListingFavorite, PropertyTypeFilter, SourceFilterValue } from '@/components/owner-listings/types';
+import type { OwnerListing, OwnerListingFavorite, PropertyTypeFilter, SourceFilterValue, TransactionTypeFilter } from '@/components/owner-listings/types';
 import {
   extractPrice,
   extractRoomsValue,
   matchesPropertyType,
   matchesSourceFilter,
+  matchesTransactionType,
   normalizeDigits,
   normalizeText,
 } from '@/components/owner-listings/utils';
@@ -24,7 +25,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
-import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { listOwnerListingScopes, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
@@ -37,10 +38,13 @@ export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('all');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>('all');
   const [constructionYearFilter, setConstructionYearFilter] = useState<string>('all');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue | null>(null);
+  const [selectedScopeKey, setSelectedScopeKey] = useState<string>('');
+  const [hasSelectedScopeManually, setHasSelectedScopeManually] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
@@ -52,7 +56,12 @@ export default function OwnerListingsPage() {
   const { user } = useUser();
   const { agency, agencyId, userProfile } = useAgency();
   const isClassicTheme = getAgencyThemePreset(agency) === 'classic';
-  const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
+  const agencyDefaultScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
+  const scopeOptions = useMemo(() => listOwnerListingScopes(), []);
+  const currentScope = useMemo(
+    () => scopeOptions.find((scope) => scope.key === selectedScopeKey) || agencyDefaultScope || scopeOptions[0] || null,
+    [agencyDefaultScope, scopeOptions, selectedScopeKey],
+  );
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
   const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
@@ -63,6 +72,18 @@ export default function OwnerListingsPage() {
 
   const { data: listings, isLoading } = useCollection<OwnerListing>(ownerListingsQuery);
   const { data: favorites } = useCollection<OwnerListingFavorite>(favoritesQuery);
+
+  useEffect(() => {
+    if (hasSelectedScopeManually) return;
+    if (agencyDefaultScope?.key) {
+      setSelectedScopeKey(agencyDefaultScope.key);
+      return;
+    }
+
+    if (!selectedScopeKey && scopeOptions[0]?.key) {
+      setSelectedScopeKey(scopeOptions[0].key);
+    }
+  }, [agencyDefaultScope?.key, hasSelectedScopeManually, scopeOptions, selectedScopeKey]);
 
   const favoritesByListingId = useMemo(() => {
     const map = new Map<string, OwnerListingFavorite>();
@@ -118,6 +139,7 @@ export default function OwnerListingsPage() {
     }
 
     result = result.filter((listing) => matchesPropertyType(listing, propertyTypeFilter));
+    result = result.filter((listing) => matchesTransactionType(listing, transactionTypeFilter));
 
     if (roomsFilter !== 'all') {
       result = result.filter((listing) => extractRoomsValue(listing.rooms) === Number(roomsFilter));
@@ -168,11 +190,11 @@ export default function OwnerListingsPage() {
     });
 
     return result;
-  }, [constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter]);
+  }, [constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roomsFilter, propertyTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
+  }, [searchQuery, roomsFilter, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -185,10 +207,16 @@ export default function OwnerListingsPage() {
     setSearchQuery('');
     setRoomsFilter('all');
     setPropertyTypeFilter('all');
+    setTransactionTypeFilter('all');
     setConstructionYearFilter('all');
     setPriceMin('');
     setPriceMax('');
     setSourceFilter(null);
+  };
+
+  const handleScopeChange = (value: string) => {
+    setSelectedScopeKey(value);
+    setHasSelectedScopeManually(true);
   };
 
   const handleImport = async (listing: OwnerListing) => {
@@ -469,6 +497,22 @@ export default function OwnerListingsPage() {
       </div>
 
       <div>
+        <Label className="mb-2 block font-semibold">Locatie</Label>
+        <Select value={currentScope?.key || selectedScopeKey} onValueChange={handleScopeChange}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {scopeOptions.map((scope) => (
+              <SelectItem key={scope.key} value={scope.key}>
+                {scope.displayName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label className="mb-2 block font-semibold">Sursa</Label>
         <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
           <SelectTrigger>
@@ -496,6 +540,20 @@ export default function OwnerListingsPage() {
             <SelectItem value="case">Case</SelectItem>
             <SelectItem value="terenuri">Terenuri</SelectItem>
             <SelectItem value="spatii-comerciale">Spatii comerciale</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label className="mb-2 block font-semibold">Tranzactie</Label>
+        <Select value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Vanzare si inchiriere</SelectItem>
+            <SelectItem value="sale">Vanzare</SelectItem>
+            <SelectItem value="rent">Inchiriere</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -589,27 +647,40 @@ export default function OwnerListingsPage() {
       <div className="sticky top-20 z-20 hidden md:block">
         <div
           className={cn(
-            "rounded-[1.75rem] p-5 backdrop-blur-xl md:flex md:flex-wrap md:items-center md:gap-4",
+            "rounded-[1.75rem] p-5 backdrop-blur-xl",
             isClassicTheme
               ? "border border-white/8 bg-[#152A47] text-white shadow-2xl"
               : "border border-white/50 bg-white/82 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)]",
           )}
         >
-          <Input
-            placeholder="Cauta dupa titlu, zona, telefon sau pret"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            className={cn(
-              "h-12 w-full max-w-[320px] rounded-2xl text-base",
-              isClassicTheme
-                ? "border-white/20 bg-white/10 text-white placeholder:text-white/55"
-                : "border-slate-200/80 bg-white/90",
-            )}
-          />
+          <div className="grid grid-cols-[minmax(220px,1fr)_160px_136px_164px_148px_124px_144px_96px_96px_44px] items-center gap-2">
+            <Input
+              placeholder="Cauta dupa titlu, zona, telefon sau pret"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className={cn(
+                "h-12 min-w-0 rounded-2xl text-base",
+                isClassicTheme
+                  ? "border-white/20 bg-white/10 text-white placeholder:text-white/55"
+                  : "border-slate-200/80 bg-white/90",
+              )}
+            />
 
-          <div className="flex gap-2">
+            <Select value={currentScope?.key || selectedScopeKey} onValueChange={handleScopeChange}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+                <SelectValue placeholder="Locatie" />
+              </SelectTrigger>
+              <SelectContent>
+                {scopeOptions.map((scope) => (
+                  <SelectItem key={scope.key} value={scope.key}>
+                    {scope.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={sourceFilter ?? 'all'} onValueChange={(value) => setSourceFilter(value === 'all' ? null : (value as SourceFilterValue))}>
-              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -622,7 +693,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
-              <SelectTrigger className={cn("h-12 w-[192px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -634,8 +705,19 @@ export default function OwnerListingsPage() {
               </SelectContent>
             </Select>
 
+            <Select value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Vanzare + chirie</SelectItem>
+                <SelectItem value="sale">Vanzare</SelectItem>
+                <SelectItem value="rent">Inchiriere</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className={cn("h-12 w-[146px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -649,7 +731,7 @@ export default function OwnerListingsPage() {
             </Select>
 
             <Select value={constructionYearFilter} onValueChange={setConstructionYearFilter}>
-              <SelectTrigger className={cn("h-12 w-[168px] rounded-2xl text-base", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+              <SelectTrigger className={cn("h-12 min-w-0 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
                 <SelectValue placeholder="An constructie" />
               </SelectTrigger>
               <SelectContent>
@@ -659,22 +741,19 @@ export default function OwnerListingsPage() {
                 <SelectItem value="after-2000">Dupa 2000</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="flex gap-2">
             <Input
-              placeholder="Pret minim"
+              placeholder="Min"
               type="number"
               value={priceMin}
               onChange={(event) => setPriceMin(event.target.value)}
-              className={cn("w-[124px]", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "")}
+              className={cn("h-12 min-w-0 rounded-2xl", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "border-slate-200/80 bg-white/90")}
             />
             <Input
-              placeholder="Pret maxim"
+              placeholder="Max"
               type="number"
               value={priceMax}
               onChange={(event) => setPriceMax(event.target.value)}
-              className={cn("w-[124px]", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "")}
+              className={cn("h-12 min-w-0 rounded-2xl", isClassicTheme ? "border-white/20 bg-white/10 text-white placeholder:text-white/55" : "border-slate-200/80 bg-white/90")}
             />
             <Button
               type="button"
@@ -683,7 +762,7 @@ export default function OwnerListingsPage() {
               onClick={resetFilters}
               aria-label="Reseteaza filtrele"
               className={cn(
-                "h-12 w-12 rounded-2xl",
+                "h-12 w-11 rounded-2xl",
                 isClassicTheme
                   ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
                   : "border-slate-200/80 bg-white/90 text-slate-700 hover:bg-white",

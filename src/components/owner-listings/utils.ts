@@ -1,4 +1,4 @@
-import type { OwnerListing, PropertyTypeFilter, SourceFilterValue } from '@/components/owner-listings/types';
+import type { OwnerListing, PropertyTypeFilter, SourceFilterValue, TransactionTypeFilter } from '@/components/owner-listings/types';
 
 export function extractPrice(priceStr: string): number | null {
   if (!priceStr) return null;
@@ -80,6 +80,24 @@ export function matchesPropertyType(listing: OwnerListing, propertyTypeFilter: P
     default:
       return true;
   }
+}
+
+export function matchesTransactionType(listing: OwnerListing, transactionTypeFilter: TransactionTypeFilter) {
+  if (transactionTypeFilter === 'all') {
+    return true;
+  }
+
+  const listingTransactionType = normalizeText(listing.transactionType);
+  if (listingTransactionType === transactionTypeFilter) {
+    return true;
+  }
+
+  const searchableText = normalizeText(`${listing.title || ''} ${listing.description || ''} ${listing.link || ''}`);
+  if (transactionTypeFilter === 'rent') {
+    return searchableText.includes('inchiri') || searchableText.includes('chirie') || searchableText.includes('de-inchiriat');
+  }
+
+  return searchableText.includes('vanzare') || searchableText.includes('de-vanzare') || searchableText.includes('vand');
 }
 
 export function matchesSourceFilter(listing: OwnerListing, sourceFilter: SourceFilterValue | null) {
