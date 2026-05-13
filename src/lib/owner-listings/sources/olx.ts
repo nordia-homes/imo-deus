@@ -23,7 +23,7 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
 };
 const olxPhoneCache = new Map<string, string>();
 const MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE = 24;
-const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = 2;
+const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE;
 const OLX_LIST_PAGE_TIMEOUT_MS = 15000;
 const OLX_DETAIL_HYDRATION_TIMEOUT_MS = 5000;
 
@@ -705,6 +705,24 @@ function extractOlxImagesFromHtml(html: string) {
 }
 
 function extractCardChunk(html: string, index: number, nextIndex: number) {
+  const lCardMarkerCandidates = [
+    html.lastIndexOf('data-testid="l-card"', index),
+    html.lastIndexOf("data-testid='l-card'", index),
+    html.lastIndexOf('data-cy="l-card"', index),
+    html.lastIndexOf("data-cy='l-card'", index),
+  ].filter((markerIndex) => markerIndex >= 0);
+  const lCardMarkerIndex = lCardMarkerCandidates.length ? Math.max(...lCardMarkerCandidates) : -1;
+  const lCardStart = lCardMarkerIndex >= 0 ? html.lastIndexOf('<div', lCardMarkerIndex) : -1;
+  if (lCardStart >= 0 && lCardStart <= index && index - lCardStart < 5000) {
+    const lCardEnd = findBalancedHtmlElementEnd(html, lCardStart, 'div', 120000);
+    if (lCardEnd > index) {
+      return {
+        chunk: html.slice(lCardStart, lCardEnd),
+        isolated: true,
+      };
+    }
+  }
+
   const articleStart = html.lastIndexOf('<article', index);
   const articleEnd = html.indexOf('</article>', index);
   if (articleStart >= 0 && articleEnd > index && articleEnd - articleStart < 30000) {
@@ -720,6 +738,30 @@ function extractCardChunk(html: string, index: number, nextIndex: number) {
     chunk: html.slice(snippetStart, snippetEnd),
     isolated: false,
   };
+}
+
+function findBalancedHtmlElementEnd(html: string, startIndex: number, tagName: string, maxLength: number) {
+  const searchEnd = Math.min(html.length, startIndex + maxLength);
+  const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi');
+
+  let depth = 0;
+  for (const match of html.slice(startIndex, searchEnd).matchAll(tagPattern)) {
+    const tag = match[0];
+    const absoluteIndex = startIndex + (match.index ?? 0);
+    if (/^<\//.test(tag)) {
+      depth -= 1;
+      if (depth === 0) {
+        return absoluteIndex + tag.length;
+      }
+      continue;
+    }
+
+    if (!/\/>$/.test(tag)) {
+      depth += 1;
+    }
+  }
+
+  return -1;
 }
 
 function extractAnchorChunk(html: string, index: number) {
@@ -747,6 +789,10 @@ function extractImageCandidatesFromChunk(chunk: string) {
   return Array.from(new Set([...attributeCandidates, ...cdnCandidates]));
 }
 
+function stripUrlQueryAndHash(value: string) {
+  return value.split(/[?#]/, 1)[0] || value;
+}
+
 function extractPriceFromChunk(chunk: string) {
   const priceMatches = [
     ...Array.from(chunk.matchAll(/\b\d{2,3}(?:[.\s]\d{3})+(?:[.,]\d{1,2})?\s*(?:â‚¬|eur|Ã¢â€šÂ¬)\b/gi)).map((match) =>
@@ -767,7 +813,8 @@ function extractListPageFromHtml(html: string) {
 
   for (let index = 0; index < hrefMatches.length; index += 1) {
     const href = hrefMatches[index]?.[1] || '';
-    if (!href || seen.has(href)) continue;
+    const comparableHref = stripUrlQueryAndHash(href);
+    if (!href || seen.has(comparableHref)) continue;
 
     const currentIndex = hrefMatches[index]?.index ?? 0;
     const nextIndex = hrefMatches[index + 1]?.index ?? Math.min(html.length, currentIndex + 8000);
@@ -778,8 +825,10 @@ function extractListPageFromHtml(html: string) {
       chunk.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '',
       anchorChunk.match(/\stitle=["']([^"']+)["']/i)?.[1] || '',
       anchorChunk.match(/aria-label=["']([^"']+)["']/i)?.[1] || '',
+      anchorChunk.match(/\salt=["']([^"']+)["']/i)?.[1] || '',
       chunk.match(/\stitle=["']([^"']+)["']/i)?.[1] || '',
       chunk.match(/aria-label=["']([^"']+)["']/i)?.[1] || '',
+      chunk.match(/\salt=["']([^"']+)["']/i)?.[1] || '',
     ];
     const title = titleCandidates.map((candidate) => normalizeOlxListTitleCandidate(candidate)).find(Boolean) || '';
     const text = stripHtml(chunk);
@@ -788,7 +837,7 @@ function extractListPageFromHtml(html: string) {
 
     if (!title) continue;
 
-    seen.add(href);
+    seen.add(comparableHref);
     cards.push({ href, title, text, price, imageCandidates, isolated });
   }
 
@@ -1076,10 +1125,6 @@ export async function scrapeOlxListingsPage(
           location: detailLocation || parsed.location,
           constructionYear: detailParams.constructionYear || parsed.constructionYear,
         };
-
-        if (detailTitle) {
-          resolvedTitle = detailTitle;
-        }
 
         card.imageCandidates.push(...extractOlxImagesFromHtml(detailHtml));
       }
