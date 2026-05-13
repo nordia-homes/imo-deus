@@ -1,7 +1,7 @@
 import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { drainNextOlxPhoneQueueItem } from '@/lib/owner-listings/olx-phone-queue';
-import { getNewBadgeLifetimeUnix, syncOwnerListings } from '@/lib/owner-listings';
+import { getNewBadgeLifetimeUnix, syncOwnerListings, syncOwnerListingsFreshRadar } from '@/lib/owner-listings';
 import { runOwnerListingsSyncSchedulerTick } from '@/lib/owner-listings/cycle';
 import { getOwnerListingScope, listOwnerListingScopes } from '@/lib/owner-listings/scope';
 import type {
@@ -33,6 +33,51 @@ type CycleTickOptions = {
 
 export async function runOwnerListingsScheduledCycleTick(options: CycleTickOptions = {}): Promise<OwnerListingSyncTickResult> {
   return runOwnerListingsSyncSchedulerTick(options);
+}
+
+export async function runOwnerListingsFreshRadarSync(options: BackgroundSyncOptions) {
+  const scopes = listTargetScopes(options.scopeKey);
+  const scopeResults: ScopeJobResult[] = [];
+
+  for (const scope of scopes) {
+    try {
+      const cycleState = await loadScopeCycleState(scope.key);
+      const isBaselineCompleted = cycleState?.baselineStatus === 'completed';
+      const result = await syncOwnerListingsFreshRadar(
+        scope.key,
+        {
+          maxPages: options.maxPages ?? 2,
+          maxListingsPerSource: options.maxListingsPerSource ?? 50,
+          hardPageLimit: Math.min(options.hardPageLimit || 2, 5),
+          maxAgeDays: 14,
+        },
+        {
+          markNew: isBaselineCompleted,
+          isBaselineListing: !isBaselineCompleted,
+          discoveredCycleNumber: cycleState?.cycleNumber || undefined,
+          newUntilAt: isBaselineCompleted ? getNewBadgeLifetimeUnix() : null,
+        }
+      );
+
+      scopeResults.push({
+        scopeKey: scope.key,
+        scopeLabel: scope.displayName,
+        result,
+      });
+    } catch (error) {
+      scopeResults.push({
+        scopeKey: scope.key,
+        scopeLabel: scope.displayName,
+        error: error instanceof Error ? error.message : 'Fresh radar sync a esuat.',
+      });
+    }
+  }
+
+  return {
+    startedAt: nowIso(),
+    finishedAt: nowIso(),
+    scopes: scopeResults,
+  };
 }
 
 type BackgroundSyncOptions = {

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { Building2, Home, LayoutDashboard, LogOut, Shield, Users } from 'lucide-react';
+import { Activity, Building2, Home, LayoutDashboard, LogOut, Shield, Users } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { signOut } from 'firebase/auth';
 import { useAuth, useFirestore, useMemoFirebase, useDoc, useUser } from '@/firebase';
@@ -68,12 +68,14 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
     return <FullScreenLoader />;
   }
 
+  const currentPathname = pathname || '';
   const navItems = [
     { href: '/master-admin', label: 'Overview', icon: LayoutDashboard },
     { href: '/master-admin/agencies', label: 'Agenții', icon: Building2 },
     { href: '/master-admin/users', label: 'Utilizatori', icon: Users },
     { href: '/master-admin/properties', label: 'Proprietăți', icon: Home },
     { href: '/master-admin/leads', label: 'Leads', icon: Shield },
+    { href: '/master-admin/scraping', label: 'Scraping', icon: Activity },
   ];
 
   return (
@@ -93,7 +95,7 @@ export default function MasterAdminLayout({ children }: { children: React.ReactN
           <nav className="mt-8 flex-1 space-y-2 overflow-y-auto pr-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive = currentPathname === item.href || currentPathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}

@@ -324,6 +324,15 @@ export const locations = {
     'Valea Aurie',
     'Vasile Aaron',
   ],
+  Oradea: ['Central', 'Nufarul', 'Rogerius', 'Iosia', 'Oncea', 'Velenta', 'Santandrei', 'Sanmartin'],
+  Arad: ['Central', 'Micalaca', 'Aurel Vlaicu', 'Gradiste', 'Bujac', 'Subcetate', 'Sannicolau Mic'],
+  Craiova: ['Central', 'Calea Bucuresti', 'Brazda lui Novac', 'Rovine', 'Lapus', '1 Mai', 'George Enescu'],
+  Galati: ['Central', 'Micro 13', 'Micro 14', 'Micro 17', 'Micro 19', 'Mazepa', 'Tiglina', 'Dunarea'],
+  Braila: ['Central', 'Viziru', 'Radu Negru', 'Chercea', 'Hipodrom', 'Obor', 'Vidin'],
+  Buzau: ['Central', 'Micro 14', 'Micro 3', 'Dorobanti', 'Brosteni', 'Unirii', 'Orizont'],
+  Ploiesti: ['Central', 'Albert', 'Nord', 'Vest', 'Sud', 'Mihai Bravu', 'Malul Rosu', 'Republicii'],
+  'Alba Iulia': ['Central', 'Cetate', 'Micesti', 'Ampoi', 'Tolstoi', 'Partos', 'Oarda'],
+  'Baia Mare': ['Central', 'Vasile Alecsandri', 'Sasar', 'Garii', 'Republicii', 'Progresului', 'Valea Rosie'],
 } as const;
 
 export type City = keyof typeof locations;

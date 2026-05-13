@@ -7,11 +7,21 @@
     "src/lib/owner-listings/olx-phone-queue.ts",
     "src/lib/owner-listings/background.ts",
     "src/lib/owner-listings/browser.ts",
+    "src/lib/owner-listings/enrichment-queue.ts",
+    "src/lib/owner-listings/frontier.ts",
     "src/lib/owner-listings/sources/olx.ts",
     "src/lib/owner-listings/sources/imoradar24.ts",
     "src/lib/owner-listings/sources/publi24.ts",
     "src/lib/owner-listings/scope.ts",
-    "src/app/api/owner-listings/olx-phone-drain/route.ts"
+    "src/app/api/owner-listings/olx-phone-drain/route.ts",
+    "src/app/api/owner-listings/enrichment-drain/route.ts",
+    "src/app/api/owner-listings/sync/fresh-radar/route.ts",
+    "src/app/api/owner-listings/sync/frontier/route.ts",
+    "src/lib/master-admin.ts",
+    "src/app/api/master-admin/scraping/route.ts",
+    "src/app/api/master-admin/scraping/actions/route.ts",
+    "src/app/master-admin/scraping/page.tsx",
+    "src/app/master-admin/layout.tsx"
   ],
   "exclude": ["node_modules", ".next"]
 }

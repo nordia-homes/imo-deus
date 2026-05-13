@@ -7,6 +7,34 @@ const ownerListingsAppBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');
 const ownerListingsCronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECRET');
 const STORIA_WEBHOOK_FORWARD_URL = 'https://imodeus.ro/api/storia/webhook';
 
+async function postOwnerListingsEndpoint(
+  appBaseUrl: string,
+  cronSecret: string,
+  path: string,
+  body: Record<string, unknown> = {}
+) {
+  const response = await fetch(`${appBaseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-owner-listings-cron-secret': cronSecret,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await response.text();
+  if (!response.ok) {
+    logger.error('Owner listings scheduled endpoint failed.', {
+      path,
+      status: response.status,
+      payload,
+    });
+    throw new Error(`${path} failed with status ${response.status}.`);
+  }
+
+  return payload;
+}
+
 export const ownerListingsBackgroundSync = onSchedule(
   {
     schedule: 'every 5 minutes',
@@ -20,30 +48,63 @@ export const ownerListingsBackgroundSync = onSchedule(
     const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
     const cronSecret = ownerListingsCronSecret.value();
 
-    const response = await fetch(`${appBaseUrl}/api/owner-listings/sync/background`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-owner-listings-cron-secret': cronSecret,
-      },
-      body: JSON.stringify({
-        hardPageLimit: 250,
-        maxAgeDays: 60,
-        maxPagesPerTick: 12,
+    const frontierPayload = await postOwnerListingsEndpoint(
+      appBaseUrl,
+      cronSecret,
+      '/api/owner-listings/sync/frontier',
+      {
+        limit: 8,
+        maxPage: 20,
         maxRuntimeMs: 420000,
-      }),
-    });
+      }
+    );
 
-    const payload = await response.text();
-    if (!response.ok) {
-      logger.error('Owner listings background sync failed.', {
-        status: response.status,
-        payload,
-      });
-      throw new Error(`Background sync failed with status ${response.status}.`);
+    const enrichmentPayloads: string[] = [];
+    for (let index = 0; index < 8; index += 1) {
+      const payload = await postOwnerListingsEndpoint(
+        appBaseUrl,
+        cronSecret,
+        '/api/owner-listings/enrichment-drain'
+      );
+      enrichmentPayloads.push(payload);
+      if (payload.includes('"status":"empty"')) {
+        break;
+      }
     }
 
-    logger.info('Owner listings background sync completed.', {
+    logger.info('Owner listings frontier/enrichment sync completed.', {
+      frontierPayload,
+      enrichmentPayloads,
+    });
+  }
+);
+
+export const ownerListingsLegacyCycleSync = onSchedule(
+  {
+    schedule: 'every 24 hours',
+    timeZone: 'Europe/Bucharest',
+    region: 'us-central1',
+    memory: '1GiB',
+    timeoutSeconds: 540,
+    secrets: [ownerListingsAppBaseUrl, ownerListingsCronSecret],
+  },
+  async () => {
+    const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
+    const cronSecret = ownerListingsCronSecret.value();
+
+    const payload = await postOwnerListingsEndpoint(
+      appBaseUrl,
+      cronSecret,
+      '/api/owner-listings/sync/background',
+      {
+        hardPageLimit: 60,
+        maxAgeDays: 60,
+        maxPagesPerTick: 6,
+        maxRuntimeMs: 300000,
+      }
+    );
+
+    logger.info('Owner listings legacy safety cycle completed.', {
       payload,
     });
   }

@@ -1,4 +1,5 @@
 import { adminDb } from '@/firebase/admin';
+import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
 
 type PlatformRole = 'admin' | 'agent' | 'platform_admin';
 
@@ -77,6 +78,67 @@ export type MasterAdminLeadSummary = {
   zone: string;
   notes: string;
   createdAt: string | null;
+};
+
+export type MasterAdminScrapingOverview = {
+  generatedAt: string;
+  totals: {
+    scopes: number;
+    activeScopes: number;
+    runningScopes: number;
+    failedScopes: number;
+    cooldownScopes: number;
+    queuedOlxPhones: number;
+    failedOlxPhones: number;
+    frontierJobs: number;
+    frontierFailedJobs: number;
+    enrichmentQueued: number;
+    enrichmentFailed: number;
+  };
+  scopes: Array<{
+    scopeKey: string;
+    scopeLabel: string;
+    baselineStatus: string;
+    status: string;
+    currentSource: string | null;
+    cycleNumber: number;
+    cooldownUntil: string | null;
+    lastHeartbeatAt: string | null;
+    lastError: string | null;
+    jobs: Array<{
+      source: string;
+      status: string;
+      nextPage: number;
+      pagesProcessed: number;
+      scanned: number;
+      stored: number;
+      errors: number;
+      lastRunAt: string | null;
+      lastError: string | null;
+    }>;
+    frontierJobs: Array<{
+      id: string;
+      source: string;
+      label: string;
+      sourceUrlKind: string;
+      status: string;
+      nextPage: number;
+      priority: number;
+      lastRunAt: string | null;
+      nextRunAt: string | null;
+      lastError: string | null;
+    }>;
+  }>;
+  recentRuns: Array<{
+    scopeKey: string;
+    source: string;
+    page: number;
+    scanned: number;
+    stored: number;
+    errors: number;
+    durationMs: number;
+    finishedAt: string;
+  }>;
 };
 
 export type MasterAdminAgencyDetail = {
@@ -333,6 +395,131 @@ export async function getMasterAdminOverview() {
     },
     agencies,
     topAgencies: sortedByActivity.slice(0, 5),
+  };
+}
+
+export async function getMasterAdminScrapingOverview(): Promise<MasterAdminScrapingOverview> {
+  const configuredScopes = listOwnerListingScopes();
+  const [cycleSnapshot, jobSnapshot, runSnapshot, olxPhoneQueueSnapshot, frontierSnapshot, enrichmentSnapshot] = await Promise.all([
+    adminDb.collection('ownerListingSyncCycles').get(),
+    adminDb.collection('ownerListingSyncCycleJobs').get(),
+    adminDb.collection('ownerListingSyncRuns').orderBy('finishedAt', 'desc').limit(100).get(),
+    adminDb.collection('ownerListingOlxPhoneQueue').get(),
+    adminDb.collection('ownerListingScrapeFrontier').get(),
+    adminDb.collection('ownerListingEnrichmentQueue').get(),
+  ]);
+
+  const cyclesByScope = new Map(cycleSnapshot.docs.map((docSnapshot) => [docSnapshot.id, docSnapshot.data()]));
+  const jobsByScope = new Map<string, Array<Record<string, unknown>>>();
+  const frontierByScope = new Map<string, Array<{ id: string; data: Record<string, unknown> }>>();
+
+  for (const docSnapshot of jobSnapshot.docs) {
+    const data = docSnapshot.data();
+    const scopeKey = safeString(data.scopeKey);
+    if (!scopeKey) continue;
+    const current = jobsByScope.get(scopeKey) || [];
+    current.push(data);
+    jobsByScope.set(scopeKey, current);
+  }
+
+  for (const docSnapshot of frontierSnapshot.docs) {
+    const data = docSnapshot.data();
+    const scopeKey = safeString(data.scopeKey);
+    if (!scopeKey) continue;
+    const current = frontierByScope.get(scopeKey) || [];
+    current.push({ id: docSnapshot.id, data });
+    frontierByScope.set(scopeKey, current);
+  }
+
+  const scopes = configuredScopes.map((scope) => {
+    const cycle = cyclesByScope.get(scope.key) || {};
+    const jobs = (jobsByScope.get(scope.key) || [])
+      .map((job) => ({
+        source: safeString(job.source, 'unknown'),
+        status: safeString(job.status, 'unknown'),
+        nextPage: safeNumber(job.nextPage, 1),
+        pagesProcessed: safeNumber(job.pagesProcessed, 0),
+        scanned: safeNumber(job.scanned, 0),
+        stored: safeNumber(job.stored, 0),
+        errors: safeNumber(job.errors, 0),
+        lastRunAt: safeString(job.lastRunAt) || null,
+        lastError: safeString(job.lastError) || null,
+      }))
+      .sort((left, right) => left.source.localeCompare(right.source));
+    const frontierJobs = (frontierByScope.get(scope.key) || [])
+      .map((entry) => ({
+        id: entry.id,
+        source: safeString(entry.data.source, 'unknown'),
+        label: safeString(entry.data.label, 'Frontier job'),
+        sourceUrlKind: safeString(entry.data.sourceUrlKind, 'coverage'),
+        status: safeString(entry.data.status, 'pending'),
+        nextPage: safeNumber(entry.data.nextPage, 1),
+        priority: safeNumber(entry.data.priority, 0),
+        lastRunAt: safeString(entry.data.lastRunAt) || null,
+        nextRunAt: safeString(entry.data.nextRunAt) || null,
+        lastError: safeString(entry.data.lastError) || null,
+      }))
+      .sort((left, right) => {
+        if (left.status !== right.status) return left.status.localeCompare(right.status);
+        return right.priority - left.priority;
+      });
+
+    return {
+      scopeKey: scope.key,
+      scopeLabel: scope.displayName,
+      baselineStatus: safeString(cycle.baselineStatus, 'pending'),
+      status: safeString(cycle.status, 'idle'),
+      currentSource: safeString(cycle.currentSource) || null,
+      cycleNumber: safeNumber(cycle.cycleNumber, 0),
+      cooldownUntil: safeString(cycle.cooldownUntil) || null,
+      lastHeartbeatAt: safeString(cycle.lastHeartbeatAt) || null,
+      lastError: safeString(cycle.lastError) || null,
+      jobs,
+      frontierJobs,
+    };
+  });
+
+  const queuedOlxPhones = olxPhoneQueueSnapshot.docs.filter((docSnapshot) => {
+    const status = safeString(docSnapshot.data().status);
+    return status === 'pending' || status === 'retry' || status === 'processing';
+  }).length;
+  const failedOlxPhones = olxPhoneQueueSnapshot.docs.filter((docSnapshot) => safeString(docSnapshot.data().status) === 'failed').length;
+  const frontierFailedJobs = frontierSnapshot.docs.filter((docSnapshot) => safeString(docSnapshot.data().status) === 'failed').length;
+  const enrichmentQueued = enrichmentSnapshot.docs.filter((docSnapshot) => {
+    const status = safeString(docSnapshot.data().status);
+    return status === 'pending' || status === 'retry' || status === 'processing';
+  }).length;
+  const enrichmentFailed = enrichmentSnapshot.docs.filter((docSnapshot) => safeString(docSnapshot.data().status) === 'failed').length;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    totals: {
+      scopes: configuredScopes.length,
+      activeScopes: scopes.filter((scope) => scope.baselineStatus === 'completed').length,
+      runningScopes: scopes.filter((scope) => scope.status === 'running').length,
+      failedScopes: scopes.filter((scope) => scope.status === 'failed' || scope.lastError).length,
+      cooldownScopes: scopes.filter((scope) => scope.status === 'cooldown').length,
+      queuedOlxPhones,
+      failedOlxPhones,
+      frontierJobs: frontierSnapshot.size,
+      frontierFailedJobs,
+      enrichmentQueued,
+      enrichmentFailed,
+    },
+    scopes,
+    recentRuns: runSnapshot.docs.map((docSnapshot) => {
+      const data = docSnapshot.data();
+      return {
+        scopeKey: safeString(data.scopeKey),
+        source: safeString(data.source),
+        page: safeNumber(data.page, 0),
+        scanned: safeNumber(data.scanned, 0),
+        stored: safeNumber(data.stored, 0),
+        errors: safeNumber(data.errors, 0),
+        durationMs: safeNumber(data.durationMs, 0),
+        finishedAt: safeString(data.finishedAt),
+      };
+    }),
   };
 }
 

@@ -1,4 +1,7 @@
 export type OwnerListingSource = 'olx' | 'imoradar24' | 'publi24';
+export type OwnerListingPropertyType = 'apartment' | 'house' | 'land' | 'commercial' | 'unknown';
+export type OwnerListingTransactionType = 'sale' | 'rent' | 'unknown';
+export type OwnerListingEnrichmentStatus = 'pending' | 'partial' | 'complete' | 'failed';
 
 export type OwnerListingSummary = {
   scopeKey?: string;
@@ -7,6 +10,7 @@ export type OwnerListingSummary = {
   sourceLabel: string;
   originSourceUrl?: string;
   originSourceLabel?: string;
+  sourceUrl?: string;
   isNew?: boolean;
   isBaselineListing?: boolean;
   discoveredCycleNumber?: number;
@@ -23,16 +27,26 @@ export type OwnerListingSummary = {
   rooms?: number | string;
   constructionYear?: number | string;
   year?: number | string;
+  propertyType?: OwnerListingPropertyType;
+  transactionType?: OwnerListingTransactionType;
+  categoryConfidence?: number;
   image?: string;
   imageUrl?: string;
   description?: string;
   fingerprint: string;
+  canonicalKey?: string;
+  dedupeGroupId?: string;
+  dedupeSignature?: string;
+  normalizedTitle?: string;
+  normalizedLocation?: string;
   ownerType: 'owner';
   ownerName?: string;
   ownerPhone?: string;
   ownerConfidence?: number;
+  enrichmentStatus?: OwnerListingEnrichmentStatus;
   scrapedAt: number;
   lastSeenAt: number;
+  lastVerifiedAt?: number;
 };
 
 export type OwnerListingDetail = OwnerListingSummary & {
@@ -66,6 +80,7 @@ export type SourceScrapeOptions = {
   scopeCity: string;
   searchKeywords: string[];
   searchUrls: string[];
+  sourceUrlKind?: 'coverage' | 'fresh-radar';
 };
 
 export type OwnerListingSourcePageResult = {

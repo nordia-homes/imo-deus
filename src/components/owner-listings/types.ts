@@ -1,4 +1,5 @@
 import type { OwnerListingSource } from '@/lib/owner-listings/types';
+import type { OwnerListingPropertyType, OwnerListingTransactionType } from '@/lib/owner-listings/types';
 
 export type PropertyTypeFilter = 'all' | 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
 export type SourceFilterValue = OwnerListingSource | 'imobiliare';
@@ -31,7 +32,10 @@ export type OwnerListing = {
   year?: number | string;
   description?: string;
   ownerPhone?: string;
-  propertyType?: string;
+  propertyType?: OwnerListingPropertyType;
+  transactionType?: OwnerListingTransactionType;
+  categoryConfidence?: number;
+  enrichmentStatus?: string;
 };
 
 export type OwnerListingFavorite = {

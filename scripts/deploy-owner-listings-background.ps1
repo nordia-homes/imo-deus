@@ -69,7 +69,7 @@ finally {
   Pop-Location
 }
 
-npx firebase-tools deploy --only functions:ownerListingsBackgroundSync --project $ProjectId
+npx firebase-tools deploy --only functions:ownerListingsBackgroundSync,functions:ownerListingsLegacyCycleSync --project $ProjectId
 
 Write-Host ""
 Write-Host "Deploy finished."

@@ -1,5 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
+import { upsertOwnerListingEnrichmentQueueEntries } from '@/lib/owner-listings/enrichment-queue';
 import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
 import { getOwnerListingScope } from '@/lib/owner-listings/scope';
 import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
@@ -77,6 +78,21 @@ function buildSourceScrapeOptions(
     SOURCE_HARD_PAGE_LIMITS[source]
   );
 
+  const sourceUrlKind = options.sourceUrlKind || 'coverage';
+  const searchUrls = options.searchUrls?.length
+    ? options.searchUrls
+    : source === 'olx'
+      ? sourceUrlKind === 'fresh-radar'
+        ? scope.olxFreshRadarUrls
+        : scope.olxSearchUrls
+      : source === 'publi24'
+        ? sourceUrlKind === 'fresh-radar'
+          ? scope.publi24FreshRadarUrls
+          : scope.publi24SearchUrls
+        : sourceUrlKind === 'fresh-radar'
+          ? []
+          : scope.imoradar24SearchUrls;
+
   return {
     ...DEFAULT_OPTIONS,
     ...options,
@@ -84,12 +100,8 @@ function buildSourceScrapeOptions(
     scopeKey: scope.key,
     scopeCity: scope.displayName,
     searchKeywords: scope.searchKeywords,
-    searchUrls:
-      source === 'olx'
-        ? scope.olxSearchUrls
-        : source === 'publi24'
-          ? scope.publi24SearchUrls
-          : scope.imoradar24SearchUrls,
+    sourceUrlKind,
+    searchUrls,
   };
 }
 
@@ -163,11 +175,17 @@ async function storeOwnerListingsBatch(
         updatedAt: new Date().toISOString(),
         syncSource: 'scraper',
         dedupeKey: listing.fingerprint,
+        canonicalKey: listing.canonicalKey,
+        dedupeGroupId: listing.dedupeGroupId,
+        dedupeSignature: listing.dedupeSignature,
+        normalizedTitle: listing.normalizedTitle,
+        normalizedLocation: listing.normalizedLocation,
         searchText: [listing.title, listing.location, listing.price, listing.sourceLabel, listing.scopeCity].join(' '),
         syncMetadata: {
           lastSeenAt: listing.lastSeenAt,
           scrapedAt: listing.scrapedAt,
           firstDiscoveredAt: listing.firstDiscoveredAt,
+          lastVerifiedAt: listing.lastVerifiedAt,
         },
         firestoreUpdatedAt: FieldValue.serverTimestamp(),
       }),
@@ -177,7 +195,14 @@ async function storeOwnerListingsBatch(
   }
 
   await batch.commit();
-  await Promise.all(listingsToStore.map((entry) => upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing)));
+  await Promise.all(
+    listingsToStore.map(async (entry) => {
+      await Promise.all([
+        upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing),
+        upsertOwnerListingEnrichmentQueueEntries(entry.docRef.id, entry.listing),
+      ]);
+    })
+  );
 
   return result;
 }
@@ -218,12 +243,22 @@ function mergeListingWithExisting(
     rooms: preferIncomingValue(listing.rooms, existing.rooms),
     constructionYear: preferIncomingValue(listing.constructionYear, existing.constructionYear),
     year: preferIncomingValue(listing.year, existing.year),
+    sourceUrl: preferIncomingValue(listing.sourceUrl, existing.sourceUrl),
+    propertyType: preferIncomingValue(listing.propertyType, existing.propertyType),
+    transactionType: preferIncomingValue(listing.transactionType, existing.transactionType),
+    categoryConfidence: preferIncomingValue(listing.categoryConfidence, existing.categoryConfidence),
+    canonicalKey: preferIncomingValue(listing.canonicalKey, existing.canonicalKey),
+    dedupeGroupId: preferIncomingValue(listing.dedupeGroupId, existing.dedupeGroupId),
+    dedupeSignature: preferIncomingValue(listing.dedupeSignature, existing.dedupeSignature),
+    normalizedTitle: preferIncomingValue(listing.normalizedTitle, existing.normalizedTitle),
+    normalizedLocation: preferIncomingValue(listing.normalizedLocation, existing.normalizedLocation),
     image: preferIncomingValue(listing.image, existing.image),
     imageUrl: preferIncomingValue(listing.imageUrl, existing.imageUrl),
     description: preferIncomingValue(listing.description, existing.description),
     ownerName: preferIncomingValue(listing.ownerName, existing.ownerName),
     ownerPhone: preferIncomingValue(listing.ownerPhone, existing.ownerPhone),
     ownerConfidence: preferIncomingValue(listing.ownerConfidence, existing.ownerConfidence),
+    enrichmentStatus: preferIncomingValue(listing.enrichmentStatus, existing.enrichmentStatus),
     isNew: listing.isNew ?? existing.isNew,
     isBaselineListing: listing.isBaselineListing ?? existing.isBaselineListing,
     discoveredCycleNumber: preferIncomingValue(listing.discoveredCycleNumber, existing.discoveredCycleNumber),
@@ -231,6 +266,7 @@ function mergeListingWithExisting(
     newUntilAt: preferIncomingValue(listing.newUntilAt, existing.newUntilAt),
     scrapedAt: Math.max(listing.scrapedAt || 0, existing.scrapedAt || 0),
     lastSeenAt: Math.max(listing.lastSeenAt || 0, existing.lastSeenAt || 0),
+    lastVerifiedAt: Math.max(listing.lastVerifiedAt || 0, existing.lastVerifiedAt || 0) || undefined,
   } satisfies OwnerListingSummary;
 }
 
@@ -304,6 +340,41 @@ export async function syncOwnerListingsSourcePage(
   };
 }
 
+export async function syncOwnerListingsSourceUrlPage(
+  scopeKey: string,
+  source: OwnerListingSource,
+  searchUrl: string,
+  page: number,
+  options: Partial<SourceScrapeOptions> = {},
+  persistOptions: PersistOwnerListingsOptions = {}
+): Promise<OwnerListingSourceSyncResult> {
+  const scope = resolveOwnerListingScope(scopeKey);
+  const resolvedOptions = buildSourceScrapeOptions(source, scope, {
+    ...options,
+    searchUrls: [searchUrl],
+    startPage: page,
+    maxPages: 1,
+  });
+
+  const pageResult = await SOURCES[source].scrapePage(resolvedOptions, page);
+  const listings = pageResult.listings.map((listing) => ({
+    ...listing,
+    sourceUrl: searchUrl,
+  }));
+  const persisted = await storeOwnerListingsBatch(listings, persistOptions);
+
+  return {
+    source,
+    page,
+    reachedEnd: pageResult.reachedEnd,
+    scanned: listings.length,
+    accepted: persisted.accepted,
+    stored: persisted.stored,
+    skipped: persisted.skipped,
+    errors: [],
+  };
+}
+
 export async function syncOwnerListings(
   scopeKey: string,
   requestedSources: OwnerListingSource[] = ['olx', 'imoradar24', 'publi24'],
@@ -349,4 +420,22 @@ export async function syncOwnerListings(
   result.skipped += persisted.skipped;
 
   return result;
+}
+
+export async function syncOwnerListingsFreshRadar(
+  scopeKey: string,
+  options: Partial<SourceScrapeOptions> = {},
+  persistOptions: PersistOwnerListingsOptions = {}
+): Promise<OwnerListingSyncResult> {
+  return syncOwnerListings(
+    scopeKey,
+    ['olx', 'publi24'],
+    {
+      ...options,
+      sourceUrlKind: 'fresh-radar',
+      maxPages: options.maxPages ?? 2,
+      hardPageLimit: Math.min(options.hardPageLimit ?? 2, 5),
+    },
+    persistOptions
+  );
 }

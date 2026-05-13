@@ -1,5 +1,11 @@
 import crypto from 'node:crypto';
-import type { OwnerListingDetail, OwnerListingSource, OwnerListingSummary } from '@/lib/owner-listings/types';
+import type {
+  OwnerListingDetail,
+  OwnerListingPropertyType,
+  OwnerListingSource,
+  OwnerListingSummary,
+  OwnerListingTransactionType,
+} from '@/lib/owner-listings/types';
 
 const SOURCE_LABELS: Record<OwnerListingSource, string> = {
   olx: 'OLX',
@@ -196,6 +202,124 @@ export function createListingFingerprint(input: {
   return crypto.createHash('sha1').update(seed).digest('hex');
 }
 
+function normalizeComparable(value: string | null | undefined) {
+  return stripDiacritics(normalizeWhitespace(value)).toLowerCase();
+}
+
+function compactComparable(value: string | null | undefined) {
+  return normalizeComparable(value)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(?:de|la|in|cu|si|sau|the|a|an)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function inferTransactionTypeFromListing(input: {
+  link?: string | null;
+  title?: string | null;
+  description?: string | null;
+}): OwnerListingTransactionType {
+  const text = normalizeComparable(`${input.link || ''} ${input.title || ''} ${input.description || ''}`);
+
+  if (/\b(?:inchiriat|inchiriere|chirie|rent)\b/.test(text) || /de-inchiriat/i.test(text)) {
+    return 'rent';
+  }
+
+  if (/\b(?:vanzare|vand|cumparare|sale)\b/.test(text) || /de-vanzare/i.test(text)) {
+    return 'sale';
+  }
+
+  return 'unknown';
+}
+
+export function inferPropertyTypeFromListing(input: {
+  link?: string | null;
+  title?: string | null;
+  description?: string | null;
+}): OwnerListingPropertyType {
+  const text = normalizeComparable(`${input.link || ''} ${input.title || ''} ${input.description || ''}`);
+
+  if (
+    /\b(?:spatiu|spatii|comercial|comerciale|birou|birouri|hala|hale|magazin|magazine|depozit|depozite)\b/.test(text) ||
+    /spatii-comerciale/i.test(text)
+  ) {
+    return 'commercial';
+  }
+
+  if (/\bteren(?:uri)?\b/.test(text)) {
+    return 'land';
+  }
+
+  if (/\b(?:casa|case|vila|vile|duplex|triplex)\b/.test(text) || /case-de/i.test(text)) {
+    return 'house';
+  }
+
+  if (
+    /\b(?:apartament|apartamente|garsoniera|garsoniere|studio)\b/.test(text) ||
+    /apartamente-garsoniere/i.test(text)
+  ) {
+    return 'apartment';
+  }
+
+  return 'unknown';
+}
+
+export function categoryConfidenceForListing(input: {
+  propertyType?: OwnerListingPropertyType;
+  transactionType?: OwnerListingTransactionType;
+  link?: string | null;
+  title?: string | null;
+  description?: string | null;
+}) {
+  const text = normalizeComparable(`${input.link || ''} ${input.title || ''} ${input.description || ''}`);
+  let score = 0;
+
+  if (input.propertyType && input.propertyType !== 'unknown') {
+    score += /apartamente-garsoniere|case-de|terenuri|spatii-comerciale/.test(text) ? 0.5 : 0.3;
+  }
+
+  if (input.transactionType && input.transactionType !== 'unknown') {
+    score += /de-vanzare|de-inchiriat|vanzare|inchiriere|chirie/.test(text) ? 0.5 : 0.3;
+  }
+
+  return Math.min(1, Number(score.toFixed(2)));
+}
+
+export function createListingDedupeSignature(input: {
+  title?: string | null;
+  location?: string | null;
+  price?: string | null;
+  area?: string | null;
+  ownerPhone?: string | null;
+  propertyType?: OwnerListingPropertyType;
+  transactionType?: OwnerListingTransactionType;
+  scopeKey?: string | null;
+}) {
+  const phoneDigits = normalizeWhitespace(input.ownerPhone).replace(/\D/g, '');
+  const normalizedTitle = compactComparable(input.title).slice(0, 90);
+  const normalizedLocation = compactComparable(input.location).slice(0, 80);
+  const price = normalizeWhitespace(input.price).replace(/[^\d]/g, '');
+  const area = normalizeWhitespace(input.area).replace(/[^\d.,]/g, '').replace(',', '.');
+  const seed = phoneDigits
+    ? ['phone', phoneDigits, input.scopeKey || '', input.propertyType || '', input.transactionType || ''].join('|')
+    : [
+        'listing',
+        input.scopeKey || '',
+        input.propertyType || '',
+        input.transactionType || '',
+        normalizedTitle,
+        normalizedLocation,
+        price,
+        area,
+      ].join('|');
+
+  return {
+    signature: crypto.createHash('sha1').update(seed).digest('hex'),
+    normalizedTitle,
+    normalizedLocation,
+  };
+}
+
 export function stripUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
 }
@@ -207,6 +331,18 @@ export function docIdForListing(listing: Pick<OwnerListingSummary, 'source' | 'e
 
 export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'fingerprint' | 'scrapedAt' | 'lastSeenAt' | 'ownerType'>) {
   const now = Math.floor(Date.now() / 1000);
+  const propertyType = input.propertyType || inferPropertyTypeFromListing(input);
+  const transactionType = input.transactionType || inferTransactionTypeFromListing(input);
+  const categoryConfidence = input.categoryConfidence ?? categoryConfidenceForListing({
+    ...input,
+    propertyType,
+    transactionType,
+  });
+  const dedupe = createListingDedupeSignature({
+    ...input,
+    propertyType,
+    transactionType,
+  });
   const fingerprint = createListingFingerprint({
     source: input.source,
     externalId: input.externalId,
@@ -226,11 +362,21 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
     description: normalizeWhitespace(input.description),
     constructionYear: input.constructionYear,
     year: input.year,
+    propertyType,
+    transactionType,
+    categoryConfidence,
     sourceLabel: sourceLabel(input.source),
     fingerprint,
+    canonicalKey: input.canonicalKey || `${input.source}:${normalizeWhitespace(input.externalId || input.link || fingerprint)}`,
+    dedupeSignature: input.dedupeSignature || dedupe.signature,
+    dedupeGroupId: input.dedupeGroupId || dedupe.signature,
+    normalizedTitle: input.normalizedTitle || dedupe.normalizedTitle,
+    normalizedLocation: input.normalizedLocation || dedupe.normalizedLocation,
+    enrichmentStatus: input.enrichmentStatus || (input.ownerPhone ? 'partial' : 'pending'),
     ownerType: 'owner' as const,
     scrapedAt: now,
     lastSeenAt: now,
+    lastVerifiedAt: input.lastVerifiedAt || now,
   } satisfies OwnerListingSummary;
 }
 
