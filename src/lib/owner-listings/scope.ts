@@ -96,7 +96,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     cityKey: 'Iasi',
     displayName: 'Iasi',
     keywords: ['iasi', 'miroslava', 'valea lupului', 'rediu', 'barnova'],
-    olxSlug: 'iasi',
+    olxSlug: 'iasi-judet',
     publi24Slug: 'iasi',
     imoradarSlug: 'iasi',
   },

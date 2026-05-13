@@ -2,7 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { upsertOwnerListingEnrichmentQueueEntries } from '@/lib/owner-listings/enrichment-queue';
 import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
-import { getOwnerListingScope } from '@/lib/owner-listings/scope';
+import { getOwnerListingScope, matchesScopeLocation } from '@/lib/owner-listings/scope';
 import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
 import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
 import { scrapePubli24ListingDetail, scrapePubli24Listings, scrapePubli24ListingsPage } from '@/lib/owner-listings/sources/publi24';
@@ -112,6 +112,27 @@ type PersistOwnerListingsOptions = {
   newUntilAt?: number | null;
 };
 
+function isListingAllowedForScope(listing: OwnerListingSummary) {
+  if (listing.scopeKey !== 'iasi') {
+    return true;
+  }
+
+  const scope = getOwnerListingScope('iasi');
+  if (!scope) {
+    return true;
+  }
+
+  return matchesScopeLocation(
+    scope,
+    [
+      listing.location,
+      listing.title,
+      listing.description,
+      listing.originSourceUrl,
+    ].join(' ')
+  );
+}
+
 async function storeOwnerListingsBatch(
   listings: OwnerListingSummary[],
   persistOptions: PersistOwnerListingsOptions = {}
@@ -124,6 +145,11 @@ async function storeOwnerListingsBatch(
   };
 
   for (const listing of listings) {
+    if (!isListingAllowedForScope(listing)) {
+      result.skipped += 1;
+      continue;
+    }
+
     if (unique.has(listing.fingerprint)) {
       result.skipped += 1;
       continue;

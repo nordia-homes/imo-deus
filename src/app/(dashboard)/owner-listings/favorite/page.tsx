@@ -15,7 +15,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
-import { resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
@@ -47,6 +47,10 @@ export default function FavoriteOwnerListingsPage() {
 
     for (const listing of listings ?? []) {
       if (currentScope && listing.scopeKey !== currentScope.key) {
+        continue;
+      }
+
+      if (currentScope?.key === 'iasi' && !matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '))) {
         continue;
       }
 

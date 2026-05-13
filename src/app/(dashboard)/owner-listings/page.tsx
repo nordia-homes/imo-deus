@@ -25,7 +25,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
-import { listOwnerListingScopes, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { listOwnerListingScopes, matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
@@ -114,6 +114,11 @@ export default function OwnerListingsPage() {
 
     if (currentScope) {
       result = result.filter((listing) => listing.scopeKey === currentScope.key);
+      if (currentScope.key === 'iasi') {
+        result = result.filter((listing) =>
+          matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '))
+        );
+      }
     }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
@@ -598,12 +603,6 @@ export default function OwnerListingsPage() {
         </div>
       </div>
 
-      <div>
-        <Label className="mb-2 block font-semibold">Resetare</Label>
-        <Button type="button" variant="outline" size="icon" onClick={resetFilters} aria-label="Reseteaza filtrele">
-          <RotateCcw className="h-4 w-4" />
-        </Button>
-      </div>
     </div>
   );
 
@@ -774,25 +773,30 @@ export default function OwnerListingsPage() {
         </div>
       </div>
 
-      <div className="md:hidden">
+      <div className="flex gap-2 md:hidden">
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="min-w-0 flex-1">
               <Filter className="mr-2 h-4 w-4" /> Filtreaza anunturi
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-2xl">
-            <SheetHeader className="pb-4 text-left">
+          <SheetContent side="bottom" className="flex max-h-[calc(100dvh-1rem)] flex-col rounded-t-2xl p-0">
+            <SheetHeader className="shrink-0 px-6 pb-4 pt-6 text-left">
               <SheetTitle>Filtre</SheetTitle>
             </SheetHeader>
-            <FilterControls />
-            <SheetFooter className="pt-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+              <FilterControls />
+            </div>
+            <SheetFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button onClick={() => setIsSheetOpen(false)} className="w-full">
                 Vezi {filteredListings.length} anunturi
               </Button>
             </SheetFooter>
           </SheetContent>
         </Sheet>
+        <Button type="button" variant="outline" size="icon" onClick={resetFilters} aria-label="Reseteaza filtrele" className="shrink-0">
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
