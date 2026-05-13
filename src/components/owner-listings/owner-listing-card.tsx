@@ -129,8 +129,8 @@ export function OwnerListingCard({
         : null;
   const badgeLabel = listing.originSourceLabel || listing.sourceLabel;
   const badgeClassName = adminClassic
-    ? 'border-white/16 bg-[#0f1e33]/88 text-white shadow-[0_16px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-md'
-    : 'border-white/85 bg-white/96 text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]';
+    ? 'border-white bg-white text-slate-950 shadow-[0_16px_30px_-20px_rgba(0,0,0,0.78)]'
+    : 'border-white bg-white text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]';
   const showNewBadge = isListingNew(listing);
 
   let displayPrice = 'Pret negociabil';
@@ -301,12 +301,12 @@ export function OwnerListingCard({
               title={isFavorite ? 'Scoate din Favorite' : 'Adauga in Favorite'}
               onClick={() => onToggleFavorite?.(listing)}
               className={cn(
-                'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] backdrop-blur-md transition-colors',
+                'inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] transition-colors',
                 isFavorite
-                  ? 'border-emerald-300/70 bg-green-500 text-white'
+                  ? 'border-white text-emerald-600 hover:bg-white'
                   : adminClassic
-                    ? 'border-white/20 bg-black/30 text-white hover:bg-black/45'
-                    : 'border-white/30 bg-white/92 text-slate-800 hover:bg-white',
+                    ? 'border-white text-slate-800 hover:bg-white'
+                    : 'border-white text-slate-800 hover:bg-white',
               )}
             >
               <FavoriteHeartIcon filled={isFavorite} />
