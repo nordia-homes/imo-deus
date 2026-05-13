@@ -40,7 +40,8 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
-    const agencyId = userProfile?.agencyId || persistedAgencyId || null;
+    const isPlatformAdmin = userProfile?.role === 'platform_admin';
+    const agencyId = isPlatformAdmin ? null : userProfile?.agencyId || persistedAgencyId || null;
 
     useEffect(() => {
         if (typeof window === 'undefined' || !userProfile?.agencyId) return;
@@ -65,7 +66,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     // Self-healing mechanisms
     useEffect(() => {
         // Wait until all data is loaded to prevent premature actions
-        if (isAgencyLoading || !user || !agency || !userProfile) {
+        if (isAgencyLoading || !user || !agency || !userProfile || isPlatformAdmin) {
             return;
         }
 
@@ -103,7 +104,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
             }
         }
 
-    }, [isAgencyLoading, user, agency, userProfile, firestore]);
+    }, [isAgencyLoading, user, agency, userProfile, isPlatformAdmin, firestore]);
 
 
     const value: AgencyContextType = { 
