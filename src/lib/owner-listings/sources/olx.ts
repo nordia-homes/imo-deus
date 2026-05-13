@@ -115,6 +115,26 @@ function pickBestImageUrl(candidates: string[]) {
   return uniqueCandidates[0]?.url || '';
 }
 
+function stripOlxFavoriteLabel(value: string) {
+  return normalizeWhitespace(
+    value.replace(/^\s*(?:salveaz[ăa]|salveaza|save)\s+(?:ca\s+)?favorit(?:e)?\s*:?\s*/i, '')
+  );
+}
+
+function isOlxFavoriteLabel(value: string) {
+  const comparable = normalizeComparableText(value);
+  return /^(?:salveaza|save)\s+(?:ca\s+)?favorit(?:e)?$/.test(comparable);
+}
+
+function normalizeOlxListTitleCandidate(value: string) {
+  const stripped = stripOlxFavoriteLabel(decodeOlxEscaped(stripHtml(value)));
+  if (!stripped || isOlxFavoriteLabel(stripped)) {
+    return '';
+  }
+
+  return stripped;
+}
+
 function sortImageUrls(candidates: string[]) {
   return Array.from(
     new Map(
@@ -702,10 +722,29 @@ function extractCardChunk(html: string, index: number, nextIndex: number) {
   };
 }
 
+function extractAnchorChunk(html: string, index: number) {
+  const anchorStart = html.lastIndexOf('<a', index);
+  const anchorEnd = html.indexOf('</a>', index);
+  if (anchorStart >= 0 && anchorEnd > index && anchorEnd - anchorStart < 12000) {
+    return html.slice(anchorStart, anchorEnd + '</a>'.length);
+  }
+
+  return '';
+}
+
 function extractImageCandidatesFromChunk(chunk: string) {
-  return Array.from(
-    chunk.matchAll(/(?:src|data-src|data-image-src|srcset|data-srcset|data-image-srcset)="([^"]+)"/gi)
+  const decodedChunk = decodeOlxEscaped(chunk);
+  const attributeCandidates = Array.from(
+    chunk.matchAll(/(?:src|data-src|data-image-src|srcset|data-srcset|data-image-srcset)=["']([^"']+)["']/gi)
   ).map((match) => decodeOlxEscaped(match[1]));
+  const cdnCandidates = [chunk, decodedChunk]
+    .flatMap((source) =>
+      Array.from(source.matchAll(/https?:\\?\/\\?\/[^"'\\\s<>,]*apollo\.olxcdn\.com[^"'\\\s<>,]*/gi))
+    )
+    .map((match) => decodeOlxEscaped(match[0]))
+    .filter((url) => /\/v1\/files\//i.test(url));
+
+  return Array.from(new Set([...attributeCandidates, ...cdnCandidates]));
 }
 
 function extractPriceFromChunk(chunk: string) {
@@ -733,14 +772,19 @@ function extractListPageFromHtml(html: string) {
     const currentIndex = hrefMatches[index]?.index ?? 0;
     const nextIndex = hrefMatches[index + 1]?.index ?? Math.min(html.length, currentIndex + 8000);
     const { chunk, isolated } = extractCardChunk(html, currentIndex, nextIndex);
-    const title =
-      decodeOlxEscaped(chunk.match(/\stitle="([^"]+)"/i)?.[1] || '') ||
-      decodeOlxEscaped(chunk.match(/aria-label="([^"]+)"/i)?.[1] || '') ||
-      stripHtml(chunk.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '') ||
-      '';
+    const anchorChunk = extractAnchorChunk(html, currentIndex);
+    const titleCandidates = [
+      anchorChunk.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '',
+      chunk.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1] || '',
+      anchorChunk.match(/\stitle=["']([^"']+)["']/i)?.[1] || '',
+      anchorChunk.match(/aria-label=["']([^"']+)["']/i)?.[1] || '',
+      chunk.match(/\stitle=["']([^"']+)["']/i)?.[1] || '',
+      chunk.match(/aria-label=["']([^"']+)["']/i)?.[1] || '',
+    ];
+    const title = titleCandidates.map((candidate) => normalizeOlxListTitleCandidate(candidate)).find(Boolean) || '';
     const text = stripHtml(chunk);
     const price = extractPriceFromChunk(chunk);
-    const imageCandidates = extractImageCandidatesFromChunk(chunk);
+    const imageCandidates = extractImageCandidatesFromChunk(`${anchorChunk} ${chunk}`);
 
     if (!title) continue;
 
