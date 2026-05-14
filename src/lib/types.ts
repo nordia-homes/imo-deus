@@ -151,6 +151,9 @@ export type PortalIntegrationPublicStatus = {
   lastRetrySummary?: ImobiliareSyncJobSummary | null;
   agentMappings?: ImobiliareAgentMapping[] | null;
   analytics?: ImobiliareAnalyticsSummary | null;
+  scope?: string | null;
+  hasVasScopes?: boolean;
+  hasLeadScopes?: boolean;
 };
 
 export type ImobiliareIntegrationPrivate = {
@@ -207,6 +210,7 @@ export type StoriaIntegrationPrivate = {
   refreshToken: string | null;
   scope?: string | null;
   hasVasScopes?: boolean;
+  hasLeadScopes?: boolean;
   connectedAt: string;
   updatedAt: string;
   authorizationState?: string | null;

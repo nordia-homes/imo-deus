@@ -14,6 +14,8 @@ type IntegrationStatus = {
   lastTokenRefreshAt?: string | null;
   lastError?: string | null;
   hasVasScopes?: boolean;
+  hasLeadScopes?: boolean;
+  scope?: string | null;
   role?: 'admin' | 'agent';
 };
 
@@ -221,6 +223,7 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
             <p>Conectat la: {status.connectedAt ? new Date(status.connectedAt).toLocaleString('ro-RO') : '-'}</p>
             <p>Ultimul refresh token: {status.lastTokenRefreshAt ? new Date(status.lastTokenRefreshAt).toLocaleString('ro-RO') : '-'}</p>
             <p>Promovari API: {status.hasVasScopes ? 'active' : 'necesita reconectare'}</p>
+            <p>Lead-uri Storia: {status.hasLeadScopes ? 'active' : 'necesita reconectare'}</p>
           </div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
@@ -237,6 +240,12 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
         {status?.connected && status.hasVasScopes === false ? (
           <div className="rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-50">
             Promovarile prin API au fost activate in aplicatia Storia, dar acest cont trebuie reconectat ca sa autorizeze noile scope-uri `read:vas` si `write:vas`.
+          </div>
+        ) : null}
+
+        {status?.connected && status.hasLeadScopes === false ? (
+          <div className="rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-50">
+            Lead scope este activat in aplicatia Storia, dar acest cont trebuie reconectat ca sa autorizeze noile permisiuni. Fara reconectare, mesajele nu vor intra in Inbox Storia.
           </div>
         ) : null}
 
@@ -279,14 +288,14 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
               <ExternalLink className="mr-2 h-4 w-4" />
               Deschide Storia
             </Button>
-            {status.hasVasScopes === false ? (
+            {status.hasVasScopes === false || status.hasLeadScopes === false ? (
               <Button
                 onClick={handleConnect}
                 disabled={!isAdmin || isSubmitting || isLoading}
                 className="w-full bg-white/10 border border-white/20 hover:bg-white/20 text-white"
               >
                 {activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlugZap className="mr-2 h-4 w-4" />}
-                Reconecteaza pentru promovari
+                Reconecteaza pentru scope-uri
               </Button>
             ) : null}
             <Button

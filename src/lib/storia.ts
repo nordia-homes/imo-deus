@@ -678,6 +678,7 @@ async function refreshAccessToken(agencyId: string, integration: StoriaIntegrati
     accessTokenExpiresAt: expiresAt,
     scope: tokenPayload.scope || integration.scope || null,
     hasVasScopes: hasRequiredVasScopes(tokenPayload.scope || integration.scope || null),
+    hasLeadScopes: hasRequiredLeadScopes(tokenPayload.scope || integration.scope || null),
     updatedAt: nowIso(),
   };
 
@@ -686,6 +687,9 @@ async function refreshAccessToken(agencyId: string, integration: StoriaIntegrati
     connected: true,
     lastTokenRefreshAt: nowIso(),
     lastError: null,
+    scope: updated.scope || null,
+    hasVasScopes: Boolean(updated.hasVasScopes),
+    hasLeadScopes: Boolean(updated.hasLeadScopes),
   });
 
   return updated;
@@ -1054,6 +1058,13 @@ function hasRequiredVasScopes(scope?: string | null) {
   return scopes.has('read:vas') && scopes.has('write:vas');
 }
 
+function hasRequiredLeadScopes(scope?: string | null) {
+  return (scope || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .some((item) => /leads?|messages?|incoming/i.test(item));
+}
+
 function parsePromotionDurationDays(value: string | number | null | undefined) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -1103,6 +1114,7 @@ export async function finalizeStoriaAuthorization(params: { code: string; state:
     refreshToken: tokenPayload.refresh_token || null,
     scope: tokenPayload.scope || null,
     hasVasScopes: hasRequiredVasScopes(tokenPayload.scope || null),
+    hasLeadScopes: hasRequiredLeadScopes(tokenPayload.scope || null),
     connectedAt: nowIso(),
     updatedAt: nowIso(),
     authorizationState: state,
@@ -1116,6 +1128,9 @@ export async function finalizeStoriaAuthorization(params: { code: string; state:
     connectedAt: payload.connectedAt,
     lastTokenRefreshAt: nowIso(),
     lastError: null,
+    scope: payload.scope || null,
+    hasVasScopes: Boolean(payload.hasVasScopes),
+    hasLeadScopes: Boolean(payload.hasLeadScopes),
   });
   await getOauthStateRef(state).delete().catch(() => undefined);
 
@@ -1149,11 +1164,15 @@ export async function getAgencyStoriaStatus(agencyId: string) {
       lastTokenRefreshAt: null,
       lastError: null,
       hasVasScopes: Boolean(privateIntegration?.hasVasScopes),
+      hasLeadScopes: Boolean(privateIntegration?.hasLeadScopes),
+      scope: privateIntegration?.scope || null,
     };
   }
   return {
     ...(publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string }),
     hasVasScopes: Boolean(privateIntegration?.hasVasScopes),
+    hasLeadScopes: Boolean(privateIntegration?.hasLeadScopes),
+    scope: privateIntegration?.scope || null,
   };
 }
 
@@ -1844,7 +1863,7 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
 }
 
 export async function handleStoriaWebhookNotification(notification: StoriaWebhookNotification, signatureHeader?: string | null) {
-  const objectId = notification.object_id || '';
+  const objectId = notification.object_id || notification.data?.uuid || '';
   const transactionId = notification.transaction_id || '';
   const secret = getWebhookSecret();
   if (!objectId || !transactionId) {
