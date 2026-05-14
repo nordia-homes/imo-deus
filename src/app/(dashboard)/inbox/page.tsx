@@ -148,24 +148,22 @@ export default function StoriaInboxPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-3 py-3 text-slate-950 sm:px-5 lg:px-6">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
-        <section className="overflow-hidden rounded-[22px] bg-[#10231f] text-white shadow-[0_24px_70px_-45px_rgba(15,35,31,0.8)] lg:hidden">
-          <div className="relative px-5 py-5">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(52,211,153,0.34),transparent_34%),radial-gradient(circle_at_95%_10%,rgba(125,211,252,0.22),transparent_30%)]" />
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/70">Storia inbox</p>
-                  <h1 className="mt-2 text-2xl font-semibold tracking-normal">Mesaje noi</h1>
-                  <p className="mt-2 max-w-[260px] text-sm leading-5 text-white/68">Lead-uri conectate direct la proprietatea publicata.</p>
-                </div>
-                <div className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold leading-none backdrop-blur">
-                  <span>{stats.unread}</span>
-                  <span className="text-white/72">necitite</span>
-                </div>
+        <section className="overflow-hidden rounded-[22px] border border-white bg-white text-slate-950 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.95)] ring-1 ring-slate-900/[0.04] lg:hidden">
+          <div className="relative px-5 py-4">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_7%_0%,rgba(16,185,129,0.16),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.95)_100%)]" />
+            <div className="relative flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.12)]">
+                  <Inbox className="h-5 w-5" />
+                </span>
+                <h1 className="truncate text-xl font-semibold tracking-normal">Inbox</h1>
+                <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm font-semibold leading-none text-slate-700 shadow-sm">
+                  {stats.total}
+                </span>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <MobileStat label="Total" value={stats.total} />
-                <MobileStat label="Deschise" value={stats.open} />
+              <div className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold leading-none text-emerald-800 shadow-[0_16px_38px_-28px_rgba(16,185,129,0.8)]">
+                <span>{stats.unread}</span>
+                <span className="text-emerald-700/75">necitite</span>
               </div>
             </div>
           </div>
@@ -348,15 +346,6 @@ function StatChip({ label, value }: { label: string; value: number }) {
     <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
       <span className="text-xs text-slate-500">{label}</span>
       <span className="text-sm font-semibold text-slate-900">{value}</span>
-    </div>
-  );
-}
-
-function MobileStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-white/12 bg-white/10 px-4 py-3 backdrop-blur">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-white/55">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
   );
 }
