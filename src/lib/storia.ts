@@ -17,6 +17,7 @@ import type {
 const STORIA_PROVIDER = 'storia';
 const PRIVATE_COLLECTION = 'agencyPrivateIntegrations';
 const OAUTH_STATE_COLLECTION = 'storiaOauthStates';
+const STORIA_ADVERT_MAPPINGS_COLLECTION = 'storiaAdvertMappings';
 const STORIA_API_BASE_URL = 'https://api.olxgroup.com';
 const STORIA_SITE_URL = 'https://www.storia.ro';
 const STORIA_SITE_URN = 'urn:site:storiaro';
@@ -156,6 +157,18 @@ type StoriaActivePromotionsResponse = {
       } | Record<string, unknown> | null;
     }>;
   };
+};
+
+type StoriaAdvertMapping = {
+  provider: 'storia';
+  agencyId: string;
+  propertyId: string;
+  remoteUuid?: string | null;
+  remoteAdId?: string | number | null;
+  propertyTitle?: string | null;
+  propertyUrl?: string | null;
+  propertyImageUrl?: string | null;
+  updatedAt: string;
 };
 
 function getPrivateDocId(agencyId: string) {
@@ -789,6 +802,7 @@ async function storiaTaxonomyRequest<T>(path: string): Promise<T> {
 async function persistPropertyPublishState(params: {
   agencyId: string;
   propertyId: string;
+  propertyTitle?: string | null;
   remoteUuid: string | null;
   remoteUrl: string | null;
   remoteCode: string | null;
@@ -801,6 +815,7 @@ async function persistPropertyPublishState(params: {
   const {
     agencyId,
     propertyId,
+    propertyTitle,
     remoteUuid,
     remoteUrl,
     remoteCode,
@@ -844,6 +859,20 @@ async function persistPropertyPublishState(params: {
     },
     { merge: true }
   );
+
+  if (!errorMessage && (remoteUuid || remoteAdId)) {
+    await persistStoriaAdvertMapping(
+      buildStoriaAdvertMapping({
+        agencyId,
+        propertyId,
+        propertyTitle,
+        remoteUuid,
+        remoteUrl,
+        remoteAdId,
+        propertyImageUrl: null,
+      })
+    );
+  }
 }
 
 async function persistPublishAudit(params: {
@@ -1465,6 +1494,7 @@ export async function publishPropertyToStoria(params: {
     await persistPropertyPublishState({
       agencyId,
       propertyId,
+      propertyTitle: property.title,
       remoteUuid,
       remoteUrl,
       remoteCode,
@@ -1516,6 +1546,7 @@ export async function publishPropertyToStoria(params: {
     await persistPropertyPublishState({
       agencyId,
       propertyId,
+      propertyTitle: property.title,
       remoteUuid: property.portalProfiles?.storia?.remoteUuid || null,
       remoteUrl: property.portalProfiles?.storia?.remoteUrl || null,
       remoteCode: property.promotions?.storia?.remoteState || null,
@@ -1562,6 +1593,7 @@ export async function unpublishPropertyFromStoria(params: { agencyId: string; pr
   await persistPropertyPublishState({
     agencyId,
     propertyId,
+    propertyTitle: property.title,
     remoteUuid,
     remoteUrl: property.portalProfiles?.storia?.remoteUrl || null,
     remoteCode: 'removed_by_user',
@@ -1600,20 +1632,35 @@ export async function resolvePropertyStoriaPublicUrl(params: { agencyId: string;
   );
 
   if (metadataState.url) {
+    const remoteAdId = extractStoriaAdIdFromUrl(metadataState.url);
     await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
       {
         promotions: {
           storia: {
             link: normalizeStoriaPublicUrl(metadataState.url, property.title),
+            remoteAdId,
           },
         },
         portalProfiles: {
           storia: {
             remoteUrl: normalizeStoriaPublicUrl(metadataState.url, property.title),
+            remoteAdId,
           },
         },
       },
       { merge: true }
+    );
+
+    await persistStoriaAdvertMapping(
+      buildStoriaAdvertMapping({
+        agencyId,
+        propertyId,
+        propertyTitle: property.title,
+        remoteUuid,
+        remoteUrl: normalizeStoriaPublicUrl(metadataState.url, property.title),
+        remoteAdId,
+        propertyImageUrl: getPropertyImageUrl(property),
+      })
     );
   }
 
@@ -1651,6 +1698,7 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
   const metadataState = getAdvertMetadataState(metadata);
   const remoteUrl = normalizeStoriaPublicUrl(metadataState.url || null, property.title);
   const remoteCode = metadataState.code || null;
+  const remoteAdId = extractStoriaAdIdFromUrl(remoteUrl);
 
   await propertyRef.set(
     {
@@ -1658,6 +1706,7 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
         storia: {
           link: remoteUrl,
           remoteId: remoteUuid,
+          remoteAdId,
           remoteState: remoteCode,
           status: remoteCode ? mapRemoteCodeToPromotionStatus(remoteCode) : property.promotions?.storia?.status || 'pending',
           lastSync: nowIso(),
@@ -1666,6 +1715,7 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
       portalProfiles: {
         storia: {
           remoteUuid,
+          remoteAdId,
           remoteUrl,
           lastPublishedAt: remoteUrl ? nowIso() : property.portalProfiles?.storia?.lastPublishedAt || null,
           lastValidationError: remoteUrl ? null : property.portalProfiles?.storia?.lastValidationError || null,
@@ -1673,6 +1723,18 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
       },
     },
     { merge: true }
+  );
+
+  await persistStoriaAdvertMapping(
+    buildStoriaAdvertMapping({
+      agencyId,
+      propertyId,
+      propertyTitle: property.title,
+      remoteUuid,
+      remoteUrl,
+      remoteAdId,
+      propertyImageUrl: getPropertyImageUrl(property),
+    })
   );
 
   return {
@@ -1729,9 +1791,134 @@ function sanitizeFirestoreId(value: string) {
   return value.replace(/[~/[\]#?]/g, '_').slice(0, 180) || randomBytes(8).toString('hex');
 }
 
+function getStoriaAdvertMappingId(kind: 'uuid' | 'ad', value: string | number) {
+  return `${kind}_${sanitizeFirestoreId(String(value))}`;
+}
+
+function getPropertyImageUrl(property?: Pick<Property, 'images'> | null) {
+  return property?.images?.find((image) => image?.url)?.url || null;
+}
+
+function buildStoriaAdvertMapping(params: {
+  agencyId: string;
+  propertyId: string;
+  propertyTitle?: string | null;
+  remoteUuid?: string | null;
+  remoteUrl?: string | null;
+  remoteAdId?: string | number | null;
+  propertyImageUrl?: string | null;
+}): StoriaAdvertMapping {
+  const remoteAdId = params.remoteAdId || extractStoriaAdIdFromUrl(params.remoteUrl) || null;
+  return {
+    provider: STORIA_PROVIDER,
+    agencyId: params.agencyId,
+    propertyId: params.propertyId,
+    remoteUuid: params.remoteUuid || null,
+    remoteAdId,
+    propertyTitle: params.propertyTitle || null,
+    propertyUrl: params.remoteUrl || null,
+    propertyImageUrl: params.propertyImageUrl || null,
+    updatedAt: nowIso(),
+  };
+}
+
+function setStoriaAdvertMappingOnBatch(batch: FirebaseFirestore.WriteBatch, mapping: StoriaAdvertMapping) {
+  if (mapping.remoteUuid) {
+    batch.set(
+      adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('uuid', mapping.remoteUuid)),
+      mapping,
+      { merge: true }
+    );
+  }
+
+  if (mapping.remoteAdId) {
+    batch.set(
+      adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('ad', mapping.remoteAdId)),
+      mapping,
+      { merge: true }
+    );
+  }
+}
+
+async function persistStoriaAdvertMapping(mapping: StoriaAdvertMapping) {
+  const batch = adminDb.batch();
+  setStoriaAdvertMappingOnBatch(batch, mapping);
+  await batch.commit();
+}
+
+async function resolveStoriaAdvertMapping(notification: StoriaWebhookNotification) {
+  const data = notification.data || {};
+  const candidates: Array<['uuid' | 'ad', string | number | null | undefined]> = [
+    ['uuid', data.advert_uuid],
+    ['uuid', data.uuid],
+    ['uuid', notification.object_id],
+    ['ad', data.ad_id],
+  ];
+
+  for (const [kind, value] of candidates) {
+    if (value === null || value === undefined || value === '') continue;
+    const snapshot = await adminDb
+      .collection(STORIA_ADVERT_MAPPINGS_COLLECTION)
+      .doc(getStoriaAdvertMappingId(kind, value))
+      .get();
+
+    if (snapshot.exists) {
+      return snapshot.data() as StoriaAdvertMapping;
+    }
+  }
+
+  return null;
+}
+
+async function persistIncomingAdIdMapping(mapping: StoriaAdvertMapping | null, adId?: string | number | null) {
+  if (!mapping || adId === null || adId === undefined || adId === '') return;
+  const nextMapping: StoriaAdvertMapping = {
+    ...mapping,
+    remoteAdId: adId,
+    updatedAt: nowIso(),
+  };
+  const batch = adminDb.batch();
+  batch.set(
+    adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('ad', adId)),
+    nextMapping,
+    { merge: true }
+  );
+  if (mapping.remoteUuid) {
+    batch.set(
+      adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('uuid', mapping.remoteUuid)),
+      nextMapping,
+      { merge: true }
+    );
+  }
+  if (mapping.agencyId && mapping.propertyId) {
+    batch.set(
+      adminDb.collection('agencies').doc(mapping.agencyId).collection('properties').doc(mapping.propertyId),
+      {
+        promotions: { storia: { remoteAdId: adId } },
+        portalProfiles: { storia: { remoteAdId: adId } },
+      },
+      { merge: true }
+    );
+  }
+  await batch.commit();
+}
+
 function getAgencyIdFromPropertyPath(path: string) {
   const parts = path.split('/');
   return parts[0] === 'agencies' && parts[2] === 'properties' ? parts[1] : null;
+}
+
+async function getMappedStoriaProperty(mapping: StoriaAdvertMapping | null) {
+  if (!mapping?.agencyId || !mapping.propertyId) return null;
+  const snapshot = await adminDb
+    .collection('agencies')
+    .doc(mapping.agencyId)
+    .collection('properties')
+    .doc(mapping.propertyId)
+    .get();
+
+  if (!snapshot.exists) return null;
+  return { snapshot, property: { id: snapshot.id, ...snapshot.data() } as Property };
 }
 
 async function findStoriaPropertySnapshotsForIncomingMessage(notification: StoriaWebhookNotification) {
@@ -1840,20 +2027,17 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
   const data = notification.data || {};
   const conversationId = String(data.conversation_id || data.ad_id || notification.object_id || notification.transaction_id || '').trim();
   const messageText = (data.message || '').trim();
-  const messageId = String(data.uuid || data.id || notification.object_id || notification.transaction_id || '').trim();
+  const messageId = String(data.id || data.uuid || notification.object_id || notification.transaction_id || '').trim();
 
   if (!conversationId || !messageId || !messageText) {
     throw new Error('Webhook Storia incoming_message invalid: lipsesc conversation_id, message id sau textul mesajului.');
   }
 
-  const propertySnapshots = await findStoriaPropertySnapshotsForIncomingMessage(notification);
-  const firstPropertySnapshot = propertySnapshots[0] || null;
-  const property = firstPropertySnapshot
-    ? ({ id: firstPropertySnapshot.id, ...firstPropertySnapshot.data() } as Property)
-    : null;
-  const agencyId =
-    (firstPropertySnapshot ? getAgencyIdFromPropertyPath(firstPropertySnapshot.ref.path) : null) ||
-    (await resolveFallbackAgencyIdForIncomingMessage());
+  const mapping = await resolveStoriaAdvertMapping(notification);
+  await persistIncomingAdIdMapping(mapping, data.ad_id);
+  const mappedProperty = await getMappedStoriaProperty(mapping);
+  const property = mappedProperty?.property || null;
+  const agencyId = mapping?.agencyId || null;
 
   if (!agencyId) {
     await adminDb.collection('storiaIncomingMessagesUnmatched').doc(sanitizeFirestoreId(messageId)).set(
@@ -1861,7 +2045,7 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
         provider: STORIA_PROVIDER,
         source: 'storia_incoming_message',
         receivedAt: nowIso(),
-        reason: 'agency_not_resolved',
+        reason: 'advert_not_mapped',
         rawPayload: notification,
       },
       { merge: true }
@@ -1874,7 +2058,7 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
   const senderEmail = data.sender_email || null;
   const senderPhone = data.sender_phone || null;
   const remoteAdId = data.ad_id ?? null;
-  const remoteAdvertUuid = data.advert_uuid || property?.portalProfiles?.storia?.remoteUuid || null;
+  const remoteAdvertUuid = data.advert_uuid || data.uuid || notification.object_id || property?.portalProfiles?.storia?.remoteUuid || mapping?.remoteUuid || null;
   const propertyRemoteAdId =
     remoteAdId ||
     property?.portalProfiles?.storia?.remoteAdId ||
@@ -1915,13 +2099,15 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
         conversationId,
         remoteAdId: propertyRemoteAdId,
         remoteAdvertUuid,
-        propertyId: property?.id || current?.propertyId || null,
-        propertyTitle: property?.title || current?.propertyTitle || null,
+        propertyId: mapping?.propertyId || current?.propertyId || null,
+        propertyTitle: property?.title || mapping?.propertyTitle || current?.propertyTitle || null,
         propertyUrl:
           property?.portalProfiles?.storia?.remoteUrl ||
           property?.promotions?.storia?.link ||
+          mapping?.propertyUrl ||
           current?.propertyUrl ||
           null,
+        propertyImageUrl: getPropertyImageUrl(property) || mapping?.propertyImageUrl || current?.propertyImageUrl || null,
         senderName: senderName || current?.senderName || 'Client Storia',
         senderEmail: senderEmail || current?.senderEmail || null,
         senderPhone: senderPhone || current?.senderPhone || null,
@@ -2066,6 +2252,8 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
   snapshot.docs.forEach((docSnapshot) => {
     const property = { id: docSnapshot.id, ...docSnapshot.data() } as Property;
     const remoteUrl = normalizeStoriaPublicUrl(rawRemoteUrl, property.title);
+    const remoteAdId = extractStoriaAdIdFromUrl(remoteUrl);
+    const agencyId = getAgencyIdFromPropertyPath(docSnapshot.ref.path);
     batch.set(
       docSnapshot.ref,
       {
@@ -2075,6 +2263,7 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
             lastSync: nowIso(),
             link: remoteUrl,
             remoteId: objectId,
+            remoteAdId,
             errorMessage,
             remoteState: remoteCode,
           },
@@ -2082,6 +2271,7 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
         portalProfiles: {
           storia: {
             remoteUuid: objectId,
+            remoteAdId,
             remoteUrl,
             lastValidationError: errorMessage,
             lastPublishedAt: !errorMessage && remoteUrl ? nowIso() : null,
@@ -2091,6 +2281,20 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
       },
       { merge: true }
     );
+    if (agencyId && !errorMessage) {
+      setStoriaAdvertMappingOnBatch(
+        batch,
+        buildStoriaAdvertMapping({
+          agencyId,
+          propertyId: property.id,
+          propertyTitle: property.title,
+          remoteUuid: objectId,
+          remoteUrl,
+          remoteAdId,
+          propertyImageUrl: getPropertyImageUrl(property),
+        })
+      );
+    }
   });
   await batch.commit();
 

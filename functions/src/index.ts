@@ -11,6 +11,7 @@ const STORIA_WEBHOOK_FORWARD_URL = 'https://imodeus.ro/api/storia/webhook';
 const STORIA_PROVIDER = 'storia';
 const STORIA_SITE_URL = 'https://www.storia.ro';
 const PRIVATE_COLLECTION = 'agencyPrivateIntegrations';
+const STORIA_ADVERT_MAPPINGS_COLLECTION = 'storiaAdvertMappings';
 
 if (!getApps().length) {
   initializeApp();
@@ -46,6 +47,7 @@ type StoriaIntegrationPrivate = {
 
 type PropertySnapshotData = {
   title?: string | null;
+  images?: Array<{ url?: string | null; alt?: string | null }> | null;
   portalProfiles?: {
     storia?: {
       remoteUuid?: string | null;
@@ -63,12 +65,32 @@ type PropertySnapshotData = {
   } | null;
 };
 
+type StoriaAdvertMapping = {
+  provider: 'storia';
+  agencyId: string;
+  propertyId: string;
+  remoteUuid?: string | null;
+  remoteAdId?: string | number | null;
+  propertyTitle?: string | null;
+  propertyUrl?: string | null;
+  propertyImageUrl?: string | null;
+  updatedAt: string;
+};
+
 function nowIso() {
   return new Date().toISOString();
 }
 
 function sanitizeFirestoreId(value: string) {
   return value.replace(/[~/[\]#?]/g, '_').slice(0, 180) || 'storia-message';
+}
+
+function getStoriaAdvertMappingId(kind: 'uuid' | 'ad', value: string | number) {
+  return `${kind}_${sanitizeFirestoreId(String(value))}`;
+}
+
+function getPropertyImageUrl(property?: PropertySnapshotData | null) {
+  return property?.images?.find((image) => image?.url)?.url || null;
 }
 
 function isIncomingMessageNotification(notification: StoriaWebhookNotification) {
@@ -97,102 +119,77 @@ function getAgencyIdFromPropertyPath(path: string) {
   return parts[0] === 'agencies' && parts[2] === 'properties' ? parts[1] : null;
 }
 
-async function resolveFallbackAgencyIdForIncomingMessage() {
-  const configuredAgencyId = (process.env.STORIA_DEFAULT_AGENCY_ID || '').trim();
-  if (configuredAgencyId) return configuredAgencyId;
+async function resolveStoriaAdvertMapping(notification: StoriaWebhookNotification) {
+  const data = notification.data || {};
+  const candidates: Array<['uuid' | 'ad', string | number | null | undefined]> = [
+    ['uuid', data.advert_uuid],
+    ['uuid', data.uuid],
+    ['uuid', notification.object_id],
+    ['ad', data.ad_id],
+  ];
 
-  const integrationsSnapshot = await db
-    .collection(PRIVATE_COLLECTION)
-    .where('provider', '==', STORIA_PROVIDER)
-    .get();
+  for (const [kind, value] of candidates) {
+    if (value === null || value === undefined || value === '') continue;
+    const snapshot = await db
+      .collection(STORIA_ADVERT_MAPPINGS_COLLECTION)
+      .doc(getStoriaAdvertMappingId(kind, value))
+      .get();
 
-  const integrations = integrationsSnapshot.docs
-    .map((docSnapshot) => docSnapshot.data() as StoriaIntegrationPrivate)
-    .filter((integration) => integration.agencyId && integration.accessToken);
-  const leadReadyIntegrations = integrations.filter((integration) => integration.hasLeadScopes !== false);
-  const candidates = leadReadyIntegrations.length ? leadReadyIntegrations : integrations;
+    if (snapshot.exists) {
+      return snapshot.data() as StoriaAdvertMapping;
+    }
+  }
 
-  return candidates.length === 1 ? candidates[0].agencyId || null : null;
+  return null;
 }
 
-async function findStoriaPropertySnapshotsForIncomingMessage(notification: StoriaWebhookNotification) {
-  const docsByPath = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
-  const addSnapshotDocs = (snapshot: FirebaseFirestore.QuerySnapshot) => {
-    snapshot.docs.forEach((docSnapshot) => {
-      docsByPath.set(docSnapshot.ref.path, docSnapshot);
-    });
+async function persistIncomingAdIdMapping(mapping: StoriaAdvertMapping | null, adId?: string | number | null) {
+  if (!mapping || adId === null || adId === undefined || adId === '') return;
+  const nextMapping: StoriaAdvertMapping = {
+    ...mapping,
+    remoteAdId: adId,
+    updatedAt: nowIso(),
   };
-  const tryAddSnapshotDocs = async (
-    query: FirebaseFirestore.Query,
-    label: string
-  ) => {
-    try {
-      addSnapshotDocs(await query.get());
-    } catch (error) {
-      logger.warn('Storia property matching query failed; continuing with fallback.', {
-        label,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
+  const batch = db.batch();
+  batch.set(
+    db.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('ad', adId)),
+    nextMapping,
+    { merge: true }
+  );
+  if (mapping.remoteUuid) {
+    batch.set(
+      db.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('uuid', mapping.remoteUuid)),
+      nextMapping,
+      { merge: true }
+    );
+  }
+  if (mapping.agencyId && mapping.propertyId) {
+    batch.set(
+      db.collection('agencies').doc(mapping.agencyId).collection('properties').doc(mapping.propertyId),
+      {
+        promotions: { storia: { remoteAdId: adId } },
+        portalProfiles: { storia: { remoteAdId: adId } },
+      },
+      { merge: true }
+    );
+  }
+  await batch.commit();
+}
+
+async function getMappedStoriaProperty(mapping: StoriaAdvertMapping | null) {
+  if (!mapping?.agencyId || !mapping.propertyId) return null;
+  const snapshot = await db
+    .collection('agencies')
+    .doc(mapping.agencyId)
+    .collection('properties')
+    .doc(mapping.propertyId)
+    .get();
+
+  if (!snapshot.exists) return null;
+  return {
+    snapshot,
+    property: snapshot.data() as PropertySnapshotData,
   };
-
-  const data = notification.data || {};
-  const identifiers = [
-    data.advert_uuid,
-    data.ad_id != null ? String(data.ad_id) : null,
-  ].filter((value): value is string => Boolean(value));
-
-  for (const identifier of identifiers) {
-    await tryAddSnapshotDocs(
-      db.collectionGroup('properties').where('promotions.storia.remoteId', '==', identifier),
-      'promotions.storia.remoteId'
-    );
-    await tryAddSnapshotDocs(
-      db.collectionGroup('properties').where('promotions.storia.remoteAdId', '==', identifier),
-      'promotions.storia.remoteAdId'
-    );
-    await tryAddSnapshotDocs(
-      db.collectionGroup('properties').where('portalProfiles.storia.remoteUuid', '==', identifier),
-      'portalProfiles.storia.remoteUuid'
-    );
-    await tryAddSnapshotDocs(
-      db.collectionGroup('properties').where('portalProfiles.storia.remoteAdId', '==', identifier),
-      'portalProfiles.storia.remoteAdId'
-    );
-  }
-
-  if (docsByPath.size || !data.ad_id) {
-    return Array.from(docsByPath.values());
-  }
-
-  const remoteAdId = String(data.ad_id);
-  let publishedSnapshot: FirebaseFirestore.QuerySnapshot;
-  try {
-    publishedSnapshot = await db
-      .collectionGroup('properties')
-      .where('promotions.storia.status', '==', 'published')
-      .limit(500)
-      .get();
-  } catch (error) {
-    logger.warn('Storia published property URL matching query failed; continuing with agency fallback.', {
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return Array.from(docsByPath.values());
-  }
-
-  publishedSnapshot.docs.forEach((docSnapshot) => {
-    const property = docSnapshot.data() as PropertySnapshotData;
-    const hasMatchingUrl = [
-      property.portalProfiles?.storia?.remoteUrl,
-      property.promotions?.storia?.link,
-    ].some((url) => extractStoriaAdIdFromUrl(url) === remoteAdId);
-
-    if (hasMatchingUrl) {
-      docsByPath.set(docSnapshot.ref.path, docSnapshot);
-    }
-  });
-
-  return Array.from(docsByPath.values());
 }
 
 async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNotification) {
@@ -208,7 +205,7 @@ async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNot
   const data = notification.data || {};
   const conversationId = String(data.conversation_id || data.ad_id || notification.object_id || notification.transaction_id || '').trim();
   const messageText = (data.message || '').trim();
-  const messageId = String(data.uuid || data.id || notification.object_id || notification.transaction_id || '').trim();
+  const messageId = String(data.id || data.uuid || notification.object_id || notification.transaction_id || '').trim();
 
   if (!conversationId || !messageId || !messageText) {
     logger.warn('Storia incoming_message missing required fields.', {
@@ -221,12 +218,11 @@ async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNot
     return { persisted: false, reason: 'missing_required_fields' };
   }
 
-  const propertySnapshots = await findStoriaPropertySnapshotsForIncomingMessage(notification);
-  const firstPropertySnapshot = propertySnapshots[0] || null;
-  const property = firstPropertySnapshot ? (firstPropertySnapshot.data() as PropertySnapshotData) : null;
-  const agencyId =
-    (firstPropertySnapshot ? getAgencyIdFromPropertyPath(firstPropertySnapshot.ref.path) : null) ||
-    (await resolveFallbackAgencyIdForIncomingMessage());
+  const mapping = await resolveStoriaAdvertMapping(notification);
+  await persistIncomingAdIdMapping(mapping, data.ad_id);
+  const mappedProperty = await getMappedStoriaProperty(mapping);
+  const property = mappedProperty?.property || null;
+  const agencyId = mapping?.agencyId || null;
 
   if (!agencyId) {
     await db.collection('storiaIncomingMessagesUnmatched').doc(sanitizeFirestoreId(messageId)).set(
@@ -234,12 +230,12 @@ async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNot
         provider: STORIA_PROVIDER,
         source: 'storia_incoming_message',
         receivedAt: nowIso(),
-        reason: 'agency_not_resolved',
+        reason: 'advert_not_mapped',
         rawPayload: notification,
       },
       { merge: true }
     );
-    return { persisted: false, reason: 'agency_not_resolved' };
+    return { persisted: false, reason: 'advert_not_mapped' };
   }
 
   const createdAt = data.created_at || nowIso();
@@ -247,7 +243,7 @@ async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNot
   const senderEmail = data.sender_email || null;
   const senderPhone = data.sender_phone || null;
   const remoteAdId = data.ad_id ?? null;
-  const remoteAdvertUuid = data.advert_uuid || property?.portalProfiles?.storia?.remoteUuid || null;
+  const remoteAdvertUuid = data.advert_uuid || data.uuid || notification.object_id || property?.portalProfiles?.storia?.remoteUuid || mapping?.remoteUuid || null;
   const propertyRemoteAdId =
     remoteAdId ||
     property?.portalProfiles?.storia?.remoteAdId ||
@@ -290,13 +286,15 @@ async function persistStoriaIncomingMessageDirect(notification: StoriaWebhookNot
         conversationId,
         remoteAdId: propertyRemoteAdId,
         remoteAdvertUuid,
-        propertyId: firstPropertySnapshot?.id || current?.propertyId || null,
-        propertyTitle: property?.title || current?.propertyTitle || null,
+        propertyId: mapping?.propertyId || current?.propertyId || null,
+        propertyTitle: property?.title || mapping?.propertyTitle || current?.propertyTitle || null,
         propertyUrl:
           property?.portalProfiles?.storia?.remoteUrl ||
           property?.promotions?.storia?.link ||
+          mapping?.propertyUrl ||
           current?.propertyUrl ||
           null,
+        propertyImageUrl: getPropertyImageUrl(property) || mapping?.propertyImageUrl || current?.propertyImageUrl || null,
         senderName: senderName || current?.senderName || 'Client Storia',
         senderEmail: senderEmail || current?.senderEmail || null,
         senderPhone: senderPhone || current?.senderPhone || null,

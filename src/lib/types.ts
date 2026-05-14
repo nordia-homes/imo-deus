@@ -242,6 +242,7 @@ export type StoriaInboxLead = {
   propertyId?: string | null;
   propertyTitle?: string | null;
   propertyUrl?: string | null;
+  propertyImageUrl?: string | null;
   senderName: string;
   senderEmail?: string | null;
   senderPhone?: string | number | null;
