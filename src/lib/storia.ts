@@ -5,6 +5,8 @@ import type {
   PromotionStatus,
   Property,
   StoriaActivePromotion,
+  StoriaInboxLead,
+  StoriaInboxMessage,
   StoriaIntegrationPrivate,
   StoriaPromotionOption,
   StoriaPromotionRequest,
@@ -33,10 +35,19 @@ type StoriaWebhookNotification = {
   event_type?: string;
   error_message?: string | null;
   data?: {
+    ad_id?: string | number | null;
+    advert_uuid?: string | null;
+    conversation_id?: string | number | null;
+    from?: string | null;
+    id?: string | number | null;
+    message?: string | null;
+    sender_name?: string | null;
+    sender_email?: string | null;
+    sender_phone?: string | number | null;
+    uuid?: string | null;
     code?: string | null;
     url?: string | null;
     promotion_code?: string | null;
-    advert_uuid?: string | null;
     status?: string | null;
     duration?: string | number | null;
     expires_at?: string | null;
@@ -1671,6 +1682,167 @@ async function findStoriaPropertySnapshotsForVas(notification: StoriaWebhookNoti
   return Array.from(docsByPath.values());
 }
 
+function isIncomingMessageNotification(notification: StoriaWebhookNotification) {
+  return (notification.flow || '').toLowerCase() === 'incoming_message' ||
+    (notification.event_type || '').toLowerCase() === 'incoming_message_success';
+}
+
+function sanitizeFirestoreId(value: string) {
+  return value.replace(/[~/[\]#?]/g, '_').slice(0, 180) || randomBytes(8).toString('hex');
+}
+
+function getAgencyIdFromPropertyPath(path: string) {
+  const parts = path.split('/');
+  return parts[0] === 'agencies' && parts[2] === 'properties' ? parts[1] : null;
+}
+
+async function findStoriaPropertySnapshotsForIncomingMessage(notification: StoriaWebhookNotification) {
+  const docsByPath = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  const addSnapshotDocs = (snapshot: FirebaseFirestore.QuerySnapshot) => {
+    snapshot.docs.forEach((docSnapshot) => {
+      docsByPath.set(docSnapshot.ref.path, docSnapshot);
+    });
+  };
+
+  const data = notification.data || {};
+  const identifiers = [
+    data.advert_uuid,
+    data.ad_id != null ? String(data.ad_id) : null,
+  ].filter((value): value is string => Boolean(value));
+
+  for (const identifier of identifiers) {
+    addSnapshotDocs(
+      await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', identifier).get()
+    );
+    addSnapshotDocs(
+      await adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteUuid', '==', identifier).get()
+    );
+  }
+
+  return Array.from(docsByPath.values());
+}
+
+async function resolveFallbackAgencyIdForIncomingMessage() {
+  const configuredAgencyId = (process.env.STORIA_DEFAULT_AGENCY_ID || '').trim();
+  if (configuredAgencyId) {
+    return configuredAgencyId;
+  }
+
+  const integrationsSnapshot = await adminDb
+    .collection(PRIVATE_COLLECTION)
+    .where('provider', '==', STORIA_PROVIDER)
+    .limit(2)
+    .get();
+
+  if (integrationsSnapshot.size === 1) {
+    const integration = integrationsSnapshot.docs[0].data() as StoriaIntegrationPrivate;
+    return integration.agencyId || null;
+  }
+
+  return null;
+}
+
+async function persistStoriaIncomingMessage(notification: StoriaWebhookNotification) {
+  const data = notification.data || {};
+  const conversationId = String(data.conversation_id || data.ad_id || notification.object_id || notification.transaction_id || '').trim();
+  const messageText = (data.message || '').trim();
+  const messageId = String(data.uuid || data.id || notification.object_id || notification.transaction_id || '').trim();
+
+  if (!conversationId || !messageId || !messageText) {
+    throw new Error('Webhook Storia incoming_message invalid: lipsesc conversation_id, message id sau textul mesajului.');
+  }
+
+  const propertySnapshots = await findStoriaPropertySnapshotsForIncomingMessage(notification);
+  const firstPropertySnapshot = propertySnapshots[0] || null;
+  const property = firstPropertySnapshot
+    ? ({ id: firstPropertySnapshot.id, ...firstPropertySnapshot.data() } as Property)
+    : null;
+  const agencyId =
+    (firstPropertySnapshot ? getAgencyIdFromPropertyPath(firstPropertySnapshot.ref.path) : null) ||
+    (await resolveFallbackAgencyIdForIncomingMessage());
+
+  if (!agencyId) {
+    await adminDb.collection('storiaIncomingMessagesUnmatched').doc(sanitizeFirestoreId(messageId)).set(
+      {
+        provider: STORIA_PROVIDER,
+        source: 'storia_incoming_message',
+        receivedAt: nowIso(),
+        reason: 'agency_not_resolved',
+        rawPayload: notification,
+      },
+      { merge: true }
+    );
+    return { matched: 0 };
+  }
+
+  const createdAt = data.created_at || nowIso();
+  const senderName = (data.sender_name || 'Client Storia').trim();
+  const senderEmail = data.sender_email || null;
+  const senderPhone = data.sender_phone || null;
+  const remoteAdId = data.ad_id ?? null;
+  const remoteAdvertUuid = data.advert_uuid || property?.portalProfiles?.storia?.remoteUuid || null;
+  const leadRef = adminDb
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('storiaInboxLeads')
+    .doc(sanitizeFirestoreId(conversationId));
+  const message: StoriaInboxMessage = {
+    id: messageId,
+    createdAt,
+    direction: 'received',
+    text: messageText,
+    senderName,
+    senderEmail,
+    senderPhone,
+    transactionId: notification.transaction_id || null,
+  };
+
+  await adminDb.runTransaction(async (transaction) => {
+    const leadSnapshot = await transaction.get(leadRef);
+    const current = leadSnapshot.exists ? (leadSnapshot.data() as StoriaInboxLead) : null;
+    const currentMessages = current?.messages || [];
+    const hasMessage = currentMessages.some((item) => item.id === message.id);
+    const nextMessages = hasMessage ? currentMessages : [...currentMessages, message];
+    nextMessages.sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
+
+    transaction.set(
+      leadRef,
+      {
+        agencyId,
+        provider: STORIA_PROVIDER,
+        source: 'storia_incoming_message',
+        conversationId,
+        remoteAdId,
+        remoteAdvertUuid,
+        propertyId: property?.id || current?.propertyId || null,
+        propertyTitle: property?.title || current?.propertyTitle || null,
+        propertyUrl:
+          property?.portalProfiles?.storia?.remoteUrl ||
+          property?.promotions?.storia?.link ||
+          current?.propertyUrl ||
+          null,
+        senderName: senderName || current?.senderName || 'Client Storia',
+        senderEmail: senderEmail || current?.senderEmail || null,
+        senderPhone: senderPhone || current?.senderPhone || null,
+        firstMessage: current?.firstMessage || nextMessages[0]?.text || messageText,
+        latestMessage: messageText,
+        firstMessageAt: current?.firstMessageAt || nextMessages[0]?.createdAt || createdAt,
+        lastMessageAt: createdAt,
+        unread: true,
+        status: current?.status || 'nou',
+        createdAt: current?.createdAt || nowIso(),
+        updatedAt: nowIso(),
+        messageCount: nextMessages.length,
+        messages: nextMessages.slice(-80),
+        rawLastPayload: notification as unknown as Record<string, unknown>,
+      } satisfies Omit<StoriaInboxLead, 'id'>,
+      { merge: true }
+    );
+  });
+
+  return { matched: 1 };
+}
+
 export async function handleStoriaWebhookNotification(notification: StoriaWebhookNotification, signatureHeader?: string | null) {
   const objectId = notification.object_id || '';
   const transactionId = notification.transaction_id || '';
@@ -1691,6 +1863,10 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
     notification.data?.detail ||
     (notification.data?.validation || []).map((item) => item.detail).filter(Boolean).join(' | ') ||
     null;
+
+  if (isIncomingMessageNotification(notification)) {
+    return persistStoriaIncomingMessage(notification);
+  }
 
   if ((notification.flow || '').toLowerCase().includes('vas')) {
     const docs = await findStoriaPropertySnapshotsForVas(notification);

@@ -214,6 +214,44 @@ export type StoriaIntegrationPrivate = {
   lastAuthorizedAt?: string | null;
 };
 
+export type StoriaInboxMessage = {
+  id: string;
+  createdAt: string;
+  direction: 'received' | 'sent';
+  text: string;
+  senderName?: string | null;
+  senderEmail?: string | null;
+  senderPhone?: string | number | null;
+  transactionId?: string | null;
+};
+
+export type StoriaInboxLead = {
+  id: string;
+  agencyId: string;
+  provider: 'storia';
+  source: 'storia_incoming_message';
+  conversationId: string;
+  remoteAdId?: string | number | null;
+  remoteAdvertUuid?: string | null;
+  propertyId?: string | null;
+  propertyTitle?: string | null;
+  propertyUrl?: string | null;
+  senderName: string;
+  senderEmail?: string | null;
+  senderPhone?: string | number | null;
+  firstMessage: string;
+  latestMessage: string;
+  firstMessageAt: string;
+  lastMessageAt: string;
+  unread: boolean;
+  status: 'nou' | 'in_lucru' | 'raspuns' | 'inchis';
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  messages: StoriaInboxMessage[];
+  rawLastPayload?: Record<string, unknown> | null;
+};
+
 export type StoriaPromotionOption = {
   promotionCode: string;
   displayName?: string | null;

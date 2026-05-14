@@ -8,6 +8,7 @@ import {
   Building2,
   CheckSquare,
   Home,
+  Inbox,
   Users,
   MessageSquare,
   CreditCard,
@@ -46,7 +47,8 @@ import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
   const pathname = usePathname();
-  const showSidebarHeaderTrigger = pathname.startsWith('/leads') || pathname.startsWith('/properties');
+  const currentPath = pathname ?? '';
+  const showSidebarHeaderTrigger = currentPath.startsWith('/leads') || currentPath.startsWith('/properties') || currentPath.startsWith('/inbox');
   const publicWebsiteHref = agencyId
     ? buildAgencyPublicUrl(agency ?? { id: agencyId })
     : null;
@@ -67,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" asChild isActive={pathname === '/dashboard'}>
+                <SidebarMenuButton tooltip="Dashboard" asChild isActive={currentPath === '/dashboard'}>
                     <Link href="/dashboard">
                         <BarChart3 />
                         <span>Dashboard</span>
@@ -75,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Cumpărători" asChild isActive={pathname.startsWith('/leads')}>
+                <SidebarMenuButton tooltip="Cumpărători" asChild isActive={currentPath.startsWith('/leads')}>
                     <Link href="/leads">
                         <Users />
                         <span>Cumpărători</span>
@@ -83,7 +85,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Proprietăți" asChild isActive={pathname.startsWith('/properties')}>
+                <SidebarMenuButton tooltip="Inbox Storia" asChild isActive={currentPath.startsWith('/inbox')}>
+                    <Link href="/inbox">
+                        <Inbox />
+                        <span>Inbox Storia</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Proprietăți" asChild isActive={currentPath.startsWith('/properties')}>
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
@@ -91,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Anunțuri Proprietari" asChild isActive={pathname === '/owner-listings'}>
+                <SidebarMenuButton tooltip="Anunțuri Proprietari" asChild isActive={currentPath === '/owner-listings'}>
                     <Link href="/owner-listings">
                         <Newspaper />
                         <span>Anunțuri Proprietari</span>
@@ -99,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Hartă" asChild isActive={pathname === '/map'}>
+                <SidebarMenuButton tooltip="Hartă" asChild isActive={currentPath === '/map'}>
                     <Link href="/map">
                         <Map />
                         <span>Hartă</span>
@@ -107,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vizionări" asChild isActive={pathname === '/viewings'}>
+                <SidebarMenuButton tooltip="Vizionări" asChild isActive={currentPath === '/viewings'}>
                     <Link href="/viewings">
                         <CalendarCheck />
                         <span>Vizionări</span>
@@ -115,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Task-uri" asChild isActive={pathname.startsWith('/tasks')}>
+                <SidebarMenuButton tooltip="Task-uri" asChild isActive={currentPath.startsWith('/tasks')}>
                     <Link href="/tasks">
                         <CheckSquare />
                         <span>Task-uri</span>
@@ -123,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Contracte" asChild isActive={pathname === '/contracts'}>
+                <SidebarMenuButton tooltip="Contracte" asChild isActive={currentPath === '/contracts'}>
                     <Link href="/contracts">
                         <FileText />
                         <span>Contracte</span>
@@ -131,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Agenti" asChild isActive={pathname === '/agenti'}>
+                <SidebarMenuButton tooltip="Agenti" asChild isActive={currentPath === '/agenti'}>
                     <Link href="/agenti">
                         <UserRound />
                         <span>Agenti</span>
@@ -139,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Assistant" asChild isActive={pathname === '/ai-assistant'}>
+                <SidebarMenuButton tooltip="AI Assistant" asChild isActive={currentPath === '/ai-assistant'}>
                     <Link href="/ai-assistant">
                         <MessageSquare />
                         <span>AI Assistant</span>
@@ -147,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Potrivire Proprietăți AI" asChild isActive={pathname === '/matching'}>
+              <SidebarMenuButton tooltip="Potrivire Proprietăți AI" asChild isActive={currentPath === '/matching'}>
                 <Link href="/matching">
                   <UserCheck />
                   <span>Potrivire AI</span>
@@ -155,7 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rapoarte" asChild isActive={pathname === '/reports'}>
+                <SidebarMenuButton tooltip="Rapoarte" asChild isActive={currentPath === '/reports'}>
                     <Link href="/reports">
                         <BarChart3 />
                         <span>Rapoarte</span>
@@ -163,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Integrări" asChild isActive={pathname === '/portal-sync'}>
+                <SidebarMenuButton tooltip="Integrări" asChild isActive={currentPath === '/portal-sync'}>
                     <Link href="/portal-sync">
                         <AppWindow />
                         <span>Integrări</span>
@@ -171,7 +181,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Facturare" asChild isActive={pathname === '/billing'}>
+                <SidebarMenuButton tooltip="Facturare" asChild isActive={currentPath === '/billing'}>
                     <Link href="/billing">
                         <CreditCard />
                         <span>Facturare</span>
@@ -189,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
              )}
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Domeniu custom" asChild isActive={pathname === '/custom-domain'}>
+                <SidebarMenuButton tooltip="Domeniu custom" asChild isActive={currentPath === '/custom-domain'}>
                     <Link href="/custom-domain">
                         <Globe />
                         <span>Domeniu custom</span>
@@ -197,7 +207,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Setări" asChild isActive={pathname === '/settings'}>
+                <SidebarMenuButton tooltip="Setări" asChild isActive={currentPath === '/settings'}>
                     <Link href="/settings">
                         <Settings />
                         <span>Setări</span>
@@ -218,7 +228,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <PushNotificationsBanner />
             {children}
         </main>
-        {pathname !== '/ai-assistant' ? (
+        {currentPath !== '/ai-assistant' ? (
           <footer className="hidden border-t border-[var(--app-sidebar-border)] bg-[var(--app-footer-bg)] px-6 py-4 text-sm text-[var(--app-page-muted)] lg:block">
             <div className="flex items-center justify-center gap-2">
               <BadgeCheck className="h-4 w-4 text-[var(--app-highlight-soft)]" />
