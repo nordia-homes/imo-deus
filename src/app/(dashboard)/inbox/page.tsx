@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { collection, doc, orderBy, query } from 'firebase/firestore';
+import { collection, doc, getDoc, orderBy, query } from 'firebase/firestore';
 import {
   ArrowUpRight,
   Clock3,
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import type { StoriaInboxLead } from '@/lib/types';
+import type { Property, StoriaInboxLead } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -107,9 +107,20 @@ export default function StoriaInboxPage() {
     const now = new Date().toISOString();
     const phone = lead.senderPhone ? String(lead.senderPhone) : '';
     const email = lead.senderEmail || '';
+    let sourceProperty: Property | null = null;
+
+    if (lead.propertyId) {
+      const propertySnapshot = await getDoc(doc(firestore, 'agencies', agencyId, 'properties', lead.propertyId));
+      sourceProperty = propertySnapshot.exists() ? ({ id: propertySnapshot.id, ...propertySnapshot.data() } as Property) : null;
+    }
+
+    const propertyCity = sourceProperty?.city?.trim() || '';
+    const propertyZone = sourceProperty?.zone?.trim() || '';
     const description = [
       lead.latestMessage ? `Mesaj Storia: ${lead.latestMessage}` : null,
       lead.propertyTitle ? `Proprietate: ${lead.propertyTitle}` : null,
+      propertyCity ? `Localitate: ${propertyCity}` : null,
+      propertyZone ? `Zona: ${propertyZone}` : null,
       lead.remoteAdId ? `Remote ad: ${lead.remoteAdId}` : null,
       lead.conversationId ? `Conversatie Storia: ${lead.conversationId}` : null,
     ].filter(Boolean).join('\n');
@@ -122,6 +133,9 @@ export default function StoriaInboxPage() {
       status: 'Nou',
       contactType: 'Cumparator',
       description,
+      city: propertyCity || null,
+      zones: propertyZone ? [propertyZone] : [],
+      locationPreferences: propertyCity || '',
       sourcePropertyId: lead.propertyId || null,
       createdAt: now,
       tags: ['Storia'],
@@ -428,14 +442,16 @@ function MobileLeadModal({
             )}
           </div>
         </div>
-        <div className="bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f3_100%)] px-4 pb-5 pt-4">
-          <h2 className="text-3xl font-semibold leading-tight text-slate-950">{lead.senderName}</h2>
-          <p className="mt-2 text-base leading-6 text-slate-600">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
+        <div className="bg-[linear-gradient(180deg,#ffffff_0%,#f3f8f6_100%)] px-4 pb-5 pt-4">
+          <div className="rounded-[22px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(239,247,243,0.92)_100%)] px-4 py-4 shadow-[0_22px_55px_-38px_rgba(15,23,42,0.9)] ring-1 ring-slate-900/[0.03]">
+            <h2 className="text-3xl font-semibold leading-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.85)]">{lead.senderName}</h2>
+            <p className="mt-2 line-clamp-2 text-base leading-6 text-slate-600">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
+          </div>
         </div>
       </div>
 
       <div className="space-y-3 p-4">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-[1fr_0.72fr_1.32fr] gap-2">
           <Button asChild disabled={!whatsappUrl} variant="outline" className="h-16 rounded-[18px] border-slate-200 bg-white px-1">
             <a href={whatsappUrl || '#'} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
               <MessageSquare className="h-4 w-4" />
@@ -456,15 +472,13 @@ function MobileLeadModal({
             disabled={isAdded}
           >
             <UserPlus className="h-4 w-4" />
-            <span className="text-xs leading-none">{isAdded ? 'Adaugat' : 'Adauga'}</span>
+            <span className="whitespace-nowrap text-[11px] leading-none">{isAdded ? 'Adaugat' : 'Adauga in CRM'}</span>
           </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <InfoPill icon={<Phone className="h-4 w-4" />} label="Telefon" value={lead.senderPhone ? String(lead.senderPhone) : 'Indisponibil'} />
           <InfoPill icon={<Mail className="h-4 w-4" />} label="Email" value={lead.senderEmail || 'Indisponibil'} />
-          <InfoPill icon={<Clock3 className="h-4 w-4" />} label="Ultimul mesaj" value={formatDate(lead.lastMessageAt)} />
-          <InfoPill icon={<MessageSquare className="h-4 w-4" />} label="Mesaje" value={String(lead.messages.length)} />
         </div>
 
         <div className="space-y-3 pb-3">
@@ -546,7 +560,7 @@ function StoriaLeadDetailCard({
                     disabled={isAdded}
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
-                    {isAdded ? 'Adaugat' : 'Adauga lead'}
+                    {isAdded ? 'Adaugat' : 'Adauga in CRM'}
                   </Button>
                 </div>
                 <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-5 text-white/72">
