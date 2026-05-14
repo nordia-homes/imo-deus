@@ -1741,6 +1741,16 @@ async function findStoriaPropertySnapshotsForIncomingMessage(notification: Stori
       docsByPath.set(docSnapshot.ref.path, docSnapshot);
     });
   };
+  const tryAddSnapshotDocs = async (query: FirebaseFirestore.Query, label: string) => {
+    try {
+      addSnapshotDocs(await query.get());
+    } catch (error) {
+      console.warn('[storia] property matching query failed; continuing with fallback', {
+        label,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
 
   const data = notification.data || {};
   const identifiers = [
@@ -1749,17 +1759,21 @@ async function findStoriaPropertySnapshotsForIncomingMessage(notification: Stori
   ].filter((value): value is string => Boolean(value));
 
   for (const identifier of identifiers) {
-    addSnapshotDocs(
-      await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', identifier).get()
+    await tryAddSnapshotDocs(
+      adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', identifier),
+      'promotions.storia.remoteId'
     );
-    addSnapshotDocs(
-      await adminDb.collectionGroup('properties').where('promotions.storia.remoteAdId', '==', identifier).get()
+    await tryAddSnapshotDocs(
+      adminDb.collectionGroup('properties').where('promotions.storia.remoteAdId', '==', identifier),
+      'promotions.storia.remoteAdId'
     );
-    addSnapshotDocs(
-      await adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteUuid', '==', identifier).get()
+    await tryAddSnapshotDocs(
+      adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteUuid', '==', identifier),
+      'portalProfiles.storia.remoteUuid'
     );
-    addSnapshotDocs(
-      await adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteAdId', '==', identifier).get()
+    await tryAddSnapshotDocs(
+      adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteAdId', '==', identifier),
+      'portalProfiles.storia.remoteAdId'
     );
   }
 
@@ -1768,11 +1782,19 @@ async function findStoriaPropertySnapshotsForIncomingMessage(notification: Stori
   }
 
   const remoteAdId = String(data.ad_id);
-  const publishedSnapshot = await adminDb
-    .collectionGroup('properties')
-    .where('promotions.storia.status', '==', 'published')
-    .limit(500)
-    .get();
+  let publishedSnapshot: FirebaseFirestore.QuerySnapshot;
+  try {
+    publishedSnapshot = await adminDb
+      .collectionGroup('properties')
+      .where('promotions.storia.status', '==', 'published')
+      .limit(500)
+      .get();
+  } catch (error) {
+    console.warn('[storia] published property URL matching query failed; continuing with agency fallback', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return Array.from(docsByPath.values());
+  }
 
   publishedSnapshot.docs.forEach((docSnapshot) => {
     const property = docSnapshot.data() as Property;
