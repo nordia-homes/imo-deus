@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import {
   ArrowUpRight,
-  CheckCircle2,
   Clock3,
   ExternalLink,
   Home,
@@ -26,20 +25,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-const STATUS_LABELS: Record<StoriaInboxLead['status'], string> = {
-  nou: 'Nou',
-  in_lucru: 'In lucru',
-  raspuns: 'Raspuns',
-  inchis: 'Inchis',
-};
-
-const STATUS_TONES: Record<StoriaInboxLead['status'], string> = {
-  nou: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  in_lucru: 'border-sky-200 bg-sky-50 text-sky-700',
-  raspuns: 'border-violet-200 bg-violet-50 text-violet-700',
-  inchis: 'border-slate-200 bg-slate-100 text-slate-600',
-};
 
 function formatDate(value?: string | null) {
   if (!value) return 'Fara data';
@@ -208,7 +193,7 @@ export default function StoriaInboxPage() {
               text="Cand webhook-ul incoming_message primeste lead-uri, conversatiile vor aparea automat aici."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {sortedLeads.map((lead) => (
                 <MobileLeadCard
                   key={lead.id}
@@ -216,6 +201,9 @@ export default function StoriaInboxPage() {
                   onOpen={() => {
                     setSelectedId(lead.id);
                     setMobileLeadId(lead.id);
+                    if (lead.unread) {
+                      updateLead(lead, { unread: false });
+                    }
                   }}
                 />
               ))}
@@ -260,32 +248,34 @@ export default function StoriaInboxPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100">
+                  <div className="space-y-2 bg-slate-50/70 p-2">
                     {sortedLeads.map((lead) => {
                       const isSelected = selectedLead?.id === lead.id;
                       return (
                         <button
                           key={lead.id}
                           type="button"
-                          className={cn('block w-full px-3 py-3 text-left transition-colors hover:bg-slate-50', isSelected && 'bg-slate-100')}
+                          className={cn(
+                            'relative block w-full overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all',
+                            'border-slate-200/80 bg-white shadow-[0_16px_38px_-34px_rgba(15,23,42,0.9)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_22px_48px_-36px_rgba(15,23,42,0.9)]',
+                            lead.unread && 'border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#ffffff_62%)] before:absolute before:left-0 before:top-3 before:h-[calc(100%-1.5rem)] before:w-1 before:rounded-r-full before:bg-emerald-400',
+                            isSelected && 'border-slate-300 bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f3_100%)] shadow-[0_24px_55px_-38px_rgba(15,23,42,0.95)]'
+                          )}
                           onClick={() => setSelectedId(lead.id)}
                         >
                           <div className="flex items-start gap-3">
                             <PropertyThumb lead={lead} size="sm" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-2">
-                                <p className="truncate text-sm font-semibold">{lead.senderName}</p>
+                                <p className={cn('truncate text-sm font-semibold', lead.unread && 'text-emerald-950')}>{lead.senderName}</p>
                                 <span className="shrink-0 text-xs text-slate-500">{formatDate(lead.lastMessageAt)}</span>
                               </div>
-                              <p className="mt-0.5 truncate text-xs text-slate-500">
+                              <p className={cn('mt-0.5 truncate text-xs', lead.unread ? 'font-medium text-slate-700' : 'text-slate-500')}>
                                 {lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}
                               </p>
-                              <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-700">{lead.latestMessage}</p>
+                              <p className={cn('mt-2 line-clamp-2 text-sm leading-5', lead.unread ? 'font-semibold text-slate-950' : 'text-slate-700')}>{lead.latestMessage}</p>
                               <div className="mt-2 flex items-center gap-2">
-                                {lead.unread && <span className="h-2 w-2 rounded-full bg-emerald-300" aria-label="Necitit" />}
-                                <Badge className={cn('shrink-0 border px-2 py-0 text-[10px] uppercase hover:bg-transparent', STATUS_TONES[lead.status])}>
-                                  {STATUS_LABELS[lead.status]}
-                                </Badge>
+                                {lead.unread && <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.16)]" aria-label="Necitit" />}
                               </div>
                             </div>
                           </div>
@@ -299,7 +289,13 @@ export default function StoriaInboxPage() {
           </Card>
 
           {selectedLead ? (
-            <StoriaLeadDetailCard lead={selectedLead} onUpdate={updateLead} className="min-h-[calc(100vh-184px)]" />
+            <StoriaLeadDetailCard
+              lead={selectedLead}
+              onUpdate={updateLead}
+              onAddLead={addLeadToApp}
+              isAdded={addedLeadIds.has(selectedLead.id)}
+              className="min-h-[calc(100vh-184px)]"
+            />
           ) : (
             <Card className="rounded-lg border-slate-200 bg-white text-slate-950 shadow-sm">
               <CardContent className="flex min-h-[560px] flex-col items-center justify-center px-6 text-center">
@@ -323,7 +319,6 @@ export default function StoriaInboxPage() {
           {mobileLead && (
             <MobileLeadModal
               lead={mobileLead}
-              onUpdate={updateLead}
               onAddLead={addLeadToApp}
               isAdded={addedLeadIds.has(mobileLead.id)}
             />
@@ -367,35 +362,31 @@ function MobileLeadCard({ lead, onOpen }: { lead: StoriaInboxLead; onOpen: () =>
     <button
       type="button"
       onClick={onOpen}
-      className="group block w-full rounded-[24px] border border-slate-200 bg-white p-4 text-left shadow-[0_18px_50px_-34px_rgba(15,23,42,0.75)] transition-transform active:scale-[0.99]"
+      className={cn(
+        'relative block w-full overflow-hidden rounded-[22px] border px-3.5 py-3 text-left transition active:scale-[0.99]',
+        lead.unread
+          ? 'border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#ffffff_58%)] shadow-[0_20px_55px_-34px_rgba(16,185,129,0.85)]'
+          : 'border-slate-200/80 bg-white shadow-[0_18px_45px_-36px_rgba(15,23,42,0.9)] active:bg-slate-50'
+      )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Badge className={cn('border px-2 py-0 text-[10px] uppercase backdrop-blur hover:bg-transparent', STATUS_TONES[lead.status])}>
-            {STATUS_LABELS[lead.status]}
-          </Badge>
-          <p className="mt-3 line-clamp-2 text-base font-semibold leading-5">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
+      {lead.unread && <span className="absolute inset-y-3 left-0 w-1 rounded-r-full bg-emerald-400" />}
+      <div className="flex items-center gap-3.5">
+        <PropertyThumb lead={lead} size="chat" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              {lead.unread && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.16)]" aria-label="Necitit" />}
+              <p className={cn('truncate text-[15px] font-semibold', lead.unread ? 'text-emerald-950' : 'text-slate-700')}>{lead.senderName}</p>
+            </div>
+            <span className="shrink-0 text-xs font-medium text-slate-400">{formatDate(lead.lastMessageAt)}</span>
+          </div>
+          <p className={cn('mt-1 truncate text-[15px] font-semibold leading-5', lead.unread ? 'text-slate-950' : 'text-slate-950')}>
+            {lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}
+          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <p className={cn('min-w-0 flex-1 truncate text-sm leading-5', lead.unread ? 'font-semibold text-slate-800' : 'text-slate-500')}>{lead.latestMessage}</p>
+          </div>
         </div>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700">
-          <ArrowUpRight className="h-5 w-5" />
-        </span>
-      </div>
-
-      <div className="mt-4 border-t border-slate-100 pt-3">
-        <p className="truncate text-lg font-semibold">{lead.senderName}</p>
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-700">{lead.latestMessage}</p>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-1">
-          <Clock3 className="h-3.5 w-3.5" />
-          {formatDate(lead.lastMessageAt)}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <MessageSquare className="h-3.5 w-3.5" />
-          {lead.messages.length} mesaje
-        </span>
-        {lead.unread && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">Nou</span>}
       </div>
     </button>
   );
@@ -403,12 +394,10 @@ function MobileLeadCard({ lead, onOpen }: { lead: StoriaInboxLead; onOpen: () =>
 
 function MobileLeadModal({
   lead,
-  onUpdate,
   onAddLead,
   isAdded,
 }: {
   lead: StoriaInboxLead;
-  onUpdate: (lead: StoriaInboxLead, data: Partial<Pick<StoriaInboxLead, 'status' | 'unread'>>) => void;
   onAddLead: (lead: StoriaInboxLead) => void;
   isAdded: boolean;
 }) {
@@ -417,45 +406,57 @@ function MobileLeadModal({
 
   return (
     <div className="max-h-[94dvh] overflow-y-auto bg-slate-50">
-      <div className="bg-[#10231f] px-4 pb-5 pt-5 text-white">
-        <div className="flex items-start gap-4">
-          <PropertyThumb lead={lead} size="modal" />
-          <div className="min-w-0">
-            <div className="mb-3 flex items-center gap-2">
-              <Badge className={cn('border px-2 py-0 text-[10px] uppercase backdrop-blur hover:bg-transparent', STATUS_TONES[lead.status])}>
-                {STATUS_LABELS[lead.status]}
-              </Badge>
-              {lead.unread && <span className="rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-950">Necitit</span>}
-            </div>
-            <h2 className="text-2xl font-semibold text-white">{lead.senderName}</h2>
-            <p className="mt-2 line-clamp-3 text-sm leading-5 text-white/76">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
+      <div className="bg-white">
+        <div className="relative h-48 bg-slate-950">
+          <PropertyModalHeroImage lead={lead} />
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            {lead.propertyId && (
+              <Button asChild size="sm" variant="outline" className="h-8 rounded-full border-white/35 bg-white/88 px-3 text-slate-900 shadow-sm backdrop-blur hover:bg-white">
+                <Link href={`/properties/${lead.propertyId}`}>
+                  CRM
+                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            )}
+            {lead.propertyUrl && (
+              <Button asChild size="sm" variant="outline" className="h-8 rounded-full border-white/35 bg-white/88 px-3 text-slate-900 shadow-sm backdrop-blur hover:bg-white">
+                <Link href={lead.propertyUrl} target="_blank" rel="noopener noreferrer">
+                  Storia
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            )}
           </div>
+        </div>
+        <div className="bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f3_100%)] px-4 pb-5 pt-4">
+          <h2 className="text-3xl font-semibold leading-tight text-slate-950">{lead.senderName}</h2>
+          <p className="mt-2 text-base leading-6 text-slate-600">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
         </div>
       </div>
 
       <div className="space-y-3 p-4">
         <div className="grid grid-cols-3 gap-2">
-          <Button asChild disabled={!whatsappUrl} variant="outline" className="h-12 rounded-[18px] border-slate-200 bg-white">
-            <a href={whatsappUrl || '#'} target="_blank" rel="noopener noreferrer">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              WhatsApp
+          <Button asChild disabled={!whatsappUrl} variant="outline" className="h-16 rounded-[18px] border-slate-200 bg-white px-1">
+            <a href={whatsappUrl || '#'} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-xs leading-none">WhatsApp</span>
             </a>
           </Button>
-          <Button asChild disabled={!telUrl} variant="outline" className="h-12 rounded-[18px] border-slate-200 bg-white">
-            <a href={telUrl ? `tel:${telUrl}` : '#'}>
-              <Phone className="mr-2 h-4 w-4" />
-              Sună
+          <Button asChild disabled={!telUrl} variant="outline" className="h-16 rounded-[18px] border-slate-200 bg-white px-1">
+            <a href={telUrl ? `tel:${telUrl}` : '#'} className="flex flex-col gap-1">
+              <Phone className="h-4 w-4" />
+              <span className="text-xs leading-none">Suna</span>
             </a>
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="h-12 rounded-[18px] border-slate-200 bg-white"
+            className="h-16 flex-col gap-1 rounded-[18px] border-slate-200 bg-white px-1"
             onClick={() => onAddLead(lead)}
             disabled={isAdded}
           >
-            <UserPlus className="mr-2 h-4 w-4" />
-            {isAdded ? 'Adăugat' : 'Adaugă'}
+            <UserPlus className="h-4 w-4" />
+            <span className="text-xs leading-none">{isAdded ? 'Adaugat' : 'Adauga'}</span>
           </Button>
         </div>
 
@@ -464,50 +465,6 @@ function MobileLeadModal({
           <InfoPill icon={<Mail className="h-4 w-4" />} label="Email" value={lead.senderEmail || 'Indisponibil'} />
           <InfoPill icon={<Clock3 className="h-4 w-4" />} label="Ultimul mesaj" value={formatDate(lead.lastMessageAt)} />
           <InfoPill icon={<MessageSquare className="h-4 w-4" />} label="Mesaje" value={String(lead.messages.length)} />
-        </div>
-
-        <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Proprietate</p>
-          <p className="mt-2 text-base font-semibold leading-5">{lead.propertyTitle || 'Anunt Storia neasociat local'}</p>
-          <p className="mt-1 text-sm text-slate-500">Remote ad: {lead.remoteAdId || lead.remoteAdvertUuid || 'necunoscut'}</p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {lead.propertyId && (
-              <Button asChild size="sm" variant="outline" className="rounded-full border-slate-200 bg-white">
-                <Link href={`/properties/${lead.propertyId}`}>
-                  CRM
-                  <ArrowUpRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-            {lead.propertyUrl && (
-              <Button asChild size="sm" variant="outline" className="rounded-full border-slate-200 bg-white">
-                <Link href={lead.propertyUrl} target="_blank" rel="noopener noreferrer">
-                  Storia
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full border-slate-200 bg-white"
-            onClick={() => onUpdate(lead, { unread: false })}
-          >
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            Citit
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full border-slate-200 bg-white"
-            onClick={() => onUpdate(lead, { status: lead.status === 'inchis' ? 'in_lucru' : 'inchis' })}
-          >
-            {lead.status === 'inchis' ? 'Redeschide' : 'Inchide'}
-          </Button>
         </div>
 
         <div className="space-y-3 pb-3">
@@ -539,57 +496,104 @@ function InfoPill({ icon, label, value }: { icon: ReactNode; label: string; valu
   );
 }
 
+function PropertyModalHeroImage({ lead }: { lead: StoriaInboxLead }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-slate-950">
+      {lead.propertyImageUrl ? (
+        <img
+          src={lead.propertyImageUrl}
+          alt={lead.propertyTitle || 'Proprietate Storia'}
+          className="h-full w-full object-cover object-center"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#10231f,#dff5ea)]">
+          <Home className="h-12 w-12 text-white/75" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StoriaLeadDetailCard({
   lead,
   onUpdate,
+  onAddLead,
+  isAdded,
   className,
 }: {
   lead: StoriaInboxLead;
   onUpdate: (lead: StoriaInboxLead, data: Partial<Pick<StoriaInboxLead, 'status' | 'unread'>>) => void;
+  onAddLead: (lead: StoriaInboxLead) => void;
+  isAdded: boolean;
   className?: string;
 }) {
   return (
-    <Card className={cn('overflow-hidden rounded-lg border-slate-200 bg-white text-slate-950 shadow-sm', className)}>
+    <Card className={cn('overflow-hidden rounded-[18px] border-slate-200 bg-white text-slate-950 shadow-[0_26px_80px_-58px_rgba(15,23,42,0.85)]', className)}>
       <CardContent className="flex min-h-[calc(100vh-184px)] flex-col p-0">
-        <div className="px-4 py-4 sm:px-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <PropertyThumb lead={lead} size="xl" />
+        <div className="bg-[linear-gradient(135deg,#0f241f_0%,#18372f_48%,#f8fafc_48%,#ffffff_100%)] px-5 py-5">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)] xl:items-center">
+            <div className="flex min-w-0 items-center gap-4 text-white">
+              <PropertyThumb lead={lead} size="desktopHero" />
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-semibold">{lead.senderName}</h2>
-                  <Badge className={cn('border px-2 py-0 text-[10px] uppercase hover:bg-transparent', STATUS_TONES[lead.status])}>
-                    {STATUS_LABELS[lead.status]}
-                  </Badge>
-                  {lead.unread && (
-                    <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">Necitit</Badge>
-                  )}
+                <div className="flex min-w-0 flex-wrap items-center gap-3">
+                  <h2 className="min-w-0 truncate text-3xl font-semibold leading-tight">{lead.senderName}</h2>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9 shrink-0 rounded-full border-white/25 bg-white/12 px-3 text-white shadow-[0_12px_30px_-22px_rgba(0,0,0,0.8)] backdrop-blur hover:bg-white/20"
+                    onClick={() => onAddLead(lead)}
+                    disabled={isAdded}
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {isAdded ? 'Adaugat' : 'Adauga lead'}
+                  </Button>
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
+                <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-5 text-white/72">
                   {lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || lead.remoteAdvertUuid || ''}`}
                 </p>
-                <p className="mt-1 truncate text-xs text-slate-400">Conversatie #{lead.conversationId}</p>
+                <p className="mt-2 truncate text-xs text-white/45">Conversatie #{lead.conversationId}</p>
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                onClick={() => onUpdate(lead, { unread: false })}
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Marcheaza citit
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                onClick={() => onUpdate(lead, { status: lead.status === 'inchis' ? 'in_lucru' : 'inchis' })}
-              >
-                {lead.status === 'inchis' ? 'Redeschide' : 'Inchide'}
-              </Button>
+            <div className="rounded-[16px] border border-slate-200 bg-white/92 p-4 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.8)] backdrop-blur">
+              <div className="flex min-w-0 items-center gap-3">
+                <PropertyThumb lead={lead} size="lg" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                    <Home className="h-4 w-4" />
+                    Proprietate
+                  </div>
+                  <p className="mt-1 truncate text-base font-semibold">{lead.propertyTitle || 'Anunt Storia neasociat local'}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">Remote ad: {lead.remoteAdId || lead.remoteAdvertUuid || 'necunoscut'}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {lead.propertyId && (
+                  <Button asChild size="sm" variant="outline" className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+                    <Link href={`/properties/${lead.propertyId}`}>
+                      CRM
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+                {lead.propertyUrl && (
+                  <Button asChild size="sm" variant="outline" className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+                    <Link href={lead.propertyUrl} target="_blank" rel="noopener noreferrer">
+                      Storia
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+                {getWhatsAppUrl(lead.senderPhone) && (
+                  <Button asChild size="sm" variant="outline" className="h-9 rounded-full border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100">
+                    <a href={getWhatsAppUrl(lead.senderPhone)} target="_blank" rel="noopener noreferrer">
+                      WhatsApp
+                      <MessageSquare className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -600,7 +604,6 @@ function StoriaLeadDetailCard({
             <DetailTile icon={<MessageSquare className="h-4 w-4" />} label="Mesaje" value={String(lead.messages.length)} />
           </div>
 
-          <PropertyInfoCard lead={lead} />
         </div>
 
         <MessageThread lead={lead} />
@@ -611,7 +614,7 @@ function StoriaLeadDetailCard({
 
 function DetailTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="min-w-0 rounded-[14px] border border-slate-200 bg-white/92 p-4 shadow-[0_16px_42px_-36px_rgba(15,23,42,0.85)] backdrop-blur">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
         {icon}
         {label}
@@ -623,54 +626,16 @@ function DetailTile({ icon, label, value }: { icon: ReactNode; label: string; va
   );
 }
 
-function PropertyInfoCard({ lead }: { lead: StoriaInboxLead }) {
-  return (
-    <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <PropertyThumb lead={lead} size="lg" />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-              <Home className="h-4 w-4" />
-              Proprietate
-            </div>
-            <p className="mt-2 truncate text-base font-semibold">{lead.propertyTitle || 'Anunt Storia neasociat local'}</p>
-            <p className="mt-1 text-sm text-slate-500">Remote ad: {lead.remoteAdId || lead.remoteAdvertUuid || 'necunoscut'}</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {lead.propertyId && (
-            <Button asChild size="sm" variant="outline" className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
-              <Link href={`/properties/${lead.propertyId}`}>
-                CRM
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          )}
-          {lead.propertyUrl && (
-            <Button asChild size="sm" variant="outline" className="h-9 rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
-              <Link href={lead.propertyUrl} target="_blank" rel="noopener noreferrer">
-                Storia
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function MessageThread({ lead }: { lead: StoriaInboxLead }) {
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-5">
+    <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-5 py-5">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Mesaje primite</p>
         <p className="text-xs text-slate-500">{lead.messages.length} mesaje</p>
       </div>
       <div className="space-y-3">
         {lead.messages.map((message) => (
-          <div key={message.id} className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-950 shadow-sm">
+          <div key={message.id} className="rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-slate-950 shadow-[0_18px_45px_-38px_rgba(15,23,42,0.9)]">
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
               <span className="font-semibold text-slate-700">{message.senderName || lead.senderName}</span>
               <span>{formatDate(message.createdAt)}</span>
@@ -683,9 +648,13 @@ function MessageThread({ lead }: { lead: StoriaInboxLead }) {
   );
 }
 
-function PropertyThumb({ lead, size }: { lead: StoriaInboxLead; size: 'sm' | 'md' | 'lg' | 'xl' | 'modal' }) {
+function PropertyThumb({ lead, size }: { lead: StoriaInboxLead; size: 'sm' | 'md' | 'lg' | 'xl' | 'modal' | 'chat' | 'desktopHero' }) {
   const sizeClass =
-    size === 'modal'
+    size === 'desktopHero'
+      ? 'h-24 w-24 rounded-[22px] border-white/20 shadow-[0_20px_45px_-24px_rgba(0,0,0,0.7)]'
+      : size === 'chat'
+      ? 'h-14 w-14 rounded-full'
+      : size === 'modal'
       ? 'h-24 w-24 rounded-[22px]'
       : size === 'xl'
         ? 'h-14 w-14 rounded-lg'
