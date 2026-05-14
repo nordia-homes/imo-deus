@@ -94,11 +94,16 @@ function initialPriority(entry: OwnerListingSourceUrl, source: OwnerListingSourc
 async function ensureFrontierJobs(scopeKey?: string | null) {
   const scopes = listOwnerListingScopes().filter((scope) => !scopeKey || scope.key === scopeKey);
   const timestamp = nowIso();
+  const activeImoradarJobIds = new Set<string>();
 
   for (const scope of scopes) {
     const batch = adminDb.batch();
     for (const entry of sourceUrlsForScope(scope)) {
       const id = jobId(scope.key, entry.source, entry.url);
+      if (entry.source === 'imoradar24') {
+        activeImoradarJobIds.add(id);
+      }
+
       const ref = adminDb.collection(FRONTIER_COLLECTION).doc(id);
       batch.set(
         ref,
@@ -128,6 +133,56 @@ async function ensureFrontierJobs(scopeKey?: string | null) {
         { merge: true }
       );
     }
+    await batch.commit();
+  }
+
+  await retireObsoleteImoradarFrontierJobs(activeImoradarJobIds, scopes.map((scope) => scope.key), timestamp);
+}
+
+async function retireObsoleteImoradarFrontierJobs(activeJobIds: Set<string>, scopeKeys: string[], timestamp: string) {
+  if (!activeJobIds.size || !scopeKeys.length) {
+    return;
+  }
+
+  const snapshot = await adminDb
+    .collection(FRONTIER_COLLECTION)
+    .where('source', '==', 'imoradar24')
+    .limit(500)
+    .get();
+
+  let batch = adminDb.batch();
+  let pendingWrites = 0;
+  const obsoleteNextRunAt = addMs(timestamp, 30 * 24 * 60 * 60 * 1000);
+
+  for (const docSnapshot of snapshot.docs) {
+    const job = docSnapshot.data() as Partial<OwnerListingScrapeFrontierJob>;
+    if (!job.scopeKey || !scopeKeys.includes(job.scopeKey) || activeJobIds.has(docSnapshot.id)) {
+      continue;
+    }
+
+    batch.set(
+      docSnapshot.ref,
+      {
+        status: 'failed',
+        lastError: 'Obsolete Imoradar URL replaced by canonical route',
+        lockedAt: FieldValue.delete(),
+        lockedBy: FieldValue.delete(),
+        nextRunAt: obsoleteNextRunAt,
+        updatedAt: timestamp,
+        firestoreUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    pendingWrites += 1;
+
+    if (pendingWrites >= 400) {
+      await batch.commit();
+      batch = adminDb.batch();
+      pendingWrites = 0;
+    }
+  }
+
+  if (pendingWrites) {
     await batch.commit();
   }
 }
