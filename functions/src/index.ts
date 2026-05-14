@@ -114,38 +114,45 @@ export const storiaWebhookAck = onRequest(
   {
     region: 'us-central1',
     memory: '256MiB',
-    timeoutSeconds: 10,
+    timeoutSeconds: 15,
     minInstances: 1,
   },
-  (request, response) => {
-    // Return the acknowledgment first so OLX/Storia webhook validation stays
-    // comfortably below the 2-second timeout.
-    response.status(200).json({
-      ok: true,
-      provider: 'storia',
-      method: request.method,
-      receivedAt: new Date().toISOString(),
-    });
-
+  async (request, response) => {
     const contentType = request.get('content-type') || 'application/json';
     const signature = request.get('x-signature') || '';
     const userAgent = request.get('user-agent') || null;
+    let forwardStatus: number | null = null;
+    let forwardError: string | null = null;
 
     if (request.method === 'POST' && request.rawBody?.length) {
       const forwardedBody = request.rawBody.toString('utf8');
-      void fetch(STORIA_WEBHOOK_FORWARD_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': contentType,
-          'x-signature': signature,
-          'user-agent': userAgent || 'olx-group-api',
-        },
-        body: forwardedBody,
-      }).catch((error) => {
-        logger.error('Storia webhook forward failed.', {
-          message: error instanceof Error ? error.message : String(error),
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const forwardResponse = await fetch(STORIA_WEBHOOK_FORWARD_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': contentType,
+            'x-signature': signature,
+            'user-agent': userAgent || 'olx-group-api',
+          },
+          body: forwardedBody,
+          signal: controller.signal,
         });
-      });
+        forwardStatus = forwardResponse.status;
+
+        if (!forwardResponse.ok) {
+          forwardError = await forwardResponse.text().catch(() => `HTTP ${forwardResponse.status}`);
+        }
+      } catch (error) {
+        forwardError = error instanceof Error ? error.message : String(error);
+        logger.error('Storia webhook forward failed.', {
+          message: forwardError,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
     logger.info('Storia webhook acknowledgment sent.', {
@@ -153,6 +160,16 @@ export const storiaWebhookAck = onRequest(
       userAgent,
       hasSignature: Boolean(signature),
       bodyPresent: Boolean(request.rawBody?.length),
+      forwardStatus,
+      forwardError,
+    });
+
+    response.status(200).json({
+      ok: true,
+      provider: 'storia',
+      method: request.method,
+      receivedAt: new Date().toISOString(),
+      forwarded: request.method === 'POST' && Boolean(request.rawBody?.length),
     });
   }
 );

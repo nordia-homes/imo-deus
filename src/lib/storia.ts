@@ -246,6 +246,22 @@ function normalizeStoriaPublicUrl(rawUrl?: string | null, title?: string | null)
   return `${STORIA_SITE_URL}/${normalized.replace(/^\/+/, '')}`;
 }
 
+function extractStoriaAdIdFromUrl(rawUrl?: string | null) {
+  const normalized = (rawUrl || '').trim();
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized.startsWith('http') ? normalized : `${STORIA_SITE_URL}/${normalized.replace(/^\/+/, '')}`);
+    const lastSegment = decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || '');
+    const match = lastSegment.match(/(?:^|-)([A-Za-z0-9]{5,32})(?:\.html)?$/);
+    return match?.[1] || null;
+  } catch {
+    const lastSegment = normalized.split(/[/?#]/).filter(Boolean).pop() || '';
+    const match = lastSegment.match(/(?:^|-)([A-Za-z0-9]{5,32})(?:\.html)?$/);
+    return match?.[1] || null;
+  }
+}
+
 function getAdvertMetadataState(metadata?: AdvertMetadataResponse | null) {
   const state = metadata?.data?.state || null;
 
@@ -796,8 +812,10 @@ async function persistPropertyPublishState(params: {
   } = params;
 
   const promotionStatus = errorMessage ? 'error' : mapRemoteCodeToPromotionStatus(remoteCode);
+  const remoteAdId = extractStoriaAdIdFromUrl(remoteUrl);
   const storiaProfilePatch = compactObject({
     remoteUuid,
+    remoteAdId,
     remoteUrl,
     ...(categoryUrn ? { categoryUrn } : {}),
     ...(market ? { market } : {}),
@@ -815,6 +833,7 @@ async function persistPropertyPublishState(params: {
           lastSync: nowIso(),
           link: remoteUrl || null,
           remoteId: remoteUuid || null,
+          remoteAdId: remoteAdId || null,
           errorMessage: errorMessage || null,
           remoteState: remoteCode || null,
         },
@@ -1734,9 +1753,38 @@ async function findStoriaPropertySnapshotsForIncomingMessage(notification: Stori
       await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', identifier).get()
     );
     addSnapshotDocs(
+      await adminDb.collectionGroup('properties').where('promotions.storia.remoteAdId', '==', identifier).get()
+    );
+    addSnapshotDocs(
       await adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteUuid', '==', identifier).get()
     );
+    addSnapshotDocs(
+      await adminDb.collectionGroup('properties').where('portalProfiles.storia.remoteAdId', '==', identifier).get()
+    );
   }
+
+  if (docsByPath.size || !data.ad_id) {
+    return Array.from(docsByPath.values());
+  }
+
+  const remoteAdId = String(data.ad_id);
+  const publishedSnapshot = await adminDb
+    .collectionGroup('properties')
+    .where('promotions.storia.status', '==', 'published')
+    .limit(500)
+    .get();
+
+  publishedSnapshot.docs.forEach((docSnapshot) => {
+    const property = docSnapshot.data() as Property;
+    const candidates = [
+      property.portalProfiles?.storia?.remoteUrl,
+      property.promotions?.storia?.link,
+    ];
+    const hasMatchingUrl = candidates.some((url) => extractStoriaAdIdFromUrl(url) === remoteAdId);
+    if (hasMatchingUrl) {
+      docsByPath.set(docSnapshot.ref.path, docSnapshot);
+    }
+  });
 
   return Array.from(docsByPath.values());
 }
@@ -1750,11 +1798,16 @@ async function resolveFallbackAgencyIdForIncomingMessage() {
   const integrationsSnapshot = await adminDb
     .collection(PRIVATE_COLLECTION)
     .where('provider', '==', STORIA_PROVIDER)
-    .limit(2)
     .get();
 
-  if (integrationsSnapshot.size === 1) {
-    const integration = integrationsSnapshot.docs[0].data() as StoriaIntegrationPrivate;
+  const integrations = integrationsSnapshot.docs
+    .map((docSnapshot) => docSnapshot.data() as StoriaIntegrationPrivate)
+    .filter((integration) => integration.agencyId && integration.accessToken);
+  const leadReadyIntegrations = integrations.filter((integration) => integration.hasLeadScopes !== false);
+  const candidates = leadReadyIntegrations.length ? leadReadyIntegrations : integrations;
+
+  if (candidates.length === 1) {
+    const integration = candidates[0];
     return integration.agencyId || null;
   }
 
@@ -1800,6 +1853,13 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
   const senderPhone = data.sender_phone || null;
   const remoteAdId = data.ad_id ?? null;
   const remoteAdvertUuid = data.advert_uuid || property?.portalProfiles?.storia?.remoteUuid || null;
+  const propertyRemoteAdId =
+    remoteAdId ||
+    property?.portalProfiles?.storia?.remoteAdId ||
+    property?.promotions?.storia?.remoteAdId ||
+    extractStoriaAdIdFromUrl(property?.portalProfiles?.storia?.remoteUrl) ||
+    extractStoriaAdIdFromUrl(property?.promotions?.storia?.link) ||
+    null;
   const leadRef = adminDb
     .collection('agencies')
     .doc(agencyId)
@@ -1831,7 +1891,7 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
         provider: STORIA_PROVIDER,
         source: 'storia_incoming_message',
         conversationId,
-        remoteAdId,
+        remoteAdId: propertyRemoteAdId,
         remoteAdvertUuid,
         propertyId: property?.id || current?.propertyId || null,
         propertyTitle: property?.title || current?.propertyTitle || null,

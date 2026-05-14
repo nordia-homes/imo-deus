@@ -73,7 +73,7 @@ export default function StoriaInboxPage() {
     );
   }, [agencyId, firestore]);
 
-  const { data: leads, isLoading } = useCollection<StoriaInboxLead>(inboxQuery);
+  const { data: leads, isLoading, error } = useCollection<StoriaInboxLead>(inboxQuery);
   const sortedLeads = useMemo(() => leads || [], [leads]);
   const selectedLead = useMemo(
     () => sortedLeads.find((lead) => lead.id === selectedId) || sortedLeads[0] || null,
@@ -151,6 +151,14 @@ export default function StoriaInboxPage() {
                     <Skeleton className="h-24 bg-white/10" />
                     <Skeleton className="h-24 bg-white/10" />
                     <Skeleton className="h-24 bg-white/10" />
+                  </div>
+                ) : error ? (
+                  <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
+                    <MessageSquare className="h-10 w-10 text-amber-200/75" />
+                    <p className="mt-4 text-base font-semibold">Inbox-ul Storia nu poate fi citit</p>
+                    <p className="mt-2 text-sm leading-6 text-white/55">
+                      Verifica permisiunile Firestore sau indexurile pentru colectia `storiaInboxLeads`.
+                    </p>
                   </div>
                 ) : sortedLeads.length === 0 ? (
                   <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">

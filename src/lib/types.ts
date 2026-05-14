@@ -6,6 +6,7 @@ export type PromotionStatus = {
   link?: string;
   views?: number;
   remoteId?: number | string;
+  remoteAdId?: number | string | null;
   errorMessage?: string;
   remoteState?: string;
 }
@@ -181,6 +182,7 @@ export type StoriaPortalProfile = {
   categoryUrn?: string | null;
   market?: 'primary' | 'secondary' | null;
   remoteUuid?: string | null;
+  remoteAdId?: string | number | null;
   remoteUrl?: string | null;
   locationExact?: boolean;
   promotionSettings?: StoriaPromotionSettings | null;
