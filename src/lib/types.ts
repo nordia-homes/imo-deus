@@ -182,6 +182,8 @@ export type StoriaPortalProfile = {
   locationExact?: boolean;
   promotionSettings?: StoriaPromotionSettings | null;
   promotionRequests?: StoriaPromotionRequest[] | null;
+  promotionRequestTransactionIds?: string[] | null;
+  promotionRequestVasUuids?: string[] | null;
   activePromotions?: StoriaActivePromotion[] | null;
   lastPromotionSyncAt?: string | null;
   lastPromotionError?: string | null;
@@ -203,6 +205,8 @@ export type StoriaIntegrationPrivate = {
   accessToken: string;
   accessTokenExpiresAt: string | null;
   refreshToken: string | null;
+  scope?: string | null;
+  hasVasScopes?: boolean;
   connectedAt: string;
   updatedAt: string;
   authorizationState?: string | null;
@@ -212,9 +216,11 @@ export type StoriaIntegrationPrivate = {
 
 export type StoriaPromotionOption = {
   promotionCode: string;
+  displayName?: string | null;
   description?: string | null;
   durationDays?: number[];
   accountType?: string[];
+  showDurationSelector?: boolean;
 };
 
 export type StoriaPromotionSelection = {
@@ -242,6 +248,8 @@ export type StoriaActivePromotion = {
   promotionCode: string;
   durationDays?: number | null;
   status: string;
+  expiresAt?: string | null;
+  url?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   errorMessage?: string | null;

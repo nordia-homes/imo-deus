@@ -1478,7 +1478,7 @@ export function PublishCard({ property }: { property: Property }) {
         <div className="mb-4 text-center">
           <p className="text-lg font-semibold text-white">Promovare Storia.ro</p>
           <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-white/55">
-            Selecteaza promotiile dorite pentru anuntul Storia. Dupa activarea scope-urilor VAS, aceleasi alegeri se aplica direct din CRM.
+            Selecteaza promotiile dorite pentru anuntul publicat pe Storia.
           </p>
         </div>
 
@@ -1502,16 +1502,37 @@ export function PublishCard({ property }: { property: Property }) {
               const activeMatch = storiaActivePromotions.find((entry) => entry.promotionCode === promotion.promotionCode);
 
               return (
-                <div key={promotion.promotionCode} className="rounded-2xl border border-white/8 bg-[#1F2A37] p-4">
+                <div
+                  key={promotion.promotionCode}
+                  className={cn(
+                    "rounded-2xl border p-4 transition-colors",
+                    activeMatch
+                      ? "border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(110,231,183,0.12)]"
+                      : "border-white/8 bg-[#1F2A37]"
+                  )}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white">{promotion.promotionCode}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold tracking-[0.04em] text-white">
+                          {promotion.displayName || promotion.promotionCode}
+                        </p>
+                        {activeMatch ? (
+                          <span className="rounded-full border border-emerald-200/25 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">
+                            Activa
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="text-xs leading-5 text-white/60">
-                        {promotion.description || 'Promotie disponibila prin VAS API pentru anunturile Storia.'}
+                        {promotion.description || 'Promotie disponibila pentru anunturile Storia.'}
                       </p>
                       {activeMatch ? (
-                        <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200">
-                          Activ: {activeMatch.status}
+                        <p className="text-xs leading-5 text-emerald-100/85">
+                          {activeMatch.expiresAt
+                            ? `Activa pana la ${new Date(activeMatch.expiresAt).toLocaleDateString('ro-RO')}`
+                            : activeMatch.durationDays
+                              ? `Activa pentru ${activeMatch.durationDays} zile`
+                              : 'Promovarea este activa.'}
                         </p>
                       ) : null}
                     </div>
@@ -1523,7 +1544,7 @@ export function PublishCard({ property }: { property: Property }) {
                     />
                   </div>
 
-                  {Array.isArray(promotion.durationDays) && promotion.durationDays.length ? (
+                  {promotion.showDurationSelector !== false && Array.isArray(promotion.durationDays) && promotion.durationDays.length ? (
                     <div className="mt-3 space-y-2">
                       <Label className="text-white/75">Durata</Label>
                       <Select
@@ -1551,38 +1572,16 @@ export function PublishCard({ property }: { property: Property }) {
           </div>
         ) : null}
 
-        {storiaActivePromotions.length ? (
-          <div className="mt-4 rounded-2xl border border-emerald-300/18 bg-emerald-400/10 p-4">
-            <p className="text-sm font-semibold text-emerald-100">Promovari active sau cerute recent</p>
-            <div className="mt-3 space-y-2 text-xs text-emerald-50/90">
-              {storiaActivePromotions.slice(0, 6).map((promotion) => (
-                <div key={`${promotion.promotionCode}-${promotion.vasUuid || promotion.status}`} className="flex items-center justify-between gap-3">
-                  <span>{promotion.promotionCode}</span>
-                  <span>{promotion.durationDays ? `${promotion.durationDays} zile` : promotion.status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-4 flex flex-wrap justify-end gap-3">
-          <Button
-            type="button"
-            onClick={handleSaveStoriaPromotionSettings}
-            disabled={isSavingStoriaPromotions || isApplyingStoriaPromotions || isLoadingStoriaPromotions}
-            className="imobiliare-publish-modal__secondary-button border border-white/20 bg-white/10 text-white hover:bg-white/20"
-          >
-            {isSavingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Salveaza selectia
-          </Button>
+        <div className="mt-4 flex justify-end">
           <Button
             type="button"
             onClick={handleApplyStoriaPromotions}
             disabled={isApplyingStoriaPromotions || isSavingStoriaPromotions || isLoadingStoriaPromotions}
-            className="imobiliare-publish-modal__primary-button bg-[#e11d48] text-white hover:bg-[#be123c]"
+            className="imobiliare-publish-modal__primary-button storia-promotion-apply-button min-h-12 px-6 bg-[#e11d48] text-white hover:bg-[#be123c]"
+            style={{ color: '#ffffff' }}
           >
-            {isApplyingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4 text-amber-200" />}
-            Aplica promovarea
+            {isApplyingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" /> : <Zap className="mr-2 h-4 w-4 text-white" />}
+            <span className="text-white">Aplica promovarea</span>
           </Button>
         </div>
       </div>
@@ -2404,6 +2403,33 @@ export function PublishCard({ property }: { property: Property }) {
 
         [data-app-theme='agentfinder'] .imobiliare-publish-modal__primary-button:hover {
           background: linear-gradient(135deg, rgba(46, 77, 120, 0.98) 0%, rgba(31, 59, 96, 1) 100%) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button {
+          border: 1px solid rgba(20, 184, 166, 0.28) !important;
+          background: linear-gradient(135deg, #0f766e 0%, #16a34a 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 16px 34px -18px rgba(15, 118, 110, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button:hover {
+          background: linear-gradient(135deg, #0d9488 0%, #22c55e 100%) !important;
+          color: #ffffff !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button,
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button *,
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button:not(:hover),
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button:not(:hover) * {
+          color: #ffffff !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-promotion-apply-button:disabled {
+          border-color: rgba(148, 163, 184, 0.32) !important;
+          background: linear-gradient(145deg, rgba(226, 236, 249, 0.92), rgba(241, 245, 249, 0.92)) !important;
+          color: #ffffff !important;
+          box-shadow: none !important;
+          opacity: 1 !important;
         }
 
         [data-app-theme='agentfinder'] .imobiliare-publish-modal__secondary-button {

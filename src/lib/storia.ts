@@ -35,6 +35,16 @@ type StoriaWebhookNotification = {
   data?: {
     code?: string | null;
     url?: string | null;
+    promotion_code?: string | null;
+    advert_uuid?: string | null;
+    status?: string | null;
+    duration?: string | number | null;
+    expires_at?: string | null;
+    custom_fields?: {
+      url?: string | null;
+      olx_url?: string | null;
+      olx_id?: string | null;
+    } | null;
     detail?: string | null;
     title?: string | null;
     validation?: Array<{ field?: string; detail?: string; title?: string }>;
@@ -90,6 +100,7 @@ type AdvertMetadataResponse = {
 
 type StoriaPromotionsTaxonomyResponse = {
   site?: string;
+  error?: string;
   promotions?: Array<{
     promotion_code?: string;
     promotion_description?: string;
@@ -120,6 +131,12 @@ type StoriaActivePromotionsResponse = {
       promotion_code?: string;
       status?: string;
       duration_days?: number;
+      expires_at?: string;
+      custom_fields?: {
+        url?: string;
+        olx_url?: string;
+        olx_id?: string;
+      } | Record<string, unknown> | null;
       created_at?: string;
       updated_at?: string;
       error?: {
@@ -648,6 +665,8 @@ async function refreshAccessToken(agencyId: string, integration: StoriaIntegrati
     accessToken: tokenPayload.access_token,
     refreshToken: tokenPayload.refresh_token || integration.refreshToken,
     accessTokenExpiresAt: expiresAt,
+    scope: tokenPayload.scope || integration.scope || null,
+    hasVasScopes: hasRequiredVasScopes(tokenPayload.scope || integration.scope || null),
     updatedAt: nowIso(),
   };
 
@@ -841,6 +860,26 @@ function normalizePromotionRequests(requests?: StoriaPromotionRequest[] | null) 
   return (requests || []).filter((request) => Boolean(request?.transactionId && request?.promotionCode));
 }
 
+function getPromotionRequestTransactionIds(requests?: StoriaPromotionRequest[] | null) {
+  return Array.from(
+    new Set(
+      normalizePromotionRequests(requests)
+        .map((request) => request.transactionId)
+        .filter(Boolean)
+    )
+  ).slice(0, 50);
+}
+
+function getPromotionRequestVasUuids(requests?: StoriaPromotionRequest[] | null) {
+  return Array.from(
+    new Set(
+      normalizePromotionRequests(requests)
+        .map((request) => request.vasUuid || '')
+        .filter(Boolean)
+    )
+  ).slice(0, 50);
+}
+
 async function persistStoriaPromotionState(params: {
   agencyId: string;
   propertyId: string;
@@ -850,12 +889,18 @@ async function persistStoriaPromotionState(params: {
   lastPromotionError?: string | null;
 }) {
   const { agencyId, propertyId, promotionSettings, promotionRequests, activePromotions, lastPromotionError } = params;
+  const promotionRequestTransactionIds =
+    promotionRequests !== undefined ? getPromotionRequestTransactionIds(promotionRequests) : undefined;
+  const promotionRequestVasUuids =
+    promotionRequests !== undefined ? getPromotionRequestVasUuids(promotionRequests) : undefined;
   await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
     {
       portalProfiles: {
         storia: {
           ...(promotionSettings !== undefined ? { promotionSettings } : {}),
           ...(promotionRequests !== undefined ? { promotionRequests } : {}),
+          ...(promotionRequestTransactionIds !== undefined ? { promotionRequestTransactionIds } : {}),
+          ...(promotionRequestVasUuids !== undefined ? { promotionRequestVasUuids } : {}),
           ...(activePromotions !== undefined ? { activePromotions } : {}),
           ...(lastPromotionError !== undefined ? { lastPromotionError } : {}),
           lastPromotionSyncAt: nowIso(),
@@ -866,22 +911,109 @@ async function persistStoriaPromotionState(params: {
   );
 }
 
+function getStoriaPromotionPresentation(promotionCode: string, fallbackDescription?: string | null) {
+  switch (promotionCode) {
+    case 'bump':
+      return {
+        displayName: 'Reactualizare',
+        description: 'Anuntul va fi din nou primul in lista de anunturi.',
+        showDurationSelector: false,
+      };
+    case 'megabump':
+      return {
+        displayName: 'Super Reactualizare',
+        description: 'Obtineti 3 reactualizari la anunt si prima pozitie in lista.',
+        showDurationSelector: false,
+      };
+    case 'homepage':
+      return {
+        displayName: 'Pe prima pagina',
+        description: 'Anuntul va aparea pe prima pagina a site-ului.',
+        showDurationSelector: true,
+      };
+    case 'olx':
+      return {
+        displayName: 'Adauga automat si pe OLX.ro',
+        description: 'Anuntul va fi exportat catre OLX.ro pentru 30 de zile.',
+        showDurationSelector: false,
+      };
+    case 'top':
+      return {
+        displayName: 'TOP',
+        description: 'Anuntul va aparea alternativ intre primele 3 din lista.',
+        showDurationSelector: true,
+      };
+    default:
+      return {
+        displayName: promotionCode,
+        description: fallbackDescription || null,
+        showDurationSelector: true,
+      };
+  }
+}
+
 function mapPromotionOption(payload: NonNullable<StoriaPromotionsTaxonomyResponse['promotions']>[number]): StoriaPromotionOption {
+  const promotionCode = String(payload.promotion_code || '');
+  const presentation = getStoriaPromotionPresentation(promotionCode, payload.promotion_description || null);
   return {
-    promotionCode: String(payload.promotion_code || ''),
-    description: payload.promotion_description || null,
+    promotionCode,
+    displayName: presentation.displayName,
+    description: presentation.description,
     durationDays: Array.isArray(payload.duration_days) ? payload.duration_days.filter((value) => Number.isFinite(value)) : [],
     accountType: Array.isArray(payload.account_type) ? payload.account_type.filter((value) => typeof value === 'string') : [],
+    showDurationSelector: presentation.showDurationSelector,
   };
+}
+
+function mergePromotionOptions(options: StoriaPromotionOption[]) {
+  const byCode = new Map<string, StoriaPromotionOption>();
+
+  options.forEach((option) => {
+    const existing = byCode.get(option.promotionCode);
+    if (!existing) {
+      byCode.set(option.promotionCode, {
+        ...option,
+        durationDays: Array.from(new Set(option.durationDays || [])).sort((a, b) => a - b),
+        accountType: Array.from(new Set(option.accountType || [])).sort(),
+      });
+      return;
+    }
+
+    byCode.set(option.promotionCode, {
+      ...existing,
+      durationDays: Array.from(new Set([...(existing.durationDays || []), ...(option.durationDays || [])])).sort((a, b) => a - b),
+      accountType: Array.from(new Set([...(existing.accountType || []), ...(option.accountType || [])])).sort(),
+    });
+  });
+
+  const preferredOrder = ['bump', 'megabump', 'homepage', 'top', 'olx'];
+  return Array.from(byCode.values()).sort((a, b) => {
+    const aIndex = preferredOrder.indexOf(a.promotionCode);
+    const bIndex = preferredOrder.indexOf(b.promotionCode);
+    if (aIndex !== -1 || bIndex !== -1) {
+      return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) - (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+    }
+    return a.promotionCode.localeCompare(b.promotionCode);
+  });
 }
 
 function mapActivePromotion(payload: NonNullable<NonNullable<StoriaActivePromotionsResponse['data']>['vas']>[number]): StoriaActivePromotion {
   const errorObject = payload.error && typeof payload.error === 'object' ? payload.error as { detail?: unknown; title?: unknown } : null;
+  const customFields = payload.custom_fields && typeof payload.custom_fields === 'object'
+    ? payload.custom_fields as { url?: unknown; olx_url?: unknown }
+    : null;
   return {
     vasUuid: payload.uuid || null,
     promotionCode: String(payload.promotion_code || ''),
     durationDays: typeof payload.duration_days === 'number' ? payload.duration_days : null,
     status: String(payload.status || 'unknown'),
+    expiresAt: payload.expires_at || null,
+    url:
+      typeof customFields?.url === 'string'
+        ? customFields.url
+        : typeof customFields?.olx_url === 'string'
+          ? customFields.olx_url
+          : null,
     createdAt: payload.created_at || null,
     updatedAt: payload.updated_at || null,
     errorMessage:
@@ -904,6 +1036,16 @@ function wrapVasScopeError(error: unknown, actionLabel: string) {
     return wrapped;
   }
   return error;
+}
+
+function hasRequiredVasScopes(scope?: string | null) {
+  const scopes = new Set((scope || '').split(/\s+/).filter(Boolean));
+  return scopes.has('read:vas') && scopes.has('write:vas');
+}
+
+function parsePromotionDurationDays(value: string | number | null | undefined) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 export async function createStoriaAuthorization(params: { agencyId: string; requestedByUid: string }) {
@@ -948,6 +1090,8 @@ export async function finalizeStoriaAuthorization(params: { code: string; state:
     accessToken: tokenPayload.access_token,
     accessTokenExpiresAt: expiresAt,
     refreshToken: tokenPayload.refresh_token || null,
+    scope: tokenPayload.scope || null,
+    hasVasScopes: hasRequiredVasScopes(tokenPayload.scope || null),
     connectedAt: nowIso(),
     updatedAt: nowIso(),
     authorizationState: state,
@@ -993,16 +1137,25 @@ export async function getAgencyStoriaStatus(agencyId: string) {
       connectedAt: privateIntegration?.connectedAt || null,
       lastTokenRefreshAt: null,
       lastError: null,
+      hasVasScopes: Boolean(privateIntegration?.hasVasScopes),
     };
   }
-  return publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string };
+  return {
+    ...(publicSnapshot.data() as PortalIntegrationPublicStatus & { updatedAt?: string }),
+    hasVasScopes: Boolean(privateIntegration?.hasVasScopes),
+  };
 }
 
 export async function getAvailableStoriaPromotions() {
-  const payload = await storiaTaxonomyRequest<StoriaPromotionsTaxonomyResponse>(`/taxonomy/v1/promotions/${encodeURIComponent(STORIA_SITE_URN)}`);
-  return (payload.promotions || [])
-    .map(mapPromotionOption)
-    .filter((item) => Boolean(item.promotionCode));
+  const payload = await storiaTaxonomyRequest<StoriaPromotionsTaxonomyResponse>(`/taxonomy/v1/promotions/${STORIA_SITE_URN}`);
+  if (payload.error) {
+    throw new Error(`Storia nu a returnat lista de promovari: ${payload.error}`);
+  }
+  return mergePromotionOptions(
+    (payload.promotions || [])
+      .map(mapPromotionOption)
+      .filter((item) => Boolean(item.promotionCode))
+  );
 }
 
 export async function getPropertyStoriaPromotions(params: { agencyId: string; propertyId: string }) {
@@ -1154,6 +1307,15 @@ export async function applyStoriaPromotions(params: {
       createdAt: nowIso(),
       updatedAt: nowIso(),
       errorMessage: null,
+    });
+
+    await persistStoriaPromotionState({
+      agencyId,
+      propertyId,
+      promotionSettings: normalizedSettings,
+      promotionRequests: nextRequests.filter((request) => Boolean(request.transactionId)).slice(0, 20),
+      activePromotions: property.portalProfiles?.storia?.activePromotions || [],
+      lastPromotionError: null,
     });
   }
 
@@ -1471,6 +1633,44 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
   };
 }
 
+async function findStoriaPropertySnapshotsForVas(notification: StoriaWebhookNotification) {
+  const docsByPath = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  const addSnapshotDocs = (snapshot: FirebaseFirestore.QuerySnapshot) => {
+    snapshot.docs.forEach((docSnapshot) => {
+      docsByPath.set(docSnapshot.ref.path, docSnapshot);
+    });
+  };
+
+  const advertUuid = notification.data?.advert_uuid || '';
+  if (advertUuid) {
+    addSnapshotDocs(
+      await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', advertUuid).get()
+    );
+  }
+
+  const transactionId = notification.transaction_id || '';
+  if (transactionId) {
+    addSnapshotDocs(
+      await adminDb
+        .collectionGroup('properties')
+        .where('portalProfiles.storia.promotionRequestTransactionIds', 'array-contains', transactionId)
+        .get()
+    );
+  }
+
+  const vasUuid = notification.object_id || '';
+  if (vasUuid) {
+    addSnapshotDocs(
+      await adminDb
+        .collectionGroup('properties')
+        .where('portalProfiles.storia.promotionRequestVasUuids', 'array-contains', vasUuid)
+        .get()
+    );
+  }
+
+  return Array.from(docsByPath.values());
+}
+
 export async function handleStoriaWebhookNotification(notification: StoriaWebhookNotification, signatureHeader?: string | null) {
   const objectId = notification.object_id || '';
   const transactionId = notification.transaction_id || '';
@@ -1486,11 +1686,6 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
     }
   }
 
-  const snapshot = await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', objectId).get();
-  if (snapshot.empty) {
-    return { matched: 0 };
-  }
-
   const errorMessage =
     notification.error_message ||
     notification.data?.detail ||
@@ -1498,34 +1693,58 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
     null;
 
   if ((notification.flow || '').toLowerCase().includes('vas')) {
+    const docs = await findStoriaPropertySnapshotsForVas(notification);
+    if (!docs.length) {
+      return { matched: 0 };
+    }
+
     const batch = adminDb.batch();
-    snapshot.docs.forEach((docSnapshot) => {
+    docs.forEach((docSnapshot) => {
       const property = { id: docSnapshot.id, ...docSnapshot.data() } as Property;
       const currentRequests = normalizePromotionRequests(property.portalProfiles?.storia?.promotionRequests);
       const currentPromotions = property.portalProfiles?.storia?.activePromotions || [];
-      const matchedRequest = currentRequests.find((request) => request.transactionId === transactionId);
+      const matchedRequest = currentRequests.find((request) =>
+        request.transactionId === transactionId || (objectId && request.vasUuid === objectId)
+      );
+      const notificationPromotionCode = notification.data?.promotion_code || matchedRequest?.promotionCode || '';
+      const notificationStatus = notification.data?.status || (errorMessage ? 'applied_failed' : 'applied');
+      const notificationDurationDays =
+        parsePromotionDurationDays(notification.data?.duration) ?? matchedRequest?.durationDays ?? null;
+      const notificationUrl =
+        notification.data?.custom_fields?.url ||
+        notification.data?.custom_fields?.olx_url ||
+        null;
+      const requestStatus: StoriaPromotionRequest['status'] = errorMessage
+        ? 'error'
+        : notificationStatus === 'applied'
+          ? 'applied'
+          : notificationStatus === 'requested'
+            ? 'requested'
+            : 'unknown';
       const nextRequests = currentRequests.map((request) =>
-        request.transactionId === transactionId
+        request.transactionId === transactionId || (objectId && request.vasUuid === objectId)
           ? {
               ...request,
-              vasUuid: request.vasUuid || null,
-              status: errorMessage ? 'error' : 'applied',
+              vasUuid: request.vasUuid || objectId || null,
+              status: requestStatus,
               updatedAt: nowIso(),
               errorMessage,
             }
           : request
       );
 
-      const promotionCode = matchedRequest?.promotionCode || '';
-      const durationDays = matchedRequest?.durationDays ?? null;
+      const promotionCode = notificationPromotionCode;
+      const durationDays = notificationDurationDays;
       const existingPromotionIndex = currentPromotions.findIndex((promotion) =>
-        matchedRequest?.vasUuid ? promotion.vasUuid === matchedRequest.vasUuid : promotion.promotionCode === promotionCode
+        objectId ? promotion.vasUuid === objectId : promotion.promotionCode === promotionCode
       );
       const nextPromotion: StoriaActivePromotion = {
-        vasUuid: matchedRequest?.vasUuid || null,
+        vasUuid: objectId || matchedRequest?.vasUuid || null,
         promotionCode,
         durationDays,
-        status: errorMessage ? 'error' : String(notification.event_type || 'applied'),
+        status: errorMessage ? 'error' : notificationStatus,
+        expiresAt: notification.data?.expires_at || null,
+        url: notificationUrl,
         createdAt: matchedRequest?.createdAt || nowIso(),
         updatedAt: nowIso(),
         errorMessage,
@@ -1543,6 +1762,8 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
           portalProfiles: {
             storia: {
               promotionRequests: nextRequests,
+              promotionRequestTransactionIds: getPromotionRequestTransactionIds(nextRequests),
+              promotionRequestVasUuids: getPromotionRequestVasUuids(nextRequests),
               activePromotions: nextPromotions,
               lastPromotionError: errorMessage,
               lastPromotionSyncAt: nowIso(),
@@ -1553,7 +1774,12 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
       );
     });
     await batch.commit();
-    return { matched: snapshot.size };
+    return { matched: docs.length };
+  }
+
+  const snapshot = await adminDb.collectionGroup('properties').where('promotions.storia.remoteId', '==', objectId).get();
+  if (snapshot.empty) {
+    return { matched: 0 };
   }
 
   const remoteCode = notification.data?.code || null;

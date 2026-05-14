@@ -13,6 +13,7 @@ type IntegrationStatus = {
   connectedAt?: string | null;
   lastTokenRefreshAt?: string | null;
   lastError?: string | null;
+  hasVasScopes?: boolean;
   role?: 'admin' | 'agent';
 };
 
@@ -219,6 +220,7 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
             <p>Conectarea OAuth este activa pentru agentia ta.</p>
             <p>Conectat la: {status.connectedAt ? new Date(status.connectedAt).toLocaleString('ro-RO') : '-'}</p>
             <p>Ultimul refresh token: {status.lastTokenRefreshAt ? new Date(status.lastTokenRefreshAt).toLocaleString('ro-RO') : '-'}</p>
+            <p>Promovari API: {status.hasVasScopes ? 'active' : 'necesita reconectare'}</p>
           </div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
@@ -229,6 +231,12 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
         {status?.lastError ? (
           <div className="rounded-xl border border-red-300/20 bg-red-400/10 p-3 text-sm text-red-100">
             {status.lastError}
+          </div>
+        ) : null}
+
+        {status?.connected && status.hasVasScopes === false ? (
+          <div className="rounded-xl border border-amber-300/20 bg-amber-400/10 p-3 text-sm text-amber-50">
+            Promovarile prin API au fost activate in aplicatia Storia, dar acest cont trebuie reconectat ca sa autorizeze noile scope-uri `read:vas` si `write:vas`.
           </div>
         ) : null}
 
@@ -271,6 +279,16 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
               <ExternalLink className="mr-2 h-4 w-4" />
               Deschide Storia
             </Button>
+            {status.hasVasScopes === false ? (
+              <Button
+                onClick={handleConnect}
+                disabled={!isAdmin || isSubmitting || isLoading}
+                className="w-full bg-white/10 border border-white/20 hover:bg-white/20 text-white"
+              >
+                {activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlugZap className="mr-2 h-4 w-4" />}
+                Reconecteaza pentru promovari
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               onClick={handleDisconnect}
