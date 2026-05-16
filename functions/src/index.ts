@@ -7,6 +7,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 const ownerListingsAppBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');
 const ownerListingsCronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECRET');
+const aiOutreachCronSecret = defineSecret('AI_OUTREACH_CRON_SECRET');
 const STORIA_WEBHOOK_FORWARD_URL = 'https://imodeus.ro/api/storia/webhook';
 const STORIA_PROVIDER = 'storia';
 const STORIA_SITE_URL = 'https://www.storia.ro';
@@ -345,6 +346,27 @@ async function postOwnerListingsEndpoint(
   return payload;
 }
 
+async function postAiOutreachEndpoint(appBaseUrl: string, cronSecret: string, path: string) {
+  const response = await fetch(`${appBaseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${cronSecret}`,
+    },
+  });
+
+  const payload = await response.text();
+  if (!response.ok) {
+    logger.error('AI outreach scheduled endpoint failed.', {
+      path,
+      status: response.status,
+      payload,
+    });
+    throw new Error(`${path} failed with status ${response.status}.`);
+  }
+
+  return payload;
+}
+
 export const ownerListingsBackgroundSync = onSchedule(
   {
     schedule: 'every 5 minutes',
@@ -385,6 +407,31 @@ export const ownerListingsBackgroundSync = onSchedule(
     logger.info('Owner listings frontier/enrichment sync completed.', {
       frontierPayload,
       enrichmentPayloads,
+    });
+  }
+);
+
+export const aiOutreachScheduledCallsDrain = onSchedule(
+  {
+    schedule: 'every 5 minutes',
+    timeZone: 'Europe/Bucharest',
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 120,
+    secrets: [ownerListingsAppBaseUrl, aiOutreachCronSecret],
+  },
+  async () => {
+    const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
+    const cronSecret = aiOutreachCronSecret.value();
+
+    const payload = await postAiOutreachEndpoint(
+      appBaseUrl,
+      cronSecret,
+      '/api/ai-outreach/calls/drain-scheduled'
+    );
+
+    logger.info('AI outreach scheduled calls drain completed.', {
+      payload,
     });
   }
 );

@@ -51,6 +51,22 @@ export type AiOutreachSettings = {
   updatedAt?: string;
 };
 
+export type AiOutreachOwnerListingStatus = {
+  id?: string;
+  agencyId: string;
+  ownerListingId: string;
+  latestAiCallId?: string | null;
+  aiOutreachStatus: AiOutreachStatus;
+  aiOutreachOutcome: AiOutreachOutcome;
+  aiOutreachUpdatedAt: string;
+  aiCollaborationStatus?: AiOutreachCallResult['collaborationStatus'];
+  aiAcceptedCommissionValue?: string | null;
+  aiDoNotCall?: boolean;
+  aiNextFollowUpAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type AiOutreachCallResult = {
   collaborationStatus?: 'yes' | 'no' | 'maybe' | 'call_later' | 'unknown';
   propertyAvailable?: 'yes' | 'no' | 'unknown';

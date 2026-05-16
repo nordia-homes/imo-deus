@@ -34,6 +34,8 @@ function buildAssistantOverrides(input: CreateVapiOutboundCallInput) {
       allowNegotiation: settings.allowNegotiation ? 'da' : 'nu',
       allowVerbalAgreement: settings.allowVerbalAgreement ? 'da' : 'nu',
       allowExactAddressCollection: settings.allowExactAddressCollection ? 'da' : 'nu',
+      recordCalls: settings.recordCalls ? 'da' : 'nu',
+      discloseAi: settings.discloseAi ? 'da' : 'nu',
     },
   };
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import { DEFAULT_AI_OUTREACH_SETTINGS, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 
 export const runtime = 'nodejs';
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const context = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const context = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const body = settingsSchema.parse(await request.json().catch(() => ({})));
     const ref = context.adminDb.collection('agencies').doc(context.agencyId).collection('aiOutreach').doc('settings');
     const current = await ref.get();

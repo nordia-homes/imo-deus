@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalizeVapiEndedReason } from '@/lib/ai-outreach/status';
 import { adminDb } from '@/firebase/admin';
 import type { AiOutreachCallResult, AiOutreachOutcome } from '@/lib/ai-outreach/types';
+import { updateAiOutreachOwnerListingStatus } from '@/lib/ai-outreach/server';
 
 export const runtime = 'nodejs';
 
@@ -13,23 +14,61 @@ function getNumber(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+function getRecord(value: unknown) {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+function getNestedRecord(payload: Record<string, unknown>, path: string[]) {
+  let current: unknown = payload;
+  for (const segment of path) {
+    const record = getRecord(current);
+    if (!record) return null;
+    current = record[segment];
+  }
+  return getRecord(current);
+}
+
+function getNestedString(payload: Record<string, unknown>, paths: string[][]) {
+  for (const path of paths) {
+    let current: unknown = payload;
+    for (const segment of path) {
+      const record = getRecord(current);
+      current = record?.[segment];
+    }
+    const value = getString(current);
+    if (value) return value;
+  }
+  return '';
+}
+
+function getNestedNumber(payload: Record<string, unknown>, paths: string[][]) {
+  for (const path of paths) {
+    let current: unknown = payload;
+    for (const segment of path) {
+      const record = getRecord(current);
+      current = record?.[segment];
+    }
+    const value = getNumber(current);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 function extractCallId(payload: Record<string, unknown>) {
-  const call = payload.call && typeof payload.call === 'object' ? (payload.call as Record<string, unknown>) : null;
-  const message = payload.message && typeof payload.message === 'object' ? (payload.message as Record<string, unknown>) : null;
-  const messageCall = message?.call && typeof message.call === 'object' ? (message.call as Record<string, unknown>) : null;
+  const call = getRecord(payload.call);
+  const messageCall = getNestedRecord(payload, ['message', 'call']);
 
   return getString(payload.callId) || getString(payload.id) || getString(call?.id) || getString(messageCall?.id);
 }
 
 function extractInternalCallId(payload: Record<string, unknown>) {
-  const call = payload.call && typeof payload.call === 'object' ? (payload.call as Record<string, unknown>) : null;
-  const metadata = call?.metadata && typeof call.metadata === 'object' ? (call.metadata as Record<string, unknown>) : null;
-  return getString(metadata?.aiOutreachCallId);
+  const metadata = getNestedRecord(payload, ['call', 'metadata']) || getNestedRecord(payload, ['message', 'call', 'metadata']);
+  return getString(metadata?.aiOutreachCallId) || getNestedString(payload, [['metadata', 'aiOutreachCallId']]);
 }
 
 function inferOutcome(payload: Record<string, unknown>): AiOutreachOutcome {
-  const analysis = payload.analysis && typeof payload.analysis === 'object' ? (payload.analysis as Record<string, unknown>) : null;
-  const structured = analysis?.structuredData && typeof analysis.structuredData === 'object' ? (analysis.structuredData as Record<string, unknown>) : null;
+  const analysis = getRecord(payload.analysis) || getNestedRecord(payload, ['message', 'analysis']);
+  const structured = getRecord(analysis?.structuredData);
   const explicitOutcome = getString(structured?.outcome) as AiOutreachOutcome;
   const known: AiOutreachOutcome[] = [
     'collaborates',
@@ -53,12 +92,12 @@ function inferOutcome(payload: Record<string, unknown>): AiOutreachOutcome {
     return explicitOutcome;
   }
 
-  return normalizeVapiEndedReason(getString(payload.endedReason));
+  return normalizeVapiEndedReason(getNestedString(payload, [['endedReason'], ['message', 'endedReason']]));
 }
 
 function extractResult(payload: Record<string, unknown>, outcome: AiOutreachOutcome): AiOutreachCallResult {
-  const analysis = payload.analysis && typeof payload.analysis === 'object' ? (payload.analysis as Record<string, unknown>) : null;
-  const structured = analysis?.structuredData && typeof analysis.structuredData === 'object' ? (analysis.structuredData as Record<string, unknown>) : null;
+  const analysis = getRecord(payload.analysis) || getNestedRecord(payload, ['message', 'analysis']);
+  const structured = getRecord(analysis?.structuredData);
 
   return {
     collaborationStatus:
@@ -107,8 +146,9 @@ export async function POST(request: NextRequest) {
   const callDoc = querySnapshot.docs[0];
   const callData = callDoc.data() as { agencyId?: string; ownerListingId?: string };
   const timestamp = new Date().toISOString();
-  const messageType = getString(payload.type) || getString((payload.message as Record<string, unknown> | undefined)?.type);
-  const isEnded = messageType.includes('end') || Boolean(payload.endedReason);
+  const messageType = getNestedString(payload, [['type'], ['message', 'type']]);
+  const endedReason = getNestedString(payload, [['endedReason'], ['message', 'endedReason']]);
+  const isEnded = messageType.includes('end') || Boolean(endedReason);
 
   const update: Record<string, unknown> = {
     updatedAt: timestamp,
@@ -125,32 +165,38 @@ export async function POST(request: NextRequest) {
     update.status = 'completed';
     update.outcome = outcome;
     update.endedAt = timestamp;
-    update.endedReason = getString(payload.endedReason) || null;
-    update.durationSeconds = getNumber(payload.durationSeconds);
-    update.cost = getNumber(payload.cost);
-    update.summary = getString(payload.summary) || getString((payload.analysis as Record<string, unknown> | undefined)?.summary);
-    update.transcript = getString(payload.transcript);
-    update.recordingUrl = getString(payload.recordingUrl) || null;
+    update.endedReason = endedReason || null;
+    update.durationSeconds = getNestedNumber(payload, [['durationSeconds'], ['duration'], ['message', 'durationSeconds'], ['message', 'duration']]);
+    update.cost = getNestedNumber(payload, [['cost'], ['message', 'cost']]);
+    update.summary = getNestedString(payload, [['summary'], ['analysis', 'summary'], ['message', 'summary'], ['message', 'analysis', 'summary']]);
+    update.transcript = getNestedString(payload, [['transcript'], ['artifact', 'transcript'], ['message', 'transcript'], ['message', 'artifact', 'transcript']]);
+    update.recordingUrl = getNestedString(payload, [['recordingUrl'], ['artifact', 'recordingUrl'], ['message', 'recordingUrl'], ['message', 'artifact', 'recordingUrl']]) || null;
     update.result = result;
 
-    if (callData.ownerListingId) {
-      await adminDb.collection('ownerListings').doc(callData.ownerListingId).set(
-        {
-          latestAiCallId: callDoc.id,
-          aiOutreachStatus: 'completed',
-          aiOutreachOutcome: outcome,
-          aiOutreachUpdatedAt: timestamp,
-          aiCollaborationStatus: result.collaborationStatus,
-          aiAcceptedCommissionValue: result.acceptedCommissionValue || null,
-          aiDoNotCall: Boolean(result.doNotCall),
-        },
-        { merge: true },
-      );
+    if (callData.agencyId && callData.ownerListingId) {
+      await updateAiOutreachOwnerListingStatus(adminDb, callData.agencyId, callData.ownerListingId, {
+        latestAiCallId: callDoc.id,
+        aiOutreachStatus: 'completed',
+        aiOutreachOutcome: outcome,
+        aiOutreachUpdatedAt: timestamp,
+        aiCollaborationStatus: result.collaborationStatus,
+        aiAcceptedCommissionValue: result.acceptedCommissionValue || null,
+        aiDoNotCall: Boolean(result.doNotCall),
+      });
     }
   } else if (messageType.includes('start') || messageType.includes('in-progress')) {
     update.status = 'calling';
     update.outcome = 'calling';
     update.startedAt = timestamp;
+
+    if (callData.agencyId && callData.ownerListingId) {
+      await updateAiOutreachOwnerListingStatus(adminDb, callData.agencyId, callData.ownerListingId, {
+        latestAiCallId: callDoc.id,
+        aiOutreachStatus: 'calling',
+        aiOutreachOutcome: 'calling',
+        aiOutreachUpdatedAt: timestamp,
+      });
+    }
   }
 
   await callDoc.ref.set(update, { merge: true });

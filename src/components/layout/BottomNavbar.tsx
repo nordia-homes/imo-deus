@@ -10,6 +10,7 @@ import {
   Check,
   Inbox,
   Palette,
+  PhoneCall,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const navItems = [
   { href: '/leads', label: 'Cumparatori', icon: Users },
   { href: '/inbox', label: 'Storia', icon: Inbox },
   { href: '/properties', label: 'Proprietati', icon: Building2 },
+  { href: '/ai-calls', label: 'Apeluri AI', icon: PhoneCall },
 ];
 
 const themeVisuals: Record<
@@ -84,22 +86,23 @@ export function BottomNavbar() {
   return (
     <>
       <nav className="agentfinder-bottom-nav fixed bottom-2 left-4 right-4 z-40 h-16 overflow-hidden rounded-2xl border bg-background/80 shadow-2xl backdrop-blur-lg md:hidden">
-        <div className="agentfinder-bottom-nav__inner grid h-full grid-cols-5">
+        <div className="agentfinder-bottom-nav__inner grid h-full grid-cols-6">
           {navItems.map((item) => {
             const isActive = currentPath.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label={item.label}
+                title={item.label}
                 className={cn(
-                  'agentfinder-bottom-nav__item flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground transition-colors hover:bg-accent/50',
+                  'agentfinder-bottom-nav__item flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent/50',
                   isActive && 'agentfinder-bottom-nav__item--active text-primary font-semibold'
                 )}
               >
                 <span className="agentfinder-bottom-nav__icon">
                   <item.icon className="h-5 w-5" />
                 </span>
-                <span className="agentfinder-bottom-nav__label">{item.label}</span>
               </Link>
             );
           })}
@@ -107,13 +110,13 @@ export function BottomNavbar() {
           <button
             type="button"
             aria-label="Deschide setarile de aspect"
-            className="agentfinder-bottom-nav__item agentfinder-bottom-nav__aspect flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground transition-colors hover:bg-accent/50"
+            title="Aspect"
+            className="agentfinder-bottom-nav__item agentfinder-bottom-nav__aspect flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent/50"
             onClick={() => setIsAppearanceOpen(true)}
           >
             <span className="agentfinder-bottom-nav__icon">
               <Palette className="h-5 w-5" />
             </span>
-            <span className="agentfinder-bottom-nav__label">Aspect</span>
           </button>
         </div>
       </nav>

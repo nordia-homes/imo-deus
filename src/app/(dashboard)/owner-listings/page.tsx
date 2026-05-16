@@ -148,7 +148,7 @@ export default function OwnerListingsPage() {
     if (aiStatusFilter !== 'all') {
       result = result.filter((listing) => {
         const latestCall = aiCallsByListingId.get(listing.id);
-        const outcome = latestCall?.outcome || listing.aiOutreachOutcome || 'uncalled';
+        const outcome = latestCall?.outcome || 'uncalled';
         return outcome === aiStatusFilter;
       });
     }
@@ -884,7 +884,14 @@ export default function OwnerListingsPage() {
                   aiOutreachUpdatedAt: latestAiCall.updatedAt,
                   aiDoNotCall: latestAiCall.result?.doNotCall,
                 }
-              : listing;
+              : {
+                  ...listing,
+                  latestAiCallId: undefined,
+                  aiOutreachStatus: undefined,
+                  aiOutreachOutcome: undefined,
+                  aiOutreachUpdatedAt: undefined,
+                  aiDoNotCall: undefined,
+                };
             return (
               <OwnerListingCard
                 key={listing.id || index}

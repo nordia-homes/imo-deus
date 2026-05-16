@@ -17,6 +17,31 @@ env:
     availability:
       - RUNTIME
 
+  - variable: VAPI_API_KEY
+    secret: VAPI_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: VAPI_WEBHOOK_SECRET
+    secret: VAPI_WEBHOOK_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID
+    secret: AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID
+    availability:
+      - RUNTIME
+
+  - variable: AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID
+    secret: AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID
+    availability:
+      - RUNTIME
+
+  - variable: AI_OUTREACH_CRON_SECRET
+    secret: AI_OUTREACH_CRON_SECRET
+    availability:
+      - RUNTIME
+
   - variable: OPENAI_ASSISTANT_MODEL
     value: gpt-4.1-mini
     availability:
