@@ -999,13 +999,13 @@
     color: hsl(var(--muted-foreground)) !important;
   }
 
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/5']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/10']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/15']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/20']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.04]']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.05]']:hover,
-  [data-app-theme='agentfinder'] [class*='hover:bg-white/[0.08]']:hover {
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/5']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/10']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/15']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/20']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/[0.04]']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/[0.05]']:hover,
+  [data-app-theme='agentfinder'] [class*='hover\:bg-white\/[0.08]']:hover {
     background: hsl(var(--accent)) !important;
   }
 
@@ -3136,7 +3136,7 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card button.text-white\/80,
-  [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card a.bg-white\/10 {
+  [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card .bg-white\/10[href] {
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.84)) !important;
     border-color: rgba(171, 190, 219, 0.72) !important;
@@ -3144,7 +3144,7 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card button.text-white\/80:hover,
-  [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card a.bg-white\/10:hover {
+  [data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card .bg-white\/10[href]:hover {
     background:
       linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(239, 246, 255, 0.94)) !important;
     color: #14532d !important;
@@ -4576,7 +4576,7 @@
   [data-app-theme='agentfinder'] .agentfinder-reports-page .text-primary,
   [data-app-theme='agentfinder'] .agentfinder-reports-page .text-primary\/75,
   [data-app-theme='agentfinder'] .agentfinder-reports-page .text-primary\/80,
-  [data-app-theme='agentfinder'] .agentfinder-reports-page svg.text-primary {
+  [data-app-theme='agentfinder'] .agentfinder-reports-page .text-primary:is(svg) {
     color: #178254 !important;
   }
 
