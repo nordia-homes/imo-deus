@@ -8,6 +8,7 @@ import { ro } from 'date-fns/locale';
 import {
   ArrowDownToLine,
   BedDouble,
+  Bot,
   Calendar,
   CheckCircle2,
   Clock,
@@ -24,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import type { CollaborationStatus, OwnerListing, OwnerListingContactOutcome, OwnerListingFavorite } from '@/components/owner-listings/types';
 import { extractPrice, extractRoomsValue, formatAreaValue, formatPriceNumber, isListingNew } from '@/components/owner-listings/utils';
+import { getAiOutreachOutcomeMeta } from '@/lib/ai-outreach/status';
 
 function FavoriteHeartIcon({ filled = false }: { filled?: boolean }) {
   return (
@@ -56,6 +58,7 @@ type OwnerListingCardProps = {
   onSetReserved?: (listing: OwnerListing) => void;
   onSetTaken?: (listing: OwnerListing) => void;
   onSetOutcome?: (listing: OwnerListing, outcome: OwnerListingContactOutcome) => void;
+  onAiBadgeClick?: (listing: OwnerListing) => void;
 };
 
 export function OwnerListingCard({
@@ -75,6 +78,7 @@ export function OwnerListingCard({
   onSetReserved,
   onSetTaken,
   onSetOutcome,
+  onAiBadgeClick,
 }: OwnerListingCardProps) {
   const locationDisplay = useMemo(() => {
     if (!listing.location) {
@@ -132,6 +136,16 @@ export function OwnerListingCard({
     ? 'border-white bg-white text-slate-950 shadow-[0_16px_30px_-20px_rgba(0,0,0,0.78)]'
     : 'border-white bg-white text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]';
   const showNewBadge = isListingNew(listing);
+  const aiOutcomeMeta = getAiOutreachOutcomeMeta(listing.aiOutreachOutcome);
+  const aiBadgeClassName = {
+    neutral: 'border-white/75 bg-white text-slate-800',
+    pending: 'border-amber-200 bg-amber-400 text-amber-950',
+    info: 'border-blue-200 bg-blue-500 text-white',
+    success: 'border-emerald-200 bg-emerald-500 text-white',
+    danger: 'border-rose-200 bg-rose-500 text-white',
+    warning: 'border-orange-200 bg-orange-500 text-white',
+    muted: 'border-slate-200 bg-slate-800 text-white',
+  }[aiOutcomeMeta.tone];
 
   let displayPrice = 'Pret negociabil';
   if (listing.price) {
@@ -294,6 +308,23 @@ export function OwnerListingCard({
               </div>
             ) : null}
           </div>
+
+          <button
+            type="button"
+            title="Vezi detalii apel AI"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAiBadgeClick?.(listing);
+            }}
+            className={cn(
+              'absolute bottom-3 left-3 inline-flex max-w-[calc(100%-6rem)] items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[0_18px_34px_-22px_rgba(15,23,42,0.95)] backdrop-blur transition-transform hover:scale-[1.02]',
+              aiBadgeClassName,
+            )}
+          >
+            <Bot className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{aiOutcomeMeta.shortLabel}</span>
+          </button>
 
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
             <button

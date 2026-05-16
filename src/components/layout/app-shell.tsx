@@ -23,6 +23,7 @@ import {
   Newspaper,
   BadgeCheck,
   Copyright,
+  PhoneCall,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -105,6 +106,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/owner-listings">
                         <Newspaper />
                         <span>Anunțuri Proprietari</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Apeluri AI" asChild isActive={currentPath.startsWith('/ai-calls')}>
+                    <Link href="/ai-calls">
+                        <PhoneCall />
+                        <span>Apeluri AI</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

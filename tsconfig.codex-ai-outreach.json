@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/lib/ai-outreach/**/*.ts",
+    "src/app/api/ai-outreach/**/*.ts",
+    "src/components/ai-outreach/**/*.tsx",
+    "src/app/(dashboard)/ai-calls/page.tsx",
+    "src/app/(dashboard)/owner-listings/page.tsx",
+    "src/components/owner-listings/owner-listing-card.tsx",
+    "src/components/owner-listings/types.ts",
+    "src/components/layout/app-shell.tsx"
+  ]
+}

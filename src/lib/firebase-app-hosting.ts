@@ -50,7 +50,7 @@ export type AppHostingDomain = {
 
 type DecodedTokenContext = {
   uid: string;
-  agencyId?: string;
+  agencyId: string;
   role: 'admin' | 'agent' | 'platform_admin' | undefined;
   adminDb: Firestore;
   adminAuth: AdminAuth;

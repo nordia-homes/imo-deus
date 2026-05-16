@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
+import { AiOutreachCallModal } from '@/components/ai-outreach/ai-outreach-call-modal';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
 import type { OwnerListing, OwnerListingFavorite, PropertyTypeFilter, SourceFilterValue, TransactionTypeFilter } from '@/components/owner-listings/types';
@@ -30,9 +31,11 @@ import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
+import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
 
 const LISTINGS_PER_PAGE = 100;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
+type AiStatusFilter = 'all' | 'uncalled' | AiOutreachOutcome;
 
 export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,11 +46,14 @@ export default function OwnerListingsPage() {
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue | null>(null);
+  const [aiStatusFilter, setAiStatusFilter] = useState<AiStatusFilter>('all');
   const [selectedScopeKey, setSelectedScopeKey] = useState<string>('');
   const [hasSelectedScopeManually, setHasSelectedScopeManually] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [propertyToImport, setPropertyToImport] = useState<Partial<Property> | null>(null);
+  const [selectedAiListing, setSelectedAiListing] = useState<OwnerListing | null>(null);
+  const [localAiCalls, setLocalAiCalls] = useState<AiOutreachCall[]>([]);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
@@ -69,9 +75,14 @@ export default function OwnerListingsPage() {
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
     [agencyId, firestore],
   );
+  const aiCallsQuery = useMemoFirebase(
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'aiOutreachCalls'), orderBy('createdAt', 'desc')) : null),
+    [agencyId, firestore],
+  );
 
   const { data: listings, isLoading } = useCollection<OwnerListing>(ownerListingsQuery);
   const { data: favorites } = useCollection<OwnerListingFavorite>(favoritesQuery);
+  const { data: aiCalls } = useCollection<AiOutreachCall>(aiCallsQuery);
 
   useEffect(() => {
     if (hasSelectedScopeManually) return;
@@ -92,6 +103,17 @@ export default function OwnerListingsPage() {
     }
     return map;
   }, [favorites]);
+
+  const aiCallsByListingId = useMemo(() => {
+    const map = new Map<string, AiOutreachCall>();
+    for (const call of [...localAiCalls, ...(aiCalls ?? [])]) {
+      const existing = map.get(call.ownerListingId);
+      if (!existing || new Date(call.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+        map.set(call.ownerListingId, call);
+      }
+    }
+    return map;
+  }, [aiCalls, localAiCalls]);
 
   const validFavoriteCount = useMemo(() => {
     if (!Array.isArray(listings) || !Array.isArray(favorites)) return 0;
@@ -122,6 +144,14 @@ export default function OwnerListingsPage() {
     }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
+
+    if (aiStatusFilter !== 'all') {
+      result = result.filter((listing) => {
+        const latestCall = aiCallsByListingId.get(listing.id);
+        const outcome = latestCall?.outcome || listing.aiOutreachOutcome || 'uncalled';
+        return outcome === aiStatusFilter;
+      });
+    }
 
     const normalizedSearchQuery = normalizeText(searchQuery);
     const numericSearchQuery = normalizeDigits(searchQuery);
@@ -195,11 +225,11 @@ export default function OwnerListingsPage() {
     });
 
     return result;
-  }, [constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter]);
+  }, [aiCallsByListingId, aiStatusFilter, constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roomsFilter, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, currentScope?.key]);
+  }, [searchQuery, roomsFilter, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, aiStatusFilter, currentScope?.key]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -217,6 +247,7 @@ export default function OwnerListingsPage() {
     setPriceMin('');
     setPriceMax('');
     setSourceFilter(null);
+    setAiStatusFilter('all');
   };
 
   const handleScopeChange = (value: string) => {
@@ -534,6 +565,27 @@ export default function OwnerListingsPage() {
       </div>
 
       <div>
+        <Label className="mb-2 block font-semibold">Status AI</Label>
+        <Select value={aiStatusFilter} onValueChange={(value) => setAiStatusFilter(value as AiStatusFilter)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toate statusurile AI</SelectItem>
+            <SelectItem value="uncalled">Nesunate</SelectItem>
+            <SelectItem value="queued">AI in asteptare</SelectItem>
+            <SelectItem value="calling">In apel</SelectItem>
+            <SelectItem value="collaborates">Colaboreaza</SelectItem>
+            <SelectItem value="does_not_collaborate">Nu colaboreaza</SelectItem>
+            <SelectItem value="call_later">Revino</SelectItem>
+            <SelectItem value="no_answer">Nu a raspuns</SelectItem>
+            <SelectItem value="invalid_number">Numar invalid</SelectItem>
+            <SelectItem value="do_not_call">Nu mai suna</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label className="mb-2 block font-semibold">Categorie</Label>
         <Select value={propertyTypeFilter} onValueChange={(value) => setPropertyTypeFilter(value as PropertyTypeFilter)}>
           <SelectTrigger>
@@ -770,6 +822,25 @@ export default function OwnerListingsPage() {
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
+          <div className="mt-3 flex max-w-xs items-center gap-2">
+            <Select value={aiStatusFilter} onValueChange={(value) => setAiStatusFilter(value as AiStatusFilter)}>
+              <SelectTrigger className={cn("h-11 rounded-2xl text-sm", isClassicTheme ? "border-white/20 bg-white/10 text-white" : "border-slate-200/80 bg-white/90")}>
+                <SelectValue placeholder="Status AI" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate statusurile AI</SelectItem>
+                <SelectItem value="uncalled">Nesunate</SelectItem>
+                <SelectItem value="queued">AI in asteptare</SelectItem>
+                <SelectItem value="calling">In apel</SelectItem>
+                <SelectItem value="collaborates">Colaboreaza</SelectItem>
+                <SelectItem value="does_not_collaborate">Nu colaboreaza</SelectItem>
+                <SelectItem value="call_later">Revino</SelectItem>
+                <SelectItem value="no_answer">Nu a raspuns</SelectItem>
+                <SelectItem value="invalid_number">Numar invalid</SelectItem>
+                <SelectItem value="do_not_call">Nu mai suna</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -803,10 +874,21 @@ export default function OwnerListingsPage() {
         {filteredListings.length > 0 ? (
           paginatedListings.map((listing, index) => {
             const favorite = favoritesByListingId.get(listing.id);
+            const latestAiCall = aiCallsByListingId.get(listing.id);
+            const listingWithAi = latestAiCall
+              ? {
+                  ...listing,
+                  latestAiCallId: latestAiCall.id,
+                  aiOutreachStatus: latestAiCall.status,
+                  aiOutreachOutcome: latestAiCall.outcome,
+                  aiOutreachUpdatedAt: latestAiCall.updatedAt,
+                  aiDoNotCall: latestAiCall.result?.doNotCall,
+                }
+              : listing;
             return (
               <OwnerListingCard
                 key={listing.id || index}
-                listing={listing}
+                listing={listingWithAi}
                 adminClassic={isClassicTheme}
                 favoriteMeta={favorite ?? null}
                 currentAgentId={user?.uid ?? null}
@@ -820,6 +902,7 @@ export default function OwnerListingsPage() {
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
+                onAiBadgeClick={setSelectedAiListing}
               />
             );
           })
@@ -845,6 +928,13 @@ export default function OwnerListingsPage() {
       ) : null}
 
       <AddPropertyDialog isOpen={isImportDialogOpen} onOpenChange={setIsImportDialogOpen} property={propertyToImport as Property | null} />
+      <AiOutreachCallModal
+        open={Boolean(selectedAiListing)}
+        onOpenChange={(open) => !open && setSelectedAiListing(null)}
+        listing={selectedAiListing}
+        latestCall={selectedAiListing ? aiCallsByListingId.get(selectedAiListing.id) ?? null : null}
+        onCallCreated={(call) => setLocalAiCalls((current) => [call, ...current.filter((item) => item.id !== call.id)])}
+      />
     </div>
   );
 }

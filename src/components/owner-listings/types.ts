@@ -1,5 +1,6 @@
 import type { OwnerListingSource } from '@/lib/owner-listings/types';
 import type { OwnerListingPropertyType, OwnerListingTransactionType } from '@/lib/owner-listings/types';
+import type { AiOutreachOutcome, AiOutreachStatus } from '@/lib/ai-outreach/types';
 
 export type PropertyTypeFilter = 'all' | 'apartamente' | 'case' | 'terenuri' | 'spatii-comerciale';
 export type TransactionTypeFilter = 'all' | 'sale' | 'rent';
@@ -33,6 +34,14 @@ export type OwnerListing = {
   year?: number | string;
   description?: string;
   ownerPhone?: string;
+  latestAiCallId?: string;
+  aiOutreachStatus?: AiOutreachStatus;
+  aiOutreachOutcome?: AiOutreachOutcome;
+  aiOutreachUpdatedAt?: string;
+  aiCollaborationStatus?: string;
+  aiAcceptedCommissionValue?: string | null;
+  aiNextFollowUpAt?: string | null;
+  aiDoNotCall?: boolean;
   propertyType?: OwnerListingPropertyType;
   transactionType?: OwnerListingTransactionType;
   categoryConfidence?: number;

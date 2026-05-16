@@ -41,10 +41,10 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
 
         // We redirect if loading is finished, and we can determine there is no agency.
         // The best way to know is to check if the loaded user profile has an agencyId.
-        if (!isAgencyLoading && !agencyId && pathname !== '/settings') {
+        if (!isAgencyLoading && (!agencyId || (agencyId && !agency)) && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [agencyId, isAgencyLoading, pathname, router, userProfile?.role]);
+    }, [agency, agencyId, isAgencyLoading, pathname, router, userProfile?.role]);
 
     // We show the loader if ANY data is still loading.
     if (isAgencyLoading) {
@@ -61,8 +61,8 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader />;
     }
 
-    // Also, if the user profile has an agency ID, but the agency data itself hasn't arrived yet
-    // (or is null, indicating an invalid ID), we should also wait.
+    // Also, if the user profile has an agency ID, but the agency data itself hasn't arrived yet,
+    // wait until the redirect above can move invalid/missing agencies to settings.
     if (agencyId && !agency && pathname !== '/settings') {
         return <FullScreenLoader />;
     }
