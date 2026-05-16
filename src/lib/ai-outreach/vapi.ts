@@ -40,10 +40,16 @@ function buildAssistantOverrides(input: CreateVapiOutboundCallInput) {
   };
 }
 
+function getConfiguredSecret(value: string | undefined) {
+  const normalized = (value || '').trim();
+  if (!normalized || normalized === '__NOT_CONFIGURED__') return '';
+  return normalized;
+}
+
 export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput): Promise<VapiOutboundCallResult> {
-  const apiKey = process.env.VAPI_API_KEY;
-  const assistantId = process.env.AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID || process.env.VAPI_ASSISTANT_ID;
-  const phoneNumberId = process.env.AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID || process.env.VAPI_PHONE_NUMBER_ID;
+  const apiKey = getConfiguredSecret(process.env.VAPI_API_KEY);
+  const assistantId = getConfiguredSecret(process.env.AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID) || getConfiguredSecret(process.env.VAPI_ASSISTANT_ID);
+  const phoneNumberId = getConfiguredSecret(process.env.AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID) || getConfiguredSecret(process.env.VAPI_PHONE_NUMBER_ID);
 
   if (!apiKey || !assistantId || !phoneNumberId) {
     return {
