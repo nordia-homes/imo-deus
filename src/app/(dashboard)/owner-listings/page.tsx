@@ -332,6 +332,10 @@ export default function OwnerListingsPage() {
         const payload = await response.json().catch(() => ({}));
         localOwnerPhone = payload.phone?.trim() || '';
 
+        if (!localOwnerPhone && payload.debug) {
+          console.info('OLX phone debug', payload.debug);
+        }
+
         if (!localOwnerPhone && payload.message) {
           toast({ title: 'Telefon OLX negasit', description: payload.message });
         }

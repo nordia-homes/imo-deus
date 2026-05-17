@@ -14,6 +14,16 @@ type StoredOlxSession = {
   storageState?: unknown;
 };
 
+type OlxPhoneDebug = {
+  stage: string;
+  adId?: string;
+  directStatus?: number;
+  capturedStatus?: number;
+  hasShowPhoneButton?: boolean;
+  hasChallenge?: boolean;
+  hasLoginSignal?: boolean;
+};
+
 function normalizePhoneCandidate(value: unknown) {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -85,8 +95,10 @@ function extractAdIdFromHtml(html: string) {
 }
 
 export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
+  const debug: OlxPhoneDebug = { stage: 'start' };
+
   if (!/^https:\/\/(?:www\.)?olx\.ro\//i.test(input.url || '')) {
-    return { phone: '', message: 'URL-ul OLX este invalid.' };
+    return { phone: '', message: 'URL-ul OLX este invalid.', debug: { ...debug, stage: 'invalid_url' } };
   }
 
   let browser: Browser;
@@ -98,12 +110,14 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
       return {
         phone: '',
         message: 'Browserul Playwright pentru scraping OLX nu este instalat pe server. Redeploy-ul aplicatiei va instala Chromium automat.',
+        debug: { ...debug, stage: 'browser_missing' },
       };
     }
 
     return {
       phone: '',
       message: error instanceof Error ? error.message : 'Nu am putut porni browserul pentru scraping OLX.',
+      debug: { ...debug, stage: 'browser_failed' },
     };
   }
 
@@ -135,36 +149,52 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
   };
 
   page.on('response', (response) => {
+    if (/\/limited-phones(?:[/?#]|$)/i.test(response.url())) {
+      debug.capturedStatus = response.status();
+    }
     void capturePhoneResponse(response);
   });
 
   try {
+    debug.stage = 'goto';
     await page.goto(input.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(1000).catch(() => undefined);
 
+    debug.stage = 'loaded';
     const html = await page.content().catch(() => '');
     const adId = extractAdIdFromHtml(html);
+    debug.adId = adId || undefined;
+    debug.hasChallenge = /captcha|robot|verify|challenge|cloudflare|checking your browser/i.test(html);
+    debug.hasLoginSignal = /autentific|login|conecteaz/i.test(html);
     if (adId) {
-      const directPayload = await page.evaluate(async ({ currentAdId }) => {
+      debug.stage = 'direct_api';
+      const directResult = await page.evaluate(async ({ currentAdId }) => {
         const response = await fetch(`https://www.olx.ro/api/v1/offers/${currentAdId}/limited-phones`, {
           credentials: 'include',
           headers: { accept: 'application/json, text/plain, */*' },
         }).catch(() => null);
 
-        return response?.ok ? await response.text().catch(() => '') : '';
+        return {
+          ok: Boolean(response?.ok),
+          status: response?.status || 0,
+          text: response ? await response.text().catch(() => '') : '',
+        };
       }, { currentAdId: adId }).catch(() => '');
-      const directPhone = extractPhoneFromLimitedPhonesPayload(directPayload);
+      debug.directStatus = typeof directResult === 'object' && directResult ? directResult.status : 0;
+      const directPhone = extractPhoneFromLimitedPhonesPayload(typeof directResult === 'object' && directResult ? directResult.text : '');
       if (directPhone) {
         await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
-        return { phone: directPhone, message: 'Telefon preluat din sesiunea OLX a agentului.' };
+        return { phone: directPhone, message: 'Telefon preluat din sesiunea OLX a agentului.', debug: { ...debug, stage: 'direct_api_success' } };
       }
     }
 
+    debug.stage = 'click_reveal';
     const showPhoneButtonCandidates = [
       page.locator('[data-testid="show-phone"]').last(),
       page.getByRole('button', { name: /arat|afis|afi|numar|telefon/i }).last(),
       page.locator('button').filter({ hasText: /arat|afis|afi|numar|telefon/i }).last(),
     ];
+    debug.hasShowPhoneButton = (await showPhoneButtonCandidates[0].count().catch(() => 0)) > 0;
 
     const phoneResponsePromise = page
       .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 12000 })
@@ -186,9 +216,10 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     const networkPhone = capturedPhones.find(Boolean) || '';
     if (networkPhone) {
       await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
-      return { phone: networkPhone, message: 'Telefon preluat din OLX.' };
+      return { phone: networkPhone, message: 'Telefon preluat din OLX.', debug: { ...debug, stage: 'click_reveal_success' } };
     }
 
+    debug.stage = 'dom_extract';
     const domText = await page.evaluate(() => {
       const tel = Array.from(document.querySelectorAll('a[href^="tel:"]'))
         .map((node) => node.getAttribute('href') || '')
@@ -199,13 +230,24 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     const phoneFromDom = extractPhoneFromText(domText);
     if (phoneFromDom) {
       await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
-      return { phone: phoneFromDom, message: 'Telefon preluat din pagina OLX.' };
+      return { phone: phoneFromDom, message: 'Telefon preluat din pagina OLX.', debug: { ...debug, stage: 'dom_extract_success' } };
     }
 
     await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
+    const statusHint = debug.directStatus ? ` API OLX a raspuns cu status ${debug.directStatus}.` : '';
+    const challengeHint = debug.hasChallenge ? ' OLX afiseaza o verificare anti-bot.' : '';
+    const loginHint = debug.hasLoginSignal ? ' OLX pare sa ceara autentificare.' : '';
+    const idHint = !debug.adId ? ' Nu am putut identifica ID-ul numeric al anuntului.' : '';
     return {
       phone: '',
-      message: 'Nu am gasit telefonul in sesiunea web/mobil. Incearca o data din desktop pentru a conecta sesiunea OLX sau introdu numarul manual.',
+      message: `Nu am gasit telefonul in sesiunea web/mobil.${statusHint}${challengeHint}${loginHint}${idHint}`.trim(),
+      debug: { ...debug, stage: 'not_found' },
+    };
+  } catch (error) {
+    return {
+      phone: '',
+      message: error instanceof Error ? error.message : 'Nu am putut prelua telefonul OLX.',
+      debug: { ...debug, stage: 'failed' },
     };
   } finally {
     await page.close().catch(() => undefined);
