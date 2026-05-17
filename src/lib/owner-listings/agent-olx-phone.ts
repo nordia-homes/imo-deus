@@ -8,6 +8,7 @@ type AgentOlxPhoneInput = {
   agencyId: string;
   uid: string;
   url: string;
+  skipStoredSession?: boolean;
 };
 
 type StoredOlxSession = {
@@ -17,6 +18,7 @@ type StoredOlxSession = {
 type OlxPhoneDebug = {
   stage: string;
   adId?: string;
+  adIdCandidates?: string[];
   directStatus?: number;
   capturedStatus?: number;
   hasShowPhoneButton?: boolean;
@@ -94,6 +96,41 @@ function extractAdIdFromHtml(html: string) {
   );
 }
 
+function extractAdIdCandidatesFromHtml(html: string) {
+  const normalized = html.replace(/\s+/g, ' ');
+  const candidates: string[] = [];
+  const add = (value?: string) => {
+    if (value && /^\d{6,12}$/.test(value) && !candidates.includes(value)) {
+      candidates.push(value);
+    }
+  };
+
+  add(normalized.match(/"sku":"(\d{6,12})"/i)?.[1]);
+  add(normalized.match(/"id":(\d{6,12}),"title":/i)?.[1]);
+  add(normalized.match(/"ad_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"adId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"offer_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"offerId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+
+  for (const match of normalized.matchAll(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,900}?"id":\s*"?(\d{6,12})"?/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"id\\":(\d{6,12})/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/\\"(?:offer|ad|listing)\\"\s*:\s*\{[\s\S]{0,900}?\\"id\\":\s*\\"?(\d{6,12})/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/gi)) {
+    add(match[1]);
+  }
+
+  return candidates.slice(0, 24);
+}
+
 export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
   const debug: OlxPhoneDebug = { stage: 'start' };
 
@@ -126,8 +163,8 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     .doc(input.agencyId)
     .collection('agentOlxSessions')
     .doc(input.uid);
-  const sessionSnapshot = await sessionRef.get();
-  const session = sessionSnapshot.data() as StoredOlxSession | undefined;
+  const sessionSnapshot = input.skipStoredSession ? null : await sessionRef.get();
+  const session = sessionSnapshot?.data() as StoredOlxSession | undefined;
   const context = await browser.newContext({
     locale: 'ro-RO',
     timezoneId: 'Europe/Bucharest',
@@ -162,30 +199,17 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
 
     debug.stage = 'loaded';
     const html = await page.content().catch(() => '');
-    const adId = extractAdIdFromHtml(html);
+    const adIdCandidates = extractAdIdCandidatesFromHtml(html);
+    const adId = adIdCandidates[0] || extractAdIdFromHtml(html);
     debug.adId = adId || undefined;
+    debug.adIdCandidates = adIdCandidates.slice(0, 8);
     debug.hasChallenge = /captcha|robot|verify|challenge|cloudflare|checking your browser/i.test(html);
     debug.hasLoginSignal = /autentific|login|conecteaz/i.test(html);
-    if (adId) {
-      debug.stage = 'direct_api';
-      const directResult = await page.evaluate(async ({ currentAdId }) => {
-        const response = await fetch(`https://www.olx.ro/api/v1/offers/${currentAdId}/limited-phones`, {
-          credentials: 'include',
-          headers: { accept: 'application/json, text/plain, */*' },
-        }).catch(() => null);
-
-        return {
-          ok: Boolean(response?.ok),
-          status: response?.status || 0,
-          text: response ? await response.text().catch(() => '') : '',
-        };
-      }, { currentAdId: adId }).catch(() => '');
-      debug.directStatus = typeof directResult === 'object' && directResult ? directResult.status : 0;
-      const directPhone = extractPhoneFromLimitedPhonesPayload(typeof directResult === 'object' && directResult ? directResult.text : '');
-      if (directPhone) {
-        await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
-        return { phone: directPhone, message: 'Telefon preluat din sesiunea OLX a agentului.', debug: { ...debug, stage: 'direct_api_success' } };
-      }
+    if (debug.hasChallenge && session?.storageState) {
+      await sessionRef.delete().catch(() => undefined);
+      await page.close().catch(() => undefined);
+      await context.close().catch(() => undefined);
+      return scrapeOlxPhoneForAgent({ ...input, skipStoredSession: true });
     }
 
     debug.stage = 'click_reveal';
@@ -219,6 +243,34 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
       return { phone: networkPhone, message: 'Telefon preluat din OLX.', debug: { ...debug, stage: 'click_reveal_success' } };
     }
 
+    if (adIdCandidates.length && !debug.hasChallenge) {
+      debug.stage = 'direct_api';
+      const directResult = await page.evaluate(async ({ currentAdId }) => {
+        const statuses: Array<{ id: string; status: number }> = [];
+        for (const id of currentAdId.slice(0, 3)) {
+          const response = await fetch(`https://www.olx.ro/api/v1/offers/${id}/limited-phones`, {
+            credentials: 'include',
+            headers: { accept: 'application/json, text/plain, */*' },
+          }).catch(() => null);
+
+          statuses.push({ id, status: response?.status || 0 });
+          const text = response ? await response.text().catch(() => '') : '';
+          if (response?.ok && text) {
+            return { ok: true, status: response.status, id, text, statuses };
+          }
+        }
+
+        return { ok: false, status: statuses[0]?.status || 0, id: currentAdId[0] || '', text: '', statuses };
+      }, { currentAdId: adIdCandidates }).catch(() => '');
+      debug.directStatus = typeof directResult === 'object' && directResult ? directResult.status : 0;
+      debug.adId = typeof directResult === 'object' && directResult?.id ? directResult.id : debug.adId;
+      const directPhone = extractPhoneFromLimitedPhonesPayload(typeof directResult === 'object' && directResult ? directResult.text : '');
+      if (directPhone) {
+        await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
+        return { phone: directPhone, message: 'Telefon preluat din sesiunea OLX a agentului.', debug: { ...debug, stage: 'direct_api_success' } };
+      }
+    }
+
     debug.stage = 'dom_extract';
     const domText = await page.evaluate(() => {
       const tel = Array.from(document.querySelectorAll('a[href^="tel:"]'))
@@ -233,7 +285,9 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
       return { phone: phoneFromDom, message: 'Telefon preluat din pagina OLX.', debug: { ...debug, stage: 'dom_extract_success' } };
     }
 
-    await sessionRef.set({ storageState: await context.storageState(), updatedAt: new Date().toISOString() }, { merge: true });
+    if (debug.hasChallenge) {
+      await sessionRef.delete().catch(() => undefined);
+    }
     const statusHint = debug.directStatus ? ` API OLX a raspuns cu status ${debug.directStatus}.` : '';
     const challengeHint = debug.hasChallenge ? ' OLX afiseaza o verificare anti-bot.' : '';
     const loginHint = debug.hasLoginSignal ? ' OLX pare sa ceara autentificare.' : '';

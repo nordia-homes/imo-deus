@@ -72,6 +72,41 @@ function extractOlxPhoneFromLimitedPhonesPayload(text) {
   }
 }
 
+function extractOlxAdIdCandidatesFromHtml(html) {
+  const normalized = String(html || '').replace(/\s+/g, ' ');
+  const candidates = [];
+  const add = (value) => {
+    if (value && /^\d{6,12}$/.test(value) && !candidates.includes(value)) {
+      candidates.push(value);
+    }
+  };
+
+  add(normalized.match(/"sku":"(\d{6,12})"/i)?.[1]);
+  add(normalized.match(/"id":(\d{6,12}),"title":/i)?.[1]);
+  add(normalized.match(/"ad_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"adId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"offer_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+  add(normalized.match(/"offerId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+
+  for (const match of normalized.matchAll(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,900}?"id":\s*"?(\d{6,12})"?/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"id\\":(\d{6,12})/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/\\"(?:offer|ad|listing)\\"\s*:\s*\{[\s\S]{0,900}?\\"id\\":\s*\\"?(\d{6,12})/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/gi)) {
+    add(match[1]);
+  }
+
+  return candidates.slice(0, 24);
+}
+
 async function launchOlxContext() {
   const { chromium } = require('playwright');
   const profileDir = getOlxProfileDir();
@@ -146,22 +181,29 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
     const directPayload = await page.evaluate(async () => {
       const html = document.documentElement.innerHTML || '';
       const normalized = html.replace(/\s+/g, ' ');
-      const adId =
-        normalized.match(/"sku":"(\d{6,12})"/i)?.[1] ||
-        normalized.match(/"id":(\d{6,12}),"title":/i)?.[1] ||
-        normalized.match(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,400}?"id":\s*"?(\d{6,12})"?/i)?.[1] ||
-        normalized.match(/"(?:adId|ad_id|offerId|offer_id)":\s*"?(\d{6,12})"?/i)?.[1] ||
-        normalized.match(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/i)?.[1] ||
-        '';
+      const ids = [];
+      const add = (value) => {
+        if (value && /^\d{6,12}$/.test(value) && !ids.includes(value)) ids.push(value);
+      };
+      add(normalized.match(/"sku":"(\d{6,12})"/i)?.[1]);
+      add(normalized.match(/"id":(\d{6,12}),"title":/i)?.[1]);
+      add(normalized.match(/"ad_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+      add(normalized.match(/"adId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+      add(normalized.match(/"offer_id"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+      add(normalized.match(/"offerId"\s*:\s*"?(\d{6,12})"?/i)?.[1]);
+      for (const match of normalized.matchAll(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,900}?"id":\s*"?(\d{6,12})"?/gi)) add(match[1]);
+      for (const match of normalized.matchAll(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/gi)) add(match[1]);
 
-      if (!adId) return '';
+      for (const adId of ids.slice(0, 3)) {
+        const response = await fetch(`https://www.olx.ro/api/v1/offers/${adId}/limited-phones`, {
+          credentials: 'include',
+          headers: { accept: 'application/json, text/plain, */*' },
+        }).catch(() => null);
+        const text = response ? await response.text().catch(() => '') : '';
+        if (response?.ok && text) return text;
+      }
 
-      const response = await fetch(`https://www.olx.ro/api/v1/offers/${adId}/limited-phones`, {
-        credentials: 'include',
-        headers: { accept: 'application/json, text/plain, */*' },
-      }).catch(() => null);
-
-      return response?.ok ? await response.text().catch(() => '') : '';
+      return '';
     }).catch(() => '');
     const directPhone = extractOlxPhoneFromLimitedPhonesPayload(directPayload);
     if (directPhone) {
@@ -222,6 +264,8 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
       phone: '',
       message: error instanceof Error ? error.message : 'Nu am putut prelua numarul OLX local.',
     };
+  } finally {
+    await page.close().catch(() => undefined);
   }
 }
 
