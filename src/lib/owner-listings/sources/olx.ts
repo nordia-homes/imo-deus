@@ -517,11 +517,16 @@ function extractOlxFrictionTokenFromHtml(html: string) {
 }
 
 function extractOlxAdId(value: string) {
-  const normalized = normalizeWhitespace(value);
+  const normalized = normalizeWhitespace(`${value} ${decodeOlxEscaped(value)}`);
   return (
     normalized.match(/"sku":"(\d{6,12})"/i)?.[1] ||
     normalized.match(/"id":(\d{6,12}),"title":/i)?.[1] ||
+    normalized.match(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,400}?"id":\s*"?(\d{6,12})"?/i)?.[1] ||
+    normalized.match(/"(?:adId|ad_id|offerId|offer_id)":\s*"?(\d{6,12})"?/i)?.[1] ||
     normalized.match(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"id\\":(\d{6,12})/i)?.[1] ||
+    normalized.match(/\\"(?:offer|ad|listing)\\"\s*:\s*\{[\s\S]{0,400}?\\"id\\":\s*\\"?(\d{6,12})/i)?.[1] ||
+    normalized.match(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"(?:adId|ad_id|offerId|offer_id)\\":\\"?(\d{6,12})/i)?.[1] ||
+    normalized.match(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/i)?.[1] ||
     normalized.match(/\bad-id=(\d{6,12})\b/i)?.[1] ||
     normalized.match(/\bID:\s*(\d{6,12})\b/i)?.[1] ||
     ''
@@ -560,13 +565,19 @@ async function fetchOlxPhoneByAdId(adId: string, frictionToken?: string) {
     return '';
   }
 
-  const payload = (await response.json().catch(() => null)) as
-    | { data?: { phones?: string[] | null } | null }
-    | null;
-
-  const phone = payload?.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+  const text = await response.text().catch(() => '');
+  const phone = extractOlxPhoneFromLimitedPhonesPayload(text);
   olxPhoneCache.set(cacheKey, phone);
   return phone;
+}
+
+function extractOlxPhoneFromLimitedPhonesPayload(text: string) {
+  try {
+    const payload = JSON.parse(text || '{}') as { data?: { phones?: string[] | null } | null };
+    return payload.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+  } catch {
+    return '';
+  }
 }
 
 async function fetchOlxPhoneViaRemoteBrowser(url: string, adId: string) {
@@ -615,8 +626,7 @@ async function fetchOlxPhoneViaRemoteBrowser(url: string, adId: string) {
       return '';
     }
 
-    const parsed = JSON.parse(payload.text || '{}') as { data?: { phones?: string[] | null } | null };
-    return parsed.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+    return extractOlxPhoneFromLimitedPhonesPayload(payload.text);
   }).catch(() => '');
 
   olxPhoneCache.set(cacheKey, phone);
@@ -949,8 +959,7 @@ async function extractOlxPhoneFromDom(url: string) {
         return;
       }
 
-      const parsed = JSON.parse(text || '{}') as { data?: { phones?: string[] | null } | null };
-      const phone = parsed.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+      const phone = extractOlxPhoneFromLimitedPhonesPayload(text);
       if (phone) {
         capturedPhones.push(phone);
       }
@@ -960,11 +969,47 @@ async function extractOlxPhoneFromDom(url: string) {
       void capturePhoneResponse(response);
     });
 
+    const browserApiPhonePayload = await page.evaluate(async () => {
+      const html = document.documentElement.innerHTML || '';
+      const normalized = html.replace(/\s+/g, ' ');
+      const adId =
+        normalized.match(/"sku":"(\d{6,12})"/i)?.[1] ||
+        normalized.match(/"id":(\d{6,12}),"title":/i)?.[1] ||
+        normalized.match(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,400}?"id":\s*"?(\d{6,12})"?/i)?.[1] ||
+        normalized.match(/"(?:adId|ad_id|offerId|offer_id)":\s*"?(\d{6,12})"?/i)?.[1] ||
+        normalized.match(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"id\\":(\d{6,12})/i)?.[1] ||
+        normalized.match(/\\"(?:offer|ad|listing)\\"\s*:\s*\{[\s\S]{0,400}?\\"id\\":\s*\\"?(\d{6,12})/i)?.[1] ||
+        normalized.match(/window\.__PRERENDERED_STATE__\s*=\s*".*?\\"(?:adId|ad_id|offerId|offer_id)\\":\\"?(\d{6,12})/i)?.[1] ||
+        normalized.match(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/i)?.[1] ||
+        normalized.match(/\bad-id=(\d{6,12})\b/i)?.[1] ||
+        '';
+
+      if (!adId) {
+        return '';
+      }
+
+      const response = await fetch(`https://www.olx.ro/api/v1/offers/${adId}/limited-phones`, {
+        credentials: 'include',
+        headers: {
+          accept: 'application/json, text/plain, */*',
+        },
+      }).catch(() => null);
+
+      return response?.ok ? await response.text().catch(() => '') : '';
+    }).catch(() => '');
+
+    if (browserApiPhonePayload) {
+      const phone = extractOlxPhoneFromLimitedPhonesPayload(browserApiPhonePayload);
+      if (phone) {
+        return phone;
+      }
+    }
+
     const revealPhone = async () => {
       const showPhoneButtonCandidates = [
         page.locator('[data-testid="show-phone"]').last(),
-        page.getByRole('button', { name: /arata numarul|afișează numărul|afiseaza numarul|numar telefon|telefon/i }).last(),
-        page.locator('button').filter({ hasText: /arata numarul|afișează numărul|afiseaza numarul|telefon/i }).last(),
+        page.getByRole('button', { name: /arat|afis|afi|numar|telefon/i }).last(),
+        page.locator('button').filter({ hasText: /arat|afis|afi|numar|telefon/i }).last(),
       ];
 
       const phoneResponsePromise = page
