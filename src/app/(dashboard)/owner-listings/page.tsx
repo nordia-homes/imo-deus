@@ -309,6 +309,53 @@ export default function OwnerListingsPage() {
     setIsLoadingAiDetails(listing.id);
 
     try {
+      let localOwnerPhone = '';
+      if (listing.source === 'olx' && typeof window !== 'undefined' && window.imodeusDesktop?.getOlxPhoneNumber) {
+        const localResult = await window.imodeusDesktop.getOlxPhoneNumber({ url: listing.link });
+        localOwnerPhone = localResult.phone?.trim() || '';
+
+        if (!localOwnerPhone && localResult.message) {
+          toast({ title: 'Telefon OLX local negasit', description: localResult.message });
+        }
+      }
+
+      if (!localOwnerPhone && listing.source === 'olx') {
+        const token = await user.getIdToken(true);
+        const response = await fetch('/api/owner-listings/olx-phone', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ url: listing.link }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        localOwnerPhone = payload.phone?.trim() || '';
+
+        if (!localOwnerPhone && payload.message) {
+          toast({ title: 'Telefon OLX negasit', description: payload.message });
+        }
+      }
+
+      if (localOwnerPhone) {
+        const enrichedListing = {
+          ...listing,
+          ownerPhone: localOwnerPhone,
+        };
+
+        if (localOwnerPhone !== listing.ownerPhone) {
+          updateDocumentNonBlocking(doc(firestore, 'ownerListings', listing.id), {
+            ownerPhone: localOwnerPhone,
+            enrichmentStatus: 'partial',
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
+        setSelectedAiListing(enrichedListing);
+        toast({ title: 'Telefon preluat', description: 'Numarul proprietarului a fost preluat din sesiunea OLX locala.' });
+        return;
+      }
+
       const token = await user.getIdToken(true);
       const response = await fetch('/api/owner-listings/import', {
         method: 'POST',

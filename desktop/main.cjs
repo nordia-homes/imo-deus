@@ -7,6 +7,7 @@ const { autoUpdater } = require('electron-updater');
 const isDev = !app.isPackaged;
 let mainWindow = null;
 let runnerProcess = null;
+let olxContextPromise = null;
 let runnerStatus = {
   state: 'idle',
   message: 'Nicio sesiune desktop activă.',
@@ -38,6 +39,190 @@ function isIgnorableRunnerStderr(message) {
 
 function getRunnerProfileDir() {
   return path.join(app.getPath('userData'), 'facebook-profile');
+}
+
+function getOlxProfileDir() {
+  return path.join(app.getPath('userData'), 'olx-profile');
+}
+
+function normalizePhoneCandidate(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('4') && digits.length === 11 && digits.slice(1).startsWith('07')) {
+    return digits.slice(1);
+  }
+  if (digits.startsWith('004') && digits.length === 13 && digits.slice(3).startsWith('07')) {
+    return digits.slice(3);
+  }
+  if (digits.startsWith('07') && digits.length === 10) {
+    return digits;
+  }
+  if (digits.startsWith('0') && digits.length >= 9 && digits.length <= 10) {
+    return digits;
+  }
+  return '';
+}
+
+function extractOlxPhoneFromLimitedPhonesPayload(text) {
+  try {
+    const payload = JSON.parse(text || '{}');
+    return payload?.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+  } catch {
+    return '';
+  }
+}
+
+async function launchOlxContext() {
+  const { chromium } = require('playwright');
+  const profileDir = getOlxProfileDir();
+  const cacheDir = path.join(profileDir, 'playwright-cache');
+  await fs.mkdir(cacheDir, { recursive: true });
+
+  const sharedOptions = {
+    headless: false,
+    viewport: null,
+    ignoreDefaultArgs: ['--enable-automation'],
+    args: [
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-session-crashed-bubble',
+      '--disable-features=Translate,OptimizationHints,MediaRouter',
+      `--disk-cache-dir=${cacheDir}`,
+      '--start-maximized',
+    ],
+  };
+
+  const attempts = [
+    { label: 'chrome', options: { ...sharedOptions, channel: 'chrome' } },
+    { label: 'msedge', options: { ...sharedOptions, channel: 'msedge' } },
+    { label: 'bundled-chromium', options: sharedOptions },
+  ];
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      return await chromium.launchPersistentContext(profileDir, attempt.options);
+    } catch (error) {
+      errors.push(`${attempt.label}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  throw new Error(`Nu am putut porni browserul OLX local. ${errors.join(' | ')}`);
+}
+
+async function getOlxContext() {
+  if (!olxContextPromise) {
+    olxContextPromise = launchOlxContext();
+  }
+
+  return olxContextPromise;
+}
+
+async function getOlxPhoneNumberFromLocalBrowser(url) {
+  if (!/^https:\/\/(?:www\.)?olx\.ro\//i.test(url || '')) {
+    throw new Error('URL-ul OLX este invalid.');
+  }
+
+  const context = await getOlxContext();
+  const page = await context.newPage();
+  const capturedPhones = [];
+
+  const capturePhoneResponse = async (response) => {
+    if (!/\/limited-phones(?:[/?#]|$)/i.test(response.url())) return;
+    const text = await response.text().catch(() => '');
+    const phone = extractOlxPhoneFromLimitedPhonesPayload(text);
+    if (phone) capturedPhones.push(phone);
+  };
+
+  page.on('response', (response) => {
+    void capturePhoneResponse(response);
+  });
+
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.waitForTimeout(1200).catch(() => undefined);
+    await page.bringToFront().catch(() => undefined);
+
+    const directPayload = await page.evaluate(async () => {
+      const html = document.documentElement.innerHTML || '';
+      const normalized = html.replace(/\s+/g, ' ');
+      const adId =
+        normalized.match(/"sku":"(\d{6,12})"/i)?.[1] ||
+        normalized.match(/"id":(\d{6,12}),"title":/i)?.[1] ||
+        normalized.match(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,400}?"id":\s*"?(\d{6,12})"?/i)?.[1] ||
+        normalized.match(/"(?:adId|ad_id|offerId|offer_id)":\s*"?(\d{6,12})"?/i)?.[1] ||
+        normalized.match(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/i)?.[1] ||
+        '';
+
+      if (!adId) return '';
+
+      const response = await fetch(`https://www.olx.ro/api/v1/offers/${adId}/limited-phones`, {
+        credentials: 'include',
+        headers: { accept: 'application/json, text/plain, */*' },
+      }).catch(() => null);
+
+      return response?.ok ? await response.text().catch(() => '') : '';
+    }).catch(() => '');
+    const directPhone = extractOlxPhoneFromLimitedPhonesPayload(directPayload);
+    if (directPhone) {
+      await page.close().catch(() => undefined);
+      return { phone: directPhone, message: 'Telefon preluat din sesiunea OLX locala.' };
+    }
+
+    const showPhoneButtonCandidates = [
+      page.locator('[data-testid="show-phone"]').last(),
+      page.getByRole('button', { name: /arat|afis|afi|numar|telefon/i }).last(),
+      page.locator('button').filter({ hasText: /arat|afis|afi|numar|telefon/i }).last(),
+    ];
+
+    const phoneResponsePromise = page
+      .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 12000 })
+      .then(async (response) => {
+        await capturePhoneResponse(response);
+      })
+      .catch(() => undefined);
+
+    for (const button of showPhoneButtonCandidates) {
+      if ((await button.count().catch(() => 0)) > 0) {
+        await button.click({ force: true, timeout: 10000 }).catch(() => undefined);
+        await page.waitForTimeout(1500).catch(() => undefined);
+        break;
+      }
+    }
+
+    await phoneResponsePromise;
+
+    const networkPhone = capturedPhones.find(Boolean) || '';
+    if (networkPhone) {
+      await page.close().catch(() => undefined);
+      return { phone: networkPhone, message: 'Telefon preluat din OLX local.' };
+    }
+
+    const domPhone = await page.evaluate(() => {
+      const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+      const tel = Array.from(document.querySelectorAll('a[href^="tel:"]'))
+        .map((node) => node.getAttribute('href') || '')
+        .map((href) => href.replace(/^tel:/i, ''))
+        .find(Boolean);
+      if (tel) return tel;
+      return clean(document.body.innerText || '');
+    }).catch(() => '');
+    const phoneFromDom = normalizePhoneCandidate(domPhone);
+    if (phoneFromDom) {
+      await page.close().catch(() => undefined);
+      return { phone: phoneFromDom, message: 'Telefon preluat din pagina OLX.' };
+    }
+
+    return {
+      phone: '',
+      message: 'Nu am gasit numarul. Daca OLX cere autentificare, logheaza-te in fereastra OLX deschisa si apasa din nou Apel AI.',
+    };
+  } catch (error) {
+    return {
+      phone: '',
+      message: error instanceof Error ? error.message : 'Nu am putut prelua numarul OLX local.',
+    };
+  }
 }
 
 function getStartUrl() {
@@ -310,6 +495,10 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('desktop:is-desktop', async () => true);
+
+ipcMain.handle('olx-phone:get-number', async (_event, { url }) => {
+  return getOlxPhoneNumberFromLocalBrowser(url);
+});
 
 ipcMain.handle('facebook-runner:save-session-file', async (_event, { session }) => {
   const defaultPath = path.join(app.getPath('downloads'), `facebook-promotion-session-${session.jobId || session.propertyId}.json`);

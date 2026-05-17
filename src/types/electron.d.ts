@@ -9,6 +9,7 @@ declare global {
   interface Window {
     imodeusDesktop?: {
       isDesktop: () => Promise<boolean>;
+      getOlxPhoneNumber: (input: { url: string }) => Promise<{ phone?: string; message?: string }>;
       startFacebookRunner: (input: StartFacebookRunnerInput) => Promise<DesktopFacebookRunnerStatus>;
       retryFacebookRunnerCurrentGroup: () => Promise<DesktopFacebookRunnerActionResult>;
       markFacebookRunnerPosted: () => Promise<DesktopFacebookRunnerActionResult>;
