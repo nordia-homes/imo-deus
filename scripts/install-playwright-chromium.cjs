@@ -1,8 +1,9 @@
 const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 
 process.env.PLAYWRIGHT_BROWSERS_PATH = '0';
 
-const cliPath = require.resolve('playwright/cli');
+const cliPath = path.join(path.dirname(require.resolve('playwright')), 'cli.js');
 const result = spawnSync(process.execPath, [cliPath, 'install', 'chromium'], {
   stdio: 'inherit',
   env: {
