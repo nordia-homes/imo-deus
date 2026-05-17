@@ -16,6 +16,7 @@
     "platform-admin:create": "node scripts/create-platform-admin.mjs",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "postinstall": "playwright install chromium",
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",

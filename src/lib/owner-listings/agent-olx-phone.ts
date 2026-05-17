@@ -89,6 +89,24 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     return { phone: '', message: 'URL-ul OLX este invalid.' };
   }
 
+  let browser: Browser;
+  try {
+    browser = await getBrowser();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('Executable doesn') || message.includes('playwright install')) {
+      return {
+        phone: '',
+        message: 'Browserul Playwright pentru scraping OLX nu este instalat pe server. Redeploy-ul aplicatiei va instala Chromium automat.',
+      };
+    }
+
+    return {
+      phone: '',
+      message: error instanceof Error ? error.message : 'Nu am putut porni browserul pentru scraping OLX.',
+    };
+  }
+
   const sessionRef = input.adminDb
     .collection('agencies')
     .doc(input.agencyId)
@@ -96,7 +114,6 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     .doc(input.uid);
   const sessionSnapshot = await sessionRef.get();
   const session = sessionSnapshot.data() as StoredOlxSession | undefined;
-  const browser = await getBrowser();
   const context = await browser.newContext({
     locale: 'ro-RO',
     timezoneId: 'Europe/Bucharest',

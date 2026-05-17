@@ -7,6 +7,12 @@ runConfig:
   maxInstances: 1
 
 env:
+  - variable: PLAYWRIGHT_BROWSERS_PATH
+    value: "0"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: OPENAI_API_KEY
     secret: OPENAI_API_KEY
     availability:
