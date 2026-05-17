@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
-import { scrapeOlxPhoneForAgent } from '@/lib/owner-listings/agent-olx-phone';
+import { resolveOlxPhoneInternally } from '@/lib/owner-listings/olx-phone-resolver';
 
 export const runtime = 'nodejs';
 
 const requestSchema = z.object({
   url: z.string().url('URL-ul OLX este invalid.'),
+  listingId: z.string().min(1).optional(),
+  title: z.string().optional(),
 });
 
 function formatError(error: unknown) {
@@ -25,11 +27,13 @@ export async function POST(request: NextRequest) {
   try {
     const context = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = requestSchema.parse(await request.json().catch(() => ({})));
-    const result = await scrapeOlxPhoneForAgent({
+    const result = await resolveOlxPhoneInternally({
       adminDb: context.adminDb,
       agencyId: context.agencyId,
       uid: context.uid,
       url: body.url,
+      listingId: body.listingId || null,
+      title: body.title || null,
     });
 
     return NextResponse.json(result, { status: 200 });

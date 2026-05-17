@@ -63,12 +63,65 @@ function normalizePhoneCandidate(value) {
   return '';
 }
 
+function extractOlxPhoneFromText(value) {
+  const text = String(value || '');
+  const patterns = [
+    /(?:\+4|004)?07\d(?:[\s().-]?\d){7,8}/g,
+    /(?:\+4|004)?0(?:2|3)\d(?:[\s().-]?\d){7,8}/g,
+    /\b0\d(?:[\s().-]?\d){7,12}\b/g,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const phone = normalizePhoneCandidate(match[0]);
+      if (phone) return phone;
+    }
+  }
+
+  return '';
+}
+
+function extractOlxPhoneFromUnknownPayload(value, seen = new Set()) {
+  const phone = normalizePhoneCandidate(value);
+  if (phone) return phone;
+
+  if (!value || typeof value !== 'object') {
+    return typeof value === 'string' ? extractOlxPhoneFromText(value) : '';
+  }
+
+  if (seen.has(value)) return '';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nestedPhone = extractOlxPhoneFromUnknownPayload(item, seen);
+      if (nestedPhone) return nestedPhone;
+    }
+    return '';
+  }
+
+  const priorityKeys = ['phone', 'phones', 'telephone', 'mobile', 'contactPhone', 'contact_phone', 'value'];
+  for (const key of priorityKeys) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      const nestedPhone = extractOlxPhoneFromUnknownPayload(value[key], seen);
+      if (nestedPhone) return nestedPhone;
+    }
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const nestedPhone = extractOlxPhoneFromUnknownPayload(nestedValue, seen);
+    if (nestedPhone) return nestedPhone;
+  }
+
+  return '';
+}
+
 function extractOlxPhoneFromLimitedPhonesPayload(text) {
   try {
     const payload = JSON.parse(text || '{}');
-    return payload?.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
+    return extractOlxPhoneFromUnknownPayload(payload);
   } catch {
-    return '';
+    return extractOlxPhoneFromText(text);
   }
 }
 
@@ -101,6 +154,10 @@ function extractOlxAdIdCandidatesFromHtml(html) {
   }
 
   for (const match of normalized.matchAll(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/gi)) {
+    add(match[1]);
+  }
+
+  for (const match of normalized.matchAll(/\/oferta\/[^"'\s<>]+-ID[a-z0-9]+\.html[?#]?[^"'\s<>]*?(\d{6,12})/gi)) {
     add(match[1]);
   }
 
@@ -163,7 +220,8 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
   const capturedPhones = [];
 
   const capturePhoneResponse = async (response) => {
-    if (!/\/limited-phones(?:[/?#]|$)/i.test(response.url())) return;
+    const responseUrl = response.url();
+    if (!/\/(?:limited-)?phones?(?:[/?#]|$)|\/api\/v1\/offers\/\d{6,12}(?:[/?#]|$)/i.test(responseUrl)) return;
     const text = await response.text().catch(() => '');
     const phone = extractOlxPhoneFromLimitedPhonesPayload(text);
     if (phone) capturedPhones.push(phone);
@@ -194,10 +252,19 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
       for (const match of normalized.matchAll(/"(?:offer|ad|listing)"\s*:\s*\{[\s\S]{0,900}?"id":\s*"?(\d{6,12})"?/gi)) add(match[1]);
       for (const match of normalized.matchAll(/\bdata-(?:ad|offer)-id=["']?(\d{6,12})["']?/gi)) add(match[1]);
 
-      for (const adId of ids.slice(0, 3)) {
-        const response = await fetch(`https://www.olx.ro/api/v1/offers/${adId}/limited-phones`, {
+      const urls = ids.slice(0, 5).flatMap((adId) => [
+        `https://www.olx.ro/api/v1/offers/${adId}/limited-phones`,
+        `https://www.olx.ro/api/v1/offers/${adId}/phones`,
+        `https://www.olx.ro/api/v1/offers/${adId}/phone`,
+        `https://www.olx.ro/api/v1/offers/${adId}`,
+      ]);
+      for (const endpoint of urls) {
+        const response = await fetch(endpoint, {
           credentials: 'include',
-          headers: { accept: 'application/json, text/plain, */*' },
+          headers: {
+            accept: 'application/json, text/plain, */*',
+            'x-requested-with': 'XMLHttpRequest',
+          },
         }).catch(() => null);
         const text = response ? await response.text().catch(() => '') : '';
         if (response?.ok && text) return text;
@@ -213,12 +280,13 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
 
     const showPhoneButtonCandidates = [
       page.locator('[data-testid="show-phone"]').last(),
-      page.getByRole('button', { name: /arat|afis|afi|numar|telefon/i }).last(),
-      page.locator('button').filter({ hasText: /arat|afis|afi|numar|telefon/i }).last(),
+      page.locator('[data-cy*="phone" i], [data-testid*="phone" i], [aria-label*="telefon" i], [aria-label*="phone" i]').last(),
+      page.getByRole('button', { name: /arat|afiș|afis|afi|num[aă]r|telefon|phone|contact/i }).last(),
+      page.locator('button, a, [role="button"]').filter({ hasText: /arat|afiș|afis|afi|num[aă]r|telefon|phone|contact/i }).last(),
     ];
 
     const phoneResponsePromise = page
-      .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 12000 })
+      .waitForResponse((response) => /\/(?:limited-)?phones?(?:[/?#]|$)|\/api\/v1\/offers\/\d{6,12}(?:[/?#]|$)/i.test(response.url()), { timeout: 15000 })
       .then(async (response) => {
         await capturePhoneResponse(response);
       })
@@ -226,11 +294,31 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
 
     for (const button of showPhoneButtonCandidates) {
       if ((await button.count().catch(() => 0)) > 0) {
+        await button.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => undefined);
         await button.click({ force: true, timeout: 10000 }).catch(() => undefined);
         await page.waitForTimeout(1500).catch(() => undefined);
         break;
       }
     }
+
+    await page.evaluate(() => {
+      const candidates = Array.from(document.querySelectorAll('button, a, [role="button"], [data-testid], [data-cy]'));
+      const phoneTextPattern = /arat|afiș|afis|afi|număr|numar|telefon|phone|contact/i;
+      for (const node of candidates) {
+        const label = [
+          node.textContent || '',
+          node.getAttribute('aria-label') || '',
+          node.getAttribute('data-testid') || '',
+          node.getAttribute('data-cy') || '',
+        ].join(' ');
+        if (phoneTextPattern.test(label)) {
+          node.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+          node.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+          node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        }
+      }
+    }).catch(() => undefined);
+    await page.waitForTimeout(2200).catch(() => undefined);
 
     await phoneResponsePromise;
 
@@ -249,7 +337,7 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
       if (tel) return tel;
       return clean(document.body.innerText || '');
     }).catch(() => '');
-    const phoneFromDom = normalizePhoneCandidate(domPhone);
+    const phoneFromDom = extractOlxPhoneFromText(domPhone);
     if (phoneFromDom) {
       await page.close().catch(() => undefined);
       return { phone: phoneFromDom, message: 'Telefon preluat din pagina OLX.' };

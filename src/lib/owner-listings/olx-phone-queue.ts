@@ -12,6 +12,42 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+export async function upsertRawOlxPhoneQueueEntry(input: {
+  listingId: string;
+  link: string;
+  title?: string;
+  error?: string;
+}) {
+  const timestamp = nowIso();
+  const queueRef = adminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(input.listingId);
+  const snapshot = await queueRef.get();
+  const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
+
+  if (existing?.status === 'done' && existing.phone) {
+    return;
+  }
+
+  await queueRef.set(
+    {
+      listingId: input.listingId,
+      source: 'olx',
+      link: input.link,
+      title: input.title || '',
+      status: existing?.status === 'processing' ? 'processing' : 'pending',
+      attempts: existing?.attempts || 0,
+      createdAt: existing?.createdAt || timestamp,
+      updatedAt: timestamp,
+      nextAttemptAt: existing?.status === 'processing' ? existing.nextAttemptAt || timestamp : timestamp,
+      phone: existing?.phone || '',
+      ...(input.error ? { error: input.error } : {}),
+      lockedAt: existing?.status === 'processing' ? existing.lockedAt || FieldValue.delete() : FieldValue.delete(),
+      lockedBy: existing?.status === 'processing' ? existing.lockedBy || FieldValue.delete() : FieldValue.delete(),
+      completedAt: FieldValue.delete(),
+    },
+    { merge: true }
+  );
+}
+
 function isQueueEligible(entry: Partial<OlxPhoneQueueEntry> | undefined, now: Date) {
   if (!entry) {
     return false;

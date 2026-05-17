@@ -5,6 +5,7 @@
     "src/lib/owner-listings/types.ts",
     "src/lib/owner-listings/utils.ts",
     "src/lib/owner-listings/olx-phone-queue.ts",
+    "src/lib/owner-listings/olx-phone-resolver.ts",
     "src/lib/owner-listings/agent-olx-phone.ts",
     "src/lib/owner-listings/background.ts",
     "src/lib/owner-listings/browser.ts",

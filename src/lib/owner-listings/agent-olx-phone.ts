@@ -44,15 +44,6 @@ function normalizePhoneCandidate(value: unknown) {
   return '';
 }
 
-function extractPhoneFromLimitedPhonesPayload(text: string) {
-  try {
-    const payload = JSON.parse(text || '{}') as { data?: { phones?: string[] | null } | null };
-    return payload.data?.phones?.map((value) => normalizePhoneCandidate(value)).find(Boolean) || '';
-  } catch {
-    return '';
-  }
-}
-
 function extractPhoneFromText(value: string) {
   const directPatterns = [
     /(?:\+4|004)?07\d(?:[\s.-]?\d){7,8}/g,
@@ -68,6 +59,51 @@ function extractPhoneFromText(value: string) {
   }
 
   return '';
+}
+
+function extractPhoneFromUnknownPayload(value: unknown, seen = new Set<unknown>()): string {
+  const directPhone = normalizePhoneCandidate(value);
+  if (directPhone) return directPhone;
+
+  if (!value || typeof value !== 'object') {
+    return typeof value === 'string' ? extractPhoneFromText(value) : '';
+  }
+
+  if (seen.has(value)) return '';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const phone = extractPhoneFromUnknownPayload(item, seen);
+      if (phone) return phone;
+    }
+    return '';
+  }
+
+  const record = value as Record<string, unknown>;
+  const priorityKeys = ['phone', 'phones', 'telephone', 'mobile', 'contactPhone', 'contact_phone', 'value'];
+  for (const key of priorityKeys) {
+    if (key in record) {
+      const phone = extractPhoneFromUnknownPayload(record[key], seen);
+      if (phone) return phone;
+    }
+  }
+
+  for (const nestedValue of Object.values(record)) {
+    const phone = extractPhoneFromUnknownPayload(nestedValue, seen);
+    if (phone) return phone;
+  }
+
+  return '';
+}
+
+function extractPhoneFromLimitedPhonesPayload(text: string) {
+  try {
+    const payload = JSON.parse(text || '{}') as unknown;
+    return extractPhoneFromUnknownPayload(payload);
+  } catch {
+    return extractPhoneFromText(text);
+  }
 }
 
 async function getBrowser() {
@@ -131,6 +167,15 @@ function extractAdIdCandidatesFromHtml(html: string) {
   return candidates.slice(0, 24);
 }
 
+function buildOlxPhoneApiUrls(adId: string) {
+  return [
+    `https://www.olx.ro/api/v1/offers/${adId}/limited-phones`,
+    `https://www.olx.ro/api/v1/offers/${adId}/phones`,
+    `https://www.olx.ro/api/v1/offers/${adId}/phone`,
+    `https://www.olx.ro/api/v1/offers/${adId}`,
+  ];
+}
+
 export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
   const debug: OlxPhoneDebug = { stage: 'start' };
 
@@ -179,14 +224,14 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
   const capturedPhones: string[] = [];
 
   const capturePhoneResponse = async (response: { url: () => string; text: () => Promise<string> }) => {
-    if (!/\/limited-phones(?:[/?#]|$)/i.test(response.url())) return;
+    if (!/\/(?:limited-)?phones?(?:[/?#]|$)|\/api\/v1\/offers\/\d{6,12}(?:[/?#]|$)/i.test(response.url())) return;
     const text = await response.text().catch(() => '');
     const phone = extractPhoneFromLimitedPhonesPayload(text);
     if (phone) capturedPhones.push(phone);
   };
 
   page.on('response', (response) => {
-    if (/\/limited-phones(?:[/?#]|$)/i.test(response.url())) {
+    if (/\/(?:limited-)?phones?(?:[/?#]|$)|\/api\/v1\/offers\/\d{6,12}(?:[/?#]|$)/i.test(response.url())) {
       debug.capturedStatus = response.status();
     }
     void capturePhoneResponse(response);
@@ -215,13 +260,14 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     debug.stage = 'click_reveal';
     const showPhoneButtonCandidates = [
       page.locator('[data-testid="show-phone"]').last(),
-      page.getByRole('button', { name: /arat|afis|afi|numar|telefon/i }).last(),
-      page.locator('button').filter({ hasText: /arat|afis|afi|numar|telefon/i }).last(),
+      page.locator('[data-cy*="phone" i], [data-testid*="phone" i], [aria-label*="telefon" i], [aria-label*="phone" i]').last(),
+      page.getByRole('button', { name: /arat|afiș|afis|afi|num[aă]r|telefon|phone|contact/i }).last(),
+      page.locator('button, a, [role="button"]').filter({ hasText: /arat|afiș|afis|afi|num[aă]r|telefon|phone|contact/i }).last(),
     ];
     debug.hasShowPhoneButton = (await showPhoneButtonCandidates[0].count().catch(() => 0)) > 0;
 
     const phoneResponsePromise = page
-      .waitForResponse((response) => /\/limited-phones(?:[/?#]|$)/i.test(response.url()), { timeout: 12000 })
+      .waitForResponse((response) => /\/(?:limited-)?phones?(?:[/?#]|$)|\/api\/v1\/offers\/\d{6,12}(?:[/?#]|$)/i.test(response.url()), { timeout: 15000 })
       .then(async (response) => {
         await capturePhoneResponse(response);
       })
@@ -229,11 +275,31 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
 
     for (const button of showPhoneButtonCandidates) {
       if ((await button.count().catch(() => 0)) > 0) {
+        await button.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => undefined);
         await button.click({ force: true, timeout: 10000 }).catch(() => undefined);
         await page.waitForTimeout(1500).catch(() => undefined);
         break;
       }
     }
+
+    await page.evaluate(() => {
+      const candidates = Array.from(document.querySelectorAll('button, a, [role="button"], [data-testid], [data-cy]'));
+      const phoneTextPattern = /arat|afiș|afis|afi|număr|numar|telefon|phone|contact/i;
+      for (const node of candidates) {
+        const label = [
+          node.textContent || '',
+          node.getAttribute('aria-label') || '',
+          node.getAttribute('data-testid') || '',
+          node.getAttribute('data-cy') || '',
+        ].join(' ');
+        if (phoneTextPattern.test(label)) {
+          node.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+          node.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+          node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        }
+      }
+    }).catch(() => undefined);
+    await page.waitForTimeout(2200).catch(() => undefined);
 
     await phoneResponsePromise;
 
@@ -245,23 +311,29 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
 
     if (adIdCandidates.length && !debug.hasChallenge) {
       debug.stage = 'direct_api';
-      const directResult = await page.evaluate(async ({ currentAdId }) => {
+      const directResult = await page.evaluate(async ({ apiUrlsByAdId }) => {
         const statuses: Array<{ id: string; status: number }> = [];
-        for (const id of currentAdId.slice(0, 3)) {
-          const response = await fetch(`https://www.olx.ro/api/v1/offers/${id}/limited-phones`, {
-            credentials: 'include',
-            headers: { accept: 'application/json, text/plain, */*' },
-          }).catch(() => null);
+        const entries = Object.entries(apiUrlsByAdId).slice(0, 5) as Array<[string, string[]]>;
+        for (const [id, endpoints] of entries) {
+          for (const endpoint of endpoints) {
+            const response = await fetch(endpoint, {
+              credentials: 'include',
+              headers: {
+                accept: 'application/json, text/plain, */*',
+                'x-requested-with': 'XMLHttpRequest',
+              },
+            }).catch(() => null);
 
-          statuses.push({ id, status: response?.status || 0 });
-          const text = response ? await response.text().catch(() => '') : '';
-          if (response?.ok && text) {
-            return { ok: true, status: response.status, id, text, statuses };
+            statuses.push({ id, status: response?.status || 0 });
+            const text = response ? await response.text().catch(() => '') : '';
+            if (response?.ok && text) {
+              return { ok: true, status: response.status, id, text, statuses };
+            }
           }
         }
 
-        return { ok: false, status: statuses[0]?.status || 0, id: currentAdId[0] || '', text: '', statuses };
-      }, { currentAdId: adIdCandidates }).catch(() => '');
+        return { ok: false, status: statuses[0]?.status || 0, id: entries[0]?.[0] || '', text: '', statuses };
+      }, { apiUrlsByAdId: Object.fromEntries(adIdCandidates.map((id) => [id, buildOlxPhoneApiUrls(id)])) }).catch(() => '');
       debug.directStatus = typeof directResult === 'object' && directResult ? directResult.status : 0;
       debug.adId = typeof directResult === 'object' && directResult?.id ? directResult.id : debug.adId;
       const directPhone = extractPhoneFromLimitedPhonesPayload(typeof directResult === 'object' && directResult ? directResult.text : '');

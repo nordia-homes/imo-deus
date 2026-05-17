@@ -313,16 +313,8 @@ export default function OwnerListingsPage() {
       const hasDesktopOlxBridge = Boolean(
         listing.source === 'olx' && typeof window !== 'undefined' && window.imodeusDesktop?.getOlxPhoneNumber,
       );
-      if (hasDesktopOlxBridge) {
-        const localResult = await window.imodeusDesktop.getOlxPhoneNumber({ url: listing.link });
-        localOwnerPhone = localResult.phone?.trim() || '';
 
-        if (!localOwnerPhone && localResult.message) {
-          toast({ title: 'Telefon OLX local negasit', description: localResult.message });
-        }
-      }
-
-      if (!localOwnerPhone && listing.source === 'olx' && !hasDesktopOlxBridge) {
+      if (!localOwnerPhone && listing.source === 'olx') {
         const token = await user.getIdToken(true);
         const response = await fetch('/api/owner-listings/olx-phone', {
           method: 'POST',
@@ -330,7 +322,7 @@ export default function OwnerListingsPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ url: listing.link }),
+          body: JSON.stringify({ url: listing.link, listingId: listing.id, title: listing.title }),
         });
         const payload = await response.json().catch(() => ({}));
         localOwnerPhone = payload.phone?.trim() || '';
@@ -339,8 +331,17 @@ export default function OwnerListingsPage() {
           console.info('OLX phone debug', payload.debug);
         }
 
-        if (!localOwnerPhone && payload.message) {
+        if (!localOwnerPhone && payload.message && !hasDesktopOlxBridge) {
           toast({ title: 'Telefon OLX negasit', description: payload.message });
+        }
+      }
+
+      if (!localOwnerPhone && hasDesktopOlxBridge) {
+        const localResult = await window.imodeusDesktop.getOlxPhoneNumber({ url: listing.link });
+        localOwnerPhone = localResult.phone?.trim() || '';
+
+        if (!localOwnerPhone && localResult.message) {
+          toast({ title: 'Telefon OLX local negasit', description: localResult.message });
         }
       }
 
