@@ -1212,6 +1212,7 @@ export async function scrapeOlxListingDetail(url: string) {
   if (!title || !detailParams.area || !detailParams.price || !images.length) {
     domParams = await extractOlxParamsFromDom(url).catch(() => null);
   }
+  const contactPhone = await resolveOlxPhone(url, html).catch(() => '');
   const summary = buildSummary({
     source: 'olx',
     externalId: url.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/)?.[1] || url.match(/ID([A-Za-z0-9]+)/)?.[1] || url,
@@ -1237,6 +1238,6 @@ export async function scrapeOlxListingDetail(url: string) {
     ).slice(0, 12),
     fullDescription: description,
     contactName: '',
-    contactPhone: '',
+    contactPhone,
   } satisfies OwnerListingDetail;
 }

@@ -49,6 +49,7 @@ type OwnerListingCardProps = {
   collaborationStatus?: CollaborationStatus | null;
   isFavorite?: boolean;
   isLoadingImport?: boolean;
+  isLoadingAiDetails?: boolean;
   collaborationMode?: 'hidden' | 'readonly' | 'interactive';
   showImportAction?: boolean;
   adminClassic?: boolean;
@@ -69,6 +70,7 @@ export function OwnerListingCard({
   collaborationStatus,
   isFavorite = false,
   isLoadingImport = false,
+  isLoadingAiDetails = false,
   collaborationMode = 'readonly',
   showImportAction = true,
   adminClassic = false,
@@ -137,6 +139,7 @@ export function OwnerListingCard({
     : 'border-white bg-white text-slate-950 shadow-[0_14px_26px_-22px_rgba(0,0,0,0.95)]';
   const showNewBadge = isListingNew(listing);
   const aiOutcomeMeta = getAiOutreachOutcomeMeta(listing.aiOutreachOutcome);
+  const aiBadgeLabel = listing.aiOutreachOutcome && listing.aiOutreachOutcome !== 'uncalled' ? aiOutcomeMeta.shortLabel : 'Apel AI';
   const aiBadgeClassName = {
     neutral: 'border-white/75 bg-white text-slate-800',
     pending: 'border-amber-200 bg-amber-400 text-amber-950',
@@ -311,7 +314,8 @@ export function OwnerListingCard({
 
           <button
             type="button"
-            title="Vezi detalii apel AI"
+            title="Pregateste apel AI"
+            disabled={isLoadingAiDetails}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -320,10 +324,11 @@ export function OwnerListingCard({
             className={cn(
               'absolute bottom-3 left-3 inline-flex max-w-[calc(100%-6rem)] items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[0_18px_34px_-22px_rgba(15,23,42,0.95)] backdrop-blur transition-transform hover:scale-[1.02]',
               aiBadgeClassName,
+              isLoadingAiDetails && 'cursor-wait opacity-85',
             )}
           >
-            <Bot className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{aiOutcomeMeta.shortLabel}</span>
+            {isLoadingAiDetails ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Bot className="h-3.5 w-3.5 shrink-0" />}
+            <span className="truncate">{aiBadgeLabel}</span>
           </button>
 
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">

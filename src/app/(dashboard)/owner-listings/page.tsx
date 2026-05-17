@@ -56,6 +56,7 @@ export default function OwnerListingsPage() {
   const [localAiCalls, setLocalAiCalls] = useState<AiOutreachCall[]>([]);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
+  const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -296,6 +297,74 @@ export default function OwnerListingsPage() {
       });
     } finally {
       setIsLoadingImport(null);
+    }
+  };
+
+  const handleAiBadgeClick = async (listing: OwnerListing) => {
+    if (!user) {
+      toast({ title: 'Autentificare necesara', description: 'Trebuie sa fii autentificat pentru apelul AI.' });
+      return;
+    }
+
+    setIsLoadingAiDetails(listing.id);
+
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          source: listing.source,
+          url: listing.link,
+          ownerPhone: listing.ownerPhone || '',
+          sourceDescription: listing.description || '',
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.message || 'Nu am putut prelua telefonul din anunt.');
+      }
+
+      const ownerPhone =
+        payload.property?.ownerPhone ||
+        payload.detail?.contactPhone ||
+        payload.detail?.ownerPhone ||
+        listing.ownerPhone ||
+        '';
+      const enrichedListing = {
+        ...listing,
+        ownerPhone,
+        description: payload.property?.description || listing.description,
+      };
+
+      if (ownerPhone && ownerPhone !== listing.ownerPhone) {
+        updateDocumentNonBlocking(doc(firestore, 'ownerListings', listing.id), {
+          ownerPhone,
+          enrichmentStatus: 'partial',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      setSelectedAiListing(enrichedListing);
+
+      if (ownerPhone) {
+        toast({ title: 'Telefon preluat', description: 'Numarul proprietarului a fost pregatit pentru apelul AI.' });
+      } else {
+        toast({ title: 'Telefon negasit', description: 'Am deschis apelul AI, dar anuntul nu a returnat un numar de telefon.' });
+      }
+    } catch (error) {
+      setSelectedAiListing(listing);
+      toast({
+        title: 'Preluare telefon esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut prelua telefonul din anunt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingAiDetails(null);
     }
   };
 
@@ -909,7 +978,8 @@ export default function OwnerListingsPage() {
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
-                onAiBadgeClick={setSelectedAiListing}
+                isLoadingAiDetails={isLoadingAiDetails === listing.id}
+                onAiBadgeClick={handleAiBadgeClick}
               />
             );
           })
