@@ -310,7 +310,10 @@ export default function OwnerListingsPage() {
 
     try {
       let localOwnerPhone = '';
-      if (listing.source === 'olx' && typeof window !== 'undefined' && window.imodeusDesktop?.getOlxPhoneNumber) {
+      const hasDesktopOlxBridge = Boolean(
+        listing.source === 'olx' && typeof window !== 'undefined' && window.imodeusDesktop?.getOlxPhoneNumber,
+      );
+      if (hasDesktopOlxBridge) {
         const localResult = await window.imodeusDesktop.getOlxPhoneNumber({ url: listing.link });
         localOwnerPhone = localResult.phone?.trim() || '';
 
@@ -319,7 +322,7 @@ export default function OwnerListingsPage() {
         }
       }
 
-      if (!localOwnerPhone && listing.source === 'olx') {
+      if (!localOwnerPhone && listing.source === 'olx' && !hasDesktopOlxBridge) {
         const token = await user.getIdToken(true);
         const response = await fetch('/api/owner-listings/olx-phone', {
           method: 'POST',

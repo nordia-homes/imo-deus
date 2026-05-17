@@ -109,7 +109,7 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     if (message.includes('Executable doesn') || message.includes('playwright install')) {
       return {
         phone: '',
-        message: 'Browserul Playwright pentru scraping OLX nu este instalat pe server. Redeploy-ul aplicatiei va instala Chromium automat.',
+        message: 'Browserul Playwright pentru scraping OLX nu este instalat pe server. Ruleaza un redeploy cu build-ul actualizat, care instaleaza Chromium in artefactul aplicatiei.',
         debug: { ...debug, stage: 'browser_missing' },
       };
     }
