@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Property, PropertyStatusEvent } from '@/lib/types';
-import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, Phone, CalendarCheck } from 'lucide-react';
+import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, CalendarCheck } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
 import { AddPropertyDialog } from '../add-property-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
@@ -30,11 +30,13 @@ import {
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId, agency } = useAgency();
+    const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<'Rezervat' | 'Vândut' | null>(null);
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isGeneratingPresentation, setIsGeneratingPresentation] = useState(false);
 
     const persistSimpleStatusChange = (newStatus: Property['status']) => {
         if (!agencyId || !property) return;
@@ -119,6 +121,58 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
             });
         } finally {
             setIsStatusUpdating(false);
+        }
+    };
+
+    const handleGeneratePresentation = async () => {
+        if (!user || isGeneratingPresentation) return;
+
+        setIsGeneratingPresentation(true);
+
+        try {
+            const token = await user.getIdToken(true);
+            const response = await fetch(`/api/properties/${property.id}/presentation`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload?.message || 'Nu am putut genera prezentarea PDF.');
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const safeTitle = property.title
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9._-]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 90) || 'prezentare-proprietate';
+
+            link.href = url;
+            link.download = `${safeTitle}-prezentare.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+
+            toast({
+                title: 'Prezentare generata',
+                description: 'PDF-ul A4 cu 2 pagini a fost descarcat.',
+            });
+        } catch (error) {
+            console.error('Failed to generate property presentation:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Generarea a esuat',
+                description: error instanceof Error ? error.message : 'Nu am putut genera prezentarea PDF.',
+            });
+        } finally {
+            setIsGeneratingPresentation(false);
         }
     };
 
@@ -227,7 +281,10 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                             Vezi pe Website
                                         </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem><FileText className="mr-2 h-4 w-4"/> Generează PDF</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={handleGeneratePresentation} disabled={isGeneratingPresentation}>
+                                        <FileText className="mr-2 h-4 w-4"/>
+                                        {isGeneratingPresentation ? 'Se generează...' : 'Generează PDF'}
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem><Rocket className="mr-2 h-4 w-4"/> Promovează</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
