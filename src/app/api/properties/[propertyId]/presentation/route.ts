@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import type { Agency, Property, UserProfile } from '@/lib/types';
+import { getNearbyObjectivesForProperty } from '@/lib/property-presentations/nearby-google';
 import { renderPropertyPresentationHtml } from '@/lib/property-presentations/pdf-template';
 
 export const runtime = 'nodejs';
@@ -67,6 +68,7 @@ export async function GET(
     const publicPropertyUrl = publicPathOrUrl.startsWith('http')
       ? publicPathOrUrl
       : new URL(publicPathOrUrl, request.nextUrl.origin).toString();
+    const nearbyObjectives = await getNearbyObjectivesForProperty(property);
 
     const html = renderPropertyPresentationHtml({
       property,
@@ -74,6 +76,7 @@ export async function GET(
       agent,
       generatedAt: new Date(),
       publicPropertyUrl,
+      nearbyObjectives,
     });
 
     browser = await chromium.launch({

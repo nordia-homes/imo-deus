@@ -1,4 +1,5 @@
 import type { Agency, Property, UserProfile } from '@/lib/types';
+import type { NearbyObjective } from '@/lib/property-presentations/nearby-google';
 
 export type PropertyPresentationTemplateInput = {
   property: Property;
@@ -6,6 +7,7 @@ export type PropertyPresentationTemplateInput = {
   agent: UserProfile | null;
   generatedAt: Date;
   publicPropertyUrl?: string | null;
+  nearbyObjectives?: NearbyObjective[];
 };
 
 function escapeHtml(value: unknown) {
@@ -31,6 +33,46 @@ function truncateText(value: string | undefined, maxLength: number) {
   const normalized = (value || '').replace(/\s+/g, ' ').trim();
   if (normalized.length <= maxLength) return normalized;
   return `${normalized.slice(0, maxLength - 1).trim()}...`;
+}
+
+function splitDescriptionParagraphs(value?: string | null) {
+  const source = (value || '').trim();
+  if (!source) {
+    return [
+      'Descrierea proprietatii va fi completata cu detalii despre pozitionare, compartimentare, finisaje si avantajele relevante pentru cumparator.',
+    ];
+  }
+
+  return source
+    .split(/\r?\n+/)
+    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function truncateDescriptionParagraphs(paragraphs: string[], maxLength: number) {
+  const output: string[] = [];
+  let used = 0;
+
+  for (const paragraph of paragraphs) {
+    const separatorLength = output.length ? 2 : 0;
+    if (used + separatorLength + paragraph.length <= maxLength) {
+      output.push(paragraph);
+      used += separatorLength + paragraph.length;
+      continue;
+    }
+
+    const remaining = maxLength - used - separatorLength;
+    if (remaining > 24) {
+      output.push(`${paragraph.slice(0, remaining - 3).trim()}...`);
+    }
+    break;
+  }
+
+  return output.length ? output : paragraphs.slice(0, 1);
+}
+
+function renderParagraphs(paragraphs: string[]) {
+  return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('');
 }
 
 function splitFeatureText(value?: string | null) {
@@ -129,18 +171,14 @@ function getAgentEmail(agent: UserProfile | null, agency: Agency | null) {
 }
 
 export function renderPropertyPresentationHtml(input: PropertyPresentationTemplateInput) {
-  const { property, agency, agent, publicPropertyUrl } = input;
+  const { property, agency, agent, publicPropertyUrl, nearbyObjectives = [] } = input;
   const images = property.images || [];
   const displaySurface = property.totalSurface ?? property.squareFootage;
   const location = [property.zone || property.location, property.address].filter(Boolean).join(' - ');
   const shortDescription =
     truncateText(property.description, 230) ||
     'O locuinta luminoasa, intr-o zona linistita, cu acces rapid la punctele importante ale orasului.';
-  const fullDescription = truncateText(
-    property.description?.trim() ||
-      'Descrierea proprietatii va fi completata cu detalii despre pozitionare, compartimentare, finisaje si avantajele relevante pentru cumparator.',
-    1700
-  );
+  const descriptionParagraphs = truncateDescriptionParagraphs(splitDescriptionParagraphs(property.description), 1550);
   const highlights = buildHighlights(property);
   const facilities = buildNearbyFacilities(property);
   const agentName = getAgentName(property, agent);
@@ -199,9 +237,10 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       background: #f7f4ee;
     }
     .hero-copy {
-      padding: 5mm 7mm 4mm 1mm;
+      padding: 6mm 8mm 5mm 3mm;
       background:
-        radial-gradient(circle at 0 0, rgba(141,128,101,0.14), transparent 37mm),
+        linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68)),
+        radial-gradient(circle at 0 0, rgba(141,128,101,0.16), transparent 36mm),
         #fbfaf6;
     }
     .mark {
@@ -214,32 +253,76 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       justify-content: center;
       color: #a39268;
       font-size: 13px;
-      margin-bottom: 4mm;
+      flex: 0 0 auto;
+    }
+    .mark-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2.6mm;
+    }
+    .zone-wow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 2mm;
+      width: var(--title-width, 62mm);
+      height: 12mm;
+      border: 1px solid rgba(177, 156, 114, 0.36);
+      border-radius: 2mm;
+      background: linear-gradient(135deg, rgba(248, 242, 229, 0.98), rgba(255, 252, 246, 0.98));
+      color: #8e7a51;
+      padding: 0 3.5mm;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 3mm 8mm rgba(177, 156, 114, 0.14);
+    }
+    .zone-wow svg {
+      width: 6.4mm;
+      height: 6.4mm;
+      flex: 0 0 auto;
+      color: #b19c72;
+    }
+    .zone-wow span {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .kicker {
+      width: var(--title-width, 62mm);
       margin: 0 0 2.5mm;
       color: #3d4039;
       font-size: 8px;
       letter-spacing: 0.38em;
+      text-align: center;
       text-transform: uppercase;
     }
     h1 {
       margin: 0;
       color: #36342f;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 21px;
+      font-size: 22px;
       font-weight: 400;
-      line-height: 0.95;
+      line-height: 1;
+      white-space: nowrap;
     }
     h1 span {
-      display: block;
+      display: inline;
       color: #a9966d;
     }
+    .title-block {
+      display: inline-block;
+      --title-width: 62mm;
+      width: var(--title-width);
+    }
     .accent-line {
-      width: 15mm;
+      width: 100%;
       height: 0.8mm;
       background: #b19c72;
-      margin: 3mm 0 3mm;
+      margin: 3mm auto 2.5mm;
     }
     .location-line {
       display: grid;
@@ -254,14 +337,48 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .property-pill {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 3mm;
-      max-width: 100%;
+      width: var(--title-width, 62mm);
       border: 1px solid #d8cfbc;
       border-radius: 2mm;
-      padding: 2mm 4mm;
-      background: rgba(255,255,255,0.7);
+      height: 8.8mm;
+      padding: 0 4mm;
+      background: rgba(255,255,255,0.86);
       color: #3f403a;
       font-size: 10px;
+    }
+    .address-wow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2mm;
+      width: var(--title-width, 62mm);
+      margin-top: 1.2mm;
+      margin-bottom: 1mm;
+      border: 1px solid #ded2bd;
+      border-radius: 2mm;
+      background: linear-gradient(135deg, #fffaf0, #ffffff);
+      color: #514b40;
+      height: 8.8mm;
+      padding: 0 4mm;
+      font-size: 8.2px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 3mm 10mm rgba(108, 94, 62, 0.10);
+    }
+    .address-wow svg {
+      width: 3.6mm;
+      height: 3.6mm;
+      flex: 0 0 auto;
+      color: #a9966d;
+    }
+    .address-wow span {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .hero-text {
       margin: 2.8mm 0 0;
@@ -287,7 +404,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .benefit {
       min-height: 18mm;
-      padding: 0 4mm;
+      padding: 0 0.8mm;
       text-align: center;
       border-right: 1px solid #e4ded2;
     }
@@ -545,36 +662,100 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       padding: 2mm;
     }
     .page-two {
+      --page-one-footer-height: calc(3mm + 10.2px + 1px);
       display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 7mm;
+      grid-template-rows: auto auto auto auto;
+      align-content: start;
+      gap: 1.6mm;
+      padding-top: 2mm;
+      padding-bottom: 4mm;
+      background:
+        radial-gradient(circle at 24mm 24mm, rgba(177,156,114,0.10), transparent 42mm),
+        linear-gradient(180deg, #fbfaf6, #f8f5ef);
     }
     .topline {
       display: flex;
+      align-items: center;
       justify-content: space-between;
+      height: calc(var(--page-one-footer-height) + 1.4mm);
       border-bottom: 1px solid #e6dfd3;
-      padding-bottom: 4mm;
-      color: #6b675e;
-      font-size: 9px;
+      padding-bottom: 0;
+      color: #69665e;
+      font-size: 8.5px;
+      line-height: 1.2;
     }
     .description-grid {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 8mm;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 6mm;
+      height: 168mm;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .description-grid main,
+    .description-grid aside {
       min-height: 0;
     }
+    .description-grid main {
+      display: flex;
+    }
+    .description-grid aside {
+      display: flex;
+      flex-direction: column;
+    }
+    .description-panel {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .page-two-panel {
+      border: 1px solid #ebe5d8;
+      border-radius: 3.5mm;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 6mm 18mm rgba(51,49,42,0.06);
+      padding: 4.5mm;
+      overflow: hidden;
+    }
     .page-two h2 {
-      margin: 0 0 4mm;
+      margin: 0 0 3mm;
       color: #34332f;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 21px;
+      font-size: 18px;
       font-weight: 400;
     }
+    .page-two .kicker {
+      width: auto;
+      margin-bottom: 2mm;
+      text-align: left;
+      color: #8e7a51;
+      letter-spacing: 0.36em;
+    }
     .description {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+      padding-bottom: 5mm;
       color: #34332f;
-      font-size: 10.7px;
-      line-height: 1.58;
-      white-space: pre-line;
+      font-size: 9.5px;
+      line-height: 1.45;
+    }
+    .description:after {
+      content: "...";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      padding-left: 12mm;
+      background: linear-gradient(90deg, rgba(255,255,255,0), #fff 38%);
+      color: #34332f;
+      font-weight: 700;
+    }
+    .description p {
+      margin: 0 0 2.6mm;
+    }
+    .description p:last-child {
+      margin-bottom: 0;
     }
     .facility-list {
       display: grid;
@@ -592,9 +773,60 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       font-size: 9.5px;
       line-height: 1.35;
     }
+    .nearby-list {
+      display: grid;
+      gap: 1.8mm;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nearby-list li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4mm;
+      align-items: center;
+      border: 1px solid #e5ded1;
+      border-radius: 2.6mm;
+      background: rgba(255,255,255,0.96);
+      padding: 2.5mm 3mm;
+    }
+    .nearby-label {
+      display: block;
+      color: #8e7a51;
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.7mm;
+    }
+    .nearby-name {
+      display: block;
+      color: #403c34;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .nearby-address {
+      display: block;
+      margin-top: 0.6mm;
+      color: #756f63;
+      font-size: 7.4px;
+      line-height: 1.2;
+    }
+    .nearby-time {
+      min-width: 20mm;
+      border-radius: 999px;
+      background: #f8f2e5;
+      color: #8e7a51;
+      padding: 1.8mm 2.5mm;
+      font-size: 8px;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
     .map-card {
-      margin-top: 6mm;
-      height: 57mm;
+      margin-top: 4mm;
+      height: 51mm;
       border-radius: 3mm;
       overflow: hidden;
       border: 1px solid #e5ded1;
@@ -609,22 +841,171 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       height: 100%;
       object-fit: cover;
     }
+    .buyer-cta-grid {
+      display: grid;
+      gap: 2.2mm;
+      margin-top: 4mm;
+    }
+    .buyer-cta-card {
+      display: grid;
+      grid-template-columns: 8mm 1fr;
+      gap: 2.8mm;
+      align-items: start;
+      border: 1px solid #e5ded1;
+      border-radius: 3mm;
+      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,242,229,0.92));
+      padding: 3mm;
+      color: #4c483f;
+    }
+    .buyer-cta-card.featured {
+      background: #65705f;
+      border-color: #65705f;
+      color: #fff;
+    }
+    .buyer-cta-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 8mm;
+      height: 8mm;
+      border-radius: 50%;
+      background: #f8f2e5;
+      color: #9b895d;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .buyer-cta-card.featured .buyer-cta-icon {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .buyer-cta-card strong {
+      display: block;
+      margin-bottom: 0.9mm;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.15;
+    }
+    .buyer-cta-card span {
+      display: block;
+      color: inherit;
+      opacity: 0.84;
+      font-size: 8.2px;
+      line-height: 1.32;
+    }
+    .page-two-cta-stack {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin-top: 0;
+    }
+    .page-two-divider {
+      height: 0;
+      margin-top: 2.4mm;
+      border-top: 1px solid #e6dfd3;
+    }
+    .page-two-photo-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2mm;
+      height: 41mm;
+      margin-top: 3mm;
+      margin-bottom: 4mm;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+    .page-two-photo-strip .photo {
+      width: 100%;
+      height: 100%;
+      border-radius: 2mm;
+      object-fit: cover;
+      object-position: center 56%;
+      box-shadow: none;
+    }
+    .page-two-wide-cta {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 5mm;
+      align-items: center;
+      min-height: 23mm;
+      border-radius: 3mm;
+      border: 1px solid #e5ded1;
+      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,242,229,0.96));
+      box-shadow: 0 6mm 18mm rgba(51,49,42,0.06);
+      padding: 3mm 5mm;
+      color: #403c34;
+    }
+    .page-two-wide-cta.dark {
+      background: #65705f;
+      border-color: #65705f;
+      color: #fff;
+    }
+    .page-two-wide-cta h2 {
+      margin: 0 0 1.4mm;
+      font-size: 15px;
+    }
+    .page-two-wide-cta.dark h2 {
+      color: #fff;
+    }
+    .page-two-wide-cta p {
+      margin: 0;
+      color: inherit;
+      opacity: 0.82;
+      font-size: 8.8px;
+      line-height: 1.35;
+    }
+    .page-two-phone {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 35mm;
+      height: 10mm;
+      border-radius: 2mm;
+      background: rgba(255,255,255,0.16);
+      color: #fff;
+      padding: 0 4mm;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .page-two-qr {
+      width: 20mm;
+      height: 20mm;
+      border-radius: 2mm;
+      background: #fff;
+      padding: 1mm;
+      object-fit: contain;
+    }
+    .page-two .footer-line {
+      height: auto;
+      margin-top: 3mm;
+      padding-top: 3mm;
+      font-size: 8.5px;
+      line-height: normal;
+    }
   </style>
 </head>
 <body>
   <section class="page">
     <div class="cover-hero">
       <div class="hero-copy">
-        <div class="mark">⌂</div>
-        <p class="kicker">Acasa. In mijlocul naturii.</p>
-        <h1>Proprietate <span>de vanzare</span></h1>
-        <div class="accent-line"></div>
-        <div class="location-line">
-          <span>⌖</span>
-          <span>${escapeHtml(location || property.location || 'Locatie disponibila la cerere')}</span>
+        <div class="mark-row">
+          <div class="zone-wow">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-4.8 7-11a7 7 0 1 0-14 0c0 6.2 7 11 7 11Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></svg>
+            <span>${escapeHtml(property.zone || property.location || 'Zona proprietatii')}</span>
+          </div>
+        </div>
+        <p class="kicker">ACASA POATE INCEPE AICI!</p>
+        <div class="title-block">
+          <h1>Proprietate <span>de vanzare</span></h1>
+          <div class="accent-line"></div>
         </div>
         <div class="property-pill">▭ ${escapeHtml(property.rooms || '-')} camere · ${escapeHtml(formatNumber(displaySurface))} mp · ${escapeHtml(formatPrice(property.price))}</div>
-        <p class="hero-text">${escapeHtml(shortDescription)}</p>
+        <div class="address-wow">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>${escapeHtml(property.address || 'Adresa disponibila la cerere')}</span>
+        </div>
       </div>
       ${renderPhoto(images[0]?.url, images[0]?.alt || property.title, 'hero-image')}
     </div>
@@ -632,23 +1013,23 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     <div class="benefits">
       <div class="benefit">
         <div class="benefit-icon">♧</div>
-        <div class="benefit-title">Zona verde</div>
-        <p>${escapeHtml(property.nearMetro ? 'Aproape de parc si acces rapid la metrou.' : 'Zona linistita, potrivita pentru locuit.')}</p>
+        <div class="benefit-title">Zona dezvoltata</div>
+        <p>Ai aproape servicii utile,<br />comert, scoli si transport<br />pentru ritmul zilnic.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">▤</div>
         <div class="benefit-title">Acces excelent</div>
-        <p>${escapeHtml(property.zone ? `Conectivitate buna in zona ${property.zone}.` : 'Acces facil la mijloace de transport.')}</p>
+        <p>Te misti usor prin oras,<br />cu legaturi rapide catre<br />puncte importante.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">▥</div>
-        <div class="benefit-title">Confort</div>
-        <p>${escapeHtml(property.partitioning ? `Compartimentare ${property.partitioning}.` : 'Spatii gandite pentru folosire eficienta.')}</p>
+        <div class="benefit-title">Confort zilnic</div>
+        <p>Spatii clare si practice,<br />gandite pentru folosire<br />usoara in fiecare zi.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">◇</div>
-        <div class="benefit-title">Siguranta</div>
-        <p>Proprietate prezentata clar, cu date utile pentru decizie.</p>
+        <div class="benefit-title">Alegerea ideala</div>
+        <p>O optiune echilibrata,<br />usor de evaluat si buna<br />pentru locuit sau investitie.</p>
       </div>
     </div>
 
@@ -720,16 +1101,77 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     </div>
     <div class="description-grid">
       <main>
-        <p class="kicker">Descriere premium</p>
-        <h2>Contextul proprietatii</h2>
-        <div class="description">${escapeHtml(fullDescription)}</div>
-        <div class="map-card">${mapImageUrl ? `<img src="${escapeHtml(mapImageUrl)}" alt="Harta proprietatii" />` : ''}</div>
+        <div class="page-two-panel description-panel">
+          <p class="kicker">Descriere premium</p>
+          <h2>Contextul proprietatii</h2>
+          <div class="description">${renderParagraphs(descriptionParagraphs)}</div>
+        </div>
       </main>
       <aside>
-        <p class="kicker">Facilitati apropiate</p>
-        <h2>Ce conteaza in zona</h2>
-        <ul class="facility-list">${renderList(facilities.length ? facilities : ['Transport public', 'Magazine si servicii', 'Zone verzi', 'Scoli si gradinite', 'Acces rutier rapid'])}</ul>
+        <div class="page-two-panel">
+          <p class="kicker">Facilitati apropiate</p>
+          <h2>Obiective importante in apropiere</h2>
+          ${
+            nearbyObjectives.length
+              ? `<ul class="nearby-list">${nearbyObjectives.map((item) => `<li><span><span class="nearby-label">${escapeHtml(item.label)}</span><span class="nearby-name">${escapeHtml(item.name)}</span>${item.address ? `<span class="nearby-address">${escapeHtml(item.address)}</span>` : ''}</span><strong class="nearby-time">${escapeHtml(item.walkingText)}</strong></li>`).join('')}</ul>`
+              : `<ul class="facility-list">${renderList(facilities.length ? facilities : ['Transport public', 'Magazine si servicii', 'Zone verzi', 'Scoli si gradinite', 'Acces rutier rapid'])}</ul>`
+          }
+        </div>
+        <div class="buyer-cta-grid">
+          <div class="buyer-cta-card featured">
+            <div class="buyer-cta-icon">%</div>
+            <div>
+              <strong>Comision cumparator: 0</strong>
+              <span>Comisionul perceput de agentia noastra este zero.</span>
+            </div>
+          </div>
+          <div class="buyer-cta-card">
+            <div class="buyer-cta-icon">EUR</div>
+            <div>
+              <strong>Finantare prin brokerul nostru</strong>
+              <span>Te putem conecta cu un broker de credite pentru simulare, preaprobare si alegerea solutiei potrivite.</span>
+            </div>
+          </div>
+          <div class="buyer-cta-card">
+            <div class="buyer-cta-icon">OK</div>
+            <div>
+              <strong>Alaturi de tine in tot procesul</strong>
+              <span>Te ghidam de la prima vizionare pana la verificari, oferta, acte si semnarea tranzactiei.</span>
+            </div>
+          </div>
+        </div>
       </aside>
+    </div>
+    <div class="page-two-divider"></div>
+    <div class="page-two-photo-strip">
+      ${renderPhoto(images[0]?.url, images[0]?.alt || 'Imagine proprietate 1')}
+      ${renderPhoto(images[1]?.url, images[1]?.alt || 'Imagine proprietate 2')}
+      ${renderPhoto(images[2]?.url, images[2]?.alt || 'Imagine proprietate 3')}
+      ${renderPhoto(images[3]?.url, images[3]?.alt || 'Imagine proprietate 4')}
+    </div>
+    <div class="page-two-cta-stack">
+      <div class="page-two-wide-cta dark">
+        <div>
+          <h2>Contacteaza consultantul tau</h2>
+          <p>Suna agentul pentru disponibilitate, detalii si urmatorii pasi.</p>
+        </div>
+        <div class="page-two-phone">${escapeHtml(agentPhone)}</div>
+      </div>
+      <div class="page-two-wide-cta">
+        <div>
+          <h2>Scaneaza codul QR</h2>
+          <p>Acceseaza pagina publica a proprietatii pentru galerie, detalii actualizate si solicitare rapida.</p>
+        </div>
+        ${
+          qrCodeUrl
+            ? `<img class="page-two-qr" src="${escapeHtml(qrCodeUrl)}" alt="Cod QR pentru pagina publica a proprietatii" />`
+            : '<div class="qr-placeholder">Link public indisponibil</div>'
+        }
+      </div>
+    </div>
+    <div class="footer-line">
+      <span>⌖ ${escapeHtml(location || property.location || '')}</span>
+      <span>${escapeHtml(agency?.name || 'ImoDeus')} · O locuinta prezentata clar, pentru o decizie buna.</span>
     </div>
   </section>
 </body>
