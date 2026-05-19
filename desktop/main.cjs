@@ -357,6 +357,75 @@ async function getOlxPhoneNumberFromLocalBrowser(url) {
   }
 }
 
+function normalizePdfFileName(value) {
+  const baseName = String(value || 'prezentare-proprietate.pdf')
+    .replace(/[<>:"/\\|?*\x00-\x1F]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120) || 'prezentare-proprietate.pdf';
+
+  return baseName.toLowerCase().endsWith('.pdf') ? baseName : `${baseName}.pdf`;
+}
+
+async function generatePropertyPresentationPdfLocally(input) {
+  const { url, token, fileName } = input || {};
+  if (!url || !token) {
+    throw new Error('Lipsesc datele necesare pentru generarea prezentarii PDF.');
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => '');
+    throw new Error(message || 'Nu am putut pregati prezentarea PDF.');
+  }
+
+  const html = await response.text();
+  const safeFileName = normalizePdfFileName(fileName || response.headers.get('x-presentation-filename'));
+  const defaultPath = path.join(app.getPath('downloads'), safeFileName);
+  const result = await dialog.showSaveDialog({
+    title: 'Salveaza prezentarea proprietatii',
+    defaultPath,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+
+  if (result.canceled || !result.filePath) {
+    return { canceled: true, filePath: null };
+  }
+
+  const pdfWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  try {
+    await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    await pdfWindow.webContents.executeJavaScript('document.fonts ? document.fonts.ready.then(() => true) : true', true).catch(() => true);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    const pdfBuffer = await pdfWindow.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: {
+        marginType: 'none',
+      },
+    });
+
+    await fs.writeFile(result.filePath, pdfBuffer);
+    return { canceled: false, filePath: result.filePath };
+  } finally {
+    pdfWindow.close();
+  }
+}
+
 function getStartUrl() {
   if (process.env.ELECTRON_START_URL) {
     return process.env.ELECTRON_START_URL;
@@ -627,6 +696,10 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('desktop:is-desktop', async () => true);
+
+ipcMain.handle('property-presentation:generate-pdf', async (_event, input) => {
+  return generatePropertyPresentationPdfLocally(input);
+});
 
 ipcMain.handle('olx-phone:get-number', async (_event, { url }) => {
   return getOlxPhoneNumberFromLocalBrowser(url);

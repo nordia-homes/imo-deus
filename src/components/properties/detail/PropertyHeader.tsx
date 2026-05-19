@@ -131,6 +131,31 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
         try {
             const token = await user.getIdToken(true);
+            const safeTitle = property.title
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9._-]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 90) || 'prezentare-proprietate';
+
+            if (typeof window !== 'undefined' && window.imodeusDesktop?.generatePropertyPresentationPdf) {
+                const url = new URL(`/api/properties/${property.id}/presentation`, window.location.origin);
+                url.searchParams.set('format', 'html');
+                const result = await window.imodeusDesktop.generatePropertyPresentationPdf({
+                    url: url.toString(),
+                    token,
+                    fileName: `${safeTitle}-prezentare.pdf`,
+                });
+
+                if (!result.canceled) {
+                    toast({
+                        title: 'Prezentare generata',
+                        description: 'PDF-ul A4 cu 2 pagini a fost salvat local.',
+                    });
+                }
+                return;
+            }
+
             const response = await fetch(`/api/properties/${property.id}/presentation`, {
                 method: 'GET',
                 headers: {
@@ -146,12 +171,6 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            const safeTitle = property.title
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-zA-Z0-9._-]+/g, '-')
-                .replace(/^-+|-+$/g, '')
-                .slice(0, 90) || 'prezentare-proprietate';
 
             link.href = url;
             link.download = `${safeTitle}-prezentare.pdf`;

@@ -114,6 +114,18 @@ export async function GET(
       publicPropertyUrl,
       nearbyObjectives,
     });
+    const fileName = `${sanitizeFileName(property.title)}-prezentare.pdf`;
+
+    if (request.nextUrl.searchParams.get('format') === 'html') {
+      return new NextResponse(html, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'X-Presentation-Filename': fileName,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
 
     const chromiumExecutablePath = findLocalChromiumExecutable();
     browser = await chromium.launch({
@@ -143,8 +155,6 @@ export async function GET(
       preferCSSPageSize: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });
-
-    const fileName = `${sanitizeFileName(property.title)}-prezentare.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,

@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const api = {
   isDesktop: () => ipcRenderer.invoke('desktop:is-desktop'),
+  generatePropertyPresentationPdf: (input) => ipcRenderer.invoke('property-presentation:generate-pdf', input),
   getOlxPhoneNumber: (input) => ipcRenderer.invoke('olx-phone:get-number', input),
   startFacebookRunner: (input) => ipcRenderer.invoke('facebook-runner:start', input),
   retryFacebookRunnerCurrentGroup: () => ipcRenderer.invoke('facebook-runner:retry-current-group'),
