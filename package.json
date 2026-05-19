@@ -17,7 +17,7 @@
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "postinstall": "node scripts/install-playwright-chromium.cjs",
-    "build": "node scripts/install-playwright-chromium.cjs && NODE_ENV=production next build",
+    "build": "node scripts/install-playwright-chromium.cjs && NODE_ENV=production next build && node scripts/copy-playwright-browsers-to-standalone.cjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

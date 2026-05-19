@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import type { Agency, Property, UserProfile } from '@/lib/types';
@@ -7,6 +9,40 @@ import { getNearbyObjectivesForProperty } from '@/lib/property-presentations/nea
 import { renderPropertyPresentationHtml } from '@/lib/property-presentations/pdf-template';
 
 export const runtime = 'nodejs';
+
+function findLocalChromiumExecutable() {
+  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && fs.existsSync(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)) {
+    return process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+  }
+
+  const executableName = process.platform === 'win32' ? 'chrome-headless-shell.exe' : 'chrome-headless-shell';
+  const candidates = [
+    process.cwd(),
+    path.resolve(process.cwd(), '..'),
+    path.resolve(process.cwd(), '..', '..'),
+    path.resolve(process.cwd(), '..', '..', '..'),
+  ];
+
+  for (const baseDir of candidates) {
+    const browsersDir = path.join(baseDir, 'node_modules', 'playwright-core', '.local-browsers');
+    if (!fs.existsSync(browsersDir)) continue;
+
+    const stack = [browsersDir];
+    while (stack.length) {
+      const currentDir = stack.pop()!;
+      for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+        const entryPath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(entryPath);
+        } else if (entry.name === executableName) {
+          return entryPath;
+        }
+      }
+    }
+  }
+
+  return null;
+}
 
 function sanitizeFileName(value: string) {
   return value
@@ -79,8 +115,10 @@ export async function GET(
       nearbyObjectives,
     });
 
+    const chromiumExecutablePath = findLocalChromiumExecutable();
     browser = await chromium.launch({
       headless: true,
+      ...(chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : {}),
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage({
