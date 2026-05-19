@@ -119,7 +119,15 @@ export async function GET(
     browser = await chromium.launch({
       headless: true,
       ...(chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : {}),
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--no-zygote',
+        '--single-process',
+      ],
     });
     const page = await browser.newPage({
       viewport: { width: 794, height: 1123 },
