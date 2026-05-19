@@ -191,6 +191,55 @@ export default function PropertyPricingAnalysisPage() {
     );
   }
 
+  const pricingStrategy = analysis?.pricingStrategy ?? {
+    fastSalePrice: analysis?.conservativeMinPrice ?? 0,
+    fastSalePricePerSqm: analysis?.subject?.squareFootage ? Math.round((analysis?.conservativeMinPrice ?? 0) / analysis.subject.squareFootage) : 0,
+    recommendedPrice: analysis?.recommendedListingPrice ?? 0,
+    recommendedPricePerSqm: analysis?.recommendedListingPricePerSqm ?? 0,
+    stretchPrice: analysis?.stretchMaxPrice ?? 0,
+    stretchPricePerSqm: analysis?.subject?.squareFootage ? Math.round((analysis?.stretchMaxPrice ?? 0) / analysis.subject.squareFootage) : 0,
+    overpricedThreshold: Math.round((analysis?.recommendedListingPrice ?? 0) * 1.06),
+    overpricedThresholdPerSqm: analysis?.subject?.squareFootage ? Math.round(((analysis?.recommendedListingPrice ?? 0) * 1.06) / analysis.subject.squareFootage) : 0,
+    expectedSaleWindowDays: {
+      fast: '21-45 zile',
+      recommended: '45-90 zile',
+      stretch: '90+ zile',
+    },
+    negotiationRoomPercent: analysis?.confidenceScore && analysis.confidenceScore >= 82 ? 3.5 : analysis?.confidenceScore && analysis.confidenceScore >= 68 ? 5 : 6.5,
+    ownerConversation: [],
+  };
+  const marketEvidence = analysis?.marketEvidence ?? {
+    tier: 'listing_led',
+    soldComparableCount: analysis?.marketSignals.soldCount ?? 0,
+    activeComparableCount: analysis?.marketSignals.activeCount ?? 0,
+    portalComparableCount: analysis?.marketSignals.portalCount ?? 0,
+    averageSoldComparableAgeDays: null,
+    directMicrozoneSoldCount: 0,
+    evidenceScore: analysis ? Math.min(72, analysis.confidenceScore) : 0,
+    sourceMix: {
+      soldWeight: analysis?.marketSignals.soldCount ? 60 : 0,
+      activeWeight: analysis?.marketSignals.activeCount ? 80 : 0,
+      portalWeight: analysis?.marketSignals.portalCount ? 20 : 0,
+    },
+    verdict: 'Analiza foloseste formatul anterior al motorului; recalculeaza pentru evidenta extinsa.',
+  };
+  const dataQuality = analysis?.dataQuality ?? {
+    score: analysis ? 70 : 0,
+    level: 'medium',
+    missingFields: [],
+    strengths: [],
+    warnings: ['Recalculeaza analiza pentru scorul complet de calitate a datelor.'],
+  };
+  const backtest = analysis?.backtest ?? {
+    available: false,
+    sampleSize: 0,
+    meanAbsoluteErrorPercent: null,
+    medianAbsoluteErrorPercent: null,
+    biasPercent: null,
+    verdict: 'Recalculeaza analiza pentru integrarea cu memoria si backtesting-ul.',
+    latestBacktest: null,
+  };
+
   return (
     <div className="space-y-6 bg-[#0F1E33] px-3 py-4 text-white">
       <Card className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.12),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_30px_80px_-40px_rgba(0,0,0,0.72)]">
@@ -269,6 +318,45 @@ export default function PropertyPricingAnalysisPage() {
           </div>
 
           <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl text-white">Strategie si incredere comerciala</CardTitle>
+              <CardDescription className="text-white/68">
+                Motorul separa pretul de vanzare rapida, pretul recomandat, limita de test si calitatea dovezilor folosite.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 xl:grid-cols-4">
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm text-white/62">Vanzare rapida</p>
+                <p className="mt-2 text-2xl font-semibold text-white">
+                  {pricingStrategy.fastSalePrice.toLocaleString('ro-RO')} EUR
+                </p>
+                <p className="mt-1 text-xs text-white/54">{pricingStrategy.expectedSaleWindowDays.fast}</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm text-white/62">Prag supraevaluare</p>
+                <p className="mt-2 text-2xl font-semibold text-white">
+                  {pricingStrategy.overpricedThreshold.toLocaleString('ro-RO')} EUR
+                </p>
+                <p className="mt-1 text-xs text-white/54">negociere normala ~{pricingStrategy.negotiationRoomPercent}%</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm text-white/62">Dovezi de piata</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{marketEvidence.evidenceScore}/100</p>
+                <p className="mt-1 text-xs text-white/54">
+                  {marketEvidence.sourceMix.soldWeight}% vandute, {marketEvidence.sourceMix.activeWeight}% active, {marketEvidence.sourceMix.portalWeight}% portal
+                </p>
+              </div>
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm text-white/62">Calitate date</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{dataQuality.score}/100</p>
+                <p className="mt-1 text-xs text-white/54">
+                  {dataQuality.missingFields.length ? `Lipsesc: ${dataQuality.missingFields.join(', ')}` : 'Date complete pentru evaluare'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
             <CardHeader className="space-y-3">
               <CardTitle className="flex items-center gap-2 text-xl text-white">
                 <BarChart3 className="h-5 w-5 text-emerald-200" />
@@ -331,6 +419,32 @@ export default function PropertyPricingAnalysisPage() {
                     ))
                   )}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl text-white">Memorie si backtesting</CardTitle>
+              <CardDescription className="text-white/68">
+                Fiecare analiza este salvata ca snapshot, iar tranzactiile vandute pot fi comparate cu recomandarile istorice.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm text-white/62">Precizie istorica</p>
+                <p className="mt-2 text-2xl font-semibold text-white">
+                  {backtest.available && backtest.medianAbsoluteErrorPercent !== null
+                    ? `${backtest.medianAbsoluteErrorPercent}%`
+                    : 'In formare'}
+                </p>
+                <p className="mt-1 text-xs text-white/54">
+                  {backtest.sampleSize} tranzactii cu analiza anterioara
+                </p>
+              </div>
+              <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                <p className="text-sm font-medium text-white">{backtest.verdict}</p>
+                <p className="mt-2 text-sm leading-6 text-white/62">{marketEvidence.verdict}</p>
               </div>
             </CardContent>
           </Card>

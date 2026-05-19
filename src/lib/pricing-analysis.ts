@@ -1,5 +1,5 @@
 import { adminDb } from '@/firebase/admin';
-import type { Property, PropertyDeletionEvent } from '@/lib/types';
+import type { Property, PropertyDeletionEvent, PropertyStatusEvent } from '@/lib/types';
 import { buildPropertyZoneFact } from '@/lib/zones/matching';
 import { getAdjacentZones, getClusterPeers, normalizeRomanianText } from '@/lib/zones/ontology';
 
@@ -22,6 +22,7 @@ export type PricingComparable = {
   statusLabel: string;
   agencyId?: string | null;
   url?: string | null;
+  recordedAt?: string | null;
 };
 
 export type PricingAdjustment = {
@@ -30,6 +31,64 @@ export type PricingAdjustment = {
   impactPerSqm: number;
   impactTotal: number;
   reason: string;
+};
+
+export type PricingDataQuality = {
+  score: number;
+  level: 'high' | 'medium' | 'low';
+  missingFields: string[];
+  strengths: string[];
+  warnings: string[];
+};
+
+export type PricingMarketEvidence = {
+  tier: 'transaction_led' | 'hybrid' | 'listing_led' | 'weak';
+  soldComparableCount: number;
+  activeComparableCount: number;
+  portalComparableCount: number;
+  averageSoldComparableAgeDays: number | null;
+  directMicrozoneSoldCount: number;
+  evidenceScore: number;
+  sourceMix: {
+    soldWeight: number;
+    activeWeight: number;
+    portalWeight: number;
+  };
+  verdict: string;
+};
+
+export type PricingStrategy = {
+  fastSalePrice: number;
+  fastSalePricePerSqm: number;
+  recommendedPrice: number;
+  recommendedPricePerSqm: number;
+  stretchPrice: number;
+  stretchPricePerSqm: number;
+  overpricedThreshold: number;
+  overpricedThresholdPerSqm: number;
+  expectedSaleWindowDays: {
+    fast: string;
+    recommended: string;
+    stretch: string;
+  };
+  negotiationRoomPercent: number;
+  ownerConversation: string[];
+};
+
+export type PricingBacktestSummary = {
+  available: boolean;
+  sampleSize: number;
+  meanAbsoluteErrorPercent: number | null;
+  medianAbsoluteErrorPercent: number | null;
+  biasPercent: number | null;
+  verdict: string;
+  latestBacktest?: {
+    soldPrice: number;
+    predictedPrice: number;
+    errorPercent: number;
+    soldAt: string | null;
+    analysisGeneratedAt: string;
+  } | null;
 };
 
 export type PricingAnalysisResult = {
@@ -66,6 +125,10 @@ export type PricingAnalysisResult = {
     portalIndexPricePerSqm: number | null;
   };
   limitations: string[];
+  dataQuality: PricingDataQuality;
+  marketEvidence: PricingMarketEvidence;
+  pricingStrategy: PricingStrategy;
+  backtest: PricingBacktestSummary;
 };
 
 type InternalComparableCandidate = Property & {
@@ -75,6 +138,12 @@ type InternalComparableCandidate = Property & {
 type ArchivedDeletionComparable = PropertyDeletionEvent & {
   propertySnapshot: Property;
 };
+
+type ArchivedStatusComparable = PropertyStatusEvent & {
+  propertySnapshot: Property;
+};
+
+type ArchivedSoldComparable = ArchivedDeletionComparable | ArchivedStatusComparable;
 
 type PortalComparableCandidate = {
   id: string;
@@ -540,6 +609,7 @@ function createPricingComparable(
     statusLabel,
     agencyId: 'agencyId' in candidate ? candidate.agencyId ?? null : null,
     url: 'url' in candidate ? candidate.url ?? null : null,
+    recordedAt: 'statusUpdatedAt' in candidate ? candidate.statusUpdatedAt ?? null : null,
   };
 }
 
@@ -560,18 +630,512 @@ function isInternalComparable(subject: Property, subjectFeatures: PropertyFeatur
   return true;
 }
 
-function computeWeightedBenchmark(comparables: PricingComparable[], askDiscount = 1) {
-  if (!comparables.length) return null;
-  const weightedValues: number[] = [];
+function filterBenchmarkOutliers(comparables: PricingComparable[]) {
+  if (comparables.length < 5) return comparables;
 
-  for (const comparable of comparables) {
-    const copies = Math.max(1, Math.round(comparable.similarityScore / 10));
-    for (let index = 0; index < copies; index += 1) {
-      weightedValues.push(comparable.pricePerSqm * askDiscount);
+  const benchmarkMedian = median(comparables.map((item) => item.pricePerSqm));
+  if (!benchmarkMedian) return comparables;
+
+  const absoluteDeviations = comparables.map((item) => Math.abs(item.pricePerSqm - benchmarkMedian));
+  const medianAbsoluteDeviation = median(absoluteDeviations) || 0;
+  const tolerance = Math.max(benchmarkMedian * 0.18, medianAbsoluteDeviation * 2.75, 120);
+
+  return comparables.filter((item) => Math.abs(item.pricePerSqm - benchmarkMedian) <= tolerance);
+}
+
+function computeRecencyWeight(recordedAt?: string | null) {
+  if (!recordedAt) return 0.82;
+  const timestamp = Date.parse(recordedAt);
+  if (!Number.isFinite(timestamp)) return 0.82;
+
+  const ageDays = Math.max(0, (Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+  if (ageDays <= 90) return 1;
+  if (ageDays <= 180) return 0.94;
+  if (ageDays <= 365) return 0.86;
+  if (ageDays <= 730) return 0.72;
+  return 0.58;
+}
+
+function computeSourceWeight(source: ComparableSource) {
+  if (source === 'platform_sold') return 1;
+  if (source === 'agency_active') return 0.78;
+  return 0.62;
+}
+
+function computeComparableWeight(comparable: PricingComparable) {
+  const similarityWeight = (comparable.similarityScore / 100) ** 1.75;
+  return clamp(similarityWeight * computeSourceWeight(comparable.source) * computeRecencyWeight(comparable.recordedAt), 0.18, 1.2);
+}
+
+function weightedMedian(items: Array<{ value: number; weight: number }>) {
+  if (!items.length) return null;
+  const sorted = [...items].sort((left, right) => left.value - right.value);
+  const totalWeight = sorted.reduce((sum, item) => sum + item.weight, 0);
+  let runningWeight = 0;
+
+  for (const item of sorted) {
+    runningWeight += item.weight;
+    if (runningWeight >= totalWeight / 2) {
+      return item.value;
     }
   }
 
-  return round(median(weightedValues) || 0, 0);
+  return sorted[sorted.length - 1]?.value ?? null;
+}
+
+function computeWeightedBenchmark(comparables: PricingComparable[], askDiscount = 1) {
+  if (!comparables.length) return null;
+  const cleanComparables = filterBenchmarkOutliers(comparables);
+  const weightedValues = cleanComparables.map((comparable) => ({
+    value: comparable.pricePerSqm * askDiscount,
+    weight: computeComparableWeight(comparable),
+  }));
+
+  return round(weightedMedian(weightedValues) || 0, 0);
+}
+
+function ageInDays(value?: string | null) {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24)));
+}
+
+function average(values: number[]) {
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function buildDataQuality(subject: Property, subjectFeatures: PropertyFeatures): PricingDataQuality {
+  const checks: Array<{ ok: boolean; field: string; strength: string; warning: string; weight: number }> = [
+    {
+      ok: Boolean(subject.price && subject.price > 0),
+      field: 'pret',
+      strength: 'Pret de listare disponibil.',
+      warning: 'Lipseste pretul de listare.',
+      weight: 14,
+    },
+    {
+      ok: Boolean(subject.squareFootage && subject.squareFootage > 0),
+      field: 'suprafata utila',
+      strength: 'Suprafata utila este disponibila.',
+      warning: 'Lipseste suprafata utila.',
+      weight: 14,
+    },
+    {
+      ok: Boolean(subject.rooms && subject.rooms > 0),
+      field: 'camere',
+      strength: 'Numarul de camere este disponibil.',
+      warning: 'Lipseste numarul de camere.',
+      weight: 10,
+    },
+    {
+      ok: Boolean(subject.zone || subject.location || subject.address),
+      field: 'zona/adresa',
+      strength: 'Localizarea poate fi folosita pentru matching.',
+      warning: 'Zona sau adresa sunt insuficiente.',
+      weight: 12,
+    },
+    {
+      ok: Boolean(subjectFeatures.zoneId || subjectFeatures.zoneTokens.length),
+      field: 'microzona',
+      strength: 'Microzona a fost identificata pentru comparabile.',
+      warning: 'Microzona nu a fost identificata clar.',
+      weight: 12,
+    },
+    {
+      ok: typeof subject.constructionYear === 'number',
+      field: 'an constructie',
+      strength: 'Anul constructiei este disponibil.',
+      warning: 'Lipseste anul constructiei.',
+      weight: 8,
+    },
+    {
+      ok: Boolean(subject.floor),
+      field: 'etaj',
+      strength: 'Etajul este disponibil.',
+      warning: 'Lipseste etajul.',
+      weight: 8,
+    },
+    {
+      ok: subjectFeatures.interiorState !== 'unknown',
+      field: 'stare interioara',
+      strength: 'Starea interioara poate fi folosita in ajustari.',
+      warning: 'Starea interioara este neclara.',
+      weight: 8,
+    },
+    {
+      ok: subjectFeatures.partitioning !== 'unknown',
+      field: 'compartimentare',
+      strength: 'Compartimentarea este disponibila.',
+      warning: 'Compartimentarea este neclara.',
+      weight: 6,
+    },
+    {
+      ok: Boolean(subject.description && subject.description.length >= 80),
+      field: 'descriere',
+      strength: 'Descrierea ofera context comercial.',
+      warning: 'Descrierea este prea scurta pentru extragerea completa a semnalelor.',
+      weight: 4,
+    },
+    {
+      ok: Array.isArray(subject.images) && subject.images.length >= 3,
+      field: 'imagini',
+      strength: 'Exista suficiente imagini pentru context comercial.',
+      warning: 'Setul de imagini este redus.',
+      weight: 4,
+    },
+  ];
+
+  const totalWeight = checks.reduce((sum, item) => sum + item.weight, 0);
+  const score = round((checks.filter((item) => item.ok).reduce((sum, item) => sum + item.weight, 0) / totalWeight) * 100, 0);
+  const missingFields = checks.filter((item) => !item.ok).map((item) => item.field);
+  const strengths = checks.filter((item) => item.ok).map((item) => item.strength).slice(0, 5);
+  const warnings = checks.filter((item) => !item.ok).map((item) => item.warning);
+
+  return {
+    score,
+    level: score >= 82 ? 'high' : score >= 62 ? 'medium' : 'low',
+    missingFields,
+    strengths,
+    warnings,
+  };
+}
+
+function computeMarketEvidence(params: {
+  soldComparables: PricingComparable[];
+  activeComparables: PricingComparable[];
+  portalComparables: PricingComparable[];
+}) {
+  const { soldComparables, activeComparables, portalComparables } = params;
+  const soldWeight = soldComparables.reduce((sum, item) => sum + computeComparableWeight(item), 0);
+  const activeWeight = activeComparables.reduce((sum, item) => sum + computeComparableWeight(item), 0);
+  const portalWeight = portalComparables.reduce((sum, item) => sum + computeComparableWeight(item), 0);
+  const totalWeight = Math.max(soldWeight + activeWeight + portalWeight, 0.01);
+  const soldAges = soldComparables.map((item) => ageInDays(item.recordedAt)).filter((value): value is number => value !== null);
+  const directMicrozoneSoldCount = soldComparables.filter((item) =>
+    item.similarityReasons.some((reason) => reason.includes('aceeasi microzona'))
+  ).length;
+
+  const evidenceScore = clamp(
+    round(
+      Math.min(42, soldComparables.length * 14) +
+        Math.min(16, directMicrozoneSoldCount * 8) +
+        Math.min(16, activeComparables.length * 3) +
+        Math.min(10, portalComparables.length * 2) +
+        (soldAges.length ? Math.max(0, 16 - (average(soldAges) || 0) / 45) : 0),
+      0
+    ),
+    0,
+    100
+  );
+
+  const tier: PricingMarketEvidence['tier'] =
+    soldComparables.length >= 3 && directMicrozoneSoldCount >= 1
+      ? 'transaction_led'
+      : soldComparables.length >= 1
+        ? 'hybrid'
+        : activeComparables.length + portalComparables.length >= 4
+          ? 'listing_led'
+          : 'weak';
+
+  const verdict =
+    tier === 'transaction_led'
+      ? 'Analiza este condusa de tranzactii inchise similare, cu suport din oferta activa.'
+      : tier === 'hybrid'
+        ? 'Analiza combina tranzactii inchise limitate cu oferta activa si portaluri.'
+        : tier === 'listing_led'
+          ? 'Analiza este condusa de oferta activa; lipsesc tranzactii inchise suficient de similare.'
+          : 'Evidenta de piata este slaba; sunt necesare mai multe comparabile sau date mai complete.';
+
+  return {
+    tier,
+    soldComparableCount: soldComparables.length,
+    activeComparableCount: activeComparables.length,
+    portalComparableCount: portalComparables.length,
+    averageSoldComparableAgeDays: soldAges.length ? round(average(soldAges) || 0, 0) : null,
+    directMicrozoneSoldCount,
+    evidenceScore,
+    sourceMix: {
+      soldWeight: round((soldWeight / totalWeight) * 100, 0),
+      activeWeight: round((activeWeight / totalWeight) * 100, 0),
+      portalWeight: round((portalWeight / totalWeight) * 100, 0),
+    },
+    verdict,
+  } satisfies PricingMarketEvidence;
+}
+
+function buildPricingStrategy(params: {
+  subject: Property;
+  recommendedListingPrice: number;
+  recommendedListingPricePerSqm: number;
+  conservativeMinPrice: number;
+  stretchMaxPrice: number;
+  confidenceScore: number;
+  marketHeat: 'hot' | 'balanced' | 'soft';
+}) {
+  const {
+    subject,
+    recommendedListingPrice,
+    recommendedListingPricePerSqm,
+    conservativeMinPrice,
+    stretchMaxPrice,
+    confidenceScore,
+    marketHeat,
+  } = params;
+
+  const surface = Math.max(subject.squareFootage, 1);
+  const negotiationRoomPercent = confidenceScore >= 82 ? 3.5 : confidenceScore >= 68 ? 5 : 6.5;
+  const overpricedMultiplier = marketHeat === 'hot' ? 1.08 : marketHeat === 'soft' ? 1.045 : 1.06;
+  const overpricedThreshold = round(recommendedListingPrice * overpricedMultiplier, 0);
+
+  return {
+    fastSalePrice: conservativeMinPrice,
+    fastSalePricePerSqm: round(conservativeMinPrice / surface, 0),
+    recommendedPrice: recommendedListingPrice,
+    recommendedPricePerSqm: recommendedListingPricePerSqm,
+    stretchPrice: stretchMaxPrice,
+    stretchPricePerSqm: round(stretchMaxPrice / surface, 0),
+    overpricedThreshold,
+    overpricedThresholdPerSqm: round(overpricedThreshold / surface, 0),
+    expectedSaleWindowDays: {
+      fast: marketHeat === 'soft' ? '30-60 zile' : '21-45 zile',
+      recommended: marketHeat === 'hot' ? '30-60 zile' : '45-90 zile',
+      stretch: marketHeat === 'hot' ? '60-100 zile' : '90+ zile',
+    },
+    negotiationRoomPercent,
+    ownerConversation: [
+      `Pretul recomandat este ${recommendedListingPrice.toLocaleString('ro-RO')} EUR, construit din comparabile ponderate dupa similaritate, sursa si recenta.`,
+      `Sub ${conservativeMinPrice.toLocaleString('ro-RO')} EUR intram in zona de vanzare rapida; peste ${overpricedThreshold.toLocaleString('ro-RO')} EUR riscul de blocaj comercial creste.`,
+      `Marja normala de negociere pentru acest nivel de incredere este aproximativ ${negotiationRoomPercent}%.`,
+    ],
+  } satisfies PricingStrategy;
+}
+
+type PricingAnalysisSnapshot = {
+  id?: string;
+  propertyId: string;
+  generatedAt: string;
+  recommendedListingPrice: number;
+  recommendedListingPricePerSqm: number;
+  conservativeMinPrice: number;
+  stretchMaxPrice: number;
+  confidenceScore: number;
+  dataQualityScore: number;
+  evidenceScore: number;
+  evidenceTier: PricingMarketEvidence['tier'];
+  subject: PricingAnalysisResult['subject'];
+};
+
+type PricingBacktestRecord = {
+  id: string;
+  propertyId: string;
+  eventId: string;
+  soldAt: string | null;
+  soldPrice: number;
+  predictedPrice: number;
+  analysisGeneratedAt: string;
+  absoluteError: number;
+  errorPercent: number;
+  signedErrorPercent: number;
+};
+
+function toSnapshot(result: PricingAnalysisResult): PricingAnalysisSnapshot {
+  return {
+    propertyId: result.subject.id,
+    generatedAt: result.generatedAt,
+    recommendedListingPrice: result.recommendedListingPrice,
+    recommendedListingPricePerSqm: result.recommendedListingPricePerSqm,
+    conservativeMinPrice: result.conservativeMinPrice,
+    stretchMaxPrice: result.stretchMaxPrice,
+    confidenceScore: result.confidenceScore,
+    dataQualityScore: result.dataQuality.score,
+    evidenceScore: result.marketEvidence.evidenceScore,
+    evidenceTier: result.marketEvidence.tier,
+    subject: result.subject,
+  };
+}
+
+async function persistPricingAnalysisSnapshot(agencyId: string, result: PricingAnalysisResult) {
+  const snapshot = toSnapshot(result);
+  const snapshotsRef = adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisSnapshots');
+  await snapshotsRef.add(snapshot);
+  await adminDb
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('properties')
+    .doc(result.subject.id)
+    .set(
+      {
+        pricingAnalysis: {
+          latestGeneratedAt: result.generatedAt,
+          recommendedListingPrice: result.recommendedListingPrice,
+          recommendedListingPricePerSqm: result.recommendedListingPricePerSqm,
+          confidenceScore: result.confidenceScore,
+          dataQualityScore: result.dataQuality.score,
+          evidenceScore: result.marketEvidence.evidenceScore,
+          evidenceTier: result.marketEvidence.tier,
+        },
+      },
+      { merge: true }
+    );
+}
+
+function buildBacktestRecord(params: {
+  propertyId: string;
+  eventId: string;
+  soldAt: string | null;
+  soldPrice: number;
+  snapshot: PricingAnalysisSnapshot;
+}): PricingBacktestRecord {
+  const { propertyId, eventId, soldAt, soldPrice, snapshot } = params;
+  const absoluteError = Math.abs(snapshot.recommendedListingPrice - soldPrice);
+  const signedErrorPercent = round(((snapshot.recommendedListingPrice - soldPrice) / soldPrice) * 100, 2);
+
+  return {
+    id: `${propertyId}_${eventId}`,
+    propertyId,
+    eventId,
+    soldAt,
+    soldPrice,
+    predictedPrice: snapshot.recommendedListingPrice,
+    analysisGeneratedAt: snapshot.generatedAt,
+    absoluteError: round(absoluteError, 0),
+    errorPercent: round((absoluteError / soldPrice) * 100, 2),
+    signedErrorPercent,
+  };
+}
+
+function pickLatestSnapshotBeforeSale(snapshots: PricingAnalysisSnapshot[], soldAt: string | null) {
+  const soldTimestamp = soldAt ? Date.parse(soldAt) : Number.POSITIVE_INFINITY;
+
+  return snapshots
+    .filter((snapshot) => {
+      const generatedTimestamp = Date.parse(snapshot.generatedAt);
+      return Number.isFinite(generatedTimestamp) && generatedTimestamp < soldTimestamp;
+    })
+    .sort((left, right) => Date.parse(right.generatedAt) - Date.parse(left.generatedAt))[0] || null;
+}
+
+async function loadAgencyAnalysisSnapshots(agencyId: string) {
+  const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisSnapshots').get();
+  return snapshot.docs.map((docSnapshot) => ({
+    id: docSnapshot.id,
+    ...docSnapshot.data(),
+  })) as PricingAnalysisSnapshot[];
+}
+
+async function loadAgencySoldEvents(agencyId: string) {
+  const [statusEventsSnapshot, deletionEventsSnapshot] = await Promise.all([
+    adminDb.collection('agencies').doc(agencyId).collection('propertyStatusEvents').get(),
+    adminDb.collection('agencies').doc(agencyId).collection('propertyDeletionEvents').get(),
+  ]);
+
+  const statusEvents = statusEventsSnapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as ArchivedStatusComparable))
+    .filter((event) => event.marketAnalysisEligible && typeof event.soldPrice === 'number' && event.soldPrice > 0)
+    .map((event) => ({
+      id: event.id,
+      propertyId: event.propertyId,
+      soldAt: event.changedAt || event.propertySnapshot?.statusUpdatedAt || null,
+      soldPrice: event.soldPrice || 0,
+    }));
+
+  const deletionEvents = deletionEventsSnapshot.docs
+    .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as ArchivedDeletionComparable))
+    .filter((event) => event.marketAnalysisEligible && typeof event.soldPrice === 'number' && event.soldPrice > 0)
+    .map((event) => ({
+      id: event.id,
+      propertyId: event.propertyId,
+      soldAt: event.deletedAt || event.propertySnapshot?.statusUpdatedAt || null,
+      soldPrice: event.soldPrice || 0,
+    }));
+
+  return [...statusEvents, ...deletionEvents];
+}
+
+async function reconcileAgencyBacktests(agencyId: string) {
+  const [snapshots, soldEvents] = await Promise.all([
+    loadAgencyAnalysisSnapshots(agencyId),
+    loadAgencySoldEvents(agencyId),
+  ]);
+  const snapshotsByPropertyId = new Map<string, PricingAnalysisSnapshot[]>();
+
+  for (const snapshot of snapshots) {
+    const current = snapshotsByPropertyId.get(snapshot.propertyId) || [];
+    current.push(snapshot);
+    snapshotsByPropertyId.set(snapshot.propertyId, current);
+  }
+
+  const backtestsRef = adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisBacktests');
+
+  await Promise.all(
+    soldEvents.map(async (event) => {
+      const previousSnapshot = pickLatestSnapshotBeforeSale(snapshotsByPropertyId.get(event.propertyId) || [], event.soldAt);
+      if (!previousSnapshot) return;
+
+      const record = buildBacktestRecord({
+        propertyId: event.propertyId,
+        eventId: event.id,
+        soldAt: event.soldAt,
+        soldPrice: event.soldPrice,
+        snapshot: previousSnapshot,
+      });
+
+      await backtestsRef.doc(record.id).set(record, { merge: true });
+    })
+  );
+}
+
+async function buildBacktestSummary(agencyId: string, subject: Property): Promise<PricingBacktestSummary> {
+  const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisBacktests').get();
+  const records = snapshot.docs.map((docSnapshot) => docSnapshot.data() as PricingBacktestRecord);
+  const errorPercents = records.map((record) => record.errorPercent).filter((value) => Number.isFinite(value));
+  const signedErrors = records.map((record) => record.signedErrorPercent).filter((value) => Number.isFinite(value));
+  const latestSubjectBacktest =
+    records
+      .filter((record) => record.propertyId === subject.id)
+      .sort((left, right) => Date.parse(right.soldAt || '') - Date.parse(left.soldAt || ''))[0] || null;
+
+  if (!errorPercents.length) {
+    return {
+      available: false,
+      sampleSize: 0,
+      meanAbsoluteErrorPercent: null,
+      medianAbsoluteErrorPercent: null,
+      biasPercent: null,
+      verdict: 'Nu exista inca suficiente proprietati vandute dupa o analiza salvata pentru backtesting.',
+      latestBacktest: null,
+    };
+  }
+
+  const meanAbsoluteErrorPercent = round(average(errorPercents) || 0, 2);
+  const medianAbsoluteErrorPercent = round(median(errorPercents) || 0, 2);
+  const biasPercent = round(average(signedErrors) || 0, 2);
+  const verdict =
+    medianAbsoluteErrorPercent <= 5
+      ? 'Precizie foarte buna pe esantionul vandut.'
+      : medianAbsoluteErrorPercent <= 9
+        ? 'Precizie buna, cu spatiu de calibrare pe microzone.'
+        : 'Modelul are nevoie de mai multe tranzactii si recalibrare pe ponderi.';
+
+  return {
+    available: true,
+    sampleSize: errorPercents.length,
+    meanAbsoluteErrorPercent,
+    medianAbsoluteErrorPercent,
+    biasPercent,
+    verdict,
+    latestBacktest: latestSubjectBacktest
+      ? {
+          soldPrice: latestSubjectBacktest.soldPrice,
+          predictedPrice: latestSubjectBacktest.predictedPrice,
+          errorPercent: latestSubjectBacktest.errorPercent,
+          soldAt: latestSubjectBacktest.soldAt,
+          analysisGeneratedAt: latestSubjectBacktest.analysisGeneratedAt,
+        }
+      : null,
+  };
 }
 
 function cleanHtmlToLines(html: string) {
@@ -815,32 +1379,50 @@ async function fetchPortalComparables(subject: Property, subjectFeatures: Proper
     .slice(0, 10);
 }
 
+function isFailedPreconditionError(error: unknown) {
+  const code = error && typeof error === 'object' && 'code' in error ? (error as { code?: unknown }).code : null;
+  const message = error instanceof Error ? error.message : String(error || '');
+  return code === 9 || code === 'failed-precondition' || /FAILED_PRECONDITION/i.test(message);
+}
+
+async function fetchMarketAnalysisEventDocs(collectionGroup: 'propertyDeletionEvents' | 'propertyStatusEvents') {
+  try {
+    const snapshot = await adminDb
+      .collectionGroup(collectionGroup)
+      .where('marketAnalysisEligible', '==', true)
+      .get();
+    return snapshot.docs;
+  } catch (error) {
+    if (!isFailedPreconditionError(error)) {
+      throw error;
+    }
+
+    const snapshot = await adminDb.collectionGroup(collectionGroup).get();
+    return snapshot.docs.filter((docSnapshot) => Boolean(docSnapshot.data().marketAnalysisEligible));
+  }
+}
+
+async function fetchArchivedSoldEventDocs() {
+  const [statusEventDocs, deletionEventDocs] = await Promise.all([
+    fetchMarketAnalysisEventDocs('propertyStatusEvents'),
+    fetchMarketAnalysisEventDocs('propertyDeletionEvents'),
+  ]);
+
+  return [...statusEventDocs, ...deletionEventDocs];
+}
+
 async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: PropertyFeatures) {
-  const [snapshot, archivedSnapshot] = await Promise.all([
+  const [snapshot, archivedDocs] = await Promise.all([
     adminDb.collectionGroup('properties').get(),
-    adminDb.collectionGroup('propertyDeletionEvents').where('marketAnalysisEligible', '==', true).get(),
+    fetchArchivedSoldEventDocs(),
   ]);
   const soldComparables: PricingComparable[] = [];
-  const seenArchivedKeys = new Set<string>();
+  const seenSoldKeys = new Set<string>();
 
-  for (const docSnapshot of snapshot.docs) {
-    const data = { id: docSnapshot.id, ...docSnapshot.data() } as InternalComparableCandidate;
-    if (data.id === subject.id) continue;
-    if (!isSoldStatus(data.status)) continue;
-    const soldCandidate: InternalComparableCandidate = {
-      ...data,
-      price: typeof data.soldPrice === 'number' && data.soldPrice > 0 ? data.soldPrice : data.price,
-    };
-    if (!isInternalComparable(subject, subjectFeatures, soldCandidate)) continue;
+  for (const docSnapshot of archivedDocs) {
+    const data = { id: docSnapshot.id, ...docSnapshot.data() } as ArchivedSoldComparable;
+    if (!data.marketAnalysisEligible) continue;
 
-    const agencyId = docSnapshot.ref.path.split('/')[1] || null;
-    soldComparables.push(
-      createPricingComparable('platform_sold', subject, subjectFeatures, { ...soldCandidate, agencyId }, 'Vandut')
-    );
-  }
-
-  for (const docSnapshot of archivedSnapshot.docs) {
-    const data = { id: docSnapshot.id, ...docSnapshot.data() } as ArchivedDeletionComparable;
     const snapshotProperty = data.propertySnapshot;
     if (!snapshotProperty || snapshotProperty.id === subject.id) continue;
 
@@ -857,17 +1439,47 @@ async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: 
       agencyId: data.agencyId || docSnapshot.ref.path.split('/')[1] || null,
       price: comparablePrice,
       status: 'Vândut',
-      statusUpdatedAt: data.deletedAt || snapshotProperty.statusUpdatedAt,
+      statusUpdatedAt:
+        'changedAt' in data
+          ? data.changedAt || snapshotProperty.statusUpdatedAt
+          : data.deletedAt || snapshotProperty.statusUpdatedAt,
     };
 
-    const dedupeKey = `${archivedCandidate.agencyId || 'unknown'}:${archivedCandidate.id}:${archivedCandidate.price}`;
-    if (seenArchivedKeys.has(dedupeKey)) continue;
-    seenArchivedKeys.add(dedupeKey);
+    const dedupeKey = `${archivedCandidate.agencyId || 'unknown'}:${archivedCandidate.id}`;
+    if (seenSoldKeys.has(dedupeKey)) continue;
+    seenSoldKeys.add(dedupeKey);
 
     if (!isInternalComparable(subject, subjectFeatures, archivedCandidate)) continue;
 
     soldComparables.push(
-      createPricingComparable('platform_sold', subject, subjectFeatures, archivedCandidate, 'Vandut arhivat')
+      createPricingComparable(
+        'platform_sold',
+        subject,
+        subjectFeatures,
+        archivedCandidate,
+        'changedAt' in data ? 'Vandut confirmat' : 'Vandut arhivat'
+      )
+    );
+  }
+
+  for (const docSnapshot of snapshot.docs) {
+    const data = { id: docSnapshot.id, ...docSnapshot.data() } as InternalComparableCandidate;
+    if (data.id === subject.id) continue;
+    if (!isSoldStatus(data.status)) continue;
+
+    const agencyId = docSnapshot.ref.path.split('/')[1] || null;
+    const dedupeKey = `${agencyId || 'unknown'}:${data.id}`;
+    if (seenSoldKeys.has(dedupeKey)) continue;
+    seenSoldKeys.add(dedupeKey);
+
+    const soldCandidate: InternalComparableCandidate = {
+      ...data,
+      price: typeof data.soldPrice === 'number' && data.soldPrice > 0 ? data.soldPrice : data.price,
+    };
+    if (!isInternalComparable(subject, subjectFeatures, soldCandidate)) continue;
+
+    soldComparables.push(
+      createPricingComparable('platform_sold', subject, subjectFeatures, { ...soldCandidate, agencyId }, 'Vandut')
     );
   }
 
@@ -1049,6 +1661,7 @@ export async function generatePricingAnalysis(params: {
   }
 
   const subjectFeatures = extractPropertyFeatures(subject);
+  const dataQuality = buildDataQuality(subject, subjectFeatures);
 
   const [soldComparables, activeComparables, portalComparables, portalIndexPricePerSqm] = await Promise.all([
     fetchPlatformSoldComparables(subject, subjectFeatures),
@@ -1056,6 +1669,7 @@ export async function generatePricingAnalysis(params: {
     fetchPortalComparables(subject, subjectFeatures),
     fetchPortalIndexPrice(subject),
   ]);
+  const marketEvidence = computeMarketEvidence({ soldComparables, activeComparables, portalComparables });
 
   const soldBenchmarkPricePerSqm = computeWeightedBenchmark(soldComparables, 1);
   const activeBenchmarkPricePerSqm = computeWeightedBenchmark(activeComparables, 0.965);
@@ -1115,18 +1729,16 @@ export async function generatePricingAnalysis(params: {
   const averageSimilarity =
     combinedComparables.reduce((sum, item) => sum + item.similarityScore, 0) / Math.max(combinedComparables.length, 1);
 
-  const confidenceScore = clamp(
-    round(
-      36 +
-        Math.min(28, soldComparables.length * 7) +
-        Math.min(12, activeComparables.length * 3) +
-        Math.min(18, portalComparables.length * 3) +
-        averageSimilarity / 3.5,
-      0
-    ),
-    40,
-    96
+  const rawConfidenceScore = round(
+    36 +
+      Math.min(28, soldComparables.length * 7) +
+      Math.min(12, activeComparables.length * 3) +
+      Math.min(18, portalComparables.length * 3) +
+      averageSimilarity / 3.5,
+    0
   );
+  const confidenceCeiling = soldComparables.length >= 3 ? 96 : soldComparables.length >= 1 ? 84 : 72;
+  const confidenceScore = clamp(rawConfidenceScore, 40, confidenceCeiling);
 
   const rangeBase = confidenceScore >= 82 ? 0.045 : confidenceScore >= 68 ? 0.06 : 0.08;
   const spread = clamp(rangeBase + volatility / 2, 0.05, 0.14);
@@ -1143,9 +1755,47 @@ export async function generatePricingAnalysis(params: {
       : activeBenchmarkPricePerSqm && recommendedListingPricePerSqm < activeBenchmarkPricePerSqm * 0.96
         ? 'soft'
         : 'balanced';
+  const pricingStrategy = buildPricingStrategy({
+    subject,
+    recommendedListingPrice,
+    recommendedListingPricePerSqm,
+    conservativeMinPrice,
+    stretchMaxPrice,
+    confidenceScore,
+    marketHeat,
+  });
 
-  return {
-    generatedAt: new Date().toISOString(),
+  const limitations = [
+    soldComparables.length === 0
+      ? 'Nu exista inca tranzactii Vandut suficient de similare pentru aceasta microzona; recomandarea foloseste oferte active si portaluri, cu incredere plafonata.'
+      : null,
+    soldComparables.length > 0 && soldComparables.length < 3
+      ? 'Esantionul de tranzactii Vandut este inca redus; intervalul tactic trebuie tratat ca plaja de calibrare, nu ca evaluare bancara.'
+      : null,
+    'Comparabilele din portaluri sunt preturi active de listare, nu preturi finale de tranzactionare.',
+    'Scraping-ul fara API depinde de structura HTML a portalurilor si poate necesita recalibrare daca paginile se schimba.',
+    'Scorul final ramane dependent de calitatea datelor din proprietate: zona, suprafata, etaj, stare si anul constructiei.',
+  ].filter((item): item is string => Boolean(item));
+  const generatedAt = new Date().toISOString();
+
+  await reconcileAgencyBacktests(agencyId).catch((error) => {
+    console.warn('Pricing backtest reconciliation failed:', error);
+  });
+  const backtest = await buildBacktestSummary(agencyId, subject).catch((error) => {
+    console.warn('Pricing backtest summary failed:', error);
+    return {
+      available: false,
+      sampleSize: 0,
+      meanAbsoluteErrorPercent: null,
+      medianAbsoluteErrorPercent: null,
+      biasPercent: null,
+      verdict: 'Backtesting-ul nu a putut fi calculat pentru aceasta rulare.',
+      latestBacktest: null,
+    } satisfies PricingBacktestSummary;
+  });
+
+  const analysis = {
+    generatedAt,
     subject: {
       id: subject.id,
       title: subject.title,
@@ -1187,10 +1837,16 @@ export async function generatePricingAnalysis(params: {
       marketHeat,
       portalIndexPricePerSqm,
     },
-    limitations: [
-      'Comparabilele din portaluri sunt preturi active de listare, nu preturi finale de tranzactionare.',
-      'Scraping-ul fara API depinde de structura HTML a portalurilor si poate necesita recalibrare daca paginile se schimba.',
-      'Scorul final ramane dependent de calitatea datelor din proprietate: zona, suprafata, etaj, stare si anul constructiei.',
-    ],
+    limitations,
+    dataQuality,
+    marketEvidence,
+    pricingStrategy,
+    backtest,
   } satisfies PricingAnalysisResult;
+
+  await persistPricingAnalysisSnapshot(agencyId, analysis).catch((error) => {
+    console.warn('Pricing analysis snapshot persistence failed:', error);
+  });
+
+  return analysis;
 }
