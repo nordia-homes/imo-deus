@@ -13,11 +13,6 @@ env:
       - BUILD
       - RUNTIME
 
-  - variable: PLAYWRIGHT_INSTALL_WITH_DEPS
-    value: "1"
-    availability:
-      - BUILD
-
   - variable: OPENAI_API_KEY
     secret: OPENAI_API_KEY
     availability:

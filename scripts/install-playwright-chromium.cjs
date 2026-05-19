@@ -6,7 +6,7 @@ process.env.PLAYWRIGHT_BROWSERS_PATH = '0';
 const cliPath = path.join(path.dirname(require.resolve('playwright')), 'cli.js');
 const installArgs = ['install'];
 
-if (process.env.PLAYWRIGHT_INSTALL_WITH_DEPS === '1') {
+if (process.env.PLAYWRIGHT_INSTALL_WITH_DEPS === '1' && process.env.npm_lifecycle_event !== 'postinstall') {
   installArgs.push('--with-deps');
 }
 
