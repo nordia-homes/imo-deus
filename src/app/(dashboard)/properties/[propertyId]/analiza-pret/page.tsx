@@ -3,18 +3,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, BarChart3, CircleAlert, ExternalLink, ImageIcon, RefreshCcw, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, CircleAlert, ExternalLink, FileDown, ImageIcon, Loader2, RefreshCcw, TrendingDown, TrendingUp } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import type { Property } from '@/lib/types';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import type { Contact, MatchedBuyer, Property } from '@/lib/types';
 import type { PricingAnalysisResult, PricingComparable } from '@/lib/pricing-analysis';
-import { doc } from 'firebase/firestore';
+import { getDeterministicMatchedBuyers } from '@/lib/matching-engine';
+import { collection, doc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from '@/hooks/use-toast';
 
 function ComparableTable({
   title,
@@ -136,6 +139,43 @@ function PageSkeleton() {
   );
 }
 
+function parseManualPrice(value: string, fallback: number) {
+  const normalized = value.replace(/[^\d]/g, '');
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+function formatEditablePrice(value: number) {
+  return Math.round(value).toLocaleString('ro-RO');
+}
+
+function formatBuyerBudget(buyer: Pick<Contact, 'budget' | 'preferences'>) {
+  const min = buyer.preferences?.desiredPriceRangeMin;
+  const max = buyer.preferences?.desiredPriceRangeMax || buyer.budget;
+
+  if (min && max) return `${min.toLocaleString('ro-RO')} - ${max.toLocaleString('ro-RO')} EUR`;
+  if (max) return `pana la ${max.toLocaleString('ro-RO')} EUR`;
+  return 'Buget nespecificat';
+}
+
+function buyerLocationLabel(buyer: Pick<Contact, 'city' | 'zones' | 'generalZone'>) {
+  const zones = buyer.zones?.filter(Boolean).slice(0, 2) ?? [];
+  if (buyer.city && zones.length) return `${buyer.city} · ${zones.join(', ')}`;
+  if (buyer.city) return buyer.city;
+  if (zones.length) return zones.join(', ');
+  return buyer.generalZone || 'Zona flexibila';
+}
+
+function sanitizeFileName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 90) || 'analiza-pret';
+}
+
 export default function PropertyPricingAnalysisPage() {
   const params = useParams();
   const propertyId = (params?.propertyId as string | undefined) || '';
@@ -144,14 +184,22 @@ export default function PropertyPricingAnalysisPage() {
   const firestore = useFirestore();
   const [analysis, setAnalysis] = useState<PricingAnalysisResult | null>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [manualMinPrice, setManualMinPrice] = useState('');
+  const [manualRecommendedPrice, setManualRecommendedPrice] = useState('');
 
   const propertyDocRef = useMemoFirebase(() => {
     if (!agencyId || !propertyId) return null;
     return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
   }, [agencyId, firestore, propertyId]);
   const { data: property, isLoading: isLoadingProperty } = useDoc<Property>(propertyDocRef);
+  const contactsQuery = useMemoFirebase(() => {
+    if (!agencyId) return null;
+    return collection(firestore, 'agencies', agencyId, 'contacts');
+  }, [firestore, agencyId]);
+  const { data: contacts } = useCollection<Contact>(contactsQuery);
 
   const marketHeatLabel = useMemo(() => {
     if (!analysis) return null;
@@ -212,6 +260,12 @@ export default function PropertyPricingAnalysisPage() {
     };
   }, [propertyId, refreshKey, user]);
 
+  useEffect(() => {
+    if (!analysis) return;
+    setManualMinPrice(formatEditablePrice(analysis.conservativeMinPrice));
+    setManualRecommendedPrice(formatEditablePrice(analysis.recommendedListingPrice));
+  }, [analysis]);
+
   if (isLoadingProperty || isLoadingAnalysis) {
     return (
       <div className="space-y-6 bg-slate-50 px-3 py-4 text-slate-950">
@@ -259,6 +313,77 @@ export default function PropertyPricingAnalysisPage() {
     strengths: [],
     warnings: ['Recalculeaza analiza pentru scorul complet de calitate a datelor.'],
   };
+  const manualMinPriceValue = parseManualPrice(manualMinPrice, pricingStrategy.fastSalePrice);
+  const manualRecommendedPriceValue = parseManualPrice(manualRecommendedPrice, pricingStrategy.recommendedPrice);
+  const pricingSurface = analysis?.subject.squareFootage || property?.squareFootage || 1;
+  const manualMinPricePerSqm = Math.round(manualMinPriceValue / pricingSurface);
+  const manualRecommendedPricePerSqm = Math.round(manualRecommendedPriceValue / pricingSurface);
+  const hasInvalidManualPrices = manualMinPriceValue > manualRecommendedPriceValue;
+  const visibleAdjustmentPerSqm = analysis?.adjustments.reduce((sum, adjustment) => sum + adjustment.impactPerSqm, 0) ?? 0;
+  const visibleAdjustmentTotal = analysis?.adjustments.reduce((sum, adjustment) => sum + adjustment.impactTotal, 0) ?? 0;
+  const estimatedBasePerSqm = manualRecommendedPricePerSqm - visibleAdjustmentPerSqm;
+  const estimatedBaseTotal = estimatedBasePerSqm * pricingSurface;
+  const missingForOwner = [...dataQuality.missingFields, ...dataQuality.warnings].slice(0, 3);
+  const matchedBuyers: MatchedBuyer[] = property && contacts?.length ? getDeterministicMatchedBuyers(property, contacts, 20) : [];
+
+  const handleExportPricingPdf = async () => {
+    if (!user || !analysis || isExportingPdf) return;
+
+    if (hasInvalidManualPrices) {
+      toast({
+        variant: 'destructive',
+        title: 'Preturi invalide',
+        description: 'Pretul minim trebuie sa fie mai mic sau egal cu pretul recomandat.',
+      });
+      return;
+    }
+
+    setIsExportingPdf(true);
+
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch(`/api/properties/${propertyId}/pricing-analysis/pdf`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          minPrice: manualMinPriceValue,
+          recommendedPrice: manualRecommendedPriceValue,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message || 'Nu am putut genera PDF-ul de analiza pret.');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${sanitizeFileName(property?.title || analysis.subject.title)}-analiza-pret.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'PDF generat',
+        description: 'Analiza de pret pentru proprietar a fost descarcata.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Exportul a esuat',
+        description: error instanceof Error ? error.message : 'Nu am putut genera PDF-ul de analiza pret.',
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6 bg-slate-50 px-3 py-4 text-slate-950">
       <Card className="overflow-hidden rounded-[2rem] border border-teal-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
@@ -315,19 +440,71 @@ export default function PropertyPricingAnalysisPage() {
         <>
           <Card className="rounded-[1.9rem] border border-slate-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
             <CardHeader className="space-y-2">
-              <CardTitle className="text-xl text-slate-950">Strategie si incredere comerciala</CardTitle>
-              <CardDescription className="text-slate-600">
-                Motorul separa pretul de vanzare rapida, pretul recomandat, limita de test si calitatea dovezilor folosite.
-              </CardDescription>
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-2">
+                  <CardTitle className="text-xl text-slate-950">Strategie si incredere comerciala</CardTitle>
+                  <CardDescription className="text-slate-600">
+                    Ajusteaza preturile pentru discutia cu proprietarul, apoi exporta analiza PDF pentru prezentare.
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleExportPricingPdf}
+                  disabled={isExportingPdf || hasInvalidManualPrices}
+                  className="rounded-full border border-emerald-200 bg-emerald-600 px-5 text-white hover:bg-emerald-700"
+                >
+                  {isExportingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                  Exporta PDF analiza pret
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 rounded-[1.2rem] border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="manual-min-price" className="text-sm font-medium text-slate-700">
+                    Pret minim
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="manual-min-price"
+                      inputMode="numeric"
+                      value={manualMinPrice}
+                      onChange={(event) => setManualMinPrice(event.target.value)}
+                      className="h-12 rounded-xl border-orange-200 bg-white pr-12 text-lg font-semibold text-slate-950"
+                    />
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">EUR</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="manual-recommended-price" className="text-sm font-medium text-slate-700">
+                    Pret recomandat
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="manual-recommended-price"
+                      inputMode="numeric"
+                      value={manualRecommendedPrice}
+                      onChange={(event) => setManualRecommendedPrice(event.target.value)}
+                      className="h-12 rounded-xl border-emerald-200 bg-white pr-12 text-lg font-semibold text-slate-950"
+                    />
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">EUR</span>
+                  </div>
+                </div>
+                {hasInvalidManualPrices ? (
+                  <p className="text-sm text-rose-700 md:col-span-2">
+                    Pretul minim trebuie sa fie mai mic sau egal cu pretul recomandat.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-[1.2rem] border border-orange-200 bg-orange-50 p-4 shadow-[inset_4px_0_0_rgba(234,88,12,0.52)]">
                 <p className="text-sm text-orange-800/76">Vanzare rapida</p>
                 <p className="mt-2 text-2xl font-semibold text-slate-950">
-                  {pricingStrategy.fastSalePrice.toLocaleString('ro-RO')} EUR
+                  {manualMinPriceValue.toLocaleString('ro-RO')} EUR
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
-                  {pricingStrategy.fastSalePricePerSqm.toLocaleString('ro-RO')} EUR/mp · {pricingStrategy.expectedSaleWindowDays.fast}
+                  {manualMinPricePerSqm.toLocaleString('ro-RO')} EUR/mp · {pricingStrategy.expectedSaleWindowDays.fast}
                 </p>
               </div>
               <div className="rounded-[1.2rem] border border-sky-200 bg-sky-50 p-4 shadow-[inset_4px_0_0_rgba(2,132,199,0.42)]">
@@ -340,9 +517,9 @@ export default function PropertyPricingAnalysisPage() {
               <div className="rounded-[1.2rem] border border-emerald-300 bg-emerald-100 p-4 shadow-[0_18px_42px_-30px_rgba(5,150,105,0.72),inset_4px_0_0_rgba(5,150,105,0.62)]">
                 <p className="text-sm text-emerald-900/78">Pret recomandat</p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-950">
-                  {pricingStrategy.recommendedPrice.toLocaleString('ro-RO')} EUR
+                  {manualRecommendedPriceValue.toLocaleString('ro-RO')} EUR
                 </p>
-                <p className="mt-1 text-xs text-slate-600">{pricingStrategy.recommendedPricePerSqm.toLocaleString('ro-RO')} EUR/mp</p>
+                <p className="mt-1 text-xs text-slate-600">{manualRecommendedPricePerSqm.toLocaleString('ro-RO')} EUR/mp</p>
               </div>
               <div className="rounded-[1.2rem] border border-amber-200 bg-amber-50 p-4 shadow-[inset_4px_0_0_rgba(217,119,6,0.45)]">
                 <p className="text-sm text-amber-800/72">Prag supraevaluare</p>
@@ -376,6 +553,7 @@ export default function PropertyPricingAnalysisPage() {
                 <p className="text-sm text-rose-800/72">Temperatura pietei</p>
                 <p className="mt-2 text-2xl font-semibold text-slate-950">{marketHeatLabel || 'Piata echilibrata'}</p>
                 <p className="mt-1 text-xs text-slate-600">Fara scraping live; surse locale controlate</p>
+              </div>
               </div>
             </CardContent>
           </Card>
@@ -417,6 +595,37 @@ export default function PropertyPricingAnalysisPage() {
 
               <div className="rounded-[1.3rem] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs font-semibold uppercase text-slate-500">Ajustari cheie</p>
+                <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                  <div className="rounded-[1rem] border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Baza comparabila</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{estimatedBasePerSqm.toLocaleString('ro-RO')} EUR/mp</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {estimatedBaseTotal.toLocaleString('ro-RO')} EUR pentru {pricingSurface.toLocaleString('ro-RO')} mp
+                    </p>
+                  </div>
+                  <div className="rounded-[1rem] border border-teal-200 bg-teal-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">Ajustari vizibile</p>
+                    <p className={`mt-2 text-2xl font-semibold ${visibleAdjustmentPerSqm < 0 ? 'text-rose-700' : 'text-teal-800'}`}>
+                      {visibleAdjustmentPerSqm > 0 ? '+' : ''}{visibleAdjustmentPerSqm.toLocaleString('ro-RO')} EUR/mp
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {visibleAdjustmentTotal > 0 ? '+' : visibleAdjustmentTotal < 0 ? '-' : ''}{Math.abs(visibleAdjustmentTotal).toLocaleString('ro-RO')} EUR impact total
+                    </p>
+                  </div>
+                  <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">Pret rezultat</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{manualRecommendedPricePerSqm.toLocaleString('ro-RO')} EUR/mp</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {manualRecommendedPriceValue.toLocaleString('ro-RO')} EUR pret recomandat
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-[1rem] border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
+                  <span className="font-semibold text-slate-900">Ce mai poate rafina pretul: </span>
+                  {missingForOwner.length > 0
+                    ? missingForOwner.join('; ')
+                    : 'datele principale sunt complete pentru o recomandare comerciala coerenta.'}
+                </div>
                 <div className="mt-4 space-y-3">
                   {analysis.adjustments.length === 0 ? (
                     <p className="rounded-[1rem] border border-slate-200 bg-white p-4 text-sm text-slate-600">
@@ -429,6 +638,9 @@ export default function PropertyPricingAnalysisPage() {
                           <div className="min-w-0">
                             <p className="font-medium text-slate-950">{adjustment.label}</p>
                             <p className="mt-1 text-sm leading-6 text-slate-600">{adjustment.reason}</p>
+                            <p className="mt-2 text-xs text-slate-500">
+                              Calcul: {adjustment.impactPerSqm > 0 ? '+' : ''}{adjustment.impactPerSqm.toLocaleString('ro-RO')} EUR/mp x {pricingSurface.toLocaleString('ro-RO')} mp = {adjustment.impactTotal > 0 ? '+' : adjustment.impactTotal < 0 ? '-' : ''}{Math.abs(adjustment.impactTotal).toLocaleString('ro-RO')} EUR
+                            </p>
                           </div>
                           <div className="shrink-0 text-right">
                             <p className={`text-sm font-semibold ${adjustment.direction === 'negative' ? 'text-rose-700' : 'text-teal-700'}`}>
@@ -444,6 +656,45 @@ export default function PropertyPricingAnalysisPage() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.9rem] border border-slate-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl text-slate-950">Cumparatori potriviti</CardTitle>
+              <CardDescription className="text-slate-600">
+                Maxim 20 de lead-uri active din baza agentiei, ordonate dupa compatibilitatea cu proprietatea.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {matchedBuyers.length === 0 ? (
+                <p className="rounded-[1.2rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  Nu au fost gasiti cumparatori potriviti pentru criteriile acestei proprietati.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {matchedBuyers.map((buyer) => (
+                    <div key={buyer.id} className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-950">{buyer.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{buyer.status} · {buyer.source || 'sursa necunoscuta'}</p>
+                        </div>
+                        <Badge className="shrink-0 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                          {buyer.matchScore}/100
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-sm font-medium text-slate-800">{formatBuyerBudget(buyer)}</p>
+                      <p className="mt-1 text-xs text-slate-500">{buyerLocationLabel(buyer)}</p>
+                      <p className="mt-3 line-clamp-2 text-xs leading-5 text-slate-600">{buyer.reasoning}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                        {buyer.phone ? <span>{buyer.phone}</span> : null}
+                        {buyer.email ? <span>{buyer.email}</span> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

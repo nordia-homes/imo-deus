@@ -2567,8 +2567,9 @@ function buildRiskFlags(params: {
 export async function generatePricingAnalysis(params: {
   agencyId: string;
   propertyId: string;
+  persist?: boolean;
 }) {
-  const { agencyId, propertyId } = params;
+  const { agencyId, propertyId, persist = true } = params;
   const propertySnapshot = await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).get();
 
   if (!propertySnapshot.exists) {
@@ -2853,12 +2854,14 @@ export async function generatePricingAnalysis(params: {
     }),
   } satisfies PricingAnalysisResult;
 
-  void Promise.all([
-    persistPricingAnalysisSnapshot(agencyId, analysis),
-    reconcileAgencyBacktests(agencyId),
-  ]).catch((error) => {
-    console.warn('Pricing analysis background persistence failed:', error);
-  });
+  if (persist) {
+    void Promise.all([
+      persistPricingAnalysisSnapshot(agencyId, analysis),
+      reconcileAgencyBacktests(agencyId),
+    ]).catch((error) => {
+      console.warn('Pricing analysis background persistence failed:', error);
+    });
+  }
 
   return analysis;
 }
