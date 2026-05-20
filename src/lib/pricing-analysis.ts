@@ -13,6 +13,7 @@ export type PricingComparable = {
   source: ComparableSource;
   title: string;
   address: string;
+  imageUrl?: string | null;
   locationLabel: string;
   price: number;
   pricePerSqm: number;
@@ -204,6 +205,7 @@ type PortalComparableCandidate = {
   portalName: string;
   title: string;
   address: string;
+  imageUrl?: string | null;
   locationLabel: string;
   price: number;
   squareFootage: number;
@@ -899,6 +901,12 @@ function createPricingComparable(
   statusLabel: string
 ) {
   const locationLabel = 'locationLabel' in candidate ? candidate.locationLabel : getLocationLabel(candidate);
+  const imageUrl =
+    'images' in candidate && Array.isArray(candidate.images)
+      ? candidate.images.find((image) => image?.url)?.url || null
+      : 'imageUrl' in candidate
+        ? candidate.imageUrl || null
+        : null;
   const candidateText = [
     'title' in candidate ? candidate.title : '',
     'address' in candidate ? candidate.address : '',
@@ -951,6 +959,7 @@ function createPricingComparable(
     source,
     title: candidate.title,
     address: candidate.address,
+    imageUrl,
     locationLabel,
     price: candidate.price,
     pricePerSqm: round(toPricePerSqm(candidate.price, candidate.squareFootage), 0),
@@ -1395,7 +1404,7 @@ function buildPricingStrategy(params: {
     overpricedThreshold,
     overpricedThresholdPerSqm: round(overpricedThreshold / surface, 0),
     expectedSaleWindowDays: {
-      fast: marketHeat === 'soft' ? '30-60 zile' : '21-45 zile',
+      fast: '30 zile',
       recommended: marketHeat === 'hot' ? '30-60 zile' : '45-90 zile',
       stretch: marketHeat === 'hot' ? '60-100 zile' : '90+ zile',
     },
@@ -1860,6 +1869,11 @@ function ownerListingToPortalCandidate(
     portalName: `${listing.sourceLabel || listing.source} proprietar`,
     title: listing.title,
     address: listing.location || listing.scopeCity || '',
+    imageUrl:
+      listing.imageUrl ||
+      listing.image ||
+      ((listing as OwnerListingSummary & { images?: string[] }).images || []).find(Boolean) ||
+      null,
     locationLabel: listing.location || listing.scopeCity || '',
     price,
     squareFootage,
@@ -2291,7 +2305,13 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
       ? knownParkingComparables.filter((item) => item.parkingIncluded === true).length / knownParkingComparables.length
       : null;
 
-  const adjustments: Array<{ label: string; reason: string; pct: number; direction: 'positive' | 'negative' | 'neutral' }> = [];
+  const adjustments: Array<{
+    label: string;
+    reason: string;
+    pct: number;
+    direction: 'positive' | 'negative' | 'neutral';
+    appliesToPricing?: boolean;
+  }> = [];
 
   if (subjectFeatures.interiorState === 'renovat') {
     adjustments.push({
@@ -2306,6 +2326,18 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
       reason: 'Piata penalizeaza apartamentele care necesita investitii imediate.',
       pct: -0.06,
       direction: 'negative',
+    });
+  }
+
+  const balconySurface = getBalconySurface(subject);
+  const pricingSurface = getPricingSurface(subject);
+  if (balconySurface > 0 && pricingSurface > 0) {
+    adjustments.push({
+      label: 'Balcon / terasa',
+      reason: `Balconul/terasa de ${balconySurface.toLocaleString('ro-RO')} mp este inclusa in valoare cu pondere de 50% fata de suprafata utila.`,
+      pct: clamp((balconySurface * 0.5) / pricingSurface, 0.005, 0.05),
+      direction: 'positive',
+      appliesToPricing: false,
     });
   }
 
@@ -2374,7 +2406,7 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
     });
   }
 
-  if (subject.bathrooms > averageBathrooms + 0.4) {
+  if (subject.bathrooms >= 2 && subject.bathrooms > averageBathrooms + 0.4) {
     adjustments.push({
       label: 'Baie suplimentara',
       reason: 'Numarul de bai este peste media comparabilelor directe.',
@@ -2621,7 +2653,11 @@ export async function generatePricingAnalysis(params: {
     ...portalComparables.slice(0, 4),
   ];
   const rawAdjustments = computeAdjustmentSet(subject, subjectFeatures, referencePool);
-  const totalAdjustmentPct = clamp(rawAdjustments.reduce((sum, item) => sum + item.pct, 0), -0.1, 0.11);
+  const totalAdjustmentPct = clamp(
+    rawAdjustments.reduce((sum, item) => sum + (item.appliesToPricing === false ? 0 : item.pct), 0),
+    -0.1,
+    0.11
+  );
   const anchorMedian = median(anchors) || baselinePricePerSqm;
   const strongestBenchmarkPricePerSqm = maxFinite([
     soldBenchmarkPricePerSqm,
