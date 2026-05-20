@@ -31,7 +31,7 @@ export function CmaAnalysisTab({ subjectProperty }: CmaAnalysisTabProps) {
 
           <div className="space-y-3 rounded-[1.1rem] border border-white/8 bg-white/[0.03] p-4">
             <p className="text-sm leading-6 text-white/76">
-              Vezi un pret recomandat calculat din proprietati `Vandut` similare din platforma, comparabile active din agentie si oferta online disponibila pe portal.
+              Vezi un pret recomandat calculat din proprietati `Vandut` similare din platforma, comparabile active din agentie si anunturi deja salvate in ownerListings.
             </p>
             <Button asChild size="sm" className={`h-10 rounded-full px-4 text-white ${ACTION_PILL_CLASSNAME}`}>
               <Link href={`/properties/${subjectProperty.id}/analiza-pret`}>

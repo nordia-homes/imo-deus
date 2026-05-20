@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, BarChart3, CircleAlert, RefreshCcw, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, CircleAlert, ExternalLink, RefreshCcw, TrendingDown, TrendingUp } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { Property } from '@/lib/types';
-import type { PricingAnalysisResult, PricingComparable } from '@/lib/pricing-analysis';
+import type { PricingAnalysisResult, PricingComparable, PricingSourceDiagnostic } from '@/lib/pricing-analysis';
 import { doc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -40,11 +40,19 @@ function ComparableTable({
   title,
   description,
   items,
+  currentAgencyId,
 }: {
   title: string;
   description: string;
   items: PricingComparable[];
+  currentAgencyId?: string | null;
 }) {
+  const getComparableHref = (item: PricingComparable) => {
+    if (item.url) return item.url;
+    if (item.agencyId && item.agencyId === currentAgencyId) return `/properties/${item.id}`;
+    return null;
+  };
+
   return (
     <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
       <CardHeader className="space-y-2">
@@ -66,32 +74,48 @@ function ComparableTable({
                   <TableHead className="text-white/70">Pret</TableHead>
                   <TableHead className="text-white/70">EUR/mp</TableHead>
                   <TableHead className="text-white/70">Similaritate</TableHead>
+                  <TableHead className="text-right text-white/70">Link</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
-                  <TableRow key={`${item.source}-${item.id}-${item.price}`} className="border-white/8 hover:bg-white/[0.04]">
-                    <TableCell className="min-w-[230px]">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">{item.title}</p>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="border-white/10 bg-white/10 text-white">{item.statusLabel}</Badge>
-                          {item.rooms !== null ? <Badge variant="outline" className="border-white/10 text-white/72">{item.rooms} cam.</Badge> : null}
-                          <Badge variant="outline" className="border-white/10 text-white/72">{item.squareFootage} mp</Badge>
+                {items.map((item) => {
+                  const comparableHref = getComparableHref(item);
+
+                  return (
+                    <TableRow key={`${item.source}-${item.id}-${item.price}`} className="border-white/8 hover:bg-white/[0.04]">
+                      <TableCell className="min-w-[230px]">
+                        <div className="space-y-1">
+                          <p className="font-medium text-white">{item.title}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge className="border-white/10 bg-white/10 text-white">{item.statusLabel}</Badge>
+                            {item.rooms !== null ? <Badge variant="outline" className="border-white/10 text-white/72">{item.rooms} cam.</Badge> : null}
+                            <Badge variant="outline" className="border-white/10 text-white/72">{item.squareFootage} mp</Badge>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-white/76">{item.locationLabel}</TableCell>
-                    <TableCell className="font-medium text-white">{item.price.toLocaleString('ro-RO')} EUR</TableCell>
-                    <TableCell className="text-white/82">{item.pricePerSqm.toLocaleString('ro-RO')}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">{item.similarityScore}/100</p>
-                        <p className="text-xs text-white/60">{item.similarityReasons.join(', ')}</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-white/76">{item.locationLabel}</TableCell>
+                      <TableCell className="font-medium text-white">{item.price.toLocaleString('ro-RO')} EUR</TableCell>
+                      <TableCell className="text-white/82">{item.pricePerSqm.toLocaleString('ro-RO')}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium text-white">{item.similarityScore}/100</p>
+                          <p className="text-xs text-white/60">{item.similarityReasons.join(', ')}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {comparableHref ? (
+                          <Button asChild size="icon" variant="outline" className="h-8 w-8 rounded-full border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]">
+                            <a href={comparableHref} target="_blank" rel="noreferrer" aria-label="Deschide comparabila in tab nou">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-white/42">Privat</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -144,7 +168,16 @@ export default function PropertyPricingAnalysisPage() {
     let isCancelled = false;
 
     async function loadAnalysis() {
-      if (!user || !propertyId) return;
+      if (!propertyId) {
+        setIsLoadingAnalysis(false);
+        return;
+      }
+
+      if (!user) {
+        setIsLoadingAnalysis(false);
+        setAnalysisError('Autentificarea nu este disponibila momentan. Reincarca pagina sau autentifica-te din nou.');
+        return;
+      }
 
       setIsLoadingAnalysis(true);
       setAnalysisError(null);
@@ -198,8 +231,8 @@ export default function PropertyPricingAnalysisPage() {
     recommendedPricePerSqm: analysis?.recommendedListingPricePerSqm ?? 0,
     stretchPrice: analysis?.stretchMaxPrice ?? 0,
     stretchPricePerSqm: analysis?.subject?.squareFootage ? Math.round((analysis?.stretchMaxPrice ?? 0) / analysis.subject.squareFootage) : 0,
-    overpricedThreshold: Math.round((analysis?.recommendedListingPrice ?? 0) * 1.06),
-    overpricedThresholdPerSqm: analysis?.subject?.squareFootage ? Math.round(((analysis?.recommendedListingPrice ?? 0) * 1.06) / analysis.subject.squareFootage) : 0,
+    overpricedThreshold: Math.round((analysis?.stretchMaxPrice ?? analysis?.recommendedListingPrice ?? 0) * 1.01),
+    overpricedThresholdPerSqm: analysis?.subject?.squareFootage ? Math.round(((analysis?.stretchMaxPrice ?? analysis?.recommendedListingPrice ?? 0) * 1.01) / analysis.subject.squareFootage) : 0,
     expectedSaleWindowDays: {
       fast: '21-45 zile',
       recommended: '45-90 zile',
@@ -239,6 +272,8 @@ export default function PropertyPricingAnalysisPage() {
     verdict: 'Recalculeaza analiza pentru integrarea cu memoria si backtesting-ul.',
     latestBacktest: null,
   };
+  const sourceDiagnostics: PricingSourceDiagnostic[] = analysis?.sourceDiagnostics ?? [];
+  const riskFlags = analysis?.riskFlags ?? [];
 
   return (
     <div className="space-y-6 bg-[#0F1E33] px-3 py-4 text-white">
@@ -263,7 +298,7 @@ export default function PropertyPricingAnalysisPage() {
                 {property?.title || 'Analiza proprietatii'}
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-white/72">
-                Motorul combina tranzactii `Vandut` din toate agentiile din platforma, proprietati active din portofoliul curent si comparabile online extrase direct din portaluri imobiliare, fara API.
+                Motorul combina tranzactii `Vandut` din toate agentiile din platforma, proprietati active din portofoliul curent si comparabile active deja salvate in ownerListings.
               </p>
             </div>
 
@@ -308,12 +343,12 @@ export default function PropertyPricingAnalysisPage() {
             <MetricCard
               label="Incredere"
               value={`${analysis.confidenceScore}/100`}
-              hint={`${analysis.marketSignals.soldCount} vandute, ${analysis.marketSignals.activeCount} active, ${analysis.marketSignals.portalCount} portal`}
+              hint={`${analysis.marketSignals.soldCount} vandute, ${analysis.marketSignals.activeCount} active, ${analysis.marketSignals.portalCount} ownerListings`}
             />
             <MetricCard
               label="Temperatura pietei"
               value={marketHeatLabel || 'Piata echilibrata'}
-              hint={analysis.marketSignals.portalIndexPricePerSqm ? `Indice portal: ${analysis.marketSignals.portalIndexPricePerSqm.toLocaleString('ro-RO')} EUR/mp` : 'Fara indice extern disponibil'}
+              hint="Fara scraping live; surse locale controlate"
             />
           </div>
 
@@ -343,7 +378,7 @@ export default function PropertyPricingAnalysisPage() {
                 <p className="text-sm text-white/62">Dovezi de piata</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{marketEvidence.evidenceScore}/100</p>
                 <p className="mt-1 text-xs text-white/54">
-                  {marketEvidence.sourceMix.soldWeight}% vandute, {marketEvidence.sourceMix.activeWeight}% active, {marketEvidence.sourceMix.portalWeight}% portal
+                  {marketEvidence.sourceMix.soldWeight}% vandute, {marketEvidence.sourceMix.activeWeight}% active, {marketEvidence.sourceMix.portalWeight}% ownerListings
                 </p>
               </div>
               <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
@@ -352,6 +387,61 @@ export default function PropertyPricingAnalysisPage() {
                 <p className="mt-1 text-xs text-white/54">
                   {dataQuality.missingFields.length ? `Lipsesc: ${dataQuality.missingFields.join(', ')}` : 'Date complete pentru evaluare'}
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl text-white">Auditul surselor si riscuri</CardTitle>
+              <CardDescription className="text-white/68">
+                Analiza arata ce surse au alimentat pretul si ce semnale pot limita increderea comerciala.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="grid gap-3 md:grid-cols-2">
+                {sourceDiagnostics.length === 0 ? (
+                  <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4 text-sm text-white/64">
+                    Recalculeaza analiza pentru auditul complet al surselor.
+                  </div>
+                ) : (
+                  sourceDiagnostics.map((item) => (
+                    <div key={item.source} className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">{item.source.replace(/_/g, ' ')}</p>
+                          <p className="mt-1 text-xs leading-5 text-white/56">{item.message}</p>
+                        </div>
+                        <Badge className={item.status === 'ok' ? 'bg-emerald-400/15 text-emerald-100' : item.status === 'failed' ? 'bg-rose-400/15 text-rose-100' : 'bg-amber-400/15 text-amber-100'}>
+                          {item.status}
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-xs text-white/48">
+                        {item.acceptedCount} acceptate / {item.rejectedCount} respinse
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {riskFlags.length === 0 ? (
+                  <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4 text-sm text-white/64">
+                    Nu exista riscuri explicite in aceasta rulare.
+                  </div>
+                ) : (
+                  riskFlags.map((flag) => (
+                    <div key={`${flag.label}-${flag.reason}`} className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-medium text-white">{flag.label}</p>
+                        <Badge className={flag.severity === 'critical' ? 'bg-rose-400/15 text-rose-100' : flag.severity === 'warning' ? 'bg-amber-400/15 text-amber-100' : 'bg-sky-400/15 text-sky-100'}>
+                          {flag.severity}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-white/62">{flag.reason}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -383,7 +473,7 @@ export default function PropertyPricingAnalysisPage() {
                     </p>
                   </div>
                   <div className="rounded-[1.1rem] border border-white/8 bg-[#10223a] p-4">
-                    <p className="text-sm text-white/62">Active pe portal</p>
+                    <p className="text-sm text-white/62">Active din ownerListings</p>
                     <p className="mt-2 text-2xl font-semibold text-white">
                       {analysis.portalBenchmarkPricePerSqm ? `${analysis.portalBenchmarkPricePerSqm.toLocaleString('ro-RO')} EUR/mp` : '-'}
                     </p>
@@ -445,6 +535,11 @@ export default function PropertyPricingAnalysisPage() {
               <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
                 <p className="text-sm font-medium text-white">{backtest.verdict}</p>
                 <p className="mt-2 text-sm leading-6 text-white/62">{marketEvidence.verdict}</p>
+                {backtest.segment ? (
+                  <p className="mt-2 text-sm leading-6 text-white/62">
+                    Segment: {backtest.segment.sampleSize} exemple, factor calibrare {backtest.segment.calibrationFactor.toLocaleString('ro-RO')}. {backtest.segment.verdict}
+                  </p>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -453,18 +548,21 @@ export default function PropertyPricingAnalysisPage() {
             title="Tranzactii similare vandute in platforma"
             description="Aceste comparabile au cea mai mare greutate in pretul recomandat, fiind vanzari inchise centralizate din agentiile inscrise."
             items={analysis.soldComparables}
+            currentAgencyId={agencyId}
           />
 
           <ComparableTable
             title="Oferta activa din agentie"
             description="Aceste proprietati arata cum este pozitionat astazi portofoliul propriu fata de aceeasi categorie de produs."
             items={analysis.activeComparables}
+            currentAgencyId={agencyId}
           />
 
           <ComparableTable
-            title="Comparabile online din portal"
-            description="Aceste comparabile sunt preturi active de listare extrase direct din portaluri precum OLX/Storia si imobiliare.net si sunt folosite cu discount fata de vanzarile inchise."
+            title="Comparabile active din ownerListings"
+            description="Aceste comparabile sunt anunturi deja colectate si normalizate in ownerListings; motorul nu face scraping live in timpul analizei."
             items={analysis.portalComparables}
+            currentAgencyId={agencyId}
           />
 
           <Card className="rounded-[1.9rem] border border-white/10 bg-[#152A47] text-white shadow-[0_24px_70px_-40px_rgba(0,0,0,0.68)]">
@@ -490,7 +588,7 @@ export default function PropertyPricingAnalysisPage() {
                   <p className="font-medium">Interval tactic</p>
                 </div>
                 <p className="mt-2 text-sm text-white/70">
-                  Limita inferioara este pragul conservator, iar limita superioara este nivelul maxim sustenabil pentru test comercial.
+                  Pretul recomandat ramane sub limita de test; cand reperele nu sustin distanta, motorul coboara recomandarea.
                 </p>
               </div>
               <div className="rounded-[1.2rem] border border-white/8 bg-[#10223a] p-4">
@@ -499,7 +597,7 @@ export default function PropertyPricingAnalysisPage() {
                   <p className="font-medium">Atentie comerciala</p>
                 </div>
                 <p className="mt-2 text-sm text-white/70">
-                  Preturile din portal sunt cereri active, nu inchideri. De aceea algoritmul le pondera mai jos decat comparabilele vandute.
+                  Preturile din ownerListings sunt cereri active, nu inchideri. De aceea algoritmul le pondera mai jos decat comparabilele vandute.
                 </p>
               </div>
             </CardContent>

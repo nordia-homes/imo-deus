@@ -1,124 +1,159 @@
 'use server';
 /**
- * @fileOverview An AI agent to generate a Comparative Market Analysis (CMA) for a property.
+ * Deprecated compatibility wrapper for the old CMA flow.
  *
- * - generateCMA - A function that generates the CMA report.
- * - CmaInput - The input type for the generateCMA function.
- * - CmaOutput - The return type for the generateCMA function.
+ * The production price analysis now lives in src/lib/pricing-analysis.ts and is
+ * evidence-led. This wrapper stays deterministic so legacy callers do not get
+ * unsupported LLM market commentary.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { initializeServerFirebase } from '@/firebase/server';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 
+type CmaInput = {
+  subjectProperty: Property;
+  allProperties: Property[];
+  agencyId: string;
+};
 
-// Schemas
-const CmaInputSchema = z.object({
-  subjectProperty: z.custom<Property>().describe("The property for which the CMA is being generated."),
-  allProperties: z.array(z.custom<Property>()).describe("A list of all other properties in the portfolio to be used as potential comparables."),
-  agencyId: z.string().describe("The ID of the agency performing the analysis.")
-});
-type CmaInput = z.infer<typeof CmaInputSchema>;
+type ComparableProperty = {
+  id: string;
+  address: string;
+  status: 'Activ' | 'Vândut' | 'Închiriat' | 'Inactiv';
+  price: number;
+  squareFootage: number;
+  rooms: number;
+  bathrooms: number;
+  similarity: string;
+};
 
-const ComparablePropertySchema = z.object({
-    id: z.string(),
-    address: z.string(),
-    status: z.enum(['Activ', 'Vândut', 'Închiriat', 'Inactiv']),
-    price: z.number(),
-    squareFootage: z.number(),
-    rooms: z.number(),
-    bathrooms: z.number(),
-    similarity: z.string().describe("A brief explanation of why this property is a good comparable (e.g., 'Same neighborhood, similar size')."),
-});
+type PriceAdjustment = {
+  feature: string;
+  adjustment: string;
+  reason: string;
+};
 
-const PriceAdjustmentSchema = z.object({
-    feature: z.string().describe("The feature being adjusted (e.g., 'Extra bathroom', 'Better view', 'Needs renovation')."),
-    adjustment: z.string().describe("The monetary adjustment as a formatted string (e.g., '+€5,000', '-€10,000')."),
-    reason: z.string().describe("A short justification for the adjustment."),
-});
+type CmaOutput = {
+  subjectPropertyId: string;
+  subjectPropertyAddress: string;
+  comparableProperties: ComparableProperty[];
+  priceAdjustments: PriceAdjustment[];
+  estimatedValueRange: {
+    min: number;
+    max: number;
+  };
+  notes: string;
+};
 
-const CmaOutputSchema = z.object({
-  subjectPropertyId: z.string(),
-  subjectPropertyAddress: z.string(),
-  comparableProperties: z.array(ComparablePropertySchema).describe("A list of 3-5 of the best comparable properties."),
-  priceAdjustments: z.array(PriceAdjustmentSchema).describe("A list of price adjustments made to the subject property based on the comparables."),
-  estimatedValueRange: z.object({
-    min: z.number().describe("The lower end of the estimated value range."),
-    max: z.number().describe("The upper end of the estimated value range."),
-  }).describe("The final estimated market value range for the subject property."),
-  notes: z.string().describe("A summary of the market analysis, including commentary on the local market conditions and the rationale for the final valuation. Written in Romanian."),
-});
-type CmaOutput = z.infer<typeof CmaOutputSchema>;
-
-
-// Main exported function
-export async function generateCMA(input: CmaInput): Promise<CmaOutput> {
-  return cmaFlow(input);
+function normalizeText(value?: string | null) {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
+function normalizePropertyType(value?: string | null) {
+  const normalized = normalizeText(value);
+  if (normalized.includes('apart')) return 'apartment';
+  if (normalized.includes('garson')) return 'studio';
+  if (normalized.includes('casa') || normalized.includes('vila')) return 'house';
+  if (normalized.includes('teren')) return 'land';
+  return normalized || 'other';
+}
 
-// Genkit Tool to get comparable properties from the provided list
-const getComparableProperties = ai.defineTool(
-    {
-        name: 'getComparableProperties',
-        description: 'Finds the best comparable properties from a given list based on a subject property.',
-        inputSchema: z.object({
-            subjectProperty: z.custom<Property>(),
-            allProperties: z.array(z.custom<Property>()),
-        }),
-        outputSchema: z.array(z.custom<Property>()),
-    },
-    async ({ subjectProperty, allProperties }) => {
-        // Simple filtering logic: same location, similar size, not the same property
-        const comparables = allProperties
-            .filter(p => 
-                p.id !== subjectProperty.id &&
-                p.location.toLowerCase().includes(subjectProperty.location.toLowerCase()) &&
-                Math.abs(p.squareFootage - subjectProperty.squareFootage) < 30 // within 30 sqm
-            )
-            .sort((a, b) => {
-                // Prioritize sold properties, then active, then others
-                const statusA = a.status === 'Vândut' ? 1 : a.status === 'Activ' ? 2 : 3;
-                const statusB = b.status === 'Vândut' ? 1 : b.status === 'Activ' ? 2 : 3;
-                return statusA - statusB;
-            })
-            .slice(0, 10); // Provide a decent number for the AI to choose from
+function isSale(value?: string | null) {
+  const normalized = normalizeText(value);
+  return normalized.includes('vanz') || normalized.includes('sell');
+}
 
-        return comparables;
+function round(value: number, precision = 0) {
+  const power = 10 ** precision;
+  return Math.round(value * power) / power;
+}
+
+function median(values: number[]) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
+function scoreComparable(subject: Property, candidate: Property) {
+  if (candidate.id === subject.id) return 0;
+  if (!candidate.price || !candidate.squareFootage) return 0;
+  if (!isSale(candidate.transactionType) || !isSale(subject.transactionType)) return 0;
+  if (normalizePropertyType(candidate.propertyType) !== normalizePropertyType(subject.propertyType)) return 0;
+
+  let score = 0;
+  const subjectZone = normalizeText(subject.zone || subject.location || subject.address);
+  const candidateZone = normalizeText(candidate.zone || candidate.location || candidate.address);
+  if (subjectZone && candidateZone.includes(subjectZone)) score += 40;
+  else if (subject.city && normalizeText(candidate.city || candidate.location).includes(normalizeText(subject.city))) score += 22;
+
+  score += Math.max(0, 24 - Math.abs((candidate.rooms || 0) - subject.rooms) * 10);
+  score += Math.max(0, 24 - (Math.abs(candidate.squareFootage - subject.squareFootage) / Math.max(subject.squareFootage, 1)) * 80);
+  if (candidate.status === 'Vândut') score += 12;
+  return Math.min(100, round(score, 1));
+}
+
+export async function generateCMA(input: CmaInput): Promise<CmaOutput> {
+  const { subjectProperty, allProperties } = input;
+  const ranked = allProperties
+    .map((property) => ({ property, score: scoreComparable(subjectProperty, property) }))
+    .filter((entry) => entry.score >= 52)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 5);
+
+  const pricePerSqmValues = ranked.map(({ property }) => property.price / property.squareFootage).filter(Number.isFinite);
+  const benchmarkPerSqm = median(pricePerSqmValues) || subjectProperty.price / Math.max(subjectProperty.squareFootage, 1);
+  const estimated = benchmarkPerSqm * subjectProperty.squareFootage;
+  const spread = ranked.length >= 3 ? 0.07 : 0.11;
+
+  const comparableProperties: ComparableProperty[] = ranked.map(({ property, score }) => ({
+    id: property.id,
+    address: property.address,
+    status: (property.status || 'Activ') as ComparableProperty['status'],
+    price: property.price,
+    squareFootage: property.squareFootage,
+    rooms: property.rooms,
+    bathrooms: property.bathrooms,
+    similarity: `${score}/100 similaritate pe zona, camere, suprafata si status.`,
+  }));
+
+  const priceAdjustments: PriceAdjustment[] = [];
+  if (subjectProperty.constructionYear && ranked.some(({ property }) => property.constructionYear)) {
+    const averageYear =
+      ranked.reduce((sum, { property }) => sum + (property.constructionYear || subjectProperty.constructionYear || 0), 0) /
+      Math.max(ranked.length, 1);
+    const gap = subjectProperty.constructionYear - averageYear;
+    if (gap >= 10) {
+      priceAdjustments.push({
+        feature: 'An constructie superior',
+        adjustment: '+2%',
+        reason: 'Proprietatea este mai noua decat media comparabilelor selectate.',
+      });
+    } else if (gap <= -10) {
+      priceAdjustments.push({
+        feature: 'An constructie inferior',
+        adjustment: '-2%',
+        reason: 'Proprietatea este mai veche decat media comparabilelor selectate.',
+      });
     }
-);
-
-
-const prompt = ai.definePrompt({
-  name: 'cmaPrompt',
-  input: { schema: z.object({ subjectProperty: z.custom<Property>() }) },
-  output: { schema: CmaOutputSchema },
-  tools: [getComparableProperties],
-  prompt: `You are an expert real estate appraiser in Romania. Your task is to perform a Comparative Market Analysis (CMA) for a subject property.
-
-You must use the 'getComparableProperties' tool to find a list of suitable comparables (comps). From the list returned by the tool, select the best 3 to 5 properties.
-
-Your analysis must be in Romanian and follow these steps:
-1.  **Analyze the Subject Property:** Briefly describe the key characteristics of the property: {{{JSON.stringify(subjectProperty, null, 2)}}}.
-2.  **Select and Analyze Comparables:** For each of the 3-5 comparable properties you select, explain why it's a good comparison (similarity). Include its address, status, price, size, camere, and bathrooms.
-3.  **Perform Price Adjustments:** Compare the subject property to the comps. Create a list of adjustments. For features where the subject property is superior, add a positive adjustment (e.g., '+€5,000' for an extra bathroom). Where it's inferior, use a negative adjustment (e.g., '-€10,000' for needing renovation). Justify each adjustment.
-4.  **Determine Estimated Value:** Based on the adjusted prices of the comparables, determine a final estimated market value range (min and max) for the subject property.
-5.  **Write Summary Notes:** Provide a concluding paragraph that summarizes your findings, comments on current local market conditions (e.g., "Piața este în creștere, cu cerere mare pentru proprietăți renovate."), and justifies the final valuation.
-
-The entire output must be in Romanian. Be professional, data-driven, and clear in your explanations.
-`,
-});
-
-const cmaFlow = ai.defineFlow(
-  {
-    name: 'cmaFlow',
-    inputSchema: CmaInputSchema,
-    outputSchema: CmaOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
   }
-);
+
+  return {
+    subjectPropertyId: subjectProperty.id,
+    subjectPropertyAddress: subjectProperty.address,
+    comparableProperties,
+    priceAdjustments,
+    estimatedValueRange: {
+      min: round(estimated * (1 - spread), 0),
+      max: round(estimated * (1 + spread), 0),
+    },
+    notes:
+      ranked.length > 0
+        ? 'CMA legacy calculat determinist din portofoliul disponibil. Pentru analiza lider de piata foloseste pagina dedicata de analiza pret, care include audit pe surse, backtesting si comparabile externe.'
+        : 'Nu exista suficiente comparabile in portofoliu pentru CMA legacy. Foloseste analiza dedicata de pret pentru surse extinse.',
+  };
+}

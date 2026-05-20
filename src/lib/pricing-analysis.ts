@@ -1,9 +1,12 @@
 import { adminDb } from '@/firebase/admin';
 import type { Property, PropertyDeletionEvent, PropertyStatusEvent } from '@/lib/types';
+import type { OwnerListingSummary } from '@/lib/owner-listings/types';
+import { parseArea, parsePriceNumber, parseRooms } from '@/lib/owner-listings/utils';
 import { buildPropertyZoneFact } from '@/lib/zones/matching';
-import { getAdjacentZones, getClusterPeers, normalizeRomanianText } from '@/lib/zones/ontology';
+import { getAdjacentZones, getClusterPeers, normalizeRomanianText, preparedBucurestiIlfovOntology } from '@/lib/zones/ontology';
 
 type ComparableSource = 'platform_sold' | 'agency_active' | 'portal_active';
+type RejectionSeverity = 'info' | 'warning' | 'critical';
 
 export type PricingComparable = {
   id: string;
@@ -17,12 +20,47 @@ export type PricingComparable = {
   rooms: number | null;
   bathrooms: number | null;
   constructionYear: number | null;
+  parkingIncluded?: boolean | null;
   similarityScore: number;
   similarityReasons: string[];
   statusLabel: string;
   agencyId?: string | null;
   url?: string | null;
   recordedAt?: string | null;
+};
+
+export type PricingRejectedComparable = {
+  id: string;
+  source: ComparableSource;
+  title: string;
+  locationLabel: string;
+  price: number | null;
+  squareFootage: number | null;
+  pricePerSqm: number | null;
+  similarityScore: number | null;
+  reasonCode:
+    | 'missing_price_or_surface'
+    | 'wrong_transaction'
+    | 'wrong_property_type'
+    | 'weak_location_match'
+    | 'room_mismatch'
+    | 'surface_out_of_range'
+    | 'stale_listing'
+    | 'duplicate'
+    | 'price_outlier';
+  reason: string;
+  severity: RejectionSeverity;
+  url?: string | null;
+};
+
+export type PricingSourceDiagnostic = {
+  source: 'platform_sold' | 'agency_active' | 'owner_listings';
+  attempted: boolean;
+  fetchedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  status: 'ok' | 'partial' | 'failed' | 'skipped';
+  message: string;
 };
 
 export type PricingAdjustment = {
@@ -82,6 +120,14 @@ export type PricingBacktestSummary = {
   medianAbsoluteErrorPercent: number | null;
   biasPercent: number | null;
   verdict: string;
+  segment?: {
+    key: string;
+    sampleSize: number;
+    medianAbsoluteErrorPercent: number | null;
+    biasPercent: number | null;
+    calibrationFactor: number;
+    verdict: string;
+  };
   latestBacktest?: {
     soldPrice: number;
     predictedPrice: number;
@@ -99,6 +145,7 @@ export type PricingAnalysisResult = {
     address: string;
     city: string | null;
     zone: string | null;
+    propertyType: string | null;
     squareFootage: number;
     rooms: number;
     bathrooms: number;
@@ -129,6 +176,13 @@ export type PricingAnalysisResult = {
   marketEvidence: PricingMarketEvidence;
   pricingStrategy: PricingStrategy;
   backtest: PricingBacktestSummary;
+  sourceDiagnostics: PricingSourceDiagnostic[];
+  rejectedComparables: PricingRejectedComparable[];
+  riskFlags: Array<{
+    severity: RejectionSeverity;
+    label: string;
+    reason: string;
+  }>;
 };
 
 type InternalComparableCandidate = Property & {
@@ -156,16 +210,33 @@ type PortalComparableCandidate = {
   rooms: number | null;
   bathrooms?: number | null;
   constructionYear?: number | null;
+  parkingIncluded?: boolean | null;
   floor?: string | null;
   totalFloors?: number | null;
   partitioning?: string | null;
   interiorState?: string | null;
   url?: string | null;
+  zoneMatchPriority?: number | null;
+  lastSeenAt?: string | number | null;
+};
+
+type PortalFetchResult = {
+  candidates: PortalComparableCandidate[];
+  rejected: PricingRejectedComparable[];
+  diagnostics: PricingSourceDiagnostic[];
+};
+
+type InternalComparableResult = {
+  comparables: PricingComparable[];
+  rejected: PricingRejectedComparable[];
+  diagnostic: PricingSourceDiagnostic;
 };
 
 type PropertyFeatures = {
   propertyType: string;
   zoneTokens: string[];
+  relatedZoneTokens: string[];
+  broaderLocationTokens: string[];
   rawZoneText: string;
   zoneId: string | null;
   zoneName: string | null;
@@ -175,15 +246,18 @@ type PropertyFeatures = {
   partitioning: string;
   interiorState: string;
   isRehabilitated: boolean;
+  hasIncludedParking: boolean | null;
   sourceText: string;
 };
 
-const IMOBILIARE_BASE_URL = (process.env.IMOBILIARE_API_BASE_URL || 'https://www.imobiliare.ro').replace(/\/+$/, '');
-const OLX_BASE_URL = 'https://www.olx.ro';
-const IMOBILIARE_NET_BASE_URL = 'https://www.imobiliare.net';
-
 function normalizeText(value?: string | null) {
   return normalizeRomanianText(value || '');
+}
+
+function normalizedContainsPhrase(text: string, phrase?: string | null) {
+  const normalizedPhrase = normalizeText(phrase);
+  if (!normalizedPhrase) return false;
+  return ` ${normalizeText(text)} `.includes(` ${normalizedPhrase} `);
 }
 
 function slugify(value?: string | null) {
@@ -204,11 +278,32 @@ function toPricePerSqm(price: number, surface: number) {
   return price / surface;
 }
 
+function safePricePerSqm(price?: number | null, surface?: number | null) {
+  if (!price || !surface) return null;
+  return round(toPricePerSqm(price, surface), 0);
+}
+
+function getBalconySurface(property: Pick<Property, 'squareFootage' | 'totalSurface' | 'balconyTerrace'>) {
+  if (!property.totalSurface || !property.squareFootage || property.totalSurface <= property.squareFootage) return 0;
+  const balconyLabel = normalizeText(property.balconyTerrace);
+  if (balconyLabel === 'fara' || balconyLabel.includes('fara balcon') || balconyLabel.includes('balcon francez')) return 0;
+  return round(property.totalSurface - property.squareFootage, 2);
+}
+
+function getPricingSurface(property: Pick<Property, 'squareFootage' | 'totalSurface' | 'balconyTerrace'>) {
+  return property.squareFootage + getBalconySurface(property) * 0.5;
+}
+
 function median(values: number[]) {
   if (!values.length) return null;
   const sorted = [...values].sort((left, right) => left - right);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
+function maxFinite(values: Array<number | null | undefined>) {
+  const cleanValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  return cleanValues.length ? Math.max(...cleanValues) : null;
 }
 
 function normalizePropertyType(value?: string | null) {
@@ -260,6 +355,93 @@ function parseFloorInfo(floor?: string | null, totalFloors?: number | null) {
     numericFloor,
     isIntermediateFloor: numericFloor > 0 && numericFloor < totalFloors,
   };
+}
+
+function getConstructionEra(year?: number | null) {
+  if (typeof year !== 'number' || !Number.isFinite(year)) return 'unknown';
+  if (year < 1940) return 'historic';
+  if (year < 1977) return 'pre_1977';
+  if (year < 1990) return 'communist_post_1977';
+  if (year < 2000) return 'post_1990';
+  if (year < 2010) return 'post_2000';
+  return 'modern';
+}
+
+function computeConstructionEraScore(subjectYear?: number | null, candidateYear?: number | null) {
+  if (typeof subjectYear !== 'number' || typeof candidateYear !== 'number') return 3;
+
+  const subjectEra = getConstructionEra(subjectYear);
+  const candidateEra = getConstructionEra(candidateYear);
+  if (subjectEra === candidateEra) {
+    if (subjectYear >= 2000 && candidateYear >= 2000) return 20;
+    return subjectEra === 'pre_1977' || subjectEra === 'historic' ? 12 : 10;
+  }
+
+  if (subjectYear < 1977 || candidateYear < 1977) return 0;
+  if (subjectYear >= 2000 && candidateYear >= 2000) return Math.max(0, 16 - Math.abs(candidateYear - subjectYear) / 3);
+  return Math.max(0, 8 - Math.abs(candidateYear - subjectYear) / 4);
+}
+
+function getConstructionEraReason(subjectYear?: number | null, candidateYear?: number | null) {
+  if (typeof subjectYear !== 'number' || typeof candidateYear !== 'number') return null;
+  const subjectEra = getConstructionEra(subjectYear);
+  const candidateEra = getConstructionEra(candidateYear);
+  if (subjectEra === candidateEra && (subjectEra === 'pre_1977' || subjectEra === 'historic')) {
+    return 'aceeasi generatie seismica pre-1977';
+  }
+  if (subjectEra === candidateEra) return 'generatie constructie similara';
+  if (subjectYear < 1977 || candidateYear < 1977) return 'generatie seismica diferita';
+  return null;
+}
+
+function detectIncludedParking(value?: string | null) {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+
+  const negativeSignals = [
+    'fara parcare',
+    'fara loc',
+    'fara garaj',
+    'nu include parcare',
+    'parcare neinclusa',
+    'loc neinclus',
+    'stradal',
+  ];
+  if (negativeSignals.some((signal) => normalized.includes(signal))) return false;
+
+  const positiveSignals = [
+    'loc de parcare',
+    'parcare inclusa',
+    'parcare subterana',
+    'parcare supraterana',
+    'parcare exterior',
+    'loc exterior',
+    'loc subteran',
+    'garaj',
+    'boxa auto',
+    'in curte',
+    'subteran',
+  ];
+  if (positiveSignals.some((signal) => normalized.includes(signal))) return true;
+
+  if (normalized === 'fara') return false;
+  return null;
+}
+
+function hasIncludedParking(property: Pick<Property, 'parking' | 'description' | 'keyFeatures' | 'amenities' | 'title'>) {
+  const explicitParking = detectIncludedParking(property.parking);
+  if (explicitParking !== null) return explicitParking;
+
+  const sourceText = [
+    property.title,
+    property.description,
+    property.keyFeatures,
+    ...(property.amenities || []),
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return detectIncludedParking(sourceText);
 }
 
 function normalizePartitioning(value?: string | null, sourceText?: string | null) {
@@ -320,7 +502,7 @@ function buildZoneKeywords(property: Property, zoneName: string | null) {
   ];
 
   for (const phrase of phrases) {
-    if (normalized.includes(phrase)) {
+    if (normalizedContainsPhrase(normalized, phrase)) {
       candidates.add(phrase);
     }
   }
@@ -333,7 +515,79 @@ function buildZoneKeywords(property: Property, zoneName: string | null) {
     candidates.add(normalizeText(property.zone));
   }
 
+  for (const zone of preparedBucurestiIlfovOntology.zones) {
+    if (zone.zone_type === 'sector' || zone.zone_type === 'locality') continue;
+    const labels = [zone.name, ...zone.aliases, ...zone.micro_zones, ...zone.commercial_clusters];
+    if (labels.some((label) => normalizedContainsPhrase(normalized, label))) {
+      candidates.add(normalizeText(zone.name));
+      for (const alias of zone.aliases) {
+        candidates.add(normalizeText(alias));
+      }
+      for (const microZone of zone.micro_zones) {
+        candidates.add(normalizeText(microZone));
+      }
+    }
+  }
+
   return Array.from(candidates).filter(Boolean);
+}
+
+function buildRelatedZoneTokens(zoneIds: Set<string>) {
+  const tokens = new Set<string>();
+  for (const zoneId of zoneIds) {
+    const zone = preparedBucurestiIlfovOntology.zoneById.get(zoneId);
+    if (!zone) continue;
+    tokens.add(normalizeText(zone.name));
+    for (const alias of zone.aliases) tokens.add(normalizeText(alias));
+    for (const microZone of zone.micro_zones) tokens.add(normalizeText(microZone));
+  }
+  return Array.from(tokens).filter(Boolean);
+}
+
+function buildChildZoneTokens(zoneId: string | null) {
+  if (!zoneId) return [];
+  const zone = preparedBucurestiIlfovOntology.zoneById.get(zoneId);
+  if (!zone) return [];
+
+  const tokens = new Set<string>();
+  const normalizedParentName = normalizeText(zone.name);
+  const childZones = preparedBucurestiIlfovOntology.zones.filter((candidate) => {
+    if (zone.sector && candidate.sector === zone.sector && candidate.zone_id !== zone.zone_id) return true;
+    return normalizeText(candidate.parent) === normalizedParentName;
+  });
+
+  for (const childZone of childZones) {
+    tokens.add(normalizeText(childZone.name));
+    for (const alias of childZone.aliases) tokens.add(normalizeText(alias));
+    for (const microZone of childZone.micro_zones) tokens.add(normalizeText(microZone));
+  }
+
+  return Array.from(tokens).filter(Boolean);
+}
+
+function buildBroaderLocationTokens(property: Property, zoneName: string | null) {
+  const tokens = new Set<string>();
+  const sourceText = normalizeText([property.zone, property.location, property.address, property.title, property.city].filter(Boolean).join(' '));
+  const sectorMatch = sourceText.match(/\bsector(?:ul)?\s*([1-6])\b/);
+  if (sectorMatch?.[1]) {
+    tokens.add(`sector ${sectorMatch[1]}`);
+    tokens.add(`sectorul ${sectorMatch[1]}`);
+  }
+
+  const normalizedZone = normalizeText(zoneName || property.zone);
+  if (normalizedZone) tokens.add(normalizedZone);
+
+  const zone = normalizedZone
+    ? preparedBucurestiIlfovOntology.zones.find((candidate) => normalizeText(candidate.name) === normalizedZone)
+    : null;
+  if (zone?.parent) tokens.add(normalizeText(zone.parent));
+  if (zone?.sector) {
+    tokens.add(`sector ${zone.sector}`);
+    tokens.add(`sectorul ${zone.sector}`);
+  }
+
+  if (sourceText.includes('bucuresti')) tokens.add('bucuresti');
+  return Array.from(tokens).filter(Boolean);
 }
 
 function extractPropertyFeatures(property: Property) {
@@ -347,6 +601,8 @@ function extractPropertyFeatures(property: Property) {
     property.interiorState,
     property.partitioning,
     property.floor,
+    property.parking,
+    property.keyFeatures,
     property.notes,
     ...(property.amenities || []),
   ]
@@ -369,10 +625,13 @@ function extractPropertyFeatures(property: Property) {
   const clusterZoneIds = new Set(
     zoneFact.zoneId ? getClusterPeers(zoneFact.zoneId).map((zone) => zone.zone_id) : []
   );
+  const childZoneTokens = buildChildZoneTokens(zoneFact.zoneId);
 
   return {
     propertyType: normalizePropertyType(property.propertyType),
     zoneTokens: buildZoneKeywords(property, zoneFact.zoneName),
+    relatedZoneTokens: Array.from(new Set([...buildRelatedZoneTokens(new Set([...adjacentZoneIds, ...clusterZoneIds])), ...childZoneTokens])),
+    broaderLocationTokens: buildBroaderLocationTokens(property, zoneFact.zoneName),
     rawZoneText: zoneFact.rawZoneText,
     zoneId: zoneFact.zoneId,
     zoneName: zoneFact.zoneName,
@@ -382,6 +641,88 @@ function extractPropertyFeatures(property: Property) {
     partitioning: normalizePartitioning(property.partitioning, sourceText),
     interiorState: normalizeInteriorState(property.interiorState, sourceText),
     isRehabilitated: isRehabilitatedProperty(sourceText, property),
+    hasIncludedParking: hasIncludedParking(property),
+    sourceText,
+  } satisfies PropertyFeatures;
+}
+
+function extractPortalCandidateFeatures(candidate: PortalComparableCandidate, subjectFeatures: PropertyFeatures) {
+  const sourceText = [
+    candidate.title,
+    candidate.address,
+    candidate.locationLabel,
+    candidate.partitioning,
+    candidate.interiorState,
+    candidate.parkingIncluded === true ? 'parcare inclusa' : candidate.parkingIncluded === false ? 'fara parcare' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const zoneFact = buildPropertyZoneFact({
+    propertyId: candidate.id,
+    rawZoneText: candidate.locationLabel || candidate.address || candidate.title,
+    locality: candidate.locationLabel || null,
+    address: candidate.address,
+    title: candidate.title,
+    description: sourceText,
+  });
+  const adjacentZoneIds = new Set(
+    zoneFact.zoneId ? getAdjacentZones(zoneFact.zoneId).map((zone) => zone.zone_id) : []
+  );
+  const clusterZoneIds = new Set(
+    zoneFact.zoneId ? getClusterPeers(zoneFact.zoneId).map((zone) => zone.zone_id) : []
+  );
+  const childZoneTokens = buildChildZoneTokens(zoneFact.zoneId);
+
+  return {
+    propertyType: subjectFeatures.propertyType,
+    zoneTokens: buildZoneKeywords(
+      {
+        id: candidate.id,
+        title: candidate.title,
+        address: candidate.address,
+        location: candidate.locationLabel,
+        city: candidate.locationLabel,
+        zone: candidate.locationLabel,
+        description: sourceText,
+        price: candidate.price,
+        rooms: candidate.rooms || 0,
+        bathrooms: candidate.bathrooms || 0,
+        squareFootage: candidate.squareFootage,
+        images: [],
+        propertyType: subjectFeatures.propertyType,
+        transactionType: 'Vanzare',
+      } as Property,
+      zoneFact.zoneName
+    ),
+    relatedZoneTokens: Array.from(new Set([...buildRelatedZoneTokens(new Set([...adjacentZoneIds, ...clusterZoneIds])), ...childZoneTokens])),
+    broaderLocationTokens: buildBroaderLocationTokens(
+      {
+        id: candidate.id,
+        title: candidate.title,
+        address: candidate.address,
+        location: candidate.locationLabel,
+        city: candidate.locationLabel,
+        zone: candidate.locationLabel,
+        price: candidate.price,
+        rooms: candidate.rooms || 0,
+        bathrooms: candidate.bathrooms || 0,
+        squareFootage: candidate.squareFootage,
+        images: [],
+        propertyType: subjectFeatures.propertyType,
+        transactionType: 'Vanzare',
+      } as Property,
+      zoneFact.zoneName
+    ),
+    rawZoneText: zoneFact.rawZoneText,
+    zoneId: zoneFact.zoneId,
+    zoneName: zoneFact.zoneName,
+    adjacentZoneIds,
+    clusterZoneIds,
+    isIntermediateFloor: candidate.floor ? parseFloorInfo(candidate.floor, candidate.totalFloors ?? null).isIntermediateFloor : null,
+    partitioning: normalizePartitioning(candidate.partitioning, sourceText),
+    interiorState: normalizeInteriorState(candidate.interiorState, sourceText),
+    isRehabilitated: normalizeText(sourceText).includes('reabilitat') || normalizeText(sourceText).includes('anvelopat'),
+    hasIncludedParking: candidate.parkingIncluded ?? detectIncludedParking(sourceText),
     sourceText,
   } satisfies PropertyFeatures;
 }
@@ -399,8 +740,14 @@ function computeZoneScore(subjectFeatures: PropertyFeatures, candidateFeatures: 
 
   const normalizedCandidateText = normalizeText(candidateText);
   for (const token of subjectFeatures.zoneTokens) {
-    if (token && normalizedCandidateText.includes(token)) {
+    if (token && normalizedContainsPhrase(normalizedCandidateText, token)) {
       return token === normalizeText(subjectFeatures.zoneName) ? 0.92 : 0.82;
+    }
+  }
+
+  for (const token of subjectFeatures.relatedZoneTokens) {
+    if (token && normalizedContainsPhrase(normalizedCandidateText, token)) {
+      return 0.76;
     }
   }
 
@@ -412,6 +759,7 @@ function buildSimilarityReasons(subject: Property, subjectFeatures: PropertyFeat
   squareFootage: number;
   rooms?: number | null;
   constructionYear?: number | null;
+  parkingIncluded?: boolean | null;
   partitioning?: string | null;
   interiorState?: string | null;
   isIntermediateFloor?: boolean | null;
@@ -420,7 +768,8 @@ function buildSimilarityReasons(subject: Property, subjectFeatures: PropertyFeat
 
   if (zoneScore >= 0.95) reasons.push('aceeasi microzona');
   else if (zoneScore >= 0.84) reasons.push('zona adiacenta relevanta');
-  else if (zoneScore >= 0.74) reasons.push('acelasi cluster comercial');
+  else if (zoneScore >= 0.74) reasons.push('zona adiacenta extinsa');
+  else if (zoneScore >= 0.66) reasons.push('acelasi cluster comercial');
 
   const surfaceGap = Math.abs(candidate.squareFootage - subject.squareFootage);
   if (surfaceGap <= Math.max(10, subject.squareFootage * 0.12)) reasons.push('suprafata apropiata');
@@ -433,6 +782,8 @@ function buildSimilarityReasons(subject: Property, subjectFeatures: PropertyFeat
   ) {
     reasons.push('vechime similara');
   }
+  const constructionEraReason = getConstructionEraReason(subject.constructionYear, candidate.constructionYear);
+  if (constructionEraReason) reasons.push(constructionEraReason);
 
   if (candidate.interiorState && candidate.interiorState !== 'unknown') {
     const subjectState = normalizeInteriorState(subject.interiorState, subject.description);
@@ -448,6 +799,12 @@ function buildSimilarityReasons(subject: Property, subjectFeatures: PropertyFeat
     reasons.push(candidate.isIntermediateFloor ? 'etaj intermediar similar' : 'pozitionare similara pe verticala');
   }
 
+  if (candidate.parkingIncluded !== null && subjectFeatures.hasIncludedParking !== null) {
+    if (candidate.parkingIncluded === subjectFeatures.hasIncludedParking) {
+      reasons.push(candidate.parkingIncluded ? 'parcare inclusa similara' : 'fara parcare similara');
+    }
+  }
+
   return reasons.length ? reasons : ['comparabil util pentru calibrare'];
 }
 
@@ -457,6 +814,7 @@ function computeSimilarityScore(subject: Property, subjectFeatures: PropertyFeat
   rooms?: number | null;
   bathrooms?: number | null;
   constructionYear?: number | null;
+  parkingIncluded?: boolean | null;
   partitioning?: string | null;
   interiorState?: string | null;
   isIntermediateFloor?: boolean | null;
@@ -477,12 +835,15 @@ function computeSimilarityScore(subject: Property, subjectFeatures: PropertyFeat
       adjacentZoneIds: new Set<string>(),
       clusterZoneIds: new Set<string>(),
       zoneTokens: [],
+      relatedZoneTokens: [],
+      broaderLocationTokens: [],
       rawZoneText: '',
       sourceText: candidate.sourceText || '',
       partitioning: candidate.partitioning || 'unknown',
       interiorState: candidate.interiorState || 'unknown',
       isIntermediateFloor: candidate.isIntermediateFloor ?? null,
       isRehabilitated: false,
+      hasIncludedParking: candidate.parkingIncluded ?? null,
     },
     candidate.sourceText || ''
   );
@@ -500,11 +861,7 @@ function computeSimilarityScore(subject: Property, subjectFeatures: PropertyFeat
   score += Math.max(0, 18 - surfaceDiffRatio * 60);
   score += Math.max(0, 8 - bathroomGap * 4);
 
-  if (typeof candidate.constructionYear === 'number' && typeof subject.constructionYear === 'number') {
-    score += Math.max(0, 8 - Math.abs(candidate.constructionYear - subject.constructionYear) / 3);
-  } else {
-    score += 3;
-  }
+  score += computeConstructionEraScore(subject.constructionYear, candidate.constructionYear);
 
   const subjectState = subjectFeatures.interiorState;
   if (candidate.interiorState && candidate.interiorState !== 'unknown' && subjectState !== 'unknown') {
@@ -521,6 +878,12 @@ function computeSimilarityScore(subject: Property, subjectFeatures: PropertyFeat
 
   if (candidate.isIntermediateFloor !== null && subjectFeatures.isIntermediateFloor !== null) {
     score += candidate.isIntermediateFloor === subjectFeatures.isIntermediateFloor ? 5 : 1;
+  } else {
+    score += 2;
+  }
+
+  if (candidate.parkingIncluded !== null && subjectFeatures.hasIncludedParking !== null) {
+    score += candidate.parkingIncluded === subjectFeatures.hasIncludedParking ? 4 : 0.5;
   } else {
     score += 2;
   }
@@ -549,20 +912,7 @@ function createPricingComparable(
   const candidateFeatures =
     'propertyType' in candidate
       ? extractPropertyFeatures(candidate)
-      : {
-          propertyType: subjectFeatures.propertyType,
-          zoneTokens: [],
-          rawZoneText: locationLabel,
-          zoneId: null,
-          zoneName: null,
-          adjacentZoneIds: new Set<string>(),
-          clusterZoneIds: new Set<string>(),
-          isIntermediateFloor: candidate.floor ? parseFloorInfo(candidate.floor, candidate.totalFloors ?? null).isIntermediateFloor : null,
-          partitioning: normalizePartitioning(candidate.partitioning, candidateText),
-          interiorState: normalizeInteriorState(candidate.interiorState, candidateText),
-          isRehabilitated: normalizeText(candidateText).includes('reabilitat') || normalizeText(candidateText).includes('anvelopat'),
-          sourceText: candidateText,
-        } satisfies PropertyFeatures;
+      : extractPortalCandidateFeatures(candidate, subjectFeatures);
 
   const similarityScore = computeSimilarityScore(subject, subjectFeatures, {
     propertyType: 'propertyType' in candidate ? candidate.propertyType : subject.propertyType,
@@ -570,6 +920,7 @@ function createPricingComparable(
     rooms: candidate.rooms ?? null,
     bathrooms: 'bathrooms' in candidate ? candidate.bathrooms ?? null : null,
     constructionYear: 'constructionYear' in candidate ? candidate.constructionYear ?? null : null,
+    parkingIncluded: candidateFeatures.hasIncludedParking,
     partitioning: 'partitioning' in candidate ? candidate.partitioning ?? null : null,
     interiorState: 'interiorState' in candidate ? candidate.interiorState ?? null : null,
     isIntermediateFloor: candidateFeatures.isIntermediateFloor,
@@ -578,6 +929,22 @@ function createPricingComparable(
   });
 
   const zoneScore = computeZoneScore(subjectFeatures, candidateFeatures, candidateText);
+  const candidateZoneMatchPriority = 'zoneMatchPriority' in candidate ? candidate.zoneMatchPriority ?? null : null;
+  const effectiveZoneScore =
+    candidateZoneMatchPriority === 4
+      ? 0.97
+      : candidateZoneMatchPriority === 3
+        ? 0.9
+        : candidateZoneMatchPriority === 2
+          ? 0.82
+          : candidateZoneMatchPriority === 1
+            ? 0.72
+            : candidateZoneMatchPriority === 0.5
+              ? 0.55
+              : zoneScore;
+  const effectiveSimilarityScore = candidateZoneMatchPriority
+    ? clamp(round(similarityScore + (effectiveZoneScore - zoneScore) * 20, 1), 0, 100)
+    : similarityScore;
 
   return {
     id: candidate.id,
@@ -591,7 +958,8 @@ function createPricingComparable(
     rooms: candidate.rooms ?? null,
     bathrooms: 'bathrooms' in candidate ? candidate.bathrooms ?? null : null,
     constructionYear: 'constructionYear' in candidate ? candidate.constructionYear ?? null : null,
-    similarityScore,
+    parkingIncluded: candidateFeatures.hasIncludedParking,
+    similarityScore: effectiveSimilarityScore,
     similarityReasons: buildSimilarityReasons(
       subject,
       subjectFeatures,
@@ -600,11 +968,12 @@ function createPricingComparable(
         squareFootage: candidate.squareFootage,
         rooms: candidate.rooms ?? null,
         constructionYear: 'constructionYear' in candidate ? candidate.constructionYear ?? null : null,
+        parkingIncluded: candidateFeatures.hasIncludedParking,
         partitioning: 'partitioning' in candidate ? candidate.partitioning ?? null : null,
         interiorState: 'interiorState' in candidate ? candidate.interiorState ?? null : null,
         isIntermediateFloor: candidateFeatures.isIntermediateFloor,
       },
-      zoneScore
+      effectiveZoneScore
     ),
     statusLabel,
     agencyId: 'agencyId' in candidate ? candidate.agencyId ?? null : null,
@@ -614,20 +983,97 @@ function createPricingComparable(
 }
 
 function isInternalComparable(subject: Property, subjectFeatures: PropertyFeatures, candidate: InternalComparableCandidate) {
-  if (!candidate.squareFootage || !candidate.price) return false;
-  if (!isSaleTransaction(candidate.transactionType)) return false;
-  if (normalizePropertyType(candidate.propertyType) !== subjectFeatures.propertyType) return false;
+  return evaluateInternalComparable(subject, subjectFeatures, candidate).comparable !== null;
+}
 
-  const candidateComparable = createPricingComparable(
-    isSoldStatus(candidate.status) ? 'platform_sold' : 'agency_active',
-    subject,
-    subjectFeatures,
-    candidate,
-    isSoldStatus(candidate.status) ? 'Vandut' : 'Activ'
-  );
+function evaluateInternalComparable(
+  subject: Property,
+  subjectFeatures: PropertyFeatures,
+  candidate: InternalComparableCandidate
+): { comparable: PricingComparable | null; rejection: PricingRejectedComparable | null } {
+  const source: ComparableSource = isSoldStatus(candidate.status) ? 'platform_sold' : 'agency_active';
+  const statusLabel = isSoldStatus(candidate.status) ? 'Vandut' : 'Activ';
+  const locationLabel = getLocationLabel(candidate);
 
-  if (candidateComparable.similarityScore < 60) return false;
-  return true;
+  if (!candidate.squareFootage || !candidate.price) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source,
+        title: candidate.title,
+        locationLabel,
+        price: candidate.price || null,
+        squareFootage: candidate.squareFootage || null,
+        reasonCode: 'missing_price_or_surface',
+        reason: 'Comparabila nu are pret si suprafata utila valide.',
+        severity: 'warning',
+      }),
+    };
+  }
+
+  if (!isSaleTransaction(candidate.transactionType)) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source,
+        title: candidate.title,
+        locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'wrong_transaction',
+        reason: 'Comparabila nu este o tranzactie de vanzare.',
+      }),
+    };
+  }
+
+  if (normalizePropertyType(candidate.propertyType) !== subjectFeatures.propertyType) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source,
+        title: candidate.title,
+        locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'wrong_property_type',
+        reason: 'Tipul proprietatii nu se potriveste cu proprietatea evaluata.',
+      }),
+    };
+  }
+
+  const candidateComparable = createPricingComparable(source, subject, subjectFeatures, candidate, statusLabel);
+  if (candidateComparable.similarityScore < 52) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source,
+        title: candidate.title,
+        locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        similarityScore: candidateComparable.similarityScore,
+        reasonCode: 'weak_location_match',
+        reason: 'Scorul de similaritate este sub pragul minim pentru evaluare.',
+      }),
+    };
+  }
+
+  return { comparable: candidateComparable, rejection: null };
+}
+
+function getComparableZonePriority(comparable: PricingComparable) {
+  if (comparable.similarityReasons.some((reason) => reason.includes('aceeasi microzona'))) return 3;
+  if (comparable.similarityReasons.some((reason) => reason.includes('zona adiacenta'))) return 2;
+  if (comparable.similarityReasons.some((reason) => reason.includes('cluster'))) return 1;
+  return 0;
+}
+
+function sortComparablesByRelevance(left: PricingComparable, right: PricingComparable) {
+  return getComparableZonePriority(right) - getComparableZonePriority(left) || right.similarityScore - left.similarityScore;
 }
 
 function filterBenchmarkOutliers(comparables: PricingComparable[]) {
@@ -657,14 +1103,32 @@ function computeRecencyWeight(recordedAt?: string | null) {
 }
 
 function computeSourceWeight(source: ComparableSource) {
-  if (source === 'platform_sold') return 1;
+  if (source === 'platform_sold') return 1.14;
   if (source === 'agency_active') return 0.78;
   return 0.62;
 }
 
+const ACTIVE_ASK_TO_SALE_DISCOUNT = 0.95;
+
+function isSameMicrozoneComparable(comparable: PricingComparable) {
+  return comparable.similarityReasons.some((reason) => reason.includes('aceeasi microzona'));
+}
+
 function computeComparableWeight(comparable: PricingComparable) {
   const similarityWeight = (comparable.similarityScore / 100) ** 1.75;
-  return clamp(similarityWeight * computeSourceWeight(comparable.source) * computeRecencyWeight(comparable.recordedAt), 0.18, 1.2);
+  const soldMicrozoneMultiplier =
+    comparable.source === 'platform_sold' && isSameMicrozoneComparable(comparable)
+      ? comparable.similarityScore >= 78
+        ? 1.65
+        : 1.35
+      : comparable.source === 'platform_sold' && comparable.similarityScore >= 82
+        ? 1.2
+        : 1;
+  return clamp(
+    similarityWeight * computeSourceWeight(comparable.source) * computeRecencyWeight(comparable.recordedAt) * soldMicrozoneMultiplier,
+    0.18,
+    1.95
+  );
 }
 
 function weightedMedian(items: Array<{ value: number; weight: number }>) {
@@ -704,6 +1168,39 @@ function ageInDays(value?: string | null) {
 function average(values: number[]) {
   if (!values.length) return null;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function createRejectedComparable(params: {
+  id: string;
+  source: ComparableSource;
+  title?: string | null;
+  locationLabel?: string | null;
+  price?: number | null;
+  squareFootage?: number | null;
+  similarityScore?: number | null;
+  reasonCode: PricingRejectedComparable['reasonCode'];
+  reason: string;
+  severity?: RejectionSeverity;
+  url?: string | null;
+}): PricingRejectedComparable {
+  return {
+    id: params.id,
+    source: params.source,
+    title: params.title || 'Comparabila fara titlu',
+    locationLabel: params.locationLabel || 'Locatie necunoscuta',
+    price: params.price ?? null,
+    squareFootage: params.squareFootage ?? null,
+    pricePerSqm: safePricePerSqm(params.price, params.squareFootage),
+    similarityScore: params.similarityScore ?? null,
+    reasonCode: params.reasonCode,
+    reason: params.reason,
+    severity: params.severity || 'info',
+    url: params.url ?? null,
+  };
+}
+
+function createDiagnostic(params: PricingSourceDiagnostic): PricingSourceDiagnostic {
+  return params;
 }
 
 function buildDataQuality(subject: Property, subjectFeatures: PropertyFeatures): PricingDataQuality {
@@ -813,9 +1310,7 @@ function computeMarketEvidence(params: {
   const portalWeight = portalComparables.reduce((sum, item) => sum + computeComparableWeight(item), 0);
   const totalWeight = Math.max(soldWeight + activeWeight + portalWeight, 0.01);
   const soldAges = soldComparables.map((item) => ageInDays(item.recordedAt)).filter((value): value is number => value !== null);
-  const directMicrozoneSoldCount = soldComparables.filter((item) =>
-    item.similarityReasons.some((reason) => reason.includes('aceeasi microzona'))
-  ).length;
+  const directMicrozoneSoldCount = soldComparables.filter(isSameMicrozoneComparable).length;
 
   const evidenceScore = clamp(
     round(
@@ -843,7 +1338,7 @@ function computeMarketEvidence(params: {
     tier === 'transaction_led'
       ? 'Analiza este condusa de tranzactii inchise similare, cu suport din oferta activa.'
       : tier === 'hybrid'
-        ? 'Analiza combina tranzactii inchise limitate cu oferta activa si portaluri.'
+        ? 'Analiza combina tranzactii inchise limitate cu oferta activa si ownerListings.'
         : tier === 'listing_led'
           ? 'Analiza este condusa de oferta activa; lipsesc tranzactii inchise suficient de similare.'
           : 'Evidenta de piata este slaba; sunt necesare mai multe comparabile sau date mai complete.';
@@ -884,10 +1379,11 @@ function buildPricingStrategy(params: {
     marketHeat,
   } = params;
 
-  const surface = Math.max(subject.squareFootage, 1);
+  const surface = Math.max(getPricingSurface(subject), 1);
   const negotiationRoomPercent = confidenceScore >= 82 ? 3.5 : confidenceScore >= 68 ? 5 : 6.5;
   const overpricedMultiplier = marketHeat === 'hot' ? 1.08 : marketHeat === 'soft' ? 1.045 : 1.06;
-  const overpricedThreshold = round(recommendedListingPrice * overpricedMultiplier, 0);
+  const rawOverpricedThreshold = round(recommendedListingPrice * overpricedMultiplier, 0);
+  const overpricedThreshold = Math.max(stretchMaxPrice, Math.min(rawOverpricedThreshold, round(stretchMaxPrice * 1.01, 0)));
 
   return {
     fastSalePrice: conservativeMinPrice,
@@ -938,6 +1434,7 @@ type PricingBacktestRecord = {
   absoluteError: number;
   errorPercent: number;
   signedErrorPercent: number;
+  subject?: PricingAnalysisSnapshot['subject'];
 };
 
 function toSnapshot(result: PricingAnalysisResult): PricingAnalysisSnapshot {
@@ -1003,6 +1500,7 @@ function buildBacktestRecord(params: {
     absoluteError: round(absoluteError, 0),
     errorPercent: round((absoluteError / soldPrice) * 100, 2),
     signedErrorPercent,
+    subject: snapshot.subject,
   };
 }
 
@@ -1088,10 +1586,10 @@ async function reconcileAgencyBacktests(agencyId: string) {
 }
 
 async function buildBacktestSummary(agencyId: string, subject: Property): Promise<PricingBacktestSummary> {
-  const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisBacktests').get();
-  const records = snapshot.docs.map((docSnapshot) => docSnapshot.data() as PricingBacktestRecord);
+  const records = await loadBacktestRecords(agencyId);
   const errorPercents = records.map((record) => record.errorPercent).filter((value) => Number.isFinite(value));
   const signedErrors = records.map((record) => record.signedErrorPercent).filter((value) => Number.isFinite(value));
+  const segment = computeSegmentBacktest(records, subject);
   const latestSubjectBacktest =
     records
       .filter((record) => record.propertyId === subject.id)
@@ -1105,6 +1603,7 @@ async function buildBacktestSummary(agencyId: string, subject: Property): Promis
       medianAbsoluteErrorPercent: null,
       biasPercent: null,
       verdict: 'Nu exista inca suficiente proprietati vandute dupa o analiza salvata pentru backtesting.',
+      segment,
       latestBacktest: null,
     };
   }
@@ -1126,6 +1625,7 @@ async function buildBacktestSummary(agencyId: string, subject: Property): Promis
     medianAbsoluteErrorPercent,
     biasPercent,
     verdict,
+    segment,
     latestBacktest: latestSubjectBacktest
       ? {
           soldPrice: latestSubjectBacktest.soldPrice,
@@ -1135,6 +1635,62 @@ async function buildBacktestSummary(agencyId: string, subject: Property): Promis
           analysisGeneratedAt: latestSubjectBacktest.analysisGeneratedAt,
         }
       : null,
+  };
+}
+
+async function loadBacktestRecords(agencyId: string) {
+  const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('pricingAnalysisBacktests').get();
+  return snapshot.docs.map((docSnapshot) => docSnapshot.data() as PricingBacktestRecord);
+}
+
+function getPricingSegmentKey(subject: {
+  propertyType?: string | null;
+  rooms?: number | null;
+  city?: string | null;
+  zone?: string | null;
+  location?: string | null;
+}) {
+  return [
+    normalizePropertyType(subject.propertyType),
+    subject.rooms ? `${subject.rooms}cam` : 'cam_unknown',
+    normalizeText(subject.city || subject.location || 'unknown_city'),
+    normalizeText(subject.zone || 'unknown_zone'),
+  ].join('|');
+}
+
+function computeSegmentBacktest(records: PricingBacktestRecord[], subject: Property): PricingBacktestSummary['segment'] {
+  const segmentKey = getPricingSegmentKey(subject);
+  const fallbackCityKey = normalizeText(subject.city || subject.location || '');
+  const segmentRecords = records.filter((record) => {
+    const snapshotSubject = (record as PricingBacktestRecord & { subject?: PricingAnalysisSnapshot['subject'] }).subject;
+    if (!snapshotSubject) return false;
+    const exactKey = getPricingSegmentKey({
+      propertyType: snapshotSubject.propertyType || subject.propertyType,
+      rooms: snapshotSubject.rooms,
+      city: snapshotSubject.city || null,
+      zone: snapshotSubject.zone || null,
+      location: snapshotSubject.city || '',
+    });
+    return exactKey === segmentKey || (fallbackCityKey && normalizeText(snapshotSubject.city) === fallbackCityKey);
+  });
+
+  const usableRecords = segmentRecords.length >= 3 ? segmentRecords : records.slice(-20);
+  const errorPercents = usableRecords.map((record) => record.errorPercent).filter((value) => Number.isFinite(value));
+  const signedErrors = usableRecords.map((record) => record.signedErrorPercent).filter((value) => Number.isFinite(value));
+  const biasPercent = round(average(signedErrors) || 0, 2);
+  const medianAbsoluteErrorPercent = errorPercents.length ? round(median(errorPercents) || 0, 2) : null;
+  const calibrationFactor = clamp(1 - biasPercent / 100, 0.94, 1.06);
+
+  return {
+    key: segmentKey,
+    sampleSize: usableRecords.length,
+    medianAbsoluteErrorPercent,
+    biasPercent: usableRecords.length ? biasPercent : null,
+    calibrationFactor: usableRecords.length >= 5 ? round(calibrationFactor, 4) : 1,
+    verdict:
+      usableRecords.length >= 5
+        ? 'Exista suficienta memorie pentru calibrare segmentata usoara.'
+        : 'Memoria segmentului este inca redusa; calibrarea este prudenta.',
   };
 }
 
@@ -1184,199 +1740,376 @@ function parseYearValue(value: string) {
 
 function shouldKeepPortalCandidate(subjectFeatures: PropertyFeatures, text: string, location: string) {
   const normalized = normalizeText(`${text} ${location}`);
-  return subjectFeatures.zoneTokens.some((token) => normalized.includes(token));
-}
+  const normalizedLocation = normalizeText(location);
+  const subjectIsBucharestArea =
+    normalizedContainsPhrase(subjectFeatures.sourceText, 'bucuresti') ||
+    normalizedContainsPhrase(subjectFeatures.sourceText, 'sector') ||
+    normalizedContainsPhrase(subjectFeatures.sourceText, 'ilfov');
+  const conflictingLocalities = [
+    'iasi',
+    'cluj',
+    'timisoara',
+    'brasov',
+    'constanta',
+    'craiova',
+    'galati',
+    'braila',
+    'arad',
+    'oradea',
+    'sibiu',
+    'ploiesti',
+  ];
 
-function parseOlxComparables(html: string, subject: Property, subjectFeatures: PropertyFeatures, url: string) {
-  const lines = cleanHtmlToLines(html);
-  const results: PortalComparableCandidate[] = [];
-  const seen = new Set<string>();
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const price = parseEuroValue(lines[index]);
-    if (!price) continue;
-
-    const title = lines[index - 1] || lines[index - 2] || '';
-    const locationLabel = lines[index + 2] || '';
-    const squareFootage = parseSurfaceValue(lines[index + 4] || '') ?? parseSurfaceValue(lines[index + 5] || '');
-    const rooms = parseRoomValue(title) ?? subject.rooms;
-
-    if (!title || !locationLabel || !squareFootage) continue;
-    if (!normalizeText(locationLabel).includes('bucuresti')) continue;
-    if (!shouldKeepPortalCandidate(subjectFeatures, title, locationLabel)) continue;
-
-    const key = `${normalizeText(title)}|${price}|${squareFootage}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    results.push({
-      id: `olx-${results.length + 1}`,
-      portalName: 'OLX/Storia',
-      title,
-      address: locationLabel,
-      locationLabel,
-      price,
-      squareFootage,
-      rooms,
-      interiorState: normalizeInteriorState(undefined, title),
-      partitioning: normalizePartitioning(undefined, title),
-      url,
-    });
+  if (subjectIsBucharestArea && conflictingLocalities.some((city) => normalizedContainsPhrase(normalizedLocation, city))) {
+    return false;
   }
 
-  return results;
+  return (
+    subjectFeatures.zoneTokens.some((token) => token && normalizedContainsPhrase(normalized, token)) ||
+    subjectFeatures.relatedZoneTokens.some((token) => token && normalizedContainsPhrase(normalized, token)) ||
+    subjectFeatures.broaderLocationTokens.some((token) => token && normalizedContainsPhrase(normalized, token))
+  );
 }
 
-function parseImobiliareNetComparables(html: string, subject: Property, subjectFeatures: PropertyFeatures, url: string) {
-  const lines = cleanHtmlToLines(html);
-  const results: PortalComparableCandidate[] = [];
-  const seen = new Set<string>();
+function getOwnerListingZoneMatchPriority(subjectFeatures: PropertyFeatures, listing: OwnerListingSummary) {
+  const titleDescriptionText = [listing.title, listing.description].filter(Boolean).join(' ');
+  const locationText = listing.location || listing.scopeCity || '';
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const price = parseEuroValue(lines[index]);
-    if (!price || !/EUR/i.test(lines[index])) continue;
+  if (subjectFeatures.zoneTokens.some((token) => normalizedContainsPhrase(titleDescriptionText, token))) return 4;
+  if (subjectFeatures.zoneTokens.some((token) => normalizedContainsPhrase(locationText, token))) return 3;
+  if (subjectFeatures.relatedZoneTokens.some((token) => normalizedContainsPhrase(titleDescriptionText, token))) return 2;
+  if (subjectFeatures.relatedZoneTokens.some((token) => normalizedContainsPhrase(locationText, token))) return 1;
+  if (subjectFeatures.broaderLocationTokens.some((token) => normalizedContainsPhrase(`${titleDescriptionText} ${locationText}`, token))) return 0.5;
+  return 0;
+}
 
-    const title = lines.slice(index + 1, index + 14).find((line) =>
-      line &&
-      !/^favorit$/i.test(line) &&
-      !/^vezi telefon$/i.test(line) &&
-      !/^vanzari apartamente/i.test(line) &&
-      !/^an constructie:/i.test(line) &&
-      !/^suprafata:/i.test(line) &&
-      !/^etaj:/i.test(line) &&
-      !/^confort:/i.test(line) &&
-      !/^(decomandat|semidec|semidecomandat|nedecomandat)$/i.test(line)
-    );
+function tokenToLocationLabel(token: string) {
+  return token
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
 
-    if (!title) continue;
-    if (!shouldKeepPortalCandidate(subjectFeatures, title, title)) continue;
+function inferRoomsFromListing(value?: string | number | null) {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 10) return value;
+  const normalized = normalizeText(String(value || ''));
+  if (!normalized) return null;
+  if (normalizedContainsPhrase(normalized, 'garsoniera') || normalizedContainsPhrase(normalized, 'studio')) return 1;
 
-    const metaWindow = lines.slice(index, index + 18);
-    const yearLine = metaWindow.find((line) => /^an constructie:/i.test(line));
-    const surfaceLine = metaWindow.find((line) => /^suprafata:/i.test(line));
-    const floorLine = metaWindow.find((line) => /^etaj:/i.test(line));
-    const partitioningLine = metaWindow.find((line) => /^(decomandat|semidec|semidecomandat|nedecomandat)$/i.test(line));
-    const squareFootage = parseSurfaceValue(surfaceLine || '');
-    if (!squareFootage) continue;
-
-    const key = `${normalizeText(title)}|${price}|${squareFootage}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    results.push({
-      id: `imobiliare-net-${results.length + 1}`,
-      portalName: 'Imobiliare.net',
-      title,
-      address: title,
-      locationLabel: title,
-      price,
-      squareFootage,
-      rooms: parseRoomValue(title) ?? subject.rooms,
-      constructionYear: parseYearValue(yearLine || ''),
-      floor: floorLine?.replace(/^Etaj:\s*/i, '') || null,
-      partitioning: partitioningLine || null,
-      interiorState: normalizeInteriorState(undefined, metaWindow.join(' ')),
-      url,
-    });
+  const explicitRooms = normalized.match(/\b([1-9])\s*(?:camere|camera|cam[a-z]*|rooms?)\b/);
+  if (explicitRooms?.[1]) {
+    const parsed = Number(explicitRooms[1]);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
-  return results;
+  return null;
 }
 
-async function fetchHtml(url: string) {
-  const response = await fetch(url, {
-    cache: 'no-store',
-    headers: {
-      'User-Agent': 'Mozilla/5.0',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-  });
+function hasRentalIntent(listing: OwnerListingSummary) {
+  if (listing.transactionType === 'rent') return true;
+  const normalized = normalizeText([listing.title, listing.description].filter(Boolean).join(' '));
+  const saleHints = ['vand', 'vanzare', 'de vanzare', 'se vinde'];
+  if (saleHints.some((hint) => normalizedContainsPhrase(normalized, hint))) return false;
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  return response.text();
+  return [
+    'inchiriez',
+    'inchiriere',
+    'de inchiriat',
+    'chirie',
+    'luna',
+    'lunar',
+    'rent',
+  ].some((hint) => normalizedContainsPhrase(normalized, hint));
 }
 
-async function fetchPortalIndexPrice(subject: Property) {
-  const citySlug = slugify(subject.city || subject.location);
-  if (!citySlug) return null;
+function hasSaleIntent(listing: OwnerListingSummary, price: number) {
+  if (hasRentalIntent(listing)) return false;
+  if (listing.transactionType === 'sale') return true;
 
-  try {
-    const text = await fetchHtml(`${IMOBILIARE_BASE_URL}/indicele-imobiliare-ro/${citySlug}`);
-    const match = text.match(/(\d{1,3}(?:\.\d{3})*(?:,\d+)?)\s*€\/mp/i);
-    if (!match?.[1]) return null;
-    const numericValue = Number(match[1].replace(/\./g, '').replace(',', '.'));
-    return Number.isFinite(numericValue) ? numericValue : null;
-  } catch {
+  const normalized = normalizeText([listing.title, listing.description].filter(Boolean).join(' '));
+  const saleHints = ['vand', 'vanzare', 'de vanzare', 'se vinde', 'apartament de vanzare'];
+  if (saleHints.some((hint) => normalizedContainsPhrase(normalized, hint))) return true;
+
+  return price >= 15000;
+}
+
+function ownerListingToPortalCandidate(
+  docId: string,
+  listing: OwnerListingSummary,
+  subjectFeatures: PropertyFeatures
+): PortalComparableCandidate | null {
+  const price = parsePriceNumber(listing.price);
+  const squareFootage = parseArea(listing.area);
+  const rooms = inferRoomsFromListing(listing.title) ?? inferRoomsFromListing(listing.rooms) ?? parseRooms(String(listing.rooms ?? ''));
+  const zoneMatchPriority = getOwnerListingZoneMatchPriority(subjectFeatures, listing);
+
+  if (!price || !squareFootage) return null;
+  if (zoneMatchPriority <= 0) return null;
+  if (!hasSaleIntent(listing, price)) return null;
+  if (
+    listing.propertyType &&
+    listing.propertyType !== 'unknown' &&
+    normalizePropertyType(listing.propertyType) !== subjectFeatures.propertyType
+  ) {
     return null;
   }
+
+  return {
+    id: `owner-${docId}`,
+    portalName: `${listing.sourceLabel || listing.source} proprietar`,
+    title: listing.title,
+    address: listing.location || listing.scopeCity || '',
+    locationLabel: listing.location || listing.scopeCity || '',
+    price,
+    squareFootage,
+    rooms: rooms || null,
+    constructionYear:
+      typeof listing.constructionYear === 'number'
+        ? listing.constructionYear
+        : typeof listing.year === 'number'
+          ? listing.year
+          : null,
+    interiorState: normalizeInteriorState(undefined, [listing.title, listing.description].filter(Boolean).join(' ')),
+    partitioning: normalizePartitioning(undefined, [listing.title, listing.description].filter(Boolean).join(' ')),
+    parkingIncluded: detectIncludedParking([listing.title, listing.description].filter(Boolean).join(' ')),
+    url: listing.link,
+    zoneMatchPriority,
+    lastSeenAt: listing.lastSeenAt || listing.postedAt || null,
+  };
 }
 
-function buildOlxSearchUrls(subject: Property, subjectFeatures: PropertyFeatures) {
-  const roomSegment = subject.rooms >= 4 ? '4-camere' : `${subject.rooms}-camere`;
-  const primaryQuery = subjectFeatures.zoneTokens.join(' ').trim() || subject.zone || subject.location || subject.address;
-  const fallbackQueries = subjectFeatures.zoneTokens.slice(0, 3);
-  const queries = [primaryQuery, ...fallbackQueries]
-    .map((item) => normalizeText(item))
-    .filter(Boolean)
-    .map((item) => item.replace(/\s+/g, '-'));
+function evaluatePortalCandidate(
+  subject: Property,
+  subjectFeatures: PropertyFeatures,
+  candidate: PortalComparableCandidate,
+  seen: Set<string>
+): { comparable: PricingComparable | null; rejection: PricingRejectedComparable | null } {
+  const key = `${normalizeText(candidate.title)}|${candidate.price}|${candidate.squareFootage}`;
+  if (seen.has(key)) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source: 'portal_active',
+        title: candidate.title,
+        locationLabel: candidate.locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'duplicate',
+        reason: 'Comparabila apare duplicat in sursele externe.',
+      }),
+    };
+  }
+  seen.add(key);
 
-  return Array.from(new Set(queries)).slice(0, 3).map(
-    (query) => `${OLX_BASE_URL}/imobiliare/apartamente-garsoniere-de-vanzare/${roomSegment}/q-${query}/`
-  );
+  if (candidate.rooms !== null && subject.rooms && candidate.rooms !== subject.rooms) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source: 'portal_active',
+        title: candidate.title,
+        locationLabel: candidate.locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'room_mismatch',
+        reason: 'Numarul de camere nu se potriveste cu proprietatea evaluata.',
+      }),
+    };
+  }
+
+  if (subject.squareFootage && Math.abs(candidate.squareFootage - subject.squareFootage) / subject.squareFootage > 0.45) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source: 'portal_active',
+        title: candidate.title,
+        locationLabel: candidate.locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'surface_out_of_range',
+        reason: 'Suprafata este prea departe de proprietatea evaluata.',
+      }),
+    };
+  }
+
+  const comparable = createPricingComparable('portal_active', subject, subjectFeatures, candidate, candidate.portalName);
+  if (comparable.similarityScore < 52) {
+    return {
+      comparable: null,
+      rejection: createRejectedComparable({
+        id: candidate.id,
+        source: 'portal_active',
+        title: candidate.title,
+        locationLabel: candidate.locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        similarityScore: comparable.similarityScore,
+        reasonCode: 'weak_location_match',
+        reason: 'Comparabila externa nu trece pragul de similaritate.',
+      }),
+    };
+  }
+
+  return { comparable, rejection: null };
 }
 
-function buildImobiliareNetUrls(subject: Property, subjectFeatures: PropertyFeatures) {
-  const zoneCandidates = subjectFeatures.zoneTokens.length ? subjectFeatures.zoneTokens : [subject.zone || subject.location || ''];
-  const roomSegment = subject.rooms >= 4 ? '4-camere' : `${subject.rooms}-camere`;
-  return Array.from(
-    new Set(
-      zoneCandidates
-        .map((item) => slugify(item))
-        .filter(Boolean)
-        .slice(0, 4)
-        .map((slug) => `${IMOBILIARE_NET_BASE_URL}/${slug}/vanzari-apartamente-${roomSegment}`)
+async function fetchOwnerListingComparables(subject: Property, subjectFeatures: PropertyFeatures) {
+  const lookupTokens = Array.from(
+    new Set([
+      ...subjectFeatures.zoneTokens,
+      ...subjectFeatures.relatedZoneTokens,
+    ])
+  )
+    .filter((token) => token.length >= 3)
+    .slice(0, 80);
+  const targetedSnapshots = await Promise.all(
+    lookupTokens.flatMap((token) =>
+      [
+        adminDb
+          .collection('ownerListings')
+          .where('normalizedLocation', '==', token)
+          .limit(120)
+          .get()
+          .catch(() => null),
+        adminDb
+          .collection('ownerListings')
+          .where('location', '==', tokenToLocationLabel(token))
+          .limit(120)
+          .get()
+          .catch(() => null),
+        adminDb
+          .collection('ownerListings')
+          .where('scopeCity', '==', tokenToLocationLabel(token))
+          .limit(120)
+          .get()
+          .catch(() => null),
+      ]
     )
   );
+  const recentSnapshot = await adminDb.collection('ownerListings').orderBy('lastSeenAt', 'desc').limit(2000).get();
+  const docsById = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+
+  for (const snapshot of targetedSnapshots) {
+    for (const docSnapshot of snapshot?.docs || []) {
+      docsById.set(docSnapshot.id, docSnapshot);
+    }
+  }
+
+  for (const docSnapshot of recentSnapshot.docs) {
+    docsById.set(docSnapshot.id, docSnapshot);
+  }
+
+  if (docsById.size < 2500 && subjectFeatures.broaderLocationTokens.some((token) => token === 'bucuresti')) {
+    const regionalSnapshot = await adminDb
+      .collection('ownerListings')
+      .where('scopeKey', '==', 'bucuresti-ilfov')
+      .limit(5000)
+      .get()
+      .catch(() => null);
+
+    for (const docSnapshot of regionalSnapshot?.docs || []) {
+      docsById.set(docSnapshot.id, docSnapshot);
+    }
+  }
+
+  const candidates: PortalComparableCandidate[] = [];
+  const rejected: PricingRejectedComparable[] = [];
+
+  for (const docSnapshot of docsById.values()) {
+    const listing = docSnapshot.data() as OwnerListingSummary;
+    const candidate = ownerListingToPortalCandidate(docSnapshot.id, listing, subjectFeatures);
+    if (!candidate) {
+      rejected.push(createRejectedComparable({
+        id: docSnapshot.id,
+        source: 'portal_active',
+        title: listing.title,
+        locationLabel: listing.location || listing.scopeCity || '',
+        price: parsePriceNumber(listing.price) || null,
+        squareFootage: parseArea(listing.area) || null,
+        reasonCode: 'missing_price_or_surface',
+        reason: 'Anuntul de proprietar nu are suficiente campuri valide sau nu se potriveste cu tipul si tranzactia evaluate.',
+      }));
+      continue;
+    }
+    if (!shouldKeepPortalCandidate(subjectFeatures, `${candidate.title} ${listing.description || ''}`, candidate.locationLabel)) {
+      rejected.push(createRejectedComparable({
+        id: candidate.id,
+        source: 'portal_active',
+        title: candidate.title,
+        locationLabel: candidate.locationLabel,
+        price: candidate.price,
+        squareFootage: candidate.squareFootage,
+        reasonCode: 'weak_location_match',
+        reason: 'Anuntul de proprietar nu se potriveste suficient cu microzona sau zonele adiacente.',
+      }));
+      continue;
+    }
+    candidates.push(candidate);
+  }
+
+  const sortedCandidates = candidates
+    .sort((left, right) => (right.zoneMatchPriority ?? 0) - (left.zoneMatchPriority ?? 0))
+    .slice(0, 250);
+
+  return {
+    candidates: sortedCandidates,
+    rejected: rejected.slice(0, 40),
+    diagnostics: [
+      createDiagnostic({
+        source: 'owner_listings',
+        attempted: true,
+        fetchedCount: docsById.size,
+        acceptedCount: sortedCandidates.length,
+        rejectedCount: rejected.length,
+        status: sortedCandidates.length ? 'ok' : rejected.length ? 'partial' : 'skipped',
+        message: sortedCandidates.length
+          ? 'Anunturile de proprietar salvate local au fost folosite ca oferta activa externa.'
+          : 'Nu exista suficiente anunturi de proprietar potrivite pentru aceasta analiza.',
+      }),
+    ],
+  } satisfies PortalFetchResult;
 }
 
 async function fetchPortalComparables(subject: Property, subjectFeatures: PropertyFeatures) {
-  const requests = [
-    ...buildOlxSearchUrls(subject, subjectFeatures).map((url) => ({ portal: 'olx', url })),
-    ...buildImobiliareNetUrls(subject, subjectFeatures).map((url) => ({ portal: 'imobiliare-net', url })),
-  ];
+  const ownerListingResults = await fetchOwnerListingComparables(subject, subjectFeatures).catch((error) => ({
+    candidates: [] as PortalComparableCandidate[],
+    rejected: [] as PricingRejectedComparable[],
+    diagnostics: [
+      createDiagnostic({
+        source: 'owner_listings',
+        attempted: true,
+        fetchedCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        status: 'failed',
+        message: error instanceof Error ? error.message : 'Nu au putut fi citite anunturile de proprietar.',
+      }),
+    ],
+  } satisfies PortalFetchResult));
 
-  const results = await Promise.all(
-    requests.map(async ({ portal, url }) => {
-      try {
-        const html = await fetchHtml(url);
-        if (portal === 'olx') {
-          return parseOlxComparables(html, subject, subjectFeatures, url);
-        }
-        return parseImobiliareNetComparables(html, subject, subjectFeatures, url);
-      } catch {
-        return [] as PortalComparableCandidate[];
-      }
-    })
-  );
-
-  const merged = results.flat();
+  const merged = ownerListingResults.candidates;
   const seen = new Set<string>();
-  return merged
-    .filter((candidate) => {
-      const key = `${normalizeText(candidate.title)}|${candidate.price}|${candidate.squareFootage}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .map((candidate) =>
-      createPricingComparable('portal_active', subject, subjectFeatures, candidate, candidate.portalName)
-    )
-    .filter((candidate) => candidate.similarityScore >= 60)
-    .sort((left, right) => right.similarityScore - left.similarityScore)
-    .slice(0, 10);
+  const comparables: PricingComparable[] = [];
+  const rejected: PricingRejectedComparable[] = [...ownerListingResults.rejected];
+
+  for (const candidate of merged) {
+    const evaluated = evaluatePortalCandidate(subject, subjectFeatures, candidate, seen);
+    if (evaluated.rejection) rejected.push(evaluated.rejection);
+    if (evaluated.comparable) comparables.push(evaluated.comparable);
+  }
+
+  const accepted = comparables
+    .sort(sortComparablesByRelevance)
+    .slice(0, 16);
+
+  return {
+    comparables: accepted,
+    rejected: rejected.slice(0, 80),
+    diagnostics: ownerListingResults.diagnostics,
+  };
 }
 
 function isFailedPreconditionError(error: unknown) {
@@ -1417,6 +2150,7 @@ async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: 
     fetchArchivedSoldEventDocs(),
   ]);
   const soldComparables: PricingComparable[] = [];
+  const rejected: PricingRejectedComparable[] = [];
   const seenSoldKeys = new Set<string>();
 
   for (const docSnapshot of archivedDocs) {
@@ -1424,7 +2158,8 @@ async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: 
     if (!data.marketAnalysisEligible) continue;
 
     const snapshotProperty = data.propertySnapshot;
-    if (!snapshotProperty || snapshotProperty.id === subject.id) continue;
+    if (!snapshotProperty) continue;
+    if (snapshotProperty.id === subject.id && !isSoldStatus(subject.status)) continue;
 
     const comparablePrice =
       typeof data.soldPrice === 'number' && data.soldPrice > 0
@@ -1449,22 +2184,19 @@ async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: 
     if (seenSoldKeys.has(dedupeKey)) continue;
     seenSoldKeys.add(dedupeKey);
 
-    if (!isInternalComparable(subject, subjectFeatures, archivedCandidate)) continue;
+    const evaluated = evaluateInternalComparable(subject, subjectFeatures, archivedCandidate);
+    if (evaluated.rejection) rejected.push(evaluated.rejection);
+    if (!evaluated.comparable) continue;
 
-    soldComparables.push(
-      createPricingComparable(
-        'platform_sold',
-        subject,
-        subjectFeatures,
-        archivedCandidate,
-        'changedAt' in data ? 'Vandut confirmat' : 'Vandut arhivat'
-      )
-    );
+    soldComparables.push({
+      ...evaluated.comparable,
+      statusLabel: 'changedAt' in data ? 'Vandut confirmat' : 'Vandut arhivat',
+    });
   }
 
   for (const docSnapshot of snapshot.docs) {
     const data = { id: docSnapshot.id, ...docSnapshot.data() } as InternalComparableCandidate;
-    if (data.id === subject.id) continue;
+    if (data.id === subject.id && !isSoldStatus(subject.status)) continue;
     if (!isSoldStatus(data.status)) continue;
 
     const agencyId = docSnapshot.ref.path.split('/')[1] || null;
@@ -1476,34 +2208,68 @@ async function fetchPlatformSoldComparables(subject: Property, subjectFeatures: 
       ...data,
       price: typeof data.soldPrice === 'number' && data.soldPrice > 0 ? data.soldPrice : data.price,
     };
-    if (!isInternalComparable(subject, subjectFeatures, soldCandidate)) continue;
+    const evaluated = evaluateInternalComparable(subject, subjectFeatures, { ...soldCandidate, agencyId });
+    if (evaluated.rejection) rejected.push(evaluated.rejection);
+    if (!evaluated.comparable) continue;
 
-    soldComparables.push(
-      createPricingComparable('platform_sold', subject, subjectFeatures, { ...soldCandidate, agencyId }, 'Vandut')
-    );
+    soldComparables.push(evaluated.comparable);
   }
 
-  return soldComparables
-    .sort((left, right) => right.similarityScore - left.similarityScore)
-    .slice(0, 8);
+  const comparables = soldComparables
+    .sort(sortComparablesByRelevance)
+    .slice(0, 12);
+
+  return {
+    comparables,
+    rejected: rejected.slice(0, 30),
+    diagnostic: createDiagnostic({
+      source: 'platform_sold',
+      attempted: true,
+      fetchedCount: archivedDocs.length + snapshot.docs.length,
+      acceptedCount: comparables.length,
+      rejectedCount: rejected.length,
+      status: comparables.length ? 'ok' : rejected.length ? 'partial' : 'skipped',
+      message: comparables.length
+        ? 'Tranzactiile vandute au fost evaluate si ponderate dupa similaritate.'
+        : 'Nu au fost gasite tranzactii vandute suficient de similare.',
+    }),
+  } satisfies InternalComparableResult;
 }
 
 async function fetchAgencyActiveComparables(subject: Property, subjectFeatures: PropertyFeatures, agencyId: string) {
   const snapshot = await adminDb.collection('agencies').doc(agencyId).collection('properties').get();
   const results: PricingComparable[] = [];
+  const rejected: PricingRejectedComparable[] = [];
 
   for (const docSnapshot of snapshot.docs) {
     const data = { id: docSnapshot.id, ...docSnapshot.data() } as InternalComparableCandidate;
     if (data.id === subject.id) continue;
     if (!isActiveStatus(data.status)) continue;
-    if (!isInternalComparable(subject, subjectFeatures, data)) continue;
 
-    results.push(createPricingComparable('agency_active', subject, subjectFeatures, { ...data, agencyId }, 'Activ'));
+    const evaluated = evaluateInternalComparable(subject, subjectFeatures, { ...data, agencyId });
+    if (evaluated.rejection) rejected.push(evaluated.rejection);
+    if (evaluated.comparable) results.push(evaluated.comparable);
   }
 
-  return results
-    .sort((left, right) => right.similarityScore - left.similarityScore)
-    .slice(0, 6);
+  const comparables = results
+    .sort(sortComparablesByRelevance)
+    .slice(0, 10);
+
+  return {
+    comparables,
+    rejected: rejected.slice(0, 25),
+    diagnostic: createDiagnostic({
+      source: 'agency_active',
+      attempted: true,
+      fetchedCount: snapshot.docs.length,
+      acceptedCount: comparables.length,
+      rejectedCount: rejected.length,
+      status: comparables.length ? 'ok' : 'partial',
+      message: comparables.length
+        ? 'Oferta activa din agentie a fost folosita ca reper secundar.'
+        : 'Portofoliul activ nu contine suficiente comparabile directe.',
+    }),
+  } satisfies InternalComparableResult;
 }
 
 function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatures, referencePool: PricingComparable[]) {
@@ -1519,6 +2285,11 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
   const averageIntermediateFloorRate =
     referencePool.filter((item) => item.similarityReasons.some((reason) => reason.includes('etaj intermediar'))).length /
     Math.max(referencePool.length, 1);
+  const knownParkingComparables = referencePool.filter((item) => item.parkingIncluded !== null && item.parkingIncluded !== undefined);
+  const parkingIncludedRate =
+    knownParkingComparables.length > 0
+      ? knownParkingComparables.filter((item) => item.parkingIncluded === true).length / knownParkingComparables.length
+      : null;
 
   const adjustments: Array<{ label: string; reason: string; pct: number; direction: 'positive' | 'negative' | 'neutral' }> = [];
 
@@ -1535,6 +2306,37 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
       reason: 'Piata penalizeaza apartamentele care necesita investitii imediate.',
       pct: -0.06,
       direction: 'negative',
+    });
+  }
+
+  if (subjectFeatures.hasIncludedParking === true) {
+    adjustments.push({
+      label: 'Parcare inclusa',
+      reason: 'Parcarea inclusa adauga valoare, dar ajustarea este moderata pentru ca o parte din comparabile pot include deja acelasi beneficiu.',
+      pct: 0.05,
+      direction: 'positive',
+    });
+  } else if (subjectFeatures.hasIncludedParking === false && parkingIncludedRate !== null && parkingIncludedRate >= 0.55) {
+    adjustments.push({
+      label: 'Parcare neinclusa',
+      reason: 'Majoritatea comparabilelor clare par sa includa parcare, deci benchmarkul este corectat prudent in jos.',
+      pct: -0.025,
+      direction: 'negative',
+    });
+  }
+
+  if (typeof subject.constructionYear === 'number' && subject.constructionYear >= 2000) {
+    const pct = averageYear === null ? 0.03 : averageYear < 2000 ? 0.04 : 0.025;
+    adjustments.push({
+      label: 'Bloc nou / dupa 2000',
+      reason:
+        averageYear === null
+          ? 'Anul de constructie dupa 2000 este tratat ca avantaj explicit, chiar daca lipsesc anii pentru o parte din comparabile.'
+          : averageYear < 2000
+            ? 'Constructia dupa 2000 este net superioara generatiei medii a comparabilelor.'
+            : 'Constructia dupa 2000 ramane avantaj comercial, dar efectul este moderat fiindca multe comparabile sunt din generatie apropiata.',
+      pct,
+      direction: 'positive',
     });
   }
 
@@ -1563,6 +2365,15 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
     });
   }
 
+  if (typeof subject.constructionYear === 'number' && subject.constructionYear < 1977) {
+    adjustments.push({
+      label: 'Constructie inainte de 1977',
+      reason: 'Anul pre-1977 este un factor major de risc perceput si reduce baza de cumparatori eligibili, mai ales pentru finantare bancara.',
+      pct: -0.085,
+      direction: 'negative',
+    });
+  }
+
   if (subject.bathrooms > averageBathrooms + 0.4) {
     adjustments.push({
       label: 'Baie suplimentara',
@@ -1573,11 +2384,15 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
   }
 
   if (typeof subject.constructionYear === 'number' && typeof averageYear === 'number') {
-    if (subject.constructionYear - averageYear >= 10) {
+    if (subject.constructionYear < 1977) {
+      // Penalizarea pre-1977 este tratata separat, fiind mult mai importanta decat diferenta liniara de vechime.
+    } else if (subject.constructionYear >= 2000) {
+      // Proprietatile dupa 2000 au ajustare dedicata, ca sa fie vizibila consecvent in analiza.
+    } else if (subject.constructionYear - averageYear >= 10) {
       adjustments.push({
         label: 'An de constructie superior',
         reason: 'Diferenta de generatie a blocului este relevanta pentru cumparatori.',
-        pct: 0.02,
+        pct: subject.constructionYear >= 2000 ? 0.04 : 0.02,
         direction: 'positive',
       });
     } else if (subject.constructionYear - averageYear <= -10) {
@@ -1590,7 +2405,7 @@ function computeAdjustmentSet(subject: Property, subjectFeatures: PropertyFeatur
     }
   }
 
-  return adjustments.slice(0, 5);
+  return adjustments.slice(0, 6);
 }
 
 function computeVolatility(comparables: PricingComparable[]) {
@@ -1634,10 +2449,87 @@ function buildSummary(params: {
   const anchors = [
     soldBenchmarkPricePerSqm ? `vanzari inchise ~${soldBenchmarkPricePerSqm} EUR/mp` : null,
     activeBenchmarkPricePerSqm ? `oferte active interne ~${activeBenchmarkPricePerSqm} EUR/mp` : null,
-    portalBenchmarkPricePerSqm ? `portaluri externe ~${portalBenchmarkPricePerSqm} EUR/mp` : null,
+    portalBenchmarkPricePerSqm ? `ownerListings ~${portalBenchmarkPricePerSqm} EUR/mp` : null,
   ].filter(Boolean);
 
-  return `Pretul recomandat de listare pentru ${subject.title} este ${recommendedListingPrice.toLocaleString('ro-RO')} EUR (${recommendedListingPricePerSqm.toLocaleString('ro-RO')} EUR/mp). Algoritmul foloseste comparabile pe microzona, camere, suprafata, stare, etaj si vechime, plus ${portalCount} comparabile externe extrase fara API din OLX/Storia si imobiliare.net; ${heatText}. Nivelul de incredere este ${confidenceScore} / 100, iar reperele dominante sunt ${anchors.join(', ')}.`;
+  return `Pretul recomandat de listare pentru ${subject.title} este ${recommendedListingPrice.toLocaleString('ro-RO')} EUR (${recommendedListingPricePerSqm.toLocaleString('ro-RO')} EUR/mp). Algoritmul foloseste comparabile pe microzona, camere, suprafata, stare, etaj si vechime, plus ${portalCount} comparabile active din ownerListings; ${heatText}. Nivelul de incredere este ${confidenceScore} / 100, iar reperele dominante sunt ${anchors.join(', ')}.`;
+}
+
+function buildRiskFlags(params: {
+  confidenceScore: number;
+  dataQuality: PricingDataQuality;
+  marketEvidence: PricingMarketEvidence;
+  rejectedComparables: PricingRejectedComparable[];
+  diagnostics: PricingSourceDiagnostic[];
+  backtest: PricingBacktestSummary;
+  subject: Property;
+}) {
+  const flags: PricingAnalysisResult['riskFlags'] = [];
+
+  if (typeof params.subject.constructionYear === 'number' && params.subject.constructionYear < 1977) {
+    flags.push({
+      severity: 'critical',
+      label: 'Constructie pre-1977',
+      reason: 'Anul constructiei este inainte de 1977; evaluarea aplica penalizare dedicata si comparabilele din aceeasi generatie devin mult mai relevante.',
+    });
+  }
+
+  if (params.marketEvidence.tier === 'weak') {
+    flags.push({
+      severity: 'critical',
+      label: 'Evidenta slaba',
+      reason: 'Sunt prea putine comparabile solide pentru o recomandare agresiva.',
+    });
+  } else if (params.marketEvidence.tier === 'listing_led') {
+    flags.push({
+      severity: 'warning',
+      label: 'Condusa de oferte active',
+      reason: 'Analiza se bazeaza mai mult pe preturi cerute din active si ownerListings decat pe tranzactii inchise.',
+    });
+  }
+
+  if (params.dataQuality.level === 'low') {
+    flags.push({
+      severity: 'critical',
+      label: 'Date incomplete',
+      reason: `Lipsesc campuri importante: ${params.dataQuality.missingFields.slice(0, 4).join(', ')}.`,
+    });
+  }
+
+  if (params.diagnostics.some((diagnostic) => diagnostic.status === 'failed')) {
+    flags.push({
+      severity: 'warning',
+      label: 'ownerListings indisponibil',
+      reason: 'Colectia ownerListings nu a putut fi citita in aceasta rulare.',
+    });
+  }
+
+  if (params.backtest.segment?.sampleSize && params.backtest.segment.sampleSize >= 5 && Math.abs(params.backtest.segment.biasPercent || 0) > 7) {
+    flags.push({
+      severity: 'warning',
+      label: 'Bias istoric detectat',
+      reason: 'Memoria istorica arata o abatere sistematica pe segment; pretul a fost calibrat prudent.',
+    });
+  }
+
+  const severeRejections = params.rejectedComparables.filter((item) => item.severity !== 'info').length;
+  if (severeRejections >= 8) {
+    flags.push({
+      severity: 'warning',
+      label: 'Multe comparabile respinse',
+      reason: 'Selectia a eliminat multe anunturi incomplete sau slab potrivite; verifica microzona si datele proprietatii.',
+    });
+  }
+
+  if (!flags.length && params.confidenceScore >= 82) {
+    flags.push({
+      severity: 'info',
+      label: 'Risc controlat',
+      reason: 'Dovezile si calitatea datelor sustin o recomandare comerciala robusta.',
+    });
+  }
+
+  return flags.slice(0, 5);
 }
 
 export async function generatePricingAnalysis(params: {
@@ -1660,20 +2552,26 @@ export async function generatePricingAnalysis(params: {
     throw new Error('Proprietatea are nevoie de pret si suprafata utila pentru analiza.');
   }
 
+  const balconySurface = getBalconySurface(subject);
+  const pricingSurface = getPricingSurface(subject);
   const subjectFeatures = extractPropertyFeatures(subject);
   const dataQuality = buildDataQuality(subject, subjectFeatures);
 
-  const [soldComparables, activeComparables, portalComparables, portalIndexPricePerSqm] = await Promise.all([
+  const [soldResult, activeResult, portalResult, historicalBacktests] = await Promise.all([
     fetchPlatformSoldComparables(subject, subjectFeatures),
     fetchAgencyActiveComparables(subject, subjectFeatures, agencyId),
     fetchPortalComparables(subject, subjectFeatures),
-    fetchPortalIndexPrice(subject),
+    loadBacktestRecords(agencyId).catch(() => [] as PricingBacktestRecord[]),
   ]);
+  const soldComparables = soldResult.comparables;
+  const activeComparables = activeResult.comparables;
+  const portalComparables = portalResult.comparables;
+  const preliminarySegmentBacktest = computeSegmentBacktest(historicalBacktests, subject);
   const marketEvidence = computeMarketEvidence({ soldComparables, activeComparables, portalComparables });
 
   const soldBenchmarkPricePerSqm = computeWeightedBenchmark(soldComparables, 1);
-  const activeBenchmarkPricePerSqm = computeWeightedBenchmark(activeComparables, 0.965);
-  const portalBenchmarkPricePerSqm = computeWeightedBenchmark(portalComparables, 0.955);
+  const activeBenchmarkPricePerSqm = computeWeightedBenchmark(activeComparables, ACTIVE_ASK_TO_SALE_DISCOUNT);
+  const portalBenchmarkPricePerSqm = computeWeightedBenchmark(portalComparables, ACTIVE_ASK_TO_SALE_DISCOUNT);
 
   const anchors = [
     soldBenchmarkPricePerSqm,
@@ -1686,16 +2584,36 @@ export async function generatePricingAnalysis(params: {
   }
 
   let baselinePricePerSqm = 0;
+  let baselineSourceMix = {
+    soldWeight: 0,
+    activeWeight: 0,
+    portalWeight: 0,
+  };
   if (soldBenchmarkPricePerSqm !== null) {
+    const directSoldWeight =
+      marketEvidence.directMicrozoneSoldCount >= 1 ? 0.78 : 0.64;
+    const activeWeight = marketEvidence.directMicrozoneSoldCount >= 1 ? 0.08 : 0.14;
+    const ownerListingsWeight = 1 - directSoldWeight - activeWeight;
+    baselineSourceMix = {
+      soldWeight: round(directSoldWeight * 100, 0),
+      activeWeight: round(activeWeight * 100, 0),
+      portalWeight: round(ownerListingsWeight * 100, 0),
+    };
     baselinePricePerSqm =
-      soldBenchmarkPricePerSqm * 0.58 +
-      (activeBenchmarkPricePerSqm ?? soldBenchmarkPricePerSqm) * 0.18 +
-      (portalBenchmarkPricePerSqm ?? soldBenchmarkPricePerSqm) * 0.24;
+      soldBenchmarkPricePerSqm * directSoldWeight +
+      (activeBenchmarkPricePerSqm ?? soldBenchmarkPricePerSqm) * activeWeight +
+      (portalBenchmarkPricePerSqm ?? soldBenchmarkPricePerSqm) * ownerListingsWeight;
   } else {
+    baselineSourceMix = {
+      soldWeight: 0,
+      activeWeight: activeBenchmarkPricePerSqm ? (portalBenchmarkPricePerSqm ? 45 : 100) : 0,
+      portalWeight: portalBenchmarkPricePerSqm ? (activeBenchmarkPricePerSqm ? 55 : 100) : 0,
+    };
     baselinePricePerSqm =
       (activeBenchmarkPricePerSqm ?? portalBenchmarkPricePerSqm ?? anchors[0]) * 0.45 +
       (portalBenchmarkPricePerSqm ?? activeBenchmarkPricePerSqm ?? anchors[0]) * 0.55;
   }
+  marketEvidence.sourceMix = baselineSourceMix;
 
   const referencePool = [
     ...soldComparables.slice(0, 5),
@@ -1705,21 +2623,43 @@ export async function generatePricingAnalysis(params: {
   const rawAdjustments = computeAdjustmentSet(subject, subjectFeatures, referencePool);
   const totalAdjustmentPct = clamp(rawAdjustments.reduce((sum, item) => sum + item.pct, 0), -0.1, 0.11);
   const anchorMedian = median(anchors) || baselinePricePerSqm;
+  const strongestBenchmarkPricePerSqm = maxFinite([
+    soldBenchmarkPricePerSqm,
+    activeBenchmarkPricePerSqm,
+    portalBenchmarkPricePerSqm,
+  ]) || anchorMedian;
+  const minimumStretchGap =
+    marketEvidence.tier === 'transaction_led' ? 0.075 : marketEvidence.tier === 'hybrid' ? 0.07 : 0.08;
+  const recommendationPremium =
+    marketEvidence.tier === 'transaction_led' ? 0.012 : marketEvidence.tier === 'hybrid' ? 0 : -0.015;
+  const stretchPremium =
+    marketEvidence.tier === 'transaction_led' && portalBenchmarkPricePerSqm && soldBenchmarkPricePerSqm && portalBenchmarkPricePerSqm > soldBenchmarkPricePerSqm * 1.06
+      ? 0.05
+      : marketEvidence.tier === 'transaction_led'
+        ? 0.04
+        : marketEvidence.tier === 'hybrid'
+          ? 0.03
+          : 0.015;
+  const stretchCeil = strongestBenchmarkPricePerSqm * (1 + stretchPremium);
+  const recommendationCeil = Math.min(
+    strongestBenchmarkPricePerSqm * (1 + recommendationPremium),
+    stretchCeil / (1 + minimumStretchGap)
+  );
 
-  let recommendedListingPricePerSqm = baselinePricePerSqm * (1 + totalAdjustmentPct);
+  let benchmarkRecommendedPricePerSqm = baselinePricePerSqm * (1 + totalAdjustmentPct) * (preliminarySegmentBacktest?.calibrationFactor || 1);
   const sanityFloor = anchorMedian * (soldComparables.length > 0 ? 0.84 : 0.9);
-  const sanityCeil = anchorMedian * 1.18;
-  recommendedListingPricePerSqm = clamp(recommendedListingPricePerSqm, sanityFloor, sanityCeil);
-  recommendedListingPricePerSqm = round(recommendedListingPricePerSqm, 0);
+  const sanityCeil = Math.min(anchorMedian * 1.1, recommendationCeil);
+  benchmarkRecommendedPricePerSqm = clamp(benchmarkRecommendedPricePerSqm, sanityFloor, sanityCeil);
+  benchmarkRecommendedPricePerSqm = round(benchmarkRecommendedPricePerSqm, 0);
 
-  const recommendedListingPrice = round(recommendedListingPricePerSqm * subject.squareFootage, 0);
+  const benchmarkRecommendedPrice = round(benchmarkRecommendedPricePerSqm * pricingSurface, 0);
   const adjustments: PricingAdjustment[] = rawAdjustments.map((item) => {
     const impactPerSqm = round(anchorMedian * item.pct, 0);
     return {
       label: item.label,
       direction: item.direction,
       impactPerSqm,
-      impactTotal: round(impactPerSqm * subject.squareFootage, 0),
+      impactTotal: round(impactPerSqm * pricingSurface, 0),
       reason: item.reason,
     };
   });
@@ -1742,8 +2682,14 @@ export async function generatePricingAnalysis(params: {
 
   const rangeBase = confidenceScore >= 82 ? 0.045 : confidenceScore >= 68 ? 0.06 : 0.08;
   const spread = clamp(rangeBase + volatility / 2, 0.05, 0.14);
-  const conservativeMinPrice = round(recommendedListingPrice * (1 - spread), 0);
-  const stretchMaxPrice = round(recommendedListingPrice * (1 + spread), 0);
+  const conservativeMinPrice = round(benchmarkRecommendedPrice * (1 - spread), 0);
+  const recommendedListingPrice = round(conservativeMinPrice * 1.07, 0);
+  const recommendedListingPricePerSqm = round(recommendedListingPrice / pricingSurface, 0);
+  const rawStretchMaxPrice = recommendedListingPrice * (1 + spread);
+  const stretchMaxPrice = Math.max(
+    recommendedListingPrice,
+    round(Math.min(rawStretchMaxPrice, stretchCeil * pricingSurface), 0)
+  );
 
   const marketHeat: 'hot' | 'balanced' | 'soft' =
     portalBenchmarkPricePerSqm && soldBenchmarkPricePerSqm
@@ -1767,20 +2713,24 @@ export async function generatePricingAnalysis(params: {
 
   const limitations = [
     soldComparables.length === 0
-      ? 'Nu exista inca tranzactii Vandut suficient de similare pentru aceasta microzona; recomandarea foloseste oferte active si portaluri, cu incredere plafonata.'
+      ? 'Nu exista inca tranzactii Vandut suficient de similare pentru aceasta microzona; recomandarea foloseste oferte active si ownerListings, cu incredere plafonata.'
       : null,
     soldComparables.length > 0 && soldComparables.length < 3
       ? 'Esantionul de tranzactii Vandut este inca redus; intervalul tactic trebuie tratat ca plaja de calibrare, nu ca evaluare bancara.'
       : null,
-    'Comparabilele din portaluri sunt preturi active de listare, nu preturi finale de tranzactionare.',
-    'Scraping-ul fara API depinde de structura HTML a portalurilor si poate necesita recalibrare daca paginile se schimba.',
+    marketEvidence.directMicrozoneSoldCount > 0
+      ? 'Tranzactiile Vandut din aceeasi microzona au prioritate ridicata in benchmark fata de ofertele active si ownerListings.'
+      : null,
+    'Comparabilele din ownerListings sunt preturi active de listare, nu preturi finale de tranzactionare.',
+    balconySurface > 0
+      ? `Suprafata balconului/terasei (${balconySurface.toLocaleString('ro-RO')} mp) este inclusa in valoarea totala cu pondere de 50% fata de suprafata utila.`
+      : null,
+    'Pretul recomandat este calculat ca limita minima plus 7%, pentru o relatie comerciala clara intre vanzare rapida si listare recomandata.',
+    'Pretul recomandat este tinut sub limita maxima tactica; daca benchmarkurile nu sustin o plaja reala, algoritmul coboara recomandarea in loc sa umfle maximul.',
     'Scorul final ramane dependent de calitatea datelor din proprietate: zona, suprafata, etaj, stare si anul constructiei.',
   ].filter((item): item is string => Boolean(item));
   const generatedAt = new Date().toISOString();
 
-  await reconcileAgencyBacktests(agencyId).catch((error) => {
-    console.warn('Pricing backtest reconciliation failed:', error);
-  });
   const backtest = await buildBacktestSummary(agencyId, subject).catch((error) => {
     console.warn('Pricing backtest summary failed:', error);
     return {
@@ -1790,9 +2740,20 @@ export async function generatePricingAnalysis(params: {
       medianAbsoluteErrorPercent: null,
       biasPercent: null,
       verdict: 'Backtesting-ul nu a putut fi calculat pentru aceasta rulare.',
+      segment: preliminarySegmentBacktest,
       latestBacktest: null,
     } satisfies PricingBacktestSummary;
   });
+  const sourceDiagnostics: PricingSourceDiagnostic[] = [
+    soldResult.diagnostic,
+    activeResult.diagnostic,
+    ...portalResult.diagnostics,
+  ];
+  const rejectedComparables = [
+    ...soldResult.rejected,
+    ...activeResult.rejected,
+    ...portalResult.rejected,
+  ].slice(0, 100);
 
   const analysis = {
     generatedAt,
@@ -1802,6 +2763,7 @@ export async function generatePricingAnalysis(params: {
       address: subject.address,
       city: subject.city || null,
       zone: subject.zone || null,
+      propertyType: subject.propertyType || null,
       squareFootage: subject.squareFootage,
       rooms: subject.rooms,
       bathrooms: subject.bathrooms,
@@ -1835,17 +2797,31 @@ export async function generatePricingAnalysis(params: {
       activeCount: activeComparables.length,
       portalCount: portalComparables.length,
       marketHeat,
-      portalIndexPricePerSqm,
+      portalIndexPricePerSqm: null,
     },
     limitations,
     dataQuality,
     marketEvidence,
     pricingStrategy,
     backtest,
+    sourceDiagnostics,
+    rejectedComparables,
+    riskFlags: buildRiskFlags({
+      confidenceScore,
+      dataQuality,
+      marketEvidence,
+      rejectedComparables,
+      diagnostics: sourceDiagnostics,
+      backtest,
+      subject,
+    }),
   } satisfies PricingAnalysisResult;
 
-  await persistPricingAnalysisSnapshot(agencyId, analysis).catch((error) => {
-    console.warn('Pricing analysis snapshot persistence failed:', error);
+  void Promise.all([
+    persistPricingAnalysisSnapshot(agencyId, analysis),
+    reconcileAgencyBacktests(agencyId),
+  ]).catch((error) => {
+    console.warn('Pricing analysis background persistence failed:', error);
   });
 
   return analysis;
