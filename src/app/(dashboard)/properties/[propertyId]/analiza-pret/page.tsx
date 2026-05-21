@@ -342,6 +342,30 @@ export default function PropertyPricingAnalysisPage() {
 
     try {
       const token = await user.getIdToken(true);
+
+      if (typeof window !== 'undefined' && window.imodeusDesktop?.generatePropertyPresentationPdf) {
+        const url = new URL(`/api/properties/${propertyId}/pricing-analysis/pdf`, window.location.origin);
+        url.searchParams.set('format', 'html');
+        const result = await window.imodeusDesktop.generatePropertyPresentationPdf({
+          url: url.toString(),
+          token,
+          method: 'POST',
+          body: {
+            minPrice: manualMinPriceValue,
+            recommendedPrice: manualRecommendedPriceValue,
+          },
+          fileName: `${sanitizeFileName(property?.title || analysis.subject.title)}-analiza-pret.pdf`,
+        });
+
+        if (!result.canceled) {
+          toast({
+            title: 'PDF generat',
+            description: 'Analiza de pret pentru proprietar a fost salvata local.',
+          });
+        }
+        return;
+      }
+
       const response = await fetch(`/api/properties/${propertyId}/pricing-analysis/pdf`, {
         method: 'POST',
         headers: {

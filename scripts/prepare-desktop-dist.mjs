@@ -47,7 +47,7 @@ async function main() {
     author: rootPackageJson.author,
     dependencies: {
       'electron-updater': rootPackageJson.devDependencies['electron-updater'],
-      playwright: rootPackageJson.devDependencies.playwright,
+      playwright: rootPackageJson.dependencies.playwright || rootPackageJson.devDependencies.playwright,
     },
   };
 

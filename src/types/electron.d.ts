@@ -9,7 +9,13 @@ declare global {
   interface Window {
     imodeusDesktop?: {
       isDesktop: () => Promise<boolean>;
-      generatePropertyPresentationPdf: (input: { url: string; token: string; fileName?: string }) => Promise<{ canceled: boolean; filePath?: string | null }>;
+      generatePropertyPresentationPdf: (input: {
+        url: string;
+        token: string;
+        fileName?: string;
+        method?: 'GET' | 'POST';
+        body?: unknown;
+      }) => Promise<{ canceled: boolean; filePath?: string | null }>;
       getOlxPhoneNumber: (input: { url: string }) => Promise<{ phone?: string; message?: string }>;
       startFacebookRunner: (input: StartFacebookRunnerInput) => Promise<DesktopFacebookRunnerStatus>;
       retryFacebookRunnerCurrentGroup: () => Promise<DesktopFacebookRunnerActionResult>;

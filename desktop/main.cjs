@@ -367,16 +367,18 @@ function normalizePdfFileName(value) {
 }
 
 async function generatePropertyPresentationPdfLocally(input) {
-  const { url, token, fileName } = input || {};
+  const { url, token, fileName, method, body } = input || {};
   if (!url || !token) {
     throw new Error('Lipsesc datele necesare pentru generarea prezentarii PDF.');
   }
 
   const response = await fetch(url, {
-    method: 'GET',
+    method: method || 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
+    ...(body ? { body: typeof body === 'string' ? body : JSON.stringify(body) } : {}),
   });
 
   if (!response.ok) {
@@ -385,7 +387,9 @@ async function generatePropertyPresentationPdfLocally(input) {
   }
 
   const html = await response.text();
-  const safeFileName = normalizePdfFileName(fileName || response.headers.get('x-presentation-filename'));
+  const safeFileName = normalizePdfFileName(
+    fileName || response.headers.get('x-presentation-filename') || response.headers.get('x-pricing-analysis-filename'),
+  );
   const defaultPath = path.join(app.getPath('downloads'), safeFileName);
   const result = await dialog.showSaveDialog({
     title: 'Salveaza prezentarea proprietatii',
