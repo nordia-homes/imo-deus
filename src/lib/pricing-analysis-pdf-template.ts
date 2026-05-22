@@ -21,6 +21,10 @@ function escapeHtml(value: unknown) {
     .replace(/'/g, '&#39;');
 }
 
+function cleanPdfText(value: unknown) {
+  return String(value ?? '').replace(/Ã‚/g, '').replace(/Â/g, '').replace(/\s+/g, ' ').trim();
+}
+
 function formatCurrency(value?: number | null) {
   if (!value || !Number.isFinite(value)) return '-';
   return `${Math.round(value).toLocaleString('ro-RO')} EUR`;
@@ -73,36 +77,70 @@ function formatBuyerBudget(buyer: MatchedBuyer) {
 }
 
 function buyerLocationLabel(buyer: MatchedBuyer) {
-  const zones = buyer.zones?.filter(Boolean).slice(0, 2) ?? [];
-  if (buyer.city && zones.length) return `${buyer.city} Â· ${zones.join(', ')}`;
-  if (buyer.city) return buyer.city;
+  const zones = buyer.zones?.filter(Boolean).map(cleanPdfText).slice(0, 2) ?? [];
+  const city = cleanPdfText(buyer.city);
+  if (city && zones.length) return `${city} - ${zones.join(', ')}`;
+  if (city) return city;
   if (zones.length) return zones.join(', ');
-  return buyer.generalZone || 'Zona flexibila';
+  return cleanPdfText(buyer.generalZone) || 'Zona flexibila';
 }
 
-function renderMatchedBuyers(matchedBuyers: MatchedBuyer[] = []) {
-  const items = matchedBuyers.slice(0, 20);
+function maskAfterFirstThree(value?: string | null) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  if (text.length <= 3) return text;
+  return `${text.slice(0, 3)}${'*'.repeat(text.length - 3)}`;
+}
 
-  if (!items.length) {
-    return '<div class="muted-row">Nu au fost gasiti cumparatori potriviti pentru criteriile acestei proprietati.</div>';
-  }
+function normalizeBuyerReasoning(reasoning?: string | null) {
+  const text = String(reasoning || 'Compatibilitate buna pe criteriile esentiale.').trim();
+  return text
+    .replace(/potrivire\s+(?:pe|in|în)\s+aceea(?:si|și)\s+localitate/giu, 'potrivire zone adiacente')
+    .replace(/potrivire\s+(?:pe|in)\s+aceea?și\s+localitate/gi, 'potrivire zone adiacente')
+    .replace(/potrivire\s+(?:pe|in)\s+aceeasi\s+localitate/gi, 'potrivire zone adiacente')
+    .replace(/potrivire\s+la\s+nivel\s+de\s+jude[tț]/gi, 'potrivire zone adiacente')
+    .replace(/la\s+nivel\s+de\s+jude[tț]/gi, 'potrivire zone adiacente');
+}
 
+function renderBuyerRows(items: MatchedBuyer[]) {
   return items
     .map(
       (buyer) => `
-        <article class="buyer-card">
-          <div class="buyer-topline">
-            <strong>${escapeHtml(buyer.name)}</strong>
-            <em>${formatNumber(buyer.matchScore)}/100</em>
+        <article class="buyer-row">
+          <div class="buyer-identity">
+            <strong>${escapeHtml(maskAfterFirstThree(cleanPdfText(buyer.name)))}</strong>
+            <span>${escapeHtml(maskAfterFirstThree(cleanPdfText(buyer.phone)) || cleanPdfText(buyer.status) || 'Lead activ')}</span>
           </div>
-          <span>${escapeHtml(formatBuyerBudget(buyer))}</span>
-          <small>${escapeHtml(buyerLocationLabel(buyer))}</small>
-          <p>${escapeHtml(buyer.reasoning || 'Compatibilitate buna pe criteriile esentiale.')}</p>
-          <footer>${escapeHtml([buyer.phone, buyer.email].filter(Boolean).join(' Â· ') || buyer.status || 'Lead activ')}</footer>
+          <div class="buyer-details">
+            <strong>${escapeHtml(formatBuyerBudget(buyer))}</strong>
+            <span>${escapeHtml(buyerLocationLabel(buyer))}</span>
+          </div>
+          <p>${escapeHtml(cleanPdfText(normalizeBuyerReasoning(buyer.reasoning)))}</p>
+          <em>${formatNumber(buyer.matchScore)}/100</em>
         </article>
       `
     )
     .join('');
+}
+
+function chunkMatchedBuyers(matchedBuyers: MatchedBuyer[] = []) {
+  const items = matchedBuyers.slice(0, 22);
+  const finalPageSize = 7;
+  const regularPageSize = 15;
+
+  if (items.length <= finalPageSize) return [items];
+
+  const chunks: MatchedBuyer[][] = [];
+  let index = 0;
+  const regularCount = items.length - finalPageSize;
+
+  while (index < regularCount) {
+    chunks.push(items.slice(index, Math.min(index + regularPageSize, regularCount)));
+    index += regularPageSize;
+  }
+
+  chunks.push(items.slice(regularCount));
+  return chunks;
 }
 
 function renderComparableRows(analysis: PricingAnalysisResult) {
@@ -121,12 +159,12 @@ function renderComparableRows(analysis: PricingAnalysisResult) {
       (item) => `
         <tr>
           <td>
-            <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.statusLabel)} · ${escapeHtml(item.locationLabel)}</span>
+            <strong>${escapeHtml(cleanPdfText(item.title))}</strong>
+            <span>${escapeHtml(cleanPdfText(item.statusLabel))} - ${escapeHtml(cleanPdfText(item.locationLabel))}</span>
           </td>
           <td>${formatCurrency(item.price)}</td>
           <td>${formatNumber(item.pricePerSqm)} EUR/mp</td>
-          <td>${item.rooms ?? '-'} cam. · ${formatNumber(item.squareFootage)} mp</td>
+          <td>${item.rooms ?? '-'} cam. - ${formatNumber(item.squareFootage)} mp</td>
           <td>${formatNumber(item.similarityScore)}/100</td>
         </tr>
       `
@@ -137,7 +175,7 @@ function renderComparableRows(analysis: PricingAnalysisResult) {
 function renderComparableCards(analysis: PricingAnalysisResult) {
   const items = [
     ...analysis.portalComparables,
-  ].slice(0, 5);
+  ].slice(0, 6);
 
   if (!items.length) {
     return '<div class="muted-row">Nu au fost gasite comparabile suficient de relevante.</div>';
@@ -150,14 +188,14 @@ function renderComparableCards(analysis: PricingAnalysisResult) {
           <div class="comparable-image">
             ${
               item.imageUrl
-                ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}" />`
+                ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(cleanPdfText(item.title))}" />`
                 : '<span>Fara poza</span>'
             }
           </div>
           <div class="comparable-main">
-            <strong>${escapeHtml(item.title)}</strong>
-            <span>${escapeHtml(item.statusLabel)} Â· ${escapeHtml(item.locationLabel)}</span>
-            <small>${item.rooms ?? '-'} camere Â· ${formatNumber(item.squareFootage)} mp</small>
+            <strong>${escapeHtml(cleanPdfText(item.title))}</strong>
+            <span>${escapeHtml(cleanPdfText(item.statusLabel))} - ${escapeHtml(cleanPdfText(item.locationLabel))}</span>
+            <small>${item.rooms ?? '-'} camere - ${formatNumber(item.squareFootage)} mp</small>
           </div>
           <div class="comparable-price">
             <strong>${formatCurrency(item.price)}</strong>
@@ -194,6 +232,70 @@ function renderAdjustments(analysis: PricingAnalysisResult, surface: number) {
     .join('');
 }
 
+function renderPricingCta(agentName: string, agentPhone: string, agentEmail: string) {
+  return `
+    <div class="cta">
+      <div>
+        <h2>Hai sa intram in piata cu avantaje care vand.</h2>
+        <p>Primele zile sunt esentiale! Nu rata startul. Creste-ti sansele de vizionari calificate, oferte rapide si o vanzare predictibila.</p>
+      </div>
+      <div class="contact-card">
+        <strong>${escapeHtml(agentName)}</strong>
+        <span>${escapeHtml(agentPhone || 'Telefon disponibil in agentie')}</span>
+        <span>${escapeHtml(agentEmail || 'Email disponibil in agentie')}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderMatchedBuyerPages(matchedBuyers: MatchedBuyer[], agencyName: string, finalCtaHtml: string) {
+  const chunks = chunkMatchedBuyers(matchedBuyers);
+
+  return chunks
+    .map((chunk, index) => {
+      const isLastPage = index === chunks.length - 1;
+      const buyerRows = chunk.length
+        ? renderBuyerRows(chunk)
+        : '<div class="muted-row">Nu au fost gasiti cumparatori potriviti pentru criteriile acestei proprietati.</div>';
+
+      return `
+        <section class="page buyer-page">
+          <div class="brand-row">
+            <div class="brand"><div class="brand-mark"></div>${escapeHtml(agencyName)}</div>
+            <div>Oportunitati active</div>
+          </div>
+
+          <div class="section buyer-section" style="margin-top:0">
+            <h2>Cumparatori potriviti pentru aceasta proprietate</h2>
+            <p class="summary">Lista este limitata la 22 de lead-uri active, ordonate dupa compatibilitatea cu proprietatea.</p>
+            <div class="buyer-list">${buyerRows}</div>
+          </div>
+
+          ${
+            isLastPage
+              ? `
+                <div class="buyer-reach-card">
+                  <div>
+                    <span>Retea activa de cumparatori</span>
+                    <strong>Peste 1.000 de cumparatori activi in agentie</strong>
+                  </div>
+                  <p>Lista de mai sus este doar selectia cea mai relevanta pentru aceasta proprietate, filtrata dupa buget, zone cautate si compatibilitate comerciala.</p>
+                </div>
+                ${finalCtaHtml}
+              `
+              : ''
+          }
+
+          <div class="footer">
+            <span>Cumparatorii sunt calculati din criteriile si preferintele salvate in CRM.</span>
+            <span>${escapeHtml(agencyName)}</span>
+          </div>
+        </section>
+      `;
+    })
+    .join('');
+}
+
 export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
   const { property, agency, agent, analysis, generatedAt, manualMinPrice, manualRecommendedPrice, matchedBuyers = [] } = input;
   const heroImage = pickImage(property);
@@ -220,7 +322,7 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
     .trim();
   const heroSummary = `Pozitionare recomandata la ${formatCurrency(manualRecommendedPrice)} (${formatNumber(
     recommendedPerSqm
-  )} EUR/mp), cu prag minim de colaborare ${formatCurrency(manualMinPrice)} si argumente clare pentru proprietar.`;
+  )} EUR/mp), cu prag minim de vanzare ${formatCurrency(manualMinPrice)} si argumente clare pentru o tranzactie rapida.`;
   const heroDetails = [
     { label: 'Suprafata', value: `${formatNumber(surface)} mp` },
     { label: 'Camere', value: `${analysis.subject.rooms || property.rooms || '-'} cam.` },
@@ -254,6 +356,9 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
         radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 34%),
         linear-gradient(180deg, #f8fafc 0%, #ffffff 42%, #f4f7fb 100%);
     }
+    .buyer-page {
+      padding-top: 8mm;
+    }
     .brand-row {
       display: flex;
       justify-content: space-between;
@@ -270,6 +375,8 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       gap: 8px;
       font-weight: 800;
       color: #0f766e;
+      font-size: 14px;
+      line-height: 1;
     }
     .brand-mark {
       width: 26px;
@@ -289,13 +396,22 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
         radial-gradient(circle at 16% 12%, rgba(20, 184, 166, 0.26), transparent 30%),
         linear-gradient(135deg, #07111f 0%, #0f2f36 52%, #ecfeff 100%);
       border: 1px solid rgba(15, 118, 110, 0.14);
-      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.16);
     }
     .hero-copy {
       display: flex;
       flex-direction: column;
       justify-content: center;
       min-width: 0;
+    }
+    .hero-signal {
+      width: 46mm;
+      height: 7px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, #34d399 0%, #99f6e4 75%, rgba(255,255,255,0.28) 75%, rgba(255,255,255,0.28) 100%);
+      box-shadow: 0 0 18px rgba(45, 212, 191, 0.36);
+      margin-top: -5mm;
+      margin-bottom: 4mm;
     }
     .hero-copy h1 {
       margin: 0 0 3mm;
@@ -314,12 +430,12 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
     .pill {
       display: inline-flex;
       border-radius: 999px;
-      padding: 7px 11px;
+      padding: 9px 14px;
       background: rgba(236, 253, 245, 0.96);
       border: 1px solid rgba(167, 243, 208, 0.75);
       color: #047857;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 11.5px;
+      font-weight: 800;
       margin-bottom: 3mm;
       align-self: flex-start;
     }
@@ -437,6 +553,18 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       margin: 0 0 4mm;
       font-size: 19px;
       letter-spacing: -0.02em;
+    }
+    .buyer-page .brand-row {
+      margin-bottom: 4mm;
+    }
+    .buyer-section {
+      padding: 4mm 6mm 5mm;
+    }
+    .buyer-section h2 {
+      margin-bottom: 2mm;
+    }
+    .buyer-section .summary {
+      line-height: 1.35;
     }
     .summary {
       color: #334155;
@@ -669,22 +797,22 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
     }
     .comparable-grid {
       display: grid;
-      gap: 4mm;
-      margin-top: 5mm;
+      gap: 3mm;
+      margin-top: 4mm;
     }
     .comparable-card {
       display: grid;
       grid-template-columns: 34mm minmax(0, 1fr) 30mm 17mm;
-      gap: 4mm;
+      gap: 3mm;
       align-items: center;
       border-radius: 20px;
       border: 1px solid #dbeafe;
       background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
-      padding: 12px;
+      padding: 9px 10px;
       box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
     }
     .comparable-image {
-      height: 25mm;
+      height: 21mm;
       border-radius: 14px;
       overflow: hidden;
       background: linear-gradient(135deg, #e2e8f0, #f8fafc);
@@ -706,21 +834,21 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
     .comparable-main strong {
       display: block;
       color: #020617;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.25;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
     .comparable-main span,
     .comparable-main small {
       display: block;
       color: #64748b;
-      font-size: 10.5px;
+      font-size: 10px;
       line-height: 1.35;
     }
     .comparable-price strong {
       display: block;
       color: #020617;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.15;
     }
     .comparable-price span {
@@ -741,67 +869,101 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       padding: 8px 9px;
       white-space: nowrap;
     }
-    .buyer-grid {
+    .buyer-list {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 3mm;
-      margin-top: 5mm;
+      gap: 2.8mm;
+      margin-top: 4.5mm;
     }
-    .buyer-card {
-      border-radius: 18px;
+    .buyer-row {
+      display: grid;
+      grid-template-columns: 34mm 44mm minmax(0, 1fr) 17mm;
+      gap: 4mm;
+      align-items: center;
+      min-height: 13.4mm;
+      border-radius: 16px;
       border: 1px solid #dbeafe;
       background: #ffffff;
-      padding: 12px;
+      padding: 11px 13px;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
       break-inside: avoid;
+      page-break-inside: avoid;
     }
-    .buyer-topline {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: flex-start;
-      margin-bottom: 6px;
+    .buyer-identity,
+    .buyer-details {
+      min-width: 0;
     }
-    .buyer-topline strong {
+    .buyer-identity strong,
+    .buyer-details strong {
+      display: block;
       color: #020617;
-      font-size: 13px;
+      font-size: 12.4px;
       line-height: 1.25;
+      margin-bottom: 4px;
     }
-    .buyer-topline em {
+    .buyer-identity span,
+    .buyer-details span {
+      display: block;
+      color: #64748b;
+      font-size: 10.7px;
+      line-height: 1.35;
+    }
+    .buyer-details strong {
+      color: #0f766e;
+      font-size: 12.4px;
+    }
+    .buyer-row p {
+      margin: 0;
+      color: #475569;
+      font-size: 10.3px;
+      line-height: 1.42;
+    }
+    .buyer-row em {
+      justify-self: end;
       border-radius: 999px;
       background: #eef2ff;
       border: 1px solid #c7d2fe;
       color: #3730a3;
       font-style: normal;
-      font-size: 10px;
+      font-size: 10.7px;
       font-weight: 900;
-      padding: 5px 7px;
+      padding: 7px 9px;
       white-space: nowrap;
     }
-    .buyer-card span {
+    .buyer-reach-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 1.15fr;
+      gap: 6mm;
+      align-items: center;
+      border-radius: 22px;
+      border: 1px solid #99f6e4;
+      background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+      padding: 5mm 7mm;
+      margin-top: 5mm;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .buyer-reach-card span {
       display: block;
       color: #0f766e;
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 3px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
     }
-    .buyer-card small {
+    .buyer-reach-card strong {
       display: block;
-      color: #64748b;
-      font-size: 10px;
-      line-height: 1.35;
+      color: #020617;
+      font-size: 20px;
+      line-height: 1.18;
+      letter-spacing: 0;
     }
-    .buyer-card p {
-      margin: 7px 0 0;
+    .buyer-reach-card p {
+      margin: 0;
       color: #475569;
-      font-size: 10px;
-      line-height: 1.4;
-    }
-    .buyer-card footer {
-      margin-top: 8px;
-      color: #64748b;
-      font-size: 9.5px;
-      line-height: 1.3;
+      font-size: 11px;
+      line-height: 1.45;
     }
     .footer {
       position: absolute;
@@ -822,31 +984,34 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       gap: 8mm;
       align-items: center;
       border-radius: 28px;
-      padding: 10mm;
+      padding: 7mm 9mm;
       color: #ffffff;
       background:
         radial-gradient(circle at top right, rgba(251,191,36,0.28), transparent 32%),
         linear-gradient(135deg, #0f172a, #0f766e);
       box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
-      margin-top: 8mm;
+      margin-top: 5mm;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .cta h2 {
       margin: 0 0 8px;
-      font-size: 28px;
-      letter-spacing: -0.04em;
+      font-size: 24px;
+      letter-spacing: 0;
+      line-height: 1.15;
     }
     .cta p {
       margin: 0;
       color: rgba(255,255,255,0.82);
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 12px;
+      line-height: 1.45;
     }
     .contact-card {
       min-width: 62mm;
       border-radius: 20px;
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.22);
-      padding: 15px;
+      padding: 12px 14px;
     }
     .contact-card strong {
       display: block;
@@ -870,6 +1035,7 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
 
     <div class="hero">
       <div class="hero-copy">
+        <div class="hero-signal"></div>
         <div class="pill">Analiza premium pentru proprietar</div>
         <h1>${escapeHtml(displayTitle)}</h1>
         <div class="location">${escapeHtml(location || 'Localizare disponibila in fisa proprietatii')}</div>
@@ -927,7 +1093,7 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
         </div>
         <div class="reading-card caution">
           <strong>Atentie comerciala</strong>
-          <span>OwnerListings sunt cereri active, nu inchideri, asa ca sunt ponderate sub comparabilele vandute.</span>
+          <span>Comparabilele sunt cereri active, nu inchideri, asa ca sunt ponderate sub comparabilele vandute.</span>
         </div>
       </div>
     </div>
@@ -973,6 +1139,8 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       <ul class="adjustments">${renderAdjustments(analysis, surface)}</ul>
     </div>
 
+    ${renderPricingCta(agentName, agentPhone, agentEmail)}
+
     <div class="footer">
       <span>Document generat automat din analiza AI si ajustarile consultantului.</span>
       <span>${escapeHtml(agency?.name || 'ImoDeus.ai')}</span>
@@ -990,17 +1158,7 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       <div class="comparable-grid">${renderComparableCards(analysis)}</div>
     </div>
 
-    <div class="cta">
-      <div>
-        <h2>Hai sa intram in piata cu un pret care vinde.</h2>
-        <p>O pozitionare corecta din prima luna creste sansele de vizionari calificate, oferte rapide si o colaborare predictibila intre proprietar si agentie.</p>
-      </div>
-      <div class="contact-card">
-        <strong>${escapeHtml(agentName)}</strong>
-        <span>${escapeHtml(agentPhone || 'Telefon disponibil in agentie')}</span>
-        <span>${escapeHtml(agentEmail || 'Email disponibil in agentie')}</span>
-      </div>
-    </div>
+    ${renderPricingCta(agentName, agentPhone, agentEmail)}
 
     <div class="footer">
       <span>Document generat automat din analiza AI si ajustarile consultantului.</span>
@@ -1008,23 +1166,7 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
     </div>
   </section>
 
-  <section class="page">
-    <div class="brand-row">
-      <div class="brand"><div class="brand-mark"></div>${escapeHtml(agency?.name || 'ImoDeus.ai')}</div>
-      <div>Oportunitati active</div>
-    </div>
-
-    <div class="section" style="margin-top:0">
-      <h2>Cumparatori potriviti</h2>
-      <p class="summary">Lista este limitata la 20 de lead-uri active, ordonate dupa compatibilitatea cu proprietatea.</p>
-      <div class="buyer-grid">${renderMatchedBuyers(matchedBuyers)}</div>
-    </div>
-
-    <div class="footer">
-      <span>Cumparatorii sunt calculati din criteriile si preferintele salvate in CRM.</span>
-      <span>${escapeHtml(agency?.name || 'ImoDeus.ai')}</span>
-    </div>
-  </section>
+  ${renderMatchedBuyerPages(matchedBuyers, agency?.name || 'ImoDeus.ai', renderPricingCta(agentName, agentPhone, agentEmail))}
 </body>
 </html>`;
 }

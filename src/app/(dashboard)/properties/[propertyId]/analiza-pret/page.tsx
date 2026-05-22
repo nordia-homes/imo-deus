@@ -683,45 +683,6 @@ export default function PropertyPricingAnalysisPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.9rem] border border-slate-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-xl text-slate-950">Cumparatori potriviti</CardTitle>
-              <CardDescription className="text-slate-600">
-                Maxim 20 de lead-uri active din baza agentiei, ordonate dupa compatibilitatea cu proprietatea.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {matchedBuyers.length === 0 ? (
-                <p className="rounded-[1.2rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  Nu au fost gasiti cumparatori potriviti pentru criteriile acestei proprietati.
-                </p>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {matchedBuyers.map((buyer) => (
-                    <div key={buyer.id} className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-950">{buyer.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{buyer.status} · {buyer.source || 'sursa necunoscuta'}</p>
-                        </div>
-                        <Badge className="shrink-0 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
-                          {buyer.matchScore}/100
-                        </Badge>
-                      </div>
-                      <p className="mt-3 text-sm font-medium text-slate-800">{formatBuyerBudget(buyer)}</p>
-                      <p className="mt-1 text-xs text-slate-500">{buyerLocationLabel(buyer)}</p>
-                      <p className="mt-3 line-clamp-2 text-xs leading-5 text-slate-600">{buyer.reasoning}</p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                        {buyer.phone ? <span>{buyer.phone}</span> : null}
-                        {buyer.email ? <span>{buyer.email}</span> : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <ComparableTable
             title="Tranzactii similare vandute in platforma"
             description="Aceste comparabile au cea mai mare greutate in pretul recomandat, fiind vanzari inchise centralizate din agentiile inscrise."
@@ -742,6 +703,45 @@ export default function PropertyPricingAnalysisPage() {
             items={analysis.portalComparables}
             currentAgencyId={agencyId}
           />
+
+          <Card className="rounded-[1.9rem] border border-slate-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl text-slate-950">Cumparatori potriviti</CardTitle>
+              <CardDescription className="text-slate-600">
+                Maxim 20 de lead-uri active din baza agentiei, ordonate dupa compatibilitatea cu proprietatea.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {matchedBuyers.length === 0 ? (
+                <p className="rounded-[1.2rem] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  Nu au fost gasiti cumparatori potriviti pentru criteriile acestei proprietati.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {matchedBuyers.map((buyer) => (
+                    <div key={buyer.id} className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-950">{buyer.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{buyer.status} - {buyer.source || 'sursa necunoscuta'}</p>
+                        </div>
+                        <Badge className="shrink-0 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                          {buyer.matchScore}/100
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-sm font-medium text-slate-800">{formatBuyerBudget(buyer)}</p>
+                      <p className="mt-1 text-xs text-slate-500">{buyerLocationLabel(buyer)}</p>
+                      <p className="mt-3 line-clamp-2 text-xs leading-5 text-slate-600">{buyer.reasoning}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                        {buyer.phone ? <span>{buyer.phone}</span> : null}
+                        {buyer.email ? <span>{buyer.email}</span> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="rounded-[1.9rem] border border-slate-200 bg-white text-slate-950 shadow-[0_22px_70px_-46px_rgba(15,30,51,0.45)]">
             <CardHeader>
