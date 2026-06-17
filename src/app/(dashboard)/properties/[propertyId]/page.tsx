@@ -126,23 +126,6 @@ export default function PropertyDetailPage() {
     }, [agents, property?.agentId]);
 
     useEffect(() => {
-        if (!property) return;
-
-        const browserWindow = window as Window & {
-            requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-            cancelIdleCallback?: (id: number) => void;
-        };
-        const loadMatches = () => setShouldLoadBuyerMatches(true);
-        if (browserWindow.requestIdleCallback && browserWindow.cancelIdleCallback) {
-            const idleCallbackId = browserWindow.requestIdleCallback(loadMatches, { timeout: 2500 });
-            return () => browserWindow.cancelIdleCallback?.(idleCallbackId);
-        }
-
-        const timeoutId = browserWindow.setTimeout(loadMatches, 600);
-        return () => browserWindow.clearTimeout(timeoutId);
-    }, [property]);
-
-    useEffect(() => {
         if (!property || !allContacts) {
             return;
         }
@@ -343,7 +326,7 @@ export default function PropertyDetailPage() {
                             <SocialMediaCard property={property} />
                             <WebsiteToggleCard property={property} />
                             <PropertyNotesCard property={property} />
-                             <PotentialBuyersCard matchedBuyers={matchedBuyers} />
+                             <PotentialBuyersCard matchedBuyers={matchedBuyers} onRequestMatches={() => setShouldLoadBuyerMatches(true)} />
                              <ScheduledViewingsCard viewings={viewings || []} />
                         </div>
                     </div>
@@ -382,7 +365,12 @@ export default function PropertyDetailPage() {
                 <main className="grid grid-cols-1 items-start gap-8 pt-3 pb-8 lg:grid-cols-12">
                     <div className="col-span-12 lg:col-span-8 space-y-4">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
-                        <InfoColumn property={property} matchedBuyers={matchedBuyers} viewings={viewings || []} />
+                        <InfoColumn
+                            property={property}
+                            matchedBuyers={matchedBuyers}
+                            viewings={viewings || []}
+                            onRequestBuyerMatches={() => setShouldLoadBuyerMatches(true)}
+                        />
                     </div>
 
                     <div className="col-span-12 lg:col-span-4">

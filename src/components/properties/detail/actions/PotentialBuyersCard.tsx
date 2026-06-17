@@ -9,6 +9,7 @@ import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from './cardStyles
 
 interface PotentialBuyersCardProps {
   matchedBuyers: MatchedBuyer[];
+  onRequestMatches?: () => void;
 }
 
 const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty', value: number) => {
@@ -58,7 +59,7 @@ const formatZoneReasoning = (zoneReasoning?: string | null) => {
   return (hasExactMatch ? ['Exact Match', ...parts] : parts).join(' · ');
 };
 
-export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps) {
+export function PotentialBuyersCard({ matchedBuyers, onRequestMatches }: PotentialBuyersCardProps) {
   return (
     <Card className={ACTION_CARD_CLASSNAME}>
       <CardHeader className="px-3 pt-3 pb-2 flex flex-row items-center justify-between">
@@ -66,11 +67,17 @@ export function PotentialBuyersCard({ matchedBuyers }: PotentialBuyersCardProps)
           <Users className="h-4 w-4" />
           Cumpărători Potriviți ({matchedBuyers.length})
         </CardTitle>
-        <Button asChild variant="link" size="sm" className="text-white text-xs px-0">
-          <Link href="/leads" aria-label="Vezi toți cumpărătorii">
-            Vezi toți
-          </Link>
-        </Button>
+        {onRequestMatches ? (
+          <Button type="button" variant="link" size="sm" className="text-white text-xs px-0" onClick={onRequestMatches}>
+            Calculeaza
+          </Button>
+        ) : (
+          <Button asChild variant="link" size="sm" className="text-white text-xs px-0">
+            <Link href="/leads" aria-label="Vezi toți cumpărătorii">
+              Vezi toți
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="px-3 pb-3 pt-0">
         {matchedBuyers.length > 0 ? (

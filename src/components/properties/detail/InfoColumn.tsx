@@ -20,7 +20,17 @@ import { Separator } from "@/components/ui/separator";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
 
-export function InfoColumn({ property, matchedBuyers, viewings }: { property: Property, matchedBuyers: MatchedBuyer[], viewings: Viewing[] }) {
+export function InfoColumn({
+    property,
+    matchedBuyers,
+    viewings,
+    onRequestBuyerMatches,
+}: {
+    property: Property,
+    matchedBuyers: MatchedBuyer[],
+    viewings: Viewing[],
+    onRequestBuyerMatches?: () => void,
+}) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
@@ -30,6 +40,9 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
     const scheduledViewings = (viewings || []).filter(v => v.status === 'scheduled').sort((a,b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
     
     const handleTabChange = (tab: string) => {
+        if (tab === 'leads') {
+            onRequestBuyerMatches?.();
+        }
         setActiveTab(tab);
         setIsSheetOpen(false);
     };
@@ -46,7 +59,7 @@ export function InfoColumn({ property, matchedBuyers, viewings }: { property: Pr
 
     return (
         <div className="space-y-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="hidden md:grid h-auto grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 md:grid-cols-5">
                     {menuItems.map(item => (
                         <TabsTrigger
