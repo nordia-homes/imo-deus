@@ -29,12 +29,12 @@ import { getAgencyThemePreset } from '@/lib/theme';
 import { listOwnerListingScopes, matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { collection, doc, limit as firestoreLimit, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, limit as firestoreLimit, orderBy, query } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
 
 const LISTINGS_PER_PAGE = 100;
-const LISTINGS_FETCH_BATCH = 500;
+const LISTINGS_FETCH_BATCH = 3000;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 type AiStatusFilter = 'all' | 'uncalled' | AiOutreachOutcome;
 
@@ -73,16 +73,10 @@ export default function OwnerListingsPage() {
   );
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
-  const ownerListingsQuery = useMemoFirebase(() => {
-    const baseCollection = collection(firestore, 'ownerListings');
-    const queryLimit = firestoreLimit(ownerListingsFetchLimit);
-
-    if (currentScope?.key) {
-      return query(baseCollection, where('scopeKey', '==', currentScope.key), orderBy('firstDiscoveredAt', 'desc'), queryLimit);
-    }
-
-    return query(baseCollection, orderBy('firstDiscoveredAt', 'desc'), queryLimit);
-  }, [currentScope?.key, firestore, ownerListingsFetchLimit]);
+  const ownerListingsQuery = useMemoFirebase(
+    () => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc'), firestoreLimit(ownerListingsFetchLimit)),
+    [firestore, ownerListingsFetchLimit],
+  );
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
     [agencyId, firestore],
@@ -150,10 +144,11 @@ export default function OwnerListingsPage() {
     if (!Array.isArray(listings)) return [];
     let result = [...listings];
 
-    if (currentScope?.key === 'iasi') {
-        result = result.filter((listing) =>
-          matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '))
-        );
+    if (currentScope) {
+      result = result.filter((listing) => {
+        if (listing.scopeKey === currentScope.key) return true;
+        return matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '));
+      });
     }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
