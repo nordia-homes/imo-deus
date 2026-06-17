@@ -249,7 +249,7 @@ export function PropertyCard({
         </CardContent>
       </Card>
       
-      {!agencyId && (
+      {!agencyId && isEditDialogOpen && (
         <AddPropertyDialog 
           property={property}
           isOpen={isEditDialogOpen}

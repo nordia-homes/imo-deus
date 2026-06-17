@@ -107,7 +107,7 @@ export default function PropertyDetailPage() {
         if (!agencyId || !propertyId) return null;
         return query(collection(firestore, 'agencies', agencyId, 'viewings'), where('propertyId', '==', propertyId));
     }, [firestore, agencyId, propertyId]);
-    const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+    const { data: viewings } = useCollection<Viewing>(viewingsQuery);
 
     const allContactsQuery = useMemoFirebase(() => {
         if (!agencyId || (!isAddViewingOpen && !shouldLoadBuyerMatches)) return null;
@@ -147,14 +147,21 @@ export default function PropertyDetailPage() {
             return;
         }
 
+        let isCancelled = false;
         buyerMatcherFromProperty(property, allContacts)
             .then((result) => {
+                if (isCancelled) return;
                 setMatchedBuyers(result.matchedBuyers || []);
             })
             .catch((error) => {
+                if (isCancelled) return;
                 console.error('Automatic OpenAI buyer matching failed:', error);
                 setMatchedBuyers([]);
             });
+
+        return () => {
+            isCancelled = true;
+        };
     }, [property, allContacts]);
     
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
@@ -174,7 +181,7 @@ export default function PropertyDetailPage() {
         toast({ title: "Vizionare programată!" });
     };
 
-    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading;
+    const isLoading = isAgencyLoading || isPropertyLoading;
     
     if (isLoading) {
         return <PageSkeleton />;

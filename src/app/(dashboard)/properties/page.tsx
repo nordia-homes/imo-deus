@@ -38,6 +38,7 @@ export default function PropertiesPage() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
   const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
+  const reportPreset = searchParams?.get('reportPreset');
 
   const propertiesQuery = useMemoFirebase(() => {
     if (!agencyId) return null;
@@ -46,10 +47,10 @@ export default function PropertiesPage() {
 
   const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);
   const viewingsQuery = useMemoFirebase(() => {
-    if (!agencyId) return null;
+    if (!agencyId || reportPreset !== 'active-no-traction') return null;
     return collection(firestore, 'agencies', agencyId, 'viewings');
-  }, [firestore, agencyId]);
-  const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+  }, [firestore, agencyId, reportPreset]);
+  const { data: viewings } = useCollection<Viewing>(viewingsQuery);
   
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
@@ -87,7 +88,6 @@ export default function PropertiesPage() {
       return hasPublishedPromotion('storia') || hasPublishedPromotion('publi24') || hasPublishedPromotion('olx');
     });
 
-    const reportPreset = searchParams?.get('reportPreset');
     const activeViewingPropertyIds = new Set(
       (viewings || [])
         .filter((item) => item.status === 'completed' || item.status === 'scheduled')
@@ -197,8 +197,7 @@ export default function PropertiesPage() {
     }
   };
 
-  const isPageLoading = isLoading || areViewingsLoading;
-  const reportPreset = searchParams?.get('reportPreset');
+  const isPageLoading = isLoading;
   const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
   const agentNameFilter = searchParams?.get('agentName');
   const isImobiliareQuickFilterActive = portalQuickFilter === 'imobiliare';
