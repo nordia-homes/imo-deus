@@ -5,28 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
 import { SidebarTrigger } from '../ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import React, { useState, useEffect } from 'react';
-import { collection } from 'firebase/firestore';
 import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
-import { useAgency } from '@/context/AgencyContext';
 import { useRouter } from 'next/navigation';
-import { LogoIcon } from '../icons/LogoIcon';
 import { getStoredRuntimeMode } from '@/lib/runtime-mode';
 
 export function Topbar() {
     const auth = useAuth();
     const router = useRouter();
     const { user } = useUser();
-    const { agencyId } = useAgency();
-    const firestore = useFirestore();
 
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
-    const [results, setResults] = useState<{ contacts: Contact[], properties: Property[], tasks: Task[] }>({ contacts: [], properties: [], tasks: [] });
+    const [results, setResults] = useState<{
+        contacts: Pick<Contact, 'id' | 'name'>[],
+        properties: Pick<Property, 'id' | 'title'>[],
+        tasks: Pick<Task, 'id' | 'description'>[],
+    }>({ contacts: [], properties: [], tasks: [] });
     const [isSearching, setIsSearching] = useState(false);
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const [isDemoMode, setIsDemoMode] = useState(false);
@@ -35,23 +34,13 @@ export function Topbar() {
         setIsDemoMode(getStoredRuntimeMode() === 'demo');
     }, []);
 
-    // Fetch all data for client-side search
-    const contactsQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'contacts') : null, [firestore, agencyId]);
-    const { data: contacts } = useCollection<Contact>(contactsQuery);
-
-    const propertiesQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'properties') : null, [firestore, agencyId]);
-    const { data: properties } = useCollection<Property>(propertiesQuery);
-
-    const tasksQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'tasks') : null, [firestore, agencyId]);
-    const { data: tasks } = useCollection<Task>(tasksQuery);
-    
     // Debounce search query
     useEffect(() => {
-        setIsSearching(true);
         if (query.length > 0) {
             setIsPopoverOpen(true);
         } else {
             setIsPopoverOpen(false);
+            setIsSearching(false);
         }
         const handler = setTimeout(() => {
             setDebouncedQuery(query);
@@ -70,30 +59,51 @@ export function Topbar() {
             return;
         }
 
-        const lowerCaseQuery = debouncedQuery.toLowerCase();
+        if (!user) {
+            setResults({ contacts: [], properties: [], tasks: [] });
+            setIsSearching(false);
+            return;
+        }
 
-        const filteredContacts = contacts?.filter(c =>
-            c.name.toLowerCase().includes(lowerCaseQuery) ||
-            c.email.toLowerCase().includes(lowerCaseQuery)
-        ) || [];
+        const activeUser = user;
+        const controller = new AbortController();
+        setIsSearching(true);
 
-        const filteredProperties = properties?.filter(p =>
-            (p.title && p.title.toLowerCase().includes(lowerCaseQuery)) ||
-            (p.address && p.address.toLowerCase().includes(lowerCaseQuery))
-        ) || [];
+        async function search() {
+            try {
+                const token = await activeUser.getIdToken();
+                const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    signal: controller.signal,
+                });
+                const payload = await response.json().catch(() => ({}));
 
-        const filteredTasks = tasks?.filter(t =>
-            t.description.toLowerCase().includes(lowerCaseQuery)
-        ) || [];
+                if (!response.ok) {
+                    throw new Error(payload?.message || 'Nu am putut cauta.');
+                }
 
-        setResults({
-            contacts: filteredContacts.slice(0, 5), // Limit results
-            properties: filteredProperties.slice(0, 5),
-            tasks: filteredTasks.slice(0, 5)
-        });
-        setIsSearching(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedQuery, contacts, properties, tasks]);
+                setResults({
+                    contacts: Array.isArray(payload.contacts) ? payload.contacts : [],
+                    properties: Array.isArray(payload.properties) ? payload.properties : [],
+                    tasks: Array.isArray(payload.tasks) ? payload.tasks : [],
+                });
+            } catch (error) {
+                if (controller.signal.aborted) return;
+                console.error('Global search failed:', error);
+                setResults({ contacts: [], properties: [], tasks: [] });
+            } finally {
+                if (!controller.signal.aborted) {
+                    setIsSearching(false);
+                }
+            }
+        }
+
+        void search();
+
+        return () => controller.abort();
+    }, [debouncedQuery, user]);
 
     const getInitials = (name?: string | null) => {
         if (!name) return 'U';

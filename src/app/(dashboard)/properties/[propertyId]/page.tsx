@@ -81,12 +81,12 @@ const PageSkeleton = () => (
 
 export default function PropertyDetailPage() {
     const params = useParams();
-    const propertyId = params.propertyId as string;
+    const propertyId = String(params?.propertyId || '');
     const { agencyId, agency, userProfile, isAgencyLoading } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { agents, isLoading: areAgentsLoading, error: agentsError } = useAgencyAgents();
+    const { agents, error: agentsError } = useAgencyAgents({ enabled: Boolean(agencyId) });
 
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
     const [matchedBuyers, setMatchedBuyers] = useState<MatchedBuyer[]>([]);
@@ -94,6 +94,7 @@ export default function PropertyDetailPage() {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [shouldLoadBuyerMatches, setShouldLoadBuyerMatches] = useState(false);
     const TRUNCATION_LENGTH = 500;
 
     const propertyDocRef = useMemoFirebase(() => {
@@ -102,12 +103,6 @@ export default function PropertyDetailPage() {
     }, [firestore, agencyId, propertyId]);
     const { data: property, isLoading: isPropertyLoading, error: propertyError } = useDoc<Property>(propertyDocRef);
 
-    const allPropertiesQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'properties');
-    }, [firestore, agencyId]);
-    const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
-
     const viewingsQuery = useMemoFirebase(() => {
         if (!agencyId || !propertyId) return null;
         return query(collection(firestore, 'agencies', agencyId, 'viewings'), where('propertyId', '==', propertyId));
@@ -115,10 +110,10 @@ export default function PropertyDetailPage() {
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
 
     const allContactsQuery = useMemoFirebase(() => {
-        if (!agencyId) return null;
+        if (!agencyId || (!isAddViewingOpen && !shouldLoadBuyerMatches)) return null;
         return collection(firestore, 'agencies', agencyId, 'contacts');
-    }, [firestore, agencyId]);
-    const { data: allContacts, isLoading: areContactsLoading } = useCollection<Contact>(allContactsQuery);
+    }, [firestore, agencyId, isAddViewingOpen, shouldLoadBuyerMatches]);
+    const { data: allContacts } = useCollection<Contact>(allContactsQuery);
 
     useEffect(() => {
         if (!agentsError) return;
@@ -129,6 +124,23 @@ export default function PropertyDetailPage() {
         if (!property?.agentId) return null;
         return agents.find((agent) => agent.id === property.agentId) || null;
     }, [agents, property?.agentId]);
+
+    useEffect(() => {
+        if (!property) return;
+
+        const browserWindow = window as Window & {
+            requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+            cancelIdleCallback?: (id: number) => void;
+        };
+        const loadMatches = () => setShouldLoadBuyerMatches(true);
+        if (browserWindow.requestIdleCallback && browserWindow.cancelIdleCallback) {
+            const idleCallbackId = browserWindow.requestIdleCallback(loadMatches, { timeout: 2500 });
+            return () => browserWindow.cancelIdleCallback?.(idleCallbackId);
+        }
+
+        const timeoutId = browserWindow.setTimeout(loadMatches, 600);
+        return () => browserWindow.clearTimeout(timeoutId);
+    }, [property]);
 
     useEffect(() => {
         if (!property || !allContacts) {
@@ -162,7 +174,7 @@ export default function PropertyDetailPage() {
         toast({ title: "Vizionare programată!" });
     };
 
-    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading || areAllPropertiesLoading || areAgentsLoading || areContactsLoading;
+    const isLoading = isAgencyLoading || isPropertyLoading || areViewingsLoading;
     
     if (isLoading) {
         return <PageSkeleton />;
@@ -317,7 +329,7 @@ export default function PropertyDetailPage() {
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">
-                            <CmaCard property={property} allProperties={allProperties || []} />
+                            <CmaCard property={property} allProperties={[]} />
                             <PublishCard property={property} />
                             <FacebookGroupPromotionLauncherCard property={property} />
                             <FacebookPromotionCard />
@@ -367,7 +379,7 @@ export default function PropertyDetailPage() {
                     </div>
 
                     <div className="col-span-12 lg:col-span-4">
-                         <ActionsColumn property={property} allProperties={allProperties || []} viewings={viewings || []} agentProfile={agentProfile} matchedBuyers={matchedBuyers} />
+                         <ActionsColumn property={property} allProperties={[]} viewings={viewings || []} agentProfile={agentProfile} matchedBuyers={matchedBuyers} />
                     </div>
                 </main>
             </div>

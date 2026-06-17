@@ -29,11 +29,12 @@ import { getAgencyThemePreset } from '@/lib/theme';
 import { listOwnerListingScopes, matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { collection, doc, orderBy, query } from 'firebase/firestore';
+import { collection, doc, limit as firestoreLimit, orderBy, query, where } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
 
 const LISTINGS_PER_PAGE = 100;
+const LISTINGS_FETCH_BATCH = 500;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 type AiStatusFilter = 'all' | 'uncalled' | AiOutreachOutcome;
 
@@ -58,6 +59,7 @@ export default function OwnerListingsPage() {
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
+  const [ownerListingsFetchLimit, setOwnerListingsFetchLimit] = useState(LISTINGS_FETCH_BATCH);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
@@ -71,7 +73,16 @@ export default function OwnerListingsPage() {
   );
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
-  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
+  const ownerListingsQuery = useMemoFirebase(() => {
+    const baseCollection = collection(firestore, 'ownerListings');
+    const queryLimit = firestoreLimit(ownerListingsFetchLimit);
+
+    if (currentScope?.key) {
+      return query(baseCollection, where('scopeKey', '==', currentScope.key), orderBy('firstDiscoveredAt', 'desc'), queryLimit);
+    }
+
+    return query(baseCollection, orderBy('firstDiscoveredAt', 'desc'), queryLimit);
+  }, [currentScope?.key, firestore, ownerListingsFetchLimit]);
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
     [agencyId, firestore],
@@ -131,17 +142,18 @@ export default function OwnerListingsPage() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    setOwnerListingsFetchLimit(LISTINGS_FETCH_BATCH);
+  }, [currentScope?.key]);
+
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
     let result = [...listings];
 
-    if (currentScope) {
-      result = result.filter((listing) => listing.scopeKey === currentScope.key);
-      if (currentScope.key === 'iasi') {
+    if (currentScope?.key === 'iasi') {
         result = result.filter((listing) =>
           matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '))
         );
-      }
     }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
@@ -234,6 +246,7 @@ export default function OwnerListingsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
+  const hasLoadedOwnerListingLimit = Array.isArray(listings) && listings.length >= ownerListingsFetchLimit;
   const paginatedListings = useMemo(() => {
     const startIndex = (safeCurrentPage - 1) * LISTINGS_PER_PAGE;
     return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
@@ -254,6 +267,18 @@ export default function OwnerListingsPage() {
   const handleScopeChange = (value: string) => {
     setSelectedScopeKey(value);
     setHasSelectedScopeManually(true);
+  };
+
+  const handleNextPage = () => {
+    if (safeCurrentPage < totalPages) {
+      setCurrentPage((page) => Math.min(totalPages, page + 1));
+      return;
+    }
+
+    if (hasLoadedOwnerListingLimit) {
+      setOwnerListingsFetchLimit((currentLimit) => currentLimit + LISTINGS_FETCH_BATCH);
+      setCurrentPage((page) => page + 1);
+    }
   };
 
   const handleImport = async (listing: OwnerListing) => {
@@ -310,9 +335,8 @@ export default function OwnerListingsPage() {
 
     try {
       let localOwnerPhone = '';
-      const hasDesktopOlxBridge = Boolean(
-        listing.source === 'olx' && typeof window !== 'undefined' && window.imodeusDesktop?.getOlxPhoneNumber,
-      );
+      const desktopBridge = typeof window !== 'undefined' ? window.imodeusDesktop : undefined;
+      const hasDesktopOlxBridge = Boolean(listing.source === 'olx' && desktopBridge?.getOlxPhoneNumber);
 
       if (!localOwnerPhone && listing.source === 'olx') {
         const token = await user.getIdToken(true);
@@ -336,8 +360,8 @@ export default function OwnerListingsPage() {
         }
       }
 
-      if (!localOwnerPhone && hasDesktopOlxBridge) {
-        const localResult = await window.imodeusDesktop.getOlxPhoneNumber({ url: listing.link });
+      if (!localOwnerPhone && hasDesktopOlxBridge && desktopBridge?.getOlxPhoneNumber) {
+        const localResult = await desktopBridge.getOlxPhoneNumber({ url: listing.link });
         localOwnerPhone = localResult.phone?.trim() || '';
 
         if (!localOwnerPhone && localResult.message) {
@@ -1045,7 +1069,7 @@ export default function OwnerListingsPage() {
         )}
       </div>
 
-      {filteredListings.length > 0 && totalPages > 1 ? (
+      {filteredListings.length > 0 && (totalPages > 1 || hasLoadedOwnerListingLimit) ? (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safeCurrentPage === 1}>
             Anterioara
@@ -1053,7 +1077,7 @@ export default function OwnerListingsPage() {
           <span className="text-sm text-white/75">
             Pagina {safeCurrentPage} din {totalPages}
           </span>
-          <Button variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages}>
+          <Button variant="outline" onClick={handleNextPage} disabled={safeCurrentPage === totalPages && !hasLoadedOwnerListingLimit}>
             Urmatoare
           </Button>
         </div>

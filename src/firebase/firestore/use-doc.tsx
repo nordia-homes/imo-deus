@@ -65,16 +65,7 @@ export function useDoc<T = DocumentData>(
 
         const docExists = snapshot.exists();
         
-        setData(currentData => {
-            if (!docExists) {
-                return null;
-            }
-            const newData = { ...(snapshot.data() as T), id: snapshot.id };
-            if (JSON.stringify(currentData) === JSON.stringify(newData)) {
-                return currentData;
-            }
-            return newData;
-        });
+        setData(docExists ? { ...(snapshot.data() as T), id: snapshot.id } : null);
 
         setError(null);
         setIsLoading(false);

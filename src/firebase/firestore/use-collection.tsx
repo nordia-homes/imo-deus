@@ -75,13 +75,7 @@ export function useCollection<T = DocumentData>(
         if (!isSubscribed) return;
         const newResults = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
         
-        setData(currentData => {
-            // Simple stringify comparison to prevent re-renders on identical data.
-            if (JSON.stringify(currentData) === JSON.stringify(newResults)) {
-                return currentData;
-            }
-            return newResults;
-        });
+        setData(newResults);
 
         setError(null);
         setIsLoading(false);
