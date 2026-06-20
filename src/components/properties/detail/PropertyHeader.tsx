@@ -150,7 +150,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                 if (!result.canceled) {
                     toast({
                         title: 'Prezentare generata',
-                        description: 'PDF-ul A4 cu 2 pagini a fost salvat local.',
+                        description: 'PDF-ul A4 cu 3 pagini a fost salvat local.',
                     });
                 }
                 return;
@@ -181,7 +181,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
 
             toast({
                 title: 'Prezentare generata',
-                description: 'PDF-ul A4 cu 2 pagini a fost descarcat.',
+                description: 'PDF-ul A4 cu 3 pagini a fost descarcat.',
             });
         } catch (error) {
             console.error('Failed to generate property presentation:', error);

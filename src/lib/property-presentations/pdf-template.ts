@@ -178,7 +178,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
   const shortDescription =
     truncateText(property.description, 230) ||
     'O locuinta luminoasa, intr-o zona linistita, cu acces rapid la punctele importante ale orasului.';
-  const descriptionParagraphs = truncateDescriptionParagraphs(splitDescriptionParagraphs(property.description), 1550);
+  const descriptionParagraphs = truncateDescriptionParagraphs(splitDescriptionParagraphs(property.description), 1260);
   const highlights = buildHighlights(property);
   const facilities = buildNearbyFacilities(property);
   const agentName = getAgentName(property, agent);
@@ -213,9 +213,10 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: #efece5;
-      color: #2f302b;
+      background: #ffffff;
+      color: #0f172a;
       font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -224,24 +225,23 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       height: 297mm;
       overflow: hidden;
       padding: 10mm;
-      background: #fbfaf6;
+      background: #ffffff;
       page-break-after: always;
     }
     .page:last-child { page-break-after: auto; }
     .cover-hero {
       display: grid;
       grid-template-columns: 43% 57%;
-      height: 58mm;
-      border-radius: 0 0 5mm 5mm;
+      height: 60mm;
+      border-radius: 26px;
       overflow: hidden;
-      background: #f7f4ee;
+      background: #062f36;
+      border: 1px solid rgba(15, 118, 110, 0.72);
+      box-shadow: 0 4mm 10mm rgba(15, 23, 42, 0.16);
     }
     .hero-copy {
-      padding: 6mm 8mm 5mm 3mm;
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68)),
-        radial-gradient(circle at 0 0, rgba(141,128,101,0.16), transparent 36mm),
-        #fbfaf6;
+      padding: 6mm 8mm 6mm 3mm;
+      background: transparent;
     }
     .mark {
       width: 12mm;
@@ -267,25 +267,24 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 2mm;
       width: var(--title-width, 62mm);
       height: 12mm;
-      border: 1px solid rgba(177, 156, 114, 0.36);
-      border-radius: 2mm;
-      background: linear-gradient(135deg, rgba(248, 242, 229, 0.98), rgba(255, 252, 246, 0.98));
-      color: #8e7a51;
+      border: 1px solid rgba(167, 243, 208, 0.75);
+      border-radius: 999px;
+      background: rgba(236, 253, 245, 0.96);
+      color: #047857;
       padding: 0 3.5mm;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       line-height: 1;
       text-transform: uppercase;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      box-shadow: 0 3mm 8mm rgba(177, 156, 114, 0.14);
     }
     .zone-wow svg {
       width: 6.4mm;
       height: 6.4mm;
       flex: 0 0 auto;
-      color: #b19c72;
+      color: #0f766e;
     }
     .zone-wow span {
       overflow: hidden;
@@ -294,24 +293,24 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .kicker {
       width: var(--title-width, 62mm);
       margin: 0 0 2.5mm;
-      color: #3d4039;
-      font-size: 8px;
+      color: rgba(224, 242, 254, 0.84);
+      font-size: 8.8px;
       letter-spacing: 0.38em;
       text-align: center;
       text-transform: uppercase;
     }
     h1 {
       margin: 0;
-      color: #36342f;
+      color: #ffffff;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 400;
       line-height: 1;
       white-space: nowrap;
     }
     h1 span {
       display: inline;
-      color: #a9966d;
+      color: #99f6e4;
     }
     .title-block {
       display: inline-block;
@@ -321,7 +320,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .accent-line {
       width: 100%;
       height: 0.8mm;
-      background: #b19c72;
+      background: #34d399;
       margin: 3mm auto 2.5mm;
     }
     .location-line {
@@ -329,8 +328,8 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       grid-template-columns: 5mm 1fr;
       gap: 3mm;
       align-items: start;
-      color: #3f403a;
-      font-size: 10px;
+      color: rgba(224, 242, 254, 0.84);
+      font-size: 11px;
       line-height: 1.4;
       margin-bottom: 2.8mm;
     }
@@ -340,13 +339,13 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       justify-content: center;
       gap: 3mm;
       width: var(--title-width, 62mm);
-      border: 1px solid #d8cfbc;
-      border-radius: 2mm;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
       height: 8.8mm;
       padding: 0 4mm;
-      background: rgba(255,255,255,0.86);
-      color: #3f403a;
-      font-size: 10px;
+      background: rgba(255,255,255,0.1);
+      color: #ffffff;
+      font-size: 11px;
     }
     .address-wow {
       display: inline-flex;
@@ -355,26 +354,25 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 2mm;
       width: var(--title-width, 62mm);
       margin-top: 1.2mm;
-      margin-bottom: 1mm;
-      border: 1px solid #ded2bd;
-      border-radius: 2mm;
-      background: linear-gradient(135deg, #fffaf0, #ffffff);
-      color: #514b40;
+      margin-bottom: 3.2mm;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.1);
+      color: rgba(224, 242, 254, 0.9);
       height: 8.8mm;
       padding: 0 4mm;
-      font-size: 8.2px;
+      font-size: 9.2px;
       font-weight: 700;
       line-height: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      box-shadow: 0 3mm 10mm rgba(108, 94, 62, 0.10);
     }
     .address-wow svg {
       width: 3.6mm;
       height: 3.6mm;
       flex: 0 0 auto;
-      color: #a9966d;
+      color: #99f6e4;
     }
     .address-wow span {
       overflow: hidden;
@@ -382,59 +380,64 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .hero-text {
       margin: 2.8mm 0 0;
-      color: #525149;
-      font-size: 7.8px;
+      color: rgba(240, 253, 250, 0.88);
+      font-size: 9px;
       line-height: 1.34;
     }
     .hero-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: calc(100% - 5mm);
+      height: calc(100% - 10mm);
+      margin: 5mm 5mm 5mm 0;
+      object-fit: contain;
       object-position: center;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.92);
     }
     .benefits {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 0;
       margin: 4mm 0 4mm;
-      padding: 3mm 6mm;
-      border-radius: 3mm;
+      padding: 2.4mm 1.5mm;
+      border-radius: 22px;
       background: #ffffff;
-      box-shadow: 0 5mm 14mm rgba(51,49,42,0.08);
+      border: 1px solid #d6dee8;
+      box-shadow: 0 2mm 7mm rgba(15, 23, 42, 0.12);
     }
     .benefit {
       min-height: 18mm;
-      padding: 0 0.8mm;
+      padding: 0 0.35mm;
       text-align: center;
-      border-right: 1px solid #e4ded2;
+      border-right: 1px solid #e2e8f0;
     }
     .benefit:last-child { border-right: 0; }
     .benefit-icon {
-      color: #a9966d;
+      color: #0f766e;
       font-size: 14px;
       line-height: 1;
-      margin-bottom: 1.8mm;
+      margin-bottom: 1.2mm;
     }
     .benefit-title {
-      color: #30312d;
-      font-size: 7.8px;
+      color: #0f172a;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      margin-bottom: 1.4mm;
+      margin-bottom: 1mm;
     }
     .benefit p {
       margin: 0;
-      color: #646158;
-      font-size: 7.1px;
-      line-height: 1.24;
+      color: #475569;
+      font-size: 9.2px;
+      line-height: 1.2;
     }
     .section-title {
       margin: 0 0 2.5mm;
       text-align: center;
-      color: #34332f;
+      color: #0f172a;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 12px;
+      font-size: 13.5px;
       font-weight: 400;
       letter-spacing: 0.18em;
       text-transform: uppercase;
@@ -455,8 +458,14 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       object-fit: cover;
       object-position: center 56%;
       border-radius: 2mm;
-      background: #ebe7dd;
+      background: #e2e8f0;
       display: block;
+    }
+    .photo.hero-image {
+      width: calc(100% - 5mm);
+      height: calc(100% - 10mm);
+      object-fit: contain;
+      object-position: center;
     }
     .photo.empty {
       display: flex;
@@ -478,21 +487,22 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .gallery-separator {
       height: 0;
-      border-top: 1px solid #e8dfcf;
+      border-top: 1px solid #e2e8f0;
       margin: -6mm 0 6mm;
     }
     .card {
-      border-radius: 3mm;
+      border-radius: 18px;
       background: #ffffff;
-      border: 1px solid #ebe5d8;
+      border: 1px solid #d6dee8;
       padding: 4.2mm;
       overflow: hidden;
+      box-shadow: 0 2.4mm 7mm rgba(15, 23, 42, 0.13);
     }
     .card h2 {
       margin: 0 0 2.5mm;
-      color: #3b3934;
+      color: #0f172a;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 11px;
+      font-size: 12.5px;
       font-weight: 400;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -501,13 +511,13 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 3mm;
-      border-bottom: 1px solid #eee7dc;
+      border-bottom: 1px solid #e2e8f0;
       padding: 1.45mm 0;
-      color: #605d54;
-      font-size: 8.6px;
+      color: #475569;
+      font-size: 9.8px;
     }
     .detail-row strong {
-      color: #3c3b36;
+      color: #0f172a;
       font-weight: 600;
       text-align: right;
     }
@@ -518,11 +528,13 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .check-list li {
       position: relative;
-      padding: 1.35mm 0 1.35mm 6mm;
-      color: #56534b;
-      font-size: 9px;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.45mm 0 1.45mm 6mm;
+      color: #334155;
+      font-size: 9.8px;
       line-height: 1.28;
     }
+    .check-list li:last-child { border-bottom: 0; }
     .check-list li:before {
       content: "✓";
       position: absolute;
@@ -530,15 +542,15 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       top: 1.55mm;
       width: 3.8mm;
       height: 3.8mm;
-      border: 1px solid #b9aa85;
+      border: 1px solid #99f6e4;
       border-radius: 50%;
-      color: #9b895d;
+      color: #0f766e;
       font-size: 8px;
       text-align: center;
       line-height: 3.8mm;
     }
     .contact-card {
-      background: #65705f;
+      background: linear-gradient(135deg, #0f172a, #0f766e);
       color: #fff;
       border: 0;
     }
@@ -553,7 +565,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 3mm;
       align-items: center;
       color: rgba(255,255,255,0.9);
-      font-size: 9px;
+      font-size: 10px;
       line-height: 1.35;
       margin: 2.5mm 0;
     }
@@ -571,18 +583,18 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 10mm;
       margin-top: 3mm;
       padding-top: 3mm;
-      border-top: 1px solid #e6dfd3;
-      color: #69665e;
-      font-size: 8.5px;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 9.2px;
     }
     .page-map {
       position: relative;
-      height: 38mm;
-      margin-top: 4mm;
-      border: 1px solid #e5ded1;
-      border-radius: 3mm;
+      height: 36mm;
+      margin-top: 8mm;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
       overflow: hidden;
-      background: #ede9df;
+      background: #e2e8f0;
     }
     .page-map iframe {
       width: 100%;
@@ -603,17 +615,16 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       max-width: 96mm;
       border-radius: 2.5mm;
       background: rgba(255,255,255,0.95);
-      box-shadow: 0 5mm 14mm rgba(51,49,42,0.14);
       padding: 2.5mm 3.2mm;
-      color: #4f4b43;
-      font-size: 8px;
+      color: #475569;
+      font-size: 9.2px;
       line-height: 1.3;
     }
     .map-label strong {
       display: block;
       margin-bottom: 0.8mm;
-      color: #34332f;
-      font-size: 9.4px;
+      color: #0f172a;
+      font-size: 10.4px;
     }
     .qr-cta {
       display: grid;
@@ -621,9 +632,9 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 6mm;
       align-items: center;
       min-height: 23mm;
-      margin-top: 4mm;
-      border-radius: 3mm;
-      background: #65705f;
+      margin-top: 3mm;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #0f172a, #0f766e);
       color: #fff;
       padding: 4mm 5mm;
     }
@@ -637,7 +648,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       margin: 0;
       max-width: 118mm;
       color: rgba(255,255,255,0.82);
-      font-size: 8.8px;
+      font-size: 10px;
       line-height: 1.35;
     }
     .qr-code {
@@ -669,28 +680,26 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 1.6mm;
       padding-top: 2mm;
       padding-bottom: 4mm;
-      background:
-        radial-gradient(circle at 24mm 24mm, rgba(177,156,114,0.10), transparent 42mm),
-        linear-gradient(180deg, #fbfaf6, #f8f5ef);
+      background: #ffffff;
     }
     .topline {
       display: flex;
       align-items: center;
       justify-content: space-between;
       height: calc(var(--page-one-footer-height) + 1.4mm);
-      border-bottom: 1px solid #e6dfd3;
+      border-bottom: 1px solid #e2e8f0;
       padding-bottom: 0;
       color: #69665e;
-      font-size: 8.5px;
+      font-size: 9.4px;
       line-height: 1.2;
     }
     .description-grid {
       display: grid;
       grid-template-columns: 1.08fr 0.92fr;
       gap: 6mm;
-      height: 168mm;
+      height: 154mm;
       min-height: 0;
-      overflow: hidden;
+      overflow: visible;
     }
     .description-grid main,
     .description-grid aside {
@@ -702,6 +711,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .description-grid aside {
       display: flex;
       flex-direction: column;
+      height: 100%;
     }
     .description-panel {
       display: flex;
@@ -710,25 +720,25 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       height: 100%;
     }
     .page-two-panel {
-      border: 1px solid #ebe5d8;
-      border-radius: 3.5mm;
-      background: rgba(255,255,255,0.92);
-      box-shadow: 0 6mm 18mm rgba(51,49,42,0.06);
-      padding: 4.5mm;
+      border: 1px solid #d6dee8;
+      border-radius: 18px;
+      background: #ffffff;
+      padding: 4.2mm;
       overflow: hidden;
+      box-shadow: 0 2.4mm 7mm rgba(15, 23, 42, 0.13);
     }
     .page-two h2 {
       margin: 0 0 3mm;
-      color: #34332f;
+      color: #0f172a;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 400;
     }
     .page-two .kicker {
       width: auto;
       margin-bottom: 2mm;
       text-align: left;
-      color: #8e7a51;
+      color: #0f766e;
       letter-spacing: 0.36em;
     }
     .description {
@@ -737,9 +747,9 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       position: relative;
       overflow: hidden;
       padding-bottom: 5mm;
-      color: #34332f;
-      font-size: 9.5px;
-      line-height: 1.45;
+      color: #0f172a;
+      font-size: 12.4px;
+      line-height: 1.46;
     }
     .description:after {
       content: "...";
@@ -748,7 +758,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       bottom: 0;
       padding-left: 12mm;
       background: linear-gradient(90deg, rgba(255,255,255,0), #fff 38%);
-      color: #34332f;
+      color: #0f172a;
       font-weight: 700;
     }
     .description p {
@@ -759,23 +769,23 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .facility-list {
       display: grid;
-      gap: 2.4mm;
+      gap: 1.8mm;
       margin: 0;
       padding: 0;
       list-style: none;
     }
     .facility-list li {
-      border: 1px solid #e5ded1;
+      border: 1px solid #e2e8f0;
       border-radius: 2.6mm;
       background: #fff;
-      padding: 3mm;
-      color: #4e4b43;
-      font-size: 9.5px;
-      line-height: 1.35;
+      padding: 2.4mm 2.7mm;
+      color: #334155;
+      font-size: 11px;
+      line-height: 1.25;
     }
     .nearby-list {
       display: grid;
-      gap: 1.8mm;
+      gap: 1mm;
       margin: 0;
       padding: 0;
       list-style: none;
@@ -783,43 +793,44 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .nearby-list li {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 4mm;
+      gap: 2.2mm;
       align-items: center;
-      border: 1px solid #e5ded1;
-      border-radius: 2.6mm;
-      background: rgba(255,255,255,0.96);
-      padding: 2.5mm 3mm;
+      border: 1px solid #d6dee8;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 1.45mm 2.1mm;
+      box-shadow: 0 1.3mm 4mm rgba(15, 23, 42, 0.08);
     }
     .nearby-label {
       display: block;
-      color: #8e7a51;
+      color: #0f766e;
       font-size: 7px;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 0.7mm;
+      margin-bottom: 0.45mm;
     }
     .nearby-name {
       display: block;
-      color: #403c34;
-      font-size: 9px;
+      color: #0f172a;
+      font-size: 10.2px;
       font-weight: 700;
       line-height: 1.25;
     }
     .nearby-address {
       display: block;
       margin-top: 0.6mm;
-      color: #756f63;
-      font-size: 7.4px;
-      line-height: 1.2;
+      color: #64748b;
+      font-size: 7.9px;
+      line-height: 1.15;
     }
     .nearby-time {
       min-width: 20mm;
       border-radius: 999px;
-      background: #f8f2e5;
-      color: #8e7a51;
-      padding: 1.8mm 2.5mm;
-      font-size: 8px;
+      background: #ccfbf1;
+      color: #0f766e;
+      padding: 1.5mm 2mm;
+      font-size: 8.7px;
       font-weight: 800;
       text-align: center;
       white-space: nowrap;
@@ -827,13 +838,13 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     .map-card {
       margin-top: 4mm;
       height: 51mm;
-      border-radius: 3mm;
+      border-radius: 18px;
       overflow: hidden;
-      border: 1px solid #e5ded1;
+      border: 1px solid #e2e8f0;
       background:
-        linear-gradient(90deg, rgba(141,128,101,0.09) 1px, transparent 1px),
-        linear-gradient(rgba(141,128,101,0.09) 1px, transparent 1px),
-        #ede9df;
+        linear-gradient(90deg, rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+        #e2e8f0;
       background-size: 10mm 10mm;
     }
     .map-card img {
@@ -843,35 +854,48 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .buyer-cta-grid {
       display: grid;
-      gap: 2.2mm;
-      margin-top: 4mm;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 1.6mm;
+      margin-top: 2mm;
+      flex: 1;
+      min-height: 0;
     }
     .buyer-cta-card {
       display: grid;
-      grid-template-columns: 8mm 1fr;
-      gap: 2.8mm;
-      align-items: start;
-      border: 1px solid #e5ded1;
-      border-radius: 3mm;
-      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,242,229,0.92));
-      padding: 3mm;
-      color: #4c483f;
+      grid-template-columns: 6.4mm 1fr;
+      gap: 1.8mm;
+      align-items: center;
+      border: 1px solid #d6dee8;
+      border-radius: 18px;
+      background: #ffffff;
+      padding: 1.8mm 2.4mm;
+      color: #334155;
+      box-shadow: 0 2.4mm 7mm rgba(15, 23, 42, 0.13);
     }
     .buyer-cta-card.featured {
-      background: #65705f;
-      border-color: #65705f;
+      background: linear-gradient(135deg, #0f172a, #0f766e);
+      border-color: #0f766e;
       color: #fff;
+    }
+    .buyer-cta-card.featured strong {
+      margin-bottom: 0;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.08;
+    }
+    .buyer-cta-card.featured span {
+      display: none;
     }
     .buyer-cta-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 8mm;
-      height: 8mm;
+      width: 6.4mm;
+      height: 6.4mm;
       border-radius: 50%;
-      background: #f8f2e5;
-      color: #9b895d;
-      font-size: 12px;
+      background: #ccfbf1;
+      color: #0f766e;
+      font-size: 9.6px;
       line-height: 1;
     }
     .buyer-cta-card.featured .buyer-cta-icon {
@@ -880,9 +904,9 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .buyer-cta-card strong {
       display: block;
-      margin-bottom: 0.9mm;
+      margin-bottom: 0.35mm;
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 11px;
+      font-size: 11.6px;
       font-weight: 400;
       line-height: 1.15;
     }
@@ -891,7 +915,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       color: inherit;
       opacity: 0.84;
       font-size: 8.2px;
-      line-height: 1.32;
+      line-height: 1.12;
     }
     .page-two-cta-stack {
       display: grid;
@@ -901,14 +925,14 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     }
     .page-two-divider {
       height: 0;
-      margin-top: 2.4mm;
-      border-top: 1px solid #e6dfd3;
+      margin-top: 4mm;
+      border-top: 1px solid #e2e8f0;
     }
     .page-two-photo-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 2mm;
-      height: 41mm;
+      height: 39mm;
       margin-top: 3mm;
       margin-bottom: 4mm;
       overflow: hidden;
@@ -929,21 +953,21 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       gap: 5mm;
       align-items: center;
       min-height: 23mm;
-      border-radius: 3mm;
-      border: 1px solid #e5ded1;
-      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,242,229,0.96));
-      box-shadow: 0 6mm 18mm rgba(51,49,42,0.06);
+      border-radius: 22px;
+      border: 1px solid #d6dee8;
+      background: #ffffff;
       padding: 3mm 5mm;
-      color: #403c34;
+      color: #334155;
+      box-shadow: 0 2mm 6mm rgba(15, 23, 42, 0.11);
     }
     .page-two-wide-cta.dark {
-      background: #65705f;
-      border-color: #65705f;
+      background: linear-gradient(135deg, #0f172a, #0f766e);
+      border-color: #0f766e;
       color: #fff;
     }
     .page-two-wide-cta h2 {
       margin: 0 0 1.4mm;
-      font-size: 15px;
+      font-size: 16px;
     }
     .page-two-wide-cta.dark h2 {
       color: #fff;
@@ -952,7 +976,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       margin: 0;
       color: inherit;
       opacity: 0.82;
-      font-size: 8.8px;
+      font-size: 9.8px;
       line-height: 1.35;
     }
     .page-two-phone {
@@ -965,7 +989,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       background: rgba(255,255,255,0.16);
       color: #fff;
       padding: 0 4mm;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -981,8 +1005,230 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       height: auto;
       margin-top: 3mm;
       padding-top: 3mm;
-      font-size: 8.5px;
+      font-size: 9.2px;
       line-height: normal;
+    }
+    .buyer-page {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 5mm;
+      background: #ffffff;
+    }
+    .buyer-hero {
+      display: grid;
+      grid-template-columns: 1fr 52mm;
+      gap: 8mm;
+      align-items: center;
+      min-height: 58mm;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%);
+      color: #fff;
+      padding: 8mm;
+      box-shadow: 0 4mm 10mm rgba(15, 23, 42, 0.16);
+    }
+    .buyer-hero .kicker {
+      width: auto;
+      margin: 0 0 3mm;
+      color: rgba(204, 251, 241, 0.9);
+      text-align: left;
+      letter-spacing: 0.34em;
+    }
+    .buyer-hero h2 {
+      margin: 0;
+      max-width: 118mm;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1.05;
+    }
+    .buyer-hero p {
+      margin: 4mm 0 0;
+      max-width: 112mm;
+      color: rgba(240, 253, 250, 0.9);
+      font-size: 12.2px;
+      line-height: 1.42;
+    }
+    .zero-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 48mm;
+      height: 48mm;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.12);
+      box-shadow: inset 0 0 0 1mm rgba(255,255,255,0.06);
+      text-align: center;
+    }
+    .zero-badge strong {
+      display: block;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 42px;
+      line-height: 0.95;
+    }
+    .zero-badge span {
+      display: block;
+      margin-top: 2mm;
+      color: rgba(240, 253, 250, 0.86);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .buyer-proof-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+    }
+    .buyer-proof-card,
+    .buyer-step-card,
+    .buyer-final-card {
+      border: 1px solid #d6dee8;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 2.4mm 7mm rgba(15, 23, 42, 0.13);
+    }
+    .buyer-proof-card {
+      padding: 4mm;
+      min-height: 39mm;
+    }
+    .buyer-proof-card strong {
+      display: block;
+      margin-bottom: 2mm;
+      color: #0f172a;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.14;
+    }
+    .buyer-proof-card p {
+      margin: 0;
+      color: #475569;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+    .buyer-proof-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 8mm;
+      height: 8mm;
+      margin-bottom: 2.5mm;
+      border-radius: 50%;
+      background: #ccfbf1;
+      color: #0f766e;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .buyer-section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 8mm;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3mm;
+    }
+    .buyer-section-heading h2 {
+      margin: 0;
+      color: #0f172a;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 21px;
+      font-weight: 400;
+      line-height: 1.1;
+    }
+    .buyer-section-heading p {
+      margin: 0;
+      max-width: 78mm;
+      color: #64748b;
+      font-size: 10px;
+      line-height: 1.35;
+      text-align: right;
+    }
+    .buyer-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3mm;
+    }
+    .buyer-step-card {
+      padding: 3.5mm;
+      min-height: 43mm;
+    }
+    .buyer-step-card b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 7mm;
+      height: 7mm;
+      margin-bottom: 2.5mm;
+      border-radius: 50%;
+      background: #0f766e;
+      color: #fff;
+      font-size: 10px;
+    }
+    .buyer-step-card strong {
+      display: block;
+      margin-bottom: 1.8mm;
+      color: #0f172a;
+      font-size: 12px;
+      line-height: 1.18;
+    }
+    .buyer-step-card span {
+      display: block;
+      color: #475569;
+      font-size: 9.4px;
+      line-height: 1.28;
+    }
+    .buyer-final-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6mm;
+      align-items: center;
+      padding: 5mm 6mm;
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    }
+    .buyer-final-card h2 {
+      margin: 0 0 2mm;
+      color: #0f172a;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.08;
+    }
+    .buyer-final-card p {
+      margin: 0;
+      max-width: 126mm;
+      color: #475569;
+      font-size: 10.6px;
+      line-height: 1.38;
+    }
+    .buyer-final-actions {
+      display: grid;
+      gap: 2mm;
+      min-width: 39mm;
+    }
+    .buyer-final-phone {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 10mm;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      padding: 0 4mm;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .buyer-final-qr {
+      justify-self: center;
+      width: 22mm;
+      height: 22mm;
+      border-radius: 2mm;
+      background: #fff;
+      padding: 1mm;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
     }
   </style>
 </head>
@@ -1121,8 +1367,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
           <div class="buyer-cta-card featured">
             <div class="buyer-cta-icon">%</div>
             <div>
-              <strong>Comision cumparator: 0</strong>
-              <span>Comisionul perceput de agentia noastra este zero.</span>
+              <strong>Comision cumparator: 0%</strong>
             </div>
           </div>
           <div class="buyer-cta-card">
@@ -1172,6 +1417,87 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
     <div class="footer-line">
       <span>⌖ ${escapeHtml(location || property.location || '')}</span>
       <span>${escapeHtml(agency?.name || 'ImoDeus')} · O locuinta prezentata clar, pentru o decizie buna.</span>
+    </div>
+  </section>
+
+  <section class="page buyer-page">
+    <div class="topline">
+      <span>${escapeHtml(agency?.name || 'ImoDeus')}</span>
+      <span>Avantaje pentru cumparator</span>
+    </div>
+    <div class="buyer-hero">
+      <div>
+        <p class="kicker">CUMPERI CU GHIDARE, NU CU PRESIUNE</p>
+        <h2>Ai langa tine o echipa care te ajuta sa cumperi mai sigur, mai clar si cu 0% comision.</h2>
+        <p>Nu platesti comision agentiei noastre. Primesti insa un proces coordonat: informatii clare, verificari, sprijin in negociere, conexiune cu finantarea si asistenta pana la semnare.</p>
+      </div>
+      <div class="zero-badge">
+        <strong>0%</strong>
+        <span>comision cumparator</span>
+      </div>
+    </div>
+    <div class="buyer-proof-grid">
+      <div class="buyer-proof-card">
+        <div class="buyer-proof-icon">1</div>
+        <strong>Claritate inainte de oferta</strong>
+        <p>Iti explicam proprietatea, pretul, zona, documentele disponibile si pasii reali ai tranzactiei, ca sa nu iei decizia pe fuga.</p>
+      </div>
+      <div class="buyer-proof-card">
+        <div class="buyer-proof-icon">2</div>
+        <strong>Sprijin in negociere</strong>
+        <p>Te ajutam sa formulezi o oferta corecta, argumentata si usor de sustinut, fara presiune inutila si fara promisiuni vagi.</p>
+      </div>
+      <div class="buyer-proof-card">
+        <div class="buyer-proof-icon">3</div>
+        <strong>Finantare mai usoara</strong>
+        <p>Te putem conecta cu brokeri de credit pentru simulare, preaprobare si intelegerea costurilor totale inainte de angajament.</p>
+      </div>
+    </div>
+    <div>
+      <div class="buyer-section-heading">
+        <h2>Ce primesti concret in proces</h2>
+        <p>Un traseu simplu, cu fiecare pas clar, de la vizionare pana la semnarea contractului.</p>
+      </div>
+      <div class="buyer-steps" style="margin-top: 3mm;">
+        <div class="buyer-step-card">
+          <b>01</b>
+          <strong>Vizionare pregatita</strong>
+          <span>Stii ce vezi, ce trebuie intrebat si ce merita verificat la fata locului.</span>
+        </div>
+        <div class="buyer-step-card">
+          <b>02</b>
+          <strong>Documente si context</strong>
+          <span>Centralizam informatiile relevante si iti semnalam ce trebuie clarificat mai departe.</span>
+        </div>
+        <div class="buyer-step-card">
+          <b>03</b>
+          <strong>Oferta si negociere</strong>
+          <span>Transformam interesul intr-o oferta coerenta, cu pasi si termene usor de urmarit.</span>
+        </div>
+        <div class="buyer-step-card">
+          <b>04</b>
+          <strong>Coordonare pana la final</strong>
+          <span>Tinem legatura cu partile implicate, pentru ca tranzactia sa avanseze ordonat.</span>
+        </div>
+      </div>
+    </div>
+    <div class="buyer-final-card">
+      <div>
+        <h2>O achizitie buna nu inseamna doar o proprietate buna. Inseamna si un proces bun.</h2>
+        <p>Scopul nostru este sa ajungi la decizie cu incredere: sa intelegi ce cumperi, cat te costa, ce urmeaza si cine te ajuta in fiecare etapa.</p>
+      </div>
+      <div class="buyer-final-actions">
+        <div class="buyer-final-phone">${escapeHtml(agentPhone)}</div>
+        ${
+          qrCodeUrl
+            ? `<img class="buyer-final-qr" src="${escapeHtml(qrCodeUrl)}" alt="Cod QR pentru pagina publica a proprietatii" />`
+            : '<div class="qr-placeholder">Link public indisponibil</div>'
+        }
+      </div>
+    </div>
+    <div class="footer-line">
+      <span>0% comision pentru cumparator</span>
+      <span>${escapeHtml(agency?.name || 'ImoDeus')} · Ghidare clara pana la semnare.</span>
     </div>
   </section>
 </body>

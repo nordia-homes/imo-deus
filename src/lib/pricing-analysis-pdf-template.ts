@@ -392,10 +392,8 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       align-items: stretch;
       padding: 5mm;
       border-radius: 26px;
-      background:
-        radial-gradient(circle at 16% 12%, rgba(20, 184, 166, 0.26), transparent 30%),
-        linear-gradient(135deg, #07111f 0%, #0f2f36 52%, #ecfeff 100%);
-      border: 1px solid rgba(15, 118, 110, 0.14);
+      background: #062f36;
+      border: 1px solid #0f766e;
     }
     .hero-copy {
       display: flex;
@@ -409,7 +407,6 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       border-radius: 999px;
       background:
         linear-gradient(90deg, #34d399 0%, #99f6e4 75%, rgba(255,255,255,0.28) 75%, rgba(255,255,255,0.28) 100%);
-      box-shadow: 0 0 18px rgba(45, 212, 191, 0.36);
       margin-top: -5mm;
       margin-bottom: 4mm;
     }
@@ -479,7 +476,6 @@ export function renderPricingAnalysisPdfHtml(input: PricingAnalysisPdfInput) {
       border-radius: 24px;
       background: linear-gradient(135deg, #0f172a, #115e59);
       border: 1px solid rgba(255, 255, 255, 0.28);
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
       position: relative;
     }
     .hero-photo img {
