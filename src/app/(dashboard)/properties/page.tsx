@@ -2,10 +2,11 @@
 import Link from 'next/link';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
-import { PlusCircle, Filter } from "lucide-react";
+import { PlusCircle, Filter, Search, X } from "lucide-react";
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
@@ -38,6 +39,7 @@ export default function PropertiesPage() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
   const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
+  const [propertySearch, setPropertySearch] = useState('');
   const reportPreset = searchParams?.get('reportPreset');
 
   const propertiesQuery = useMemoFirebase(() => {
@@ -51,6 +53,16 @@ export default function PropertiesPage() {
     return collection(firestore, 'agencies', agencyId, 'viewings');
   }, [firestore, agencyId, reportPreset]);
   const { data: viewings } = useCollection<Viewing>(viewingsQuery);
+
+  const normalizedPropertySearch = useMemo(
+    () =>
+      propertySearch
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim(),
+    [propertySearch]
+  );
   
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
@@ -75,7 +87,46 @@ export default function PropertiesPage() {
       return true;
     });
 
-    const portalFiltered = dialogFiltered.filter((prop) => {
+    const searchedProperties = !normalizedPropertySearch ? dialogFiltered : dialogFiltered.filter((prop) => {
+      const displaySurface = prop.totalSurface ?? prop.squareFootage;
+      const searchableParts = [
+        prop.title,
+        prop.address,
+        prop.location,
+        prop.city,
+        prop.zone,
+        prop.description,
+        prop.status,
+        prop.propertyType,
+        prop.transactionType,
+        prop.agentName,
+        prop.ownerName,
+        prop.ownerPhone,
+        prop.price,
+        `${prop.price} eur`,
+        prop.price ? prop.price.toLocaleString('en-US') : null,
+        prop.price ? prop.price.toLocaleString('ro-RO') : null,
+        prop.rooms,
+        prop.rooms ? `${prop.rooms} camere` : null,
+        prop.bathrooms,
+        prop.bathrooms ? `${prop.bathrooms} bai` : null,
+        displaySurface,
+        displaySurface ? `${displaySurface} mp` : null,
+        prop.constructionYear,
+      ];
+      const searchableText = searchableParts
+        .filter((value) => value !== undefined && value !== null && value !== '')
+        .join(' ')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+      return normalizedPropertySearch
+        .split(/\s+/)
+        .every((token) => searchableText.includes(token));
+    });
+
+    const portalFiltered = searchedProperties.filter((prop) => {
       if (!portalQuickFilter) return true;
 
       const promotionEntries = prop.promotions || {};
@@ -134,7 +185,7 @@ export default function PropertiesPage() {
 
       return true;
     });
-  }, [properties, filters, portalQuickFilter, searchParams, viewings]);
+  }, [properties, filters, normalizedPropertySearch, portalQuickFilter, searchParams, viewings]);
 
   const handleDelete = async ({ reason, soldPrice, agentMessage }: DeletePropertyPayload) => {
     if (!agencyId || !deletingProperty || isDeletingProperty) return;
@@ -202,6 +253,31 @@ export default function PropertiesPage() {
   const agentNameFilter = searchParams?.get('agentName');
   const isImobiliareQuickFilterActive = portalQuickFilter === 'imobiliare';
   const isStoriaOlxQuickFilterActive = portalQuickFilter === 'storia-olx';
+  const searchPlaceholder = isMobile ? 'Cauta dupa adresa, pret, cuvinte...' : 'Cauta proprietati dupa titlu, adresa, zona, pret, camere, agent...';
+  const searchInput = (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+      <Input
+        value={propertySearch}
+        onChange={(event) => setPropertySearch(event.target.value)}
+        placeholder={searchPlaceholder}
+        className="h-12 rounded-2xl border-white/12 bg-[#152A47] pl-11 pr-12 text-white placeholder:text-white/42 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:ring-emerald-300/35"
+      />
+      {propertySearch ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => setPropertySearch('')}
+          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+          aria-label="Sterge cautarea"
+          title="Sterge cautarea"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className={cn("agentfinder-properties-page space-y-6", isMobile && "p-0")}>
@@ -245,6 +321,9 @@ export default function PropertiesPage() {
                     </div>
                 </CardHeader>
             </Card>
+             <div className="px-2">
+                {searchInput}
+            </div>
              <div className="px-2">
                 <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
                     <Button variant="outline" className="agentfinder-properties-soft-button w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
@@ -352,6 +431,14 @@ export default function PropertiesPage() {
                     </div>
                 </CardHeader>
             </Card>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                {searchInput}
+                {propertySearch ? (
+                    <div className="rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm text-white/65">
+                        {filteredProperties.length} rezultate
+                    </div>
+                ) : null}
+            </div>
             
             <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} />
         </div>

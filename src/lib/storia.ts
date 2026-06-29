@@ -353,6 +353,17 @@ function sanitizeStoriaText(value?: string | null) {
     .trim();
 }
 
+function sanitizeStoriaDescription(value?: string | null) {
+  return (value || '')
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function normalizeComparableText(value?: string | null) {
   return (value || '')
     .normalize('NFD')
@@ -589,7 +600,7 @@ function buildAdvertPayload(property: Property) {
   const categoryUrn = mapPropertyToCategoryUrn(property, profile);
   const market = profile?.market || 'secondary';
   const title = sanitizeStoriaText(profile?.titleOverride || property.title);
-  const description = sanitizeStoriaText(profile?.descriptionOverride || property.description || '');
+  const description = sanitizeStoriaDescription(profile?.descriptionOverride || property.description || '');
 
   if (title.length < 5) {
     throw new Error('Titlul proprietatii trebuie sa aiba minimum 5 caractere pentru Storia.');
