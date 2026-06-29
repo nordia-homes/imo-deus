@@ -107,6 +107,10 @@ type AdvertMetadataResponse = {
       recorded_at?: string | null;
       ttl?: string | null;
     } | null;
+    last_error?: {
+      title?: string | null;
+      detail?: string | null;
+    } | null;
   };
 };
 
@@ -290,7 +294,21 @@ function getAdvertMetadataState(metadata?: AdvertMetadataResponse | null) {
     createdAt: state?.created_at || metadata?.data?.created_at || null,
     modifiedAt: state?.modified_at || metadata?.data?.modified_at || null,
     activatedAt: state?.activated_at || metadata?.data?.activated_at || null,
+    lastErrorTitle: metadata?.data?.last_error?.title || null,
+    lastErrorDetail: metadata?.data?.last_error?.detail || null,
   };
+}
+
+function isStoriaAdvertMissingForUser(metadataState: ReturnType<typeof getAdvertMetadataState>) {
+  const code = (metadataState.code || '').toLowerCase();
+  const errorTitle = (metadataState.lastErrorTitle || '').toLowerCase();
+  const errorDetail = (metadataState.lastErrorDetail || '').toLowerCase();
+
+  return (
+    code === 'not_put' &&
+    errorTitle.includes('notfound') &&
+    errorDetail.includes('not found for the user')
+  );
 }
 
 async function waitForAdvertMetadataState(params: {
@@ -1433,14 +1451,16 @@ export async function publishPropertyToStoria(params: {
   const existingRemoteUuid =
     property.portalProfiles?.storia?.remoteUuid ||
     (typeof property.promotions?.storia?.remoteId === 'string' ? property.promotions.storia.remoteId : null);
-  const requestPath = existingRemoteUuid ? `/advert/v1/${encodeURIComponent(existingRemoteUuid)}` : '/advert/v1';
-  const requestMethod = existingRemoteUuid ? 'PUT' : 'POST';
   const currentMetadata = existingRemoteUuid
     ? await storiaRequest<AdvertMetadataResponse>(agencyId, `/advert/v1/${encodeURIComponent(existingRemoteUuid)}/meta`, {
         method: 'GET',
       }).catch(() => null)
     : null;
   const currentMetadataState = getAdvertMetadataState(currentMetadata);
+  const shouldCreateFreshAdvert = existingRemoteUuid && isStoriaAdvertMissingForUser(currentMetadataState);
+  const targetRemoteUuid = shouldCreateFreshAdvert ? null : existingRemoteUuid;
+  const requestPath = targetRemoteUuid ? `/advert/v1/${encodeURIComponent(targetRemoteUuid)}` : '/advert/v1';
+  const requestMethod = targetRemoteUuid ? 'PUT' : 'POST';
 
   await persistPublishAudit({
     agencyId,
@@ -1457,7 +1477,7 @@ export async function publishPropertyToStoria(params: {
       body: JSON.stringify(payload),
     });
 
-    const remoteUuid = publishResponse.data?.uuid || existingRemoteUuid || null;
+    const remoteUuid = publishResponse.data?.uuid || targetRemoteUuid || null;
     if (!remoteUuid) {
       throw new Error('Storia nu a returnat UUID-ul anuntului.');
     }
@@ -1469,6 +1489,7 @@ export async function publishPropertyToStoria(params: {
     let metadataState = getAdvertMetadataState(metadata);
     const shouldActivateAfterPublish =
       Boolean(existingRemoteUuid) &&
+      !shouldCreateFreshAdvert &&
       ['removed_by_user', 'outdated'].includes((currentMetadataState.code || '').toLowerCase()) &&
       currentMetadataState.visibleInProfile !== false;
 
