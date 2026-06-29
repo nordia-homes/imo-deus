@@ -50,7 +50,7 @@ type PropertyStub = {
   zone?: string;
   images?: { url: string; alt: string }[];
 };
-type ContactStub = { id: string; name: string; };
+type ContactStub = { id: string; name: string; phone?: string | null; email?: string | null; };
 
 type AddViewingDialogProps = {
     onAddViewing: (viewing: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => Promise<void>;
@@ -64,6 +64,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
   const [isNewContact, setIsNewContact] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [contactSearch, setContactSearch] = useState('');
   const { toast } = useToast();
   const { agencyId } = useAgency();
   const { user } = useUser();
@@ -97,6 +98,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
       });
       setIsNewContact(false); // Reset to existing contact view
       setIsDatePickerOpen(false);
+      setContactSearch('');
     }
   }, [isOpen, defaultContactId, defaultPropertyId, form]);
 
@@ -120,6 +122,27 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
       { value: 90, label: '1 oră 30 min' },
       { value: 120, label: '2 ore' },
   ]), []);
+
+  const filteredContacts = useMemo(() => {
+    const normalizedSearch = contactSearch
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+    if (!normalizedSearch) return contacts;
+
+    const tokens = normalizedSearch.split(/\s+/).filter(Boolean);
+
+    return contacts.filter((contact) => {
+      const searchableName = contact.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+      return tokens.every((token) => searchableName.includes(token));
+    });
+  }, [contacts, contactSearch]);
 
   async function onSubmit(values: z.infer<typeof viewingSchema>) {
     setIsSubmitting(true);
@@ -239,7 +262,14 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                             ) : (
                                 <FormItem>
                                 <FormLabel className="text-white/80">Client</FormLabel>
-                                <div className="flex items-center gap-2">
+                                <div className="space-y-2">
+                                    <Input
+                                        value={contactSearch}
+                                        onChange={(event) => setContactSearch(event.target.value)}
+                                        placeholder="Cauta cumparator dupa nume..."
+                                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                                    />
+                                    <div className="flex items-center gap-2">
                                         <FormField
                                             control={form.control}
                                             name="contactId"
@@ -251,7 +281,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        {contacts?.map(c => (
+                                                        {filteredContacts?.map(c => (
                                                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -261,6 +291,10 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                         <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)} className="bg-white/10 border-white/20 text-white">
                                             <UserPlus className="h-4 w-4"/>
                                         </Button>
+                                    </div>
+                                    {contactSearch && filteredContacts.length === 0 ? (
+                                        <p className="text-xs text-white/55">Nu am gasit niciun cumparator cu acest nume.</p>
+                                    ) : null}
                                 </div>
                                 <FormMessage />
                                 </FormItem>
