@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { DeletePropertyAlert, type DeletePropertyPayload } from "@/components/properties/DeletePropertyAlert";
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
+import { getAgencyThemePreset } from '@/lib/theme';
 
 const REPORT_PRESET_LABELS: Record<string, string> = {
   'active-no-traction': 'Filtru din Rapoarte: Proprietati active fara tractiune',
@@ -30,7 +31,7 @@ const REPORT_PRESET_LABELS: Record<string, string> = {
 
 export default function PropertiesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const { agencyId } = useAgency();
+  const { agency, agencyId } = useAgency();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
@@ -298,6 +299,7 @@ export default function PropertiesPage() {
   const agentNameFilter = searchParams?.get('agentName');
   const isImobiliareQuickFilterActive = portalQuickFilter === 'imobiliare';
   const isStoriaOlxQuickFilterActive = portalQuickFilter === 'storia-olx';
+  const deleteModalThemeVariant = getAgencyThemePreset(agency) === 'agentfinder' ? 'light' : 'dark';
   const searchPlaceholder = isMobile ? 'Cauta dupa adresa, pret, cuvinte...' : 'Cauta proprietati dupa titlu, adresa, zona, pret, camere, agent...';
   const searchInput = (
     <div className="relative">
@@ -492,6 +494,7 @@ export default function PropertiesPage() {
             onOpenChange={(isOpen) => !isOpen && setDeletingProperty(null)}
             property={deletingProperty}
             isDeleting={isDeletingProperty}
+            themeVariant={deleteModalThemeVariant}
             onDelete={handleDelete}
         />
     </div>
