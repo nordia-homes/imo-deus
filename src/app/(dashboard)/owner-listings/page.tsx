@@ -26,10 +26,10 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
-import { listOwnerListingScopes, matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
+import { listOwnerListingScopes, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { collection, doc, limit as firestoreLimit, orderBy, query } from 'firebase/firestore';
+import { collection, doc, limit as firestoreLimit, orderBy, query, where } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
 
@@ -37,6 +37,11 @@ const LISTINGS_PER_PAGE = 100;
 const LISTINGS_FETCH_BATCH = 3000;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 type AiStatusFilter = 'all' | 'uncalled' | AiOutreachOutcome;
+type DesktopOlxBridgeWindow = Window & {
+  imodeusDesktop?: {
+    getOlxPhoneNumber?: (input: { url: string }) => Promise<{ phone?: string; message?: string }>;
+  };
+};
 
 export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,8 +79,16 @@ export default function OwnerListingsPage() {
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
   const ownerListingsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc'), firestoreLimit(ownerListingsFetchLimit)),
-    [firestore, ownerListingsFetchLimit],
+    () =>
+      currentScope?.key
+        ? query(
+            collection(firestore, 'ownerListings'),
+            where('scopeKey', '==', currentScope.key),
+            orderBy('firstDiscoveredAt', 'desc'),
+            firestoreLimit(ownerListingsFetchLimit),
+          )
+        : query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc'), firestoreLimit(ownerListingsFetchLimit)),
+    [currentScope?.key, firestore, ownerListingsFetchLimit],
   );
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
@@ -143,13 +156,6 @@ export default function OwnerListingsPage() {
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
     let result = [...listings];
-
-    if (currentScope) {
-      result = result.filter((listing) => {
-        if (listing.scopeKey === currentScope.key) return true;
-        return matchesScopeLocation(currentScope, [listing.location, listing.title, listing.description].join(' '));
-      });
-    }
 
     result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
 
@@ -330,7 +336,7 @@ export default function OwnerListingsPage() {
 
     try {
       let localOwnerPhone = '';
-      const desktopBridge = typeof window !== 'undefined' ? window.imodeusDesktop : undefined;
+      const desktopBridge = typeof window !== 'undefined' ? (window as DesktopOlxBridgeWindow).imodeusDesktop : undefined;
       const hasDesktopOlxBridge = Boolean(listing.source === 'olx' && desktopBridge?.getOlxPhoneNumber);
 
       if (!localOwnerPhone && listing.source === 'olx') {
