@@ -2158,18 +2158,18 @@ export function PublishCard({ property }: { property: Property }) {
               <>
                 <div className="space-y-4">
                   <div className="storia-publish-modal__summary-card rounded-[24px] border border-white/10 bg-[#1F2A37] p-4 shadow-[0_18px_40px_rgba(3,8,20,0.16)]">
-                    <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="grid items-center gap-5 sm:grid-cols-[150px_minmax(0,1fr)]">
                       {heroImage ? (
                         <div
-                          className="h-44 w-full shrink-0 rounded-[18px] bg-cover bg-center sm:h-28 sm:w-32"
+                          className="aspect-square w-full rounded-[18px] bg-cover bg-center sm:w-[150px]"
                           style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.02), rgba(8,20,38,0.26)), url(${heroImage})` }}
                         />
                       ) : (
-                        <div className="flex h-44 w-full shrink-0 items-center justify-center rounded-[18px] bg-[#16304f] text-sm text-white/45 sm:h-28 sm:w-32">
+                        <div className="flex aspect-square w-full items-center justify-center rounded-[18px] bg-[#16304f] text-sm text-white/45 sm:w-[150px]">
                           Fara imagine
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex min-w-0 flex-col justify-center space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
                             Preview Storia
@@ -2182,7 +2182,7 @@ export function PublishCard({ property }: { property: Property }) {
                           <h3 className="line-clamp-2 text-xl font-semibold leading-tight text-white">{property.title}</h3>
                           <p className="line-clamp-2 text-sm leading-6 text-white/60">{propertyLocationLine}</p>
                         </div>
-                        <div className="flex flex-wrap items-end justify-between gap-3">
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
                           <div className="flex flex-wrap gap-2">
                             {propertyHighlights.slice(0, 3).map((highlight) => (
                               <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
@@ -2190,7 +2190,7 @@ export function PublishCard({ property }: { property: Property }) {
                               </span>
                             ))}
                           </div>
-                          <div className="text-left sm:text-right">
+                          <div className="min-w-[132px] text-left md:text-right">
                             <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Pret</p>
                             <p className="text-2xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
                           </div>
@@ -2211,7 +2211,7 @@ export function PublishCard({ property }: { property: Property }) {
                     <div className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
                       <Button
                         type="button"
-                        className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                        className="storia-publish-modal__primary-button imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
                         onClick={handleConfirmStoriaPublish}
                         disabled={isSubmitting || isSavingStoriaPromotions || isApplyingStoriaPromotions}
                       >
@@ -2444,6 +2444,19 @@ export function PublishCard({ property }: { property: Property }) {
           border-color: rgba(191, 206, 230, 0.82) !important;
           background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.96)) !important;
           color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__primary-button {
+          border: 1px solid rgba(174, 195, 225, 0.88) !important;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(231, 240, 252, 0.96)) !important;
+          color: #111827 !important;
+          box-shadow:
+            0 16px 34px rgba(45, 68, 104, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__primary-button:hover {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(219, 233, 250, 0.98)) !important;
         }
 
         [data-app-theme='agentfinder'] .imobiliare-publish-modal--dialog {
