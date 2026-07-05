@@ -2185,15 +2185,15 @@ export function PublishCard({ property }: { property: Property }) {
                           <h3 className="line-clamp-2 text-xl font-semibold leading-tight text-white">{property.title}</h3>
                           <p className="line-clamp-2 text-sm leading-6 text-white/60">{propertyLocationLine}</p>
                         </div>
-                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                          <div className="flex flex-nowrap items-center gap-2 overflow-hidden">
+                        <div className="space-y-3">
+                          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
                             {propertyHighlights.slice(0, 3).map((highlight) => (
                               <span key={highlight} className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
                                 {highlight}
                               </span>
                             ))}
                           </div>
-                          <div className="min-w-[132px] text-left md:text-right">
+                          <div className="text-left">
                             <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Pret</p>
                             <p className="text-2xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
                           </div>
