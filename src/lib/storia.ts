@@ -12,6 +12,7 @@ import type {
   StoriaPromotionRequest,
   StoriaPromotionSettings,
   StoriaPortalProfile,
+  UserProfile,
 } from '@/lib/types';
 
 const STORIA_PROVIDER = 'storia';
@@ -173,6 +174,14 @@ type StoriaAdvertMapping = {
   propertyUrl?: string | null;
   propertyImageUrl?: string | null;
   updatedAt: string;
+};
+
+type StoriaAgentContact = {
+  id?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  photoUrl?: string | null;
 };
 
 function getPrivateDocId(agencyId: string) {
@@ -595,7 +604,53 @@ function buildAttributes(property: Property, categoryUrn: string) {
   return attributes;
 }
 
-function buildAdvertPayload(property: Property) {
+async function loadUserProfile(userId?: string | null) {
+  if (!userId) return null;
+  const snapshot = await adminDb.collection('users').doc(userId).get();
+  if (!snapshot.exists) return null;
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  } as UserProfile;
+}
+
+function normalizeContactValue(value?: string | null) {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized || null;
+}
+
+function normalizeAgentPhone(value?: string | null) {
+  const normalized = normalizeContactValue(value);
+  if (!normalized) return null;
+  return normalized.replace(/[^\d+]/g, '');
+}
+
+function buildStoriaAgentContact(params: {
+  property: Property;
+  assignedAgent?: UserProfile | null;
+  fallbackAgent?: UserProfile | null;
+}): StoriaAgentContact | null {
+  const { property, assignedAgent, fallbackAgent } = params;
+  const selectedAgent = assignedAgent || fallbackAgent || null;
+  const name = normalizeContactValue(assignedAgent?.name || property.agentName || fallbackAgent?.name || null);
+  const email = normalizeContactValue(selectedAgent?.email || null);
+  const phone = normalizeAgentPhone(selectedAgent?.phone || null);
+  const photoUrl = normalizeContactValue(selectedAgent?.photoUrl || null);
+
+  if (!name && !email && !phone && !photoUrl) {
+    return null;
+  }
+
+  return compactObject({
+    id: selectedAgent?.id || property.agentId || null,
+    name,
+    email,
+    phone,
+    photoUrl,
+  }) as StoriaAgentContact;
+}
+
+function buildAdvertPayload(property: Property, agentContact?: StoriaAgentContact | null) {
   const profile = property.portalProfiles?.storia || null;
   const categoryUrn = mapPropertyToCategoryUrn(property, profile);
   const market = profile?.market || 'secondary';
@@ -616,6 +671,16 @@ function buildAdvertPayload(property: Property) {
   }
 
   const priceCurrency = property.transactionType === 'Închiriere' ? 'EUR' : 'EUR';
+  const contactPayload = agentContact
+    ? compactObject({
+        name: agentContact.name || undefined,
+        email: agentContact.email || undefined,
+        phone: agentContact.phone || undefined,
+        image_url: agentContact.photoUrl || undefined,
+        photo_url: agentContact.photoUrl || undefined,
+      })
+    : null;
+
   const payload = compactObject({
     title: title.slice(0, 70),
     description,
@@ -639,7 +704,13 @@ function buildAdvertPayload(property: Property) {
     custom_fields: {
       id: profile?.customReference || property.id,
       reference_id: profile?.customReference || property.id,
+      agent_id: agentContact?.id || property.agentId || null,
+      agent_name: agentContact?.name || property.agentName || null,
+      agent_email: agentContact?.email || null,
+      agent_phone: agentContact?.phone || null,
+      agent_photo_url: agentContact?.photoUrl || null,
     },
+    contact: contactPayload,
     auto_extend: true,
   });
 
@@ -840,6 +911,7 @@ async function persistPropertyPublishState(params: {
   market?: 'primary' | 'secondary' | null;
   errorMessage?: string | null;
   transactionId?: string | null;
+  agentContact?: StoriaAgentContact | null;
 }) {
   const {
     agencyId,
@@ -853,6 +925,7 @@ async function persistPropertyPublishState(params: {
     market,
     errorMessage,
     transactionId,
+    agentContact,
   } = params;
 
   const promotionStatus = errorMessage ? 'error' : mapRemoteCodeToPromotionStatus(remoteCode);
@@ -867,6 +940,15 @@ async function persistPropertyPublishState(params: {
     lastPublishedAt: !errorMessage && remoteUrl ? nowIso() : null,
     lastPayloadHash: payloadHash || null,
     lastTransactionId: transactionId || null,
+    agentContact: agentContact
+      ? compactObject({
+          id: agentContact.id || null,
+          name: agentContact.name || null,
+          email: agentContact.email || null,
+          phone: agentContact.phone || null,
+          photoUrl: agentContact.photoUrl || null,
+        })
+      : null,
   });
 
   await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
@@ -1457,7 +1539,16 @@ export async function publishPropertyToStoria(params: {
   }
 
   const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
-  const { payload, categoryUrn, market } = buildAdvertPayload(property);
+  const [assignedAgentProfile, fallbackAgentProfile] = await Promise.all([
+    loadUserProfile(property.agentId),
+    loadUserProfile(params.requestedByUid),
+  ]);
+  const agentContact = buildStoriaAgentContact({
+    property,
+    assignedAgent: assignedAgentProfile,
+    fallbackAgent: fallbackAgentProfile,
+  });
+  const { payload, categoryUrn, market } = buildAdvertPayload(property, agentContact);
   const payloadHash = getPayloadHash(payload);
   const existingRemoteUuid =
     property.portalProfiles?.storia?.remoteUuid ||
@@ -1534,6 +1625,7 @@ export async function publishPropertyToStoria(params: {
       categoryUrn,
       market,
       transactionId: publishResponse.transaction_id || null,
+      agentContact,
     });
     await persistPublishAudit({
       agencyId,

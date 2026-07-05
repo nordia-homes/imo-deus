@@ -17,12 +17,12 @@ function formatError(error: unknown) {
 
 export async function POST(request: NextRequest) {
   try {
-    const [{ requireAgencyAdminFromBearerToken }, { publishPropertyToStoria }] = await Promise.all([
+    const [{ requireAgencyUserFromBearerToken }, { publishPropertyToStoria }] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
       import('@/lib/storia'),
     ]);
 
-    const { agencyId, uid } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, uid } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Publicarea pe Storia este simulata doar vizual in mediul demo.');
     }
