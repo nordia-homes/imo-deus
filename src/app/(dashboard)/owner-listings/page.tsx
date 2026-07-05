@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { AiOutreachCallModal } from '@/components/ai-outreach/ai-outreach-call-modal';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
@@ -65,6 +65,8 @@ export default function OwnerListingsPage() {
   const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const [ownerListingsFetchLimit, setOwnerListingsFetchLimit] = useState(LISTINGS_FETCH_BATCH);
+  const pageTopRef = useRef<HTMLDivElement | null>(null);
+  const previousPageRef = useRef(currentPage);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
@@ -252,6 +254,15 @@ export default function OwnerListingsPage() {
     const startIndex = (safeCurrentPage - 1) * LISTINGS_PER_PAGE;
     return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
   }, [filteredListings, safeCurrentPage]);
+
+  useEffect(() => {
+    if (previousPageRef.current === safeCurrentPage) return;
+    previousPageRef.current = safeCurrentPage;
+
+    window.requestAnimationFrame(() => {
+      pageTopRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  }, [safeCurrentPage]);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -809,7 +820,7 @@ export default function OwnerListingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
+      <div ref={pageTopRef} className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
         title="Anunturi de la proprietari"
         subtitle="Incarcam lista de proprietati si pregatim filtrele."
@@ -833,7 +844,7 @@ export default function OwnerListingsPage() {
   }
 
   return (
-    <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
+    <div ref={pageTopRef} className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
         title="Anunturi de la proprietari"
         subtitle=""

@@ -46,6 +46,14 @@ const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
     return agents.find(agent => agent.id === viewing.agentId);
 };
 
+const formatPropertyPrice = (price?: number | null) => {
+    if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) {
+        return null;
+    }
+
+    return `${new Intl.NumberFormat('ro-RO').format(price)} EUR`;
+};
+
 const getStatusVariant = (status: Viewing['status']) => {
     switch (status) {
         case 'completed': return 'success';
@@ -547,6 +555,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
                 const ownerPhone = sanitizeForWhatsapp(property?.ownerPhone);
                 const agentPhone = sanitizeForWhatsapp(agent?.phone);
+                const priceLabel = formatPropertyPrice(property?.price);
                 const wazeUrl = buildWazeUrl(viewing.propertyAddress);
                 const viewingConfirmationText = encodeURIComponent(buildViewingConfirmationText(viewing));
                 const ownerConfirmationText = encodeURIComponent(buildOwnerConfirmationText(viewing));
@@ -573,7 +582,14 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                                     style={{ background: 'linear-gradient(to top, rgba(15, 30, 51, 0.55), transparent 58%)' }}
                                 />
                                 <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-3">
-                                    <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                        <Badge variant={getStatusVariant(viewing.status)}>{viewing.status}</Badge>
+                                        {priceLabel ? (
+                                            <Badge variant="outline" className="border-white/35 bg-white/90 font-semibold text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.22)] backdrop-blur-sm">
+                                                {priceLabel}
+                                            </Badge>
+                                        ) : null}
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-black/25 text-white/85 backdrop-blur-sm hover:bg-black/40 hover:text-white">
