@@ -1472,8 +1472,9 @@ export function PublishCard({ property }: { property: Property }) {
     );
   }
 
-  function renderStoriaPromotionEditor() {
+  function renderStoriaPromotionEditor(options?: { showApplyButton?: boolean }) {
     const selectedPromotionCount = storiaPromotionForm.filter((entry) => entry.enabled).length;
+    const showApplyButton = options?.showApplyButton ?? true;
 
     return (
       <div className="storia-publish-modal__promotion-editor rounded-[24px] border border-white/10 bg-[#111927] p-4">
@@ -1580,18 +1581,20 @@ export function PublishCard({ property }: { property: Property }) {
           </div>
         ) : null}
 
-        <div className="mt-4 flex justify-end">
-          <Button
-            type="button"
-            onClick={handleApplyStoriaPromotions}
-            disabled={isApplyingStoriaPromotions || isSavingStoriaPromotions || isLoadingStoriaPromotions}
-            className="imobiliare-publish-modal__primary-button storia-promotion-apply-button min-h-12 px-6 bg-[#e11d48] text-white hover:bg-[#be123c]"
-            style={{ color: '#ffffff' }}
-          >
-            {isApplyingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" /> : <Zap className="mr-2 h-4 w-4 text-white" />}
-            <span className="text-white">Aplica promovarea</span>
-          </Button>
-        </div>
+        {showApplyButton ? (
+          <div className="mt-4 flex justify-end">
+            <Button
+              type="button"
+              onClick={handleApplyStoriaPromotions}
+              disabled={isApplyingStoriaPromotions || isSavingStoriaPromotions || isLoadingStoriaPromotions}
+              className="imobiliare-publish-modal__primary-button storia-promotion-apply-button min-h-12 px-6 bg-[#e11d48] text-white hover:bg-[#be123c]"
+              style={{ color: '#ffffff' }}
+            >
+              {isApplyingStoriaPromotions ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" /> : <Zap className="mr-2 h-4 w-4 text-white" />}
+              <span className="text-white">Aplica promovarea</span>
+            </Button>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -2183,9 +2186,9 @@ export function PublishCard({ property }: { property: Property }) {
                           <p className="line-clamp-2 text-sm leading-6 text-white/60">{propertyLocationLine}</p>
                         </div>
                         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-nowrap items-center gap-2 overflow-hidden">
                             {propertyHighlights.slice(0, 3).map((highlight) => (
-                              <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
+                              <span key={highlight} className="shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
                                 {highlight}
                               </span>
                             ))}
@@ -2206,7 +2209,7 @@ export function PublishCard({ property }: { property: Property }) {
                       </div>
                     ) : null}
 
-                    {renderStoriaPromotionEditor()}
+                    {renderStoriaPromotionEditor({ showApplyButton: false })}
 
                     <div className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
                       <Button
@@ -2269,7 +2272,7 @@ export function PublishCard({ property }: { property: Property }) {
                 </div>
 
                 <div className="space-y-4">
-                  {renderStoriaPromotionEditor()}
+                  {renderStoriaPromotionEditor({ showApplyButton: false })}
                   <Button
                     type="button"
                     variant="ghost"
@@ -2446,19 +2449,6 @@ export function PublishCard({ property }: { property: Property }) {
           color: #111827 !important;
         }
 
-        [data-app-theme='agentfinder'] .storia-publish-modal__primary-button {
-          border: 1px solid rgba(174, 195, 225, 0.88) !important;
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(231, 240, 252, 0.96)) !important;
-          color: #111827 !important;
-          box-shadow:
-            0 16px 34px rgba(45, 68, 104, 0.14),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
-        }
-
-        [data-app-theme='agentfinder'] .storia-publish-modal__primary-button:hover {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(219, 233, 250, 0.98)) !important;
-        }
-
         [data-app-theme='agentfinder'] .imobiliare-publish-modal--dialog {
           border: 1px solid rgba(174, 195, 225, 0.78);
           background:
@@ -2564,6 +2554,24 @@ export function PublishCard({ property }: { property: Property }) {
 
         [data-app-theme='agentfinder'] .imobiliare-publish-modal__primary-button:hover {
           background: linear-gradient(135deg, rgba(46, 77, 120, 0.98) 0%, rgba(31, 59, 96, 1) 100%) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .storia-publish-modal__primary-button {
+          border: 1px solid rgba(174, 195, 225, 0.88) !important;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(231, 240, 252, 0.96)) !important;
+          color: #111827 !important;
+          box-shadow:
+            0 16px 34px rgba(45, 68, 104, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .storia-publish-modal__primary-button:hover {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(219, 233, 250, 0.98)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .storia-publish-modal__primary-button,
+        [data-app-theme='agentfinder'] .storia-publish-modal .storia-publish-modal__primary-button * {
+          color: #111827 !important;
         }
 
         [data-app-theme='agentfinder'] .storia-promotion-apply-button {
