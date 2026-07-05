@@ -1473,13 +1473,20 @@ export function PublishCard({ property }: { property: Property }) {
   }
 
   function renderStoriaPromotionEditor() {
+    const selectedPromotionCount = storiaPromotionForm.filter((entry) => entry.enabled).length;
+
     return (
-      <div className="imobiliare-publish-modal__promotion-editor rounded-[24px] border border-white/10 bg-[#111927] p-4">
-        <div className="mb-4 text-center">
-          <p className="text-lg font-semibold text-white">Promovare Storia.ro</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-white/55">
-            Selecteaza promotiile dorite pentru anuntul publicat pe Storia.
-          </p>
+      <div className="storia-publish-modal__promotion-editor rounded-[24px] border border-white/10 bg-[#111927] p-4">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-lg font-semibold text-white">Promovare Storia.ro</p>
+            <p className="mt-1 max-w-sm text-xs leading-5 text-white/55">
+              Alege vizibilitatea anuntului inainte de publicare.
+            </p>
+          </div>
+          <div className="w-fit rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-white/70">
+            {selectedPromotionCount} selectate
+          </div>
         </div>
 
         {isLoadingStoriaPromotions ? (
@@ -1490,7 +1497,7 @@ export function PublishCard({ property }: { property: Property }) {
         ) : null}
 
         {!isLoadingStoriaPromotions && !storiaPromotionOptions.length ? (
-          <div className="rounded-2xl border border-amber-300/18 bg-amber-400/10 px-4 py-4 text-sm text-amber-100">
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-4 text-sm text-amber-100">
             Nu am primit inca lista de promotii disponibile de la Storia pentru acest cont sau pentru acest mediu.
           </div>
         ) : null}
@@ -1505,14 +1512,14 @@ export function PublishCard({ property }: { property: Property }) {
                 <div
                   key={promotion.promotionCode}
                   className={cn(
-                    "rounded-2xl border p-4 transition-colors",
-                    activeMatch
-                      ? "border-emerald-300/35 bg-emerald-400/10 shadow-[0_0_0_1px_rgba(110,231,183,0.12)]"
-                      : "border-white/8 bg-[#1F2A37]"
+                    "storia-publish-modal__promotion-option rounded-2xl border p-4 transition-colors",
+                    formEntry?.enabled || activeMatch
+                      ? "border-rose-300/40 bg-rose-400/10 shadow-[0_0_0_1px_rgba(251,113,133,0.12)]"
+                      : "border-white/10 bg-[#1F2A37]"
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold tracking-[0.04em] text-white">
                           {promotion.displayName || promotion.promotionCode}
@@ -1541,12 +1548,13 @@ export function PublishCard({ property }: { property: Property }) {
                       onCheckedChange={(checked) =>
                         updateStoriaPromotionForm(promotion.promotionCode, { enabled: Boolean(checked) })
                       }
+                      className="mt-1"
                     />
                   </div>
 
                   {promotion.showDurationSelector !== false && Array.isArray(promotion.durationDays) && promotion.durationDays.length ? (
-                    <div className="mt-3 space-y-2">
-                      <Label className="text-white/75">Durata</Label>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_150px] sm:items-center">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">Durata promovarii</Label>
                       <Select
                         value={formEntry?.durationDays || String(promotion.durationDays[0])}
                         onValueChange={(value) =>
@@ -2103,114 +2111,132 @@ export function PublishCard({ property }: { property: Property }) {
           }
         }}
       >
-        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,560px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
+        <DialogContent className="storia-publish-modal imobiliare-publish-modal max-h-[92vh] w-[min(94vw,980px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_28px_80px_rgba(3,8,20,0.48)] backdrop-blur-xl">
           <DialogHeader
             className={cn(
-              "imobiliare-publish-modal__header border-b border-white/10 px-6 py-5 text-center sm:text-center",
-              storiaPublishModalStep === 'published' ? "bg-[linear-gradient(180deg,rgba(48,55,79,0.32),rgba(17,25,39,0.94))]" : "bg-[#111927]"
+              "storia-publish-modal__header border-b border-white/10 px-5 py-5 text-left sm:px-6",
+              storiaPublishModalStep === 'published'
+                ? "bg-[linear-gradient(180deg,rgba(76,29,149,0.18),rgba(17,25,39,0.94))]"
+                : "bg-[radial-gradient(circle_at_top_right,rgba(225,29,72,0.18),transparent_36%),linear-gradient(135deg,#111927,#0D121C)]"
             )}
           >
             {storiaPublishModalStep === 'published' ? (
-              <>
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-400/12 shadow-[0_0_40px_rgba(56,189,248,0.18)]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-400 text-[#081426]">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-rose-300/25 bg-rose-400/12 shadow-[0_0_40px_rgba(244,63,94,0.18)]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-500 text-white">
                     <CheckCircle2 className="h-6 w-6" />
                   </div>
                 </div>
-                <DialogTitle className="text-center text-[2rem] font-semibold leading-tight text-white">
-                  Anuntul Storia este publicat
-                </DialogTitle>
-                <DialogDescription className="mx-auto max-w-md text-center text-base leading-7 text-white/72">
-                  Anuntul a fost trimis pe Storia, iar promovarea poate fi ajustata oricand din acelasi CRM.
-                </DialogDescription>
-              </>
+                <div>
+                  <DialogTitle className="text-[2rem] font-semibold leading-tight text-white">
+                    Anuntul Storia este publicat
+                  </DialogTitle>
+                  <DialogDescription className="mt-2 max-w-xl text-base leading-7 text-white/72">
+                    Anuntul a fost trimis pe Storia, iar promovarea poate fi ajustata oricand din acelasi CRM.
+                  </DialogDescription>
+                </div>
+              </div>
             ) : (
-              <>
-                <DialogTitle className="text-center text-xl text-white">
-                  {storiaPublishModalStep === 'confirm' ? 'Publicare pe Storia.ro' : 'Publicam pe Storia.ro'}
-                </DialogTitle>
-                <DialogDescription className="mx-auto max-w-md text-center text-white/65">
-                  Verifica anuntul, alege promovarea dorita si confirma publicarea intr-un singur flux.
-                </DialogDescription>
-              </>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
+                    <StoriaLogo />
+                    Publicare portal
+                  </div>
+                  <DialogTitle className="text-2xl font-semibold text-white">
+                    {storiaPublishModalStep === 'confirm' ? 'Publicare pe Storia.ro' : 'Publicam pe Storia.ro'}
+                  </DialogTitle>
+                  <DialogDescription className="mt-2 max-w-xl text-sm leading-6 text-white/65">
+                    Verifica anuntul, alege promovarea dorita si confirma publicarea intr-un singur flux.
+                  </DialogDescription>
+                </div>
+                <div className="hidden rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-right sm:block">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">Pret listare</p>
+                  <p className="mt-1 text-xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                </div>
+              </div>
             )}
           </DialogHeader>
-          <div className="space-y-5 p-6">
+          <div className="space-y-5 p-5 sm:p-6">
             {storiaPublishModalStep === 'confirm' ? (
               <>
-                <div className="imobiliare-publish-modal__preview-card mx-auto w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
-                  {heroImage ? (
-                    <div
-                      className="h-56 w-full bg-cover bg-center"
-                      style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.08), rgba(8,20,38,0.56)), url(${heroImage})` }}
-                    />
-                  ) : (
-                    <div className="flex h-56 items-center justify-center bg-[#16304f] text-white/45">
-                      Fara imagine principala
-                    </div>
-                  )}
-                  <div className="space-y-4 p-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-sky-300/16 bg-sky-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200">
-                        Preview Storia
-                      </span>
-                      <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
-                        {property.transactionType}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold leading-tight text-white">{property.title}</h3>
-                      <p className="text-sm leading-6 text-white/60">{propertyLocationLine}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {propertyHighlights.map((highlight) => (
-                        <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
-                          {highlight}
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+                  <div className="storia-publish-modal__preview-card overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
+                    {heroImage ? (
+                      <div
+                        className="h-64 w-full bg-cover bg-center lg:h-[360px]"
+                        style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.02), rgba(8,20,38,0.68)), url(${heroImage})` }}
+                      />
+                    ) : (
+                      <div className="flex h-64 items-center justify-center bg-[#16304f] text-white/45 lg:h-[360px]">
+                        Fara imagine principala
+                      </div>
+                    )}
+                    <div className="space-y-4 p-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
+                          Preview Storia
                         </span>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Pret</p>
-                      <p className="text-3xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                        <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
+                          {property.transactionType}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-semibold leading-tight text-white">{property.title}</h3>
+                        <p className="text-sm leading-6 text-white/60">{propertyLocationLine}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyHighlights.map((highlight) => (
+                          <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
+                            {highlight}
+                          </span>
+                        ))}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Pret</p>
+                        <p className="text-3xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {storiaPublishModalError ? (
-                  <div className="rounded-2xl border border-red-300/18 bg-red-400/10 px-4 py-3 text-sm text-red-100">
-                    {storiaPublishModalError}
+                  <div className="space-y-4">
+                    {storiaPublishModalError ? (
+                      <div className="rounded-2xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+                        {storiaPublishModalError}
+                      </div>
+                    ) : null}
+
+                    {renderStoriaPromotionEditor()}
+
+                    <div className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
+                      <Button
+                        type="button"
+                        className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
+                        onClick={handleConfirmStoriaPublish}
+                        disabled={isSubmitting || isSavingStoriaPromotions || isApplyingStoriaPromotions}
+                      >
+                        <Rocket className="mr-2 h-4 w-4" />
+                        Confirma publicarea pe Storia.ro
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                        onClick={() => setIsStoriaPublishModalOpen(false)}
+                      >
+                        Anuleaza
+                      </Button>
+                    </div>
                   </div>
-                ) : null}
-
-                <div className="mx-auto w-full max-w-[430px]">
-                  {renderStoriaPromotionEditor()}
-                </div>
-
-                <div className="mx-auto flex w-full max-w-[430px] flex-col gap-3">
-                  <Button
-                    type="button"
-                    className="imobiliare-publish-modal__primary-button h-12 w-full bg-[#e11d48] text-white hover:bg-[#be123c]"
-                    onClick={handleConfirmStoriaPublish}
-                    disabled={isSubmitting || isSavingStoriaPromotions || isApplyingStoriaPromotions}
-                  >
-                    <Rocket className="mr-2 h-4 w-4" />
-                    Confirma publicarea pe Storia.ro
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="imobiliare-publish-modal__secondary-button h-12 w-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
-                    onClick={() => setIsStoriaPublishModalOpen(false)}
-                  >
-                    Anuleaza
-                  </Button>
                 </div>
               </>
             ) : null}
 
             {storiaPublishModalStep === 'syncing' ? (
-              <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
-                <Loader2 className="h-10 w-10 animate-spin text-sky-300" />
+              <div className="flex flex-col items-center justify-center gap-4 py-14 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border border-rose-300/20 bg-rose-400/10">
+                  <Loader2 className="h-10 w-10 animate-spin text-rose-200" />
+                </div>
                 <div className="space-y-1">
                   <p className="text-base font-semibold text-white">Publicam anuntul pe Storia.ro</p>
                   <p className="text-sm text-white/60">Salvam promovarea aleasa si trimitem anuntul catre Storia.</p>
@@ -2219,11 +2245,11 @@ export function PublishCard({ property }: { property: Property }) {
             ) : null}
 
             {storiaPublishModalStep === 'published' ? (
-              <div className="space-y-5">
-                <div className="mx-auto w-full max-w-[430px] rounded-3xl border border-white/10 bg-[#111927] p-5 shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="storia-publish-modal__preview-card rounded-3xl border border-white/10 bg-[#111927] p-5 shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
                   <div className="space-y-4 text-white">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
+                      <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
                         Publicat pe Storia.ro
                       </span>
                     </div>
@@ -2241,11 +2267,8 @@ export function PublishCard({ property }: { property: Property }) {
                   </div>
                 </div>
 
-                <div className="mx-auto w-full max-w-[430px]">
+                <div className="space-y-4">
                   {renderStoriaPromotionEditor()}
-                </div>
-
-                <div className="mx-auto w-full max-w-[430px]">
                   <Button
                     type="button"
                     variant="ghost"
@@ -2261,11 +2284,15 @@ export function PublishCard({ property }: { property: Property }) {
         </DialogContent>
       </Dialog>
       <Dialog open={isStoriaPromotionModalOpen} onOpenChange={setIsStoriaPromotionModalOpen}>
-        <DialogContent className="imobiliare-publish-modal imobiliare-publish-modal--dialog max-h-[90vh] w-[min(92vw,520px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_22px_60px_rgba(3,8,20,0.42)] backdrop-blur-xl">
-          <DialogHeader className="imobiliare-publish-modal__header border-b border-white/10 bg-[#111927] px-6 py-5 text-center sm:text-center">
-            <DialogTitle className="text-center text-xl text-white">Promovare Storia.ro</DialogTitle>
-            <DialogDescription className="mx-auto max-w-md text-center text-white/65">
-              Selecteaza promovarile dorite pentru anuntul publicat pe Storia din acelasi tip de modal folosit pentru portalurile deja integrate.
+        <DialogContent className="storia-publish-modal imobiliare-publish-modal max-h-[90vh] w-[min(92vw,620px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_28px_80px_rgba(3,8,20,0.48)] backdrop-blur-xl">
+          <DialogHeader className="storia-publish-modal__header border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(225,29,72,0.18),transparent_36%),linear-gradient(135deg,#111927,#0D121C)] px-6 py-5 text-left">
+            <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
+              <StoriaLogo />
+              Setari promovare
+            </div>
+            <DialogTitle className="text-2xl font-semibold text-white">Promovare Storia.ro</DialogTitle>
+            <DialogDescription className="mt-2 max-w-md text-white/65">
+              Selecteaza promovarile dorite pentru anuntul publicat pe Storia.
             </DialogDescription>
           </DialogHeader>
           <div className="p-6">
@@ -2296,6 +2323,125 @@ export function PublishCard({ property }: { property: Property }) {
 
         .imobiliare-publish-modal::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(180deg, rgba(148, 163, 184, 0.88), rgba(100, 116, 139, 0.98));
+        }
+
+        .storia-publish-modal {
+          border-radius: 30px;
+        }
+
+        .storia-publish-modal > button.absolute {
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.76);
+          box-shadow: 0 12px 26px rgba(3, 8, 20, 0.22);
+        }
+
+        .storia-publish-modal > button.absolute:hover {
+          background: rgba(255, 255, 255, 0.14);
+          color: #ffffff;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal {
+          border: 1px solid rgba(174, 195, 225, 0.78);
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 246, 253, 0.96) 58%, rgba(248, 251, 255, 0.98));
+          color: #111827;
+          box-shadow:
+            0 32px 90px rgba(30, 45, 74, 0.32),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal > button.absolute {
+          border: 1px solid rgba(174, 195, 225, 0.76);
+          background: rgba(255, 255, 255, 0.78);
+          color: #273b5b;
+          box-shadow: 0 10px 24px rgba(37, 55, 88, 0.12);
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header {
+          border-bottom-color: rgba(174, 195, 225, 0.52) !important;
+          background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(235, 243, 252, 0.94)) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header [data-radix-dialog-title],
+        [data-app-theme='agentfinder'] .storia-publish-modal__header h2,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-white {
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header [data-radix-dialog-description],
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-white\/72,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-white\/65,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-white\/60,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-white\/45 {
+          color: #5d6c86 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .border-rose-300\/20,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .border-white\/10 {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .bg-rose-400\/10,
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .bg-white\/\[0\.05\] {
+          background: rgba(255, 255, 255, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__header .text-rose-100 {
+          color: #445b84 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal__preview-card,
+        [data-app-theme='agentfinder'] .storia-publish-modal__promotion-editor,
+        [data-app-theme='agentfinder'] .storia-publish-modal__promotion-option {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.88)) !important;
+          box-shadow:
+            0 18px 38px rgba(45, 68, 104, 0.13),
+            inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white {
+          color: #111827 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/85,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/80,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/75,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/70,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/65,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/60,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/55,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/50,
+        [data-app-theme='agentfinder'] .storia-publish-modal .text-white\/45 {
+          color: #5d6c86 !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-white\/10,
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-white\/15,
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-white\/8,
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-rose-300\/40,
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-red-300\/20,
+        [data-app-theme='agentfinder'] .storia-publish-modal .border-amber-300\/20 {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-white\/\[0\.04\],
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-white\/\[0\.05\],
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-rose-400\/10,
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-red-400\/10,
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-amber-400\/10,
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-\[\#111927\],
+        [data-app-theme='agentfinder'] .storia-publish-modal .bg-\[\#1F2A37\] {
+          background: rgba(255, 255, 255, 0.82) !important;
+        }
+
+        [data-app-theme='agentfinder'] .storia-publish-modal input,
+        [data-app-theme='agentfinder'] .storia-publish-modal [role='combobox'] {
+          border-color: rgba(191, 206, 230, 0.82) !important;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.96)) !important;
+          color: #111827 !important;
         }
 
         [data-app-theme='agentfinder'] .imobiliare-publish-modal--dialog {
