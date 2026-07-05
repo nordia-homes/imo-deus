@@ -218,9 +218,11 @@ export function PropertyCard({
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:bg-white/10" onClick={() => setIsEditDialogOpen(true)}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={onDeleteRequest}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {onDeleteRequest ? (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={onDeleteRequest}>
+                          <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : null}
                     <Button asChild size="sm" variant="outline" className="bg-white/10 border-primary/50 text-white hover:bg-primary/10 button-glow">
                         <Link href={href}>Vezi Detalii</Link>
                     </Button>

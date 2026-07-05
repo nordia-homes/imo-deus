@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
-import type { Property, PropertyDeletionEvent, Viewing } from '@/lib/types';
+import type { Property, PropertyDeletionEvent, PropertyStatusEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -183,11 +183,11 @@ export default function PropertiesPage() {
         return soldAt ? now - soldAt <= 1000 * 60 * 60 * 24 * 30 : false;
       }
 
-      return true;
+      return prop.status !== 'Vândut';
     });
   }, [properties, filters, normalizedPropertySearch, portalQuickFilter, searchParams, viewings]);
 
-  const handleDelete = async ({ reason, soldPrice, agentMessage }: DeletePropertyPayload) => {
+  const handleDelete = async ({ reason, soldDisposition, soldPrice, agentMessage }: DeletePropertyPayload) => {
     if (!agencyId || !deletingProperty || isDeletingProperty) return;
 
     setIsDeletingProperty(true);
@@ -195,6 +195,50 @@ export default function PropertiesPage() {
     try {
       const deletedAt = new Date().toISOString();
       const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', deletingProperty.id);
+      const batch = writeBatch(firestore);
+
+      if (reason === 'sold' && soldDisposition === 'agency') {
+        const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
+        const soldPropertySnapshot: Property = {
+          ...deletingProperty,
+          price: soldPrice ?? deletingProperty.price,
+          status: 'Vândut',
+          statusUpdatedAt: deletedAt,
+          soldPrice: soldPrice ?? null,
+        };
+        const statusEvent: PropertyStatusEvent = {
+          id: statusEventRef.id,
+          agencyId,
+          propertyId: deletingProperty.id,
+          changedAt: deletedAt,
+          previousStatus: deletingProperty.status ?? null,
+          nextStatus: 'Vândut',
+          reason: 'sale_completed',
+          reasonLabel: 'Vandut de agentia mea',
+          agentMessage,
+          soldPrice: soldPrice ?? null,
+          marketAnalysisEligible: true,
+          propertySnapshot: soldPropertySnapshot,
+        };
+
+        batch.update(propertyRef, {
+          price: soldPrice ?? deletingProperty.price,
+          status: 'Vândut',
+          statusUpdatedAt: deletedAt,
+          soldPrice: soldPrice ?? null,
+        });
+        batch.set(statusEventRef, statusEvent);
+        await batch.commit();
+
+        toast({
+          title: 'Proprietate mutata in Proprietati Vandute',
+          description: `Am salvat vanzarea agentiei pentru "${deletingProperty.title}" si pretul final.`,
+        });
+
+        setDeletingProperty(null);
+        return;
+      }
+
       const deletionEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyDeletionEvents'));
       const propertySnapshot: Property = {
         ...deletingProperty,
@@ -211,7 +255,9 @@ export default function PropertiesPage() {
         reason,
         reasonLabel:
           reason === 'sold'
-            ? 'Proprietate vanduta'
+            ? soldDisposition === 'other_agency'
+              ? 'Vandut de alta agentie'
+              : 'Vandut de proprietar'
             : reason === 'collaboration_ended'
               ? 'Colaborare incetata'
               : 'Nu prezinta interes',
@@ -222,7 +268,6 @@ export default function PropertiesPage() {
         propertySnapshot,
       };
 
-      const batch = writeBatch(firestore);
       batch.set(deletionEventRef, deletionEvent);
       batch.delete(propertyRef);
       await batch.commit();

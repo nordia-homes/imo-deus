@@ -49,7 +49,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
   const pathname = usePathname();
   const currentPath = pathname ?? '';
-  const showSidebarHeaderTrigger = currentPath.startsWith('/leads') || currentPath.startsWith('/properties') || currentPath.startsWith('/inbox');
+  const showSidebarHeaderTrigger =
+    currentPath.startsWith('/leads') ||
+    currentPath.startsWith('/properties') ||
+    currentPath.startsWith('/sold-properties') ||
+    currentPath.startsWith('/inbox');
   const publicWebsiteHref = agencyId
     ? buildAgencyPublicUrl(agency ?? { id: agencyId })
     : null;
@@ -98,6 +102,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Proprietati Vandute" asChild isActive={currentPath.startsWith('/sold-properties')}>
+                    <Link href="/sold-properties">
+                        <BadgeCheck />
+                        <span>Proprietati Vandute</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

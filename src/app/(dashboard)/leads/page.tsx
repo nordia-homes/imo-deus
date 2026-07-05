@@ -6,13 +6,14 @@ import { useSearchParams } from 'next/navigation';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore, ArrowUpDown } from 'lucide-react';
+import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore, ArrowUpDown, Search, X } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFiltersDialog';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,7 @@ export default function LeadsPage() {
     const [showArchived, setShowArchived] = useState(false);
     const [ageSortBucket, setAgeSortBucket] = useState<ContactAgeBucket>('all');
     const [filters, setFilters] = useState<LeadFilters | null>(null);
+    const [leadSearch, setLeadSearch] = useState('');
     const isMobile = useIsMobile();
     const archivedInSessionRef = useRef<Set<string>>(new Set());
 
@@ -129,6 +131,16 @@ export default function LeadsPage() {
         };
     }, [activeContacts]);
 
+    const normalizedLeadSearch = useMemo(
+        () =>
+            leadSearch
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim(),
+        [leadSearch]
+    );
+
     const filteredContacts = useMemo(() => {
         const sourceContacts = showArchived ? archivedContacts : activeContacts;
         const filteredByDialog = !filters ? sourceContacts : sourceContacts.filter(contact => {
@@ -150,8 +162,45 @@ export default function LeadsPage() {
             return true;
         });
 
-        const reportPreset = searchParams.get('reportPreset');
-        const filtered = filteredByDialog.filter((contact) => {
+        const searchedContacts = !normalizedLeadSearch ? filteredByDialog : filteredByDialog.filter((contact) => {
+            const desiredRooms = contact.preferences?.desiredRooms;
+            const searchableParts = [
+                contact.name,
+                contact.phone,
+                contact.email,
+                contact.status,
+                contact.source,
+                contact.city,
+                contact.generalZone,
+                ...(contact.zones || []),
+                contact.budget,
+                contact.budget ? `${contact.budget} eur` : null,
+                contact.budget ? contact.budget.toLocaleString('en-US') : null,
+                contact.budget ? contact.budget.toLocaleString('ro-RO') : null,
+                desiredRooms,
+                desiredRooms ? `${desiredRooms} camere` : null,
+                contact.description,
+                contact.agentName,
+                ...(contact.tags || []),
+                contact.preferences?.desiredFeatures,
+                contact.preferences?.locationPreferences,
+                contact.financialStatus,
+                contact.leadScore,
+            ];
+            const searchableText = searchableParts
+                .filter((value) => value !== undefined && value !== null && value !== '')
+                .join(' ')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+
+            return normalizedLeadSearch
+                .split(/\s+/)
+                .every((token) => searchableText.includes(token));
+        });
+
+        const reportPreset = searchParams?.get('reportPreset');
+        const filtered = searchedContacts.filter((contact) => {
             const history = contact.interactionHistory || [];
             const latestInteractionTime = history.length > 0
                 ? Math.max(...history.map((item) => new Date(item.date).getTime()))
@@ -177,7 +226,7 @@ export default function LeadsPage() {
 
             if (reportPreset === 'weak-sources') {
                 const source = contact.source?.trim() || 'Necunoscută';
-                const sourceContacts = filteredByDialog.filter((item) => (item.source?.trim() || 'Necunoscută') === source);
+                const sourceContacts = searchedContacts.filter((item) => (item.source?.trim() || 'Necunoscută') === source);
                 const progressed = sourceContacts.filter((item) => ['Vizionare', 'În negociere', 'Câștigat'].includes(item.status)).length;
                 const pipelineRate = sourceContacts.length > 0 ? (progressed / sourceContacts.length) * 100 : 0;
                 return sourceContacts.length >= 3 && pipelineRate < 25;
@@ -228,7 +277,7 @@ export default function LeadsPage() {
             const rightAge = getContactAgeInDays(right.createdAt) ?? 0;
             return leftAge - rightAge;
         });
-    }, [activeContacts, ageSortBucket, archivedContacts, filters, searchParams, showArchived]);
+    }, [activeContacts, ageSortBucket, archivedContacts, filters, normalizedLeadSearch, searchParams, showArchived]);
 
     const handleUnarchive = (contact: Contact) => {
         if (!agencyId) return;
@@ -251,8 +300,33 @@ export default function LeadsPage() {
 
     const isLoading = areContactsLoading || arePropertiesLoading;
     const activeAgeSortLabel = AGE_BUCKET_OPTIONS.find((option) => option.value === ageSortBucket)?.label ?? 'Ordonează după vechime';
-    const reportPreset = searchParams.get('reportPreset');
+    const reportPreset = searchParams?.get('reportPreset');
     const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
+    const searchPlaceholder = isMobile ? 'Cauta dupa nume, buget, zona...' : 'Cauta cumparatori dupa nume, telefon, email, buget, zona, status...';
+    const searchInput = (
+        <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+            <Input
+                value={leadSearch}
+                onChange={(event) => setLeadSearch(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="h-12 rounded-2xl border-white/12 bg-[#152A47] pl-11 pr-12 text-white placeholder:text-white/42 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:ring-emerald-300/35"
+            />
+            {leadSearch ? (
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setLeadSearch('')}
+                    className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+                    aria-label="Sterge cautarea"
+                    title="Sterge cautarea"
+                >
+                    <X className="h-4 w-4" />
+                </Button>
+            ) : null}
+        </div>
+    );
 
   return (
     <div className={cn(
@@ -353,6 +427,9 @@ export default function LeadsPage() {
                         {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                     </Button>
                 </div>
+            </div>
+            <div className="px-2">
+              {searchInput}
             </div>
             <div className="px-2">
               <LeadList contacts={filteredContacts} isLoading={isLoading} onUnarchive={handleUnarchive} showArchivedState={showArchived} />
@@ -481,6 +558,15 @@ export default function LeadsPage() {
                             <StatCard className="agentfinder-leads-stat-card bg-[#152A47] border-none text-white" title="Scor Mediu AI" value={averageAiScore.toString()} icon={<BarChart />} segmentedScore={averageAiScore} />
                         </>
                     )}
+                </div>
+
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                    {searchInput}
+                    {leadSearch ? (
+                        <div className="rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm text-white/65">
+                            {filteredContacts.length} rezultate
+                        </div>
+                    ) : null}
                 </div>
 
                 <LeadList contacts={filteredContacts} isLoading={isLoading} onUnarchive={handleUnarchive} showArchivedState={showArchived} />
