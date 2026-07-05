@@ -2111,7 +2111,7 @@ export function PublishCard({ property }: { property: Property }) {
           }
         }}
       >
-        <DialogContent className="storia-publish-modal imobiliare-publish-modal max-h-[92vh] w-[min(94vw,980px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_28px_80px_rgba(3,8,20,0.48)] backdrop-blur-xl">
+        <DialogContent className="storia-publish-modal imobiliare-publish-modal max-h-[90vh] w-[min(92vw,680px)] overflow-y-auto border border-white/10 bg-[#0D121C] p-0 text-white shadow-[0_28px_80px_rgba(3,8,20,0.48)] backdrop-blur-xl">
           <DialogHeader
             className={cn(
               "storia-publish-modal__header border-b border-white/10 px-5 py-5 text-left sm:px-6",
@@ -2137,7 +2137,7 @@ export function PublishCard({ property }: { property: Property }) {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
                 <div>
                   <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
                     <StoriaLogo />
@@ -2150,51 +2150,51 @@ export function PublishCard({ property }: { property: Property }) {
                     Verifica anuntul, alege promovarea dorita si confirma publicarea intr-un singur flux.
                   </DialogDescription>
                 </div>
-                <div className="hidden rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-right sm:block">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">Pret listare</p>
-                  <p className="mt-1 text-xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
-                </div>
               </div>
             )}
           </DialogHeader>
           <div className="space-y-5 p-5 sm:p-6">
             {storiaPublishModalStep === 'confirm' ? (
               <>
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-                  <div className="storia-publish-modal__preview-card overflow-hidden rounded-[28px] border border-white/10 bg-[#1F2A37] shadow-[0_18px_40px_rgba(3,8,20,0.18)]">
-                    {heroImage ? (
-                      <div
-                        className="h-64 w-full bg-cover bg-center lg:h-[360px]"
-                        style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.02), rgba(8,20,38,0.68)), url(${heroImage})` }}
-                      />
-                    ) : (
-                      <div className="flex h-64 items-center justify-center bg-[#16304f] text-white/45 lg:h-[360px]">
-                        Fara imagine principala
-                      </div>
-                    )}
-                    <div className="space-y-4 p-5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
-                          Preview Storia
-                        </span>
-                        <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
-                          {property.transactionType}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-semibold leading-tight text-white">{property.title}</h3>
-                        <p className="text-sm leading-6 text-white/60">{propertyLocationLine}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {propertyHighlights.map((highlight) => (
-                          <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
-                            {highlight}
+                <div className="space-y-4">
+                  <div className="storia-publish-modal__summary-card rounded-[24px] border border-white/10 bg-[#1F2A37] p-4 shadow-[0_18px_40px_rgba(3,8,20,0.16)]">
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      {heroImage ? (
+                        <div
+                          className="h-44 w-full shrink-0 rounded-[18px] bg-cover bg-center sm:h-28 sm:w-32"
+                          style={{ backgroundImage: `linear-gradient(180deg, rgba(8,20,38,0.02), rgba(8,20,38,0.26)), url(${heroImage})` }}
+                        />
+                      ) : (
+                        <div className="flex h-44 w-full shrink-0 items-center justify-center rounded-[18px] bg-[#16304f] text-sm text-white/45 sm:h-28 sm:w-32">
+                          Fara imagine
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100">
+                            Preview Storia
                           </span>
-                        ))}
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Pret</p>
-                        <p className="text-3xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/60">
+                            {property.transactionType}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="line-clamp-2 text-xl font-semibold leading-tight text-white">{property.title}</h3>
+                          <p className="line-clamp-2 text-sm leading-6 text-white/60">{propertyLocationLine}</p>
+                        </div>
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                          <div className="flex flex-wrap gap-2">
+                            {propertyHighlights.slice(0, 3).map((highlight) => (
+                              <span key={highlight} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/80">
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Pret</p>
+                            <p className="text-2xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2245,8 +2245,8 @@ export function PublishCard({ property }: { property: Property }) {
             ) : null}
 
             {storiaPublishModalStep === 'published' ? (
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-                <div className="storia-publish-modal__preview-card rounded-3xl border border-white/10 bg-[#111927] p-5 shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
+              <div className="space-y-4">
+                <div className="storia-publish-modal__summary-card rounded-3xl border border-white/10 bg-[#111927] p-5 shadow-[0_18px_42px_rgba(3,8,20,0.18)]">
                   <div className="space-y-4 text-white">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">
@@ -2256,6 +2256,7 @@ export function PublishCard({ property }: { property: Property }) {
                     <div className="space-y-2">
                       <h3 className="text-2xl font-semibold leading-tight">{property.title}</h3>
                       <p className="text-sm text-white/60">{propertyLocationLine}</p>
+                      <p className="text-2xl font-semibold text-white">{formatPrice(property.price)} EUR</p>
                     </div>
                     <Button
                       type="button"
@@ -2393,6 +2394,7 @@ export function PublishCard({ property }: { property: Property }) {
         }
 
         [data-app-theme='agentfinder'] .storia-publish-modal__preview-card,
+        [data-app-theme='agentfinder'] .storia-publish-modal__summary-card,
         [data-app-theme='agentfinder'] .storia-publish-modal__promotion-editor,
         [data-app-theme='agentfinder'] .storia-publish-modal__promotion-option {
           border-color: rgba(191, 206, 230, 0.82) !important;
