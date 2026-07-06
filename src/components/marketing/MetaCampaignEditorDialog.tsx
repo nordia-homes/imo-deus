@@ -566,12 +566,12 @@ export function MetaCampaignEditorDialog({
                   </div>
                   <div className="space-y-2">
                     <Label className={labelClass}>Obiectiv campanie</Label>
-                    <div className="grid gap-2 sm:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {[
-                        { value: 'leads', label: 'Lead-uri', helper: 'Formular / contact', icon: ShieldCheck },
-                        { value: 'messages', label: 'Mesaje', helper: 'Messenger', icon: MessageCircle },
-                        { value: 'traffic', label: 'Trafic', helper: 'Pagina proprietatii', icon: Eye },
-                        { value: 'calls', label: 'Apeluri', helper: 'Suna acum', icon: PhoneCall },
+                        { value: 'leads', label: 'Lead-uri', helper: 'Formular instant sau contact direct', icon: ShieldCheck },
+                        { value: 'messages', label: 'Mesaje', helper: 'Conversatii in Messenger', icon: MessageCircle },
+                        { value: 'traffic', label: 'Trafic', helper: 'Vizite pe pagina proprietatii', icon: Eye },
+                        { value: 'calls', label: 'Apeluri', helper: 'Clientii pot suna agentia', icon: PhoneCall },
                       ].map((option) => {
                         const Icon = option.icon;
                         const selected = form.objective === option.value;
@@ -580,20 +580,33 @@ export function MetaCampaignEditorDialog({
                             key={option.value}
                             type="button"
                             className={cn(
-                              'flex min-h-20 items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition',
+                              'group relative flex min-h-[104px] items-center gap-4 overflow-hidden rounded-2xl border px-4 py-4 text-left shadow-lg shadow-black/10 transition',
                               selected
-                                ? 'border-sky-200 bg-sky-200 text-[#08243d] shadow-sky-950/20 ring-2 ring-sky-200/40'
-                                : 'border-white/15 bg-white/10 text-white hover:border-white/30 hover:bg-white/15'
+                                ? 'border-sky-200 bg-gradient-to-br from-sky-200 to-emerald-100 text-[#08243d] shadow-sky-950/25 ring-2 ring-sky-200/45'
+                                : 'border-white/15 bg-gradient-to-br from-white/[0.12] to-white/[0.04] text-white hover:border-emerald-200/35 hover:from-white/[0.16] hover:to-emerald-300/[0.06]'
                             )}
                             onClick={() => handleObjectiveChange(option.value as CampaignForm['objective'])}
                           >
-                            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', selected ? 'bg-white/70' : 'bg-white/10')}>
+                            <span
+                              className={cn(
+                                'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition',
+                                selected
+                                  ? 'border-white/60 bg-white/75 text-[#08243d]'
+                                  : 'border-white/10 bg-white/10 text-emerald-100 group-hover:border-emerald-200/30 group-hover:bg-emerald-200/10'
+                              )}
+                            >
                               <Icon className="h-5 w-5" />
                             </span>
-                            <span className="min-w-0">
-                              <span className="block font-semibold">{option.label}</span>
-                              <span className={cn('block text-xs', selected ? 'text-[#12405d]' : 'text-white/55')}>{option.helper}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-base font-semibold leading-6">{option.label}</span>
+                              <span className={cn('mt-1 block text-sm leading-5', selected ? 'text-[#12405d]' : 'text-white/58')}>{option.helper}</span>
                             </span>
+                            <span
+                              className={cn(
+                                'absolute right-3 top-3 h-2.5 w-2.5 rounded-full border',
+                                selected ? 'border-[#08243d] bg-[#08243d]' : 'border-white/30 bg-white/10'
+                              )}
+                            />
                           </button>
                         );
                       })}

@@ -914,6 +914,112 @@ export async function updateMetaCampaignDraft(agencyId: string, campaignId: stri
   } as MetaMarketingCampaignDraft;
 }
 
+async function syncPropertyMetaMarketingStatus(agencyId: string, propertyId: string) {
+  const latestSnapshot = await getCampaignDraftsCollection(agencyId)
+    .where('propertyId', '==', propertyId)
+    .orderBy('updatedAt', 'desc')
+    .limit(1)
+    .get();
+  const latestDraft = latestSnapshot.docs[0]
+    ? ({
+      id: latestSnapshot.docs[0].id,
+      ...(latestSnapshot.docs[0].data() as Omit<MetaMarketingCampaignDraft, 'id'>),
+    } as MetaMarketingCampaignDraft)
+    : null;
+
+  await adminDb
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('properties')
+    .doc(propertyId)
+    .set(
+      {
+        metaMarketing: {
+          latestCampaignDraftId: latestDraft?.id || null,
+          status: latestDraft?.status || null,
+          updatedAt: nowIso(),
+        },
+      },
+      { merge: true }
+    );
+}
+
+async function updatePublishedMetaCampaignStatus(
+  agencyId: string,
+  draft: MetaMarketingCampaignDraft,
+  status: 'PAUSED' | 'DELETED'
+) {
+  if (!draft.metaCampaignId) return;
+  const { accessToken } = await getAccessTokenForAgency(agencyId);
+  await metaRequest<Record<string, unknown>>(`/${draft.metaCampaignId}`, accessToken, {
+    method: 'POST',
+    body: new URLSearchParams({ status }).toString(),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+}
+
+export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new Error('Campania Meta nu a fost gasita.');
+  }
+
+  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
+  if (draft.agencyId !== agencyId) {
+    throw new Error('Campania Meta nu apartine acestei agentii.');
+  }
+  if (draft.status === 'draft') {
+    throw new Error('Drafturile nu se pun in pauza. Le poti edita sau sterge.');
+  }
+  if (draft.status === 'paused') {
+    return draft;
+  }
+
+  await updatePublishedMetaCampaignStatus(agencyId, draft, 'PAUSED');
+  const updatedAt = nowIso();
+  await ref.set({ status: 'paused', updatedAt, lastPublishError: null }, { merge: true });
+  await adminDb
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('properties')
+    .doc(draft.propertyId)
+    .set(
+      {
+        metaMarketing: {
+          latestCampaignDraftId: campaignId,
+          status: 'paused',
+          updatedAt,
+        },
+      },
+      { merge: true }
+    );
+
+  const updatedSnapshot = await ref.get();
+  return {
+    id: updatedSnapshot.id,
+    ...(updatedSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
+  } as MetaMarketingCampaignDraft;
+}
+
+export async function deleteMetaCampaignDraft(agencyId: string, campaignId: string) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new Error('Campania Meta nu a fost gasita.');
+  }
+
+  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
+  if (draft.agencyId !== agencyId) {
+    throw new Error('Campania Meta nu apartine acestei agentii.');
+  }
+
+  await updatePublishedMetaCampaignStatus(agencyId, draft, 'DELETED');
+  await ref.delete();
+  await syncPropertyMetaMarketingStatus(agencyId, draft.propertyId);
+  return { id: campaignId, deleted: true };
+}
+
 export async function refreshMetaCampaignInsights(agencyId: string, campaignId: string) {
   const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
   const draftSnapshot = await getCampaignDraftRef(agencyId, campaignId).get();

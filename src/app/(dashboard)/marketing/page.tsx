@@ -14,11 +14,13 @@ import {
   Loader2,
   Megaphone,
   MousePointerClick,
+  PauseCircle,
   Pencil,
   PlugZap,
   RefreshCw,
   ShieldCheck,
   Target,
+  Trash2,
   Unplug,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -98,6 +100,44 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat('ro-RO').format(value || 0);
 }
 
+function formatStatusLabel(status: MetaMarketingCampaignDraft['status']) {
+  const labels: Record<MetaMarketingCampaignDraft['status'], string> = {
+    draft: 'Draft',
+    ready: 'Pregatita',
+    published: 'Activa',
+    paused: 'Pauzata',
+    completed: 'Finalizata',
+    error: 'Eroare',
+  };
+  return labels[status] || status;
+}
+
+function getStatusClass(status: MetaMarketingCampaignDraft['status']) {
+  const classes: Record<MetaMarketingCampaignDraft['status'], string> = {
+    draft: 'border-slate-400/25 bg-slate-400/12 text-slate-100',
+    ready: 'border-sky-300/25 bg-sky-400/15 text-sky-100',
+    published: 'border-emerald-300/25 bg-emerald-400/15 text-emerald-100',
+    paused: 'border-amber-300/25 bg-amber-400/15 text-amber-100',
+    completed: 'border-violet-300/25 bg-violet-400/15 text-violet-100',
+    error: 'border-rose-300/25 bg-rose-400/15 text-rose-100',
+  };
+  return classes[status] || classes.draft;
+}
+
+function formatObjectiveLabel(objective: MetaMarketingCampaignDraft['objective']) {
+  const labels: Record<MetaMarketingCampaignDraft['objective'], string> = {
+    leads: 'Lead-uri',
+    messages: 'Mesaje',
+    traffic: 'Trafic',
+    calls: 'Apeluri',
+  };
+  return labels[objective] || objective;
+}
+
+function canPauseCampaign(status: MetaMarketingCampaignDraft['status']) {
+  return status === 'ready' || status === 'published' || status === 'error';
+}
+
 function StatusBadge({ connected }: { connected?: boolean }) {
   return connected ? (
     <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/15">
@@ -154,6 +194,7 @@ export default function MarketingPage() {
   const [selectedAdAccountId, setSelectedAdAccountId] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('');
   const [editingCampaign, setEditingCampaign] = useState<MetaMarketingCampaignDraft | null>(null);
+  const [campaignAction, setCampaignAction] = useState<{ id: string; type: 'pause' | 'delete' } | null>(null);
 
   const isAdmin = dashboard?.role === 'admin';
   const status = dashboard?.status;
@@ -337,6 +378,74 @@ export default function MarketingPage() {
       };
     });
     setEditingCampaign(campaign);
+  }
+
+  async function handlePauseCampaign(campaign: MetaMarketingCampaignDraft) {
+    if (!user || campaignAction) return;
+    setCampaignAction({ id: campaign.id, type: 'pause' });
+    try {
+      const response = await authorizedFetch(user, auth, `/api/marketing/meta/property-campaigns/${campaign.id}/pause`, {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut pune campania in pauza.');
+      }
+      const updatedCampaign = payload.campaign as MetaMarketingCampaignDraft;
+      setDashboard((current) => current
+        ? {
+          ...current,
+          campaigns: current.campaigns.map((item) => item.id === updatedCampaign.id ? updatedCampaign : item),
+        }
+        : current);
+      toast({ title: 'Campanie pusa in pauza', description: 'Campania nu mai este marcata ca activa.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Pauza esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut pune campania in pauza.',
+      });
+    } finally {
+      setCampaignAction(null);
+    }
+  }
+
+  async function handleDeleteCampaign(campaign: MetaMarketingCampaignDraft) {
+    if (!user || campaignAction) return;
+    const isPublished = campaign.status === 'published';
+    const confirmed = window.confirm(
+      isPublished
+        ? 'Stergi aceasta campanie si o opresti din Meta daca a fost publicata? Actiunea nu poate fi anulata.'
+        : 'Stergi acest draft de campanie? Actiunea nu poate fi anulata.'
+    );
+    if (!confirmed) return;
+
+    setCampaignAction({ id: campaign.id, type: 'delete' });
+    try {
+      const response = await authorizedFetch(user, auth, `/api/marketing/meta/property-campaigns/${campaign.id}`, {
+        method: 'DELETE',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut sterge campania.');
+      }
+      setDashboard((current) => current
+        ? {
+          ...current,
+          campaigns: current.campaigns.filter((item) => item.id !== campaign.id),
+        }
+        : current);
+      if (editingCampaign?.id === campaign.id) setEditingCampaign(null);
+      toast({ title: 'Campanie stearsa', description: 'Campania a fost eliminata din lista.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Stergere esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut sterge campania.',
+      });
+    } finally {
+      setCampaignAction(null);
+    }
   }
 
   if (isLoading) {
@@ -554,40 +663,117 @@ export default function MarketingPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {latestCampaigns.length ? (
-              latestCampaigns.map((campaign) => (
-                <div key={campaign.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="bg-white/10 text-white hover:bg-white/10">{campaign.status}</Badge>
-                        <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/15">HOUSING</Badge>
+              <div className="space-y-3">
+                {latestCampaigns.map((campaign) => {
+                  const actionType = campaignAction?.id === campaign.id ? campaignAction.type : null;
+                  const canPause = canPauseCampaign(campaign.status);
+
+                  return (
+                    <div
+                      key={campaign.id}
+                      className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0F1E33]/80 shadow-lg shadow-black/10 transition hover:border-emerald-300/25 hover:bg-[#142844]"
+                    >
+                      <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 flex-1 space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge className={`rounded-full border px-3 py-1 text-xs font-semibold hover:bg-transparent ${getStatusClass(campaign.status)}`}>
+                              {formatStatusLabel(campaign.status)}
+                            </Badge>
+                            <Badge className="rounded-full border border-emerald-300/25 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100 hover:bg-emerald-400/15">
+                              HOUSING
+                            </Badge>
+                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/65">
+                              {formatObjectiveLabel(campaign.objective)}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <p className="line-clamp-1 text-base font-semibold text-white">
+                              {campaign.headline || campaign.campaignName || 'Campanie fara titlu'}
+                            </p>
+                            <p className="line-clamp-2 text-sm leading-6 text-white/60">
+                              {campaign.primaryText || 'Textul reclamei nu este completat.'}
+                            </p>
+                          </div>
+
+                          <div className="grid gap-2 text-sm sm:grid-cols-4">
+                            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Buget</p>
+                              <p className="mt-1 font-semibold text-white">{formatMoney(campaign.budgetAmount, campaign.currency)}</p>
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Durata</p>
+                              <p className="mt-1 font-semibold text-white">{campaign.durationDays} zile</p>
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Click-uri</p>
+                              <p className="mt-1 font-semibold text-white">{formatNumber(campaign.insights?.clicks || 0)}</p>
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Lead-uri</p>
+                              <p className="mt-1 font-semibold text-white">{formatNumber(campaign.insights?.leads || 0)}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 flex-wrap gap-2 lg:w-36 lg:flex-col">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
+                            onClick={() => setEditingCampaign(campaign)}
+                          >
+                            <Pencil className="mr-2 h-3.5 w-3.5" />
+                            Editeaza
+                          </Button>
+                          {campaign.status === 'paused' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled
+                              className="rounded-full border-amber-300/20 bg-amber-400/10 text-amber-100 opacity-70"
+                            >
+                              <PauseCircle className="mr-2 h-3.5 w-3.5" />
+                              Pauzata
+                            </Button>
+                          ) : canPause ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={Boolean(campaignAction)}
+                              className="rounded-full border-amber-300/20 bg-amber-400/10 text-amber-100 hover:bg-amber-400/15 disabled:opacity-45"
+                              onClick={() => void handlePauseCampaign(campaign)}
+                            >
+                              {actionType === 'pause' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <PauseCircle className="mr-2 h-3.5 w-3.5" />}
+                              Pauza
+                            </Button>
+                          ) : null}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={Boolean(campaignAction)}
+                            className="rounded-full border-rose-300/20 bg-rose-400/10 text-rose-100 hover:bg-rose-400/15"
+                            onClick={() => void handleDeleteCampaign(campaign)}
+                          >
+                            {actionType === 'delete' ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-2 h-3.5 w-3.5" />}
+                            Sterge
+                          </Button>
+                        </div>
                       </div>
-                      <p className="mt-3 font-semibold text-white">{campaign.headline}</p>
-                      <p className="mt-1 line-clamp-2 text-sm text-white/60">{campaign.primaryText}</p>
+
+                      <div className="grid border-t border-white/10 bg-white/[0.025] px-4 py-3 text-sm text-white/60 sm:grid-cols-3">
+                        <span>Spend: <b className="text-white">{formatMoney(campaign.insights?.spend || 0, campaign.currency)}</b></span>
+                        <span>Impresii: <b className="text-white">{formatNumber(campaign.insights?.impressions || 0)}</b></span>
+                        <span>Cost / lead: <b className="text-white">{campaign.insights?.costPerLead ? formatMoney(campaign.insights.costPerLead, campaign.currency) : '-'}</b></span>
+                      </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <p className="font-semibold text-white">{formatMoney(campaign.budgetAmount, campaign.currency)}</p>
-                      <p className="text-white/55">{campaign.durationDays} zile</p>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="mt-3 rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
-                        onClick={() => setEditingCampaign(campaign)}
-                      >
-                        <Pencil className="mr-2 h-3.5 w-3.5" />
-                        Editeaza
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
-                    <span className="text-white/60">Spend: <b className="text-white">{formatMoney(campaign.insights?.spend || 0, campaign.currency)}</b></span>
-                    <span className="text-white/60">Impresii: <b className="text-white">{formatNumber(campaign.insights?.impressions || 0)}</b></span>
-                    <span className="text-white/60">Click-uri: <b className="text-white">{formatNumber(campaign.insights?.clicks || 0)}</b></span>
-                    <span className="text-white/60">Lead-uri: <b className="text-white">{formatNumber(campaign.insights?.leads || 0)}</b></span>
-                  </div>
-                </div>
-              ))
+                  );
+                })}
+              </div>
             ) : (
               <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-8 text-center">
                 <Building2 className="h-10 w-10 text-white/45" />
