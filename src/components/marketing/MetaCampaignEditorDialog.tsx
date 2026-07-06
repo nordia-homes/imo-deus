@@ -325,8 +325,8 @@ export function MetaCampaignEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto border-white/10 bg-[#0F1E33] text-white">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92vh] max-w-6xl flex-col overflow-hidden border-white/10 bg-[#0F1E33] p-0 text-white">
+        <DialogHeader className="shrink-0 border-b border-white/10 px-6 py-5">
           <DialogTitle>Configureaza campania Meta</DialogTitle>
           <DialogDescription className="text-white/60">
             Pregateste reclama Housing pentru aceasta proprietate. Publicarea live ramane blocata pana la App Review.
@@ -334,9 +334,15 @@ export function MetaCampaignEditorDialog({
         </DialogHeader>
 
         {form ? (
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)]">
+            <div className="min-h-0 overflow-y-auto px-6 py-5 pr-4 lg:max-h-[calc(92vh-10.5rem)]">
+              <div className="space-y-5">
+                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Setari campanie</p>
+                    <p className="mt-1 text-xs text-white/45">Alege obiectivul, bugetul, durata si CTA-ul reclamei.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label className="text-white/70">Obiectiv</Label>
                   <Select value={form.objective} onValueChange={(value) => updateForm('objective', value as CampaignForm['objective'])}>
@@ -362,6 +368,41 @@ export function MetaCampaignEditorDialog({
                   <Input value={form.durationDays} onChange={(event) => updateForm('durationDays', event.target.value)} inputMode="numeric" className="border-white/15 bg-white/10 text-white" />
                 </div>
               </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-white/70">Tip buget</Label>
+                      <Select value={form.budgetType} onValueChange={(value) => updateForm('budgetType', value as CampaignForm['budgetType'])}>
+                        <SelectTrigger className="border-white/15 bg-white/10 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Zilnic</SelectItem>
+                          <SelectItem value="lifetime">Total campanie</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white/70">Call to action</Label>
+                      <Select value={form.callToAction} onValueChange={(value) => updateForm('callToAction', value as CampaignForm['callToAction'])}>
+                        <SelectTrigger className="border-white/15 bg-white/10 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LEARN_MORE">Afla mai multe</SelectItem>
+                          <SelectItem value="CONTACT_US">Contacteaza-ne</SelectItem>
+                          <SelectItem value="SEND_MESSAGE">Trimite mesaj</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Creativ reclama</p>
+                    <p className="mt-1 text-xs text-white/45">Controleaza formatul, titlul si textul care apar in feed.</p>
+                  </div>
 
               <div className="space-y-2">
                 <Label className="text-white/70">Format creativ</Label>
@@ -398,34 +439,6 @@ export function MetaCampaignEditorDialog({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-white/70">Tip buget</Label>
-                  <Select value={form.budgetType} onValueChange={(value) => updateForm('budgetType', value as CampaignForm['budgetType'])}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Zilnic</SelectItem>
-                      <SelectItem value="lifetime">Total campanie</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70">Call to action</Label>
-                  <Select value={form.callToAction} onValueChange={(value) => updateForm('callToAction', value as CampaignForm['callToAction'])}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LEARN_MORE">Afla mai multe</SelectItem>
-                      <SelectItem value="CONTACT_US">Contacteaza-ne</SelectItem>
-                      <SelectItem value="SEND_MESSAGE">Trimite mesaj</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label className="text-white/70">Titlu</Label>
                 <Input value={form.headline} onChange={(event) => updateForm('headline', event.target.value)} className="border-white/15 bg-white/10 text-white" />
@@ -437,6 +450,13 @@ export function MetaCampaignEditorDialog({
                 <Textarea value={form.primaryText} onChange={(event) => updateForm('primaryText', event.target.value)} className="min-h-44 border-white/15 bg-white/10 text-white" />
                 <p className="text-xs text-white/45">{form.primaryText.length} caractere. Meta poate trunchia vizual textul lung in feed, dar draftul pastreaza paragrafele.</p>
               </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Audienta si destinatie</p>
+                    <p className="mt-1 text-xs text-white/45">Pentru Housing, promovarea trebuie sa ramana conforma cu limitarile Meta.</p>
+                  </div>
 
               <div className="space-y-2">
                 <Label className="text-white/70">Oras promovat</Label>
@@ -448,6 +468,13 @@ export function MetaCampaignEditorDialog({
                 <Label className="text-white/70">Link destinatie</Label>
                 <Input value={form.destinationUrl} onChange={(event) => updateForm('destinationUrl', event.target.value)} className="border-white/15 bg-white/10 text-white" />
               </div>
+                </section>
+
+                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Media reclama</p>
+                    <p className="mt-1 text-xs text-white/45">Selecteaza pozele proprietatii sau incarca imagini si video dedicate reclamei.</p>
+                  </div>
 
               <div className="space-y-2">
                 <Label className="text-white/70">Incarca media pentru reclama</Label>
@@ -519,8 +546,12 @@ export function MetaCampaignEditorDialog({
                   </div>
                 </div>
               ) : null}
+                </section>
+              </div>
             </div>
 
+            <aside className="min-h-0 border-t border-white/10 bg-white/[0.03] px-6 py-5 lg:border-l lg:border-t-0 lg:pl-5">
+              <div className="sticky top-0 max-h-[calc(92vh-10.5rem)] space-y-4 overflow-y-auto pr-1">
             <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-white">Preview Facebook feed</p>
@@ -620,10 +651,12 @@ export function MetaCampaignEditorDialog({
                 Preview-ul foloseste format patrat 1:1, potrivit pentru feed si usor de verificat vizual.
               </p>
             </div>
+              </div>
+            </aside>
           </div>
         ) : null}
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="shrink-0 gap-2 border-t border-white/10 bg-[#0F1E33] px-6 py-4 sm:gap-0">
           <Button type="button" variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void handleSaveDraft()} disabled={isSaving || isMarkingReady || !form}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Salveaza draft
