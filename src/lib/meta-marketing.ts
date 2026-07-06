@@ -641,21 +641,41 @@ export async function createMetaCampaignDraft(params: {
     updatedAt: now,
     createdByUid: params.requestedByUid,
     status: 'draft',
+    campaignName: `Promovare ${property.title || 'proprietate'}`.slice(0, 120),
+    adSetName: `${content.locationLabel || property.location || 'Housing'} - 7 zile`.slice(0, 120),
+    adName: `${property.title || 'Proprietate'} - principal`.slice(0, 120),
     objective: params.objective || 'leads',
     budgetType: params.budgetType || 'daily',
     budgetAmount: params.budgetAmount || 50,
     currency: (integration.selectedAdAccount.currency as MetaMarketingCampaignDraft['currency']) || 'RON',
     durationDays: params.durationDays || 7,
+    startsAt: null,
+    endsAt: null,
+    startMode: 'now',
     locationLabel: content.locationLabel,
+    radiusKm: 25,
     headline: content.headline,
     primaryText: content.primaryText,
     creativeFormat: 'single_image',
+    creativeAspectRatio: '1:1',
+    previewDevice: 'mobile',
+    placements: ['facebook_feed', 'instagram_feed'],
+    optimizationGoal: 'leads',
+    billingEvent: 'impressions',
+    abTestEnabled: false,
+    creativeVariants: [],
     imageUrl: coverImage?.url || null,
     imageAlt: coverImage?.alt || property.title || null,
     mediaItems: propertyMediaItems,
     videoUrl: null,
     videoThumbnailUrl: null,
     destinationUrl,
+    destinationType: 'property_page',
+    utmEnabled: true,
+    utmSource: 'meta',
+    utmMedium: 'paid_social',
+    utmCampaign: `property_${params.propertyId}`,
+    utmContent: 'main_creative',
     callToAction: 'LEARN_MORE',
     specialAdCategory: 'HOUSING',
     metaCampaignId: null,
@@ -696,14 +716,28 @@ export async function listPropertyMetaCampaigns(agencyId: string, propertyId: st
 
 type CampaignDraftUpdateInput = Partial<Pick<
   MetaMarketingCampaignDraft,
+  | 'campaignName'
+  | 'adSetName'
+  | 'adName'
   | 'objective'
   | 'budgetType'
   | 'budgetAmount'
   | 'durationDays'
+  | 'startsAt'
+  | 'endsAt'
+  | 'startMode'
   | 'locationLabel'
+  | 'radiusKm'
   | 'headline'
   | 'primaryText'
   | 'creativeFormat'
+  | 'creativeAspectRatio'
+  | 'previewDevice'
+  | 'placements'
+  | 'optimizationGoal'
+  | 'billingEvent'
+  | 'abTestEnabled'
+  | 'creativeVariants'
   | 'callToAction'
   | 'imageUrl'
   | 'imageAlt'
@@ -711,6 +745,12 @@ type CampaignDraftUpdateInput = Partial<Pick<
   | 'videoUrl'
   | 'videoThumbnailUrl'
   | 'destinationUrl'
+  | 'destinationType'
+  | 'utmEnabled'
+  | 'utmSource'
+  | 'utmMedium'
+  | 'utmCampaign'
+  | 'utmContent'
 >>;
 
 function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
@@ -727,6 +767,15 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   if (['leads', 'messages', 'traffic'].includes(String(input.objective))) {
     patch.objective = input.objective;
   }
+  if (typeof input.campaignName === 'string' || input.campaignName === null) {
+    patch.campaignName = input.campaignName ? input.campaignName.trim().slice(0, 120) : null;
+  }
+  if (typeof input.adSetName === 'string' || input.adSetName === null) {
+    patch.adSetName = input.adSetName ? input.adSetName.trim().slice(0, 120) : null;
+  }
+  if (typeof input.adName === 'string' || input.adName === null) {
+    patch.adName = input.adName ? input.adName.trim().slice(0, 120) : null;
+  }
   if (['daily', 'lifetime'].includes(String(input.budgetType))) {
     patch.budgetType = input.budgetType;
   }
@@ -736,8 +785,20 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   if (Number.isFinite(Number(input.durationDays))) {
     patch.durationDays = Math.min(90, Math.max(1, Math.round(Number(input.durationDays))));
   }
+  if (typeof input.startsAt === 'string' || input.startsAt === null) {
+    patch.startsAt = input.startsAt ? input.startsAt.trim().slice(0, 40) : null;
+  }
+  if (typeof input.endsAt === 'string' || input.endsAt === null) {
+    patch.endsAt = input.endsAt ? input.endsAt.trim().slice(0, 40) : null;
+  }
+  if (['now', 'scheduled'].includes(String(input.startMode))) {
+    patch.startMode = input.startMode;
+  }
   if (typeof input.locationLabel === 'string') {
     patch.locationLabel = input.locationLabel.trim().slice(0, 120);
+  }
+  if (Number.isFinite(Number(input.radiusKm))) {
+    patch.radiusKm = Math.min(80, Math.max(15, Math.round(Number(input.radiusKm))));
   }
   if (typeof input.headline === 'string') {
     patch.headline = input.headline.trim();
@@ -747,6 +808,34 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   }
   if (['single_image', 'carousel', 'video'].includes(String(input.creativeFormat))) {
     patch.creativeFormat = input.creativeFormat;
+  }
+  if (['1:1', '4:5', 'original'].includes(String(input.creativeAspectRatio))) {
+    patch.creativeAspectRatio = input.creativeAspectRatio;
+  }
+  if (['mobile', 'desktop'].includes(String(input.previewDevice))) {
+    patch.previewDevice = input.previewDevice;
+  }
+  if (Array.isArray(input.placements)) {
+    const allowedPlacements = new Set(['facebook_feed', 'instagram_feed', 'facebook_story', 'instagram_story']);
+    patch.placements = input.placements.filter((placement) => allowedPlacements.has(placement)).slice(0, 4);
+  }
+  if (['leads', 'landing_page_views', 'messages'].includes(String(input.optimizationGoal))) {
+    patch.optimizationGoal = input.optimizationGoal;
+  }
+  if (input.billingEvent === 'impressions') {
+    patch.billingEvent = 'impressions';
+  }
+  if (typeof input.abTestEnabled === 'boolean') {
+    patch.abTestEnabled = input.abTestEnabled;
+  }
+  if (Array.isArray(input.creativeVariants)) {
+    patch.creativeVariants = input.creativeVariants
+      .filter((variant) => variant && (typeof variant.headline === 'string' || typeof variant.primaryText === 'string'))
+      .slice(0, 3)
+      .map((variant) => ({
+        headline: String(variant.headline || '').trim().slice(0, 120),
+        primaryText: String(variant.primaryText || '').replace(/\r\n/g, '\n').trim().slice(0, 5000),
+      }));
   }
   if (['LEARN_MORE', 'SEND_MESSAGE', 'CONTACT_US'].includes(String(input.callToAction))) {
     patch.callToAction = input.callToAction;
@@ -777,6 +866,24 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   }
   if (typeof input.destinationUrl === 'string') {
     patch.destinationUrl = input.destinationUrl.trim().slice(0, 500);
+  }
+  if (['property_page', 'lead_form', 'whatsapp', 'messenger'].includes(String(input.destinationType))) {
+    patch.destinationType = input.destinationType;
+  }
+  if (typeof input.utmEnabled === 'boolean') {
+    patch.utmEnabled = input.utmEnabled;
+  }
+  if (typeof input.utmSource === 'string' || input.utmSource === null) {
+    patch.utmSource = input.utmSource ? input.utmSource.trim().slice(0, 80) : null;
+  }
+  if (typeof input.utmMedium === 'string' || input.utmMedium === null) {
+    patch.utmMedium = input.utmMedium ? input.utmMedium.trim().slice(0, 80) : null;
+  }
+  if (typeof input.utmCampaign === 'string' || input.utmCampaign === null) {
+    patch.utmCampaign = input.utmCampaign ? input.utmCampaign.trim().slice(0, 120) : null;
+  }
+  if (typeof input.utmContent === 'string' || input.utmContent === null) {
+    patch.utmContent = input.utmContent ? input.utmContent.trim().slice(0, 120) : null;
   }
 
   return patch;
@@ -851,6 +958,28 @@ export async function refreshMetaCampaignInsights(agencyId: string, campaignId: 
 
 export async function markMetaCampaignReady(agencyId: string, campaignId: string) {
   const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new Error('Campania Meta nu a fost gasita.');
+  }
+  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
+  const mediaItems = draft.mediaItems || [];
+  const imageItems = mediaItems.filter((item) => item.type === 'image');
+  const hasMedia = draft.creativeFormat === 'video' ? Boolean(draft.videoUrl || mediaItems.some((item) => item.type === 'video')) : imageItems.length > 0;
+  const hasValidDestination = Boolean(draft.destinationUrl && /^https?:\/\//.test(draft.destinationUrl));
+  const readyErrors = [
+    !draft.campaignName || !draft.adSetName || !draft.adName ? 'Completeaza numele campaniei, ad setului si reclamei.' : null,
+    Number(draft.budgetAmount) < 10 || Number(draft.durationDays) < 1 ? 'Bugetul sau durata campaniei nu sunt valide.' : null,
+    !draft.headline || !draft.primaryText ? 'Completeaza titlul si textul reclamei.' : null,
+    !hasMedia ? 'Selecteaza media pentru reclama.' : null,
+    !hasValidDestination ? 'Adauga un link de destinatie valid.' : null,
+    !draft.locationLabel || Number(draft.radiusKm || 0) < 15 ? 'Completeaza audienta Housing pe oras sau zona metropolitana.' : null,
+    !draft.placements?.length ? 'Selecteaza cel putin un placement.' : null,
+    draft.utmEnabled && (!draft.utmSource || !draft.utmMedium || !draft.utmCampaign) ? 'Completeaza parametrii UTM sau dezactiveaza tracking-ul.' : null,
+  ].filter(Boolean);
+  if (readyErrors.length) {
+    throw new Error(readyErrors.join(' '));
+  }
   await ref.set(
     {
       status: 'ready',

@@ -376,15 +376,32 @@ export type MetaMarketingCampaignDraft = {
   updatedAt: string;
   createdByUid: string;
   status: 'draft' | 'ready' | 'published' | 'paused' | 'completed' | 'error';
+  campaignName?: string | null;
+  adSetName?: string | null;
+  adName?: string | null;
   objective: 'leads' | 'messages' | 'traffic';
   budgetType: 'daily' | 'lifetime';
   budgetAmount: number;
   currency: 'RON' | 'EUR' | 'USD';
   durationDays: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  startMode?: 'now' | 'scheduled';
   locationLabel: string;
+  radiusKm?: number | null;
   headline: string;
   primaryText: string;
   creativeFormat?: 'single_image' | 'carousel' | 'video';
+  creativeAspectRatio?: '1:1' | '4:5' | 'original';
+  previewDevice?: 'mobile' | 'desktop';
+  placements?: Array<'facebook_feed' | 'instagram_feed' | 'facebook_story' | 'instagram_story'> | null;
+  optimizationGoal?: 'leads' | 'landing_page_views' | 'messages';
+  billingEvent?: 'impressions';
+  abTestEnabled?: boolean;
+  creativeVariants?: Array<{
+    headline: string;
+    primaryText: string;
+  }> | null;
   imageUrl?: string | null;
   imageAlt?: string | null;
   mediaItems?: Array<{
@@ -397,6 +414,12 @@ export type MetaMarketingCampaignDraft = {
   videoUrl?: string | null;
   videoThumbnailUrl?: string | null;
   destinationUrl?: string | null;
+  destinationType?: 'property_page' | 'lead_form' | 'whatsapp' | 'messenger';
+  utmEnabled?: boolean;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
   callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US';
   specialAdCategory: 'HOUSING';
   metaCampaignId?: string | null;
