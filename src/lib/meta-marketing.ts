@@ -564,19 +564,21 @@ export async function getMetaDashboardSummary(agencyId: string) {
 
 function buildDefaultCampaignContent(property: Property) {
   const location = [property.city, property.zone].filter(Boolean).join(', ') || property.location || property.address;
+  const targetingLocation = property.city || property.location?.split(',')[0]?.trim() || property.address;
   const rooms = property.rooms ? `${property.rooms} camere` : property.propertyType || 'proprietate';
   const price = Number.isFinite(property.price) ? `${new Intl.NumberFormat('ro-RO').format(property.price)} EUR` : 'pret disponibil la cerere';
   const headline = `${rooms} in ${location}`.slice(0, 80);
-  const primaryText = [
+  const defaultText = [
     property.title,
     `${price}. ${property.squareFootage || property.totalSurface || ''} mp${property.nearMetro ? ', aproape de metrou' : ''}.`,
     'Vezi fotografii, detalii si programeaza o discutie cu agentul ImoDeus.',
   ].filter(Boolean).join(' ');
+  const primaryText = (property.description || defaultText).replace(/\s+/g, ' ').trim();
 
   return {
     headline,
     primaryText: primaryText.slice(0, 480),
-    locationLabel: location,
+    locationLabel: targetingLocation,
   };
 }
 

@@ -14,6 +14,7 @@ import {
   Loader2,
   Megaphone,
   MousePointerClick,
+  Pencil,
   PlugZap,
   RefreshCw,
   ShieldCheck,
@@ -29,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { MetaCampaignEditorDialog } from '@/components/marketing/MetaCampaignEditorDialog';
 import type { MetaMarketingCampaignDraft, MetaMarketingIntegrationPublicStatus } from '@/lib/types';
 
 type DashboardPayload = {
@@ -151,6 +153,7 @@ export default function MarketingPage() {
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const [selectedAdAccountId, setSelectedAdAccountId] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('');
+  const [editingCampaign, setEditingCampaign] = useState<MetaMarketingCampaignDraft | null>(null);
 
   const isAdmin = dashboard?.role === 'admin';
   const status = dashboard?.status;
@@ -320,6 +323,20 @@ export default function MarketingPage() {
     } finally {
       setActiveAction(null);
     }
+  }
+
+  function upsertCampaign(campaign: MetaMarketingCampaignDraft) {
+    setDashboard((current) => {
+      if (!current) return current;
+      const exists = current.campaigns.some((item) => item.id === campaign.id);
+      return {
+        ...current,
+        campaigns: exists
+          ? current.campaigns.map((item) => item.id === campaign.id ? campaign : item)
+          : [campaign, ...current.campaigns],
+      };
+    });
+    setEditingCampaign(campaign);
   }
 
   if (isLoading) {
@@ -551,6 +568,16 @@ export default function MarketingPage() {
                     <div className="text-right text-sm">
                       <p className="font-semibold text-white">{formatMoney(campaign.budgetAmount, campaign.currency)}</p>
                       <p className="text-white/55">{campaign.durationDays} zile</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
+                        onClick={() => setEditingCampaign(campaign)}
+                      >
+                        <Pencil className="mr-2 h-3.5 w-3.5" />
+                        Editeaza
+                      </Button>
                     </div>
                   </div>
                   <div className="mt-4 grid gap-3 text-sm sm:grid-cols-4">
@@ -593,6 +620,26 @@ export default function MarketingPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <MetaCampaignEditorDialog
+        open={Boolean(editingCampaign)}
+        campaign={editingCampaign}
+        pageName={status?.selectedPage?.name || 'ImoDeus'}
+        fallbackTitle={editingCampaign?.headline || 'Proprietate ImoDeus'}
+        onOpenChange={(open) => {
+          if (!open) setEditingCampaign(null);
+        }}
+        onSaved={upsertCampaign}
+        onReady={(campaignId) => {
+          setDashboard((current) => current
+            ? {
+              ...current,
+              campaigns: current.campaigns.map((campaign) => campaign.id === campaignId ? { ...campaign, status: 'ready' } : campaign),
+            }
+            : current);
+          setEditingCampaign(null);
+        }}
+      />
     </div>
   );
 }
