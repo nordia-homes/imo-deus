@@ -384,8 +384,18 @@ export type MetaMarketingCampaignDraft = {
   locationLabel: string;
   headline: string;
   primaryText: string;
+  creativeFormat?: 'single_image' | 'carousel' | 'video';
   imageUrl?: string | null;
   imageAlt?: string | null;
+  mediaItems?: Array<{
+    url: string;
+    type: 'image' | 'video';
+    alt?: string | null;
+    name?: string | null;
+    source?: 'property' | 'upload';
+  }> | null;
+  videoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
   destinationUrl?: string | null;
   callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US';
   specialAdCategory: 'HOUSING';

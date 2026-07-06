@@ -621,6 +621,16 @@ export async function createMetaCampaignDraft(params: {
     buildPropertyDestinationUrl(params.agencyId, params.propertyId),
   ]);
   const coverImage = property.images?.find((image) => image?.url) || null;
+  const propertyMediaItems = (property.images || [])
+    .filter((image) => image?.url)
+    .slice(0, 10)
+    .map((image) => ({
+      url: image.url,
+      type: 'image' as const,
+      alt: image.alt || property.title || null,
+      name: null,
+      source: 'property' as const,
+    }));
   const now = nowIso();
   const draftRef = getCampaignDraftsCollection(params.agencyId).doc();
   const draft: MetaMarketingCampaignDraft = {
@@ -639,8 +649,12 @@ export async function createMetaCampaignDraft(params: {
     locationLabel: content.locationLabel,
     headline: content.headline,
     primaryText: content.primaryText,
+    creativeFormat: 'single_image',
     imageUrl: coverImage?.url || null,
     imageAlt: coverImage?.alt || property.title || null,
+    mediaItems: propertyMediaItems,
+    videoUrl: null,
+    videoThumbnailUrl: null,
     destinationUrl,
     callToAction: 'LEARN_MORE',
     specialAdCategory: 'HOUSING',
@@ -689,9 +703,13 @@ type CampaignDraftUpdateInput = Partial<Pick<
   | 'locationLabel'
   | 'headline'
   | 'primaryText'
+  | 'creativeFormat'
   | 'callToAction'
   | 'imageUrl'
   | 'imageAlt'
+  | 'mediaItems'
+  | 'videoUrl'
+  | 'videoThumbnailUrl'
   | 'destinationUrl'
 >>;
 
@@ -727,6 +745,9 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   if (typeof input.primaryText === 'string') {
     patch.primaryText = input.primaryText.replace(/\r\n/g, '\n').trim();
   }
+  if (['single_image', 'carousel', 'video'].includes(String(input.creativeFormat))) {
+    patch.creativeFormat = input.creativeFormat;
+  }
   if (['LEARN_MORE', 'SEND_MESSAGE', 'CONTACT_US'].includes(String(input.callToAction))) {
     patch.callToAction = input.callToAction;
   }
@@ -735,6 +756,24 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   }
   if (typeof input.imageAlt === 'string' || input.imageAlt === null) {
     patch.imageAlt = input.imageAlt ? input.imageAlt.trim().slice(0, 160) : null;
+  }
+  if (Array.isArray(input.mediaItems)) {
+    patch.mediaItems = input.mediaItems
+      .filter((item) => item && typeof item.url === 'string' && ['image', 'video'].includes(String(item.type)))
+      .slice(0, 10)
+      .map((item) => ({
+        url: item.url.trim(),
+        type: item.type,
+        alt: typeof item.alt === 'string' ? item.alt.trim().slice(0, 160) : null,
+        name: typeof item.name === 'string' ? item.name.trim().slice(0, 120) : null,
+        source: item.source === 'upload' ? 'upload' : 'property',
+      }));
+  }
+  if (typeof input.videoUrl === 'string' || input.videoUrl === null) {
+    patch.videoUrl = input.videoUrl ? input.videoUrl.trim() : null;
+  }
+  if (typeof input.videoThumbnailUrl === 'string' || input.videoThumbnailUrl === null) {
+    patch.videoThumbnailUrl = input.videoThumbnailUrl ? input.videoThumbnailUrl.trim() : null;
   }
   if (typeof input.destinationUrl === 'string') {
     patch.destinationUrl = input.destinationUrl.trim().slice(0, 500);
