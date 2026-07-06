@@ -525,8 +525,9 @@ export function MetaCampaignEditorDialog({
     { label: 'UTM configurat pentru masurare', ok: !form.utmEnabled || Boolean(form.utmSource && form.utmMedium && form.utmCampaign) },
   ] : [];
   const canMarkReady = validationItems.every((item) => item.ok);
-  const fieldShellClass = 'rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.10] to-white/[0.035] p-3 shadow-lg shadow-black/10';
-  const controlClass = 'border-white/15 bg-white/10 text-white shadow-inner shadow-black/10 ring-1 ring-white/5 transition focus-visible:ring-2 focus-visible:ring-emerald-300/50';
+  const fieldShellClass = 'rounded-2xl border border-rose-100/15 bg-gradient-to-br from-rose-200/[0.14] via-white/[0.075] to-emerald-200/[0.10] p-3 shadow-xl shadow-black/[0.12] ring-1 ring-white/5';
+  const highlightedFieldShellClass = 'rounded-2xl border border-emerald-200/30 bg-gradient-to-br from-emerald-200/[0.20] via-sky-200/[0.10] to-rose-200/[0.12] p-4 shadow-xl shadow-emerald-950/20 ring-1 ring-emerald-100/20';
+  const controlClass = 'border-white/20 bg-white/[0.16] text-white shadow-inner shadow-black/10 ring-1 ring-white/10 transition placeholder:text-white/35 focus-visible:ring-2 focus-visible:ring-emerald-200/60';
   const labelClass = 'text-xs font-semibold uppercase tracking-[0.16em] text-white/55';
 
   return (
@@ -612,11 +613,32 @@ export function MetaCampaignEditorDialog({
                       })}
                     </div>
                   </div>
+                  {form.objective === 'calls' ? (
+                    <div className={highlightedFieldShellClass}>
+                      <div className="flex flex-wrap items-start gap-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/[0.18] text-emerald-100">
+                          <PhoneCall className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <Label className={labelClass}>Numar telefon pentru reclama</Label>
+                          <Input
+                            value={form.phoneNumber}
+                            onChange={(event) => updateForm('phoneNumber', event.target.value)}
+                            placeholder="+40 7xx xxx xxx"
+                            className={cn(controlClass, 'mt-2')}
+                          />
+                          <p className="mt-2 text-xs leading-5 text-white/55">
+                            Numarul folosit de butonul „Suna acum”. Ideal, il preluam din setarile agentiei si il poti ajusta per campanie.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="grid gap-3 sm:grid-cols-2">
                 <div className={fieldShellClass}>
                   <Label className={labelClass}>Buget</Label>
-                  <div className="mt-2 grid grid-cols-[1fr_auto] items-center overflow-hidden rounded-md border border-white/15 bg-white/10">
+                  <div className="mt-2 grid grid-cols-[1fr_auto] items-center overflow-hidden rounded-md border border-white/20 bg-white/[0.16] shadow-inner shadow-black/10">
                     <Input value={form.budgetAmount} onChange={(event) => updateForm('budgetAmount', event.target.value)} inputMode="numeric" className="border-0 bg-transparent text-white focus-visible:ring-0" />
                     <span className="px-3 text-sm font-semibold text-white/70">RON</span>
                   </div>
@@ -915,7 +937,7 @@ export function MetaCampaignEditorDialog({
                   </p>
                 </div>
               </div>
-              {(form.destinationType === 'phone_call' || form.objective === 'calls') ? (
+              {form.destinationType === 'phone_call' && form.objective !== 'calls' ? (
                 <div className={fieldShellClass}>
                   <Label className={labelClass}>Numar telefon pentru reclama</Label>
                   <Input value={form.phoneNumber} onChange={(event) => updateForm('phoneNumber', event.target.value)} placeholder="+40 7xx xxx xxx" className={cn(controlClass, 'mt-2')} />
