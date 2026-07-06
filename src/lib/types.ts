@@ -328,6 +328,80 @@ export type FacebookPromotionSession = {
   startedAt: string;
 };
 
+export type MetaMarketingIntegrationPublicStatus = {
+  provider: 'meta';
+  connected: boolean;
+  connectedAt?: string | null;
+  updatedAt?: string | null;
+  lastError?: string | null;
+  lastAuthorizedByUid?: string | null;
+  metaUserId?: string | null;
+  metaUserName?: string | null;
+  scopes?: string[];
+  selectedBusiness?: {
+    id: string;
+    name: string;
+  } | null;
+  selectedAdAccount?: {
+    id: string;
+    accountId?: string | null;
+    name: string;
+    currency?: string | null;
+    timezoneName?: string | null;
+  } | null;
+  selectedPage?: {
+    id: string;
+    name: string;
+  } | null;
+  selectedInstagramAccount?: {
+    id: string;
+    username?: string | null;
+    name?: string | null;
+  } | null;
+  accessTier?: 'development' | 'standard' | 'advanced' | 'unknown';
+};
+
+export type MetaMarketingIntegrationPrivate = MetaMarketingIntegrationPublicStatus & {
+  agencyId: string;
+  encryptedAccessToken: string;
+  accessTokenExpiresAt?: string | null;
+  tokenEncryptionVersion: 1;
+};
+
+export type MetaMarketingCampaignDraft = {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  createdAt: string;
+  updatedAt: string;
+  createdByUid: string;
+  status: 'draft' | 'ready' | 'published' | 'paused' | 'completed' | 'error';
+  objective: 'leads' | 'messages' | 'traffic';
+  budgetType: 'daily' | 'lifetime';
+  budgetAmount: number;
+  currency: 'RON' | 'EUR' | 'USD';
+  durationDays: number;
+  locationLabel: string;
+  headline: string;
+  primaryText: string;
+  callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US';
+  specialAdCategory: 'HOUSING';
+  metaCampaignId?: string | null;
+  metaAdSetId?: string | null;
+  metaAdId?: string | null;
+  metaCreativeId?: string | null;
+  lastPublishError?: string | null;
+  insights?: {
+    spend: number;
+    impressions: number;
+    reach: number;
+    clicks: number;
+    leads: number;
+    costPerLead: number | null;
+    updatedAt: string;
+  } | null;
+};
+
 export type Property = {
   id: string;
   title: string;

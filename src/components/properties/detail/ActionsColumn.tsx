@@ -9,6 +9,7 @@ import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { FacebookGroupPromotionLauncherCard } from "./actions/FacebookGroupPromotionLauncherCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
+import { MetaAdsCard } from "./actions/MetaAdsCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, matchedBuyers }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, matchedBuyers: MatchedBuyer[] }) {
     
@@ -25,6 +26,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <PublishCard property={property} />
+            <MetaAdsCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />
             <FacebookPromotionCard />
             <SocialMediaCard property={property} />

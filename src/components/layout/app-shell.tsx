@@ -24,6 +24,7 @@ import {
   BadgeCheck,
   Copyright,
   PhoneCall,
+  Megaphone,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -102,6 +103,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Link href="/properties">
                         <Building2 />
                         <span>Proprietăți</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Marketing" asChild isActive={currentPath.startsWith('/marketing')}>
+                    <Link href="/marketing">
+                        <Megaphone />
+                        <span>Marketing</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
