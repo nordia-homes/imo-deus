@@ -1,0 +1,108 @@
+{
+  "createdAt": "2026-07-06T18:35:35.349Z",
+  "adAccountId": "act_1029339220032249",
+  "pageId": "1237866869402002",
+  "requiredSummary": {
+    "total": 6,
+    "success": 5,
+    "failed": 1,
+    "successRate": 83.33
+  },
+  "marketingSummary": {
+    "total": 1,
+    "success": 0,
+    "failed": 1,
+    "successRate": 0
+  },
+  "overallSummary": {
+    "total": 7,
+    "success": 5,
+    "failed": 2,
+    "successRate": 71.43
+  },
+  "metaRequirement": {
+    "marketingApiAccessTierCallsRequired": 500,
+    "minimumSuccessRate": 85,
+    "marketingTierRequirementMet": false,
+    "stoppedForRateLimit": true
+  },
+  "results": [
+    {
+      "sequence": 1,
+      "group": "required_feature",
+      "feature": "public_profile",
+      "path": "/me?fields=id,name",
+      "startedAt": "2026-07-06T18:35:24.039Z",
+      "finishedAt": "2026-07-06T18:35:25.212Z",
+      "ok": true,
+      "status": 200,
+      "message": null
+    },
+    {
+      "sequence": 2,
+      "group": "required_feature",
+      "feature": "pages_show_list",
+      "path": "/me/accounts?fields=id,name&limit=5",
+      "startedAt": "2026-07-06T18:35:26.228Z",
+      "finishedAt": "2026-07-06T18:35:26.602Z",
+      "ok": true,
+      "status": 200,
+      "message": null
+    },
+    {
+      "sequence": 3,
+      "group": "required_feature",
+      "feature": "business_management",
+      "path": "/me/businesses?fields=id,name&limit=5",
+      "startedAt": "2026-07-06T18:35:27.612Z",
+      "finishedAt": "2026-07-06T18:35:28.004Z",
+      "ok": true,
+      "status": 200,
+      "message": null
+    },
+    {
+      "sequence": 4,
+      "group": "required_feature",
+      "feature": "pages_read_engagement",
+      "path": "/1237866869402002?fields=id,name,followers_count",
+      "startedAt": "2026-07-06T18:35:29.012Z",
+      "finishedAt": "2026-07-06T18:35:30.007Z",
+      "ok": true,
+      "status": 200,
+      "message": null
+    },
+    {
+      "sequence": 5,
+      "group": "required_feature",
+      "feature": "ads_read",
+      "path": "/act_1029339220032249/insights?fields=spend,impressions,clicks&date_preset=last_7d",
+      "startedAt": "2026-07-06T18:35:31.012Z",
+      "finishedAt": "2026-07-06T18:35:32.705Z",
+      "ok": true,
+      "status": 200,
+      "message": null
+    },
+    {
+      "sequence": 6,
+      "group": "required_feature",
+      "feature": "ads_management",
+      "path": "/act_1029339220032249/campaigns?fields=id,name,status,objective&limit=5",
+      "startedAt": "2026-07-06T18:35:33.711Z",
+      "finishedAt": "2026-07-06T18:35:34.080Z",
+      "ok": false,
+      "status": 400,
+      "message": "There have been too many calls to this ad-account. Wait a bit and try again. For more info, please refer to https://developers.facebook.com/docs/graph-api/overview/rate-limiting#ads-management."
+    },
+    {
+      "sequence": 7,
+      "group": "marketing_api_access_tier",
+      "feature": "Marketing API Access Tier",
+      "path": "/act_1029339220032249/campaigns?fields=id,name,status,objective&limit=1",
+      "startedAt": "2026-07-06T18:35:35.092Z",
+      "finishedAt": "2026-07-06T18:35:35.348Z",
+      "ok": false,
+      "status": 400,
+      "message": "There have been too many calls to this ad-account. Wait a bit and try again. For more info, please refer to https://developers.facebook.com/docs/graph-api/overview/rate-limiting#ads-management."
+    }
+  ]
+}

@@ -21,7 +21,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "facebook:helper": "node scripts/facebook-promotion-helper.mjs"
+    "facebook:helper": "node scripts/facebook-promotion-helper.mjs",
+    "meta:test-runner": "node scripts/meta-api-test-runner.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
