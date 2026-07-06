@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { Eye, Images, Loader2, MessageCircle, Play, Save, Share2, ShieldCheck, ThumbsUp, Upload } from 'lucide-react';
+import { Eye, ImageIcon, Images, Loader2, MessageCircle, Play, Save, Share2, ShieldCheck, ThumbsUp, Upload } from 'lucide-react';
 import type { MetaMarketingCampaignDraft } from '@/lib/types';
 import { useAuth, useStorage, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -136,6 +136,19 @@ function ctaLabel(value: MetaMarketingCampaignDraft['callToAction']) {
   if (value === 'CONTACT_US') return 'Contacteaza-ne';
   if (value === 'SEND_MESSAGE') return 'Trimite mesaj';
   return 'Afla mai multe';
+}
+
+function collapseFacebookText(value: string, maxLength = 165) {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) {
+    return { text: normalized, isTruncated: false };
+  }
+  const cut = normalized.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(' ');
+  return {
+    text: (lastSpace > 120 ? cut.slice(0, lastSpace) : cut).trimEnd(),
+    isTruncated: true,
+  };
 }
 
 export function MetaCampaignEditorDialog({
@@ -292,10 +305,23 @@ export function MetaCampaignEditorDialog({
   const imageMediaItems = form?.mediaItems.filter((item) => item.type === 'image') || [];
   const videoMediaItems = form?.mediaItems.filter((item) => item.type === 'video') || [];
   const selectedImageUrl = form?.imageUrl || '';
+  const availableImageItems = [
+    ...imageMediaItems,
+    ...propertyImages
+      .filter((image) => image?.url && !imageMediaItems.some((item) => item.url === image.url))
+      .map((image) => ({
+        url: image.url,
+        type: 'image' as const,
+        alt: image.alt || fallbackTitle,
+        name: null,
+        source: 'property' as const,
+      })),
+  ];
   const previewImages = form?.creativeFormat === 'carousel'
-    ? imageMediaItems.slice(0, 6)
-    : imageMediaItems.filter((item) => item.url === selectedImageUrl).slice(0, 1);
+    ? availableImageItems.slice(0, 6)
+    : availableImageItems.filter((item) => item.url === selectedImageUrl).slice(0, 1);
   const activeVideoUrl = form?.videoUrl || videoMediaItems[0]?.url || '';
+  const collapsedText = collapseFacebookText(form?.primaryText || '');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -341,24 +367,34 @@ export function MetaCampaignEditorDialog({
                 <Label className="text-white/70">Format creativ</Label>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {[
-                    { value: 'single_image', label: 'O imagine' },
-                    { value: 'carousel', label: 'Carusel imagini' },
-                    { value: 'video', label: 'Video' },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={cn(
-                        'rounded-xl border px-3 py-2 text-sm font-semibold',
-                        form.creativeFormat === option.value
-                          ? 'border-emerald-300 bg-emerald-400/15 text-emerald-100'
-                          : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
-                      )}
-                      onClick={() => updateForm('creativeFormat', option.value as CampaignForm['creativeFormat'])}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                    { value: 'single_image', label: 'O imagine', helper: 'Postare simpla', icon: ImageIcon },
+                    { value: 'carousel', label: 'Carusel', helper: 'Mai multe poze', icon: Images },
+                    { value: 'video', label: 'Video', helper: 'Creativ video', icon: Play },
+                  ].map((option) => {
+                    const Icon = option.icon;
+                    const isActive = form.creativeFormat === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={cn(
+                          'flex min-h-20 items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition',
+                          isActive
+                            ? 'border-emerald-300 bg-emerald-300 text-[#06351f] shadow-emerald-900/20 ring-2 ring-emerald-200/40'
+                            : 'border-white/15 bg-white/10 text-white hover:border-white/30 hover:bg-white/15'
+                        )}
+                        onClick={() => updateForm('creativeFormat', option.value as CampaignForm['creativeFormat'])}
+                      >
+                        <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', isActive ? 'bg-white/70' : 'bg-white/10')}>
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-semibold">{option.label}</span>
+                          <span className={cn('block text-xs', isActive ? 'text-[#0a5735]' : 'text-white/55')}>{option.helper}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -413,44 +449,6 @@ export function MetaCampaignEditorDialog({
                 <Input value={form.destinationUrl} onChange={(event) => updateForm('destinationUrl', event.target.value)} className="border-white/15 bg-white/10 text-white" />
               </div>
 
-              {propertyImages.length ? (
-                <div className="space-y-2">
-                  <Label className="text-white/70">Imagini din proprietate</Label>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                    {propertyImages.map((image) => (
-                      <button
-                        key={image.url}
-                        type="button"
-                        className={cn(
-                          'aspect-square overflow-hidden rounded-xl border bg-white/5',
-                          form.imageUrl === image.url ? 'border-emerald-300 ring-2 ring-emerald-300/30' : 'border-white/10'
-                        )}
-                        onClick={() => {
-                          selectImage(image.url, image.alt || fallbackTitle);
-                          setForm((current) => {
-                            if (!current) return current;
-                            const exists = current.mediaItems.some((item) => item.url === image.url);
-                            if (exists) return current;
-                            return {
-                              ...current,
-                              mediaItems: [...current.mediaItems, {
-                                url: image.url,
-                                type: 'image' as const,
-                                alt: image.alt || fallbackTitle,
-                                name: null,
-                                source: 'property' as const,
-                              }].slice(0, 10),
-                            };
-                          });
-                        }}
-                      >
-                        <img src={image.url} alt={image.alt || fallbackTitle} className="h-full w-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
               <div className="space-y-2">
                 <Label className="text-white/70">Incarca media pentru reclama</Label>
                 <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 px-4 py-4 text-sm font-semibold text-white/75 hover:bg-white/10">
@@ -468,11 +466,11 @@ export function MetaCampaignEditorDialog({
                 <p className="text-xs text-white/45">Media incarcata se salveaza in Firebase Storage si poate fi folosita in draft.</p>
               </div>
 
-              {imageMediaItems.length ? (
+              {availableImageItems.length ? (
                 <div className="space-y-2">
-                  <Label className="text-white/70">Media selectata</Label>
+                  <Label className="text-white/70">Imagini pentru reclama</Label>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                    {imageMediaItems.map((item) => (
+                    {availableImageItems.map((item) => (
                       <button
                         key={item.url}
                         type="button"
@@ -480,7 +478,15 @@ export function MetaCampaignEditorDialog({
                           'aspect-square overflow-hidden rounded-xl border bg-white/5',
                           form.imageUrl === item.url ? 'border-emerald-300 ring-2 ring-emerald-300/30' : 'border-white/10'
                         )}
-                        onClick={() => selectImage(item.url, item.alt || fallbackTitle)}
+                        onClick={() => {
+                          selectImage(item.url, item.alt || fallbackTitle);
+                          setForm((current) => {
+                            if (!current) return current;
+                            const exists = current.mediaItems.some((mediaItem) => mediaItem.url === item.url);
+                            if (exists) return current;
+                            return { ...current, mediaItems: [...current.mediaItems, item].slice(0, 10) };
+                          });
+                        }}
                       >
                         <img src={item.url} alt={item.alt || fallbackTitle} className="h-full w-full object-cover" />
                       </button>
@@ -531,20 +537,27 @@ export function MetaCampaignEditorDialog({
                   </div>
                 </div>
                 <div className="px-4 pb-3 text-sm leading-5 text-[#050505]">
-                  <div className="relative">
-                    <p className={cn('whitespace-pre-line', !isTextExpanded && 'line-clamp-3 pr-20')}>
-                      {form.primaryText || 'Textul reclamei va aparea aici.'}
-                    </p>
-                    {!isTextExpanded && form.primaryText.length > 140 ? (
-                      <button
-                        type="button"
-                        className="absolute bottom-0 right-0 bg-white pl-1 font-semibold text-[#65676b]"
-                        onClick={() => setIsTextExpanded(true)}
-                      >
-                        ....mai mult
-                      </button>
-                    ) : null}
-                    {isTextExpanded && form.primaryText.length > 140 ? (
+                  <div>
+                    {isTextExpanded ? (
+                      <p className="whitespace-pre-line">
+                        {form.primaryText || 'Textul reclamei va aparea aici.'}
+                      </p>
+                    ) : (
+                      <p>
+                        {collapsedText.text || 'Textul reclamei va aparea aici.'}
+                        {collapsedText.isTruncated ? ' ' : ''}
+                        {collapsedText.isTruncated ? (
+                          <button
+                            type="button"
+                            className="inline font-semibold text-[#65676b]"
+                            onClick={() => setIsTextExpanded(true)}
+                          >
+                            ....mai mult
+                          </button>
+                        ) : null}
+                      </p>
+                    )}
+                    {isTextExpanded && collapsedText.isTruncated ? (
                       <button
                         type="button"
                         className="mt-1 font-semibold text-[#65676b]"
