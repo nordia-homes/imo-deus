@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { Eye, ImageIcon, Images, Loader2, MessageCircle, Play, Save, Share2, ShieldCheck, ThumbsUp, Upload } from 'lucide-react';
+import { Eye, ImageIcon, Images, Loader2, MessageCircle, PhoneCall, Play, Save, Share2, ShieldCheck, ThumbsUp, Upload } from 'lucide-react';
 import type { MetaMarketingCampaignDraft } from '@/lib/types';
 import { useAuth, useStorage, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +47,7 @@ type CampaignForm = {
   videoThumbnailUrl: string;
   destinationUrl: string;
   destinationType: NonNullable<MetaMarketingCampaignDraft['destinationType']>;
+  phoneNumber: string;
   utmEnabled: boolean;
   utmSource: string;
   utmMedium: string;
@@ -135,6 +136,7 @@ function buildFormFromCampaign(campaign: MetaMarketingCampaignDraft): CampaignFo
     videoThumbnailUrl: campaign.videoThumbnailUrl || '',
     destinationUrl: campaign.destinationUrl || '',
     destinationType: campaign.destinationType || 'property_page',
+    phoneNumber: campaign.phoneNumber || '',
     utmEnabled: campaign.utmEnabled !== false,
     utmSource: campaign.utmSource || 'meta',
     utmMedium: campaign.utmMedium || 'paid_social',
@@ -175,6 +177,7 @@ function serializeForm(form: CampaignForm) {
     videoThumbnailUrl: form.videoThumbnailUrl || null,
     destinationUrl: form.destinationUrl,
     destinationType: form.destinationType,
+    phoneNumber: form.phoneNumber || null,
     utmEnabled: form.utmEnabled,
     utmSource: form.utmSource || null,
     utmMedium: form.utmMedium || null,
@@ -193,22 +196,10 @@ function getDomain(url?: string) {
 }
 
 function ctaLabel(value: MetaMarketingCampaignDraft['callToAction']) {
+  if (value === 'CALL_NOW') return 'Suna acum';
   if (value === 'CONTACT_US') return 'Contacteaza-ne';
   if (value === 'SEND_MESSAGE') return 'Trimite mesaj';
   return 'Afla mai multe';
-}
-
-function collapseFacebookText(value: string, maxLength = 165) {
-  const normalized = value.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= maxLength) {
-    return { text: normalized, isTruncated: false };
-  }
-  const cut = normalized.slice(0, maxLength);
-  const lastSpace = cut.lastIndexOf(' ');
-  return {
-    text: (lastSpace > 120 ? cut.slice(0, lastSpace) : cut).trimEnd(),
-    isTruncated: true,
-  };
 }
 
 function withUtmParameters(form: CampaignForm) {
@@ -256,11 +247,9 @@ export function MetaCampaignEditorDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingReady, setIsMarkingReady] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  const [isTextExpanded, setIsTextExpanded] = useState(false);
 
   useEffect(() => {
     setForm(campaign ? buildFormFromCampaign(campaign) : null);
-    setIsTextExpanded(false);
   }, [campaign?.id, campaign?.updatedAt]);
 
   function updateForm<K extends keyof CampaignForm>(key: K, value: CampaignForm[K]) {
@@ -288,6 +277,16 @@ export function MetaCampaignEditorDialog({
           callToAction: 'LEARN_MORE',
           destinationType: 'property_page',
           utmContent: 'traffic_creative',
+        };
+      }
+      if (objective === 'calls') {
+        return {
+          ...current,
+          objective,
+          optimizationGoal: 'leads',
+          callToAction: 'CALL_NOW',
+          destinationType: 'phone_call',
+          utmContent: 'call_creative',
         };
       }
       return {
@@ -512,16 +511,15 @@ export function MetaCampaignEditorDialog({
     ? imageMediaItems.slice(0, 6)
     : imageMediaItems.filter((item) => item.url === selectedImageUrl).slice(0, 1);
   const activeVideoUrl = form?.videoUrl || videoMediaItems[0]?.url || '';
-  const collapsedText = collapseFacebookText(form?.primaryText || '');
   const destinationPreviewUrl = form ? withUtmParameters(form) : '';
   const totalBudget = form ? (Number(form.budgetAmount) || 0) * (form.budgetType === 'daily' ? Number(form.durationDays) || 1 : 1) : 0;
-  const hasValidUrl = Boolean(form?.destinationUrl && /^https?:\/\//.test(form.destinationUrl));
+  const hasValidUrl = Boolean(form && (form.objective === 'calls' ? form.phoneNumber.trim() : form.destinationUrl && /^https?:\/\//.test(form.destinationUrl)));
   const validationItems = form ? [
     { label: 'Nume campanie, ad set si ad completate', ok: Boolean(form.campaignName && form.adSetName && form.adName) },
     { label: 'Buget minim 10 RON si durata valida', ok: Number(form.budgetAmount) >= 10 && Number(form.durationDays) >= 1 },
     { label: 'Text, titlu si CTA completate', ok: Boolean(form.primaryText.trim() && form.headline.trim() && form.callToAction) },
     { label: 'Creative media selectat pentru formatul ales', ok: form.creativeFormat === 'video' ? Boolean(activeVideoUrl) : imageMediaItems.length > 0 },
-    { label: 'Link destinatie public si valid', ok: hasValidUrl },
+    { label: form.objective === 'calls' ? 'Numar de telefon completat' : 'Link destinatie public si valid', ok: hasValidUrl },
     { label: 'Audienta Housing pe oras / zona metropolitana', ok: Boolean(form.locationLabel.trim()) && Number(form.radiusKm) >= 15 },
     { label: 'Cel putin un placement selectat', ok: form.placements.length > 0 },
     { label: 'UTM configurat pentru masurare', ok: !form.utmEnabled || Boolean(form.utmSource && form.utmMedium && form.utmCampaign) },
@@ -568,11 +566,12 @@ export function MetaCampaignEditorDialog({
                   </div>
                   <div className="space-y-2">
                     <Label className={labelClass}>Obiectiv campanie</Label>
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="grid gap-2 sm:grid-cols-4">
                       {[
                         { value: 'leads', label: 'Lead-uri', helper: 'Formular / contact', icon: ShieldCheck },
                         { value: 'messages', label: 'Mesaje', helper: 'Messenger', icon: MessageCircle },
                         { value: 'traffic', label: 'Trafic', helper: 'Pagina proprietatii', icon: Eye },
+                        { value: 'calls', label: 'Apeluri', helper: 'Suna acum', icon: PhoneCall },
                       ].map((option) => {
                         const Icon = option.icon;
                         const selected = form.objective === option.value;
@@ -599,9 +598,6 @@ export function MetaCampaignEditorDialog({
                         );
                       })}
                     </div>
-                    <p className="rounded-xl border border-sky-200/20 bg-sky-200/10 p-3 text-xs leading-5 text-sky-50/80">
-                      Cand schimbi obiectivul, editorul ajusteaza automat optimizarea, CTA-ul, destinatia si UTM content.
-                    </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -641,6 +637,7 @@ export function MetaCampaignEditorDialog({
                           <SelectItem value="LEARN_MORE">Afla mai multe</SelectItem>
                           <SelectItem value="CONTACT_US">Contacteaza-ne</SelectItem>
                           <SelectItem value="SEND_MESSAGE">Trimite mesaj</SelectItem>
+                          <SelectItem value="CALL_NOW">Suna acum</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -884,6 +881,7 @@ export function MetaCampaignEditorDialog({
                       <SelectItem value="lead_form">Formular lead</SelectItem>
                       <SelectItem value="whatsapp">WhatsApp</SelectItem>
                       <SelectItem value="messenger">Messenger</SelectItem>
+                      <SelectItem value="phone_call">Apel telefonic</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="mt-2 text-xs leading-5 text-white/45">
@@ -904,6 +902,15 @@ export function MetaCampaignEditorDialog({
                   </p>
                 </div>
               </div>
+              {(form.destinationType === 'phone_call' || form.objective === 'calls') ? (
+                <div className={fieldShellClass}>
+                  <Label className={labelClass}>Numar telefon pentru reclama</Label>
+                  <Input value={form.phoneNumber} onChange={(event) => updateForm('phoneNumber', event.target.value)} placeholder="+40 7xx xxx xxx" className={cn(controlClass, 'mt-2')} />
+                  <p className="mt-2 text-xs leading-5 text-white/45">
+                    Acesta este numarul afisat pentru CTA-ul de apel. In varianta finala poate fi precompletat din setarile agentiei si ajustat per campanie.
+                  </p>
+                </div>
+              ) : null}
               {form.utmEnabled ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className={fieldShellClass}>
@@ -1062,36 +1069,9 @@ export function MetaCampaignEditorDialog({
                   </div>
                 </div>
                 <div className="px-4 pb-3 text-sm leading-5 text-[#050505]">
-                  <div>
-                    {isTextExpanded ? (
-                      <p className="whitespace-pre-line">
-                        {form.primaryText || 'Textul reclamei va aparea aici.'}
-                      </p>
-                    ) : (
-                      <p>
-                        {collapsedText.text || 'Textul reclamei va aparea aici.'}
-                        {collapsedText.isTruncated ? ' ' : ''}
-                        {collapsedText.isTruncated ? (
-                          <button
-                            type="button"
-                            className="inline font-semibold text-[#65676b]"
-                            onClick={() => setIsTextExpanded(true)}
-                          >
-                            ....mai mult
-                          </button>
-                        ) : null}
-                      </p>
-                    )}
-                    {isTextExpanded && collapsedText.isTruncated ? (
-                      <button
-                        type="button"
-                        className="mt-1 font-semibold text-[#65676b]"
-                        onClick={() => setIsTextExpanded(false)}
-                      >
-                        Arata mai putin
-                      </button>
-                    ) : null}
-                  </div>
+                  <p className="whitespace-pre-line">
+                    {form.primaryText || 'Textul reclamei va aparea aici.'}
+                  </p>
                 </div>
                 {form.creativeFormat === 'video' ? (
                   activeVideoUrl ? (

@@ -379,7 +379,7 @@ export type MetaMarketingCampaignDraft = {
   campaignName?: string | null;
   adSetName?: string | null;
   adName?: string | null;
-  objective: 'leads' | 'messages' | 'traffic';
+  objective: 'leads' | 'messages' | 'traffic' | 'calls';
   budgetType: 'daily' | 'lifetime';
   budgetAmount: number;
   currency: 'RON' | 'EUR' | 'USD';
@@ -414,13 +414,14 @@ export type MetaMarketingCampaignDraft = {
   videoUrl?: string | null;
   videoThumbnailUrl?: string | null;
   destinationUrl?: string | null;
-  destinationType?: 'property_page' | 'lead_form' | 'whatsapp' | 'messenger';
+  destinationType?: 'property_page' | 'lead_form' | 'whatsapp' | 'messenger' | 'phone_call';
+  phoneNumber?: string | null;
   utmEnabled?: boolean;
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
   utmContent?: string | null;
-  callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US';
+  callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US' | 'CALL_NOW';
   specialAdCategory: 'HOUSING';
   metaCampaignId?: string | null;
   metaAdSetId?: string | null;

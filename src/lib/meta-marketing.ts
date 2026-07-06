@@ -746,6 +746,7 @@ type CampaignDraftUpdateInput = Partial<Pick<
   | 'videoThumbnailUrl'
   | 'destinationUrl'
   | 'destinationType'
+  | 'phoneNumber'
   | 'utmEnabled'
   | 'utmSource'
   | 'utmMedium'
@@ -764,7 +765,7 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
     lastPublishError: null,
   };
 
-  if (['leads', 'messages', 'traffic'].includes(String(input.objective))) {
+  if (['leads', 'messages', 'traffic', 'calls'].includes(String(input.objective))) {
     patch.objective = input.objective;
   }
   if (typeof input.campaignName === 'string' || input.campaignName === null) {
@@ -837,7 +838,7 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
         primaryText: String(variant.primaryText || '').replace(/\r\n/g, '\n').trim().slice(0, 5000),
       }));
   }
-  if (['LEARN_MORE', 'SEND_MESSAGE', 'CONTACT_US'].includes(String(input.callToAction))) {
+  if (['LEARN_MORE', 'SEND_MESSAGE', 'CONTACT_US', 'CALL_NOW'].includes(String(input.callToAction))) {
     patch.callToAction = input.callToAction;
   }
   if (typeof input.imageUrl === 'string' || input.imageUrl === null) {
@@ -867,8 +868,11 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   if (typeof input.destinationUrl === 'string') {
     patch.destinationUrl = input.destinationUrl.trim().slice(0, 500);
   }
-  if (['property_page', 'lead_form', 'whatsapp', 'messenger'].includes(String(input.destinationType))) {
+  if (['property_page', 'lead_form', 'whatsapp', 'messenger', 'phone_call'].includes(String(input.destinationType))) {
     patch.destinationType = input.destinationType;
+  }
+  if (typeof input.phoneNumber === 'string' || input.phoneNumber === null) {
+    patch.phoneNumber = input.phoneNumber ? input.phoneNumber.replace(/[^\d+()\-\s.]/g, '').trim().slice(0, 32) : null;
   }
   if (typeof input.utmEnabled === 'boolean') {
     patch.utmEnabled = input.utmEnabled;
@@ -966,13 +970,16 @@ export async function markMetaCampaignReady(agencyId: string, campaignId: string
   const mediaItems = draft.mediaItems || [];
   const imageItems = mediaItems.filter((item) => item.type === 'image');
   const hasMedia = draft.creativeFormat === 'video' ? Boolean(draft.videoUrl || mediaItems.some((item) => item.type === 'video')) : imageItems.length > 0;
-  const hasValidDestination = Boolean(draft.destinationUrl && /^https?:\/\//.test(draft.destinationUrl));
+  const hasValidDestination = draft.objective === 'calls'
+    ? Boolean(draft.phoneNumber)
+    : Boolean(draft.destinationUrl && /^https?:\/\//.test(draft.destinationUrl));
   const readyErrors = [
     !draft.campaignName || !draft.adSetName || !draft.adName ? 'Completeaza numele campaniei, ad setului si reclamei.' : null,
     Number(draft.budgetAmount) < 10 || Number(draft.durationDays) < 1 ? 'Bugetul sau durata campaniei nu sunt valide.' : null,
     !draft.headline || !draft.primaryText ? 'Completeaza titlul si textul reclamei.' : null,
     !hasMedia ? 'Selecteaza media pentru reclama.' : null,
     !hasValidDestination ? 'Adauga un link de destinatie valid.' : null,
+    draft.objective === 'calls' && !draft.phoneNumber ? 'Adauga numarul de telefon pentru apeluri.' : null,
     !draft.locationLabel || Number(draft.radiusKm || 0) < 15 ? 'Completeaza audienta Housing pe oras sau zona metropolitana.' : null,
     !draft.placements?.length ? 'Selecteaza cel putin un placement.' : null,
     draft.utmEnabled && (!draft.utmSource || !draft.utmMedium || !draft.utmCampaign) ? 'Completeaza parametrii UTM sau dezactiveaza tracking-ul.' : null,
