@@ -267,6 +267,40 @@ export function MetaCampaignEditorDialog({
     setForm((current) => current ? { ...current, [key]: value } : current);
   }
 
+  function handleObjectiveChange(objective: CampaignForm['objective']) {
+    setForm((current) => {
+      if (!current) return current;
+      if (objective === 'messages') {
+        return {
+          ...current,
+          objective,
+          optimizationGoal: 'messages',
+          callToAction: 'SEND_MESSAGE',
+          destinationType: 'messenger',
+          utmContent: 'messages_creative',
+        };
+      }
+      if (objective === 'traffic') {
+        return {
+          ...current,
+          objective,
+          optimizationGoal: 'landing_page_views',
+          callToAction: 'LEARN_MORE',
+          destinationType: 'property_page',
+          utmContent: 'traffic_creative',
+        };
+      }
+      return {
+        ...current,
+        objective,
+        optimizationGoal: 'leads',
+        callToAction: 'CONTACT_US',
+        destinationType: 'lead_form',
+        utmContent: 'lead_creative',
+      };
+    });
+  }
+
   function togglePlacement(placement: CampaignForm['placements'][number]) {
     setForm((current) => {
       if (!current) return current;
@@ -493,10 +527,13 @@ export function MetaCampaignEditorDialog({
     { label: 'UTM configurat pentru masurare', ok: !form.utmEnabled || Boolean(form.utmSource && form.utmMedium && form.utmCampaign) },
   ] : [];
   const canMarkReady = validationItems.every((item) => item.ok);
+  const fieldShellClass = 'rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.10] to-white/[0.035] p-3 shadow-lg shadow-black/10';
+  const controlClass = 'border-white/15 bg-white/10 text-white shadow-inner shadow-black/10 ring-1 ring-white/5 transition focus-visible:ring-2 focus-visible:ring-emerald-300/50';
+  const labelClass = 'text-xs font-semibold uppercase tracking-[0.16em] text-white/55';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92vh] max-w-6xl flex-col overflow-hidden border-white/10 bg-[#0F1E33] p-0 text-white">
+      <DialogContent className="flex h-[92vh] max-w-6xl flex-col overflow-hidden border-white/10 bg-[#0F1E33] p-0 text-white">
         <DialogHeader className="shrink-0 border-b border-white/10 px-6 py-5">
           <DialogTitle>Configureaza campania Meta</DialogTitle>
           <DialogDescription className="text-white/60">
@@ -505,54 +542,79 @@ export function MetaCampaignEditorDialog({
         </DialogHeader>
 
         {form ? (
-          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)]">
-            <div className="min-h-0 overflow-y-auto px-6 py-5 pr-4 lg:max-h-[calc(92vh-10.5rem)]">
+          <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)]">
+            <div className="min-h-0 overflow-y-auto px-6 py-5 pr-4">
               <div className="space-y-5">
-                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <section className="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.10] via-white/[0.045] to-emerald-300/[0.04] p-5 shadow-2xl shadow-black/15">
                   <div>
                     <p className="text-sm font-semibold text-white">Setari campanie</p>
                     <p className="mt-1 text-xs text-white/45">Alege obiectivul, bugetul, durata si CTA-ul reclamei.</p>
                   </div>
                   <div className="grid gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-white/70">Nume campanie</Label>
-                      <Input value={form.campaignName} onChange={(event) => updateForm('campaignName', event.target.value)} className="border-white/15 bg-white/10 text-white" />
+                    <div className={fieldShellClass}>
+                      <Label className={labelClass}>Nume campanie</Label>
+                      <Input value={form.campaignName} onChange={(event) => updateForm('campaignName', event.target.value)} className={cn(controlClass, 'mt-2')} />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="text-white/70">Nume ad set</Label>
-                        <Input value={form.adSetName} onChange={(event) => updateForm('adSetName', event.target.value)} className="border-white/15 bg-white/10 text-white" />
+                      <div className={fieldShellClass}>
+                        <Label className={labelClass}>Nume ad set</Label>
+                        <Input value={form.adSetName} onChange={(event) => updateForm('adSetName', event.target.value)} className={cn(controlClass, 'mt-2')} />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-white/70">Nume ad</Label>
-                        <Input value={form.adName} onChange={(event) => updateForm('adName', event.target.value)} className="border-white/15 bg-white/10 text-white" />
+                      <div className={fieldShellClass}>
+                        <Label className={labelClass}>Nume ad</Label>
+                        <Input value={form.adName} onChange={(event) => updateForm('adName', event.target.value)} className={cn(controlClass, 'mt-2')} />
                       </div>
                     </div>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label className="text-white/70">Obiectiv</Label>
-                  <Select value={form.objective} onValueChange={(value) => updateForm('objective', value as CampaignForm['objective'])}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="leads">Lead-uri</SelectItem>
-                      <SelectItem value="messages">Mesaje</SelectItem>
-                      <SelectItem value="traffic">Trafic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70">Buget</Label>
-                  <div className="grid grid-cols-[1fr_auto] items-center overflow-hidden rounded-md border border-white/15 bg-white/10">
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Obiectiv campanie</Label>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {[
+                        { value: 'leads', label: 'Lead-uri', helper: 'Formular / contact', icon: ShieldCheck },
+                        { value: 'messages', label: 'Mesaje', helper: 'Messenger', icon: MessageCircle },
+                        { value: 'traffic', label: 'Trafic', helper: 'Pagina proprietatii', icon: Eye },
+                      ].map((option) => {
+                        const Icon = option.icon;
+                        const selected = form.objective === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={cn(
+                              'flex min-h-20 items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition',
+                              selected
+                                ? 'border-sky-200 bg-sky-200 text-[#08243d] shadow-sky-950/20 ring-2 ring-sky-200/40'
+                                : 'border-white/15 bg-white/10 text-white hover:border-white/30 hover:bg-white/15'
+                            )}
+                            onClick={() => handleObjectiveChange(option.value as CampaignForm['objective'])}
+                          >
+                            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', selected ? 'bg-white/70' : 'bg-white/10')}>
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block font-semibold">{option.label}</span>
+                              <span className={cn('block text-xs', selected ? 'text-[#12405d]' : 'text-white/55')}>{option.helper}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="rounded-xl border border-sky-200/20 bg-sky-200/10 p-3 text-xs leading-5 text-sky-50/80">
+                      Cand schimbi obiectivul, editorul ajusteaza automat optimizarea, CTA-ul, destinatia si UTM content.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                <div className={fieldShellClass}>
+                  <Label className={labelClass}>Buget</Label>
+                  <div className="mt-2 grid grid-cols-[1fr_auto] items-center overflow-hidden rounded-md border border-white/15 bg-white/10">
                     <Input value={form.budgetAmount} onChange={(event) => updateForm('budgetAmount', event.target.value)} inputMode="numeric" className="border-0 bg-transparent text-white focus-visible:ring-0" />
                     <span className="px-3 text-sm font-semibold text-white/70">RON</span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70">Durata zile</Label>
-                  <Input value={form.durationDays} onChange={(event) => updateForm('durationDays', event.target.value)} inputMode="numeric" className="border-white/15 bg-white/10 text-white" />
+                <div className={fieldShellClass}>
+                  <Label className={labelClass}>Durata zile</Label>
+                  <Input value={form.durationDays} onChange={(event) => updateForm('durationDays', event.target.value)} inputMode="numeric" className={cn(controlClass, 'mt-2')} />
                 </div>
               </div>
 
@@ -644,7 +706,7 @@ export function MetaCampaignEditorDialog({
                   </div>
                 </section>
 
-                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <section className="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.10] via-white/[0.045] to-sky-300/[0.04] p-5 shadow-2xl shadow-black/15">
                   <div>
                     <p className="text-sm font-semibold text-white">Creativ reclama</p>
                     <p className="mt-1 text-xs text-white/45">Controleaza formatul, titlul si textul care apar in feed.</p>
@@ -762,7 +824,7 @@ export function MetaCampaignEditorDialog({
               </div>
                 </section>
 
-                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <section className="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.10] via-white/[0.045] to-amber-300/[0.04] p-5 shadow-2xl shadow-black/15">
                   <div>
                     <p className="text-sm font-semibold text-white">Audienta si destinatie</p>
                     <p className="mt-1 text-xs text-white/45">Pentru Housing, promovarea trebuie sa ramana conforma cu limitarile Meta.</p>
@@ -803,15 +865,18 @@ export function MetaCampaignEditorDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-white/70">Link destinatie</Label>
-                <Input value={form.destinationUrl} onChange={(event) => updateForm('destinationUrl', event.target.value)} className="border-white/15 bg-white/10 text-white" />
+              <div className={fieldShellClass}>
+                <Label className={labelClass}>Link destinatie</Label>
+                <Input value={form.destinationUrl} onChange={(event) => updateForm('destinationUrl', event.target.value)} placeholder="https://imodeus.ro/proprietati/..." className={cn(controlClass, 'mt-2')} />
+                <p className="mt-2 text-xs leading-5 text-white/45">
+                  Aici pui pagina unde ajunge clientul dupa click. Recomandat: pagina publica a proprietatii sau formularul de lead.
+                </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-white/70">Destinatie</Label>
+                <div className={fieldShellClass}>
+                  <Label className={labelClass}>Tip destinatie</Label>
                   <Select value={form.destinationType} onValueChange={(value) => updateForm('destinationType', value as CampaignForm['destinationType'])}>
-                    <SelectTrigger className="border-white/15 bg-white/10 text-white">
+                    <SelectTrigger className={cn(controlClass, 'mt-2')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -821,27 +886,46 @@ export function MetaCampaignEditorDialog({
                       <SelectItem value="messenger">Messenger</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="mt-2 text-xs leading-5 text-white/45">
+                    Alegerea schimba intentia reclamei: pagina pentru trafic, lead form pentru contacte, Messenger/WhatsApp pentru conversatii.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-white/70">Tracking UTM</Label>
+                <div className={fieldShellClass}>
+                  <Label className={labelClass}>Tracking UTM</Label>
                   <button
                     type="button"
-                    className={cn(
-                      'h-10 w-full rounded-md border px-3 text-left text-sm font-semibold',
-                      form.utmEnabled ? 'border-emerald-300 bg-emerald-300 text-[#06351f]' : 'border-white/15 bg-white/10 text-white/70'
-                    )}
+                    className={cn('mt-2 h-11 w-full rounded-xl border px-3 text-left text-sm font-semibold transition', form.utmEnabled ? 'border-emerald-300 bg-emerald-300 text-[#06351f]' : 'border-white/15 bg-white/10 text-white/70 hover:bg-white/15')}
                     onClick={() => updateForm('utmEnabled', !form.utmEnabled)}
                   >
                     {form.utmEnabled ? 'UTM activ' : 'UTM inactiv'}
                   </button>
+                  <p className="mt-2 text-xs leading-5 text-white/45">
+                    UTM-urile ajuta analytics-ul sa stie ca lead-ul sau click-ul a venit din reclama Meta.
+                  </p>
                 </div>
               </div>
               {form.utmEnabled ? (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Input value={form.utmSource} onChange={(event) => updateForm('utmSource', event.target.value)} placeholder="utm_source" className="border-white/15 bg-white/10 text-white" />
-                  <Input value={form.utmMedium} onChange={(event) => updateForm('utmMedium', event.target.value)} placeholder="utm_medium" className="border-white/15 bg-white/10 text-white" />
-                  <Input value={form.utmCampaign} onChange={(event) => updateForm('utmCampaign', event.target.value)} placeholder="utm_campaign" className="border-white/15 bg-white/10 text-white" />
-                  <Input value={form.utmContent} onChange={(event) => updateForm('utmContent', event.target.value)} placeholder="utm_content" className="border-white/15 bg-white/10 text-white" />
+                  <div className={fieldShellClass}>
+                    <Label className={labelClass}>Sursa</Label>
+                    <Input value={form.utmSource} onChange={(event) => updateForm('utmSource', event.target.value)} placeholder="meta" className={cn(controlClass, 'mt-2')} />
+                    <p className="mt-2 text-xs text-white/45">Recomandat: meta</p>
+                  </div>
+                  <div className={fieldShellClass}>
+                    <Label className={labelClass}>Mediu</Label>
+                    <Input value={form.utmMedium} onChange={(event) => updateForm('utmMedium', event.target.value)} placeholder="paid_social" className={cn(controlClass, 'mt-2')} />
+                    <p className="mt-2 text-xs text-white/45">Recomandat: paid_social</p>
+                  </div>
+                  <div className={fieldShellClass}>
+                    <Label className={labelClass}>Campanie</Label>
+                    <Input value={form.utmCampaign} onChange={(event) => updateForm('utmCampaign', event.target.value)} placeholder="property_123" className={cn(controlClass, 'mt-2')} />
+                    <p className="mt-2 text-xs text-white/45">Nume stabil pentru raportare.</p>
+                  </div>
+                  <div className={fieldShellClass}>
+                    <Label className={labelClass}>Continut</Label>
+                    <Input value={form.utmContent} onChange={(event) => updateForm('utmContent', event.target.value)} placeholder="lead_creative" className={cn(controlClass, 'mt-2')} />
+                    <p className="mt-2 text-xs text-white/45">Se schimba automat dupa obiectiv.</p>
+                  </div>
                   <p className="sm:col-span-2 break-all rounded-xl border border-white/10 bg-black/10 p-3 text-xs leading-5 text-white/45">
                     URL final: {destinationPreviewUrl || 'Adauga link destinatie pentru preview UTM.'}
                   </p>
@@ -849,7 +933,7 @@ export function MetaCampaignEditorDialog({
               ) : null}
                 </section>
 
-                <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <section className="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.10] via-white/[0.045] to-violet-300/[0.04] p-5 shadow-2xl shadow-black/15">
                   <div>
                     <p className="text-sm font-semibold text-white">Media reclama</p>
                     <p className="mt-1 text-xs text-white/45">Selecteaza pozele proprietatii sau incarca imagini si video dedicate reclamei.</p>
@@ -960,8 +1044,8 @@ export function MetaCampaignEditorDialog({
               </div>
             </div>
 
-            <aside className="min-h-0 border-t border-white/10 bg-white/[0.03] px-6 py-5 lg:border-l lg:border-t-0 lg:pl-5">
-              <div className="sticky top-0 max-h-[calc(92vh-10.5rem)] space-y-4 overflow-y-auto pr-1">
+            <aside className="min-h-0 overflow-y-auto border-t border-white/10 bg-white/[0.03] px-6 py-5 pb-6 lg:border-l lg:border-t-0 lg:pl-5">
+              <div className="space-y-4 pr-1">
             <div className={cn('space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4', form.previewDevice === 'mobile' ? 'mx-auto max-w-[430px]' : 'w-full')}>
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-white">Preview Facebook feed</p>
