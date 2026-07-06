@@ -384,6 +384,9 @@ export type MetaMarketingCampaignDraft = {
   locationLabel: string;
   headline: string;
   primaryText: string;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  destinationUrl?: string | null;
   callToAction: 'LEARN_MORE' | 'SEND_MESSAGE' | 'CONTACT_US';
   specialAdCategory: 'HOUSING';
   metaCampaignId?: string | null;

@@ -2,11 +2,13 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypt
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import type {
+  Agency,
   MetaMarketingCampaignDraft,
   MetaMarketingIntegrationPrivate,
   MetaMarketingIntegrationPublicStatus,
   Property,
 } from '@/lib/types';
+import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
 const META_PROVIDER = 'meta';
 const PRIVATE_COLLECTION = 'agencyPrivateIntegrations';
@@ -578,6 +580,15 @@ function buildDefaultCampaignContent(property: Property) {
   };
 }
 
+async function buildPropertyDestinationUrl(agencyId: string, propertyId: string) {
+  const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
+  const agency = agencySnapshot.exists
+    ? ({ id: agencySnapshot.id, ...(agencySnapshot.data() as Omit<Agency, 'id'>) } as Agency)
+    : ({ id: agencyId } as Agency);
+  const publicUrl = buildAgencyPublicUrl(agency, `/properties/${propertyId}`);
+  return publicUrl.startsWith('http') ? publicUrl : `${getAppBaseUrl()}${publicUrl}`;
+}
+
 export async function createMetaCampaignDraft(params: {
   agencyId: string;
   propertyId: string;
@@ -604,7 +615,11 @@ export async function createMetaCampaignDraft(params: {
     throw new Error('Conecteaza Meta si selecteaza Business, Ad Account si Page inainte sa pregatesti campania.');
   }
 
-  const content = buildDefaultCampaignContent(property);
+  const [content, destinationUrl] = await Promise.all([
+    Promise.resolve(buildDefaultCampaignContent(property)),
+    buildPropertyDestinationUrl(params.agencyId, params.propertyId),
+  ]);
+  const coverImage = property.images?.find((image) => image?.url) || null;
   const now = nowIso();
   const draftRef = getCampaignDraftsCollection(params.agencyId).doc();
   const draft: MetaMarketingCampaignDraft = {
@@ -623,6 +638,9 @@ export async function createMetaCampaignDraft(params: {
     locationLabel: content.locationLabel,
     headline: content.headline,
     primaryText: content.primaryText,
+    imageUrl: coverImage?.url || null,
+    imageAlt: coverImage?.alt || property.title || null,
+    destinationUrl,
     callToAction: 'LEARN_MORE',
     specialAdCategory: 'HOUSING',
     metaCampaignId: null,
@@ -659,6 +677,90 @@ export async function listPropertyMetaCampaigns(agencyId: string, propertyId: st
     id: docSnapshot.id,
     ...(docSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
   })) as MetaMarketingCampaignDraft[];
+}
+
+type CampaignDraftUpdateInput = Partial<Pick<
+  MetaMarketingCampaignDraft,
+  | 'objective'
+  | 'budgetType'
+  | 'budgetAmount'
+  | 'durationDays'
+  | 'locationLabel'
+  | 'headline'
+  | 'primaryText'
+  | 'callToAction'
+  | 'imageUrl'
+  | 'imageAlt'
+  | 'destinationUrl'
+>>;
+
+function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
+  const patch: CampaignDraftUpdateInput & {
+    updatedAt: string;
+    status: MetaMarketingCampaignDraft['status'];
+    lastPublishError: null;
+  } = {
+    updatedAt: nowIso(),
+    status: 'draft',
+    lastPublishError: null,
+  };
+
+  if (['leads', 'messages', 'traffic'].includes(String(input.objective))) {
+    patch.objective = input.objective;
+  }
+  if (['daily', 'lifetime'].includes(String(input.budgetType))) {
+    patch.budgetType = input.budgetType;
+  }
+  if (Number.isFinite(Number(input.budgetAmount))) {
+    patch.budgetAmount = Math.max(10, Math.round(Number(input.budgetAmount)));
+  }
+  if (Number.isFinite(Number(input.durationDays))) {
+    patch.durationDays = Math.min(90, Math.max(1, Math.round(Number(input.durationDays))));
+  }
+  if (typeof input.locationLabel === 'string') {
+    patch.locationLabel = input.locationLabel.trim().slice(0, 120);
+  }
+  if (typeof input.headline === 'string') {
+    patch.headline = input.headline.trim().slice(0, 80);
+  }
+  if (typeof input.primaryText === 'string') {
+    patch.primaryText = input.primaryText.trim().slice(0, 500);
+  }
+  if (['LEARN_MORE', 'SEND_MESSAGE', 'CONTACT_US'].includes(String(input.callToAction))) {
+    patch.callToAction = input.callToAction;
+  }
+  if (typeof input.imageUrl === 'string' || input.imageUrl === null) {
+    patch.imageUrl = input.imageUrl ? input.imageUrl.trim() : null;
+  }
+  if (typeof input.imageAlt === 'string' || input.imageAlt === null) {
+    patch.imageAlt = input.imageAlt ? input.imageAlt.trim().slice(0, 160) : null;
+  }
+  if (typeof input.destinationUrl === 'string') {
+    patch.destinationUrl = input.destinationUrl.trim().slice(0, 500);
+  }
+
+  return patch;
+}
+
+export async function updateMetaCampaignDraft(agencyId: string, campaignId: string, input: CampaignDraftUpdateInput) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new Error('Campania Meta nu a fost gasita.');
+  }
+
+  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
+  if (draft.agencyId !== agencyId) {
+    throw new Error('Campania Meta nu apartine acestei agentii.');
+  }
+
+  const patch = cleanCampaignDraftUpdate(input);
+  await ref.set(patch, { merge: true });
+  const updatedSnapshot = await ref.get();
+  return {
+    id: updatedSnapshot.id,
+    ...(updatedSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
+  } as MetaMarketingCampaignDraft;
 }
 
 export async function refreshMetaCampaignInsights(agencyId: string, campaignId: string) {

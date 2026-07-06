@@ -146,6 +146,7 @@ export default function MarketingPage() {
   const [assets, setAssets] = useState<MetaAssetsPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAssetsLoading, setIsAssetsLoading] = useState(false);
+  const [hasAutoLoadedAssets, setHasAutoLoadedAssets] = useState(false);
   const [activeAction, setActiveAction] = useState<'connect' | 'disconnect' | 'assets' | 'save' | null>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const [selectedAdAccountId, setSelectedAdAccountId] = useState('');
@@ -187,6 +188,7 @@ export default function MarketingPage() {
 
   async function loadAssets() {
     if (!user) return;
+    setHasAutoLoadedAssets(true);
     setIsAssetsLoading(true);
     setActiveAction('assets');
     try {
@@ -217,6 +219,11 @@ export default function MarketingPage() {
   useEffect(() => {
     void loadDashboard();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !status?.connected || assets || hasAutoLoadedAssets) return;
+    void loadAssets();
+  }, [user, status?.connected, assets, hasAutoLoadedAssets]);
 
   useEffect(() => {
     const meta = searchParams?.get('meta');
@@ -439,8 +446,8 @@ export default function MarketingPage() {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-white">Asset-uri campanii</p>
-                  <p className="text-sm text-white/60">Lista vine direct din contul Meta conectat.</p>
+                  <p className="font-semibold text-white">Alege conturile folosite la reclame</p>
+                  <p className="text-sm text-white/60">Selecteaza Business Manager-ul, contul de reclame si pagina care apare in anunturi.</p>
                 </div>
                 <Button
                   type="button"
@@ -450,44 +457,58 @@ export default function MarketingPage() {
                   onClick={() => void loadAssets()}
                 >
                   {activeAction === 'assets' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                  Incarca asset-uri
+                  Actualizeaza lista Meta
                 </Button>
               </div>
 
               {assets ? (
                 <div className="grid gap-3">
-                  <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-                    <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
-                      <SelectValue placeholder="Alege Business Portfolio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assets.businesses.map((business) => (
-                        <SelectItem key={business.id} value={business.id}>{business.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedAdAccountId} onValueChange={setSelectedAdAccountId}>
-                    <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
-                      <SelectValue placeholder="Alege Ad Account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assets.adAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name} {account.currency ? `(${account.currency})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedPageId} onValueChange={setSelectedPageId}>
-                    <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
-                      <SelectValue placeholder="Alege Facebook Page" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assets.pages.map((page) => (
-                        <SelectItem key={page.id} value={page.id}>{page.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">1. Business Manager</p>
+                      <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
+                        <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
+                          <SelectValue placeholder="Alege Business Portfolio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assets.businesses.map((business) => (
+                            <SelectItem key={business.id} value={business.id}>{business.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">2. Cont de reclame</p>
+                      <Select value={selectedAdAccountId} onValueChange={setSelectedAdAccountId}>
+                        <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
+                          <SelectValue placeholder="Alege Ad Account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assets.adAccounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.name} {account.currency ? `(${account.currency})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">3. Pagina Facebook</p>
+                      <Select value={selectedPageId} onValueChange={setSelectedPageId}>
+                        <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
+                          <SelectValue placeholder="Alege Facebook Page" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assets.pages.map((page) => (
+                            <SelectItem key={page.id} value={page.id}>{page.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <Button
                     type="button"
                     disabled={!isAdmin || !selectedBusinessId || !selectedAdAccountId || !selectedPageId || activeAction === 'save'}
@@ -497,6 +518,10 @@ export default function MarketingPage() {
                     {activeAction === 'save' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                     Salveaza selectia
                   </Button>
+                </div>
+              ) : status?.connected ? (
+                <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm text-white/60">
+                  {isAssetsLoading ? 'Se cauta Business Manager, Ad Account si Page in contul Meta conectat...' : 'Apasa Actualizeaza lista Meta daca optiunile nu apar automat.'}
                 </div>
               ) : null}
             </div>
