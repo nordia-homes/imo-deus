@@ -104,9 +104,11 @@ function formatStatusLabel(status: MetaMarketingCampaignDraft['status']) {
   const labels: Record<MetaMarketingCampaignDraft['status'], string> = {
     draft: 'Draft',
     ready: 'Pregatita',
+    publishing: 'Se publica',
     published: 'Activa',
     paused: 'Pauzata',
     completed: 'Finalizata',
+    deleted: 'Stearsa',
     error: 'Eroare',
   };
   return labels[status] || status;
@@ -116,9 +118,11 @@ function getStatusClass(status: MetaMarketingCampaignDraft['status']) {
   const classes: Record<MetaMarketingCampaignDraft['status'], string> = {
     draft: 'border-slate-400/25 bg-slate-400/12 text-slate-100',
     ready: 'border-sky-300/25 bg-sky-400/15 text-sky-100',
+    publishing: 'border-cyan-300/25 bg-cyan-400/15 text-cyan-100',
     published: 'border-emerald-300/25 bg-emerald-400/15 text-emerald-100',
     paused: 'border-amber-300/25 bg-amber-400/15 text-amber-100',
     completed: 'border-violet-300/25 bg-violet-400/15 text-violet-100',
+    deleted: 'border-slate-500/25 bg-slate-500/15 text-slate-200',
     error: 'border-rose-300/25 bg-rose-400/15 text-rose-100',
   };
   return classes[status] || classes.draft;
@@ -825,6 +829,7 @@ export default function MarketingPage() {
             : current);
           setEditingCampaign(null);
         }}
+        onPublished={upsertCampaign}
       />
     </div>
   );

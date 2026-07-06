@@ -70,6 +70,12 @@ type MetaUser = {
   name?: string;
 };
 
+type MetaCreateResponse = {
+  id?: string;
+  hash?: string;
+  images?: Record<string, { hash?: string; url?: string }>;
+};
+
 type AssetSelection = {
   businessId: string;
   adAccountId: string;
@@ -207,6 +213,19 @@ async function metaRequest<T>(path: string, accessToken: string, init?: RequestI
   }
 
   return payload as T;
+}
+
+async function metaFormRequest<T>(path: string, accessToken: string, params: Record<string, string | number | boolean | null | undefined>) {
+  const body = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    body.set(key, String(value));
+  });
+  return metaRequest<T>(path, accessToken, {
+    method: 'POST',
+    body: body.toString(),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
 }
 
 async function requestShortLivedToken(code: string) {
@@ -1018,6 +1037,407 @@ export async function deleteMetaCampaignDraft(agencyId: string, campaignId: stri
   await ref.delete();
   await syncPropertyMetaMarketingStatus(agencyId, draft.propertyId);
   return { id: campaignId, deleted: true };
+}
+
+function appendPublishLog(
+  draft: MetaMarketingCampaignDraft,
+  entry: NonNullable<MetaMarketingCampaignDraft['publishLog']>[number]
+) {
+  return [...(draft.publishLog || []), entry].slice(-25);
+}
+
+function withDraftUtmParameters(draft: MetaMarketingCampaignDraft) {
+  if (!draft.destinationUrl || !draft.utmEnabled) return draft.destinationUrl || '';
+  try {
+    const url = new URL(draft.destinationUrl);
+    if (draft.utmSource) url.searchParams.set('utm_source', draft.utmSource);
+    if (draft.utmMedium) url.searchParams.set('utm_medium', draft.utmMedium);
+    if (draft.utmCampaign) url.searchParams.set('utm_campaign', draft.utmCampaign);
+    if (draft.utmContent) url.searchParams.set('utm_content', draft.utmContent);
+    return url.toString();
+  } catch {
+    return draft.destinationUrl;
+  }
+}
+
+function getPublishObjective(draft: MetaMarketingCampaignDraft) {
+  if (draft.objective === 'traffic') return 'OUTCOME_TRAFFIC';
+  if (draft.objective === 'messages') return 'OUTCOME_ENGAGEMENT';
+  return 'OUTCOME_LEADS';
+}
+
+function getPublishOptimizationGoal(draft: MetaMarketingCampaignDraft) {
+  if (draft.objective === 'traffic') return 'LINK_CLICKS';
+  if (draft.objective === 'messages') return 'CONVERSATIONS';
+  return 'LEADS';
+}
+
+function getMetaCtaType(draft: MetaMarketingCampaignDraft) {
+  if (draft.objective === 'calls') return 'CALL_NOW';
+  return draft.callToAction || 'LEARN_MORE';
+}
+
+function buildHousingTargeting(draft: MetaMarketingCampaignDraft, property: Property) {
+  const latitude = Number(property.latitude);
+  const longitude = Number(property.longitude);
+  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    return {
+      geo_locations: {
+        custom_locations: [{
+          latitude,
+          longitude,
+          radius: Math.max(15, Math.min(80, Number(draft.radiusKm || 25))),
+          distance_unit: 'kilometer',
+        }],
+      },
+      publisher_platforms: ['facebook', 'instagram'],
+      facebook_positions: draft.placements?.some((placement) => placement === 'facebook_story') ? ['feed', 'story'] : ['feed'],
+      instagram_positions: draft.placements?.some((placement) => placement === 'instagram_story') ? ['stream', 'story'] : ['stream'],
+    };
+  }
+
+  return {
+    geo_locations: {
+      countries: ['RO'],
+    },
+    publisher_platforms: ['facebook', 'instagram'],
+    facebook_positions: ['feed'],
+    instagram_positions: ['stream'],
+  };
+}
+
+async function validateRemoteMedia(url: string, expectedType: 'image' | 'video') {
+  if (!/^https:\/\//.test(url)) {
+    throw new Error('Media pentru Meta trebuie sa fie disponibila public prin HTTPS.');
+  }
+  try {
+    const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+    const contentType = response.headers.get('content-type') || '';
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    if (response.ok && expectedType === 'image' && contentType && !contentType.startsWith('image/')) {
+      throw new Error('Fisierul selectat nu pare sa fie imagine.');
+    }
+    if (response.ok && expectedType === 'video' && contentType && !contentType.startsWith('video/')) {
+      throw new Error('Fisierul selectat nu pare sa fie video.');
+    }
+    if (contentLength > 0) {
+      const maxBytes = expectedType === 'video' ? 250 * 1024 * 1024 : 8 * 1024 * 1024;
+      if (contentLength > maxBytes) {
+        throw new Error(expectedType === 'video'
+          ? 'Video-ul depaseste limita de siguranta de 250 MB.'
+          : 'Imaginea depaseste limita de siguranta de 8 MB.');
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error && /Media|Fisierul|Video-ul|Imaginea/.test(error.message)) throw error;
+  }
+}
+
+function validateMetaCampaignForPublish(
+  draft: MetaMarketingCampaignDraft,
+  integration: MetaMarketingIntegrationPublicStatus,
+  property: Property
+) {
+  const errors: string[] = [];
+  const mediaItems = draft.mediaItems || [];
+  const imageItems = mediaItems.filter((item) => item.type === 'image');
+  const hasVideo = Boolean(draft.videoUrl || mediaItems.some((item) => item.type === 'video'));
+  const destinationUrl = withDraftUtmParameters(draft);
+
+  if (!integration.connected) errors.push('Conecteaza Meta inainte de publicare.');
+  if (!integration.selectedBusiness) errors.push('Selecteaza Business Manager-ul folosit la reclame.');
+  if (!integration.selectedAdAccount) errors.push('Selecteaza Ad Account-ul folosit la reclame.');
+  if (!integration.selectedPage) errors.push('Selecteaza pagina Facebook folosita in reclama.');
+  if (!draft.campaignName || !draft.adSetName || !draft.adName) errors.push('Completeaza numele campaniei, ad setului si reclamei.');
+  if (Number(draft.budgetAmount) < 10) errors.push('Bugetul minim este 10 RON.');
+  if (Number(draft.durationDays) < 1) errors.push('Durata campaniei trebuie sa fie de cel putin o zi.');
+  if (!draft.headline?.trim() || !draft.primaryText?.trim()) errors.push('Completeaza titlul si textul reclamei.');
+  if (!draft.locationLabel?.trim()) errors.push('Completeaza orasul sau zona metropolitana promovata.');
+  if (Number(draft.radiusKm || 0) < 15) errors.push('Pentru Housing, raza audientei trebuie sa fie de minimum 15 km.');
+  if (!Number.isFinite(Number(property.latitude)) || !Number.isFinite(Number(property.longitude))) {
+    errors.push('Proprietatea trebuie sa aiba coordonate valide pentru targetarea Housing pe zona larga.');
+  }
+  if (!draft.placements?.length) errors.push('Selecteaza cel putin un placement.');
+  if (draft.creativeFormat === 'video' && !hasVideo) errors.push('Selecteaza un video pentru formatul video.');
+  if (draft.creativeFormat !== 'video' && !imageItems.length) errors.push('Selecteaza cel putin o imagine pentru reclama.');
+  if (draft.creativeFormat === 'carousel' && imageItems.length < 2) errors.push('Caruselul are nevoie de cel putin doua imagini.');
+  if (draft.objective === 'calls' && !draft.phoneNumber?.trim()) errors.push('Adauga numarul de telefon pentru obiectivul Apeluri.');
+  if (!destinationUrl || !/^https:\/\//.test(destinationUrl)) {
+    errors.push('Linkul de destinatie trebuie sa fie public si HTTPS.');
+  }
+  if (draft.utmEnabled && (!draft.utmSource || !draft.utmMedium || !draft.utmCampaign)) {
+    errors.push('Completeaza parametrii UTM sau dezactiveaza tracking-ul.');
+  }
+
+  return { ok: errors.length === 0, errors, destinationUrl };
+}
+
+async function uploadMetaImage(adAccountId: string, accessToken: string, imageUrl: string) {
+  await validateRemoteMedia(imageUrl, 'image');
+  const response = await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/adimages`, accessToken, {
+    url: imageUrl,
+  });
+  return response.hash || Object.values(response.images || {})[0]?.hash || null;
+}
+
+async function uploadMetaVideo(adAccountId: string, accessToken: string, videoUrl: string) {
+  await validateRemoteMedia(videoUrl, 'video');
+  const response = await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/advideos`, accessToken, {
+    file_url: videoUrl,
+  });
+  return response.id || null;
+}
+
+function buildCreativeObjectStorySpec(params: {
+  draft: MetaMarketingCampaignDraft;
+  pageId: string;
+  destinationUrl: string;
+  imageHashes: string[];
+  videoId?: string | null;
+}) {
+  const { draft, pageId, destinationUrl, imageHashes, videoId } = params;
+  const ctaType = getMetaCtaType(draft);
+  const ctaValue = draft.objective === 'calls'
+    ? { link: destinationUrl || draft.destinationUrl || undefined, phone_number: draft.phoneNumber || undefined }
+    : { link: destinationUrl };
+
+  if (draft.creativeFormat === 'video' && videoId) {
+    return {
+      page_id: pageId,
+      video_data: {
+        video_id: videoId,
+        title: draft.headline,
+        message: draft.primaryText,
+        image_url: draft.videoThumbnailUrl || draft.imageUrl || undefined,
+        call_to_action: { type: ctaType, value: ctaValue },
+      },
+    };
+  }
+
+  if (draft.creativeFormat === 'carousel' && imageHashes.length > 1) {
+    return {
+      page_id: pageId,
+      link_data: {
+        message: draft.primaryText,
+        link: destinationUrl,
+        caption: 'HOUSING',
+        call_to_action: { type: ctaType, value: ctaValue },
+        child_attachments: imageHashes.slice(0, 10).map((imageHash) => ({
+          link: destinationUrl,
+          name: draft.headline,
+          description: draft.locationLabel,
+          image_hash: imageHash,
+        })),
+      },
+    };
+  }
+
+  return {
+    page_id: pageId,
+    link_data: {
+      message: draft.primaryText,
+      link: destinationUrl,
+      name: draft.headline,
+      description: draft.locationLabel,
+      image_hash: imageHashes[0],
+      call_to_action: { type: ctaType, value: ctaValue },
+    },
+  };
+}
+
+export async function publishMetaCampaign(agencyId: string, campaignId: string, requestedByUid?: string) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new Error('Campania Meta nu a fost gasita.');
+  }
+
+  let draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
+  if (draft.agencyId !== agencyId) {
+    throw new Error('Campania Meta nu apartine acestei agentii.');
+  }
+
+  const [{ accessToken, integration }, propertySnapshot] = await Promise.all([
+    getAccessTokenForAgency(agencyId),
+    adminDb.collection('agencies').doc(agencyId).collection('properties').doc(draft.propertyId).get(),
+  ]);
+  if (!propertySnapshot.exists) {
+    throw new Error('Proprietatea campaniei nu a fost gasita.');
+  }
+  const property = { id: propertySnapshot.id, ...(propertySnapshot.data() as Omit<Property, 'id'>) } as Property;
+  const validation = validateMetaCampaignForPublish(draft, integration, property);
+  if (!validation.ok) {
+    throw new Error(validation.errors.join(' '));
+  }
+
+  const adAccountId = integration.selectedAdAccount?.id;
+  const pageId = integration.selectedPage?.id;
+  if (!adAccountId || !pageId) {
+    throw new Error('Selecteaza Ad Account si Page inainte de publicare.');
+  }
+
+  const startedAt = nowIso();
+  let publishLog = appendPublishLog(draft, {
+    at: startedAt,
+    status: 'publishing',
+    message: requestedByUid ? `Publicare pornita de ${requestedByUid}.` : 'Publicare pornita.',
+  });
+  await ref.set({
+    status: 'publishing',
+    lastPublishAttemptAt: startedAt,
+    publishAttempts: (draft.publishAttempts || 0) + 1,
+    lastPublishError: null,
+    publishLog,
+    updatedAt: startedAt,
+  }, { merge: true });
+  draft = { ...draft, status: 'publishing', publishLog };
+
+  try {
+    const campaignResponse = draft.metaCampaignId
+      ? { id: draft.metaCampaignId }
+      : await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/campaigns`, accessToken, {
+        name: draft.campaignName || draft.headline,
+        objective: getPublishObjective(draft),
+        special_ad_categories: JSON.stringify(['HOUSING']),
+        status: 'PAUSED',
+      });
+    const metaCampaignId = campaignResponse.id;
+    if (!metaCampaignId) throw new Error('Meta nu a returnat Campaign ID.');
+    publishLog = appendPublishLog(draft, { at: nowIso(), status: 'publishing', message: 'Campaign creat in Meta.', metaObjectId: metaCampaignId });
+    draft = { ...draft, metaCampaignId, publishLog };
+    await ref.set({
+      metaCampaignId,
+      publishLog,
+    }, { merge: true });
+
+    const imageItems = (draft.mediaItems || []).filter((item) => item.type === 'image');
+    const selectedImageItems = draft.creativeFormat === 'carousel'
+      ? imageItems.slice(0, 10)
+      : imageItems.filter((item) => item.url === draft.imageUrl).slice(0, 1);
+    const imageHashes = draft.creativeFormat === 'video'
+      ? []
+      : await Promise.all((selectedImageItems.length ? selectedImageItems : imageItems.slice(0, 1)).map((item) => uploadMetaImage(adAccountId, accessToken, item.url)));
+    const cleanImageHashes = imageHashes.filter(Boolean) as string[];
+    const videoUrl = draft.videoUrl || (draft.mediaItems || []).find((item) => item.type === 'video')?.url || '';
+    const metaVideoId = draft.creativeFormat === 'video' && videoUrl
+      ? await uploadMetaVideo(adAccountId, accessToken, videoUrl)
+      : null;
+    if (draft.creativeFormat !== 'video' && !cleanImageHashes.length) {
+      throw new Error('Meta nu a returnat hash pentru imagine.');
+    }
+    if (draft.creativeFormat === 'video' && !metaVideoId) {
+      throw new Error('Meta nu a returnat Video ID.');
+    }
+
+    const adSetResponse = draft.metaAdSetId
+      ? { id: draft.metaAdSetId }
+      : await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/adsets`, accessToken, {
+        name: draft.adSetName || `${draft.locationLabel} - Housing`,
+        campaign_id: metaCampaignId,
+        billing_event: 'IMPRESSIONS',
+        optimization_goal: getPublishOptimizationGoal(draft),
+        status: 'PAUSED',
+        targeting: JSON.stringify(buildHousingTargeting(draft, property)),
+        promoted_object: JSON.stringify({ page_id: pageId }),
+        ...(draft.budgetType === 'lifetime'
+          ? { lifetime_budget: Math.round(Number(draft.budgetAmount || 0) * 100) }
+          : { daily_budget: Math.round(Number(draft.budgetAmount || 0) * 100) }),
+        ...(draft.startsAt ? { start_time: draft.startsAt } : {}),
+        ...(draft.endsAt ? { end_time: draft.endsAt } : {}),
+      });
+    const metaAdSetId = adSetResponse.id;
+    if (!metaAdSetId) throw new Error('Meta nu a returnat Ad Set ID.');
+    publishLog = appendPublishLog(draft, { at: nowIso(), status: 'publishing', message: 'Ad Set creat in Meta.', metaObjectId: metaAdSetId });
+    draft = { ...draft, metaAdSetId, metaImageHash: cleanImageHashes[0] || null, metaVideoId, publishLog };
+    await ref.set({
+      metaAdSetId,
+      metaImageHash: cleanImageHashes[0] || null,
+      metaVideoId,
+      publishLog,
+    }, { merge: true });
+
+    const creativeResponse = draft.metaCreativeId
+      ? { id: draft.metaCreativeId }
+      : await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/adcreatives`, accessToken, {
+        name: `${draft.adName || draft.headline} - creative`,
+        object_story_spec: JSON.stringify(buildCreativeObjectStorySpec({
+          draft,
+          pageId,
+          destinationUrl: validation.destinationUrl,
+          imageHashes: cleanImageHashes,
+          videoId: metaVideoId,
+        })),
+      });
+    const metaCreativeId = creativeResponse.id;
+    if (!metaCreativeId) throw new Error('Meta nu a returnat Creative ID.');
+    publishLog = appendPublishLog(draft, { at: nowIso(), status: 'publishing', message: 'Creative creat in Meta.', metaObjectId: metaCreativeId });
+    draft = { ...draft, metaCreativeId, publishLog };
+    await ref.set({
+      metaCreativeId,
+      publishLog,
+    }, { merge: true });
+
+    const adResponse = draft.metaAdId
+      ? { id: draft.metaAdId }
+      : await metaFormRequest<MetaCreateResponse>(`/${normalizeAdAccountId(adAccountId)}/ads`, accessToken, {
+        name: draft.adName || draft.headline,
+        adset_id: metaAdSetId,
+        creative: JSON.stringify({ creative_id: metaCreativeId }),
+        status: 'PAUSED',
+      });
+    const metaAdId = adResponse.id;
+    if (!metaAdId) throw new Error('Meta nu a returnat Ad ID.');
+
+    const finishedAt = nowIso();
+    publishLog = appendPublishLog({ ...draft, metaAdId }, {
+      at: finishedAt,
+      status: 'published',
+      message: 'Campania a fost publicata in Meta in status PAUSED pentru verificare finala.',
+      metaObjectId: metaAdId,
+    });
+    await ref.set({
+      status: 'published',
+      metaCampaignId,
+      metaAdSetId,
+      metaCreativeId,
+      metaAdId,
+      metaImageHash: cleanImageHashes[0] || null,
+      metaVideoId,
+      lastPublishError: null,
+      updatedAt: finishedAt,
+      publishLog,
+    }, { merge: true });
+    await propertySnapshot.ref.set({
+      metaMarketing: {
+        latestCampaignDraftId: campaignId,
+        status: 'published',
+        updatedAt: finishedAt,
+      },
+    }, { merge: true });
+
+    const updatedSnapshot = await ref.get();
+    return {
+      id: updatedSnapshot.id,
+      ...(updatedSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
+    } as MetaMarketingCampaignDraft;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Publicarea Meta a esuat.';
+    const failedAt = nowIso();
+    await ref.set({
+      status: 'error',
+      lastPublishError: message,
+      updatedAt: failedAt,
+      publishLog: appendPublishLog(draft, { at: failedAt, status: 'error', message }),
+    }, { merge: true });
+    await propertySnapshot.ref.set({
+      metaMarketing: {
+        latestCampaignDraftId: campaignId,
+        status: 'error',
+        updatedAt: failedAt,
+      },
+    }, { merge: true });
+    throw error;
+  }
 }
 
 export async function refreshMetaCampaignInsights(agencyId: string, campaignId: string) {

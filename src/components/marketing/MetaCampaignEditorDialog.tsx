@@ -69,6 +69,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onSaved?: (campaign: MetaMarketingCampaignDraft) => void;
   onReady?: (campaignId: string) => void;
+  onPublished?: (campaign: MetaMarketingCampaignDraft) => void;
 };
 
 async function authorizedFetch(
@@ -238,6 +239,7 @@ export function MetaCampaignEditorDialog({
   onOpenChange,
   onSaved,
   onReady,
+  onPublished,
 }: Props) {
   const { user } = useUser();
   const auth = useAuth();
@@ -246,6 +248,7 @@ export function MetaCampaignEditorDialog({
   const [form, setForm] = useState<CampaignForm | null>(campaign ? buildFormFromCampaign(campaign) : null);
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingReady, setIsMarkingReady] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   useEffect(() => {
@@ -492,6 +495,38 @@ export function MetaCampaignEditorDialog({
     }
   }
 
+  async function handlePublish() {
+    if (!user || !campaign) return;
+    setIsPublishing(true);
+    try {
+      const saved = await saveDraft();
+      const campaignId = saved?.id || campaign.id;
+      const response = await authorizedFetch(user, auth, `/api/marketing/meta/property-campaigns/${campaignId}/publish`, {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Nu am putut publica reclama Meta.');
+      }
+      const publishedCampaign = payload.campaign as MetaMarketingCampaignDraft;
+      setForm(buildFormFromCampaign(publishedCampaign));
+      onPublished?.(publishedCampaign);
+      onSaved?.(publishedCampaign);
+      toast({
+        title: 'Campanie publicata in Meta',
+        description: 'Campania a fost creata in Meta in status PAUSED pentru verificare finala.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Publicare Meta esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut publica reclama Meta.',
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
   const imageMediaItems = form?.mediaItems.filter((item) => item.type === 'image') || [];
   const videoMediaItems = form?.mediaItems.filter((item) => item.type === 'video') || [];
   const selectedImageUrl = form?.imageUrl || '';
@@ -536,7 +571,7 @@ export function MetaCampaignEditorDialog({
         <DialogHeader className="shrink-0 border-b border-white/10 px-6 py-5">
           <DialogTitle>Configureaza campania Meta</DialogTitle>
           <DialogDescription className="text-white/60">
-            Pregateste reclama Housing pentru aceasta proprietate. Publicarea live ramane blocata pana la App Review.
+            Pregateste reclama Housing pentru aceasta proprietate si public-o in Meta cand validarea este completa.
           </DialogDescription>
         </DialogHeader>
 
@@ -1215,13 +1250,17 @@ export function MetaCampaignEditorDialog({
         ) : null}
 
         <DialogFooter className="shrink-0 gap-2 border-t border-white/10 bg-[#0F1E33] px-6 py-4 sm:gap-0">
-          <Button type="button" variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void handleSaveDraft()} disabled={isSaving || isMarkingReady || !form}>
+          <Button type="button" variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void handleSaveDraft()} disabled={isSaving || isMarkingReady || isPublishing || !form}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Salveaza draft
           </Button>
-          <Button type="button" className="bg-emerald-400 text-black hover:bg-emerald-300 disabled:opacity-45" onClick={() => void handleMarkReady()} disabled={isSaving || isMarkingReady || !form || !canMarkReady}>
+          <Button type="button" variant="outline" className="border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/15 disabled:opacity-45" onClick={() => void handleMarkReady()} disabled={isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
             {isMarkingReady ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
             Pregateste pentru publicare
+          </Button>
+          <Button type="button" className="bg-emerald-400 text-black hover:bg-emerald-300 disabled:opacity-45" onClick={() => void handlePublish()} disabled={isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
+            {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Publica in Meta
           </Button>
         </DialogFooter>
       </DialogContent>

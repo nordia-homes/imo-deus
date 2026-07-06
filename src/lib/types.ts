@@ -375,7 +375,7 @@ export type MetaMarketingCampaignDraft = {
   createdAt: string;
   updatedAt: string;
   createdByUid: string;
-  status: 'draft' | 'ready' | 'published' | 'paused' | 'completed' | 'error';
+  status: 'draft' | 'ready' | 'publishing' | 'published' | 'paused' | 'completed' | 'deleted' | 'error';
   campaignName?: string | null;
   adSetName?: string | null;
   adName?: string | null;
@@ -427,7 +427,17 @@ export type MetaMarketingCampaignDraft = {
   metaAdSetId?: string | null;
   metaAdId?: string | null;
   metaCreativeId?: string | null;
+  metaImageHash?: string | null;
+  metaVideoId?: string | null;
+  publishAttempts?: number;
+  lastPublishAttemptAt?: string | null;
   lastPublishError?: string | null;
+  publishLog?: Array<{
+    at: string;
+    status: 'ready' | 'publishing' | 'published' | 'paused' | 'deleted' | 'error';
+    message: string;
+    metaObjectId?: string | null;
+  }> | null;
   insights?: {
     spend: number;
     impressions: number;
