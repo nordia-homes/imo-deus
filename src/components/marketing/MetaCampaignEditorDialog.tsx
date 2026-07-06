@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
-import { Eye, Loader2, Save, ShieldCheck } from 'lucide-react';
+import { Eye, Loader2, MessageCircle, Save, Share2, ShieldCheck, ThumbsUp } from 'lucide-react';
 import type { MetaMarketingCampaignDraft } from '@/lib/types';
 import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -278,14 +278,14 @@ export function MetaCampaignEditorDialog({
 
               <div className="space-y-2">
                 <Label className="text-white/70">Titlu</Label>
-                <Input value={form.headline} maxLength={80} onChange={(event) => updateForm('headline', event.target.value)} className="border-white/15 bg-white/10 text-white" />
-                <p className="text-xs text-white/45">{form.headline.length}/80</p>
+                <Input value={form.headline} onChange={(event) => updateForm('headline', event.target.value)} className="border-white/15 bg-white/10 text-white" />
+                <p className="text-xs text-white/45">Titlul este preluat din titlul proprietatii si poate fi ajustat manual.</p>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-white/70">Text reclama</Label>
-                <Textarea value={form.primaryText} maxLength={500} onChange={(event) => updateForm('primaryText', event.target.value)} className="min-h-32 border-white/15 bg-white/10 text-white" />
-                <p className="text-xs text-white/45">{form.primaryText.length}/500</p>
+                <Textarea value={form.primaryText} onChange={(event) => updateForm('primaryText', event.target.value)} className="min-h-44 border-white/15 bg-white/10 text-white" />
+                <p className="text-xs text-white/45">{form.primaryText.length} caractere. Meta poate trunchia vizual textul lung in feed, dar draftul pastreaza paragrafele.</p>
               </div>
 
               <div className="space-y-2">
@@ -308,7 +308,7 @@ export function MetaCampaignEditorDialog({
                         key={image.url}
                         type="button"
                         className={cn(
-                          'aspect-[4/3] overflow-hidden rounded-xl border bg-white/5',
+                          'aspect-square overflow-hidden rounded-xl border bg-white/5',
                           form.imageUrl === image.url ? 'border-emerald-300 ring-2 ring-emerald-300/30' : 'border-white/10'
                         )}
                         onClick={() => {
@@ -336,14 +336,14 @@ export function MetaCampaignEditorDialog({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{pageName}</p>
-                    <p className="text-xs text-[#65676b]">Sponsored · Facebook</p>
+                    <p className="text-xs text-[#65676b]">Sponsored <span aria-hidden="true">&middot;</span> Facebook</p>
                   </div>
                 </div>
                 <p className="whitespace-pre-line px-4 pb-3 text-sm leading-5 text-[#050505]">{form.primaryText || 'Textul reclamei va aparea aici.'}</p>
                 {form.imageUrl ? (
-                  <img src={form.imageUrl} alt={form.imageAlt || form.headline} className="aspect-[1.91/1] w-full object-cover" />
+                  <img src={form.imageUrl} alt={form.imageAlt || form.headline} className="aspect-square w-full object-cover" />
                 ) : (
-                  <div className="flex aspect-[1.91/1] items-center justify-center bg-slate-100 text-slate-400">
+                  <div className="flex aspect-square items-center justify-center bg-slate-100 text-slate-400">
                     <Eye className="h-8 w-8" />
                   </div>
                 )}
@@ -357,9 +357,25 @@ export function MetaCampaignEditorDialog({
                     {ctaLabel(form.callToAction)}
                   </Button>
                 </div>
+                <div className="px-4 py-2">
+                  <div className="flex items-center justify-between border-y border-[#dadde1] py-1 text-sm font-semibold text-[#65676b]">
+                    <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-md py-2 hover:bg-[#f0f2f5]">
+                      <ThumbsUp className="h-4 w-4" />
+                      Like
+                    </button>
+                    <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-md py-2 hover:bg-[#f0f2f5]">
+                      <MessageCircle className="h-4 w-4" />
+                      Comment
+                    </button>
+                    <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-md py-2 hover:bg-[#f0f2f5]">
+                      <Share2 className="h-4 w-4" />
+                      Share
+                    </button>
+                  </div>
+                </div>
               </div>
               <p className="text-xs leading-5 text-white/50">
-                Preview-ul reproduce structura principala din feed: nume pagina, Sponsored, text, imagine, card link si CTA.
+                Preview-ul foloseste format patrat 1:1, potrivit pentru feed si usor de verificat vizual.
               </p>
             </div>
           </div>
