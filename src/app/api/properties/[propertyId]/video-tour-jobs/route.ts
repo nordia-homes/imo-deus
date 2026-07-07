@@ -55,6 +55,12 @@ export async function POST(
       includeText: body.includeText,
       includeBranding: body.includeBranding,
       includeMusic: body.includeMusic,
+      includeAiPresenter: body.includeAiPresenter,
+      aiPresenterAvatar: body.aiPresenterAvatar,
+      aiPresenterVoice: body.aiPresenterVoice,
+      aiPresenterPosition: body.aiPresenterPosition,
+      aiPresenterSize: body.aiPresenterSize,
+      aiPresenterScript: body.aiPresenterScript,
     });
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {

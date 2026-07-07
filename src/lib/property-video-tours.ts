@@ -22,6 +22,12 @@ type CreateJobInput = {
   includeText?: boolean;
   includeBranding?: boolean;
   includeMusic?: boolean;
+  includeAiPresenter?: boolean;
+  aiPresenterAvatar?: PropertyVideoTourJob['aiPresenterAvatar'];
+  aiPresenterVoice?: PropertyVideoTourJob['aiPresenterVoice'];
+  aiPresenterPosition?: PropertyVideoTourJob['aiPresenterPosition'];
+  aiPresenterSize?: PropertyVideoTourJob['aiPresenterSize'];
+  aiPresenterScript?: string | null;
 };
 
 type DrainInput = {
@@ -32,6 +38,9 @@ type DrainInput = {
 
 const JOB_COLLECTION = 'propertyVideoTourJobs';
 const MAX_IMAGES = 18;
+const OPENAI_RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
+const OPENAI_SPEECH_API_URL = 'https://api.openai.com/v1/audio/speech';
+const HEYGEN_API_BASE_URL = 'https://api.heygen.com';
 
 function nowIso() {
   return new Date().toISOString();
@@ -80,6 +89,508 @@ function formatPrice(price?: number | null) {
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(price);
+}
+
+function getPropertySurface(property: Property) {
+  return property.totalSurface ?? property.squareFootage;
+}
+
+function buildFallbackPresenterScript(property: Property, style: PropertyVideoTourJob['style']) {
+  const surface = getPropertySurface(property);
+  const opening = style === 'luxury'
+    ? 'Va prezint o proprietate eleganta, potrivita pentru cei care cauta confort si o locuinta pregatita cu atentie.'
+    : style === 'social'
+      ? 'Hai sa vedem rapid o proprietate care merita atentia ta.'
+      : 'Va prezint o proprietate luminoasa si bine pozitionata, potrivita pentru locuire sau investitie.';
+  const details = [
+    property.rooms ? `${property.rooms} camere` : '',
+    surface ? `${surface} metri patrati` : '',
+    property.location ? `in zona ${property.location}` : '',
+    property.price ? `la pretul de ${formatPrice(property.price)}` : '',
+  ].filter(Boolean).join(', ');
+  const description = (property.description || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[•*_#]+/g, '')
+    .slice(0, 420);
+  const close = 'Pentru detalii si vizionare, contacteaza agentia si programeaza o discutie.';
+  return [opening, details ? `Proprietatea are ${details}.` : '', description, close]
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 900);
+}
+
+async function generatePresenterScript(property: Property, job: PropertyVideoTourJob) {
+  const manualScript = job.aiPresenterScript?.trim();
+  if (manualScript) return manualScript.slice(0, 1200);
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return buildFallbackPresenterScript(property, job.style);
+
+  try {
+    const response = await fetch(OPENAI_RESPONSES_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
+        input: [
+          {
+            role: 'system',
+            content: [
+              {
+                type: 'input_text',
+                text: 'Scrie texte scurte de prezentare imobiliara in romana. Stil natural, premium, fara exagerari, fara promisiuni false, fara emoji.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: JSON.stringify({
+                  title: property.title,
+                  location: property.location,
+                  price: property.price,
+                  rooms: property.rooms,
+                  surface: getPropertySurface(property),
+                  description: property.description,
+                  style: job.style,
+                  targetDurationSeconds: job.targetDurationSeconds || null,
+                }),
+              },
+            ],
+          },
+        ],
+        max_output_tokens: 360,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`OpenAI script ${response.status}`);
+    const payload = await response.json() as { output_text?: string };
+    const script = payload.output_text?.trim();
+    return script ? script.slice(0, 1200) : buildFallbackPresenterScript(property, job.style);
+  } catch {
+    return buildFallbackPresenterScript(property, job.style);
+  }
+}
+
+function getOpenAiVoice(voice: PropertyVideoTourJob['aiPresenterVoice']) {
+  if (voice === 'male') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_MALE_VOICE || 'onyx';
+  return process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+}
+
+async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJob, outputPath: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY trebuie setata pentru voiceover-ul prezentatorului AI.');
+  }
+
+  const response = await fetch(OPENAI_SPEECH_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts',
+      voice: getOpenAiVoice(job.aiPresenterVoice),
+      input: script,
+      response_format: 'mp3',
+      speed: job.style === 'social' ? 1.06 : job.style === 'luxury' ? 0.94 : 1,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => '');
+    throw new Error(`Nu am putut genera voiceover-ul AI (${response.status}). ${payload.slice(0, 240)}`);
+  }
+
+  await writeFile(outputPath, Buffer.from(await response.arrayBuffer()));
+}
+
+async function uploadRenderAsset(input: {
+  bucketName: string;
+  storagePath: string;
+  localPath: string;
+  contentType: string;
+}) {
+  const token = randomUUID();
+  const bucket = adminStorage.bucket(input.bucketName);
+  await bucket.file(input.storagePath).save(await readFile(input.localPath), {
+    resumable: false,
+    contentType: input.contentType,
+    metadata: {
+      cacheControl: 'public, max-age=31536000',
+      metadata: { firebaseStorageDownloadTokens: token },
+    },
+  });
+  return getFirebaseDownloadUrl(bucket.name, input.storagePath, token);
+}
+
+function getAvatarSourceUrl(job: PropertyVideoTourJob) {
+  const avatar = job.aiPresenterAvatar || 'business';
+  return (
+    process.env[`PROPERTY_VIDEO_TOUR_AVATAR_${avatar.toUpperCase()}_URL`] ||
+    process.env.PROPERTY_VIDEO_TOUR_AVATAR_SOURCE_URL ||
+    ''
+  );
+}
+
+function getHeyGenAvatarId(job: PropertyVideoTourJob) {
+  const avatar = (job.aiPresenterAvatar || 'business').toUpperCase();
+  return (
+    process.env[`HEYGEN_AVATAR_ID_${avatar}`] ||
+    process.env.HEYGEN_AVATAR_ID ||
+    ''
+  );
+}
+
+function getHeyGenVoiceId(job: PropertyVideoTourJob) {
+  const voice = (job.aiPresenterVoice || 'female').toUpperCase();
+  return (
+    process.env[`HEYGEN_VOICE_ID_${voice}`] ||
+    process.env.HEYGEN_VOICE_ID ||
+    ''
+  );
+}
+
+function getHeyGenAvatarLookId(job: PropertyVideoTourJob) {
+  const avatar = (job.aiPresenterAvatar || 'business').toUpperCase();
+  return (
+    process.env[`HEYGEN_AVATAR_LOOK_ID_${avatar}`] ||
+    process.env.HEYGEN_AVATAR_LOOK_ID ||
+    ''
+  );
+}
+
+function getHeyGenAspectRatio(format: PropertyVideoTourJob['format']) {
+  if (format === 'portrait') return '9:16';
+  if (format === 'square') return '1:1';
+  return '16:9';
+}
+
+function getHeyGenResolution(quality: PropertyVideoTourJob['quality']) {
+  return quality === 'premium' ? '1080p' : '720p';
+}
+
+function getHeyGenEngine() {
+  const engine = (process.env.HEYGEN_AVATAR_ENGINE || 'avatar_v').toLowerCase();
+  if (engine === 'avatar_3' || engine === 'avatar_iii') return { type: 'avatar_iii' };
+  if (engine === 'avatar_4' || engine === 'avatar_iv') return { type: 'avatar_iv' };
+  return { type: 'avatar_v' };
+}
+
+function getHeyGenDimension(format: PropertyVideoTourJob['format'], quality: PropertyVideoTourJob['quality']) {
+  const config = getFormatConfig(format, quality);
+  return {
+    width: config.width,
+    height: config.height,
+  };
+}
+
+async function readProviderPayload(response: Response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => ({})) as Promise<Record<string, any>>;
+  }
+  const text = await response.text().catch(() => '');
+  return {
+    message: text.trim().startsWith('<!DOCTYPE html') || text.trim().startsWith('<html')
+      ? `Providerul a returnat HTML in loc de JSON (${response.status}). Verifica endpoint-ul HeyGen.`
+      : text.slice(0, 500),
+  };
+}
+
+async function pollHeyGenV2Video(input: {
+  apiKey: string;
+  videoId: string;
+  outputPath: string;
+}) {
+  const timeoutAt = Date.now() + 12 * 60 * 1000;
+  while (Date.now() < timeoutAt) {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    const statusResponse = await fetch(`${HEYGEN_API_BASE_URL}/v1/video_status.get?video_id=${encodeURIComponent(input.videoId)}`, {
+      headers: { 'x-api-key': input.apiKey },
+      cache: 'no-store',
+    });
+    const statusPayload = await readProviderPayload(statusResponse);
+    const data = statusPayload.data || statusPayload;
+    const status = String(data.status || statusPayload.status || '').toLowerCase();
+    const resultUrl = data.video_url || data.videoUrl || data.url || statusPayload.video_url || statusPayload.videoUrl;
+    if (resultUrl) {
+      await writeFile(input.outputPath, await fetchBuffer(String(resultUrl)));
+      return String(resultUrl);
+    }
+    if (status === 'failed' || status === 'error') {
+      throw new Error(data.error?.message || data.message || statusPayload.message || 'HeyGen a respins randarea avatarului.');
+    }
+  }
+
+  throw new Error('HeyGen nu a finalizat randarea avatarului in timp util.');
+}
+
+async function pollHeyGenV3Video(input: {
+  apiKey: string;
+  videoId: string;
+  outputPath: string;
+}) {
+  const timeoutAt = Date.now() + 12 * 60 * 1000;
+  while (Date.now() < timeoutAt) {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    const statusResponse = await fetch(`${HEYGEN_API_BASE_URL}/v3/videos/${encodeURIComponent(input.videoId)}`, {
+      headers: { 'x-api-key': input.apiKey },
+      cache: 'no-store',
+    });
+    const statusPayload = await readProviderPayload(statusResponse);
+    const data = statusPayload.data || statusPayload;
+    const status = String(data.status || statusPayload.status || '').toLowerCase();
+    const resultUrl = data.video_url || data.captioned_video_url || data.videoUrl || data.url || statusPayload.video_url || statusPayload.videoUrl;
+    if (resultUrl) {
+      await writeFile(input.outputPath, await fetchBuffer(String(resultUrl)));
+      return String(resultUrl);
+    }
+    if (status === 'failed' || status === 'error') {
+      throw new Error(data.error?.message || data.failure_message || data.message || statusPayload.message || 'HeyGen a respins randarea avatarului.');
+    }
+  }
+
+  throw new Error('HeyGen nu a finalizat randarea avatarului in timp util.');
+}
+
+async function generateHeyGenAvatarVideo(input: {
+  job: PropertyVideoTourJob;
+  script: string;
+  audioUrl: string;
+  outputPath: string;
+}) {
+  const apiKey = process.env.HEYGEN_API_KEY;
+  const avatarId = getHeyGenAvatarId(input.job);
+  const voiceId = getHeyGenVoiceId(input.job);
+  const avatarLookId = getHeyGenAvatarLookId(input.job);
+  if (!apiKey) {
+    throw new Error('Seteaza HEYGEN_API_KEY in .env.local pentru avatarul HeyGen.');
+  }
+  if (!avatarId) {
+    throw new Error('Seteaza HEYGEN_AVATAR_ID_BUSINESS, HEYGEN_AVATAR_ID_LUXURY sau HEYGEN_AVATAR_ID_CASUAL in .env.local.');
+  }
+
+  const useHeyGenTts = process.env.HEYGEN_USE_SCRIPT_TTS === 'true';
+  if (avatarLookId) {
+    if (!voiceId) {
+      throw new Error('Seteaza HEYGEN_VOICE_ID_FEMALE sau HEYGEN_VOICE_ID_MALE pentru avatarul HeyGen v3.');
+    }
+
+    const response = await fetch(`${HEYGEN_API_BASE_URL}/v3/videos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'Idempotency-Key': input.job.id,
+      },
+      body: JSON.stringify({
+        type: 'avatar',
+        avatar_id: avatarId,
+        engine: getHeyGenEngine(),
+        script: input.script.slice(0, 1800),
+        voice_id: voiceId,
+      }),
+    });
+
+    const created = await readProviderPayload(response);
+    const videoId = created.data?.video_id || created.video_id || created.data?.id || created.id;
+    if (!response.ok || !videoId) {
+      throw new Error(created.error?.message || created.message || `HeyGen nu a creat avatarul (${response.status}).`);
+    }
+
+    return pollHeyGenV3Video({
+      apiKey,
+      videoId: String(videoId),
+      outputPath: input.outputPath,
+    });
+  }
+
+  const response = await fetch(`${HEYGEN_API_BASE_URL}/v2/video/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'Idempotency-Key': input.job.id,
+    },
+    body: JSON.stringify({
+      video_inputs: [
+        {
+          character: {
+            type: 'avatar',
+            avatar_id: avatarId,
+            avatar_style: 'normal',
+          },
+          voice: useHeyGenTts
+            ? {
+                type: 'text',
+                input_text: input.script,
+                voice_id: voiceId,
+                speed: input.job.style === 'social' ? 1.06 : input.job.style === 'luxury' ? 0.94 : 1,
+              }
+            : {
+                type: 'audio',
+                audio_url: input.audioUrl,
+            },
+          background: {
+            type: 'color',
+            value: '#00ff00',
+          },
+        },
+      ],
+      dimension: getHeyGenDimension(input.job.format, input.job.quality),
+      caption: false,
+      title: `ImoDeus property video ${input.job.propertyId}`,
+    }),
+  });
+
+  const created = await readProviderPayload(response);
+  const videoId = created.data?.video_id || created.video_id || created.data?.id || created.id;
+  if (!response.ok || !videoId) {
+    throw new Error(created.error?.message || created.message || `HeyGen nu a creat avatarul (${response.status}).`);
+  }
+
+  return pollHeyGenV2Video({
+    apiKey,
+    videoId: String(videoId),
+    outputPath: input.outputPath,
+  });
+}
+
+async function pollAvatarResult(input: {
+  statusUrl: string;
+  authorizationHeader?: string | null;
+  resultField?: string | null;
+}) {
+  const timeoutAt = Date.now() + 7 * 60 * 1000;
+  const resultField = input.resultField || 'result_url';
+
+  while (Date.now() < timeoutAt) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    const response = await fetch(input.statusUrl, {
+      headers: input.authorizationHeader ? { Authorization: input.authorizationHeader } : undefined,
+      cache: 'no-store',
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, any>;
+    const status = String(payload.status || payload.state || '').toLowerCase();
+    const resultUrl = payload[resultField] || payload.resultUrl || payload.video_url || payload.videoUrl || payload.url;
+    if (resultUrl) return String(resultUrl);
+    if (status === 'failed' || status === 'error' || status === 'rejected') {
+      throw new Error(payload.error?.message || payload.message || 'Providerul de avatar a respins randarea.');
+    }
+  }
+
+  throw new Error('Providerul de avatar nu a finalizat randarea in timp util.');
+}
+
+async function generateAvatarVideo(input: {
+  job: PropertyVideoTourJob;
+  script: string;
+  audioUrl: string;
+  outputPath: string;
+}) {
+  const provider = (process.env.PROPERTY_VIDEO_TOUR_AVATAR_PROVIDER || 'webhook').toLowerCase();
+  const avatarSourceUrl = getAvatarSourceUrl(input.job);
+
+  if (provider === 'heygen') {
+    return generateHeyGenAvatarVideo(input);
+  }
+
+  if (provider === 'did') {
+    const apiKey = process.env.D_ID_API_KEY || process.env.DID_API_KEY;
+    if (!apiKey || !avatarSourceUrl) {
+      throw new Error('Pentru avatar AI premium seteaza D_ID_API_KEY si PROPERTY_VIDEO_TOUR_AVATAR_SOURCE_URL.');
+    }
+
+    const createResponse = await fetch('https://api.d-id.com/talks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${apiKey}`,
+      },
+      body: JSON.stringify({
+        source_url: avatarSourceUrl,
+        script: {
+          type: 'audio',
+          audio_url: input.audioUrl,
+        },
+        config: {
+          stitch: true,
+          result_format: 'mp4',
+        },
+      }),
+    });
+    const created = await createResponse.json().catch(() => ({})) as Record<string, any>;
+    if (!createResponse.ok || !created.id) {
+      throw new Error(created.message || created.error?.message || `D-ID nu a creat avatarul (${createResponse.status}).`);
+    }
+
+    const resultUrl = await pollAvatarResult({
+      statusUrl: `https://api.d-id.com/talks/${created.id}`,
+      authorizationHeader: `Basic ${apiKey}`,
+      resultField: 'result_url',
+    });
+    await writeFile(input.outputPath, await fetchBuffer(resultUrl));
+    return resultUrl;
+  }
+
+  const endpoint = process.env.PROPERTY_VIDEO_TOUR_AVATAR_RENDER_ENDPOINT;
+  if (!endpoint) {
+    throw new Error('Seteaza PROPERTY_VIDEO_TOUR_AVATAR_RENDER_ENDPOINT sau PROPERTY_VIDEO_TOUR_AVATAR_PROVIDER=did pentru avatar AI premium.');
+  }
+
+  const token = process.env.PROPERTY_VIDEO_TOUR_AVATAR_API_KEY || null;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      mode: 'lip_sync',
+      avatar: input.job.aiPresenterAvatar || 'business',
+      avatarSourceUrl,
+      voice: input.job.aiPresenterVoice || 'female',
+      script: input.script,
+      audioUrl: input.audioUrl,
+      output: {
+        format: 'mp4',
+        transparent: true,
+        greenScreen: true,
+      },
+      metadata: {
+        agencyId: input.job.agencyId,
+        propertyId: input.job.propertyId,
+        jobId: input.job.id,
+      },
+    }),
+  });
+  const payload = await response.json().catch(() => ({})) as Record<string, any>;
+  if (!response.ok) {
+    throw new Error(payload.message || payload.error?.message || `Providerul de avatar a raspuns cu ${response.status}.`);
+  }
+
+  const resultUrl = payload.resultUrl || payload.result_url || payload.videoUrl || payload.video_url || payload.url
+    || (payload.statusUrl || payload.status_url
+      ? await pollAvatarResult({
+          statusUrl: payload.statusUrl || payload.status_url,
+          authorizationHeader: token ? `Bearer ${token}` : null,
+          resultField: payload.resultField || payload.result_field || null,
+        })
+      : null);
+
+  if (!resultUrl) {
+    throw new Error('Providerul de avatar nu a returnat URL-ul video.');
+  }
+
+  await writeFile(input.outputPath, await fetchBuffer(String(resultUrl)));
+  return String(resultUrl);
 }
 
 function getVideoTourJobsCollection(adminDb: Firestore, agencyId: string, propertyId: string) {
@@ -346,6 +857,154 @@ async function stitchSegmentsWithTransitions(input: {
   );
 }
 
+function getPresenterOverlayConfig(input: {
+  width: number;
+  height: number;
+  position?: PropertyVideoTourJob['aiPresenterPosition'];
+  size?: PropertyVideoTourJob['aiPresenterSize'];
+}) {
+  const sizeRatio = input.size === 'large' ? 0.34 : input.size === 'small' ? 0.22 : 0.28;
+  const overlayWidth = Math.round(input.width * sizeRatio);
+  const margin = Math.max(20, Math.round(input.width * 0.025));
+  const x = input.position === 'bottom-left' ? margin : `main_w-overlay_w-${margin}`;
+  const y = `main_h-overlay_h-${margin}`;
+  return { overlayWidth, x, y };
+}
+
+async function overlayPresenterVideo(input: {
+  baseVideoPath: string;
+  presenterVideoPath: string;
+  outputPath: string;
+  width: number;
+  height: number;
+  position?: PropertyVideoTourJob['aiPresenterPosition'];
+  size?: PropertyVideoTourJob['aiPresenterSize'];
+  workDir: string;
+}) {
+  const overlay = getPresenterOverlayConfig(input);
+  const filter = `[1:v]scale=${overlay.overlayWidth}:-1:force_original_aspect_ratio=decrease,format=rgba,colorkey=0x00ff00:0.22:0.10,setsar=1[presenter];[0:v][presenter]overlay=x=${overlay.x}:y=${overlay.y}:format=auto:shortest=1[v]`;
+
+  await runCommand(
+    getFfmpegCommand(),
+    [
+      '-y',
+      '-i',
+      input.baseVideoPath,
+      '-stream_loop',
+      '-1',
+      '-i',
+      input.presenterVideoPath,
+      '-filter_complex',
+      filter,
+      '-map',
+      '[v]',
+      '-an',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '19',
+      '-movflags',
+      '+faststart',
+      input.outputPath,
+    ],
+    input.workDir
+  );
+}
+
+async function muxFinalVideo(input: {
+  videoPath: string;
+  outputPath: string;
+  presenterAudioPath?: string | null;
+  includeMusic: boolean;
+  durationSeconds: number;
+  workDir: string;
+}) {
+  if (input.presenterAudioPath && input.includeMusic) {
+    const musicPath = await createSilentAudio(input.workDir, input.durationSeconds);
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        '-i',
+        input.videoPath,
+        '-i',
+        input.presenterAudioPath,
+        '-i',
+        musicPath,
+        '-filter_complex',
+        '[1:a]volume=1.0,afade=t=in:st=0:d=0.15,afade=t=out:st=' + Math.max(0, input.durationSeconds - 0.35) + ':d=0.35[voice];[2:a]volume=0.018[bed];[voice][bed]amix=inputs=2:duration=first:dropout_transition=0[a]',
+        '-map',
+        '0:v',
+        '-map',
+        '[a]',
+        '-shortest',
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        '-movflags',
+        '+faststart',
+        input.outputPath,
+      ],
+      input.workDir
+    );
+    return;
+  }
+
+  if (input.presenterAudioPath) {
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        '-i',
+        input.videoPath,
+        '-i',
+        input.presenterAudioPath,
+        '-shortest',
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        '-movflags',
+        '+faststart',
+        input.outputPath,
+      ],
+      input.workDir
+    );
+    return;
+  }
+
+  if (input.includeMusic) {
+    const audioPath = await createSilentAudio(input.workDir, input.durationSeconds);
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        '-i',
+        input.videoPath,
+        '-i',
+        audioPath,
+        '-shortest',
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        '-movflags',
+        '+faststart',
+        input.outputPath,
+      ],
+      input.workDir
+    );
+    return;
+  }
+
+  await runCommand(getFfmpegCommand(), ['-y', '-i', input.videoPath, '-c', 'copy', '-movflags', '+faststart', input.outputPath], input.workDir);
+}
+
 async function createSilentAudio(workDir: string, durationSeconds: number) {
   const audioPath = path.join(workDir, 'ambient.m4a');
   await runCommand(
@@ -460,31 +1119,54 @@ async function renderJobWithFfmpeg(input: {
       workDir,
     });
 
-    const finalVideoPath = path.join(workDir, 'video-tour.mp4');
-    if (job.includeMusic) {
-      const audioPath = await createSilentAudio(workDir, durationSeconds);
-      await runCommand(
-        getFfmpegCommand(),
-        [
-          '-y',
-          '-i',
-          silentVideoPath,
-          '-i',
-          audioPath,
-          '-shortest',
-          '-c:v',
-          'copy',
-          '-c:a',
-          'aac',
-          '-movflags',
-          '+faststart',
-          finalVideoPath,
-        ],
-        workDir
-      );
-    } else {
-      await runCommand(getFfmpegCommand(), ['-y', '-i', silentVideoPath, '-c', 'copy', '-movflags', '+faststart', finalVideoPath], workDir);
+    let presenterScript: string | null = null;
+    let presenterAudioPath: string | null = null;
+    let presenterAudioUrl: string | null = null;
+    let presenterVideoUrl: string | null = null;
+    let videoForMuxPath = silentVideoPath;
+
+    if (job.includeAiPresenter) {
+      presenterScript = await generatePresenterScript(property, job);
+      presenterAudioPath = path.join(workDir, 'presenter-voice.mp3');
+      await synthesizePresenterAudio(presenterScript, job, presenterAudioPath);
+      presenterAudioUrl = await uploadRenderAsset({
+        bucketName: bucket.name,
+        storagePath: `agencies/${job.agencyId}/properties/${job.propertyId}/video-tours/cloud-${job.id}/presenter-voice.mp3`,
+        localPath: presenterAudioPath,
+        contentType: 'audio/mpeg',
+      });
+
+      const presenterVideoPath = path.join(workDir, 'presenter-avatar.mp4');
+      presenterVideoUrl = await generateAvatarVideo({
+        job,
+        script: presenterScript,
+        audioUrl: presenterAudioUrl,
+        outputPath: presenterVideoPath,
+      });
+
+      const compositedVideoPath = path.join(workDir, 'video-with-presenter.mp4');
+      await overlayPresenterVideo({
+        baseVideoPath: silentVideoPath,
+        presenterVideoPath,
+        outputPath: compositedVideoPath,
+        width,
+        height,
+        position: job.aiPresenterPosition,
+        size: job.aiPresenterSize,
+        workDir,
+      });
+      videoForMuxPath = compositedVideoPath;
     }
+
+    const finalVideoPath = path.join(workDir, 'video-tour.mp4');
+    await muxFinalVideo({
+      videoPath: videoForMuxPath,
+      outputPath: finalVideoPath,
+      presenterAudioPath,
+      includeMusic: job.includeMusic,
+      durationSeconds,
+      workDir,
+    });
 
     const thumbnailPath = path.join(workDir, 'thumbnail.jpg');
     await runCommand(
@@ -530,6 +1212,9 @@ async function renderJobWithFfmpeg(input: {
       fileName: `${safeTitle}.mp4`,
       imageCount: downloadedImages.length,
       skippedImageCount: skippedImages.length,
+      presenterScript,
+      presenterAudioUrl,
+      presenterVideoUrl,
     };
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => undefined);
@@ -574,6 +1259,12 @@ export async function createPropertyVideoTourJob(input: CreateJobInput) {
     includeText: input.includeText !== false,
     includeBranding: input.includeBranding !== false,
     includeMusic: input.includeMusic !== false,
+    includeAiPresenter: Boolean(input.includeAiPresenter),
+    aiPresenterAvatar: input.aiPresenterAvatar || 'business',
+    aiPresenterVoice: input.aiPresenterVoice || 'female',
+    aiPresenterPosition: input.aiPresenterPosition || 'bottom-right',
+    aiPresenterSize: input.aiPresenterSize || 'medium',
+    aiPresenterScript: input.aiPresenterScript?.trim() || null,
     images,
     progress: 0,
     attempts: 0,
@@ -593,6 +1284,12 @@ export async function createPropertyVideoTourJob(input: CreateJobInput) {
         targetDurationSeconds: job.targetDurationSeconds,
         hasMusic: job.includeMusic,
         hasAgencyBranding: job.includeBranding,
+        hasAiPresenter: job.includeAiPresenter,
+        aiPresenterAvatar: job.aiPresenterAvatar,
+        aiPresenterVoice: job.aiPresenterVoice,
+        aiPresenterPosition: job.aiPresenterPosition,
+        aiPresenterSize: job.aiPresenterSize,
+        aiPresenterScript: job.aiPresenterScript,
         engine: 'cloud-renderer',
         imageCount: images.length,
         generatedAt: now,
@@ -689,6 +1386,14 @@ export async function runPropertyVideoTourJob(input: {
             targetDurationSeconds: acquired.job.targetDurationSeconds,
             hasMusic: acquired.job.includeMusic,
             hasAgencyBranding: acquired.job.includeBranding,
+            hasAiPresenter: acquired.job.includeAiPresenter,
+            aiPresenterAvatar: acquired.job.aiPresenterAvatar,
+            aiPresenterVoice: acquired.job.aiPresenterVoice,
+            aiPresenterPosition: acquired.job.aiPresenterPosition,
+            aiPresenterSize: acquired.job.aiPresenterSize,
+            aiPresenterScript: result.presenterScript || acquired.job.aiPresenterScript || null,
+            aiPresenterAudioUrl: result.presenterAudioUrl || null,
+            aiPresenterVideoUrl: result.presenterVideoUrl || null,
             engine: 'cloud-renderer',
             mimeType: result.mimeType,
             durationSeconds: result.durationSeconds,
@@ -734,6 +1439,12 @@ export async function runPropertyVideoTourJob(input: {
             targetDurationSeconds: acquired.job.targetDurationSeconds,
             hasMusic: acquired.job.includeMusic,
             hasAgencyBranding: acquired.job.includeBranding,
+            hasAiPresenter: acquired.job.includeAiPresenter,
+            aiPresenterAvatar: acquired.job.aiPresenterAvatar,
+            aiPresenterVoice: acquired.job.aiPresenterVoice,
+            aiPresenterPosition: acquired.job.aiPresenterPosition,
+            aiPresenterSize: acquired.job.aiPresenterSize,
+            aiPresenterScript: acquired.job.aiPresenterScript || null,
             engine: 'cloud-renderer',
             imageCount: acquired.job.images.length,
             generatedAt: failedAt,

@@ -12,6 +12,7 @@ import {
   Music2,
   PlayCircle,
   Sparkles,
+  UserRound,
   Wand2,
 } from 'lucide-react';
 import type { Property, PropertyVideoTour } from '@/lib/types';
@@ -32,6 +33,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   ACTION_CARD_INTERACTIVE_CLASSNAME,
@@ -42,6 +44,10 @@ import {
 type VideoFormat = PropertyVideoTour['format'];
 type VideoStyle = PropertyVideoTour['style'];
 type VideoQuality = NonNullable<PropertyVideoTour['quality']>;
+type AiPresenterAvatar = NonNullable<PropertyVideoTour['aiPresenterAvatar']>;
+type AiPresenterVoice = NonNullable<PropertyVideoTour['aiPresenterVoice']>;
+type AiPresenterPosition = NonNullable<PropertyVideoTour['aiPresenterPosition']>;
+type AiPresenterSize = NonNullable<PropertyVideoTour['aiPresenterSize']>;
 
 type RenderPreset = {
   width: number;
@@ -75,6 +81,17 @@ const TARGET_DURATION_OPTIONS = [
   { value: '60', label: '60 sec' },
 ];
 
+const AI_PRESENTER_AVATAR_LABELS: Record<AiPresenterAvatar, string> = {
+  business: 'Business',
+  luxury: 'Luxury',
+  casual: 'Casual',
+};
+
+const AI_PRESENTER_VOICE_LABELS: Record<AiPresenterVoice, string> = {
+  female: 'Feminin',
+  male: 'Masculin',
+};
+
 const MIME_CANDIDATES = [
   'video/mp4;codecs=avc1.42E01E',
   'video/webm;codecs=vp9',
@@ -89,6 +106,10 @@ async function readApiPayload(response: Response) {
   try {
     return JSON.parse(text) as Record<string, any>;
   } catch {
+    const trimmed = text.trim();
+    if (trimmed.startsWith('<!DOCTYPE html') || trimmed.startsWith('<html')) {
+      return { message: 'Serverul a returnat HTML in loc de raspuns JSON. Reporneste serverul dev si incearca din nou.' };
+    }
     return { message: text.slice(0, 500) };
   }
 }
@@ -397,6 +418,12 @@ export function VideoTourCard({
   const [includeText, setIncludeText] = useState(true);
   const [includeBranding, setIncludeBranding] = useState(true);
   const [includeMusic, setIncludeMusic] = useState(true);
+  const [includeAiPresenter, setIncludeAiPresenter] = useState(false);
+  const [aiPresenterAvatar, setAiPresenterAvatar] = useState<AiPresenterAvatar>('business');
+  const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('female');
+  const [aiPresenterPosition, setAiPresenterPosition] = useState<AiPresenterPosition>('bottom-right');
+  const [aiPresenterSize, setAiPresenterSize] = useState<AiPresenterSize>('medium');
+  const [aiPresenterScript, setAiPresenterScript] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCloudRendering, setIsCloudRendering] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<string | null>(null);
@@ -662,6 +689,12 @@ export function VideoTourCard({
           includeText,
           includeBranding,
           includeMusic,
+          includeAiPresenter,
+          aiPresenterAvatar,
+          aiPresenterVoice,
+          aiPresenterPosition,
+          aiPresenterSize,
+          aiPresenterScript: includeAiPresenter ? aiPresenterScript : null,
         }),
       });
       const payload = await readApiPayload(response);
@@ -818,6 +851,89 @@ export function VideoTourCard({
                 </Label>
                 <Switch id="video-tour-music" checked={includeMusic} onCheckedChange={setIncludeMusic} />
               </div>
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="video-tour-ai-presenter" className="flex items-center gap-2 text-sm font-medium text-white/82">
+                  <UserRound className="h-4 w-4 text-emerald-200" />
+                  Prezentator AI
+                </Label>
+                <Switch id="video-tour-ai-presenter" checked={includeAiPresenter} onCheckedChange={setIncludeAiPresenter} />
+              </div>
+
+              {includeAiPresenter ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Avatar</Label>
+                      <Select value={aiPresenterAvatar} onValueChange={(value) => setAiPresenterAvatar(value as AiPresenterAvatar)}>
+                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(AI_PRESENTER_AVATAR_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Voce</Label>
+                      <Select value={aiPresenterVoice} onValueChange={(value) => setAiPresenterVoice(value as AiPresenterVoice)}>
+                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(AI_PRESENTER_VOICE_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Pozitie</Label>
+                      <Select value={aiPresenterPosition} onValueChange={(value) => setAiPresenterPosition(value as AiPresenterPosition)}>
+                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bottom-right">Dreapta jos</SelectItem>
+                          <SelectItem value="bottom-left">Stanga jos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Marime</Label>
+                      <Select value={aiPresenterSize} onValueChange={(value) => setAiPresenterSize(value as AiPresenterSize)}>
+                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Mic</SelectItem>
+                          <SelectItem value="medium">Mediu</SelectItem>
+                          <SelectItem value="large">Mare</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Script</Label>
+                    <Textarea
+                      value={aiPresenterScript}
+                      onChange={(event) => setAiPresenterScript(event.target.value)}
+                      placeholder="Lasă gol pentru script automat din descrierea proprietății."
+                      className="min-h-[92px] resize-none border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/34"
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="rounded-lg border border-emerald-300/16 bg-emerald-400/[0.06] p-4">

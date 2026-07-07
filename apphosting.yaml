@@ -58,6 +58,76 @@ env:
     availability:
       - RUNTIME
 
+  - variable: PROPERTY_VIDEO_TOUR_AVATAR_PROVIDER
+    value: heygen
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_API_KEY
+    secret: HEYGEN_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_AVATAR_ENGINE
+    value: avatar_4
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_USE_SCRIPT_TTS
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_AVATAR_ID_BUSINESS
+    secret: HEYGEN_AVATAR_ID_BUSINESS
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_AVATAR_ID_LUXURY
+    secret: HEYGEN_AVATAR_ID_LUXURY
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_AVATAR_ID_CASUAL
+    secret: HEYGEN_AVATAR_ID_CASUAL
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_VOICE_ID_FEMALE
+    secret: HEYGEN_VOICE_ID_FEMALE
+    availability:
+      - RUNTIME
+
+  - variable: HEYGEN_VOICE_ID_MALE
+    secret: HEYGEN_VOICE_ID_MALE
+    availability:
+      - RUNTIME
+
+  - variable: PROPERTY_VIDEO_TOUR_AVATAR_RENDER_ENDPOINT
+    secret: PROPERTY_VIDEO_TOUR_AVATAR_RENDER_ENDPOINT
+    availability:
+      - RUNTIME
+
+  - variable: PROPERTY_VIDEO_TOUR_AVATAR_API_KEY
+    secret: PROPERTY_VIDEO_TOUR_AVATAR_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: PROPERTY_VIDEO_TOUR_AVATAR_SOURCE_URL
+    secret: PROPERTY_VIDEO_TOUR_AVATAR_SOURCE_URL
+    availability:
+      - RUNTIME
+
+  - variable: D_ID_API_KEY
+    secret: D_ID_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: OPENAI_TTS_MODEL
+    value: gpt-4o-mini-tts
+    availability:
+      - RUNTIME
+
   - variable: OPENAI_ASSISTANT_MODEL
     value: gpt-4.1-mini
     availability:
