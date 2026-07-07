@@ -13,6 +13,25 @@ function formatError(error: unknown) {
   return { status: 500, message: 'A aparut o eroare la randarea video.' };
 }
 
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ propertyId: string; jobId: string }> }
+) {
+  try {
+    const [{ propertyId, jobId }, { requireAgencyUserFromBearerToken }, { getPropertyVideoTourJob }] = await Promise.all([
+      context.params,
+      import('@/lib/firebase-app-hosting'),
+      import('@/lib/property-video-tours'),
+    ]);
+    const authContext = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const job = await getPropertyVideoTourJob(authContext.adminDb, authContext.agencyId, propertyId, jobId);
+    return NextResponse.json({ job }, { status: 200 });
+  } catch (error) {
+    const formatted = formatError(error);
+    return NextResponse.json({ message: formatted.message }, { status: formatted.status });
+  }
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ propertyId: string; jobId: string }> }
@@ -32,7 +51,7 @@ export async function POST(
       propertyId,
       jobId,
     }).catch((error) => {
-      console.error('[property-video-tour-run-background]', {
+      console.error('[property-video-tour-job-background-run]', {
         propertyId,
         jobId,
         error,
@@ -50,7 +69,7 @@ export async function POST(
       { status: 202 }
     );
   } catch (error) {
-    console.error('[property-video-tour-run]', {
+    console.error('[property-video-tour-job-run]', {
       propertyId: routeParams?.propertyId,
       jobId: routeParams?.jobId,
       error,

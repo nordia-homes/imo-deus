@@ -115,13 +115,18 @@ async function readApiPayload(response: Response) {
 }
 
 function getApiErrorMessage(payload: Record<string, any>, fallback: string) {
-  return (
+  const message = (
     payload?.message ||
     payload?.job?.errorMessage ||
     payload?.errorMessage ||
     payload?.error?.message ||
     fallback
   );
+  return String(message).replace(/\s+/g, ' ').slice(0, 420);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function pickRecorderMimeType() {
@@ -704,14 +709,43 @@ export function VideoTourCard({
 
       setProgress(12);
       setCloudStatus('Job creat. Se porneste randarea FFmpeg...');
-      const runResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}/run`, {
+      const runResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}`, {
         method: 'POST',
       });
       const runPayload = await readApiPayload(runResponse);
-      if (!runResponse.ok) throw new Error(getApiErrorMessage(runPayload, 'Randarea cloud a esuat.'));
-      if (runPayload?.job?.status === 'error') {
-        throw new Error(getApiErrorMessage(runPayload, 'Randarea cloud a esuat.'));
+      if (!runResponse.ok) throw new Error(getApiErrorMessage(runPayload, 'Nu am putut porni randarea cloud.'));
+
+      setCloudStatus('Randarea ruleaza. Verific progresul...');
+      const startedAt = Date.now();
+      let completedJob: Record<string, any> | null = null;
+      while (Date.now() - startedAt < 9 * 60 * 1000) {
+        await delay(2500);
+        const statusResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}`, {
+          method: 'GET',
+        });
+        const statusPayload = await readApiPayload(statusResponse);
+        if (!statusResponse.ok) {
+          throw new Error(getApiErrorMessage(statusPayload, 'Nu am putut verifica statusul randarii.'));
+        }
+        const currentJob = statusPayload?.job as Record<string, any> | undefined;
+        const jobProgress = Number(currentJob?.progress);
+        const elapsedSeconds = Math.round((Date.now() - startedAt) / 1000);
+        const estimatedProgress = Math.min(95, 18 + Math.floor(elapsedSeconds / 3));
+        if (Number.isFinite(jobProgress)) {
+          setProgress(Math.min(98, Math.max(12, estimatedProgress, Math.round(jobProgress))));
+        } else {
+          setProgress(Math.min(98, Math.max(12, estimatedProgress)));
+        }
+        if (currentJob?.status === 'completed') {
+          completedJob = currentJob;
+          break;
+        }
+        if (currentJob?.status === 'error') {
+          throw new Error(getApiErrorMessage(statusPayload, 'Randarea cloud a esuat.'));
+        }
+        setCloudStatus(`Randarea ruleaza... ${elapsedSeconds}s`);
       }
+      if (!completedJob) throw new Error('Randarea dureaza prea mult. Jobul poate continua in fundal; reincarca proprietatea peste cateva minute.');
 
       setProgress(100);
       setCloudStatus('Video MP4 randat in cloud.');

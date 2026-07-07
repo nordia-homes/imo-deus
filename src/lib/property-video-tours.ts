@@ -685,6 +685,29 @@ function getUnknownErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function summarizeCommandError(stderr: string, command: string, code: number | null) {
+  const lines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => {
+      if (/^(Input|Output) #\d+/i.test(line)) return false;
+      if (/^(Stream|Metadata|Duration|encoder|major_brand|minor_version|compatible_brands)\b/i.test(line)) return false;
+      if (/^\s*handler_name\s*:/i.test(line)) return false;
+      if (/^\s*vendor_id\s*:/i.test(line)) return false;
+      if (/^frame=\s*\d+/i.test(line)) return false;
+      if (/^video:\d+/i.test(line)) return false;
+      return true;
+    });
+  const relevant = lines
+    .filter((line) => /error|failed|invalid|unable|no such|not found|permission|denied|cannot|could not|impossible/i.test(line))
+    .slice(-4);
+  const fallbackLines = lines.slice(-4);
+  const details = (relevant.length ? relevant : fallbackLines).join(' | ');
+  const prefix = `${path.basename(command)} a esuat${typeof code === 'number' ? ` cu exit code ${code}` : ''}.`;
+  return details ? `${prefix} ${details}`.slice(0, 700) : prefix;
+}
+
 async function runCommand(command: string, args: string[], cwd: string) {
   return new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, { cwd, windowsHide: true });
@@ -698,7 +721,7 @@ async function runCommand(command: string, args: string[], cwd: string) {
         resolve();
         return;
       }
-      reject(new Error(stderr.trim() || `${command} a esuat cu exit code ${code}.`));
+      reject(new Error(summarizeCommandError(stderr, command, code)));
     });
   });
 }
@@ -802,6 +825,53 @@ function getTransitionName(index: number, style: PropertyVideoTourJob['style']) 
   return transitions[index % transitions.length];
 }
 
+async function stitchSegmentsSimple(input: {
+  segmentPaths: string[];
+  outputPath: string;
+  quality: PropertyVideoTourJob['quality'];
+  workDir: string;
+}) {
+  const concatPath = path.join(input.workDir, 'segments.txt');
+  await writeFile(
+    concatPath,
+    input.segmentPaths.map((segmentPath) => `file '${path.basename(segmentPath).replace(/'/g, "'\\''")}'`).join('\n'),
+    'utf8'
+  );
+  try {
+    await runCommand(
+      getFfmpegCommand(),
+      ['-y', '-f', 'concat', '-safe', '0', '-i', concatPath, '-c', 'copy', '-movflags', '+faststart', input.outputPath],
+      input.workDir
+    );
+  } catch {
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        concatPath,
+        '-an',
+        '-c:v',
+        'libx264',
+        '-pix_fmt',
+        'yuv420p',
+        '-preset',
+        'veryfast',
+        '-crf',
+        input.quality === 'premium' ? '18' : '22',
+        '-movflags',
+        '+faststart',
+        input.outputPath,
+      ],
+      input.workDir
+    );
+  }
+}
+
 async function stitchSegmentsWithTransitions(input: {
   segmentPaths: string[];
   outputPath: string;
@@ -831,30 +901,37 @@ async function stitchSegmentsWithTransitions(input: {
     previousLabel = outputLabel;
   }
 
-  await runCommand(
-    getFfmpegCommand(),
-    [
-      '-y',
-      ...inputArgs,
-      '-filter_complex',
-      [...normalizedInputs, ...xfadeFilters].join(';'),
-      '-map',
-      `[${previousLabel}]`,
-      '-an',
-      '-c:v',
-      'libx264',
-      '-pix_fmt',
-      'yuv420p',
-      '-preset',
-      'veryfast',
-      '-crf',
-      quality === 'premium' ? '18' : '22',
-      '-movflags',
-      '+faststart',
-      outputPath,
-    ],
-    workDir
-  );
+  try {
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        ...inputArgs,
+        '-filter_complex',
+        [...normalizedInputs, ...xfadeFilters].join(';'),
+        '-map',
+        `[${previousLabel}]`,
+        '-an',
+        '-c:v',
+        'libx264',
+        '-pix_fmt',
+        'yuv420p',
+        '-preset',
+        'veryfast',
+        '-crf',
+        quality === 'premium' ? '18' : '22',
+        '-movflags',
+        '+faststart',
+        outputPath,
+      ],
+      workDir
+    );
+  } catch (error) {
+    console.warn('[property-video-tour-transitions-fallback]', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    await stitchSegmentsSimple({ segmentPaths, outputPath, quality, workDir });
+  }
 }
 
 function getPresenterOverlayConfig(input: {
@@ -1018,6 +1095,69 @@ async function overlayAgentPhotoAndCaptions(input: {
   });
   const photoSize = overlay.overlayWidth;
   const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto[withagent];[withagent]ass=agent-captions.ass[v]`;
+
+  await runCommand(
+    getFfmpegCommand(),
+    [
+      '-y',
+      '-i',
+      input.baseVideoPath,
+      '-loop',
+      '1',
+      '-i',
+      agentPhotoPath,
+      '-filter_complex',
+      filter,
+      '-map',
+      '[v]',
+      '-an',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '19',
+      '-movflags',
+      '+faststart',
+      input.outputPath,
+    ],
+    input.workDir
+  );
+}
+
+async function overlayAgentPhotoOnly(input: {
+  adminDb: Firestore;
+  property: Property;
+  baseVideoPath: string;
+  outputPath: string;
+  width: number;
+  height: number;
+  position?: PropertyVideoTourJob['aiPresenterPosition'];
+  size?: PropertyVideoTourJob['aiPresenterSize'];
+  workDir: string;
+}) {
+  const agentPhotoUrl = await getPropertyAgentPhotoUrl({
+    adminDb: input.adminDb,
+    property: input.property,
+  });
+
+  if (!agentPhotoUrl) {
+    await runCommand(getFfmpegCommand(), ['-y', '-i', input.baseVideoPath, '-c', 'copy', '-movflags', '+faststart', input.outputPath], input.workDir);
+    return;
+  }
+
+  const agentPhotoPath = path.join(input.workDir, 'agent-photo-fallback.jpg');
+  await writeFile(agentPhotoPath, await fetchBuffer(agentPhotoUrl));
+  const overlay = getPresenterOverlayConfig({
+    width: input.width,
+    height: input.height,
+    position: input.position,
+    size: input.size,
+  });
+  const photoSize = overlay.overlayWidth;
+  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1316,19 +1456,36 @@ async function renderJobWithFfmpeg(input: {
       });
 
       const compositedVideoPath = path.join(workDir, 'video-with-agent-voice.mp4');
-      await overlayAgentPhotoAndCaptions({
-        adminDb: input.adminDb,
-        property,
-        baseVideoPath: silentVideoPath,
-        outputPath: compositedVideoPath,
-        script: presenterScript,
-        durationSeconds,
-        width,
-        height,
-        position: job.aiPresenterPosition,
-        size: job.aiPresenterSize,
-        workDir,
-      });
+      try {
+        await overlayAgentPhotoAndCaptions({
+          adminDb: input.adminDb,
+          property,
+          baseVideoPath: silentVideoPath,
+          outputPath: compositedVideoPath,
+          script: presenterScript,
+          durationSeconds,
+          width,
+          height,
+          position: job.aiPresenterPosition,
+          size: job.aiPresenterSize,
+          workDir,
+        });
+      } catch (error) {
+        console.warn('[property-video-tour-caption-fallback]', {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        await overlayAgentPhotoOnly({
+          adminDb: input.adminDb,
+          property,
+          baseVideoPath: silentVideoPath,
+          outputPath: compositedVideoPath,
+          width,
+          height,
+          position: job.aiPresenterPosition,
+          size: job.aiPresenterSize,
+          workDir,
+        });
+      }
       presenterVideoUrl = null;
       videoForMuxPath = compositedVideoPath;
     }
@@ -1483,6 +1640,16 @@ export async function getPropertyVideoTourJobs(adminDb: Firestore, agencyId: str
     .limit(10)
     .get();
   return snapshot.docs.map((doc) => doc.data() as PropertyVideoTourJob);
+}
+
+export async function getPropertyVideoTourJob(adminDb: Firestore, agencyId: string, propertyId: string, jobId: string) {
+  const snapshot = await getVideoTourJobsCollection(adminDb, agencyId, propertyId).doc(jobId).get();
+  if (!snapshot.exists) {
+    const error = new Error('Jobul video nu exista.') as Error & { status?: number };
+    error.status = 404;
+    throw error;
+  }
+  return snapshot.data() as PropertyVideoTourJob;
 }
 
 export async function runPropertyVideoTourJob(input: {
