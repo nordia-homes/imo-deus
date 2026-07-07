@@ -871,6 +871,185 @@ function getPresenterOverlayConfig(input: {
   return { overlayWidth, x, y };
 }
 
+function escapeAssText(value: string) {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/\r?\n/g, ' ')
+    .trim();
+}
+
+function buildKaraokeAss(input: {
+  script: string;
+  durationSeconds: number;
+  width: number;
+  height: number;
+}) {
+  const words = input.script
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 180);
+  const safeWords = words.length ? words : ['Prezentare', 'proprietate'];
+  const totalUnits = Math.max(1, Math.round(input.durationSeconds * 100));
+  const unitPerWord = Math.max(18, Math.floor(totalUnits / safeWords.length));
+  const lineWordCount = input.width < input.height ? 5 : 7;
+  const fontSize = Math.round(input.width * (input.width < input.height ? 0.047 : 0.032));
+  const marginV = Math.round(input.height * 0.075);
+  const header = [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${input.width}`,
+    `PlayResY: ${input.height}`,
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: ImoDeusCaption,Arial,${fontSize},&H00FFFFFF,&H0022E6A8,&HAA07120F,&HAA07120F,-1,0,0,0,100,100,0,0,1,3,1,2,80,80,${marginV},1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+  ];
+
+  const events: string[] = [];
+  let currentUnit = 0;
+  for (let index = 0; index < safeWords.length; index += lineWordCount) {
+    const lineWords = safeWords.slice(index, index + lineWordCount);
+    const start = currentUnit / 100;
+    const lineUnits = unitPerWord * lineWords.length;
+    const end = Math.min(input.durationSeconds, (currentUnit + lineUnits + 35) / 100);
+    currentUnit += lineUnits;
+    const text = lineWords.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
+    events.push(`Dialogue: 0,${formatAssTime(start)},${formatAssTime(Math.max(start + 0.6, end))},ImoDeusCaption,,0,0,0,,${text}`);
+  }
+
+  return [...header, ...events, ''].join('\n');
+}
+
+function formatAssTime(seconds: number) {
+  const safeSeconds = Math.max(0, seconds);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const secs = Math.floor(safeSeconds % 60);
+  const centiseconds = Math.floor((safeSeconds - Math.floor(safeSeconds)) * 100);
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+}
+
+async function getPropertyAgentPhotoUrl(input: {
+  adminDb: Firestore;
+  property: Property;
+}) {
+  const propertyAgentPhoto = input.property.agent?.avatarUrl;
+  if (propertyAgentPhoto) return propertyAgentPhoto;
+
+  if (!input.property.agentId) return null;
+  const agentSnapshot = await input.adminDb.collection('users').doc(input.property.agentId).get();
+  if (!agentSnapshot.exists) return null;
+  const agent = agentSnapshot.data() as { photoUrl?: string | null } | undefined;
+  return agent?.photoUrl || null;
+}
+
+async function overlayAgentPhotoAndCaptions(input: {
+  adminDb: Firestore;
+  property: Property;
+  baseVideoPath: string;
+  outputPath: string;
+  script: string;
+  durationSeconds: number;
+  width: number;
+  height: number;
+  position?: PropertyVideoTourJob['aiPresenterPosition'];
+  size?: PropertyVideoTourJob['aiPresenterSize'];
+  workDir: string;
+}) {
+  const captionsPath = path.join(input.workDir, 'agent-captions.ass');
+  await writeFile(
+    captionsPath,
+    buildKaraokeAss({
+      script: input.script,
+      durationSeconds: input.durationSeconds,
+      width: input.width,
+      height: input.height,
+    }),
+    'utf8'
+  );
+
+  const agentPhotoUrl = await getPropertyAgentPhotoUrl({
+    adminDb: input.adminDb,
+    property: input.property,
+  });
+
+  if (!agentPhotoUrl) {
+    await runCommand(
+      getFfmpegCommand(),
+      [
+        '-y',
+        '-i',
+        input.baseVideoPath,
+        '-vf',
+        'ass=agent-captions.ass',
+        '-an',
+        '-c:v',
+        'libx264',
+        '-pix_fmt',
+        'yuv420p',
+        '-preset',
+        'veryfast',
+        '-crf',
+        '19',
+        '-movflags',
+        '+faststart',
+        input.outputPath,
+      ],
+      input.workDir
+    );
+    return;
+  }
+
+  const agentPhotoPath = path.join(input.workDir, 'agent-photo.jpg');
+  await writeFile(agentPhotoPath, await fetchBuffer(agentPhotoUrl));
+  const overlay = getPresenterOverlayConfig({
+    width: input.width,
+    height: input.height,
+    position: input.position,
+    size: input.size,
+  });
+  const photoSize = overlay.overlayWidth;
+  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto[withagent];[withagent]ass=agent-captions.ass[v]`;
+
+  await runCommand(
+    getFfmpegCommand(),
+    [
+      '-y',
+      '-i',
+      input.baseVideoPath,
+      '-loop',
+      '1',
+      '-i',
+      agentPhotoPath,
+      '-filter_complex',
+      filter,
+      '-map',
+      '[v]',
+      '-an',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '19',
+      '-movflags',
+      '+faststart',
+      input.outputPath,
+    ],
+    input.workDir
+  );
+}
+
 async function overlayPresenterVideo(input: {
   baseVideoPath: string;
   presenterVideoPath: string;
@@ -1136,25 +1315,21 @@ async function renderJobWithFfmpeg(input: {
         contentType: 'audio/mpeg',
       });
 
-      const presenterVideoPath = path.join(workDir, 'presenter-avatar.mp4');
-      presenterVideoUrl = await generateAvatarVideo({
-        job,
-        script: presenterScript,
-        audioUrl: presenterAudioUrl,
-        outputPath: presenterVideoPath,
-      });
-
-      const compositedVideoPath = path.join(workDir, 'video-with-presenter.mp4');
-      await overlayPresenterVideo({
+      const compositedVideoPath = path.join(workDir, 'video-with-agent-voice.mp4');
+      await overlayAgentPhotoAndCaptions({
+        adminDb: input.adminDb,
+        property,
         baseVideoPath: silentVideoPath,
-        presenterVideoPath,
         outputPath: compositedVideoPath,
+        script: presenterScript,
+        durationSeconds,
         width,
         height,
         position: job.aiPresenterPosition,
         size: job.aiPresenterSize,
         workDir,
       });
+      presenterVideoUrl = null;
       videoForMuxPath = compositedVideoPath;
     }
 

@@ -857,28 +857,14 @@ export function VideoTourCard({
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="video-tour-ai-presenter" className="flex items-center gap-2 text-sm font-medium text-white/82">
                   <UserRound className="h-4 w-4 text-emerald-200" />
-                  Prezentator AI
+                  Voce + poza agent
                 </Label>
                 <Switch id="video-tour-ai-presenter" checked={includeAiPresenter} onCheckedChange={setIncludeAiPresenter} />
               </div>
 
               {includeAiPresenter ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Avatar</Label>
-                      <Select value={aiPresenterAvatar} onValueChange={(value) => setAiPresenterAvatar(value as AiPresenterAvatar)}>
-                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(AI_PRESENTER_AVATAR_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Voce</Label>
                       <Select value={aiPresenterVoice} onValueChange={(value) => setAiPresenterVoice(value as AiPresenterVoice)}>
@@ -928,9 +914,12 @@ export function VideoTourCard({
                     <Textarea
                       value={aiPresenterScript}
                       onChange={(event) => setAiPresenterScript(event.target.value)}
-                      placeholder="Lasă gol pentru script automat din descrierea proprietății."
+                      placeholder="Lasa gol pentru script automat din descrierea proprietatii."
                       className="min-h-[92px] resize-none border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/34"
                     />
+                    <p className="text-xs leading-5 text-white/50">
+                      Foloseste poza agentului proprietatii, voiceover si subtitrare animata pe cuvinte. Nu foloseste avatar extern.
+                    </p>
                   </div>
                 </div>
               ) : null}
