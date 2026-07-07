@@ -139,6 +139,15 @@ function isRateLimited(message) {
   return String(message || '').toLowerCase().includes('too many calls');
 }
 
+function isInvalidAccessToken(message) {
+  const normalized = String(message || '').toLowerCase();
+  return normalized.includes('access token') && (
+    normalized.includes('expired')
+    || normalized.includes('invalid')
+    || normalized.includes('error validating')
+  );
+}
+
 function summarize(results) {
   const total = results.length;
   const success = results.filter((item) => item.ok).length;
@@ -192,6 +201,7 @@ async function main() {
   const results = [];
   let sequence = 0;
   let stoppedForRateLimit = false;
+  let stoppedForInvalidToken = false;
 
   for (const test of requiredTests) {
     sequence += 1;
@@ -209,10 +219,15 @@ async function main() {
       message: result.message || null,
     });
     console.log(`[${sequence}] ${test.feature} ${result.ok ? 'OK' : 'FAIL'} ${result.status}${result.message ? ` - ${result.message}` : ''}`);
+    if (!result.ok && isInvalidAccessToken(result.message)) {
+      stoppedForInvalidToken = true;
+      console.log('Token Meta expirat sau invalid. Opresc rularea ca sa nu creasca error rate-ul pentru App Review.');
+      break;
+    }
     if (delayMs) await sleep(delayMs);
   }
 
-  for (let index = 0; index < totalMarketingCalls; index += 1) {
+  for (let index = 0; !stoppedForInvalidToken && index < totalMarketingCalls; index += 1) {
     const requestPath = marketingPool[index % marketingPool.length];
     sequence += 1;
     const startedAt = new Date().toISOString();
@@ -237,6 +252,11 @@ async function main() {
       console.log('Rate limit detectat. Opresc rularea ca sa nu creasca error rate-ul pentru App Review.');
       break;
     }
+    if (!result.ok && isInvalidAccessToken(result.message)) {
+      stoppedForInvalidToken = true;
+      console.log('Token Meta expirat sau invalid. Opresc rularea ca sa nu creasca error rate-ul pentru App Review.');
+      break;
+    }
     if (delayMs) await sleep(delayMs);
   }
 
@@ -255,6 +275,7 @@ async function main() {
       minimumSuccessRate: 85,
       marketingTierRequirementMet: marketingSummary.total >= 500 && marketingSummary.successRate >= 85,
       stoppedForRateLimit,
+      stoppedForInvalidToken,
     },
     results,
   };
@@ -269,7 +290,9 @@ async function main() {
     reportPath,
   }, null, 2));
 
-  if (stoppedForRateLimit) {
+  if (stoppedForInvalidToken) {
+    process.exitCode = 4;
+  } else if (stoppedForRateLimit) {
     process.exitCode = 3;
   } else if (!report.metaRequirement.marketingTierRequirementMet) {
     process.exitCode = 2;

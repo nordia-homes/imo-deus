@@ -4,6 +4,7 @@ import { adminDb } from '@/firebase/admin';
 import type {
   Agency,
   MetaMarketingCampaignDraft,
+  MetaFacebookPagePost,
   MetaMarketingIntegrationPrivate,
   MetaMarketingIntegrationPublicStatus,
   Property,
@@ -22,6 +23,7 @@ const REQUIRED_SCOPES = [
   'business_management',
   'pages_show_list',
   'pages_read_engagement',
+  'pages_manage_posts',
 ];
 
 type MetaApiError = Error & {
@@ -58,6 +60,7 @@ type MetaAdAccount = {
 type MetaPage = {
   id: string;
   name?: string;
+  access_token?: string;
   instagram_business_account?: {
     id?: string;
     username?: string;
@@ -72,8 +75,13 @@ type MetaUser = {
 
 type MetaCreateResponse = {
   id?: string;
+  post_id?: string;
   hash?: string;
   images?: Record<string, { hash?: string; url?: string }>;
+};
+
+type MetaPermalinkResponse = {
+  permalink_url?: string;
 };
 
 type AssetSelection = {
@@ -607,6 +615,161 @@ async function buildPropertyDestinationUrl(agencyId: string, propertyId: string)
     : ({ id: agencyId } as Agency);
   const publicUrl = buildAgencyPublicUrl(agency, `/properties/${propertyId}`);
   return publicUrl.startsWith('http') ? publicUrl : `${getAppBaseUrl()}${publicUrl}`;
+}
+
+function buildOrganicFacebookPostMessage(property: Property, destinationUrl: string) {
+  const content = buildDefaultCampaignContent(property);
+  const parts = [
+    property.title || content.headline,
+    property.description || content.primaryText,
+    destinationUrl,
+  ].filter((value): value is string => Boolean(value?.trim()));
+  return parts.join('\n\n').trim();
+}
+
+function getHttpsPropertyImages(property: Property) {
+  return (property.images || [])
+    .filter((image) => image?.url && /^https:\/\//i.test(image.url))
+    .slice(0, 10)
+    .map((image) => ({
+      url: image.url,
+      alt: image.alt || property.title || '',
+    }));
+}
+
+async function getSelectedPageAccessToken(
+  pageId: string,
+  userAccessToken: string,
+) {
+  const page = await metaRequest<MetaPage>(
+    `/${pageId}?fields=id,name,access_token`,
+    userAccessToken,
+  );
+
+  if (!page.access_token) {
+    throw new Error('Tokenul Meta nu are acces de publicare pe pagina selectata. Reconecteaza Meta cu permisiunea pages_manage_posts.');
+  }
+
+  return {
+    pageAccessToken: page.access_token,
+    pageName: page.name || page.id,
+  };
+}
+
+export async function publishPropertyToFacebookPage(params: {
+  agencyId: string;
+  propertyId: string;
+  requestedByUid?: string | null;
+}) {
+  const propertySnapshot = await adminDb
+    .collection('agencies')
+    .doc(params.agencyId)
+    .collection('properties')
+    .doc(params.propertyId)
+    .get();
+
+  if (!propertySnapshot.exists) {
+    throw new Error('Proprietatea nu a fost gasita.');
+  }
+
+  const property = { id: propertySnapshot.id, ...(propertySnapshot.data() as Omit<Property, 'id'>) } as Property;
+  const { accessToken, integration } = await getAccessTokenForAgency(params.agencyId);
+  const selectedPage = integration.selectedPage;
+
+  if (!integration.connected || !selectedPage?.id) {
+    throw new Error('Conecteaza Meta si selecteaza pagina Facebook a agentiei inainte de publicare.');
+  }
+
+  if (integration.scopes?.length && !integration.scopes.includes('pages_manage_posts')) {
+    throw new Error('Conexiunea Meta nu include pages_manage_posts. Reconecteaza Meta pentru publicare organica pe pagina Facebook.');
+  }
+
+  const destinationUrl = await buildPropertyDestinationUrl(params.agencyId, params.propertyId);
+  const message = buildOrganicFacebookPostMessage(property, destinationUrl);
+  const images = getHttpsPropertyImages(property);
+  const now = nowIso();
+
+  await propertySnapshot.ref.set(
+    {
+      metaFacebookPost: {
+        status: 'publishing',
+        pageId: selectedPage.id,
+        pageName: selectedPage.name || null,
+        postId: null,
+        permalinkUrl: null,
+        photoIds: [],
+        message,
+        imageCount: images.length,
+        createdByUid: params.requestedByUid || null,
+        updatedAt: now,
+        errorMessage: null,
+      } satisfies MetaFacebookPagePost,
+    },
+    { merge: true },
+  );
+
+  try {
+    const { pageAccessToken, pageName } = await getSelectedPageAccessToken(selectedPage.id, accessToken);
+    const uploadedPhotos = images.length
+      ? await Promise.all(images.map((image) => metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/photos`, pageAccessToken, {
+          url: image.url,
+          published: false,
+          caption: image.alt,
+        })))
+      : [];
+    const photoIds = uploadedPhotos.map((photo) => photo.id).filter((id): id is string => Boolean(id));
+    const feedParams: Record<string, string | number | boolean | null | undefined> = {
+      message,
+    };
+
+    if (photoIds.length) {
+      photoIds.forEach((id, index) => {
+        feedParams[`attached_media[${index}]`] = JSON.stringify({ media_fbid: id });
+      });
+    } else {
+      feedParams.link = destinationUrl;
+    }
+
+    const postResponse = await metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/feed`, pageAccessToken, feedParams);
+    const postId = postResponse.id || postResponse.post_id || null;
+    const permalink = postId
+      ? await metaRequest<MetaPermalinkResponse>(`/${postId}?fields=permalink_url`, pageAccessToken).catch(() => null)
+      : null;
+    const post: MetaFacebookPagePost = {
+      status: 'published',
+      pageId: selectedPage.id,
+      pageName,
+      postId,
+      permalinkUrl: permalink?.permalink_url || null,
+      photoIds,
+      message,
+      imageCount: images.length,
+      createdByUid: params.requestedByUid || null,
+      publishedAt: nowIso(),
+      updatedAt: nowIso(),
+      errorMessage: null,
+    };
+
+    await propertySnapshot.ref.set({ metaFacebookPost: post }, { merge: true });
+    return post;
+  } catch (error) {
+    const messageError = error instanceof Error ? error.message : 'Publicarea pe Facebook a esuat.';
+    const failedPost: MetaFacebookPagePost = {
+      status: 'error',
+      pageId: selectedPage.id,
+      pageName: selectedPage.name || null,
+      postId: null,
+      permalinkUrl: null,
+      photoIds: [],
+      message,
+      imageCount: images.length,
+      createdByUid: params.requestedByUid || null,
+      updatedAt: nowIso(),
+      errorMessage: messageError,
+    };
+    await propertySnapshot.ref.set({ metaFacebookPost: failedPost }, { merge: true });
+    throw error;
+  }
 }
 
 export async function createMetaCampaignDraft(params: {

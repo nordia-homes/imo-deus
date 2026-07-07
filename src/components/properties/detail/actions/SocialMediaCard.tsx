@@ -1,4 +1,5 @@
 'use client';
+import { signOut } from "firebase/auth";
 import {
   Dialog,
   DialogContent,
@@ -9,24 +10,57 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Rocket, Loader2, Copy, Check, ThumbsUp, MessageCircle, Share, Globe } from "lucide-react";
-import type { Property } from "@/lib/types";
+import { Share2, Rocket, Loader2, Copy, Check, ThumbsUp, MessageCircle, Share, Globe, Send, ExternalLink } from "lucide-react";
+import type { MetaFacebookPagePost, Property } from "@/lib/types";
 import { generateSocialMediaPost } from "@/ai/flows/social-media-post-generator";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useAgency } from "@/context/AgencyContext";
+import { useAuth, useUser } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Skeleton } from "../../../ui/skeleton";
 import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_PILL_CLASSNAME } from "./cardStyles";
 
+async function authorizedFetch(
+    user: NonNullable<ReturnType<typeof useUser>['user']>,
+    auth: ReturnType<typeof useAuth>,
+    input: RequestInfo,
+    init?: RequestInit
+) {
+    let token: string;
+    try {
+        token = await user.getIdToken(true);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error || '');
+        if (message.includes('auth/invalid-credential') || message.includes('invalid-credential')) {
+            await signOut(auth).catch(() => undefined);
+            throw new Error('Sesiunea Firebase nu mai este valida. Autentifica-te din nou si reincearca.');
+        }
+        throw error;
+    }
+
+    return fetch(input, {
+        ...init,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            ...(init?.headers || {}),
+        },
+    });
+}
+
 
 export function SocialMediaCard({ property }: { property: Property }) {
     const { agency } = useAgency();
+    const { user } = useUser();
+    const auth = useAuth();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isPublishingFacebook, setIsPublishingFacebook] = useState(false);
+    const [facebookPost, setFacebookPost] = useState<MetaFacebookPagePost | null>(property.metaFacebookPost || null);
     const [post, setPost] = useState('');
     const [copied, setCopied] = useState(false);
     const { toast } = useToast();
@@ -65,6 +99,34 @@ export function SocialMediaCard({ property }: { property: Property }) {
         toast({ title: 'Textul postării a fost copiat!' });
     };
 
+    const handlePublishFacebook = async () => {
+        if (!user || !property.id || isPublishingFacebook) return;
+        setIsPublishingFacebook(true);
+        try {
+            const response = await authorizedFetch(user, auth, '/api/marketing/meta/property-posts', {
+                method: 'POST',
+                body: JSON.stringify({ propertyId: property.id }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload?.message || 'Nu am putut publica proprietatea pe Facebook.');
+            }
+            setFacebookPost(payload.post as MetaFacebookPagePost);
+            toast({
+                title: 'Publicata pe Facebook',
+                description: 'Proprietatea a fost publicata pe pagina agentiei, cu descrierea si pozele din anunt.',
+            });
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Publicare Facebook esuata',
+                description: error instanceof Error ? error.message : 'Nu am putut publica proprietatea pe Facebook.',
+            });
+        } finally {
+            setIsPublishingFacebook(false);
+        }
+    };
+
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -86,7 +148,7 @@ export function SocialMediaCard({ property }: { property: Property }) {
                                     Promovare Social Media
                                 </p>
                                 <p className="text-xs text-white/60">
-                                    Genereaza rapid continut pentru social media.
+                                    Genereaza continut si publica pe Facebook.
                                 </p>
                             </div>
                         </div>
@@ -173,6 +235,56 @@ export function SocialMediaCard({ property }: { property: Property }) {
                           Copiază textul postării
                         </Button>
                     )}
+                    <div className="rounded-2xl border border-sky-300/15 bg-sky-300/[0.07] p-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-semibold text-white">Publicare pe pagina Facebook</p>
+                                <p className="mt-1 text-xs leading-5 text-white/60">
+                                    Posteaza direct proprietatea pe pagina Facebook a agentiei, fara buget de promovare.
+                                </p>
+                            </div>
+                            {facebookPost?.status === 'published' ? (
+                                <span className="rounded-full border border-emerald-300/25 bg-emerald-400/12 px-3 py-1 text-xs font-semibold text-emerald-100">
+                                    Publicata
+                                </span>
+                            ) : null}
+                        </div>
+
+                        {facebookPost ? (
+                            <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+                                <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">Ultima postare</p>
+                                <p className="mt-1 text-sm font-medium text-white">
+                                    {facebookPost.status === 'error'
+                                        ? 'Eroare la publicare'
+                                        : facebookPost.status === 'publishing'
+                                            ? 'Se publica...'
+                                            : `${facebookPost.imageCount} fotografii pe ${facebookPost.pageName || 'pagina Facebook'}`}
+                                </p>
+                                {facebookPost.errorMessage ? (
+                                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-red-100/80">{facebookPost.errorMessage}</p>
+                                ) : null}
+                            </div>
+                        ) : null}
+
+                        <div className="mt-3 flex gap-2">
+                            <Button
+                                type="button"
+                                className="flex-1 rounded-full border border-sky-200/24 bg-sky-300/14 text-sky-50 hover:bg-sky-300/20"
+                                onClick={() => void handlePublishFacebook()}
+                                disabled={isPublishingFacebook || !user}
+                            >
+                                {isPublishingFacebook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                {facebookPost?.status === 'published' ? 'Publica din nou' : 'Publica pe Facebook'}
+                            </Button>
+                            {facebookPost?.permalinkUrl ? (
+                                <Button asChild variant="ghost" size="icon" className={`h-10 w-10 rounded-full ${ACTION_PILL_CLASSNAME}`}>
+                                    <a href={facebookPost.permalinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Deschide postarea Facebook">
+                                        <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                </Button>
+                            ) : null}
+                        </div>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

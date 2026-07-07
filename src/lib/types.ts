@@ -449,6 +449,21 @@ export type MetaMarketingCampaignDraft = {
   } | null;
 };
 
+export type MetaFacebookPagePost = {
+  status: 'publishing' | 'published' | 'error';
+  pageId: string;
+  pageName?: string | null;
+  postId?: string | null;
+  permalinkUrl?: string | null;
+  photoIds?: string[];
+  message: string;
+  imageCount: number;
+  createdByUid?: string | null;
+  publishedAt?: string | null;
+  updatedAt: string;
+  errorMessage?: string | null;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -515,6 +530,7 @@ export type Property = {
     imobiliare?: ImobiliarePortalProfile;
     storia?: StoriaPortalProfile;
   };
+  metaFacebookPost?: MetaFacebookPagePost | null;
   locationProfile?: PropertyLocationProfile | null;
 
   // Commission fields
