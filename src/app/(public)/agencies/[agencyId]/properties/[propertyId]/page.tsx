@@ -332,7 +332,7 @@ export default function PublicPropertyDetailPage() {
         return (
           <div className={cn("min-h-screen bg-transparent pb-24", isAgentfinderTheme ? "text-slate-950" : "text-stone-100")}>
              <div className="space-y-0">
-                 <MediaColumn property={property} showMatchPrompt={true} shareImageUrl={propertyShareImageUrl} />
+                 <MediaColumn property={property} showMatchPrompt={true} showVideoTour={false} shareImageUrl={propertyShareImageUrl} />
 
                 <div className="space-y-4 px-2">
                     <div className={cn(isAgentfinderTheme ? "space-y-0" : "space-y-4")}>
@@ -443,7 +443,7 @@ export default function PublicPropertyDetailPage() {
                 <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <PublicPropertyHeader property={property} />
-                        <MediaColumn property={property} showMatchPrompt={true} shareImageUrl={propertyShareImageUrl} />
+                        <MediaColumn property={property} showMatchPrompt={true} showVideoTour={false} shareImageUrl={propertyShareImageUrl} />
                         <PublicInfoColumn property={property} isMobile={false} />
                         <div className="h-80">
                             <PublicPropertyDetailsMap properties={[property]} />

@@ -6,11 +6,13 @@ import { VideoTourCard } from "./actions/VideoTourCard";
 export function MediaColumn({
     property,
     showMatchPrompt = false,
+    showVideoTour = true,
     shareUrl,
     shareImageUrl,
 }: {
     property: Property;
     showMatchPrompt?: boolean;
+    showVideoTour?: boolean;
     shareUrl?: string;
     shareImageUrl?: string;
 }) {
@@ -25,7 +27,7 @@ export function MediaColumn({
                 showMatchPrompt={showMatchPrompt}
                 shareUrl={shareUrl}
                 shareImageUrl={shareImageUrl}
-                videoAction={<VideoTourCard property={property} triggerVariant="gallery-button" />}
+                videoAction={showVideoTour ? <VideoTourCard property={property} triggerVariant="gallery-button" /> : null}
              />
         </div>
     );
