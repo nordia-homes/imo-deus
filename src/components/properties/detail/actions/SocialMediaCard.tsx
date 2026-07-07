@@ -90,7 +90,7 @@ function FacebookImageGrid({ property }: { property: Property }) {
 
   if (images.length === 2) {
     return (
-      <div className="grid aspect-[1.6/1] grid-cols-2 gap-1 overflow-hidden bg-white">
+      <div className="grid aspect-[1.7/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
         {images.map((image, index) => (
           <div key={`${image.url}-${index}`} className="relative bg-slate-100">
             <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
@@ -102,11 +102,11 @@ function FacebookImageGrid({ property }: { property: Property }) {
 
   if (images.length === 3) {
     return (
-      <div className="grid aspect-[1.2/1] grid-cols-2 gap-1 overflow-hidden bg-white">
+      <div className="grid aspect-[1.45/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
         <div className="relative bg-slate-100">
           <Image src={images[0].url} alt={images[0].alt || property.title} fill className="object-cover" sizes="260px" />
         </div>
-        <div className="grid grid-rows-2 gap-1">
+        <div className="grid grid-rows-2 gap-0.5">
           {images.slice(1).map((image, index) => (
             <div key={`${image.url}-${index}`} className="relative bg-slate-100">
               <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
@@ -119,7 +119,7 @@ function FacebookImageGrid({ property }: { property: Property }) {
 
   if (images.length === 4) {
     return (
-      <div className="grid aspect-square grid-cols-2 gap-1 overflow-hidden bg-white">
+      <div className="grid aspect-[1.45/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
         {images.map((image, index) => (
           <div key={`${image.url}-${index}`} className="relative bg-slate-100">
             <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
@@ -130,18 +130,22 @@ function FacebookImageGrid({ property }: { property: Property }) {
   }
 
   return (
-    <div className="grid aspect-[1.04/1] grid-cols-2 gap-1 overflow-hidden bg-white">
-      <div className="relative min-h-0 bg-slate-100">
-        <Image src={images[0].url} alt={images[0].alt || property.title} fill className="object-cover" sizes="260px" />
+    <div className="grid aspect-[1.45/1] grid-rows-[1.05fr_0.95fr] gap-0.5 overflow-hidden bg-white">
+      <div className="grid grid-cols-2 gap-0.5">
+        {images.slice(0, 2).map((image, index) => (
+          <div key={`${image.url}-${index}`} className="relative bg-slate-100">
+            <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
+          </div>
+        ))}
       </div>
-      <div className="grid min-h-0 grid-cols-2 gap-1">
-        {images.slice(1, 5).map((image, index) => {
-          const showOverlay = index === 3 && remainingCount > 0;
+      <div className="grid grid-cols-3 gap-0.5">
+        {images.slice(2, 5).map((image, index) => {
+          const showOverlay = index === 2 && remainingCount > 0;
           return (
-            <div key={`${image.url}-${index}`} className="relative min-h-0 bg-slate-100">
-              <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="130px" />
+            <div key={`${image.url}-${index}`} className="relative bg-slate-100">
+              <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="180px" />
               {showOverlay ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-4xl font-semibold text-white">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-3xl font-semibold text-white">
                   +{remainingCount}
                 </div>
               ) : null}
@@ -216,56 +220,56 @@ export function SocialMediaCard({ property }: { property: Property }) {
 
       <DialogContent
         className={cn(
-          'border-none bg-white p-0 text-slate-950 shadow-2xl sm:max-w-[640px]',
+          'border-none bg-white p-0 text-slate-950 shadow-2xl sm:max-w-[620px]',
           isMobile && 'h-screen w-screen max-w-full rounded-none',
         )}
       >
-        <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left">
-          <DialogTitle className="text-2xl font-semibold tracking-tight">Publica pe pagina ta Facebook</DialogTitle>
-          <DialogDescription className="text-slate-500">
+        <DialogHeader className="border-b border-slate-200 px-5 py-4 text-left">
+          <DialogTitle className="text-xl font-semibold tracking-tight">Publica pe pagina ta Facebook</DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
             Verifica previzualizarea si publica postarea organic, fara buget de promovare.
           </DialogDescription>
         </DialogHeader>
 
-        <div className={cn('max-h-[72vh] overflow-y-auto bg-slate-100/70 px-4 py-5', isMobile && 'max-h-[calc(100vh-190px)]')}>
-          <div className="mx-auto overflow-hidden rounded-sm bg-white shadow-sm ring-1 ring-slate-200 sm:max-w-[520px]">
-            <div className="flex items-start justify-between px-4 pb-3 pt-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border border-slate-200">
+        <div className={cn('max-h-[72vh] overflow-y-auto bg-[#f0f2f5] px-4 py-5', isMobile && 'max-h-[calc(100vh-190px)]')}>
+          <div className="mx-auto overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200 sm:max-w-[500px]">
+            <div className="flex items-start justify-between px-4 pb-2.5 pt-3.5">
+              <div className="flex items-center gap-2.5">
+                <Avatar className="h-10 w-10 border border-slate-200">
                   <AvatarImage src={agency?.logoUrl || undefined} alt={pageName} />
                   <AvatarFallback className="bg-slate-950 text-white">{pageName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-[17px] font-bold leading-tight text-slate-950">{pageName}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[15px] leading-tight text-slate-500">
+                  <p className="text-[15px] font-bold leading-tight text-slate-950">{pageName}</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-[13px] leading-tight text-slate-500">
                     Chiar acum
                     <span aria-hidden="true">·</span>
-                    <Globe2 className="h-4 w-4" />
+                    <Globe2 className="h-3.5 w-3.5" />
                   </p>
                 </div>
               </div>
-              <MoreHorizontal className="mt-1 h-7 w-7 text-slate-500" />
+              <MoreHorizontal className="mt-1 h-6 w-6 text-slate-500" />
             </div>
 
             <div className="px-4 pb-3">
-              <p className="whitespace-pre-wrap text-[21px] leading-[1.18] tracking-normal text-slate-950">
+              <p className="whitespace-pre-wrap text-[15px] leading-[1.32] tracking-normal text-slate-950">
                 {previewText || 'Descrierea proprietatii va aparea aici.'}
               </p>
             </div>
 
             <FacebookImageGrid property={property} />
 
-            <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 text-slate-600">
-              <button type="button" className="flex items-center gap-2 text-[15px] font-semibold">
-                <ThumbsUp className="h-6 w-6" />
+            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-2.5 text-slate-600">
+              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
+                <ThumbsUp className="h-5 w-5" />
                 Apreciaza
               </button>
-              <button type="button" className="flex items-center gap-2 text-[15px] font-semibold">
-                <MessageCircle className="h-6 w-6" />
+              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
+                <MessageCircle className="h-5 w-5" />
                 Comenteaza
               </button>
-              <button type="button" className="flex items-center gap-2 text-[15px] font-semibold">
-                <Share2 className="h-6 w-6" />
+              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
+                <Share2 className="h-5 w-5" />
                 Distribuie
               </button>
             </div>
