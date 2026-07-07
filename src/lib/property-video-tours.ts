@@ -217,15 +217,36 @@ function buildZoompanFilter(input: {
   height: number;
   fps: number;
   framesPerImage: number;
+  imageIndex: number;
   job: PropertyVideoTourJob;
   property: Property;
   agencyName?: string | null;
 }) {
-  const { width, height, fps, framesPerImage, job, property, agencyName } = input;
+  const { width, height, fps, framesPerImage, imageIndex, job, property, agencyName } = input;
+  const progress = `on/${Math.max(framesPerImage - 1, 1)}`;
+  const panXLeft = `(iw-iw/zoom)*(1-${progress})`;
+  const panXRight = `(iw-iw/zoom)*${progress}`;
+  const panYTop = `(ih-ih/zoom)*(1-${progress})`;
+  const panYBottom = `(ih-ih/zoom)*${progress}`;
+  const centerX = 'iw/2-(iw/zoom/2)';
+  const centerY = 'ih/2-(ih/zoom/2)';
+  const zoomStep = job.style === 'social' ? '0.0022' : job.style === 'luxury' ? '0.0010' : '0.0015';
+  const zoomOutStep = job.style === 'social' ? '0.0018' : job.style === 'luxury' ? '0.0009' : '0.0013';
+  const motionVariants = [
+    { z: `min(1.02+on*${zoomStep},1.16)`, x: centerX, y: centerY },
+    { z: `max(1.16-on*${zoomOutStep},1.03)`, x: centerX, y: centerY },
+    { z: '1.12', x: panXRight, y: centerY },
+    { z: '1.12', x: panXLeft, y: centerY },
+    { z: '1.13', x: centerX, y: panYBottom },
+    { z: '1.13', x: centerX, y: panYTop },
+    { z: `min(1.04+on*${zoomStep},1.15)`, x: panXRight, y: panYBottom },
+    { z: `max(1.15-on*${zoomOutStep},1.04)`, x: panXLeft, y: panYTop },
+  ];
+  const motion = motionVariants[imageIndex % motionVariants.length];
   const filters = [
     `scale=${width * 2}:${height * 2}:force_original_aspect_ratio=increase`,
     `crop=${width * 2}:${height * 2}`,
-    `zoompan=z='min(zoom+0.0016,1.12)':d=${framesPerImage}:s=${width}x${height}:fps=${fps}`,
+    `zoompan=z='${motion.z}':x='${motion.x}':y='${motion.y}':d=${framesPerImage}:s=${width}x${height}:fps=${fps}`,
     'setsar=1',
   ];
 
@@ -254,6 +275,75 @@ function buildZoompanFilter(input: {
   }
 
   return filters.join(',');
+}
+
+function getTransitionSeconds(style: PropertyVideoTourJob['style']) {
+  if (style === 'social') return 0.32;
+  if (style === 'luxury') return 0.72;
+  return 0.48;
+}
+
+function getTransitionName(index: number, style: PropertyVideoTourJob['style']) {
+  const cinematic = ['fade', 'smoothleft', 'smoothright', 'distance'];
+  const luxury = ['fade', 'fadeblack', 'smoothleft', 'smoothright'];
+  const social = ['smoothleft', 'smoothright', 'circlecrop', 'fade'];
+  const transitions = style === 'luxury' ? luxury : style === 'social' ? social : cinematic;
+  return transitions[index % transitions.length];
+}
+
+async function stitchSegmentsWithTransitions(input: {
+  segmentPaths: string[];
+  outputPath: string;
+  segmentDurationSeconds: number;
+  transitionSeconds: number;
+  style: PropertyVideoTourJob['style'];
+  quality: PropertyVideoTourJob['quality'];
+  workDir: string;
+}) {
+  const { segmentPaths, outputPath, segmentDurationSeconds, transitionSeconds, style, quality, workDir } = input;
+  if (segmentPaths.length === 1) {
+    await runCommand(getFfmpegCommand(), ['-y', '-i', segmentPaths[0], '-c', 'copy', '-movflags', '+faststart', outputPath], workDir);
+    return;
+  }
+
+  const inputArgs = segmentPaths.flatMap((segmentPath) => ['-i', segmentPath]);
+  const normalizedInputs = segmentPaths.map((_, index) => `[${index}:v]setpts=PTS-STARTPTS[v${index}]`);
+  const xfadeFilters: string[] = [];
+  let previousLabel = 'v0';
+
+  for (let index = 1; index < segmentPaths.length; index += 1) {
+    const outputLabel = `vx${index}`;
+    const offset = Math.max(0.1, (segmentDurationSeconds - transitionSeconds) * index);
+    xfadeFilters.push(
+      `[${previousLabel}][v${index}]xfade=transition=${getTransitionName(index - 1, style)}:duration=${transitionSeconds.toFixed(2)}:offset=${offset.toFixed(2)}[${outputLabel}]`
+    );
+    previousLabel = outputLabel;
+  }
+
+  await runCommand(
+    getFfmpegCommand(),
+    [
+      '-y',
+      ...inputArgs,
+      '-filter_complex',
+      [...normalizedInputs, ...xfadeFilters].join(';'),
+      '-map',
+      `[${previousLabel}]`,
+      '-an',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'veryfast',
+      '-crf',
+      quality === 'premium' ? '18' : '22',
+      '-movflags',
+      '+faststart',
+      outputPath,
+    ],
+    workDir
+  );
 }
 
 async function createSilentAudio(workDir: string, durationSeconds: number) {
@@ -323,9 +413,10 @@ async function renderJobWithFfmpeg(input: {
     const agencyName = (agencySnapshot.data() as { name?: string } | undefined)?.name || null;
     const defaultDuration = downloadedImages.length * getSecondsPerImage(job.style);
     const durationSeconds = Math.round(job.targetDurationSeconds || defaultDuration);
-    const framesPerImage = Math.max(45, Math.round((durationSeconds / downloadedImages.length) * fps));
+    const transitionSeconds = getTransitionSeconds(job.style);
+    const segmentDurationSeconds = (durationSeconds + (downloadedImages.length - 1) * transitionSeconds) / downloadedImages.length;
+    const framesPerImage = Math.max(45, Math.round(segmentDurationSeconds * fps));
     const { width, height } = getFormatConfig(job.format, job.quality);
-    const listPath = path.join(workDir, 'segments.txt');
     const segmentPaths: string[] = [];
 
     for (let index = 0; index < downloadedImages.length; index += 1) {
@@ -340,7 +431,7 @@ async function renderJobWithFfmpeg(input: {
           '-i',
           path.join(workDir, 'frames', downloadedImages[index].fileName),
           '-vf',
-          buildZoompanFilter({ width, height, fps, framesPerImage, job, property, agencyName }),
+          buildZoompanFilter({ width, height, fps, framesPerImage, imageIndex: index, job, property, agencyName }),
           '-t',
           String(framesPerImage / fps),
           '-an',
@@ -358,17 +449,16 @@ async function renderJobWithFfmpeg(input: {
       );
     }
 
-    await writeFile(
-      listPath,
-      segmentPaths.map((segmentPath) => `file '${segmentPath.replace(/\\/g, '/')}'`).join('\n')
-    );
-
     const silentVideoPath = path.join(workDir, 'video-no-audio.mp4');
-    await runCommand(
-      getFfmpegCommand(),
-      ['-y', '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', silentVideoPath],
-      workDir
-    );
+    await stitchSegmentsWithTransitions({
+      segmentPaths,
+      outputPath: silentVideoPath,
+      segmentDurationSeconds: framesPerImage / fps,
+      transitionSeconds,
+      style: job.style,
+      quality: job.quality,
+      workDir,
+    });
 
     const finalVideoPath = path.join(workDir, 'video-tour.mp4');
     if (job.includeMusic) {
