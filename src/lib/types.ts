@@ -464,6 +464,26 @@ export type MetaFacebookPagePost = {
   errorMessage?: string | null;
 };
 
+export type PropertyVideoTour = {
+  status: 'ready' | 'processing' | 'error';
+  url?: string | null;
+  thumbnailUrl?: string | null;
+  fileName?: string | null;
+  format: 'landscape' | 'portrait' | 'square';
+  style: 'cinematic' | 'luxury' | 'social';
+  quality?: 'standard' | 'premium' | null;
+  targetDurationSeconds?: number | null;
+  hasMusic?: boolean | null;
+  hasAgencyBranding?: boolean | null;
+  engine?: 'browser-canvas' | 'cloud-renderer' | null;
+  mimeType?: string | null;
+  durationSeconds?: number | null;
+  imageCount?: number | null;
+  generatedAt?: string | null;
+  generatedByUid?: string | null;
+  errorMessage?: string | null;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -531,6 +551,7 @@ export type Property = {
     storia?: StoriaPortalProfile;
   };
   metaFacebookPost?: MetaFacebookPagePost | null;
+  videoTour?: PropertyVideoTour | null;
   locationProfile?: PropertyLocationProfile | null;
 
   // Commission fields

@@ -70,6 +70,14 @@ export function MetaAdsCard({ property }: { property: Property }) {
   const latestCampaign = campaigns[0] || null;
   const latestInsights = latestCampaign?.insights || null;
   const propertyImages = property.images?.filter((image) => image?.url).slice(0, 6) || [];
+  const propertyVideos = property.videoTour?.status === 'ready' && property.videoTour.url
+    ? [{
+        url: property.videoTour.url,
+        thumbnailUrl: property.videoTour.thumbnailUrl || property.images?.[0]?.url || null,
+        alt: `Video tur ${property.title}`,
+        name: 'Video tur proprietate',
+      }]
+    : [];
   const statusLabel = latestCampaign
     ? latestCampaign.status === 'draft'
       ? 'Draft in lucru'
@@ -245,6 +253,7 @@ export function MetaAdsCard({ property }: { property: Property }) {
         open={Boolean(editingCampaign)}
         campaign={editingCampaign}
         propertyImages={propertyImages}
+        propertyVideos={propertyVideos}
         fallbackTitle={property.title}
         onOpenChange={(open) => {
           if (!open) setEditingCampaign(null);

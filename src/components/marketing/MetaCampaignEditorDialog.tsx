@@ -60,10 +60,18 @@ type PropertyImage = {
   alt?: string | null;
 };
 
+type PropertyVideo = {
+  url: string;
+  thumbnailUrl?: string | null;
+  alt?: string | null;
+  name?: string | null;
+};
+
 type Props = {
   open: boolean;
   campaign: MetaMarketingCampaignDraft | null;
   propertyImages?: PropertyImage[];
+  propertyVideos?: PropertyVideo[];
   fallbackTitle?: string;
   pageName?: string;
   onOpenChange: (open: boolean) => void;
@@ -234,6 +242,7 @@ export function MetaCampaignEditorDialog({
   open,
   campaign,
   propertyImages = [],
+  propertyVideos = [],
   fallbackTitle = 'Proprietate ImoDeus',
   pageName = 'ImoDeus',
   onOpenChange,
@@ -540,6 +549,19 @@ export function MetaCampaignEditorDialog({
         alt: image.alt || fallbackTitle,
         name: null,
         source: 'property' as const,
+      })),
+  ];
+  const availableVideoItems = [
+    ...videoMediaItems,
+    ...propertyVideos
+      .filter((video) => video?.url && !videoMediaItems.some((item) => item.url === video.url))
+      .map((video) => ({
+        url: video.url,
+        type: 'video' as const,
+        alt: video.alt || fallbackTitle,
+        name: video.name || 'Video tur proprietate',
+        source: 'property' as const,
+        thumbnailUrl: video.thumbnailUrl || null,
       })),
   ];
   const previewImages = form?.creativeFormat === 'carousel'
@@ -1082,11 +1104,11 @@ export function MetaCampaignEditorDialog({
                 </div>
               ) : null}
 
-              {videoMediaItems.length ? (
+              {availableVideoItems.length ? (
                 <div className="space-y-2">
                   <Label className="text-white/70">Video reclame</Label>
                   <div className="grid gap-2">
-                    {videoMediaItems.map((item) => (
+                    {availableVideoItems.map((item) => (
                       <div
                         key={item.url}
                         className={cn(
@@ -1098,6 +1120,17 @@ export function MetaCampaignEditorDialog({
                           type="button"
                           className="flex min-w-0 flex-1 items-center justify-between text-left"
                           onClick={() => {
+                            setForm((current) => {
+                              if (!current) return current;
+                              const exists = current.mediaItems.some((mediaItem) => mediaItem.url === item.url);
+                              return {
+                                ...current,
+                                mediaItems: exists ? current.mediaItems : [...current.mediaItems, item].slice(0, 10),
+                                videoUrl: item.url,
+                                videoThumbnailUrl: current.videoThumbnailUrl || item.thumbnailUrl || current.imageUrl,
+                                creativeFormat: 'video',
+                              };
+                            });
                             updateForm('videoUrl', item.url);
                             updateForm('creativeFormat', 'video');
                           }}

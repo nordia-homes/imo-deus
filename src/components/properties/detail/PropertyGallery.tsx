@@ -28,6 +28,7 @@ export function PropertyGallery({
   showMatchPrompt = true,
   shareUrl,
   shareImageUrl,
+  videoAction,
 }: {
   images: string[];
   title: string;
@@ -35,6 +36,7 @@ export function PropertyGallery({
   showMatchPrompt?: boolean;
   shareUrl?: string;
   shareImageUrl?: string;
+  videoAction?: React.ReactNode;
 }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
@@ -205,7 +207,8 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+        <div className="absolute bottom-4 right-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap items-center justify-end gap-2">
+          {videoAction}
           <Button
             variant="secondary"
             className="rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"

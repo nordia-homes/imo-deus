@@ -54,6 +54,30 @@ export function PropertyClientView({ property }: { property: Property }) {
                  <p className="text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> {property.address}</p>
             </div>
             <PropertyGallery images={allImages} title={property.title || 'Proprietate'} />
+            {property.videoTour?.status === 'ready' && property.videoTour.url ? (
+                <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+                        <div>
+                            <p className="text-sm font-semibold text-card-foreground">Video tur proprietate</p>
+                            <p className="text-xs text-muted-foreground">
+                                Prezentare video generata din fotografiile proprietatii.
+                            </p>
+                        </div>
+                        {property.videoTour.durationSeconds ? (
+                            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                                {property.videoTour.durationSeconds}s
+                            </span>
+                        ) : null}
+                    </div>
+                    <video
+                        src={property.videoTour.url}
+                        poster={property.videoTour.thumbnailUrl || allImages[0]}
+                        controls
+                        playsInline
+                        className="aspect-video w-full bg-black object-contain"
+                    />
+                </div>
+            ) : null}
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
