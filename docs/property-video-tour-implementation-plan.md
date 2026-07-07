@@ -32,6 +32,13 @@ Turn a property's existing image gallery into a premium video asset that agencie
 ## Technical Architecture
 
 - Rendering runs in the browser through Canvas and `MediaRecorder`.
+- Production rendering can run through the cloud video job queue.
+- Cloud rendering creates `propertyVideoTourJobs` under each property.
+- The cloud worker drains queued jobs through `/api/property-video-tours/drain`.
+- Manual premium render can run `/api/properties/{propertyId}/video-tour-jobs/{jobId}/run`.
+- FFmpeg rendering outputs deterministic MP4/H.264 with `yuv420p` and `+faststart`.
+- The app bundles `ffmpeg-static`, so the renderer does not depend on a system-level FFmpeg binary.
+- Scheduled draining uses `PROPERTY_VIDEO_TOUR_CRON_SECRET`.
 - Images are loaded through `fetch` to Blob URLs where possible to reduce canvas/CORS issues.
 - Output uses the best MIME type supported by the user's browser: MP4 when available, WebM fallback otherwise.
 - Files are stored at `agencies/{agencyId}/properties/{propertyId}/video-tours/{fileName}`.
@@ -39,8 +46,8 @@ Turn a property's existing image gallery into a premium video asset that agencie
 
 ## Market-Leader Roadmap
 
-- Add a cloud worker for deterministic MP4/H.264 exports through FFmpeg or Remotion.
-- Add background jobs with queue status and retry.
+- Add a dedicated Cloud Run image with FFmpeg preinstalled for higher throughput and predictable runtime.
+- Add richer real-time progress updates from FFmpeg frame parsing.
 - Add thumbnails and first-frame preview images.
 - Add music bed selection with licensed tracks.
 - Add agency logo support instead of generic ImoDeus branding.

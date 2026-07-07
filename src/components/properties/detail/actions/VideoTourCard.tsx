@@ -377,6 +377,8 @@ export function VideoTourCard({
   const [includeBranding, setIncludeBranding] = useState(true);
   const [includeMusic, setIncludeMusic] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCloudRendering, setIsCloudRendering] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
@@ -399,6 +401,19 @@ export function VideoTourCard({
     if (!agencyId || !property.id) return;
     const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
     updateDocumentNonBlocking(propertyRef, { videoTour: payload });
+  };
+
+  const authorizedFetch = async (input: RequestInfo, init?: RequestInit) => {
+    if (!user) throw new Error('Autentifica-te pentru a genera video.');
+    const token = await user.getIdToken(true);
+    return fetch(input, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(init?.headers || {}),
+      },
+    });
   };
 
   const handleDownload = () => {
@@ -609,6 +624,60 @@ export function VideoTourCard({
     }
   };
 
+  const handleCloudRender = async () => {
+    if (!canGenerate || isCloudRendering) return;
+    setIsCloudRendering(true);
+    setCloudStatus('Se creeaza jobul cloud...');
+    setProgress(4);
+
+    try {
+      const response = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs`, {
+        method: 'POST',
+        body: JSON.stringify({
+          format,
+          style,
+          quality,
+          targetDurationSeconds: targetDuration === 'auto' ? null : Number(targetDuration),
+          includeText,
+          includeBranding,
+          includeMusic,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.message || 'Nu am putut crea jobul video cloud.');
+      const jobId = payload?.job?.id as string | undefined;
+      if (!jobId) throw new Error('Jobul video cloud nu a returnat un ID valid.');
+
+      setProgress(12);
+      setCloudStatus('Job creat. Se porneste randarea FFmpeg...');
+      const runResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}/run`, {
+        method: 'POST',
+      });
+      const runPayload = await runResponse.json().catch(() => ({}));
+      if (!runResponse.ok) throw new Error(runPayload?.message || 'Randarea cloud a esuat.');
+
+      setProgress(100);
+      setCloudStatus('Video MP4 randat in cloud.');
+      toast({
+        title: 'Video MP4 generat in cloud',
+        description: 'Turul video H.264 a fost salvat pe proprietate si poate fi folosit in Meta Ads.',
+      });
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+        setLocalPreviewUrl(null);
+      }
+    } catch (error) {
+      setCloudStatus('Randarea cloud a esuat.');
+      toast({
+        variant: 'destructive',
+        title: 'Randare cloud esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut genera MP4-ul cloud.',
+      });
+    } finally {
+      setIsCloudRendering(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -775,6 +844,16 @@ export function VideoTourCard({
               </div>
             ) : null}
 
+            {isCloudRendering || cloudStatus ? (
+              <div className="space-y-2 rounded-lg border border-sky-300/15 bg-sky-400/[0.06] p-3">
+                <div className="flex items-center justify-between gap-3 text-xs text-white/64">
+                  <span>{cloudStatus || 'Randare cloud'}</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2 bg-white/10" />
+              </div>
+            ) : null}
+
             {property.videoTour?.status === 'ready' && property.videoTour.generatedAt ? (
               <p className="text-xs text-white/48">
                 Ultimul video: {new Date(property.videoTour.generatedAt).toLocaleString('ro-RO')}
@@ -785,18 +864,28 @@ export function VideoTourCard({
               <Button
                 type="button"
                 className="h-11 rounded-full bg-emerald-400 text-slate-950 hover:bg-emerald-300"
+                onClick={() => void handleCloudRender()}
+                disabled={!canGenerate || isGenerating || isCloudRendering}
+              >
+                {isCloudRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Randare cloud MP4
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-full border-white/12 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
                 onClick={() => void handleGenerate()}
-                disabled={!canGenerate || isGenerating}
+                disabled={!canGenerate || isGenerating || isCloudRendering}
               >
                 {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                {previewUrl ? 'Genereaza din nou' : 'Genereaza video'}
+                {previewUrl ? 'Preview browser din nou' : 'Preview browser'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="h-11 rounded-full border-white/12 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
                 onClick={handleDownload}
-                disabled={!previewUrl || isGenerating}
+                disabled={!previewUrl || isGenerating || isCloudRendering}
               >
                 {previewUrl ? <Download className="mr-2 h-4 w-4" /> : <PlayCircle className="mr-2 h-4 w-4" />}
                 Descarca video

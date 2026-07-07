@@ -48,6 +48,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: PROPERTY_VIDEO_TOUR_CRON_SECRET
+    secret: PROPERTY_VIDEO_TOUR_CRON_SECRET
+    availability:
+      - RUNTIME
+
   - variable: OPENAI_ASSISTANT_MODEL
     value: gpt-4.1-mini
     availability:

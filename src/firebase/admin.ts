@@ -10,6 +10,7 @@ import {
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
+import { getStorage } from 'firebase-admin/storage';
 
 const REAL_ADMIN_APP_NAME = 'real-admin';
 
@@ -72,3 +73,4 @@ function getRealAdminApp(): App {
 export const adminDb = getFirestore(getRealAdminApp());
 export const adminAuth = getAuth(getRealAdminApp());
 export const adminMessaging = getMessaging(getRealAdminApp());
+export const adminStorage = getStorage(getRealAdminApp());

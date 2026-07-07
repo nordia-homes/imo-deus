@@ -484,6 +484,36 @@ export type PropertyVideoTour = {
   errorMessage?: string | null;
 };
 
+export type PropertyVideoTourJob = {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  propertyTitle?: string | null;
+  status: 'queued' | 'processing' | 'completed' | 'error';
+  engine: 'ffmpeg-cloud';
+  format: 'landscape' | 'portrait' | 'square';
+  style: 'cinematic' | 'luxury' | 'social';
+  quality: 'standard' | 'premium';
+  targetDurationSeconds?: number | null;
+  includeText: boolean;
+  includeBranding: boolean;
+  includeMusic: boolean;
+  images: Array<{ url: string; alt?: string | null }>;
+  progress: number;
+  attempts: number;
+  videoUrl?: string | null;
+  thumbnailUrl?: string | null;
+  mimeType?: string | null;
+  durationSeconds?: number | null;
+  errorMessage?: string | null;
+  lockedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+  failedAt?: string | null;
+  requestedByUid?: string | null;
+};
+
 export type Property = {
   id: string;
   title: string;
