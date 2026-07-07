@@ -53,6 +53,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: studio-652232171-42fb6.firebasestorage.app
+    availability:
+      - RUNTIME
+
   - variable: OPENAI_ASSISTANT_MODEL
     value: gpt-4.1-mini
     availability:

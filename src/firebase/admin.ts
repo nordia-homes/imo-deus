@@ -13,6 +13,15 @@ import { getMessaging } from 'firebase-admin/messaging';
 import { getStorage } from 'firebase-admin/storage';
 
 const REAL_ADMIN_APP_NAME = 'real-admin';
+const DEFAULT_STORAGE_BUCKET = 'studio-652232171-42fb6.firebasestorage.app';
+
+function resolveStorageBucket(projectId?: string | null) {
+  return (
+    process.env.FIREBASE_STORAGE_BUCKET ||
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    (projectId ? `${projectId}.firebasestorage.app` : DEFAULT_STORAGE_BUCKET)
+  );
+}
 
 function getRealAdminApp(): App {
   const existing = getApps().find((candidate) => candidate.name === REAL_ADMIN_APP_NAME);
@@ -34,6 +43,7 @@ function getRealAdminApp(): App {
       {
         credential: applicationDefault(),
         projectId,
+        storageBucket: resolveStorageBucket(projectId),
       },
       REAL_ADMIN_APP_NAME
     );
@@ -65,6 +75,7 @@ function getRealAdminApp(): App {
     {
       credential: cert(serviceAccount),
       projectId,
+      storageBucket: resolveStorageBucket(projectId),
     },
     REAL_ADMIN_APP_NAME
   );
