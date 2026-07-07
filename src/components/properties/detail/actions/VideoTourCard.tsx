@@ -82,6 +82,27 @@ const MIME_CANDIDATES = [
   'video/webm',
 ];
 
+async function readApiPayload(response: Response) {
+  const text = await response.text().catch(() => '');
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text) as Record<string, any>;
+  } catch {
+    return { message: text.slice(0, 500) };
+  }
+}
+
+function getApiErrorMessage(payload: Record<string, any>, fallback: string) {
+  return (
+    payload?.message ||
+    payload?.job?.errorMessage ||
+    payload?.errorMessage ||
+    payload?.error?.message ||
+    fallback
+  );
+}
+
 function pickRecorderMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
   return MIME_CANDIDATES.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || '';
@@ -643,8 +664,8 @@ export function VideoTourCard({
           includeMusic,
         }),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.message || 'Nu am putut crea jobul video cloud.');
+      const payload = await readApiPayload(response);
+      if (!response.ok) throw new Error(getApiErrorMessage(payload, 'Nu am putut crea jobul video cloud.'));
       const jobId = payload?.job?.id as string | undefined;
       if (!jobId) throw new Error('Jobul video cloud nu a returnat un ID valid.');
 
@@ -653,8 +674,11 @@ export function VideoTourCard({
       const runResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}/run`, {
         method: 'POST',
       });
-      const runPayload = await runResponse.json().catch(() => ({}));
-      if (!runResponse.ok) throw new Error(runPayload?.message || 'Randarea cloud a esuat.');
+      const runPayload = await readApiPayload(runResponse);
+      if (!runResponse.ok) throw new Error(getApiErrorMessage(runPayload, 'Randarea cloud a esuat.'));
+      if (runPayload?.job?.status === 'error') {
+        throw new Error(getApiErrorMessage(runPayload, 'Randarea cloud a esuat.'));
+      }
 
       setProgress(100);
       setCloudStatus('Video MP4 randat in cloud.');

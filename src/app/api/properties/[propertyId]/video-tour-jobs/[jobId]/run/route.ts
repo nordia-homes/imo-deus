@@ -17,12 +17,14 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ propertyId: string; jobId: string }> }
 ) {
+  let routeParams: { propertyId: string; jobId: string } | null = null;
   try {
     const [{ propertyId, jobId }, { requireAgencyUserFromBearerToken }, { runPropertyVideoTourJob }] = await Promise.all([
       context.params,
       import('@/lib/firebase-app-hosting'),
       import('@/lib/property-video-tours'),
     ]);
+    routeParams = { propertyId, jobId };
     const authContext = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const job = await runPropertyVideoTourJob({
       adminDb: authContext.adminDb,
@@ -32,6 +34,11 @@ export async function POST(
     });
     return NextResponse.json({ job }, { status: 200 });
   } catch (error) {
+    console.error('[property-video-tour-run]', {
+      propertyId: routeParams?.propertyId,
+      jobId: routeParams?.jobId,
+      error,
+    });
     const formatted = formatError(error);
     return NextResponse.json({ message: formatted.message }, { status: formatted.status });
   }

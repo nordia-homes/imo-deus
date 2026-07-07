@@ -47,6 +47,7 @@ async function main() {
     author: rootPackageJson.author,
     dependencies: {
       'electron-updater': rootPackageJson.devDependencies['electron-updater'],
+      'ffmpeg-static': rootPackageJson.dependencies['ffmpeg-static'],
       playwright: rootPackageJson.dependencies.playwright || rootPackageJson.devDependencies.playwright,
     },
   };

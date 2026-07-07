@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -91,11 +92,86 @@ function getVideoTourJobsCollection(adminDb: Firestore, agencyId: string, proper
 }
 
 async function fetchBuffer(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Nu am putut descarca media pentru randare (${response.status}).`);
+  const firebaseStorageFile = getFirebaseStorageFileFromUrl(url);
+  let directStorageError: string | null = null;
+  if (firebaseStorageFile) {
+    try {
+      const [buffer] = await adminStorage
+        .bucket(firebaseStorageFile.bucketName)
+        .file(firebaseStorageFile.filePath)
+        .download();
+      return buffer;
+    } catch (error) {
+      directStorageError = error instanceof Error ? error.message : 'acces direct esuat';
+    }
   }
-  return Buffer.from(await response.arrayBuffer());
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    const host = getUrlHost(url);
+    const message = error instanceof Error ? error.message : 'eroare necunoscuta';
+    const storageDetail = directStorageError ? ` Citire Storage: ${directStorageError}.` : '';
+    throw new Error(`Nu am putut descarca media pentru randare de la ${host}: ${message}.${storageDetail}`);
+  }
+}
+
+function getFirebaseStorageFileFromUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.hostname === 'firebasestorage.googleapis.com') {
+      const match = parsed.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+      if (!match) return null;
+      return {
+        bucketName: decodeURIComponent(match[1]),
+        filePath: decodeURIComponent(match[2]),
+      };
+    }
+
+    if (parsed.hostname === 'storage.googleapis.com') {
+      const [, bucketName, ...filePathParts] = parsed.pathname.split('/');
+      if (!bucketName || filePathParts.length === 0) return null;
+      return {
+        bucketName: decodeURIComponent(bucketName),
+        filePath: decodeURIComponent(filePathParts.join('/')),
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function getUrlHost(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return 'URL invalid';
+  }
+}
+
+function getUnknownErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    if (typeof record.message === 'string' && record.message) return record.message;
+    if (typeof record.details === 'string' && record.details) return record.details;
+    if (typeof record.code === 'string' && record.code) return record.code;
+    if (typeof record.code === 'number') return `Cod eroare ${record.code}`;
+    try {
+      return JSON.stringify(record).slice(0, 900);
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof error === 'string' && error) return error;
+  return fallback;
 }
 
 async function runCommand(command: string, args: string[], cwd: string) {
@@ -117,7 +193,19 @@ async function runCommand(command: string, args: string[], cwd: string) {
 }
 
 function getFfmpegCommand() {
-  return ffmpegStaticPath || 'ffmpeg';
+  const executable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath || '';
+  const candidates = [
+    process.env.FFMPEG_PATH || '',
+    ffmpegStaticPath || '',
+    path.join(process.cwd(), 'node_modules', 'ffmpeg-static', executable),
+    path.join(process.cwd(), 'resources', 'app.asar.unpacked', 'node_modules', 'ffmpeg-static', executable),
+    path.join(resourcesPath, 'app.asar.unpacked', 'node_modules', 'ffmpeg-static', executable),
+    path.join(resourcesPath, 'app', 'node_modules', 'ffmpeg-static', executable),
+  ].filter(Boolean);
+
+  const resolved = candidates.find((candidate) => existsSync(candidate));
+  return resolved || 'ffmpeg';
 }
 
 async function assertFfmpegAvailable(workDir: string) {
@@ -209,22 +297,38 @@ async function renderJobWithFfmpeg(input: {
       throw new Error('Randarea cloud are nevoie de cel putin doua fotografii.');
     }
 
+    const downloadedImages: Array<{ sourceIndex: number; fileName: string }> = [];
+    const skippedImages: string[] = [];
     for (let index = 0; index < images.length; index += 1) {
-      const imageBuffer = await fetchBuffer(images[index].url);
-      await writeFile(path.join(workDir, 'frames', `image-${String(index).padStart(3, '0')}.jpg`), imageBuffer);
+      const fileName = `image-${String(downloadedImages.length).padStart(3, '0')}.jpg`;
+      try {
+        const imageBuffer = await fetchBuffer(images[index].url);
+        await writeFile(path.join(workDir, 'frames', fileName), imageBuffer);
+        downloadedImages.push({ sourceIndex: index, fileName });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Nu am putut descarca fotografia.';
+        skippedImages.push(`Foto ${index + 1}: ${message}`);
+      }
+    }
+
+    if (downloadedImages.length < 2) {
+      const details = skippedImages.slice(0, 3).join(' | ');
+      throw new Error(
+        `Randarea cloud nu poate citi cel putin doua fotografii valide. ${details ? `Detalii: ${details}` : ''}`.trim()
+      );
     }
 
     const fps = 30;
     const agencySnapshot = await input.adminDb.collection('agencies').doc(job.agencyId).get();
     const agencyName = (agencySnapshot.data() as { name?: string } | undefined)?.name || null;
-    const defaultDuration = images.length * getSecondsPerImage(job.style);
+    const defaultDuration = downloadedImages.length * getSecondsPerImage(job.style);
     const durationSeconds = Math.round(job.targetDurationSeconds || defaultDuration);
-    const framesPerImage = Math.max(45, Math.round((durationSeconds / images.length) * fps));
+    const framesPerImage = Math.max(45, Math.round((durationSeconds / downloadedImages.length) * fps));
     const { width, height } = getFormatConfig(job.format, job.quality);
     const listPath = path.join(workDir, 'segments.txt');
     const segmentPaths: string[] = [];
 
-    for (let index = 0; index < images.length; index += 1) {
+    for (let index = 0; index < downloadedImages.length; index += 1) {
       const segmentPath = path.join(workDir, `segment-${String(index).padStart(3, '0')}.mp4`);
       segmentPaths.push(segmentPath);
       await runCommand(
@@ -234,7 +338,7 @@ async function renderJobWithFfmpeg(input: {
           '-loop',
           '1',
           '-i',
-          path.join(workDir, 'frames', `image-${String(index).padStart(3, '0')}.jpg`),
+          path.join(workDir, 'frames', downloadedImages[index].fileName),
           '-vf',
           buildZoompanFilter({ width, height, fps, framesPerImage, job, property, agencyName }),
           '-t',
@@ -334,6 +438,8 @@ async function renderJobWithFfmpeg(input: {
       durationSeconds,
       mimeType: 'video/mp4',
       fileName: `${safeTitle}.mp4`,
+      imageCount: downloadedImages.length,
+      skippedImageCount: skippedImages.length,
     };
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => undefined);
@@ -496,7 +602,7 @@ export async function runPropertyVideoTourJob(input: {
             engine: 'cloud-renderer',
             mimeType: result.mimeType,
             durationSeconds: result.durationSeconds,
-            imageCount: acquired.job.images.length,
+            imageCount: result.imageCount,
             generatedAt: completedAt,
             generatedByUid: acquired.job.requestedByUid,
           },
@@ -507,7 +613,14 @@ export async function runPropertyVideoTourJob(input: {
 
     return { ...acquired.job, ...completedJob } as PropertyVideoTourJob;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Randarea cloud a esuat.';
+    const message = getUnknownErrorMessage(error, 'Randarea cloud a esuat.');
+    console.error('[property-video-tour-worker]', {
+      agencyId: acquired.job.agencyId,
+      propertyId: acquired.job.propertyId,
+      jobId: acquired.job.id,
+      message,
+      error,
+    });
     const failedAt = nowIso();
     await Promise.all([
       jobRef.set(
