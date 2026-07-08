@@ -409,6 +409,7 @@ export type MetaMarketingCampaignDraft = {
     type: 'image' | 'video';
     alt?: string | null;
     name?: string | null;
+    thumbnailUrl?: string | null;
     source?: 'property' | 'upload';
   }> | null;
   videoUrl?: string | null;
@@ -464,6 +465,64 @@ export type MetaFacebookPagePost = {
   errorMessage?: string | null;
 };
 
+export type TikTokMarketingIntegrationPublicStatus = {
+  provider: 'tiktok';
+  connected: boolean;
+  connectedAt?: string | null;
+  updatedAt?: string | null;
+  lastError?: string | null;
+  lastAuthorizedByUid?: string | null;
+  openId?: string | null;
+  unionId?: string | null;
+  displayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+  scopes?: string[];
+  accessTokenExpiresAt?: string | null;
+  refreshTokenExpiresAt?: string | null;
+  privateModeOnly?: boolean;
+};
+
+export type TikTokMarketingIntegrationPrivate = TikTokMarketingIntegrationPublicStatus & {
+  agencyId: string;
+  uid: string;
+  encryptedAccessToken: string;
+  encryptedRefreshToken?: string | null;
+  tokenEncryptionVersion: 1;
+};
+
+export type TikTokPostDraft = {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  videoTourUrl: string;
+  videoTourThumbnailUrl?: string | null;
+  propertyTitle: string;
+  createdAt: string;
+  updatedAt: string;
+  createdByUid: string;
+  status: 'draft' | 'ready' | 'publishing' | 'processing' | 'published' | 'error';
+  description: string;
+  hashtags: string[];
+  privacyLevel: string;
+  disableComment: boolean;
+  disableDuet: boolean;
+  disableStitch: boolean;
+  aiGeneratedContent: boolean;
+  coverTimestampMs?: number | null;
+  publishId?: string | null;
+  publishedAt?: string | null;
+  lastStatusCheckedAt?: string | null;
+  lastPublishAttemptAt?: string | null;
+  lastPublishError?: string | null;
+  publishLog?: Array<{
+    at: string;
+    status: TikTokPostDraft['status'];
+    message: string;
+    tiktokObjectId?: string | null;
+  }> | null;
+};
+
 export type PropertyVideoTour = {
   status: 'ready' | 'processing' | 'error';
   url?: string | null;
@@ -477,7 +536,7 @@ export type PropertyVideoTour = {
   hasAgencyBranding?: boolean | null;
   hasAiPresenter?: boolean | null;
   aiPresenterAvatar?: 'business' | 'luxury' | 'casual' | null;
-  aiPresenterVoice?: 'female' | 'male' | 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'nova' | 'onyx' | 'sage' | 'shimmer' | 'verse' | null;
+  aiPresenterVoice?: string | null;
   aiPresenterPosition?: 'bottom-right' | 'bottom-left' | null;
   aiPresenterSize?: 'small' | 'medium' | 'large' | null;
   aiPresenterScript?: string | null;
@@ -508,7 +567,7 @@ export type PropertyVideoTourJob = {
   includeMusic: boolean;
   includeAiPresenter?: boolean | null;
   aiPresenterAvatar?: 'business' | 'luxury' | 'casual' | null;
-  aiPresenterVoice?: 'female' | 'male' | 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'nova' | 'onyx' | 'sage' | 'shimmer' | 'verse' | null;
+  aiPresenterVoice?: string | null;
   aiPresenterPosition?: 'bottom-right' | 'bottom-left' | null;
   aiPresenterSize?: 'small' | 'medium' | 'large' | null;
   aiPresenterScript?: string | null;

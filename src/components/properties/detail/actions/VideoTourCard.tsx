@@ -55,6 +55,13 @@ type RenderPreset = {
   label: string;
 };
 
+type VoicePreset = {
+  id: string;
+  label: string;
+  description: string;
+  provider?: 'elevenlabs' | 'fallback';
+};
+
 const STANDARD_FORMAT_PRESETS: Record<VideoFormat, RenderPreset> = {
   landscape: { width: 1280, height: 720, label: 'Website / YouTube' },
   portrait: { width: 720, height: 1024, label: 'Reels / TikTok' },
@@ -88,19 +95,15 @@ const AI_PRESENTER_AVATAR_LABELS: Record<AiPresenterAvatar, string> = {
 };
 
 const AI_PRESENTER_VOICE_LABELS: Record<AiPresenterVoice, string> = {
-  female: 'Feminin clasic',
-  male: 'Masculin',
-  alloy: 'Alloy neutru',
-  ash: 'Ash',
-  ballad: 'Ballad',
-  coral: 'Coral',
-  echo: 'Echo',
-  fable: 'Fable',
-  nova: 'Nova recomandat',
-  onyx: 'Onyx',
-  sage: 'Sage',
-  shimmer: 'Shimmer',
-  verse: 'Verse',
+  'eleven-rachel': 'Rachel recomandat',
+  'eleven-bella': 'Bella',
+  'eleven-domi': 'Domi',
+  'eleven-elli': 'Elli',
+  female: 'Feminin custom',
+  'eleven-antoni': 'Antoni',
+  'eleven-josh': 'Josh',
+  'eleven-adam': 'Adam',
+  male: 'Masculin custom',
 };
 
 const AI_PRESENTER_VOICE_DESCRIPTIONS: Partial<Record<AiPresenterVoice, string>> = {
@@ -118,20 +121,23 @@ const AI_PRESENTER_VOICE_DESCRIPTIONS: Partial<Record<AiPresenterVoice, string>>
 };
 
 const AI_PRESENTER_VOICE_PREVIEW_COPY: Partial<Record<AiPresenterVoice, string>> = {
-  nova: 'Tanara, calda, clara, cea mai potrivita pentru tururi imobiliare.',
-  coral: 'Feminina, expresiva, cu energie social media.',
-  shimmer: 'Luminoasa, delicata, potrivita pentru prezentari calde.',
-  sage: 'Calma, rafinata, cu ritm mai asezat.',
-  verse: 'Dinamica, moderna, buna pentru TikTok/Reels.',
-  ballad: 'Moale, narativa, cu senzatie de poveste.',
-  female: 'Alias pentru vocea feminina implicita configurata in server.',
-  male: 'Alias pentru vocea masculina implicita configurata in server.',
-  alloy: 'Neutra si clara.',
-  ash: 'Masculina, calma.',
-  echo: 'Masculina, radio.',
-  fable: 'Narativa, calda.',
-  onyx: 'Masculina, grava.',
+  'eleven-rachel': 'Feminina, calda si echilibrata; recomandata pentru tururi imobiliare.',
+  'eleven-bella': 'Feminina, placuta, cu intonatie mai expresiva.',
+  'eleven-domi': 'Mai energica si mai potrivita pentru social media.',
+  'eleven-elli': 'Tanara, luminoasa si apropiata.',
+  female: 'Foloseste PROPERTY_VIDEO_TOUR_ELEVENLABS_FEMALE_VOICE_ID sau vocea ElevenLabs implicita.',
+  'eleven-antoni': 'Masculina, naturala si clara.',
+  'eleven-josh': 'Masculina, calma, cu ritm asezat.',
+  'eleven-adam': 'Masculina, mai profunda.',
+  male: 'Foloseste PROPERTY_VIDEO_TOUR_ELEVENLABS_MALE_VOICE_ID sau vocea masculina implicita.',
 };
+
+const FALLBACK_VOICE_PRESETS: VoicePreset[] = Object.entries(AI_PRESENTER_VOICE_LABELS).map(([id, label]) => ({
+  id,
+  label,
+  description: AI_PRESENTER_VOICE_PREVIEW_COPY[id] || AI_PRESENTER_VOICE_DESCRIPTIONS[id] || 'Voce disponibila pentru preview.',
+  provider: 'fallback',
+}));
 
 const MIME_CANDIDATES = [
   'video/mp4;codecs=avc1.42E01E',
@@ -456,6 +462,7 @@ export function VideoTourCard({
   const storage = useStorage();
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const hasLoadedVoicePresetsRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [format, setFormat] = useState<VideoFormat>('portrait');
   const [style, setStyle] = useState<VideoStyle>('cinematic');
@@ -466,12 +473,14 @@ export function VideoTourCard({
   const [includeMusic, setIncludeMusic] = useState(true);
   const [includeAiPresenter, setIncludeAiPresenter] = useState(false);
   const [aiPresenterAvatar, setAiPresenterAvatar] = useState<AiPresenterAvatar>('business');
-  const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('nova');
+  const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('eleven-rachel');
   const [aiPresenterPosition, setAiPresenterPosition] = useState<AiPresenterPosition>('bottom-right');
   const [aiPresenterSize, setAiPresenterSize] = useState<AiPresenterSize>('medium');
   const [aiPresenterScript, setAiPresenterScript] = useState('');
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [previewingVoice, setPreviewingVoice] = useState<AiPresenterVoice | null>(null);
+  const [voicePresets, setVoicePresets] = useState<VoicePreset[]>(FALLBACK_VOICE_PRESETS);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCloudRendering, setIsCloudRendering] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<string | null>(null);
@@ -492,6 +501,46 @@ export function VideoTourCard({
       if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
     };
   }, [localPreviewUrl]);
+
+  useEffect(() => {
+    if (!isOpen || !includeAiPresenter || !user || !property.id || hasLoadedVoicePresetsRef.current) return;
+    let cancelled = false;
+    const loadVoices = async () => {
+      hasLoadedVoicePresetsRef.current = true;
+      setIsLoadingVoices(true);
+      try {
+        const response = await authorizedFetch(`/api/properties/${property.id}/video-tour-voices`);
+        const payload = await readApiPayload(response);
+        if (!response.ok) throw new Error(getApiErrorMessage(payload, 'Nu am putut importa vocile ElevenLabs.'));
+        const voices = Array.isArray(payload.voices) ? payload.voices : [];
+        const nextVoicePresets = voices
+          .map((voice) => ({
+            id: String(voice.id || ''),
+            label: String(voice.label || voice.id || ''),
+            description: String(voice.description || 'Voce ElevenLabs disponibila pentru romana.'),
+            provider: voice.provider === 'elevenlabs' ? 'elevenlabs' as const : 'fallback' as const,
+          }))
+          .filter((voice) => voice.id && voice.label);
+        if (!cancelled && nextVoicePresets.length) {
+          setVoicePresets(nextVoicePresets);
+          if (!nextVoicePresets.some((voice) => voice.id === aiPresenterVoice)) {
+            setAiPresenterVoice(nextVoicePresets[0].id);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setVoicePresets(FALLBACK_VOICE_PRESETS);
+        }
+        console.warn('[property-video-tour-voices-fallback]', error);
+      } finally {
+        if (!cancelled) setIsLoadingVoices(false);
+      }
+    };
+    void loadVoices();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, includeAiPresenter, user, property.id, aiPresenterVoice]);
 
   const persistVideoTour = (payload: PropertyVideoTour) => {
     if (!agencyId || !property.id) return;
@@ -1044,9 +1093,9 @@ export function VideoTourCard({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(AI_PRESENTER_VOICE_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label} - {AI_PRESENTER_VOICE_PREVIEW_COPY[value as AiPresenterVoice] || AI_PRESENTER_VOICE_DESCRIPTIONS[value as AiPresenterVoice] || 'Voce disponibila pentru preview.'}
+                          {voicePresets.map((voice) => (
+                            <SelectItem key={voice.id} value={voice.id}>
+                              {voice.label} - {voice.description}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1062,7 +1111,7 @@ export function VideoTourCard({
                         Asculta vocea selectata
                       </Button>
                       <p className="text-xs leading-5 text-white/48">
-                        Recomandare: Nova sau Coral pentru o voce feminina tanara, calda si expresiva.
+                        {isLoadingVoices ? 'Import vocile ElevenLabs pentru romana...' : 'Vocile din contul ElevenLabs sunt importate automat cand au limba romana in metadate.'}
                       </p>
                     </div>
                   </div>

@@ -46,6 +46,8 @@ const STALE_PROCESSING_JOB_MS = 20 * 60_000;
 const OPENAI_RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
 const OPENAI_SPEECH_API_URL = 'https://api.openai.com/v1/audio/speech';
 const OPENAI_TRANSCRIPTIONS_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
+const ELEVENLABS_TEXT_TO_SPEECH_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
+const ELEVENLABS_VOICES_API_URL = 'https://api.elevenlabs.io/v2/voices';
 const HEYGEN_API_BASE_URL = 'https://api.heygen.com';
 
 type RenderStage =
@@ -72,14 +74,83 @@ type WordTiming = {
   end: number;
 };
 
+type ElevenLabsAlignment = {
+  characters?: string[];
+  character_start_times_seconds?: number[];
+  character_end_times_seconds?: number[];
+} | null | undefined;
+
+export type PropertyVideoTourVoicePreset = {
+  id: string;
+  label: string;
+  description: string;
+  provider: 'elevenlabs' | 'fallback';
+};
+
 const CAPTION_TIMING_DELAY_SECONDS = 0.18;
-const CAPTION_EMPTY_LINE = '{\\alpha&HFF&}.';
+const CAPTION_EMPTY_LINE = '{\\alpha&HFF&}Ag';
+const CAPTION_HIGHLIGHT_ASS_COLOR = '&H007F00FF';
+const CAPTION_BASE_ASS_COLOR = '&H00FFFFFF';
+const CAPTION_FONT_FAMILY = process.env.PROPERTY_VIDEO_TOUR_CAPTION_FONT || 'Avenue';
 const PROPERTY_VIDEO_TOUR_TTS_INSTRUCTIONS = [
   'Voce feminina tanara, calda, placuta si usor senzuala, cu zambet audibil in ton.',
   'Intonatie premium, apropiata de HeyGen: expresiva, blanda, naturala, cu pauze firesti si energie pozitiva.',
   'Suna ca o prezentatoare imobiliara eleganta care vorbeste unui client real.',
   'Evita complet tonul rigid, dur, citit sau robotic.',
 ].join(' ');
+
+const ELEVENLABS_VOICE_IDS: Record<string, string> = {
+  female: '21m00Tcm4TlvDq8ikWAM',
+  male: 'pNInz6obpgDQGcFmaJgB',
+  'eleven-rachel': '21m00Tcm4TlvDq8ikWAM',
+  'eleven-bella': 'EXAVITQu4vr4xnSDxMaL',
+  'eleven-domi': 'AZnzlk1XvdvUeBnXmlld',
+  'eleven-elli': 'MF3mGyEYCl7XYWbV9V6O',
+  'eleven-antoni': 'ErXwobaYiN019PkySvjV',
+  'eleven-josh': 'TxGEqnHWrfWFTfGW9XjX',
+  'eleven-arnold': 'VR6AewLTigWG4xSOukaG',
+  'eleven-adam': 'pNInz6obpgDQGcFmaJgB',
+  'eleven-sam': 'yoZ06aMxZJJ28mfd3POQ',
+};
+
+const FALLBACK_ELEVENLABS_ROMANIAN_VOICE_PRESETS: PropertyVideoTourVoicePreset[] = [
+  {
+    id: 'eleven-rachel',
+    label: 'Rachel recomandat',
+    description: 'Feminina, calda si echilibrata; recomandata pentru tururi imobiliare.',
+    provider: 'fallback',
+  },
+  {
+    id: 'eleven-bella',
+    label: 'Bella',
+    description: 'Feminina, placuta, cu intonatie mai expresiva.',
+    provider: 'fallback',
+  },
+  {
+    id: 'eleven-domi',
+    label: 'Domi',
+    description: 'Mai energica si mai potrivita pentru social media.',
+    provider: 'fallback',
+  },
+  {
+    id: 'eleven-elli',
+    label: 'Elli',
+    description: 'Tanara, luminoasa si apropiata.',
+    provider: 'fallback',
+  },
+  {
+    id: 'female',
+    label: 'Feminin custom',
+    description: 'Foloseste PROPERTY_VIDEO_TOUR_ELEVENLABS_FEMALE_VOICE_ID sau vocea ElevenLabs implicita.',
+    provider: 'fallback',
+  },
+  {
+    id: 'male',
+    label: 'Masculin custom',
+    description: 'Foloseste PROPERTY_VIDEO_TOUR_ELEVENLABS_MALE_VOICE_ID sau vocea masculina implicita.',
+    provider: 'fallback',
+  },
+];
 
 function nowIso() {
   return new Date().toISOString();
@@ -174,6 +245,135 @@ function getPropertySurface(property: Property) {
 }
 
 const VIDEO_TOUR_SCRIPT_CTA = 'Pentru mai multe detalii despre aceasta proprietate si pentru a programa o vizionare, va rog sa ne contactati. Suntem disponibili la orice ora, nu percepem comision si iti vom raspunde detaliat la toate intrebarile. Pe curand.';
+const VIDEO_TOUR_SCRIPT_CTA_RO = 'Pentru mai multe detalii despre această proprietate și pentru a programa o vizionare, vă rog să ne contactați. Suntem disponibili la orice oră, nu percepem comision și îți vom răspunde detaliat la toate întrebările. Pe curând.';
+
+const RO_SMALL_NUMBERS = [
+  'zero',
+  'unu',
+  'doi',
+  'trei',
+  'patru',
+  'cinci',
+  'șase',
+  'șapte',
+  'opt',
+  'nouă',
+  'zece',
+  'unsprezece',
+  'doisprezece',
+  'treisprezece',
+  'paisprezece',
+  'cincisprezece',
+  'șaisprezece',
+  'șaptesprezece',
+  'optsprezece',
+  'nouăsprezece',
+];
+const RO_TENS = ['', '', 'douăzeci', 'treizeci', 'patruzeci', 'cincizeci', 'șaizeci', 'șaptezeci', 'optzeci', 'nouăzeci'];
+
+function romanianIntegerToWords(value: number): string {
+  const number = Math.trunc(Math.abs(value));
+  if (number < 20) return RO_SMALL_NUMBERS[number];
+  if (number < 100) {
+    const tens = Math.floor(number / 10);
+    const rest = number % 10;
+    return rest ? `${RO_TENS[tens]} și ${RO_SMALL_NUMBERS[rest]}` : RO_TENS[tens];
+  }
+  if (number < 1000) {
+    const hundreds = Math.floor(number / 100);
+    const rest = number % 100;
+    const prefix = hundreds === 1 ? 'o sută' : hundreds === 2 ? 'două sute' : `${RO_SMALL_NUMBERS[hundreds]} sute`;
+    return rest ? `${prefix} ${romanianIntegerToWords(rest)}` : prefix;
+  }
+  if (number < 1_000_000) {
+    const thousands = Math.floor(number / 1000);
+    const rest = number % 1000;
+    const thousandsWords = thousands === 2 ? 'două' : romanianIntegerToWords(thousands);
+    const prefix = thousands === 1 ? 'o mie' : `${thousandsWords} ${thousands < 20 ? 'mii' : 'de mii'}`;
+    return rest ? `${prefix} ${romanianIntegerToWords(rest)}` : prefix;
+  }
+  const millions = Math.floor(number / 1_000_000);
+  const rest = number % 1_000_000;
+  const prefix = millions === 1 ? 'un milion' : `${romanianIntegerToWords(millions)} ${millions < 20 ? 'milioane' : 'de milioane'}`;
+  return rest ? `${prefix} ${romanianIntegerToWords(rest)}` : prefix;
+}
+
+function romanianIntegerToWordsForFeminineNoun(value: number) {
+  const number = Math.trunc(Math.abs(value));
+  if (number === 1) return 'o';
+  if (number === 2) return 'două';
+  return romanianIntegerToWords(number);
+}
+
+function replaceKnownRomanianDiacritics(value: string) {
+  return value
+    .replace(/\baceasta\b/gi, 'această')
+    .replace(/\bva rog\b/gi, 'vă rog')
+    .replace(/\borice ora\b/gi, 'orice oră')
+    .replace(/\biti\b/gi, 'îți')
+    .replace(/\bintrebarile\b/gi, 'întrebările')
+    .replace(/\bmetri patrati\b/gi, 'metri pătrați')
+    .replace(/\bpretul\b/gi, 'prețul')
+    .replace(/\blinistita\b/gi, 'liniștită')
+    .replace(/\bluminoasa\b/gi, 'luminoasă')
+    .replace(/\bpozitionata\b/gi, 'poziționată')
+    .replace(/\blocuinta\b/gi, 'locuință')
+    .replace(/\bpregatita\b/gi, 'pregătită')
+    .replace(/\batentie\b/gi, 'atenție')
+    .replace(/\bgenerala\b/gi, 'generală')
+    .replace(/\bplacuta\b/gi, 'plăcută')
+    .replace(/\bpractica\b/gi, 'practică')
+    .replace(/\bviata\b/gi, 'viața')
+    .replace(/\bvanzare\b/gi, 'vânzare')
+    .replace(/\bdoua\b/gi, 'două')
+    .replace(/\bsapte\b/gi, 'șapte')
+    .replace(/\bsase\b/gi, 'șase')
+    .replace(/\btreizeci si\b/gi, 'treizeci și')
+    .replace(/\bpatruzeci si\b/gi, 'patruzeci și')
+    .replace(/\bcincizeci si\b/gi, 'cincizeci și')
+    .replace(/\bsaizeci si\b/gi, 'șaizeci și')
+    .replace(/\bsaptezeci si\b/gi, 'șaptezeci și')
+    .replace(/\boptzeci si\b/gi, 'optzeci și')
+    .replace(/\bnouazeci si\b/gi, 'nouăzeci și')
+    .replace(/\bPe curand\b/g, 'Pe curând')
+    .replace(/\bsi\b/g, 'și')
+    .replace(/\bSi\b/g, 'Și');
+}
+
+function expandNumbersForRomanianVoiceover(script: string) {
+  const parseNumber = (rawNumber: string) => {
+    const compact = rawNumber.replace(/[.,](?=\d{3}\b)/g, '');
+    if (!/^\d+$/.test(compact)) return null;
+    const number = Number(compact);
+    return Number.isSafeInteger(number) ? number : null;
+  };
+
+  const withMeasuredUnits = script.replace(/\b(\d[\d.,]*)\s+(euro|eur|mp|m2|metri pătrați|metri patrati|metri utili)\b/gi, (match, rawNumber: string, unit: string) => {
+    const number = parseNumber(rawNumber);
+    if (number === null) return match;
+    const words = romanianIntegerToWords(number);
+    const normalizedUnit = /^(mp|m2)$/i.test(unit) ? 'metri pătrați' : replaceKnownRomanianDiacritics(unit.toLowerCase());
+    const connector = number >= 20 ? ' de ' : ' ';
+    return `${words}${connector}${normalizedUnit}`;
+  });
+
+  const withFeminineNouns = withMeasuredUnits.replace(/\b(\d[\d.,]*)\s+(camere|camera|băi|bai|baie|garsoniere|locuri|terase|balcoane|întrebări|intrebari)\b/gi, (match, rawNumber: string, noun: string) => {
+    const number = parseNumber(rawNumber);
+    if (number === null) return match;
+    return `${romanianIntegerToWordsForFeminineNoun(number)} ${noun}`;
+  });
+
+  return withFeminineNouns.replace(/\b\d[\d.,]*\b/g, (match) => {
+    const number = parseNumber(match);
+    if (number === null) return match;
+    return romanianIntegerToWords(number);
+  });
+}
+
+function normalizeScriptForRomanianVoiceover(script: string) {
+  const normalized = replaceKnownRomanianDiacritics(script.replace(/\s+/g, ' ').trim());
+  return expandNumbersForRomanianVoiceover(normalized);
+}
 
 function buildFallbackPresenterScript(property: Property, style: PropertyVideoTourJob['style']) {
   const surface = getPropertySurface(property);
@@ -192,15 +392,15 @@ function buildFallbackPresenterScript(property: Property, style: PropertyVideoTo
     .replace(/\s+/g, ' ')
     .replace(/[•*_#]+/g, '')
     .slice(0, 420);
-  return [opening, details ? `Proprietatea are ${details}, iar atmosfera generala este una placuta si practica pentru viata de zi cu zi.` : '', description, VIDEO_TOUR_SCRIPT_CTA]
+  return normalizeScriptForRomanianVoiceover([opening, details ? `Proprietatea are ${details}, iar atmosfera generală este una plăcută și practică pentru viața de zi cu zi.` : '', description, VIDEO_TOUR_SCRIPT_CTA_RO]
     .filter(Boolean)
     .join(' ')
-    .slice(0, 1300);
+    .slice(0, 1300));
 }
 
 async function generatePresenterScript(property: Property, job: PropertyVideoTourJob) {
   const manualScript = job.aiPresenterScript?.trim();
-  if (manualScript) return manualScript.slice(0, 1200);
+  if (manualScript) return normalizeScriptForRomanianVoiceover(manualScript);
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return buildFallbackPresenterScript(property, job.style);
@@ -227,8 +427,10 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
                   'Scrie ca si cum ai povesti natural unui client de ce proprietatea merita vazuta: inceput elegant, dezvoltare fireasca, tranzitii line intre idei si final cald.',
                   'Stil natural, cald, premium si convingator, fara exagerari, fara promisiuni false si fara emoji.',
                   'Nu folosi bullet-uri, titluri, markdown sau enumerari seci.',
+                  'Scrie obligatoriu cu diacritice romanesti corecte.',
+                  'Scrie toate numerele cu litere, nu cu cifre. Exemple: "două camere", "o sută nouăzeci și opt de mii de euro", "șaptezeci și doi de metri pătrați".',
                   'Evita frazele rigide de anunt imobiliar precum "proprietatea dispune de", "este situata", "beneficiaza de" atunci cand pot fi inlocuite cu exprimari naturale.',
-                  `Incheie obligatoriu cu aceasta formula, adaptata doar daca este nevoie pentru acord gramatical: "${VIDEO_TOUR_SCRIPT_CTA}"`,
+                  `Incheie obligatoriu cu aceasta formula, cu diacritice: "${VIDEO_TOUR_SCRIPT_CTA_RO}"`,
                 ].join(' '),
               },
             ],
@@ -248,13 +450,13 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
                   instruction: 'Foloseste descrierea ca sursa de informatii, nu ca text de copiat. Reformuleaza totul intr-o compunere cursiva.',
                   style: job.style,
                   targetDurationSeconds: job.targetDurationSeconds || null,
-                  requiredClosing: VIDEO_TOUR_SCRIPT_CTA,
+                  requiredClosing: VIDEO_TOUR_SCRIPT_CTA_RO,
                 }),
               },
             ],
           },
         ],
-        max_output_tokens: 360,
+        max_output_tokens: 900,
       }),
     }, OPENAI_TIMEOUT_MS, 'Generarea scriptului OpenAI');
 
@@ -262,10 +464,10 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
     const payload = await response.json() as { output_text?: string };
     const script = payload.output_text?.trim();
     if (!script) return buildFallbackPresenterScript(property, job.style);
-    const normalizedScript = script.replace(/\s+/g, ' ').trim();
-    return normalizedScript.includes('Pe curand')
-      ? normalizedScript.slice(0, 1400)
-      : `${normalizedScript} ${VIDEO_TOUR_SCRIPT_CTA}`.slice(0, 1400);
+    const normalizedScript = normalizeScriptForRomanianVoiceover(script);
+    return normalizedScript.includes('Pe curând')
+      ? normalizedScript
+      : normalizeScriptForRomanianVoiceover(`${normalizedScript} ${VIDEO_TOUR_SCRIPT_CTA_RO}`);
   } catch {
     return buildFallbackPresenterScript(property, job.style);
   }
@@ -298,16 +500,272 @@ export async function generatePropertyVideoTourScript(input: {
   });
 }
 
+function getElevenLabsVoiceId(voice: PropertyVideoTourJob['aiPresenterVoice']) {
+  const selectedVoice = voice || 'eleven-rachel';
+  const envKey = `PROPERTY_VIDEO_TOUR_ELEVENLABS_VOICE_ID_${selectedVoice.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
+  return (
+    process.env[envKey] ||
+    (selectedVoice === 'female' ? process.env.PROPERTY_VIDEO_TOUR_ELEVENLABS_FEMALE_VOICE_ID : null) ||
+    (selectedVoice === 'male' ? process.env.PROPERTY_VIDEO_TOUR_ELEVENLABS_MALE_VOICE_ID : null) ||
+    process.env.PROPERTY_VIDEO_TOUR_ELEVENLABS_VOICE_ID ||
+    ELEVENLABS_VOICE_IDS[selectedVoice] ||
+    selectedVoice
+  );
+}
+
+function normalizeVoiceMetadata(value: unknown) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function isRomanianElevenLabsVoice(voice: {
+  name?: string;
+  labels?: Record<string, unknown>;
+  verified_languages?: Array<{ language?: string; locale?: string; accent?: string }>;
+}) {
+  const searchable = [
+    voice.name,
+    voice.labels?.language,
+    voice.labels?.accent,
+    voice.labels?.description,
+    voice.labels?.use_case,
+    ...(voice.verified_languages || []).flatMap((item) => [item.language, item.locale, item.accent]),
+  ].map(normalizeVoiceMetadata);
+
+  return searchable.some((value) => (
+    value === 'ro' ||
+    value.includes('romanian') ||
+    value.includes('romana') ||
+    value.includes('romania') ||
+    value.includes('moldovan') ||
+    value.includes('moldova')
+  ));
+}
+
+function describeElevenLabsVoice(voice: {
+  category?: string;
+  labels?: Record<string, unknown>;
+  verified_languages?: Array<{ language?: string; locale?: string; accent?: string }>;
+}) {
+  const labels = voice.labels || {};
+  const parts = [
+    labels.gender,
+    labels.age,
+    labels.accent,
+    labels.use_case,
+    voice.category,
+  ]
+    .map((item) => String(item || '').replace(/_/g, ' ').trim())
+    .filter(Boolean);
+  const language = labels.language || voice.verified_languages?.[0]?.language || voice.verified_languages?.[0]?.locale;
+  if (language) parts.unshift(String(language).replace(/_/g, ' '));
+  return parts.length ? parts.join(' · ') : 'Voce ElevenLabs disponibila pentru romana.';
+}
+
+export function getFallbackPropertyVideoTourVoicePresets() {
+  return FALLBACK_ELEVENLABS_ROMANIAN_VOICE_PRESETS;
+}
+
+export async function listPropertyVideoTourRomanianVoicePresets(): Promise<PropertyVideoTourVoicePreset[]> {
+  const apiKey = process.env.ELEVENLABS_API_KEY || process.env.XI_API_KEY;
+  if (!apiKey) return getFallbackPropertyVideoTourVoicePresets();
+
+  const response = await fetchWithTimeout(
+    `${ELEVENLABS_VOICES_API_URL}?include_total_count=true`,
+    {
+      method: 'GET',
+      headers: {
+        'xi-api-key': apiKey,
+      },
+    },
+    OPENAI_TIMEOUT_MS,
+    'Importul vocilor ElevenLabs'
+  );
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => '');
+    throw new Error(`Nu am putut importa vocile ElevenLabs (${response.status}). ${payload.slice(0, 240)}`);
+  }
+
+  const payload = await response.json().catch(() => ({})) as {
+    voices?: Array<{
+      voice_id?: string;
+      name?: string;
+      category?: string;
+      labels?: Record<string, unknown>;
+      verified_languages?: Array<{ language?: string; locale?: string; accent?: string }>;
+    }>;
+  };
+  const voices = (payload.voices || [])
+    .filter((voice) => voice.voice_id && isRomanianElevenLabsVoice(voice))
+    .map((voice) => ({
+      id: String(voice.voice_id),
+      label: voice.name ? `${voice.name}` : String(voice.voice_id),
+      description: describeElevenLabsVoice(voice),
+      provider: 'elevenlabs' as const,
+    }));
+
+  return voices.length ? voices : getFallbackPropertyVideoTourVoicePresets();
+}
+
 function getOpenAiVoice(voice: PropertyVideoTourJob['aiPresenterVoice']) {
   if (voice === 'male') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_MALE_VOICE || 'ash';
   if (voice === 'female') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
-  return voice || process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+  if (voice && !voice.startsWith('eleven-')) return voice;
+  return process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+}
+
+function buildWordTimingsFromElevenLabsAlignment(alignment: ElevenLabsAlignment): WordTiming[] | null {
+  const characters = alignment?.characters || [];
+  const starts = alignment?.character_start_times_seconds || [];
+  const ends = alignment?.character_end_times_seconds || [];
+  const words: WordTiming[] = [];
+  let currentWord = '';
+  let currentStart: number | null = null;
+  let currentEnd: number | null = null;
+
+  const flushWord = () => {
+    const word = currentWord.trim();
+    if (word && currentStart !== null && currentEnd !== null && currentEnd > currentStart) {
+      words.push({ word, start: currentStart, end: currentEnd });
+    }
+    currentWord = '';
+    currentStart = null;
+    currentEnd = null;
+  };
+
+  for (let index = 0; index < characters.length; index += 1) {
+    const character = characters[index] || '';
+    const start = Number(starts[index]);
+    const end = Number(ends[index]);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+
+    if (/\s/.test(character)) {
+      flushWord();
+      continue;
+    }
+
+    if (currentStart === null) currentStart = start;
+    currentWord += character;
+    currentEnd = end;
+  }
+  flushWord();
+
+  return words.length ? words : null;
+}
+
+async function synthesizeElevenLabsSpeech(input: {
+  text: string;
+  voice?: PropertyVideoTourJob['aiPresenterVoice'];
+  label: string;
+  withTimestamps?: boolean;
+}) {
+  const apiKey = process.env.ELEVENLABS_API_KEY || process.env.XI_API_KEY;
+  if (!apiKey) {
+    throw new Error('ELEVENLABS_API_KEY trebuie setata pentru voiceover-ul ElevenLabs.');
+  }
+
+  const voiceId = getElevenLabsVoiceId(input.voice);
+  const modelId = process.env.ELEVENLABS_TTS_MODEL || 'eleven_multilingual_v2';
+  const endpoint = input.withTimestamps
+    ? `${ELEVENLABS_TEXT_TO_SPEECH_API_URL}/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`
+    : `${ELEVENLABS_TEXT_TO_SPEECH_API_URL}/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
+  const response = await fetchWithTimeout(
+    endpoint,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text: input.text,
+        model_id: modelId,
+        voice_settings: {
+          stability: Number(process.env.ELEVENLABS_VOICE_STABILITY || 0.42),
+          similarity_boost: Number(process.env.ELEVENLABS_VOICE_SIMILARITY_BOOST || 0.82),
+          style: Number(process.env.ELEVENLABS_VOICE_STYLE || 0.55),
+          use_speaker_boost: process.env.ELEVENLABS_USE_SPEAKER_BOOST !== 'false',
+        },
+      }),
+    },
+    OPENAI_TIMEOUT_MS,
+    input.label
+  );
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => '');
+    throw new Error(`ElevenLabs nu a putut genera vocea (${response.status}). ${payload.slice(0, 240)}`);
+  }
+
+  if (!input.withTimestamps) {
+    return { audio: Buffer.from(await response.arrayBuffer()), wordTimings: null };
+  }
+
+  const payload = await response.json().catch(() => ({})) as {
+    audio_base64?: string;
+    alignment?: ElevenLabsAlignment;
+    normalized_alignment?: ElevenLabsAlignment;
+  };
+  if (!payload.audio_base64) {
+    throw new Error('ElevenLabs nu a returnat audio_base64 pentru sincronizarea subtitrarii.');
+  }
+
+  return {
+    audio: Buffer.from(payload.audio_base64, 'base64'),
+    wordTimings: buildWordTimingsFromElevenLabsAlignment(payload.normalized_alignment || payload.alignment),
+  };
+}
+
+function splitTextForElevenLabs(text: string) {
+  const maxCharacters = Math.max(800, Number(process.env.ELEVENLABS_TTS_CHUNK_CHARACTERS || 2200));
+  const normalizedText = text.replace(/\s+/g, ' ').trim();
+  const sentences = normalizedText.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = '';
+
+  const pushCurrent = () => {
+    if (current.trim()) chunks.push(current.trim());
+    current = '';
+  };
+
+  for (const sentence of sentences.length ? sentences : [normalizedText]) {
+    if (sentence.length > maxCharacters) {
+      pushCurrent();
+      for (let index = 0; index < sentence.length; index += maxCharacters) {
+        const chunk = sentence.slice(index, index + maxCharacters).trim();
+        if (chunk) chunks.push(chunk);
+      }
+      continue;
+    }
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (candidate.length > maxCharacters) {
+      pushCurrent();
+      current = sentence;
+    } else {
+      current = candidate;
+    }
+  }
+  pushCurrent();
+  return chunks.length ? chunks : [normalizedText];
 }
 
 export async function synthesizePropertyVideoTourVoicePreview(input: {
   voice?: PropertyVideoTourJob['aiPresenterVoice'];
   text?: string | null;
 }) {
+  const previewText = input.text || 'Buna, sunt aici sa va prezint o proprietate frumoasa, luminoasa si primitoare. Va invit sa o descoperim impreuna.';
+  if (process.env.PROPERTY_VIDEO_TOUR_TTS_PROVIDER !== 'openai') {
+    const result = await synthesizeElevenLabsSpeech({
+      text: previewText,
+      voice: input.voice || 'eleven-rachel',
+      label: 'Previzualizarea vocii ElevenLabs',
+    });
+    return result.audio;
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY trebuie setata pentru previzualizarea vocilor.');
@@ -322,7 +780,7 @@ export async function synthesizePropertyVideoTourVoicePreview(input: {
     body: JSON.stringify({
       model: process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts',
       voice: getOpenAiVoice(input.voice || 'nova'),
-      input: input.text || 'Buna, sunt aici sa va prezint o proprietate frumoasa, luminoasa si primitoare. Va invit sa o descoperim impreuna.',
+      input: previewText,
       response_format: 'mp3',
       speed: 0.92,
       instructions: PROPERTY_VIDEO_TOUR_TTS_INSTRUCTIONS,
@@ -338,6 +796,60 @@ export async function synthesizePropertyVideoTourVoicePreview(input: {
 }
 
 async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJob, outputPath: string) {
+  if (process.env.PROPERTY_VIDEO_TOUR_TTS_PROVIDER !== 'openai') {
+    const chunks = splitTextForElevenLabs(script);
+    const workDir = path.dirname(outputPath);
+    const chunkPaths: string[] = [];
+    const allWordTimings: WordTiming[] = [];
+    let offsetSeconds = 0;
+
+    for (let index = 0; index < chunks.length; index += 1) {
+      const result = await synthesizeElevenLabsSpeech({
+        text: chunks[index],
+        voice: job.aiPresenterVoice || 'eleven-rachel',
+        label: `Generarea voiceover-ului ElevenLabs ${index + 1}/${chunks.length}`,
+        withTimestamps: true,
+      });
+      const chunkPath = path.join(workDir, `presenter-voice-part-${String(index).padStart(3, '0')}.mp3`);
+      await writeFile(chunkPath, result.audio);
+      chunkPaths.push(chunkPath);
+      if (result.wordTimings) {
+        allWordTimings.push(...result.wordTimings.map((item) => ({
+          ...item,
+          start: item.start + offsetSeconds,
+          end: item.end + offsetSeconds,
+        })));
+      }
+      offsetSeconds += await getMediaDurationSeconds(chunkPath, workDir);
+    }
+
+    if (chunkPaths.length === 1) {
+      await writeFile(outputPath, await readFile(chunkPaths[0]));
+    } else {
+      const inputArgs = chunkPaths.flatMap((chunkPath) => ['-i', chunkPath]);
+      const concatInputs = chunkPaths.map((_, index) => `[${index}:a]`).join('');
+      await runCommand(
+        getFfmpegCommand(),
+        [
+          '-y',
+          ...inputArgs,
+          '-filter_complex',
+          `${concatInputs}concat=n=${chunkPaths.length}:v=0:a=1[a]`,
+          '-map',
+          '[a]',
+          '-c:a',
+          'libmp3lame',
+          '-b:a',
+          '128k',
+          outputPath,
+        ],
+        workDir
+      );
+    }
+
+    return allWordTimings.length ? allWordTimings : null;
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY trebuie setata pentru voiceover-ul prezentatorului AI.');
@@ -365,6 +877,7 @@ async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJo
   }
 
   await writeFile(outputPath, Buffer.from(await response.arrayBuffer()));
+  return null;
 }
 
 async function transcribePresenterAudio(audioPath: string): Promise<WordTiming[] | null> {
@@ -401,7 +914,7 @@ async function transcribePresenterAudio(audioPath: string): Promise<WordTiming[]
         end: Number(item.end),
       }))
       .filter((item) => item.word && Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start);
-    return words.length ? words.slice(0, 260) : null;
+    return words.length ? words : null;
   } catch (error) {
     console.warn('[property-video-tour-transcription-fallback]', {
       message: error instanceof Error ? error.message : String(error),
@@ -1301,20 +1814,21 @@ function buildKaraokeAss(input: {
   wordTimings?: WordTiming[] | null;
 }) {
   const timedWords = (input.wordTimings || [])
-    .filter((item) => item.word && item.end > item.start)
-    .slice(0, 260);
+    .filter((item) => item.word && item.end > item.start);
   const words = input.script
     .replace(/\s+/g, ' ')
     .trim()
     .split(' ')
-    .filter(Boolean)
-    .slice(0, 180);
+    .filter(Boolean);
   const safeWords = words.length ? words : ['Prezentare', 'proprietate'];
   const totalUnits = Math.max(1, Math.round(input.durationSeconds * 100));
   const unitPerWord = Math.max(18, Math.floor(totalUnits / safeWords.length));
   const lineWordCount = input.width < input.height ? 6 : 8;
   const fontSize = Math.round(input.width * (input.width < input.height ? 0.079 : 0.052));
   const marginV = Math.round(input.height * (input.width < input.height ? 0.108 : 0.095));
+  const captionX = Math.round(input.width / 2);
+  const captionTopY = Math.round(input.height * (input.width < input.height ? 0.68 : 0.70));
+  const fixedPositionPrefix = `{\\an8\\pos(${captionX},${captionTopY})}`;
   const header = [
     '[Script Info]',
     'ScriptType: v4.00+',
@@ -1324,7 +1838,7 @@ function buildKaraokeAss(input: {
     '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    `Style: ImoDeusCaption,Arial Rounded MT Bold,${fontSize},&H00FFFFFF,&H00B827F5,&HAA5D0B42,&HAA5D0B42,-1,0,0,0,100,100,0,0,1,6,2,2,64,64,${marginV},1`,
+    `Style: ImoDeusCaption,${CAPTION_FONT_FAMILY},${fontSize},${CAPTION_HIGHLIGHT_ASS_COLOR},${CAPTION_BASE_ASS_COLOR},&HAA5D0B42,&HAA5D0B42,-1,0,0,0,100,100,0,0,1,6,2,8,64,64,${marginV},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
@@ -1358,7 +1872,7 @@ function buildKaraokeAss(input: {
       const split = splitCaptionLine(lineWords);
       const firstLine = split.first.map(renderTimedWord).join(' ');
       const secondLine = split.second.map(renderTimedWord).join(' ');
-      const text = `${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
+      const text = `${fixedPositionPrefix}${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
       events.push(`Dialogue: 0,${formatAssTime(start)},${formatAssTime(end)},ImoDeusCaption,,0,0,0,,${text}`);
     }
     return [...header, ...events, ''].join('\n');
@@ -1374,11 +1888,51 @@ function buildKaraokeAss(input: {
     const split = splitCaptionLine(lineWords);
     const firstLine = split.first.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
     const secondLine = split.second.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
-    const text = `${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
+    const text = `${fixedPositionPrefix}${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
     events.push(`Dialogue: 0,${formatAssTime(start)},${formatAssTime(Math.max(start + 0.6, end))},ImoDeusCaption,,0,0,0,,${text}`);
   }
 
   return [...header, ...events, ''].join('\n');
+}
+
+function buildAgentContactAss(input: {
+  agentProfile: { name?: string | null; phone?: string | null };
+  durationSeconds: number;
+  width: number;
+  height: number;
+  overlay: ReturnType<typeof getPresenterOverlayConfig>;
+  photoSize: number;
+}) {
+  const name = truncateForOverlay(input.agentProfile.name || 'Agent ImoDeus', 22);
+  const phone = truncateForOverlay(input.agentProfile.phone || '', 22);
+  const captionFontSize = Math.round(input.width * (input.width < input.height ? 0.079 : 0.052));
+  const fontSize = Math.round(captionFontSize * (input.width < input.height ? 0.52 : 0.46));
+  const centerX = Math.round(input.overlay.x + input.photoSize / 2);
+  const nameY = Math.max(16, Math.round(input.overlay.y - fontSize * 2.35));
+  const phoneY = Math.max(16, Math.round(input.overlay.y - fontSize * 1.1));
+  const events = [
+    `Dialogue: 1,${formatAssTime(0)},${formatAssTime(input.durationSeconds)},ImoDeusAgent,,0,0,0,,{\\an5\\pos(${centerX},${nameY})}${escapeAssText(name)}`,
+  ];
+  if (phone) {
+    events.push(`Dialogue: 1,${formatAssTime(0)},${formatAssTime(input.durationSeconds)},ImoDeusAgent,,0,0,0,,{\\an5\\pos(${centerX},${phoneY})}${escapeAssText(phone)}`);
+  }
+
+  return [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${input.width}`,
+    `PlayResY: ${input.height}`,
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: ImoDeusAgent,${CAPTION_FONT_FAMILY},${fontSize},${CAPTION_BASE_ASS_COLOR},${CAPTION_BASE_ASS_COLOR},&HAA000000,&HAA000000,-1,0,0,0,100,100,0,0,1,3,2,5,0,0,0,1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    ...events,
+    '',
+  ].join('\n');
 }
 
 function formatAssTime(seconds: number) {
@@ -1410,68 +1964,6 @@ async function getPropertyAgentProfile(input: {
     phone: agent?.phone || null,
   };
   return profile;
-}
-
-function buildAgentContactBadge(input: {
-  agentProfile: { name?: string | null; phone?: string | null };
-  overlay: ReturnType<typeof getPresenterOverlayConfig>;
-  photoSize: number;
-  height: number;
-  durationSeconds: number;
-}) {
-  const phone = truncateForOverlay(input.agentProfile.phone || '', 22);
-  const name = truncateForOverlay(input.agentProfile.name || 'Agent ImoDeus', 22);
-  const safeName = name || 'Agent ImoDeus';
-
-  const nameText = escapeFfmpegText(safeName);
-  const phoneText = escapeFfmpegText(phone);
-  const cardHeight = Math.max(104, Math.round(input.height * 0.078));
-  const gap = Math.max(18, Math.round(input.height * 0.018));
-  const nameSize = Math.round(cardHeight * 0.27);
-  const phoneSize = Math.round(cardHeight * 0.40);
-  const cardWidth = Math.max(
-    input.photoSize + 132,
-    Math.round(Math.max(safeName.length * nameSize * 0.62, phone.length * phoneSize * 0.58) + cardHeight * 1.28)
-  );
-  const groupWidth = cardWidth + 18;
-  const groupHeight = cardHeight + gap + input.photoSize + 18;
-  const groupX = Math.max(10, Math.round(input.overlay.x + input.photoSize / 2 - groupWidth / 2));
-  const groupY = Math.max(12, Math.round(input.overlay.y - cardHeight - gap));
-  const cardX = 9;
-  const cardY = 4;
-  const agentX = Math.round((groupWidth - input.photoSize) / 2);
-  const agentY = cardHeight + gap;
-  const floatY = '8*sin(t*2.1)';
-  const accent = '0xD92BFF';
-  const glow = '0xF45BFF';
-  const textX = cardX + Math.round(cardHeight * 0.50);
-  const nameY = cardY + Math.round(cardHeight * 0.16);
-  const phoneY = cardY + Math.round(cardHeight * 0.49);
-  const stripX = cardX + Math.round(cardHeight * 0.18);
-  const stripY = cardY + Math.round(cardHeight * 0.18);
-  const stripW = Math.max(9, Math.round(cardHeight * 0.105));
-  const stripH = Math.round(cardHeight * 0.64);
-  const cardFilter = [
-    `color=c=black@0.0:s=${groupWidth}x${groupHeight}:d=${input.durationSeconds.toFixed(2)},format=rgba[badgebase]`,
-    `[badgebase]drawbox=x=${cardX + 8}:y=${cardY + 10}:w=${cardWidth}:h=${cardHeight}:color=black@0.24:t=fill`,
-    `drawbox=x=${cardX}:y=${cardY}:w=${cardWidth}:h=${cardHeight}:color=black@0.72:t=fill`,
-    `drawbox=x=${cardX}:y=${cardY}:w=${cardWidth}:h=${cardHeight}:color=${accent}@0.48:t=5`,
-    `drawbox=x=${cardX + 5}:y=${cardY + 5}:w=${cardWidth - 10}:h=${cardHeight - 10}:color=white@0.05:t=2`,
-    `drawbox=x=${stripX}:y=${stripY}:w=${stripW}:h=${stripH}:color=${glow}@0.98:t=fill`,
-    `drawtext=font='Arial Rounded MT Bold':text='${nameText}':x=${textX}:y=${nameY}:fontsize=${nameSize}:fontcolor=0xFFE6FF:shadowcolor=black@0.90:shadowx=2:shadowy=2`,
-    phone
-      ? `drawtext=font='Arial Rounded MT Bold':text='${phoneText}':x=${textX}:y=${phoneY}:fontsize=${phoneSize}:fontcolor=white:shadowcolor=black@0.95:shadowx=3:shadowy=3[badgecard]`
-      : `null[badgecard]`,
-  ].join(',');
-
-  return {
-    filter: cardFilter,
-    groupX,
-    groupY,
-    agentX,
-    agentY,
-    floatY,
-  };
 }
 
 async function overlayAgentPhotoAndCaptions(input: {
@@ -1545,15 +2037,22 @@ async function overlayAgentPhotoAndCaptions(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
+  const contactPath = path.join(input.workDir, 'agent-contact.ass');
+  await writeFile(
+    contactPath,
+    buildAgentContactAss({
+      agentProfile,
+      durationSeconds: input.durationSeconds,
+      width: input.width,
+      height: input.height,
+      overlay,
+      photoSize,
+    }),
+    'utf8'
+  );
   const circleMask = `scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte((X-W/2)*(X-W/2)+(Y-H/2)*(Y-H/2),(W/2)*(W/2)),255,0)'`;
-  const badge = buildAgentContactBadge({
-    agentProfile,
-    overlay,
-    photoSize,
-    height: input.height,
-    durationSeconds: input.durationSeconds,
-  });
-  const filter = `${badge.filter};[1:v]${circleMask}[agent];[badgecard][agent]overlay=x=${badge.agentX}:y=${badge.agentY}:format=auto:shortest=1[badge];[0:v][badge]overlay=x=${badge.groupX}:y='${badge.groupY}+${badge.floatY}':eval=frame:format=auto:shortest=1[withagent];[withagent]ass=agent-captions.ass[v]`;
+  const floatY = '8*sin(t*2.1)';
+  const filter = `[1:v]${circleMask}[agent];[0:v][agent]overlay=x=${overlay.x}:y='${overlay.y}+${floatY}':eval=frame:format=auto:shortest=1[withagent];[withagent]ass=agent-contact.ass[withcontact];[withcontact]ass=agent-captions.ass[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1620,15 +2119,22 @@ async function overlayAgentPhotoOnly(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
+  const contactPath = path.join(input.workDir, 'agent-contact-fallback.ass');
+  await writeFile(
+    contactPath,
+    buildAgentContactAss({
+      agentProfile,
+      durationSeconds: input.durationSeconds,
+      width: input.width,
+      height: input.height,
+      overlay,
+      photoSize,
+    }),
+    'utf8'
+  );
   const circleMask = `scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte((X-W/2)*(X-W/2)+(Y-H/2)*(Y-H/2),(W/2)*(W/2)),255,0)'`;
-  const badge = buildAgentContactBadge({
-    agentProfile,
-    overlay,
-    photoSize,
-    height: input.height,
-    durationSeconds: input.durationSeconds,
-  });
-  const filter = `${badge.filter};[1:v]${circleMask}[agent];[badgecard][agent]overlay=x=${badge.agentX}:y=${badge.agentY}:format=auto:shortest=1[badge];[0:v][badge]overlay=x=${badge.groupX}:y='${badge.groupY}+${badge.floatY}':eval=frame:format=auto:shortest=1[v]`;
+  const floatY = '8*sin(t*2.1)';
+  const filter = `[1:v]${circleMask}[agent];[0:v][agent]overlay=x=${overlay.x}:y='${overlay.y}+${floatY}':eval=frame:format=auto:shortest=1[withagent];[withagent]ass=agent-contact-fallback.ass[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1733,7 +2239,8 @@ async function muxFinalVideo(input: {
         '0:v',
         '-map',
         '[a]',
-        '-shortest',
+        '-t',
+        String(input.durationSeconds),
         '-c:v',
         'copy',
         '-c:a',
@@ -1756,7 +2263,8 @@ async function muxFinalVideo(input: {
         input.videoPath,
         '-i',
         input.presenterAudioPath,
-        '-shortest',
+        '-t',
+        String(input.durationSeconds),
         '-c:v',
         'copy',
         '-c:a',
@@ -1780,7 +2288,8 @@ async function muxFinalVideo(input: {
         input.videoPath,
         '-i',
         audioPath,
-        '-shortest',
+        '-t',
+        String(input.durationSeconds),
         '-c:v',
         'copy',
         '-c:a',
@@ -1937,11 +2446,13 @@ async function renderJobWithFfmpeg(input: {
       await input.onProgress?.({ progress: 70, stage: 'Generez scriptul' });
       presenterAudioPath = path.join(workDir, 'presenter-voice.mp3');
       await input.onProgress?.({ progress: 72, stage: 'Generez voiceover-ul' });
-      await synthesizePresenterAudio(presenterScript, job, presenterAudioPath);
+      presenterWordTimings = await synthesizePresenterAudio(presenterScript, job, presenterAudioPath);
       const presenterAudioDurationSeconds = await getMediaDurationSeconds(presenterAudioPath, workDir);
       renderDurationSeconds = Math.max(baseDurationSeconds, Math.ceil(presenterAudioDurationSeconds + 0.35));
       await input.onProgress?.({ progress: 74, stage: 'Generez voiceover-ul' });
-      presenterWordTimings = await transcribePresenterAudio(presenterAudioPath);
+      if (!presenterWordTimings) {
+        presenterWordTimings = await transcribePresenterAudio(presenterAudioPath);
+      }
       await input.onProgress?.({ progress: 76, stage: 'Incarc voiceover-ul' });
       presenterAudioUrl = await uploadRenderAsset({
         bucketName: bucket.name,
@@ -2115,7 +2626,7 @@ export async function createPropertyVideoTourJob(input: CreateJobInput) {
     includeMusic: input.includeMusic !== false,
     includeAiPresenter: Boolean(input.includeAiPresenter),
     aiPresenterAvatar: input.aiPresenterAvatar || 'business',
-    aiPresenterVoice: input.aiPresenterVoice || 'female',
+    aiPresenterVoice: input.aiPresenterVoice || 'eleven-rachel',
     aiPresenterPosition: input.aiPresenterPosition || 'bottom-right',
     aiPresenterSize: input.aiPresenterSize || 'medium',
     aiPresenterScript: input.aiPresenterScript?.trim() || null,

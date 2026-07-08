@@ -25,6 +25,8 @@ import {
   Copyright,
   PhoneCall,
   Megaphone,
+  Facebook,
+  Video,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -37,6 +39,9 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
@@ -113,6 +118,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <span>Marketing</span>
                     </Link>
                 </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath === '/marketing' || currentPath.startsWith('/marketing/meta-advertising')}>
+                      <Link href="/marketing/meta-advertising">
+                        <Facebook />
+                        <span>Meta Advertising</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-studio')}>
+                      <Link href="/marketing/tiktok-studio">
+                        <Video />
+                        <span>TikTok Studio</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Proprietati Vandute" asChild isActive={currentPath.startsWith('/sold-properties')}>
