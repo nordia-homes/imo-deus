@@ -18,7 +18,8 @@ import {
   Video,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { useAuth, useUser } from '@/firebase';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { useAuth, useStorage, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,10 +30,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import type { TikTokMarketingIntegrationPublicStatus, TikTokPostDraft } from '@/lib/types';
+import type { TikTokMarketingIntegrationPublicStatus, TikTokPostDraft, TikTokStudioAsset } from '@/lib/types';
 
 type ReadyVideoTour = {
+  source?: 'property_video_tour' | 'studio_asset';
   propertyId: string;
+  assetId?: string | null;
   propertyTitle: string;
   propertyPrice?: string | null;
   propertyLocation?: string | null;
@@ -72,6 +75,7 @@ type DashboardPayload = {
     privateModeOnly: boolean;
     defaultPrivacyLevel: string;
   };
+  studioAssets?: TikTokStudioAsset[];
 };
 
 type PublishForm = {
@@ -149,13 +153,23 @@ function splitHashtags(value: string) {
 export default function TikTokStudioPage() {
   const { user } = useUser();
   const auth = useAuth();
+  const storage = useStorage();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [creatorInfo, setCreatorInfo] = useState<CreatorInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<ReadyVideoTour | null>(null);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+  const [aiComposer, setAiComposer] = useState({
+    title: 'Video AI pentru TikTok',
+    script: '',
+    voiceId: '',
+    subtitleStyle: 'heygen_pink',
+    aspectRatio: '9:16',
+  });
   const [publishForm, setPublishForm] = useState<PublishForm>({
     draftId: null,
     description: '',
@@ -240,7 +254,15 @@ export default function TikTokStudioPage() {
   const draftsByProperty = useMemo(() => {
     const map = new Map<string, TikTokPostDraft>();
     (dashboard?.drafts || []).forEach((draft) => {
-      if (!map.has(draft.propertyId)) map.set(draft.propertyId, draft);
+      if (draft.propertyId && !map.has(draft.propertyId)) map.set(draft.propertyId, draft);
+    });
+    return map;
+  }, [dashboard?.drafts]);
+
+  const draftsByAsset = useMemo(() => {
+    const map = new Map<string, TikTokPostDraft>();
+    (dashboard?.drafts || []).forEach((draft) => {
+      if (draft.studioAssetId && !map.has(draft.studioAssetId)) map.set(draft.studioAssetId, draft);
     });
     return map;
   }, [dashboard?.drafts]);
@@ -291,7 +313,9 @@ export default function TikTokStudioPage() {
 
   async function openPublishModal(video: ReadyVideoTour) {
     setSelectedVideo(video);
-    const latestDraft = draftsByProperty.get(video.propertyId) || video.latestDraft || null;
+    const latestDraft = video.assetId
+      ? draftsByAsset.get(video.assetId) || null
+      : draftsByProperty.get(video.propertyId) || video.latestDraft || null;
     setPublishForm({
       draftId: latestDraft?.id || null,
       description: latestDraft?.description || '',
@@ -305,9 +329,78 @@ export default function TikTokStudioPage() {
     if (connected && !creatorInfo) {
       void loadCreatorInfo();
     }
-    if (!latestDraft?.description) {
+    if (!latestDraft?.description && !video.assetId) {
       await generateDescription(video.propertyId);
+    } else if (!latestDraft?.description && video.assetId) {
+      setPublishForm((current) => ({
+        ...current,
+        description: `${video.propertyTitle} pregatit in ImoDeus TikTok Studio.`,
+        hashtags: '#imobiliare #tiktokstudio #imodeus',
+      }));
     }
+  }
+
+  async function handleStudioMediaUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length || !user) return;
+
+    setIsUploadingMedia(true);
+    try {
+      await Promise.all(files.map(async (file) => {
+        const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : null;
+        if (!type) return;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+        const mediaRef = ref(storage, `tiktok-studio/${user.uid}/${Date.now()}-${safeName}`);
+        await uploadBytes(mediaRef, file, { contentType: file.type });
+        const url = await getDownloadURL(mediaRef);
+        const response = await authorizedFetch(user, auth, '/api/marketing/tiktok/studio-assets', {
+          method: 'POST',
+          body: JSON.stringify({
+            type,
+            name: file.name,
+            url,
+            mimeType: file.type,
+            sizeBytes: file.size,
+            source: 'upload',
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.message || 'Nu am putut salva asset-ul importat.');
+      }));
+      await loadDashboard();
+      toast({ title: 'Media importata', description: 'Fisierele au fost adaugate in TikTok Studio.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Import esuat',
+        description: error instanceof Error ? error.message : 'Nu am putut importa fisierele media.',
+      });
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  }
+
+  function openAssetPublishModal(asset: TikTokStudioAsset) {
+    if (asset.type !== 'video') {
+      toast({
+        variant: 'destructive',
+        title: 'Fotografia trebuie randata',
+        description: 'Selecteaza fotografii in AI Composer si genereaza un video inainte de publicare.',
+      });
+      return;
+    }
+    void openPublishModal({
+      source: 'studio_asset',
+      propertyId: '',
+      assetId: asset.id,
+      propertyTitle: asset.name,
+      videoTourUrl: asset.url,
+      videoTourThumbnailUrl: asset.thumbnailUrl || null,
+      generatedAt: asset.createdAt,
+      format: asset.editorState?.aspectRatio || '9:16',
+      style: 'studio',
+    });
   }
 
   async function generateDescription(propertyId?: string) {
@@ -341,7 +434,8 @@ export default function TikTokStudioPage() {
   async function saveDraft() {
     if (!user || !selectedVideo) return null;
     const body = {
-      propertyId: selectedVideo.propertyId,
+      propertyId: selectedVideo.assetId ? undefined : selectedVideo.propertyId,
+      assetId: selectedVideo.assetId || undefined,
       description: publishForm.description,
       hashtags: splitHashtags(publishForm.hashtags),
       privacyLevel: publishForm.privacyLevel,
@@ -664,6 +758,168 @@ export default function TikTokStudioPage() {
                 Drafturile TikTok vor aparea aici dupa ce pregatesti prima postare.
               </div>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white shadow-2xl">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-pink-200" />
+                  AI Video Studio
+                </CardTitle>
+                <CardDescription className="mt-2 text-white/65">
+                  Importa videoclipuri sau fotografii, pregateste editarea si publica video-urile direct pe TikTok.
+                </CardDescription>
+              </div>
+              <Button asChild className="rounded-full bg-[#FF0050] text-white hover:bg-[#ff2a68]">
+                <label>
+                  {isUploadingMedia ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Video className="mr-2 h-4 w-4" />}
+                  Import video/foto
+                  <input
+                    type="file"
+                    multiple
+                    accept="video/*,image/*"
+                    className="hidden"
+                    onChange={(event) => void handleStudioMediaUpload(event)}
+                  />
+                </label>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            {(dashboard?.studioAssets || []).length ? dashboard!.studioAssets!.map((asset) => {
+              const draft = draftsByAsset.get(asset.id);
+              const isSelectedPhoto = selectedPhotoIds.includes(asset.id);
+              return (
+                <div key={asset.id} className="overflow-hidden rounded-2xl border border-white/10 bg-[#0F1E33]/85">
+                  <div className="aspect-[9/13] bg-black/40">
+                    {asset.type === 'video' ? (
+                      <video src={asset.url} className="h-full w-full object-cover" muted playsInline />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={asset.url} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <div className="space-y-3 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{asset.name}</p>
+                      <p className="text-xs text-white/45">{asset.type === 'video' ? 'Video importat' : 'Fotografie pentru AI video'}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="border-white/10 bg-white/10 text-white hover:bg-white/10">{asset.editorState?.aspectRatio || '9:16'}</Badge>
+                      {draft ? <Badge className={`border ${getStatusClass(draft.status)} hover:bg-transparent`}>{STATUS_LABELS[draft.status]}</Badge> : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {asset.type === 'video' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!connected}
+                          className="rounded-full bg-[#FF0050] text-white hover:bg-[#ff2a68]"
+                          onClick={() => openAssetPublishModal(asset)}
+                        >
+                          <Send className="mr-2 h-3.5 w-3.5" />
+                          Publica
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
+                          onClick={() => setSelectedPhotoIds((current) => (
+                            current.includes(asset.id)
+                              ? current.filter((id) => id !== asset.id)
+                              : [...current, asset.id]
+                          ))}
+                        >
+                          {isSelectedPhoto ? 'Selectata' : 'Adauga in AI'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="col-span-full rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-6 text-center text-sm text-white/60">
+                Importa primul video sau primele fotografii pentru a porni studioul.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-white/10 bg-[#152A47] text-white shadow-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-pink-200" />
+              Composer fotografii {'->'} video AI
+            </CardTitle>
+            <CardDescription className="text-white/65">
+              Pregateste un video vertical din fotografii, voce ElevenLabs si subtitrari in stilul video tur.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-sm font-semibold">{selectedPhotoIds.length} fotografii selectate</p>
+              <p className="mt-1 text-sm text-white/55">Ordinea selectiei va fi folosita pentru storyboard-ul video.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-white">Titlu proiect</Label>
+                <Textarea
+                  value={aiComposer.title}
+                  onChange={(event) => setAiComposer((current) => ({ ...current, title: event.target.value }))}
+                  className="min-h-[52px] rounded-2xl border-white/10 bg-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-white">Aspect</Label>
+                <Select
+                  value={aiComposer.aspectRatio}
+                  onValueChange={(value) => setAiComposer((current) => ({ ...current, aspectRatio: value }))}
+                >
+                  <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="9:16">9:16 TikTok</SelectItem>
+                    <SelectItem value="4:5">4:5 Feed</SelectItem>
+                    <SelectItem value="1:1">1:1 Square</SelectItem>
+                    <SelectItem value="16:9">16:9 Landscape</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white">Script voiceover ElevenLabs</Label>
+              <Textarea
+                value={aiComposer.script}
+                onChange={(event) => setAiComposer((current) => ({ ...current, script: event.target.value }))}
+                className="min-h-[160px] rounded-2xl border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                placeholder="Scrie sau genereaza scriptul pentru voce..."
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm font-semibold">Subtitrari</p>
+                <p className="mt-1 text-sm text-white/55">Stil HeyGen roz, doua randuri, sincronizare pe cuvinte ElevenLabs.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm font-semibold">Editor avansat</p>
+                <p className="mt-1 text-sm text-white/55">Trim, crop 9:16, cover, headline, descriere TikTok si export MP4.</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              disabled
+              className="w-full rounded-full bg-white/15 text-white/55"
+            >
+              Randare AI video din fotografii - pipeline pregatit
+            </Button>
           </CardContent>
         </Card>
       </div>

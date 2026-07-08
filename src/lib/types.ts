@@ -494,7 +494,10 @@ export type TikTokMarketingIntegrationPrivate = TikTokMarketingIntegrationPublic
 export type TikTokPostDraft = {
   id: string;
   agencyId: string;
-  propertyId: string;
+  propertyId?: string | null;
+  sourceType?: 'property_video_tour' | 'studio_asset' | 'studio_project';
+  studioAssetId?: string | null;
+  studioProjectId?: string | null;
   videoTourUrl: string;
   videoTourThumbnailUrl?: string | null;
   propertyTitle: string;
@@ -521,6 +524,52 @@ export type TikTokPostDraft = {
     message: string;
     tiktokObjectId?: string | null;
   }> | null;
+};
+
+export type TikTokStudioAsset = {
+  id: string;
+  agencyId: string;
+  ownerUid: string;
+  createdAt: string;
+  updatedAt: string;
+  type: 'video' | 'image';
+  name: string;
+  url: string;
+  thumbnailUrl?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  durationSeconds?: number | null;
+  source: 'upload' | 'ai_generated' | 'property_video_tour';
+  status: 'ready' | 'processing' | 'error';
+  editorState?: {
+    aspectRatio?: '9:16' | '1:1' | '4:5' | '16:9';
+    trimStartSeconds?: number;
+    trimEndSeconds?: number | null;
+    headline?: string | null;
+    description?: string | null;
+    voiceId?: string | null;
+    subtitleStyle?: 'heygen_pink' | 'clean_white' | 'luxury';
+  } | null;
+  errorMessage?: string | null;
+};
+
+export type TikTokStudioProject = {
+  id: string;
+  agencyId: string;
+  ownerUid: string;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  status: 'draft' | 'rendering' | 'ready' | 'error';
+  mode: 'photo_to_video' | 'video_editor';
+  sourceAssetIds: string[];
+  outputAssetId?: string | null;
+  script?: string | null;
+  voiceId?: string | null;
+  subtitleStyle?: 'heygen_pink' | 'clean_white' | 'luxury';
+  aspectRatio: '9:16' | '1:1' | '4:5' | '16:9';
+  settings?: Record<string, unknown> | null;
+  errorMessage?: string | null;
 };
 
 export type PropertyVideoTour = {

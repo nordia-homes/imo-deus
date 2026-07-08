@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const [{ requireAgencyUserFromBearerToken }, { createTikTokPostDraft }] = await Promise.all([
+    const [{ requireAgencyUserFromBearerToken }, { createTikTokPostDraft, createTikTokPostDraftFromStudioAsset }] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
       import('@/lib/tiktok-marketing'),
     ]);
@@ -39,6 +39,23 @@ export async function POST(request: NextRequest) {
       return createDemoBlockedResponse('Publicarea TikTok este doar preview in mediul demo.');
     }
     const body = await request.json().catch(() => ({}));
+    const assetId = typeof body.assetId === 'string' ? body.assetId : '';
+    if (assetId) {
+      const draft = await createTikTokPostDraftFromStudioAsset({
+        agencyId,
+        assetId,
+        requestedByUid: uid,
+        description: body.description,
+        hashtags: body.hashtags,
+        privacyLevel: body.privacyLevel,
+        disableComment: body.disableComment,
+        disableDuet: body.disableDuet,
+        disableStitch: body.disableStitch,
+        aiGeneratedContent: body.aiGeneratedContent,
+      });
+      return NextResponse.json({ draft }, { status: 201 });
+    }
+
     const propertyId = typeof body.propertyId === 'string' ? body.propertyId : '';
     if (!propertyId) {
       return NextResponse.json({ message: 'propertyId lipseste.' }, { status: 400 });
