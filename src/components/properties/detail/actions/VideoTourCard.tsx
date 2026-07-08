@@ -709,17 +709,36 @@ export function VideoTourCard({
 
       setProgress(12);
       setCloudStatus('Job creat. Se porneste randarea FFmpeg...');
-      const runResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}`, {
+      let runCompletedJob: Record<string, any> | null = null;
+      let runError: Error | null = null;
+      let runFinished = false;
+      const runPromise = authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}?wait=1`, {
         method: 'POST',
-      });
-      const runPayload = await readApiPayload(runResponse);
-      if (!runResponse.ok) throw new Error(getApiErrorMessage(runPayload, 'Nu am putut porni randarea cloud.'));
+      })
+        .then(async (runResponse) => {
+          const runPayload = await readApiPayload(runResponse);
+          if (!runResponse.ok) throw new Error(getApiErrorMessage(runPayload, 'Nu am putut porni randarea cloud.'));
+          const job = runPayload?.job as Record<string, any> | undefined;
+          if (job?.status === 'completed') runCompletedJob = job;
+          if (job?.status === 'error') throw new Error(getApiErrorMessage(runPayload, 'Randarea cloud a esuat.'));
+        })
+        .catch((error) => {
+          runError = error instanceof Error ? error : new Error('Nu am putut porni randarea cloud.');
+        })
+        .finally(() => {
+          runFinished = true;
+        });
 
       setCloudStatus('Randarea ruleaza. Verific progresul...');
       const startedAt = Date.now();
       let completedJob: Record<string, any> | null = null;
-      while (Date.now() - startedAt < 9 * 60 * 1000) {
+      while (Date.now() - startedAt < 15 * 60 * 1000) {
         await delay(2500);
+        if (runError) throw runError;
+        if (runCompletedJob) {
+          completedJob = runCompletedJob;
+          break;
+        }
         const statusResponse = await authorizedFetch(`/api/properties/${property.id}/video-tour-jobs/${jobId}`, {
           method: 'GET',
         });
@@ -729,10 +748,11 @@ export function VideoTourCard({
         }
         const currentJob = statusPayload?.job as Record<string, any> | undefined;
         const jobProgress = Number(currentJob?.progress);
+        const jobStage = typeof currentJob?.stage === 'string' ? currentJob.stage : null;
         const elapsedSeconds = Math.round((Date.now() - startedAt) / 1000);
         const estimatedProgress = Math.min(95, 18 + Math.floor(elapsedSeconds / 3));
         if (Number.isFinite(jobProgress)) {
-          setProgress(Math.min(98, Math.max(12, estimatedProgress, Math.round(jobProgress))));
+          setProgress(Math.min(98, Math.max(12, Math.round(jobProgress))));
         } else {
           setProgress(Math.min(98, Math.max(12, estimatedProgress)));
         }
@@ -743,8 +763,19 @@ export function VideoTourCard({
         if (currentJob?.status === 'error') {
           throw new Error(getApiErrorMessage(statusPayload, 'Randarea cloud a esuat.'));
         }
-        setCloudStatus(`Randarea ruleaza... ${elapsedSeconds}s`);
+        if (runFinished) {
+          await runPromise;
+          if (runCompletedJob) {
+            completedJob = runCompletedJob;
+            break;
+          }
+          if (runError) throw runError;
+        }
+        setCloudStatus(jobStage ? `${jobStage}... ${elapsedSeconds}s` : `Randarea ruleaza... ${elapsedSeconds}s`);
       }
+      if (!completedJob && !runFinished) await runPromise;
+      if (!completedJob && runCompletedJob) completedJob = runCompletedJob;
+      if (runError) throw runError;
       if (!completedJob) throw new Error('Randarea dureaza prea mult. Jobul poate continua in fundal; reincarca proprietatea peste cateva minute.');
 
       setProgress(100);

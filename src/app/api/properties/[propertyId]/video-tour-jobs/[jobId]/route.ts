@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 900;
 
 function formatError(error: unknown) {
   if (error && typeof error === 'object' && 'status' in error) {
@@ -45,6 +45,17 @@ export async function POST(
     ]);
     routeParams = { propertyId, jobId };
     const authContext = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const shouldWait = request.nextUrl.searchParams.get('wait') === '1';
+    if (shouldWait) {
+      const job = await runPropertyVideoTourJob({
+        adminDb: authContext.adminDb,
+        agencyId: authContext.agencyId,
+        propertyId,
+        jobId,
+      });
+      return NextResponse.json({ job }, { status: 200 });
+    }
+
     void runPropertyVideoTourJob({
       adminDb: authContext.adminDb,
       agencyId: authContext.agencyId,

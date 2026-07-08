@@ -38,12 +38,68 @@ type DrainInput = {
 
 const JOB_COLLECTION = 'propertyVideoTourJobs';
 const MAX_IMAGES = 18;
+const FETCH_TIMEOUT_MS = 90_000;
+const OPENAI_TIMEOUT_MS = 120_000;
+const FFMPEG_TIMEOUT_MS = 8 * 60_000;
+const STORAGE_UPLOAD_TIMEOUT_MS = 4 * 60_000;
+const STALE_PROCESSING_JOB_MS = 20 * 60_000;
 const OPENAI_RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
 const OPENAI_SPEECH_API_URL = 'https://api.openai.com/v1/audio/speech';
 const HEYGEN_API_BASE_URL = 'https://api.heygen.com';
 
+type RenderStage =
+  | 'Verific FFmpeg'
+  | 'Descarc fotografiile'
+  | 'Randez segmentele video'
+  | 'Aplic tranzitiile'
+  | 'Generez scriptul'
+  | 'Generez voiceover-ul'
+  | 'Incarc voiceover-ul'
+  | 'Aplic poza agentului si subtitrarea'
+  | 'Combin vocea cu video-ul'
+  | 'Generez thumbnail-ul'
+  | 'Incarc video-ul final';
+
+type RenderProgressUpdate = {
+  progress: number;
+  stage: RenderStage;
+};
+
 function nowIso() {
   return new Date().toISOString();
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      reject(new Error(`${label} a depasit limita de ${Math.round(timeoutMs / 1000)}s.`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit | undefined, timeoutMs: number, label: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`${label} a depasit limita de ${Math.round(timeoutMs / 1000)}s.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function sanitizeFileName(value: string) {
@@ -127,7 +183,7 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
   if (!apiKey) return buildFallbackPresenterScript(property, job.style);
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_API_URL, {
+    const response = await fetchWithTimeout(OPENAI_RESPONSES_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,7 +222,7 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
         ],
         max_output_tokens: 360,
       }),
-    });
+    }, OPENAI_TIMEOUT_MS, 'Generarea scriptului OpenAI');
 
     if (!response.ok) throw new Error(`OpenAI script ${response.status}`);
     const payload = await response.json() as { output_text?: string };
@@ -188,7 +244,7 @@ async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJo
     throw new Error('OPENAI_API_KEY trebuie setata pentru voiceover-ul prezentatorului AI.');
   }
 
-  const response = await fetch(OPENAI_SPEECH_API_URL, {
+  const response = await fetchWithTimeout(OPENAI_SPEECH_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,7 +257,7 @@ async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJo
       response_format: 'mp3',
       speed: job.style === 'social' ? 1.06 : job.style === 'luxury' ? 0.94 : 1,
     }),
-  });
+  }, OPENAI_TIMEOUT_MS, 'Generarea voiceover-ului OpenAI');
 
   if (!response.ok) {
     const payload = await response.text().catch(() => '');
@@ -219,14 +275,18 @@ async function uploadRenderAsset(input: {
 }) {
   const token = randomUUID();
   const bucket = adminStorage.bucket(input.bucketName);
-  await bucket.file(input.storagePath).save(await readFile(input.localPath), {
-    resumable: false,
-    contentType: input.contentType,
-    metadata: {
-      cacheControl: 'public, max-age=31536000',
-      metadata: { firebaseStorageDownloadTokens: token },
-    },
-  });
+  await withTimeout(
+    bucket.file(input.storagePath).save(await readFile(input.localPath), {
+      resumable: false,
+      contentType: input.contentType,
+      metadata: {
+        cacheControl: 'public, max-age=31536000',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
+    }),
+    STORAGE_UPLOAD_TIMEOUT_MS,
+    `Upload asset ${path.basename(input.storagePath)}`
+  );
   return getFirebaseDownloadUrl(bucket.name, input.storagePath, token);
 }
 
@@ -618,7 +678,7 @@ async function fetchBuffer(url: string) {
   }
 
   try {
-    const response = await fetch(url);
+    const response = await fetchWithTimeout(url, undefined, FETCH_TIMEOUT_MS, `Descarcarea media de la ${getUrlHost(url)}`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -708,15 +768,31 @@ function summarizeCommandError(stderr: string, command: string, code: number | n
   return details ? `${prefix} ${details}`.slice(0, 700) : prefix;
 }
 
-async function runCommand(command: string, args: string[], cwd: string) {
+async function runCommand(command: string, args: string[], cwd: string, timeoutMs = FFMPEG_TIMEOUT_MS) {
   return new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, { cwd, windowsHide: true });
     let stderr = '';
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill('SIGKILL');
+      reject(new Error(`${path.basename(command)} a depasit limita de ${Math.round(timeoutMs / 1000)}s.`));
+    }, timeoutMs);
+
     child.stderr.on('data', (chunk) => {
       stderr += String(chunk);
     });
-    child.on('error', reject);
+    child.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(error);
+    });
     child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
       if (code === 0) {
         resolve();
         return;
@@ -1094,7 +1170,7 @@ async function overlayAgentPhotoAndCaptions(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
-  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto[withagent];[withagent]ass=agent-captions.ass[v]`;
+  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto:shortest=1[withagent];[withagent]ass=agent-captions.ass[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1110,6 +1186,8 @@ async function overlayAgentPhotoAndCaptions(input: {
       filter,
       '-map',
       '[v]',
+      '-t',
+      String(input.durationSeconds),
       '-an',
       '-c:v',
       'libx264',
@@ -1132,6 +1210,7 @@ async function overlayAgentPhotoOnly(input: {
   property: Property;
   baseVideoPath: string;
   outputPath: string;
+  durationSeconds: number;
   width: number;
   height: number;
   position?: PropertyVideoTourJob['aiPresenterPosition'];
@@ -1157,7 +1236,7 @@ async function overlayAgentPhotoOnly(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
-  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto[v]`;
+  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto:shortest=1[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1173,6 +1252,8 @@ async function overlayAgentPhotoOnly(input: {
       filter,
       '-map',
       '[v]',
+      '-t',
+      String(input.durationSeconds),
       '-an',
       '-c:v',
       'libx264',
@@ -1351,12 +1432,14 @@ async function renderJobWithFfmpeg(input: {
   adminDb: Firestore;
   job: PropertyVideoTourJob;
   property: Property;
+  onProgress?: (update: RenderProgressUpdate) => Promise<void>;
 }) {
   const { job, property } = input;
   const bucket = adminStorage.bucket();
   const workDir = await mkdtemp(path.join(tmpdir(), 'imodeus-video-tour-'));
 
   try {
+    await input.onProgress?.({ progress: 18, stage: 'Verific FFmpeg' });
     await assertFfmpegAvailable(workDir);
     await mkdir(path.join(workDir, 'frames'), { recursive: true });
 
@@ -1373,6 +1456,10 @@ async function renderJobWithFfmpeg(input: {
         const imageBuffer = await fetchBuffer(images[index].url);
         await writeFile(path.join(workDir, 'frames', fileName), imageBuffer);
         downloadedImages.push({ sourceIndex: index, fileName });
+        await input.onProgress?.({
+          progress: 20 + Math.round((downloadedImages.length / images.length) * 12),
+          stage: 'Descarc fotografiile',
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Nu am putut descarca fotografia.';
         skippedImages.push(`Foto ${index + 1}: ${message}`);
@@ -1425,9 +1512,14 @@ async function renderJobWithFfmpeg(input: {
         ],
         workDir
       );
+      await input.onProgress?.({
+        progress: 34 + Math.round(((index + 1) / downloadedImages.length) * 26),
+        stage: 'Randez segmentele video',
+      });
     }
 
     const silentVideoPath = path.join(workDir, 'video-no-audio.mp4');
+    await input.onProgress?.({ progress: 62, stage: 'Aplic tranzitiile' });
     await stitchSegmentsWithTransitions({
       segmentPaths,
       outputPath: silentVideoPath,
@@ -1437,6 +1529,7 @@ async function renderJobWithFfmpeg(input: {
       quality: job.quality,
       workDir,
     });
+    await input.onProgress?.({ progress: 66, stage: 'Aplic tranzitiile' });
 
     let presenterScript: string | null = null;
     let presenterAudioPath: string | null = null;
@@ -1445,17 +1538,24 @@ async function renderJobWithFfmpeg(input: {
     let videoForMuxPath = silentVideoPath;
 
     if (job.includeAiPresenter) {
+      await input.onProgress?.({ progress: 68, stage: 'Generez scriptul' });
       presenterScript = await generatePresenterScript(property, job);
+      await input.onProgress?.({ progress: 70, stage: 'Generez scriptul' });
       presenterAudioPath = path.join(workDir, 'presenter-voice.mp3');
+      await input.onProgress?.({ progress: 72, stage: 'Generez voiceover-ul' });
       await synthesizePresenterAudio(presenterScript, job, presenterAudioPath);
+      await input.onProgress?.({ progress: 74, stage: 'Generez voiceover-ul' });
+      await input.onProgress?.({ progress: 76, stage: 'Incarc voiceover-ul' });
       presenterAudioUrl = await uploadRenderAsset({
         bucketName: bucket.name,
         storagePath: `agencies/${job.agencyId}/properties/${job.propertyId}/video-tours/cloud-${job.id}/presenter-voice.mp3`,
         localPath: presenterAudioPath,
         contentType: 'audio/mpeg',
       });
+      await input.onProgress?.({ progress: 78, stage: 'Incarc voiceover-ul' });
 
       const compositedVideoPath = path.join(workDir, 'video-with-agent-voice.mp4');
+      await input.onProgress?.({ progress: 80, stage: 'Aplic poza agentului si subtitrarea' });
       try {
         await overlayAgentPhotoAndCaptions({
           adminDb: input.adminDb,
@@ -1470,6 +1570,7 @@ async function renderJobWithFfmpeg(input: {
           size: job.aiPresenterSize,
           workDir,
         });
+        await input.onProgress?.({ progress: 84, stage: 'Aplic poza agentului si subtitrarea' });
       } catch (error) {
         console.warn('[property-video-tour-caption-fallback]', {
           message: error instanceof Error ? error.message : String(error),
@@ -1479,18 +1580,21 @@ async function renderJobWithFfmpeg(input: {
           property,
           baseVideoPath: silentVideoPath,
           outputPath: compositedVideoPath,
+          durationSeconds,
           width,
           height,
           position: job.aiPresenterPosition,
           size: job.aiPresenterSize,
           workDir,
         });
+        await input.onProgress?.({ progress: 84, stage: 'Aplic poza agentului si subtitrarea' });
       }
       presenterVideoUrl = null;
       videoForMuxPath = compositedVideoPath;
     }
 
     const finalVideoPath = path.join(workDir, 'video-tour.mp4');
+    await input.onProgress?.({ progress: 86, stage: 'Combin vocea cu video-ul' });
     await muxFinalVideo({
       videoPath: videoForMuxPath,
       outputPath: finalVideoPath,
@@ -1499,13 +1603,16 @@ async function renderJobWithFfmpeg(input: {
       durationSeconds,
       workDir,
     });
+    await input.onProgress?.({ progress: 90, stage: 'Combin vocea cu video-ul' });
 
     const thumbnailPath = path.join(workDir, 'thumbnail.jpg');
+    await input.onProgress?.({ progress: 92, stage: 'Generez thumbnail-ul' });
     await runCommand(
       getFfmpegCommand(),
       ['-y', '-ss', '00:00:01', '-i', finalVideoPath, '-frames:v', '1', '-q:v', '3', thumbnailPath],
       workDir
     );
+    await input.onProgress?.({ progress: 93, stage: 'Generez thumbnail-ul' });
 
     const safeTitle = sanitizeFileName(property.title || job.propertyTitle || 'video-tur');
     const baseStoragePath = `agencies/${job.agencyId}/properties/${job.propertyId}/video-tours/cloud-${job.id}`;
@@ -1514,24 +1621,30 @@ async function renderJobWithFfmpeg(input: {
     const videoToken = randomUUID();
     const thumbnailToken = randomUUID();
 
-    await Promise.all([
-      bucket.file(videoStoragePath).save(await readFile(finalVideoPath), {
-        resumable: false,
-        contentType: 'video/mp4',
-        metadata: {
-          cacheControl: 'public, max-age=31536000',
-          metadata: { firebaseStorageDownloadTokens: videoToken },
-        },
-      }),
-      bucket.file(thumbnailStoragePath).save(await readFile(thumbnailPath), {
-        resumable: false,
-        contentType: 'image/jpeg',
-        metadata: {
-          cacheControl: 'public, max-age=31536000',
-          metadata: { firebaseStorageDownloadTokens: thumbnailToken },
-        },
-      }),
-    ]);
+    await input.onProgress?.({ progress: 94, stage: 'Incarc video-ul final' });
+    await withTimeout(
+      Promise.all([
+        bucket.file(videoStoragePath).save(await readFile(finalVideoPath), {
+          resumable: false,
+          contentType: 'video/mp4',
+          metadata: {
+            cacheControl: 'public, max-age=31536000',
+            metadata: { firebaseStorageDownloadTokens: videoToken },
+          },
+        }),
+        bucket.file(thumbnailStoragePath).save(await readFile(thumbnailPath), {
+          resumable: false,
+          contentType: 'image/jpeg',
+          metadata: {
+            cacheControl: 'public, max-age=31536000',
+            metadata: { firebaseStorageDownloadTokens: thumbnailToken },
+          },
+        }),
+      ]),
+      STORAGE_UPLOAD_TIMEOUT_MS,
+      'Upload video final'
+    );
+    await input.onProgress?.({ progress: 96, stage: 'Incarc video-ul final' });
 
     const videoUrl = getFirebaseDownloadUrl(bucket.name, videoStoragePath, videoToken);
     const thumbnailUrl = getFirebaseDownloadUrl(bucket.name, thumbnailStoragePath, thumbnailToken);
@@ -1599,6 +1712,7 @@ export async function createPropertyVideoTourJob(input: CreateJobInput) {
     aiPresenterScript: input.aiPresenterScript?.trim() || null,
     images,
     progress: 0,
+    stage: 'In asteptare',
     attempts: 0,
     createdAt: now,
     updatedAt: now,
@@ -1643,13 +1757,49 @@ export async function getPropertyVideoTourJobs(adminDb: Firestore, agencyId: str
 }
 
 export async function getPropertyVideoTourJob(adminDb: Firestore, agencyId: string, propertyId: string, jobId: string) {
-  const snapshot = await getVideoTourJobsCollection(adminDb, agencyId, propertyId).doc(jobId).get();
+  const jobRef = getVideoTourJobsCollection(adminDb, agencyId, propertyId).doc(jobId);
+  const snapshot = await jobRef.get();
   if (!snapshot.exists) {
     const error = new Error('Jobul video nu exista.') as Error & { status?: number };
     error.status = 404;
     throw error;
   }
-  return snapshot.data() as PropertyVideoTourJob;
+  const job = snapshot.data() as PropertyVideoTourJob;
+  if (job.status === 'processing' && job.lockedAt) {
+    const lockAgeMs = Date.now() - new Date(job.lockedAt).getTime();
+    if (lockAgeMs > STALE_PROCESSING_JOB_MS) {
+      const failedAt = nowIso();
+      const staleJob: Partial<PropertyVideoTourJob> = {
+        status: 'error',
+        progress: 100,
+        stage: null,
+        lockedAt: null,
+        updatedAt: failedAt,
+        failedAt,
+        errorMessage: `Randarea a ramas blocata la etapa "${job.stage || 'necunoscuta'}". Porneste o randare noua.`,
+      };
+      await Promise.all([
+        jobRef.set(staleJob, { merge: true }),
+        adminDb
+          .collection('agencies')
+          .doc(agencyId)
+          .collection('properties')
+          .doc(propertyId)
+          .set(
+            {
+              videoTour: {
+                status: 'error',
+                errorMessage: staleJob.errorMessage,
+                generatedAt: failedAt,
+              },
+            },
+            { merge: true }
+          ),
+      ]);
+      return { ...job, ...staleJob } as PropertyVideoTourJob;
+    }
+  }
+  return job;
 }
 
 export async function runPropertyVideoTourJob(input: {
@@ -1681,6 +1831,7 @@ export async function runPropertyVideoTourJob(input: {
       updatedAt: nowIso(),
       attempts: (job.attempts || 0) + 1,
       progress: Math.max(job.progress || 0, 8),
+      stage: 'Pornesc randarea',
     };
     transaction.set(jobRef, nextJob, { merge: true });
     return { job: nextJob, shouldRun: true };
@@ -1689,7 +1840,23 @@ export async function runPropertyVideoTourJob(input: {
   if (!acquired.shouldRun) return acquired.job;
 
   try {
-    await jobRef.set({ progress: 18, updatedAt: nowIso() }, { merge: true });
+    let lastProgress = Math.max(acquired.job.progress || 0, 18);
+    let lastStage = acquired.job.stage || 'Pornesc randarea';
+    const updateProgress = async (update: RenderProgressUpdate) => {
+      const nextProgress = Math.min(96, Math.max(18, Math.round(update.progress)));
+      const nextStage = update.stage;
+      if (nextProgress <= lastProgress && nextStage === lastStage) return;
+      lastProgress = nextProgress;
+      lastStage = nextStage;
+      await jobRef.set({
+        progress: nextProgress,
+        stage: nextStage,
+        lockedAt: nowIso(),
+        updatedAt: nowIso(),
+      }, { merge: true });
+    };
+
+    await jobRef.set({ progress: lastProgress, stage: lastStage, lockedAt: nowIso(), updatedAt: nowIso() }, { merge: true });
     const propertySnapshot = await propertyRef.get();
     if (!propertySnapshot.exists) throw new Error('Proprietatea nu mai exista.');
     const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
@@ -1698,12 +1865,14 @@ export async function runPropertyVideoTourJob(input: {
       adminDb: input.adminDb,
       job: acquired.job,
       property,
+      onProgress: updateProgress,
     });
 
     const completedAt = nowIso();
     const completedJob: Partial<PropertyVideoTourJob> = {
       status: 'completed',
       progress: 100,
+      stage: null,
       videoUrl: result.videoUrl,
       thumbnailUrl: result.thumbnailUrl,
       durationSeconds: result.durationSeconds,
@@ -1764,6 +1933,7 @@ export async function runPropertyVideoTourJob(input: {
         {
           status: 'error',
           progress: 100,
+          stage: null,
           errorMessage: message,
           failedAt,
           updatedAt: failedAt,

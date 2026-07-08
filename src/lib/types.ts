@@ -516,6 +516,7 @@ export type PropertyVideoTourJob = {
   aiPresenterVideoUrl?: string | null;
   images: Array<{ url: string; alt?: string | null }>;
   progress: number;
+  stage?: string | null;
   attempts: number;
   videoUrl?: string | null;
   thumbnailUrl?: string | null;
