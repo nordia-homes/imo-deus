@@ -477,7 +477,7 @@ export type PropertyVideoTour = {
   hasAgencyBranding?: boolean | null;
   hasAiPresenter?: boolean | null;
   aiPresenterAvatar?: 'business' | 'luxury' | 'casual' | null;
-  aiPresenterVoice?: 'female' | 'male' | null;
+  aiPresenterVoice?: 'female' | 'male' | 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'nova' | 'onyx' | 'sage' | 'shimmer' | 'verse' | null;
   aiPresenterPosition?: 'bottom-right' | 'bottom-left' | null;
   aiPresenterSize?: 'small' | 'medium' | 'large' | null;
   aiPresenterScript?: string | null;
@@ -508,7 +508,7 @@ export type PropertyVideoTourJob = {
   includeMusic: boolean;
   includeAiPresenter?: boolean | null;
   aiPresenterAvatar?: 'business' | 'luxury' | 'casual' | null;
-  aiPresenterVoice?: 'female' | 'male' | null;
+  aiPresenterVoice?: 'female' | 'male' | 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'fable' | 'nova' | 'onyx' | 'sage' | 'shimmer' | 'verse' | null;
   aiPresenterPosition?: 'bottom-right' | 'bottom-left' | null;
   aiPresenterSize?: 'small' | 'medium' | 'large' | null;
   aiPresenterScript?: string | null;

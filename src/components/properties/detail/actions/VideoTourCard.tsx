@@ -57,13 +57,13 @@ type RenderPreset = {
 
 const STANDARD_FORMAT_PRESETS: Record<VideoFormat, RenderPreset> = {
   landscape: { width: 1280, height: 720, label: 'Website / YouTube' },
-  portrait: { width: 720, height: 1280, label: 'Reels / TikTok' },
+  portrait: { width: 720, height: 1024, label: 'Reels / TikTok' },
   square: { width: 1080, height: 1080, label: 'Feed patrat' },
 };
 
 const PREMIUM_FORMAT_PRESETS: Record<VideoFormat, RenderPreset> = {
   landscape: { width: 1920, height: 1080, label: 'Website / YouTube' },
-  portrait: { width: 1080, height: 1920, label: 'Reels / TikTok' },
+  portrait: { width: 1080, height: 1536, label: 'Reels / TikTok' },
   square: { width: 1080, height: 1080, label: 'Feed patrat' },
 };
 
@@ -88,8 +88,49 @@ const AI_PRESENTER_AVATAR_LABELS: Record<AiPresenterAvatar, string> = {
 };
 
 const AI_PRESENTER_VOICE_LABELS: Record<AiPresenterVoice, string> = {
-  female: 'Feminin',
+  female: 'Feminin clasic',
   male: 'Masculin',
+  alloy: 'Alloy neutru',
+  ash: 'Ash',
+  ballad: 'Ballad',
+  coral: 'Coral',
+  echo: 'Echo',
+  fable: 'Fable',
+  nova: 'Nova recomandat',
+  onyx: 'Onyx',
+  sage: 'Sage',
+  shimmer: 'Shimmer',
+  verse: 'Verse',
+};
+
+const AI_PRESENTER_VOICE_DESCRIPTIONS: Partial<Record<AiPresenterVoice, string>> = {
+  nova: 'Feminină, tânără, clară',
+  coral: 'Feminină, caldă, expresivă',
+  shimmer: 'Feminină, luminoasă',
+  sage: 'Calmă, rafinată',
+  verse: 'Dinamică, social',
+  ballad: 'Moale, narativă',
+  alloy: 'Neutră, clară',
+  ash: 'Masculină, calmă',
+  echo: 'Masculină, radio',
+  fable: 'Narativă, caldă',
+  onyx: 'Masculină, gravă',
+};
+
+const AI_PRESENTER_VOICE_PREVIEW_COPY: Partial<Record<AiPresenterVoice, string>> = {
+  nova: 'Tanara, calda, clara, cea mai potrivita pentru tururi imobiliare.',
+  coral: 'Feminina, expresiva, cu energie social media.',
+  shimmer: 'Luminoasa, delicata, potrivita pentru prezentari calde.',
+  sage: 'Calma, rafinata, cu ritm mai asezat.',
+  verse: 'Dinamica, moderna, buna pentru TikTok/Reels.',
+  ballad: 'Moale, narativa, cu senzatie de poveste.',
+  female: 'Alias pentru vocea feminina implicita configurata in server.',
+  male: 'Alias pentru vocea masculina implicita configurata in server.',
+  alloy: 'Neutra si clara.',
+  ash: 'Masculina, calma.',
+  echo: 'Masculina, radio.',
+  fable: 'Narativa, calda.',
+  onyx: 'Masculina, grava.',
 };
 
 const MIME_CANDIDATES = [
@@ -425,10 +466,12 @@ export function VideoTourCard({
   const [includeMusic, setIncludeMusic] = useState(true);
   const [includeAiPresenter, setIncludeAiPresenter] = useState(false);
   const [aiPresenterAvatar, setAiPresenterAvatar] = useState<AiPresenterAvatar>('business');
-  const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('female');
+  const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('nova');
   const [aiPresenterPosition, setAiPresenterPosition] = useState<AiPresenterPosition>('bottom-right');
   const [aiPresenterSize, setAiPresenterSize] = useState<AiPresenterSize>('medium');
   const [aiPresenterScript, setAiPresenterScript] = useState('');
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [previewingVoice, setPreviewingVoice] = useState<AiPresenterVoice | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCloudRendering, setIsCloudRendering] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<string | null>(null);
@@ -479,6 +522,70 @@ export function VideoTourCard({
     document.body.appendChild(link);
     link.click();
     link.remove();
+  };
+
+  const handleGenerateScript = async () => {
+    if (!canGenerate || isGeneratingScript || isCloudRendering) return;
+    setIsGeneratingScript(true);
+    setIncludeAiPresenter(true);
+    try {
+      const response = await authorizedFetch(`/api/properties/${property.id}/video-tour-script`, {
+        method: 'POST',
+        body: JSON.stringify({
+          style,
+          targetDurationSeconds: targetDuration === 'auto' ? null : Number(targetDuration),
+        }),
+      });
+      const payload = await readApiPayload(response);
+      if (!response.ok) throw new Error(getApiErrorMessage(payload, 'Nu am putut genera scriptul AI.'));
+      const script = typeof payload?.script === 'string' ? payload.script.trim() : '';
+      if (!script) throw new Error('Generatorul AI nu a returnat un script valid.');
+      setAiPresenterScript(script);
+      toast({
+        title: 'Script AI generat',
+        description: 'Il poti modifica inainte sa pornesti randarea video.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Script AI negenerat',
+        description: error instanceof Error ? error.message : 'Nu am putut genera scriptul AI.',
+      });
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  const handlePreviewVoice = async (voice: AiPresenterVoice) => {
+    if (!canGenerate || previewingVoice) return;
+    setPreviewingVoice(voice);
+    try {
+      const response = await authorizedFetch(`/api/properties/${property.id}/video-tour-voice-preview`, {
+        method: 'POST',
+        body: JSON.stringify({
+          voice,
+          text: aiPresenterScript.trim().slice(0, 220) || null,
+        }),
+      });
+      if (!response.ok) {
+        const payload = await readApiPayload(response);
+        throw new Error(getApiErrorMessage(payload, 'Nu am putut previzualiza vocea.'));
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => URL.revokeObjectURL(url);
+      audio.onerror = () => URL.revokeObjectURL(url);
+      await audio.play();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Voce indisponibila',
+        description: error instanceof Error ? error.message : 'Nu am putut reda previzualizarea vocii.',
+      });
+    } finally {
+      setPreviewingVoice(null);
+    }
   };
 
   const handleGenerate = async () => {
@@ -938,10 +1045,25 @@ export function VideoTourCard({
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(AI_PRESENTER_VOICE_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                            <SelectItem key={value} value={value}>
+                              {label} - {AI_PRESENTER_VOICE_PREVIEW_COPY[value as AiPresenterVoice] || AI_PRESENTER_VOICE_DESCRIPTIONS[value as AiPresenterVoice] || 'Voce disponibila pentru preview.'}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 w-full rounded-full border-white/12 bg-white/[0.05] text-xs text-white/86 hover:bg-white/[0.1] hover:text-white"
+                        onClick={() => void handlePreviewVoice(aiPresenterVoice)}
+                        disabled={!canGenerate || Boolean(previewingVoice) || isCloudRendering}
+                      >
+                        {previewingVoice === aiPresenterVoice ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <PlayCircle className="mr-2 h-3.5 w-3.5 text-fuchsia-200" />}
+                        Asculta vocea selectata
+                      </Button>
+                      <p className="text-xs leading-5 text-white/48">
+                        Recomandare: Nova sau Coral pentru o voce feminina tanara, calda si expresiva.
+                      </p>
                     </div>
                   </div>
 
@@ -975,11 +1097,24 @@ export function VideoTourCard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Script</Label>
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Script</Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full border-fuchsia-300/30 bg-fuchsia-400/10 px-3 text-xs text-fuchsia-50 hover:bg-fuchsia-400/18 hover:text-white"
+                        onClick={() => void handleGenerateScript()}
+                        disabled={!canGenerate || isGeneratingScript || isCloudRendering}
+                      >
+                        {isGeneratingScript ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-2 h-3.5 w-3.5" />}
+                        Genereaza cu AI
+                      </Button>
+                    </div>
                     <Textarea
                       value={aiPresenterScript}
                       onChange={(event) => setAiPresenterScript(event.target.value)}
-                      placeholder="Lasa gol pentru script automat din descrierea proprietatii."
+                      placeholder="Genereaza cu AI sau scrie manual scriptul care va fi citit in voiceover."
                       className="min-h-[92px] resize-none border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/34"
                     />
                     <p className="text-xs leading-5 text-white/50">

@@ -45,6 +45,7 @@ const STORAGE_UPLOAD_TIMEOUT_MS = 4 * 60_000;
 const STALE_PROCESSING_JOB_MS = 20 * 60_000;
 const OPENAI_RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
 const OPENAI_SPEECH_API_URL = 'https://api.openai.com/v1/audio/speech';
+const OPENAI_TRANSCRIPTIONS_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
 const HEYGEN_API_BASE_URL = 'https://api.heygen.com';
 
 type RenderStage =
@@ -64,6 +65,21 @@ type RenderProgressUpdate = {
   progress: number;
   stage: RenderStage;
 };
+
+type WordTiming = {
+  word: string;
+  start: number;
+  end: number;
+};
+
+const CAPTION_TIMING_DELAY_SECONDS = 0.18;
+const CAPTION_EMPTY_LINE = '{\\alpha&HFF&}.';
+const PROPERTY_VIDEO_TOUR_TTS_INSTRUCTIONS = [
+  'Voce feminina tanara, calda, placuta si usor senzuala, cu zambet audibil in ton.',
+  'Intonatie premium, apropiata de HeyGen: expresiva, blanda, naturala, cu pauze firesti si energie pozitiva.',
+  'Suna ca o prezentatoare imobiliara eleganta care vorbeste unui client real.',
+  'Evita complet tonul rigid, dur, citit sau robotic.',
+].join(' ');
 
 function nowIso() {
   return new Date().toISOString();
@@ -117,7 +133,7 @@ function getFirebaseDownloadUrl(bucketName: string, storagePath: string, token: 
 
 function getFormatConfig(format: PropertyVideoTourJob['format'], quality: PropertyVideoTourJob['quality']) {
   const premium = quality === 'premium';
-  if (format === 'portrait') return premium ? { width: 1080, height: 1920 } : { width: 720, height: 1280 };
+  if (format === 'portrait') return premium ? { width: 1080, height: 1536 } : { width: 720, height: 1024 };
   if (format === 'square') return { width: 1080, height: 1080 };
   return premium ? { width: 1920, height: 1080 } : { width: 1280, height: 720 };
 }
@@ -132,10 +148,16 @@ function escapeFfmpegText(value: string) {
   return value
     .replace(/\\/g, '\\\\')
     .replace(/:/g, '\\:')
+    .replace(/,/g, '\\,')
     .replace(/'/g, "\\'")
     .replace(/\[/g, '\\[')
     .replace(/\]/g, '\\]')
     .slice(0, 120);
+}
+
+function truncateForOverlay(value: string, maxLength: number) {
+  const cleaned = value.replace(/\s+/g, ' ').trim();
+  return cleaned.length > maxLength ? `${cleaned.slice(0, Math.max(0, maxLength - 1)).trim()}…` : cleaned;
 }
 
 function formatPrice(price?: number | null) {
@@ -151,13 +173,15 @@ function getPropertySurface(property: Property) {
   return property.totalSurface ?? property.squareFootage;
 }
 
+const VIDEO_TOUR_SCRIPT_CTA = 'Pentru mai multe detalii despre aceasta proprietate si pentru a programa o vizionare, va rog sa ne contactati. Suntem disponibili la orice ora, nu percepem comision si iti vom raspunde detaliat la toate intrebarile. Pe curand.';
+
 function buildFallbackPresenterScript(property: Property, style: PropertyVideoTourJob['style']) {
   const surface = getPropertySurface(property);
   const opening = style === 'luxury'
-    ? 'Va prezint o proprietate eleganta, potrivita pentru cei care cauta confort si o locuinta pregatita cu atentie.'
+    ? 'Va invit sa descoperiti o proprietate eleganta, gandita pentru cei care cauta liniste, confort si o locuinta pregatita cu atentie.'
     : style === 'social'
-      ? 'Hai sa vedem rapid o proprietate care merita atentia ta.'
-      : 'Va prezint o proprietate luminoasa si bine pozitionata, potrivita pentru locuire sau investitie.';
+      ? 'Hai sa descoperim impreuna o proprietate care merita atentia ta si care poate deveni rapid acasa.'
+      : 'Va invit sa descoperiti o proprietate luminoasa si bine pozitionata, potrivita atat pentru locuire, cat si pentru investitie.';
   const details = [
     property.rooms ? `${property.rooms} camere` : '',
     surface ? `${surface} metri patrati` : '',
@@ -168,11 +192,10 @@ function buildFallbackPresenterScript(property: Property, style: PropertyVideoTo
     .replace(/\s+/g, ' ')
     .replace(/[•*_#]+/g, '')
     .slice(0, 420);
-  const close = 'Pentru detalii si vizionare, contacteaza agentia si programeaza o discutie.';
-  return [opening, details ? `Proprietatea are ${details}.` : '', description, close]
+  return [opening, details ? `Proprietatea are ${details}, iar atmosfera generala este una placuta si practica pentru viata de zi cu zi.` : '', description, VIDEO_TOUR_SCRIPT_CTA]
     .filter(Boolean)
     .join(' ')
-    .slice(0, 900);
+    .slice(0, 1300);
 }
 
 async function generatePresenterScript(property: Property, job: PropertyVideoTourJob) {
@@ -190,14 +213,23 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
+        model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1',
         input: [
           {
             role: 'system',
             content: [
               {
                 type: 'input_text',
-                text: 'Scrie texte scurte de prezentare imobiliara in romana. Stil natural, premium, fara exagerari, fara promisiuni false, fara emoji.',
+                text: [
+                  'Scrie scripturi de prezentare imobiliara in romana pentru voiceover video.',
+                  'Textul trebuie sa fie cursiv, ca o compunere scurta, cu fraze legate natural intre ele, nu o lista de puncte.',
+                  'Nu copia propozitii direct din descrierea proprietatii. Extrage doar datele corecte si rescrie complet textul intr-o forma narativa, fluida si placuta la ascultat.',
+                  'Scrie ca si cum ai povesti natural unui client de ce proprietatea merita vazuta: inceput elegant, dezvoltare fireasca, tranzitii line intre idei si final cald.',
+                  'Stil natural, cald, premium si convingator, fara exagerari, fara promisiuni false si fara emoji.',
+                  'Nu folosi bullet-uri, titluri, markdown sau enumerari seci.',
+                  'Evita frazele rigide de anunt imobiliar precum "proprietatea dispune de", "este situata", "beneficiaza de" atunci cand pot fi inlocuite cu exprimari naturale.',
+                  `Incheie obligatoriu cu aceasta formula, adaptata doar daca este nevoie pentru acord gramatical: "${VIDEO_TOUR_SCRIPT_CTA}"`,
+                ].join(' '),
               },
             ],
           },
@@ -213,8 +245,10 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
                   rooms: property.rooms,
                   surface: getPropertySurface(property),
                   description: property.description,
+                  instruction: 'Foloseste descrierea ca sursa de informatii, nu ca text de copiat. Reformuleaza totul intr-o compunere cursiva.',
                   style: job.style,
                   targetDurationSeconds: job.targetDurationSeconds || null,
+                  requiredClosing: VIDEO_TOUR_SCRIPT_CTA,
                 }),
               },
             ],
@@ -227,15 +261,80 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
     if (!response.ok) throw new Error(`OpenAI script ${response.status}`);
     const payload = await response.json() as { output_text?: string };
     const script = payload.output_text?.trim();
-    return script ? script.slice(0, 1200) : buildFallbackPresenterScript(property, job.style);
+    if (!script) return buildFallbackPresenterScript(property, job.style);
+    const normalizedScript = script.replace(/\s+/g, ' ').trim();
+    return normalizedScript.includes('Pe curand')
+      ? normalizedScript.slice(0, 1400)
+      : `${normalizedScript} ${VIDEO_TOUR_SCRIPT_CTA}`.slice(0, 1400);
   } catch {
     return buildFallbackPresenterScript(property, job.style);
   }
 }
 
+export async function generatePropertyVideoTourScript(input: {
+  property: Property;
+  style?: PropertyVideoTourJob['style'];
+  targetDurationSeconds?: number | null;
+}) {
+  return generatePresenterScript(input.property, {
+    id: 'script-preview',
+    agencyId: '',
+    propertyId: input.property.id,
+    status: 'queued',
+    engine: 'ffmpeg-cloud',
+    format: 'portrait',
+    style: input.style || 'cinematic',
+    quality: 'standard',
+    targetDurationSeconds: input.targetDurationSeconds || null,
+    includeText: true,
+    includeBranding: true,
+    includeMusic: true,
+    includeAiPresenter: true,
+    images: [],
+    progress: 0,
+    attempts: 0,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  });
+}
+
 function getOpenAiVoice(voice: PropertyVideoTourJob['aiPresenterVoice']) {
-  if (voice === 'male') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_MALE_VOICE || 'onyx';
-  return process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+  if (voice === 'male') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_MALE_VOICE || 'ash';
+  if (voice === 'female') return process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+  return voice || process.env.PROPERTY_VIDEO_TOUR_OPENAI_FEMALE_VOICE || 'nova';
+}
+
+export async function synthesizePropertyVideoTourVoicePreview(input: {
+  voice?: PropertyVideoTourJob['aiPresenterVoice'];
+  text?: string | null;
+}) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY trebuie setata pentru previzualizarea vocilor.');
+  }
+
+  const response = await fetchWithTimeout(OPENAI_SPEECH_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts',
+      voice: getOpenAiVoice(input.voice || 'nova'),
+      input: input.text || 'Buna, sunt aici sa va prezint o proprietate frumoasa, luminoasa si primitoare. Va invit sa o descoperim impreuna.',
+      response_format: 'mp3',
+      speed: 0.92,
+      instructions: PROPERTY_VIDEO_TOUR_TTS_INSTRUCTIONS,
+    }),
+  }, OPENAI_TIMEOUT_MS, 'Previzualizarea vocii OpenAI');
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => '');
+    throw new Error(`Nu am putut genera previzualizarea vocii (${response.status}). ${payload.slice(0, 240)}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
 }
 
 async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJob, outputPath: string) {
@@ -255,7 +354,8 @@ async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJo
       voice: getOpenAiVoice(job.aiPresenterVoice),
       input: script,
       response_format: 'mp3',
-      speed: job.style === 'social' ? 1.06 : job.style === 'luxury' ? 0.94 : 1,
+      speed: job.style === 'social' ? 0.94 : job.style === 'luxury' ? 0.88 : 0.92,
+      instructions: PROPERTY_VIDEO_TOUR_TTS_INSTRUCTIONS,
     }),
   }, OPENAI_TIMEOUT_MS, 'Generarea voiceover-ului OpenAI');
 
@@ -265,6 +365,49 @@ async function synthesizePresenterAudio(script: string, job: PropertyVideoTourJo
   }
 
   await writeFile(outputPath, Buffer.from(await response.arrayBuffer()));
+}
+
+async function transcribePresenterAudio(audioPath: string): Promise<WordTiming[] | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const audioBuffer = await readFile(audioPath);
+    const form = new FormData();
+    form.append('model', process.env.OPENAI_TRANSCRIPTION_MODEL || 'whisper-1');
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'word');
+    form.append('file', new Blob([audioBuffer], { type: 'audio/mpeg' }), 'presenter-voice.mp3');
+
+    const response = await fetchWithTimeout(
+      OPENAI_TRANSCRIPTIONS_API_URL,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: form,
+      },
+      OPENAI_TIMEOUT_MS,
+      'Transcrierea voiceover-ului OpenAI'
+    );
+
+    if (!response.ok) return null;
+    const payload = await response.json().catch(() => ({})) as { words?: Array<{ word?: string; start?: number; end?: number }> };
+    const words = (payload.words || [])
+      .map((item) => ({
+        word: String(item.word || '').trim(),
+        start: Number(item.start),
+        end: Number(item.end),
+      }))
+      .filter((item) => item.word && Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start);
+    return words.length ? words.slice(0, 260) : null;
+  } catch (error) {
+    console.warn('[property-video-tour-transcription-fallback]', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }
 
 async function uploadRenderAsset(input: {
@@ -327,7 +470,7 @@ function getHeyGenAvatarLookId(job: PropertyVideoTourJob) {
 }
 
 function getHeyGenAspectRatio(format: PropertyVideoTourJob['format']) {
-  if (format === 'portrait') return '9:16';
+  if (format === 'portrait') return '45:64';
   if (format === 'square') return '1:1';
   return '16:9';
 }
@@ -802,6 +945,64 @@ async function runCommand(command: string, args: string[], cwd: string, timeoutM
   });
 }
 
+async function runCommandForOutput(command: string, args: string[], cwd: string, timeoutMs = FFMPEG_TIMEOUT_MS) {
+  return new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
+    const child = spawn(command, args, { cwd, windowsHide: true });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill('SIGKILL');
+      reject(new Error(`${path.basename(command)} a depasit limita de ${Math.round(timeoutMs / 1000)}s.`));
+    }, timeoutMs);
+
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk);
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve({ stdout, stderr, code });
+    });
+  });
+}
+
+function parseFfmpegDuration(output: string) {
+  const match = output.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3]);
+  if (![hours, minutes, seconds].every(Number.isFinite)) return null;
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+async function getMediaDurationSeconds(filePath: string, workDir: string) {
+  const result = await runCommandForOutput(
+    getFfmpegCommand(),
+    ['-hide_banner', '-i', filePath],
+    workDir,
+    30_000
+  );
+  const duration = parseFfmpegDuration(`${result.stderr}\n${result.stdout}`);
+  if (!duration || duration <= 0) {
+    throw new Error(`Nu am putut determina durata media pentru ${path.basename(filePath)}.`);
+  }
+  return duration;
+}
+
 function getFfmpegCommand() {
   const executable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
   const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath || '';
@@ -1010,18 +1211,68 @@ async function stitchSegmentsWithTransitions(input: {
   }
 }
 
+async function extendVideoToDuration(input: {
+  inputPath: string;
+  outputPath: string;
+  currentDurationSeconds: number;
+  targetDurationSeconds: number;
+  quality: PropertyVideoTourJob['quality'];
+  workDir: string;
+}) {
+  const extraSeconds = Math.max(0, input.targetDurationSeconds - input.currentDurationSeconds);
+  if (extraSeconds < 0.15) {
+    await runCommand(
+      getFfmpegCommand(),
+      ['-y', '-i', input.inputPath, '-c', 'copy', '-movflags', '+faststart', input.outputPath],
+      input.workDir
+    );
+    return;
+  }
+
+  await runCommand(
+    getFfmpegCommand(),
+    [
+      '-y',
+      '-stream_loop',
+      '-1',
+      '-i',
+      input.inputPath,
+      '-t',
+      input.targetDurationSeconds.toFixed(2),
+      '-an',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-preset',
+      'veryfast',
+      '-crf',
+      input.quality === 'premium' ? '18' : '22',
+      '-movflags',
+      '+faststart',
+      input.outputPath,
+    ],
+    input.workDir
+  );
+}
+
 function getPresenterOverlayConfig(input: {
   width: number;
   height: number;
   position?: PropertyVideoTourJob['aiPresenterPosition'];
   size?: PropertyVideoTourJob['aiPresenterSize'];
 }) {
-  const sizeRatio = input.size === 'large' ? 0.34 : input.size === 'small' ? 0.22 : 0.28;
+  const sizeRatio = input.size === 'large' ? 0.28 : input.size === 'small' ? 0.18 : 0.23;
   const overlayWidth = Math.round(input.width * sizeRatio);
-  const margin = Math.max(20, Math.round(input.width * 0.025));
-  const x = input.position === 'bottom-left' ? margin : `main_w-overlay_w-${margin}`;
-  const y = `main_h-overlay_h-${margin}`;
-  return { overlayWidth, x, y };
+  const margin = Math.max(24, Math.round(input.width * 0.045));
+  if (input.width < input.height) {
+    const x = margin;
+    const y = Math.round(input.height * 0.36);
+    return { overlayWidth, x, y, margin };
+  }
+  const x = input.position === 'bottom-left' ? margin : input.width - overlayWidth - margin;
+  const y = Math.round(input.height * 0.46);
+  return { overlayWidth, x, y, margin };
 }
 
 function escapeAssText(value: string) {
@@ -1033,12 +1284,25 @@ function escapeAssText(value: string) {
     .trim();
 }
 
+function splitCaptionLine<T>(items: T[]) {
+  if (items.length <= 1) return { first: items, second: [] as T[] };
+  const splitAt = Math.ceil(items.length / 2);
+  return {
+    first: items.slice(0, splitAt),
+    second: items.slice(splitAt),
+  };
+}
+
 function buildKaraokeAss(input: {
   script: string;
   durationSeconds: number;
   width: number;
   height: number;
+  wordTimings?: WordTiming[] | null;
 }) {
+  const timedWords = (input.wordTimings || [])
+    .filter((item) => item.word && item.end > item.start)
+    .slice(0, 260);
   const words = input.script
     .replace(/\s+/g, ' ')
     .trim()
@@ -1048,9 +1312,9 @@ function buildKaraokeAss(input: {
   const safeWords = words.length ? words : ['Prezentare', 'proprietate'];
   const totalUnits = Math.max(1, Math.round(input.durationSeconds * 100));
   const unitPerWord = Math.max(18, Math.floor(totalUnits / safeWords.length));
-  const lineWordCount = input.width < input.height ? 5 : 7;
-  const fontSize = Math.round(input.width * (input.width < input.height ? 0.047 : 0.032));
-  const marginV = Math.round(input.height * 0.075);
+  const lineWordCount = input.width < input.height ? 6 : 8;
+  const fontSize = Math.round(input.width * (input.width < input.height ? 0.079 : 0.052));
+  const marginV = Math.round(input.height * (input.width < input.height ? 0.108 : 0.095));
   const header = [
     '[Script Info]',
     'ScriptType: v4.00+',
@@ -1060,13 +1324,46 @@ function buildKaraokeAss(input: {
     '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    `Style: ImoDeusCaption,Arial,${fontSize},&H00FFFFFF,&H0022E6A8,&HAA07120F,&HAA07120F,-1,0,0,0,100,100,0,0,1,3,1,2,80,80,${marginV},1`,
+    `Style: ImoDeusCaption,Arial Rounded MT Bold,${fontSize},&H00FFFFFF,&H00B827F5,&HAA5D0B42,&HAA5D0B42,-1,0,0,0,100,100,0,0,1,6,2,2,64,64,${marginV},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
   ];
 
   const events: string[] = [];
+  if (timedWords.length) {
+    const timedScriptWords = safeWords.map((word, index) => {
+      const timedWord = timedWords[index];
+      const estimatedStart = (unitPerWord * index) / 100;
+      const estimatedEnd = estimatedStart + unitPerWord / 100;
+      const start = Math.max(0, (timedWord?.start ?? estimatedStart) + CAPTION_TIMING_DELAY_SECONDS);
+      const end = Math.min(
+        input.durationSeconds,
+        Math.max(start + 0.08, (timedWord?.end ?? estimatedEnd) + CAPTION_TIMING_DELAY_SECONDS)
+      );
+      return { word, start, end };
+    });
+
+    for (let index = 0; index < timedScriptWords.length; index += lineWordCount) {
+      const lineWords = timedScriptWords.slice(index, index + lineWordCount);
+      const start = Math.max(0, lineWords[0].start);
+      const end = Math.min(input.durationSeconds, Math.max(lineWords[lineWords.length - 1].end + 0.1, start + 0.55));
+      let cursor = start;
+      const renderTimedWord = (item: { word: string; start: number; end: number }) => {
+        const gapUnits = Math.max(0, Math.round((item.start - cursor) * 100));
+        const units = Math.max(9, Math.round((item.end - item.start) * 100));
+        cursor = item.end;
+        return `${gapUnits ? `{\\k${gapUnits}}` : ''}{\\k${units}}${escapeAssText(item.word)}`;
+      };
+      const split = splitCaptionLine(lineWords);
+      const firstLine = split.first.map(renderTimedWord).join(' ');
+      const secondLine = split.second.map(renderTimedWord).join(' ');
+      const text = `${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
+      events.push(`Dialogue: 0,${formatAssTime(start)},${formatAssTime(end)},ImoDeusCaption,,0,0,0,,${text}`);
+    }
+    return [...header, ...events, ''].join('\n');
+  }
+
   let currentUnit = 0;
   for (let index = 0; index < safeWords.length; index += lineWordCount) {
     const lineWords = safeWords.slice(index, index + lineWordCount);
@@ -1074,7 +1371,10 @@ function buildKaraokeAss(input: {
     const lineUnits = unitPerWord * lineWords.length;
     const end = Math.min(input.durationSeconds, (currentUnit + lineUnits + 35) / 100);
     currentUnit += lineUnits;
-    const text = lineWords.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
+    const split = splitCaptionLine(lineWords);
+    const firstLine = split.first.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
+    const secondLine = split.second.map((word) => `{\\k${unitPerWord}}${escapeAssText(word)}`).join(' ');
+    const text = `${firstLine}\\N${secondLine || CAPTION_EMPTY_LINE}`;
     events.push(`Dialogue: 0,${formatAssTime(start)},${formatAssTime(Math.max(start + 0.6, end))},ImoDeusCaption,,0,0,0,,${text}`);
   }
 
@@ -1090,18 +1390,88 @@ function formatAssTime(seconds: number) {
   return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
 }
 
-async function getPropertyAgentPhotoUrl(input: {
+async function getPropertyAgentProfile(input: {
   adminDb: Firestore;
   property: Property;
 }) {
+  let profile: { name?: string | null; photoUrl?: string | null; phone?: string | null } = {
+    name: input.property.agent?.name || input.property.agentName || null,
+  };
   const propertyAgentPhoto = input.property.agent?.avatarUrl;
-  if (propertyAgentPhoto) return propertyAgentPhoto;
+  if (propertyAgentPhoto) profile.photoUrl = propertyAgentPhoto;
 
-  if (!input.property.agentId) return null;
+  if (!input.property.agentId) return profile;
   const agentSnapshot = await input.adminDb.collection('users').doc(input.property.agentId).get();
-  if (!agentSnapshot.exists) return null;
-  const agent = agentSnapshot.data() as { photoUrl?: string | null } | undefined;
-  return agent?.photoUrl || null;
+  if (!agentSnapshot.exists) return profile;
+  const agent = agentSnapshot.data() as { name?: string | null; photoUrl?: string | null; phone?: string | null } | undefined;
+  profile = {
+    name: profile.name || agent?.name || null,
+    photoUrl: profile.photoUrl || agent?.photoUrl || null,
+    phone: agent?.phone || null,
+  };
+  return profile;
+}
+
+function buildAgentContactBadge(input: {
+  agentProfile: { name?: string | null; phone?: string | null };
+  overlay: ReturnType<typeof getPresenterOverlayConfig>;
+  photoSize: number;
+  height: number;
+  durationSeconds: number;
+}) {
+  const phone = truncateForOverlay(input.agentProfile.phone || '', 22);
+  const name = truncateForOverlay(input.agentProfile.name || 'Agent ImoDeus', 22);
+  const safeName = name || 'Agent ImoDeus';
+
+  const nameText = escapeFfmpegText(safeName);
+  const phoneText = escapeFfmpegText(phone);
+  const cardHeight = Math.max(104, Math.round(input.height * 0.078));
+  const gap = Math.max(18, Math.round(input.height * 0.018));
+  const nameSize = Math.round(cardHeight * 0.27);
+  const phoneSize = Math.round(cardHeight * 0.40);
+  const cardWidth = Math.max(
+    input.photoSize + 132,
+    Math.round(Math.max(safeName.length * nameSize * 0.62, phone.length * phoneSize * 0.58) + cardHeight * 1.28)
+  );
+  const groupWidth = cardWidth + 18;
+  const groupHeight = cardHeight + gap + input.photoSize + 18;
+  const groupX = Math.max(10, Math.round(input.overlay.x + input.photoSize / 2 - groupWidth / 2));
+  const groupY = Math.max(12, Math.round(input.overlay.y - cardHeight - gap));
+  const cardX = 9;
+  const cardY = 4;
+  const agentX = Math.round((groupWidth - input.photoSize) / 2);
+  const agentY = cardHeight + gap;
+  const floatY = '8*sin(t*2.1)';
+  const accent = '0xD92BFF';
+  const glow = '0xF45BFF';
+  const textX = cardX + Math.round(cardHeight * 0.50);
+  const nameY = cardY + Math.round(cardHeight * 0.16);
+  const phoneY = cardY + Math.round(cardHeight * 0.49);
+  const stripX = cardX + Math.round(cardHeight * 0.18);
+  const stripY = cardY + Math.round(cardHeight * 0.18);
+  const stripW = Math.max(9, Math.round(cardHeight * 0.105));
+  const stripH = Math.round(cardHeight * 0.64);
+  const cardFilter = [
+    `color=c=black@0.0:s=${groupWidth}x${groupHeight}:d=${input.durationSeconds.toFixed(2)},format=rgba[badgebase]`,
+    `[badgebase]drawbox=x=${cardX + 8}:y=${cardY + 10}:w=${cardWidth}:h=${cardHeight}:color=black@0.24:t=fill`,
+    `drawbox=x=${cardX}:y=${cardY}:w=${cardWidth}:h=${cardHeight}:color=black@0.72:t=fill`,
+    `drawbox=x=${cardX}:y=${cardY}:w=${cardWidth}:h=${cardHeight}:color=${accent}@0.48:t=5`,
+    `drawbox=x=${cardX + 5}:y=${cardY + 5}:w=${cardWidth - 10}:h=${cardHeight - 10}:color=white@0.05:t=2`,
+    `drawbox=x=${stripX}:y=${stripY}:w=${stripW}:h=${stripH}:color=${glow}@0.98:t=fill`,
+    `drawtext=font='Arial Rounded MT Bold':text='${nameText}':x=${textX}:y=${nameY}:fontsize=${nameSize}:fontcolor=0xFFE6FF:shadowcolor=black@0.90:shadowx=2:shadowy=2`,
+    phone
+      ? `drawtext=font='Arial Rounded MT Bold':text='${phoneText}':x=${textX}:y=${phoneY}:fontsize=${phoneSize}:fontcolor=white:shadowcolor=black@0.95:shadowx=3:shadowy=3[badgecard]`
+      : `null[badgecard]`,
+  ].join(',');
+
+  return {
+    filter: cardFilter,
+    groupX,
+    groupY,
+    agentX,
+    agentY,
+    floatY,
+  };
 }
 
 async function overlayAgentPhotoAndCaptions(input: {
@@ -1110,6 +1480,7 @@ async function overlayAgentPhotoAndCaptions(input: {
   baseVideoPath: string;
   outputPath: string;
   script: string;
+  wordTimings?: WordTiming[] | null;
   durationSeconds: number;
   width: number;
   height: number;
@@ -1125,14 +1496,16 @@ async function overlayAgentPhotoAndCaptions(input: {
       durationSeconds: input.durationSeconds,
       width: input.width,
       height: input.height,
+      wordTimings: input.wordTimings,
     }),
     'utf8'
   );
 
-  const agentPhotoUrl = await getPropertyAgentPhotoUrl({
+  const agentProfile = await getPropertyAgentProfile({
     adminDb: input.adminDb,
     property: input.property,
   });
+  const agentPhotoUrl = agentProfile.photoUrl || null;
 
   if (!agentPhotoUrl) {
     await runCommand(
@@ -1143,6 +1516,8 @@ async function overlayAgentPhotoAndCaptions(input: {
         input.baseVideoPath,
         '-vf',
         'ass=agent-captions.ass',
+        '-t',
+        String(input.durationSeconds),
         '-an',
         '-c:v',
         'libx264',
@@ -1170,7 +1545,15 @@ async function overlayAgentPhotoAndCaptions(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
-  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto:shortest=1[withagent];[withagent]ass=agent-captions.ass[v]`;
+  const circleMask = `scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte((X-W/2)*(X-W/2)+(Y-H/2)*(Y-H/2),(W/2)*(W/2)),255,0)'`;
+  const badge = buildAgentContactBadge({
+    agentProfile,
+    overlay,
+    photoSize,
+    height: input.height,
+    durationSeconds: input.durationSeconds,
+  });
+  const filter = `${badge.filter};[1:v]${circleMask}[agent];[badgecard][agent]overlay=x=${badge.agentX}:y=${badge.agentY}:format=auto:shortest=1[badge];[0:v][badge]overlay=x=${badge.groupX}:y='${badge.groupY}+${badge.floatY}':eval=frame:format=auto:shortest=1[withagent];[withagent]ass=agent-captions.ass[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1217,10 +1600,11 @@ async function overlayAgentPhotoOnly(input: {
   size?: PropertyVideoTourJob['aiPresenterSize'];
   workDir: string;
 }) {
-  const agentPhotoUrl = await getPropertyAgentPhotoUrl({
+  const agentProfile = await getPropertyAgentProfile({
     adminDb: input.adminDb,
     property: input.property,
   });
+  const agentPhotoUrl = agentProfile.photoUrl || null;
 
   if (!agentPhotoUrl) {
     await runCommand(getFfmpegCommand(), ['-y', '-i', input.baseVideoPath, '-c', 'copy', '-movflags', '+faststart', input.outputPath], input.workDir);
@@ -1236,7 +1620,15 @@ async function overlayAgentPhotoOnly(input: {
     size: input.size,
   });
   const photoSize = overlay.overlayWidth;
-  const filter = `[1:v]scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba[agent];[0:v][agent]overlay=x=${overlay.x}:y=${overlay.y}:format=auto:shortest=1[v]`;
+  const circleMask = `scale=${photoSize}:${photoSize}:force_original_aspect_ratio=increase,crop=${photoSize}:${photoSize},format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte((X-W/2)*(X-W/2)+(Y-H/2)*(Y-H/2),(W/2)*(W/2)),255,0)'`;
+  const badge = buildAgentContactBadge({
+    agentProfile,
+    overlay,
+    photoSize,
+    height: input.height,
+    durationSeconds: input.durationSeconds,
+  });
+  const filter = `${badge.filter};[1:v]${circleMask}[agent];[badgecard][agent]overlay=x=${badge.agentX}:y=${badge.agentY}:format=auto:shortest=1[badge];[0:v][badge]overlay=x=${badge.groupX}:y='${badge.groupY}+${badge.floatY}':eval=frame:format=auto:shortest=1[v]`;
 
   await runCommand(
     getFfmpegCommand(),
@@ -1477,9 +1869,10 @@ async function renderJobWithFfmpeg(input: {
     const agencySnapshot = await input.adminDb.collection('agencies').doc(job.agencyId).get();
     const agencyName = (agencySnapshot.data() as { name?: string } | undefined)?.name || null;
     const defaultDuration = downloadedImages.length * getSecondsPerImage(job.style);
-    const durationSeconds = Math.round(job.targetDurationSeconds || defaultDuration);
+    const baseDurationSeconds = Math.round(job.targetDurationSeconds || defaultDuration);
+    let renderDurationSeconds = baseDurationSeconds;
     const transitionSeconds = getTransitionSeconds(job.style);
-    const segmentDurationSeconds = (durationSeconds + (downloadedImages.length - 1) * transitionSeconds) / downloadedImages.length;
+    const segmentDurationSeconds = (baseDurationSeconds + (downloadedImages.length - 1) * transitionSeconds) / downloadedImages.length;
     const framesPerImage = Math.max(45, Math.round(segmentDurationSeconds * fps));
     const { width, height } = getFormatConfig(job.format, job.quality);
     const segmentPaths: string[] = [];
@@ -1535,6 +1928,7 @@ async function renderJobWithFfmpeg(input: {
     let presenterAudioPath: string | null = null;
     let presenterAudioUrl: string | null = null;
     let presenterVideoUrl: string | null = null;
+    let presenterWordTimings: WordTiming[] | null = null;
     let videoForMuxPath = silentVideoPath;
 
     if (job.includeAiPresenter) {
@@ -1544,7 +1938,10 @@ async function renderJobWithFfmpeg(input: {
       presenterAudioPath = path.join(workDir, 'presenter-voice.mp3');
       await input.onProgress?.({ progress: 72, stage: 'Generez voiceover-ul' });
       await synthesizePresenterAudio(presenterScript, job, presenterAudioPath);
+      const presenterAudioDurationSeconds = await getMediaDurationSeconds(presenterAudioPath, workDir);
+      renderDurationSeconds = Math.max(baseDurationSeconds, Math.ceil(presenterAudioDurationSeconds + 0.35));
       await input.onProgress?.({ progress: 74, stage: 'Generez voiceover-ul' });
+      presenterWordTimings = await transcribePresenterAudio(presenterAudioPath);
       await input.onProgress?.({ progress: 76, stage: 'Incarc voiceover-ul' });
       presenterAudioUrl = await uploadRenderAsset({
         bucketName: bucket.name,
@@ -1556,14 +1953,24 @@ async function renderJobWithFfmpeg(input: {
 
       const compositedVideoPath = path.join(workDir, 'video-with-agent-voice.mp4');
       await input.onProgress?.({ progress: 80, stage: 'Aplic poza agentului si subtitrarea' });
+      const baseVideoForPresenterPath = path.join(workDir, 'video-for-presenter-duration.mp4');
+      await extendVideoToDuration({
+        inputPath: silentVideoPath,
+        outputPath: baseVideoForPresenterPath,
+        currentDurationSeconds: baseDurationSeconds,
+        targetDurationSeconds: renderDurationSeconds,
+        quality: job.quality,
+        workDir,
+      });
       try {
         await overlayAgentPhotoAndCaptions({
           adminDb: input.adminDb,
           property,
-          baseVideoPath: silentVideoPath,
+          baseVideoPath: baseVideoForPresenterPath,
           outputPath: compositedVideoPath,
           script: presenterScript,
-          durationSeconds,
+          wordTimings: presenterWordTimings,
+          durationSeconds: renderDurationSeconds,
           width,
           height,
           position: job.aiPresenterPosition,
@@ -1578,9 +1985,9 @@ async function renderJobWithFfmpeg(input: {
         await overlayAgentPhotoOnly({
           adminDb: input.adminDb,
           property,
-          baseVideoPath: silentVideoPath,
+          baseVideoPath: baseVideoForPresenterPath,
           outputPath: compositedVideoPath,
-          durationSeconds,
+          durationSeconds: renderDurationSeconds,
           width,
           height,
           position: job.aiPresenterPosition,
@@ -1591,6 +1998,8 @@ async function renderJobWithFfmpeg(input: {
       }
       presenterVideoUrl = null;
       videoForMuxPath = compositedVideoPath;
+    } else {
+      renderDurationSeconds = baseDurationSeconds;
     }
 
     const finalVideoPath = path.join(workDir, 'video-tour.mp4');
@@ -1600,7 +2009,7 @@ async function renderJobWithFfmpeg(input: {
       outputPath: finalVideoPath,
       presenterAudioPath,
       includeMusic: job.includeMusic,
-      durationSeconds,
+      durationSeconds: renderDurationSeconds,
       workDir,
     });
     await input.onProgress?.({ progress: 90, stage: 'Combin vocea cu video-ul' });
@@ -1652,7 +2061,7 @@ async function renderJobWithFfmpeg(input: {
     return {
       videoUrl,
       thumbnailUrl,
-      durationSeconds,
+      durationSeconds: renderDurationSeconds,
       mimeType: 'video/mp4',
       fileName: `${safeTitle}.mp4`,
       imageCount: downloadedImages.length,
