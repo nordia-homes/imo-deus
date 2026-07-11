@@ -93,6 +93,29 @@ type PortfolioProperty = {
   rooms?: number | null;
   bathrooms?: number | null;
   squareFootage?: number | null;
+  totalSurface?: number | null;
+  constructionYear?: number | null;
+  floor?: string | null;
+  totalFloors?: number | null;
+  orientation?: string | null;
+  comfort?: string | null;
+  interiorState?: string | null;
+  furnishing?: string | null;
+  heatingSystem?: string | null;
+  parking?: string | null;
+  nearMetro?: boolean | null;
+  buildingState?: string | null;
+  seismicRisk?: string | null;
+  balconyTerrace?: string | null;
+  partitioning?: string | null;
+  kitchen?: string | null;
+  lift?: string | null;
+  city?: string | null;
+  zone?: string | null;
+  cadastralNumber?: string | null;
+  amenities?: string[];
+  tagline?: string | null;
+  notes?: string | null;
   propertyType?: string | null;
   images: Array<{ url: string; alt?: string | null }>;
 };
@@ -130,6 +153,16 @@ type RoomGroup = RoomDraft & {
   assetIds: string[];
 };
 
+type PremiumScriptPayload = {
+  script?: string;
+  model?: string;
+  scenes?: Array<{
+    id?: string;
+    voiceoverLine?: string;
+  }>;
+  message?: string;
+};
+
 type ScriptInput = {
   property: PortfolioProperty | null | undefined;
   hookBrief?: string;
@@ -155,6 +188,8 @@ const STATUS_LABELS: Record<TikTokPostDraft['status'], string> = {
   published: 'Publicat',
   error: 'Eroare',
 };
+
+const VIDEO_TOUR_SCRIPT_CTA = 'Pentru mai multe detalii despre aceasta proprietate si pentru a programa o vizionare, va rog sa ne contactati. Suntem disponibili la orice ora, nu percepem comision si iti vom raspunde detaliat la toate intrebarile. Pe curand.';
 
 const CREATIVE_PRESETS: Array<{ value: TikTokStudioCreativePreset; label: string; description: string }> = [
   { value: 'luxury_real_estate', label: 'Luxury Real Estate', description: 'Elegant, cald, premium' },
@@ -1107,7 +1142,7 @@ export default function TikTokStudioPage() {
             name: aiComposer.brandName,
             accentColor: aiComposer.brandAccentColor,
             fontFamily: 'Avenue',
-            defaultCallToAction: 'Pentru mai multe detalii despre aceasta proprietate si pentru a programa o vizionare, va rog sa ne contactati. Suntem disponibili la orice ora, nu percepem comision si iti vom raspunde detaliat la toate intrebarile. Pe curand.',
+            defaultCallToAction: VIDEO_TOUR_SCRIPT_CTA,
           },
         }),
       });
@@ -1138,6 +1173,90 @@ export default function TikTokStudioPage() {
         variant: 'destructive',
         title: 'Concept negenerat',
         description: error instanceof Error ? error.message : 'Nu am putut genera conceptul AI.',
+      });
+    } finally {
+      setActiveAction(null);
+    }
+  }
+
+  async function handleGeneratePremiumScript() {
+    if (!user) return;
+    const localTimeline = timelineScenes.length
+      ? timelineScenes
+      : buildPropertyTimelineScenes(selectedPhotoAssets, roomDraftsByAssetId, hookSceneAssetIds, aiComposer.hookBrief, selectedPortfolioProperty);
+    if (selectedPhotoIds.length < 2 || !localTimeline.length) {
+      toast({
+        variant: 'destructive',
+        title: 'Selecteaza fotografii',
+        description: 'Scriptul premium are nevoie de fotografii si scene in timeline pentru sincronizare.',
+      });
+      return;
+    }
+
+    setActiveAction('premium-script');
+    try {
+      const propertyContext = buildPropertyCreativeContext({
+        property: selectedPortfolioProperty,
+        hookBrief: aiComposer.hookBrief,
+        drafts: selectedRoomDrafts,
+        hookAssetIds: hookSceneAssetIds,
+        assets: selectedPhotoAssets,
+      });
+      const response = await authorizedFetch(user, auth, '/api/marketing/tiktok/premium-script', {
+        method: 'POST',
+        body: JSON.stringify({
+          propertyContext,
+          currentScript: aiComposer.script,
+          propertySnapshot: selectedPortfolioProperty,
+          callToAction: VIDEO_TOUR_SCRIPT_CTA,
+          roomDescriptions: selectedRoomGroups.map((group) => ({
+            room: getRoomLabel(group.room),
+            description: group.description,
+            photoCount: group.assetIds.length,
+          })),
+          scenes: localTimeline.map((scene) => ({
+            id: scene.id,
+            title: scene.title,
+            mediaType: scene.mediaType,
+            currentVoiceover: scene.voiceoverLine,
+          })),
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as PremiumScriptPayload;
+      if (!response.ok) throw new Error(payload?.message || 'Nu am putut genera scriptul premium.');
+
+      const voiceoverPairs: Array<readonly [string, string]> = Array.isArray(payload.scenes)
+        ? payload.scenes
+          .map((scene) => [
+            typeof scene.id === 'string' ? scene.id : '',
+            typeof scene.voiceoverLine === 'string' ? scene.voiceoverLine.trim() : '',
+          ] as const)
+          .filter((pair): pair is readonly [string, string] => Boolean(pair[0] && pair[1]))
+        : [];
+      const voiceoverBySceneId = new Map<string, string>(voiceoverPairs);
+      const nextTimeline = localTimeline.map((scene) => {
+        const voiceoverLine = voiceoverBySceneId.get(scene.id);
+        return voiceoverLine
+          ? { ...scene, voiceoverLine, durationSeconds: estimateSceneDuration(voiceoverLine) }
+          : scene;
+      });
+      const script = typeof payload.script === 'string' && payload.script.trim()
+        ? payload.script.trim()
+        : buildScriptFromTimelineScenes(nextTimeline);
+      setTimelineScenes(nextTimeline);
+      setAiComposer((current) => ({
+        ...current,
+        script,
+      }));
+      toast({
+        title: 'Script premium generat',
+        description: `OpenAI a rescris scriptul in stilul exemplului si l-a sincronizat cu timeline-ul.${payload?.model ? ` Model: ${payload.model}.` : ''}`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Script negenerat',
+        description: error instanceof Error ? error.message : 'Nu am putut genera scriptul premium.',
       });
     } finally {
       setActiveAction(null);
@@ -1317,7 +1436,7 @@ export default function TikTokStudioPage() {
             defaultVoiceProfile: aiComposer.voiceProfile,
             defaultVoiceId: aiComposer.voiceId || null,
             defaultSubtitlePreset: aiComposer.subtitleStyle,
-            defaultCallToAction: 'Pentru mai multe detalii despre aceasta proprietate si pentru a programa o vizionare, va rog sa ne contactati. Suntem disponibili la orice ora, nu percepem comision si iti vom raspunde detaliat la toate intrebarile. Pe curand.',
+          defaultCallToAction: VIDEO_TOUR_SCRIPT_CTA,
           },
           repurposeVariants,
           scheduledAt: aiComposer.scheduledAt || null,
@@ -1953,7 +2072,20 @@ export default function TikTokStudioPage() {
                   ) : null}
 
                   <div>
-                    <Label className="text-slate-700">Script voiceover</Label>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label className="text-slate-700">Script voiceover</Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={activeAction === 'premium-script' || selectedPhotoIds.length < 2}
+                        className="h-8 rounded-full border-pink-200 bg-white px-3 text-xs font-black text-[#FF0050] shadow-sm hover:bg-pink-50"
+                        onClick={() => void handleGeneratePremiumScript()}
+                      >
+                        {activeAction === 'premium-script' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+                        Genereaza ca exemplul
+                      </Button>
+                    </div>
                     <Textarea value={aiComposer.script} onChange={(event) => setAiComposer((current) => ({ ...current, script: event.target.value }))} className={`mt-2 min-h-[132px] ${STUDIO_FIELD}`} placeholder="Script cursiv, cu numere scrise in litere..." />
                   </div>
 
@@ -2534,7 +2666,20 @@ export default function TikTokStudioPage() {
               </div>
             ) : null}
             <div className="space-y-2">
-              <Label className="text-slate-700">Script voiceover ElevenLabs</Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label className="text-slate-700">Script voiceover ElevenLabs</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={activeAction === 'premium-script' || selectedPhotoIds.length < 2}
+                  className="h-8 rounded-full border-pink-200 bg-white px-3 text-xs font-black text-[#FF0050] shadow-sm hover:bg-pink-50"
+                  onClick={() => void handleGeneratePremiumScript()}
+                >
+                  {activeAction === 'premium-script' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+                  Genereaza ca exemplul
+                </Button>
+              </div>
               <Textarea
                 value={aiComposer.script}
                 onChange={(event) => setAiComposer((current) => ({ ...current, script: event.target.value }))}
