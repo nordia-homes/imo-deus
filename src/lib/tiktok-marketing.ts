@@ -7,6 +7,14 @@ import type {
   TikTokMarketingIntegrationPublicStatus,
   TikTokPostDraft,
   TikTokStudioAsset,
+  TikTokStudioBrandKit,
+  TikTokStudioCreativePreset,
+  TikTokStudioProject,
+  TikTokStudioQualityScore,
+  TikTokStudioRepurposeVariant,
+  TikTokStudioStoryboardScene,
+  TikTokStudioSubtitlePreset,
+  TikTokStudioVoiceProfile,
 } from '@/lib/types';
 
 const TIKTOK_PROVIDER = 'tiktok';
@@ -155,6 +163,10 @@ function getDraftsCollection(agencyId: string) {
 
 function getStudioAssetsCollection(agencyId: string) {
   return adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioAssets');
+}
+
+function getStudioProjectsCollection(agencyId: string) {
+  return adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioProjects');
 }
 
 function getDraftRef(agencyId: string, draftId: string) {
@@ -637,6 +649,7 @@ export async function getTikTokDashboardSummary(agencyId: string, uid: string) {
     status,
     readyVideoTours,
     studioAssets: await listTikTokStudioAssets(agencyId).catch(() => []),
+    studioProjects: await listTikTokStudioProjects(agencyId).catch(() => []),
     drafts,
     totals,
     config: {
@@ -951,7 +964,7 @@ export async function publishTikTokPostDraft(input: {
     publishLog: appendLog(draft, { at: now, status: 'publishing', message: 'Publicarea TikTok a pornit.' }),
   };
   await ref.set(draft, { merge: true });
-    await updatePropertyTikTokSummary(input.agencyId, draft.propertyId || null, draft);
+  await updatePropertyTikTokSummary(input.agencyId, draft.propertyId || null, draft);
 
   try {
     const { accessToken } = await getAccessTokenForUser(input.requestedByUid);
@@ -1062,6 +1075,11 @@ export async function listTikTokStudioAssets(agencyId: string) {
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as TikTokStudioAsset);
 }
 
+export async function listTikTokStudioProjects(agencyId: string) {
+  const snapshot = await getStudioProjectsCollection(agencyId).orderBy('updatedAt', 'desc').limit(80).get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as TikTokStudioProject);
+}
+
 export async function createTikTokStudioAsset(input: {
   agencyId: string;
   ownerUid: string;
@@ -1089,6 +1107,7 @@ export async function createTikTokStudioAsset(input: {
     sizeBytes: input.sizeBytes || null,
     durationSeconds: null,
     source: input.source || 'upload',
+    studioProjectId: null,
     status: 'ready',
     editorState: {
       aspectRatio: '9:16',
@@ -1096,6 +1115,7 @@ export async function createTikTokStudioAsset(input: {
       trimEndSeconds: null,
       headline: null,
       description: null,
+      hashtags: null,
       voiceId: null,
       subtitleStyle: 'heygen_pink',
     },
@@ -1103,6 +1123,169 @@ export async function createTikTokStudioAsset(input: {
 
   await ref.set(asset);
   return asset;
+}
+
+export async function createTikTokStudioProject(input: {
+  agencyId: string;
+  ownerUid: string;
+  title?: string;
+  mode?: TikTokStudioProject['mode'];
+  sourceAssetIds: string[];
+  script?: string;
+  voiceId?: string | null;
+  voiceProfile?: TikTokStudioVoiceProfile | null;
+  subtitleStyle?: TikTokStudioSubtitlePreset;
+  creativePreset?: TikTokStudioCreativePreset;
+  hook?: string | null;
+  caption?: string | null;
+  captionVariants?: string[] | null;
+  hashtags?: string[] | null;
+  storyboard?: TikTokStudioStoryboardScene[] | null;
+  timeline?: TikTokStudioStoryboardScene[] | null;
+  qualityScore?: TikTokStudioQualityScore | null;
+  brandKit?: TikTokStudioBrandKit | null;
+  repurposeVariants?: TikTokStudioRepurposeVariant[] | null;
+  scheduledAt?: string | null;
+  aspectRatio?: TikTokStudioProject['aspectRatio'];
+  settings?: Record<string, unknown> | null;
+}) {
+  const sourceAssetIds = Array.from(new Set(input.sourceAssetIds.map((id) => String(id || '').trim()).filter(Boolean)));
+  if (sourceAssetIds.length < 2) {
+    throw new Error('Selecteaza cel putin doua fotografii pentru randarea AI video.');
+  }
+  if (!String(input.script || '').trim()) {
+    throw new Error('Scriptul voiceover este obligatoriu pentru randarea AI video.');
+  }
+
+  const now = nowIso();
+  const ref = getStudioProjectsCollection(input.agencyId).doc();
+  const project: TikTokStudioProject = {
+    id: ref.id,
+    agencyId: input.agencyId,
+    ownerUid: input.ownerUid,
+    createdAt: now,
+    updatedAt: now,
+    title: input.title?.trim() || 'Video AI pentru TikTok',
+    status: 'draft',
+    mode: input.mode || 'photo_to_video',
+    sourceAssetIds,
+    outputAssetId: null,
+    script: input.script?.trim() || '',
+    voiceId: input.voiceId || null,
+    voiceProfile: input.voiceProfile || input.brandKit?.defaultVoiceProfile || null,
+    subtitleStyle: input.subtitleStyle || 'heygen_pink',
+    creativePreset: input.creativePreset || 'luxury_real_estate',
+    hook: input.hook || null,
+    caption: input.caption || null,
+    captionVariants: input.captionVariants || null,
+    hashtags: input.hashtags || null,
+    storyboard: input.storyboard || null,
+    timeline: input.timeline || input.storyboard || null,
+    qualityScore: input.qualityScore || null,
+    brandKit: input.brandKit || null,
+    repurposeVariants: input.repurposeVariants || ['tiktok_9_16'],
+    scheduledAt: input.scheduledAt || null,
+    aspectRatio: input.aspectRatio || '9:16',
+    settings: input.settings || null,
+    errorMessage: null,
+  };
+
+  await ref.set(project);
+  return project;
+}
+
+export async function renderTikTokStudioProject(input: {
+  agencyId: string;
+  projectId: string;
+  requestedByUid: string;
+}) {
+  const projectRef = getStudioProjectsCollection(input.agencyId).doc(input.projectId);
+  const projectSnapshot = await projectRef.get();
+  if (!projectSnapshot.exists) throw new Error('Proiectul TikTok Studio nu a fost gasit.');
+  const project = { id: projectSnapshot.id, ...projectSnapshot.data() } as TikTokStudioProject;
+  if (project.mode !== 'photo_to_video') {
+    throw new Error('Randarea cloud asteapta un proiect AI format din fotografii selectate.');
+  }
+  if (project.ownerUid !== input.requestedByUid) {
+    throw new Error('Nu poti randa un proiect creat de alt utilizator.');
+  }
+
+  const assetSnapshots = await Promise.all(
+    project.sourceAssetIds.map((assetId) => getStudioAssetsCollection(input.agencyId).doc(assetId).get())
+  );
+  const sourceAssets = assetSnapshots
+    .filter((snapshot) => snapshot.exists)
+    .map((snapshot) => ({ id: snapshot.id, ...snapshot.data() }) as TikTokStudioAsset)
+    .filter((asset) => asset.type === 'image');
+  if (sourceAssets.length < 2) {
+    throw new Error('Proiectul are nevoie de cel putin doua fotografii valide.');
+  }
+
+  await projectRef.set({
+    status: 'rendering',
+    updatedAt: nowIso(),
+    errorMessage: null,
+  } satisfies Partial<TikTokStudioProject>, { merge: true });
+
+  try {
+    const { renderTikTokStudioPhotoVideo } = await import('@/lib/tiktok-video-studio-renderer');
+    const render = await renderTikTokStudioPhotoVideo({
+      agencyId: input.agencyId,
+      project,
+      sourceAssets,
+    });
+
+    const now = nowIso();
+    const assetRef = getStudioAssetsCollection(input.agencyId).doc();
+    const outputAsset: TikTokStudioAsset = {
+      id: assetRef.id,
+      agencyId: input.agencyId,
+      ownerUid: input.requestedByUid,
+      createdAt: now,
+      updatedAt: now,
+      type: 'video',
+      name: `${project.title || 'Video AI TikTok'} - randare AI`,
+      url: render.videoUrl,
+      thumbnailUrl: render.thumbnailUrl,
+      mimeType: 'video/mp4',
+      sizeBytes: render.sizeBytes,
+      durationSeconds: render.durationSeconds,
+      source: 'ai_generated',
+      studioProjectId: project.id,
+      status: 'ready',
+      editorState: {
+        aspectRatio: project.aspectRatio,
+        trimStartSeconds: 0,
+        trimEndSeconds: null,
+        headline: null,
+        description: project.caption || project.script || null,
+        hashtags: project.hashtags || null,
+        voiceId: project.voiceId || null,
+        subtitleStyle: project.subtitleStyle || 'heygen_pink',
+        repurposeVariant: project.repurposeVariants?.[0] || 'tiktok_9_16',
+      },
+      errorMessage: null,
+    };
+
+    await assetRef.set(outputAsset);
+    const readyProject: TikTokStudioProject = {
+      ...project,
+      status: 'ready',
+      updatedAt: now,
+      outputAssetId: outputAsset.id,
+      errorMessage: null,
+    };
+    await projectRef.set(readyProject, { merge: true });
+    return { project: readyProject, asset: outputAsset };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Randarea AI video a esuat.';
+    await projectRef.set({
+      status: 'error',
+      updatedAt: nowIso(),
+      errorMessage: message,
+    } satisfies Partial<TikTokStudioProject>, { merge: true });
+    throw error;
+  }
 }
 
 export async function createTikTokPostDraftFromStudioAsset(input: {
@@ -1116,6 +1299,8 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
   disableDuet?: boolean;
   disableStitch?: boolean;
   aiGeneratedContent?: boolean;
+  scheduledAt?: string | null;
+  repurposeVariant?: TikTokStudioRepurposeVariant | null;
 }) {
   const assetSnapshot = await getStudioAssetsCollection(input.agencyId).doc(input.assetId).get();
   if (!assetSnapshot.exists) throw new Error('Asset-ul TikTok Studio nu a fost gasit.');
@@ -1131,9 +1316,9 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
     id: ref.id,
     agencyId: input.agencyId,
     propertyId: null,
-    sourceType: 'studio_asset',
+    sourceType: asset.studioProjectId ? 'studio_project' : 'studio_asset',
     studioAssetId: asset.id,
-    studioProjectId: null,
+    studioProjectId: asset.studioProjectId || null,
     videoTourUrl: asset.url,
     videoTourThumbnailUrl: asset.thumbnailUrl || null,
     propertyTitle: asset.name || 'Video TikTok Studio',
@@ -1142,13 +1327,16 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
     createdByUid: input.requestedByUid,
     status: 'draft',
     description: (input.description || asset.editorState?.description || 'Video pregatit in ImoDeus TikTok Studio.').trim(),
-    hashtags: normalizeHashtags(input.hashtags?.length ? input.hashtags : ['#imobiliare', '#tiktokstudio', '#imodeus']),
+    hashtags: normalizeHashtags(input.hashtags?.length ? input.hashtags : asset.editorState?.hashtags?.length ? asset.editorState.hashtags : ['#imobiliare', '#tiktokstudio', '#imodeus']),
     privacyLevel: isPrivateModeOnly() ? 'SELF_ONLY' : input.privacyLevel || getDefaultPrivacyLevel(),
     disableComment: Boolean(input.disableComment),
     disableDuet: Boolean(input.disableDuet),
     disableStitch: Boolean(input.disableStitch),
     aiGeneratedContent: input.aiGeneratedContent !== false,
     coverTimestampMs: 1000,
+    scheduledAt: input.scheduledAt || null,
+    scheduleStatus: input.scheduledAt ? 'scheduled' : 'none',
+    repurposeVariant: input.repurposeVariant || asset.editorState?.repurposeVariant || null,
     publishLog: [{ at: now, status: 'draft', message: 'Draft TikTok creat dintr-un video importat in Studio.' }],
   };
 

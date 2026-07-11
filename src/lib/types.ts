@@ -513,6 +513,9 @@ export type TikTokPostDraft = {
   disableStitch: boolean;
   aiGeneratedContent: boolean;
   coverTimestampMs?: number | null;
+  scheduledAt?: string | null;
+  scheduleStatus?: 'none' | 'scheduled' | 'sent' | 'error';
+  repurposeVariant?: TikTokStudioRepurposeVariant | null;
   publishId?: string | null;
   publishedAt?: string | null;
   lastStatusCheckedAt?: string | null;
@@ -540,6 +543,7 @@ export type TikTokStudioAsset = {
   sizeBytes?: number | null;
   durationSeconds?: number | null;
   source: 'upload' | 'ai_generated' | 'property_video_tour';
+  studioProjectId?: string | null;
   status: 'ready' | 'processing' | 'error';
   editorState?: {
     aspectRatio?: '9:16' | '1:1' | '4:5' | '16:9';
@@ -547,10 +551,110 @@ export type TikTokStudioAsset = {
     trimEndSeconds?: number | null;
     headline?: string | null;
     description?: string | null;
+    hashtags?: string[] | null;
     voiceId?: string | null;
-    subtitleStyle?: 'heygen_pink' | 'clean_white' | 'luxury';
+    subtitleStyle?: TikTokStudioSubtitlePreset;
+    repurposeVariant?: TikTokStudioRepurposeVariant | null;
   } | null;
   errorMessage?: string | null;
+};
+
+export type TikTokStudioCreativePreset =
+  | 'luxury_real_estate'
+  | 'modern_urban'
+  | 'fast_tiktok_hook'
+  | 'warm_family_home'
+  | 'investor_deal'
+  | 'new_development';
+
+export type TikTokStudioSubtitlePreset =
+  | 'heygen_pink'
+  | 'tiktok_bold'
+  | 'luxury_white'
+  | 'minimal_premium'
+  | 'high_contrast'
+  | 'clean_white'
+  | 'luxury';
+
+export type TikTokStudioVoiceProfile =
+  | 'warm_feminine'
+  | 'young_social'
+  | 'luxury_calm'
+  | 'energetic'
+  | 'professional';
+
+export type TikTokStudioRepurposeVariant =
+  | 'tiktok_9_16'
+  | 'reels_9_16'
+  | 'story_9_16'
+  | 'shorts_9_16'
+  | 'no_subtitles'
+  | 'alternate_cta';
+
+export type TikTokStudioBrandKit = {
+  name?: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  accentColor?: string | null;
+  fontFamily?: string | null;
+  watermarkText?: string | null;
+  defaultCallToAction?: string | null;
+  defaultVoiceProfile?: TikTokStudioVoiceProfile | null;
+  defaultVoiceId?: string | null;
+  defaultSubtitlePreset?: TikTokStudioSubtitlePreset | null;
+  phone?: string | null;
+  agentName?: string | null;
+};
+
+export type TikTokStudioStoryboardScene = {
+  id: string;
+  assetId?: string | null;
+  title: string;
+  visualIntent: string;
+  voiceoverLine: string;
+  overlayText?: string | null;
+  durationSeconds: number;
+  motion: 'slow_push' | 'pull_back' | 'pan_left' | 'pan_right' | 'detail_zoom';
+  safeZone?: 'center' | 'upper' | 'lower';
+  mediaType?: 'exterior' | 'living' | 'kitchen' | 'bedroom' | 'bathroom' | 'balcony' | 'view' | 'detail' | 'other';
+  qualityNote?: string | null;
+  missingShotRecommendation?: string | null;
+  crop?: {
+    x: number;
+    y: number;
+    scale: number;
+  } | null;
+};
+
+export type TikTokStudioQualityScore = {
+  score: number;
+  label: 'slab' | 'bun' | 'foarte_bun' | 'premium';
+  strengths: string[];
+  improvements: string[];
+  checks: Array<{
+    id: string;
+    label: string;
+    passed: boolean;
+    impact: 'low' | 'medium' | 'high';
+  }>;
+};
+
+export type TikTokStudioCreativeBrief = {
+  preset: TikTokStudioCreativePreset;
+  title: string;
+  hooks: string[];
+  selectedHook: string;
+  script: string;
+  caption: string;
+  captionVariants?: string[];
+  hashtags: string[];
+  storyboard: TikTokStudioStoryboardScene[];
+  voiceProfile: TikTokStudioVoiceProfile;
+  recommendedDurationSeconds: number;
+  qualityScore: TikTokStudioQualityScore;
+  missingShots?: string[];
+  weakPhotos?: Array<{ assetId?: string | null; reason: string }>;
+  brandKit?: TikTokStudioBrandKit | null;
 };
 
 export type TikTokStudioProject = {
@@ -566,7 +670,19 @@ export type TikTokStudioProject = {
   outputAssetId?: string | null;
   script?: string | null;
   voiceId?: string | null;
-  subtitleStyle?: 'heygen_pink' | 'clean_white' | 'luxury';
+  voiceProfile?: TikTokStudioVoiceProfile | null;
+  subtitleStyle?: TikTokStudioSubtitlePreset;
+  creativePreset?: TikTokStudioCreativePreset;
+  hook?: string | null;
+  caption?: string | null;
+  captionVariants?: string[] | null;
+  hashtags?: string[] | null;
+  storyboard?: TikTokStudioStoryboardScene[] | null;
+  timeline?: TikTokStudioStoryboardScene[] | null;
+  qualityScore?: TikTokStudioQualityScore | null;
+  brandKit?: TikTokStudioBrandKit | null;
+  repurposeVariants?: TikTokStudioRepurposeVariant[] | null;
+  scheduledAt?: string | null;
   aspectRatio: '9:16' | '1:1' | '4:5' | '16:9';
   settings?: Record<string, unknown> | null;
   errorMessage?: string | null;

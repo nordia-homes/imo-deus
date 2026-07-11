@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
         disableDuet: body.disableDuet,
         disableStitch: body.disableStitch,
         aiGeneratedContent: body.aiGeneratedContent,
+        scheduledAt: typeof body.scheduledAt === 'string' ? body.scheduledAt : null,
+        repurposeVariant: typeof body.repurposeVariant === 'string' ? body.repurposeVariant : null,
       });
       return NextResponse.json({ draft }, { status: 201 });
     }
