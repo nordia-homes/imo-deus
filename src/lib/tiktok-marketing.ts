@@ -1125,6 +1125,25 @@ export async function createTikTokStudioAsset(input: {
   return asset;
 }
 
+export async function deleteTikTokStudioAsset(agencyId: string, assetId: string) {
+  if (!assetId) {
+    const error = new Error('Asset-ul TikTok Studio lipseste.') as TikTokApiError;
+    error.status = 400;
+    throw error;
+  }
+
+  const ref = getStudioAssetsCollection(agencyId).doc(assetId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    const error = new Error('Asset-ul TikTok Studio nu a fost gasit.') as TikTokApiError;
+    error.status = 404;
+    throw error;
+  }
+
+  await ref.delete();
+  return { id: assetId };
+}
+
 export async function createTikTokStudioProject(input: {
   agencyId: string;
   ownerUid: string;

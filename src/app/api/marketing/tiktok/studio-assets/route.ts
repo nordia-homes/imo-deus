@@ -63,3 +63,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: formatted.message }, { status: formatted.status });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const [{ requireAgencyUserFromBearerToken }, { deleteTikTokStudioAsset }] = await Promise.all([
+      import('@/lib/firebase-app-hosting'),
+      import('@/lib/tiktok-marketing'),
+    ]);
+    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    if (isDemoAgencyId(agencyId)) {
+      return createDemoBlockedResponse('Stergerea media TikTok Studio este blocata in mediul demo.');
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const assetId = typeof body.assetId === 'string' ? body.assetId : '';
+    if (!assetId) {
+      return NextResponse.json({ message: 'assetId este obligatoriu.' }, { status: 400 });
+    }
+
+    const result = await deleteTikTokStudioAsset(agencyId, assetId);
+    return NextResponse.json({ assetId: result.id }, { status: 200 });
+  } catch (error) {
+    const formatted = formatError(error);
+    return NextResponse.json({ message: formatted.message }, { status: formatted.status });
+  }
+}

@@ -281,9 +281,13 @@ export default function TikTokStudioPage() {
   const connected = Boolean(dashboard?.status.connected);
   const studioAssets = dashboard?.studioAssets || [];
   const studioProjects = dashboard?.studioProjects || [];
-  const selectedPhotoAssets = studioAssets.filter((asset) => selectedPhotoIds.includes(asset.id));
+  const studioAssetById = useMemo(() => new Map(studioAssets.map((asset) => [asset.id, asset])), [studioAssets]);
+  const selectedPhotoAssets = selectedPhotoIds
+    .map((assetId) => studioAssetById.get(assetId))
+    .filter((asset): asset is TikTokStudioAsset => Boolean(asset));
   const importedVideos = studioAssets.filter((asset) => asset.type === 'video');
   const importedPhotos = studioAssets.filter((asset) => asset.type === 'image');
+  const previewAsset = selectedPhotoAssets[0] || importedPhotos[0] || null;
   const privacyOptions = creatorInfo?.privacy_level_options?.length
     ? creatorInfo.privacy_level_options
     : [dashboard?.config.defaultPrivacyLevel || 'SELF_ONLY'];
@@ -586,6 +590,47 @@ export default function TikTokStudioPage() {
       next.splice(target, 0, scene);
       return next;
     });
+  }
+
+  function togglePhotoInStoryboard(assetId: string) {
+    setSelectedPhotoIds((current) => (
+      current.includes(assetId)
+        ? current.filter((id) => id !== assetId)
+        : [...current, assetId]
+    ));
+  }
+
+  async function handleDeleteStudioAsset(asset: TikTokStudioAsset) {
+    if (!user) return;
+    const confirmed = window.confirm(`Stergi definitiv "${asset.name}" din biblioteca TikTok Studio?`);
+    if (!confirmed) return;
+
+    setActiveAction(`delete-asset:${asset.id}`);
+    try {
+      const response = await authorizedFetch(user, auth, '/api/marketing/tiktok/studio-assets', {
+        method: 'DELETE',
+        body: JSON.stringify({ assetId: asset.id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.message || 'Nu am putut sterge asset-ul.');
+
+      setSelectedPhotoIds((current) => current.filter((id) => id !== asset.id));
+      setDashboard((current) => current
+        ? {
+          ...current,
+          studioAssets: (current.studioAssets || []).filter((item) => item.id !== asset.id),
+        }
+        : current);
+      toast({ title: 'Asset sters', description: 'Fisierul a fost eliminat din biblioteca TikTok Studio.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Stergere esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut sterge asset-ul.',
+      });
+    } finally {
+      setActiveAction(null);
+    }
   }
 
   function toggleRepurposeVariant(variant: TikTokStudioRepurposeVariant) {
@@ -957,7 +1002,7 @@ export default function TikTokStudioPage() {
           ].map((metric) => {
             const Icon = metric.icon;
             return (
-              <div key={metric.label} className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-[0_18px_55px_rgba(15,30,51,0.07)]">
+              <div key={metric.label} className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-[0_18px_55px_rgba(15,30,51,0.07)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{metric.label}</p>
@@ -993,14 +1038,15 @@ export default function TikTokStudioPage() {
               </div>
             </div>
 
-            <div className="grid min-h-[720px] gap-0 xl:grid-cols-[340px_minmax(420px,1fr)_420px]">
-              <aside className="border-b border-slate-200/80 bg-white/70 p-4 xl:border-b-0 xl:border-r">
+            <div className="grid min-h-[720px] gap-0 xl:grid-cols-[460px_minmax(420px,1fr)_420px]">
+              <aside className="border-b border-slate-200/80 bg-white/75 p-5 xl:border-b-0 xl:border-r">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF0050]">Media library</p>
-                    <h2 className="mt-1 text-2xl font-black">Asset-uri</h2>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF0050]">Media gallery</p>
+                    <h2 className="mt-1 text-2xl font-black">Galerie foto</h2>
+                    <p className="mt-1 text-sm text-slate-500">Alege ordinea vizuala a turului.</p>
                   </div>
-                  <Button asChild className={`${STUDIO_PRIMARY_BUTTON} h-10 px-4`}>
+                  <Button asChild className={`${STUDIO_PRIMARY_BUTTON} h-11 px-5`}>
                     <label>
                       {isUploadingMedia ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                       Import
@@ -1009,55 +1055,54 @@ export default function TikTokStudioPage() {
                   </Button>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className={STUDIO_MUTED_PANEL + ' p-3'}><p className="text-xl font-black">{studioAssets.length}</p><p className="text-xs text-slate-500">total</p></div>
-                  <div className={STUDIO_MUTED_PANEL + ' p-3'}><p className="text-xl font-black">{importedPhotos.length}</p><p className="text-xs text-slate-500">foto</p></div>
-                  <div className={STUDIO_MUTED_PANEL + ' p-3'}><p className="text-xl font-black">{importedVideos.length}</p><p className="text-xs text-slate-500">video</p></div>
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xl font-black">{studioAssets.length}</p><p className="text-xs text-slate-500">total</p></div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xl font-black">{importedPhotos.length}</p><p className="text-xs text-slate-500">foto</p></div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xl font-black">{importedVideos.length}</p><p className="text-xs text-slate-500">video</p></div>
+                  <div className="rounded-2xl border border-pink-200 bg-pink-50 p-3 shadow-sm"><p className="text-xl font-black text-[#FF0050]">{selectedPhotoIds.length}</p><p className="text-xs text-slate-500">scene</p></div>
                 </div>
 
-                <div className="mt-4 max-h-[530px] space-y-3 overflow-y-auto pr-1">
-                  {studioAssets.length ? studioAssets.map((asset) => {
-                    const draft = draftsByAsset.get(asset.id);
+                <div className="mt-4 max-h-[520px] overflow-y-auto pr-1">
+                  {studioAssets.length ? (
+                    <div className="columns-2 gap-3">
+                    {studioAssets.map((asset) => {
                     const isSelectedPhoto = selectedPhotoIds.includes(asset.id);
+                    const isDeleting = activeAction === `delete-asset:${asset.id}`;
                     return (
-                      <div key={asset.id} className={`grid grid-cols-[76px_1fr] gap-3 rounded-[20px] border bg-white p-2 shadow-sm transition hover:-translate-y-0.5 ${isSelectedPhoto ? 'border-[#FF0050] ring-4 ring-pink-100' : 'border-slate-200/80'}`}>
-                        <div className="aspect-[9/12] overflow-hidden rounded-2xl bg-slate-950">
+                      <div key={asset.id} className={`group mb-3 inline-block w-full break-inside-avoid overflow-hidden rounded-[24px] border bg-white align-top shadow-sm transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,30,51,0.16)] ${isSelectedPhoto ? 'border-[#FF0050] ring-4 ring-pink-100' : 'border-slate-200/80'}`}>
+                        <div className="relative overflow-hidden bg-white">
                           {asset.type === 'video' ? (
-                            <video src={asset.url} className="h-full w-full object-cover" muted playsInline />
+                            <video src={asset.url} className="aspect-video h-auto w-full object-contain" muted playsInline />
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={asset.url} alt="" className="h-full w-full object-cover" />
+                            <img src={asset.url} alt="" className="block h-auto w-full" />
                           )}
-                        </div>
-                        <div className="min-w-0 py-1">
-                          <p className="truncate text-sm font-black">{asset.name}</p>
-                          <p className="text-xs text-slate-500">{asset.type === 'video' ? 'Video importat' : 'Fotografie AI video'}</p>
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            <Badge className="rounded-full border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50">{asset.editorState?.aspectRatio || '9:16'}</Badge>
-                            {draft ? <Badge className={`rounded-full border ${getStatusClass(draft.status)} hover:bg-transparent`}>{STATUS_LABELS[draft.status]}</Badge> : null}
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {asset.type === 'video' ? (
-                              <Button type="button" size="sm" disabled={!connected} className={`${STUDIO_PRIMARY_BUTTON} h-8 px-3`} onClick={() => openAssetPublishModal(asset)}>
-                                <Send className="mr-1.5 h-3.5 w-3.5" />
-                                Publica
-                              </Button>
-                            ) : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className={`h-8 rounded-full px-3 ${isSelectedPhoto ? 'border-[#FF0050] bg-pink-50 text-[#FF0050] hover:bg-pink-100' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-                                onClick={() => setSelectedPhotoIds((current) => current.includes(asset.id) ? current.filter((id) => id !== asset.id) : [...current, asset.id])}
-                              >
-                                {isSelectedPhoto ? 'In storyboard' : 'Adauga'}
-                              </Button>
-                            )}
-                          </div>
+                          {asset.type === 'video' ? (
+                            <div className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/65 text-white shadow-lg backdrop-blur">
+                              <Video className="h-4 w-4" />
+                            </div>
+                          ) : null}
+                          <button
+                            type="button"
+                            className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-xs font-black shadow-lg backdrop-blur transition ${isSelectedPhoto ? 'bg-[#FF0050] text-white' : 'bg-white/92 text-slate-950 hover:bg-white'}`}
+                            onClick={() => asset.type === 'image' ? togglePhotoInStoryboard(asset.id) : void openAssetPublishModal(asset)}
+                          >
+                            {isSelectedPhoto ? 'Selectat' : 'Selecteaza'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isDeleting}
+                            className="absolute right-3 top-3 rounded-full bg-white/92 px-3 py-1.5 text-xs font-black text-rose-600 shadow-lg backdrop-blur transition hover:bg-white disabled:opacity-70"
+                            onClick={() => void handleDeleteStudioAsset(asset)}
+                          >
+                            {isDeleting ? 'Sterg...' : 'Sterge'}
+                          </button>
                         </div>
                       </div>
                     );
-                  }) : (
+                    })}
+                    </div>
+                  ) : (
                     <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
                       <UploadCloud className="mx-auto h-10 w-10 text-[#FF0050]/70" />
                       <p className="mt-3 text-sm font-semibold text-slate-600">Importa fotografii sau video-uri.</p>
@@ -1066,65 +1111,91 @@ export default function TikTokStudioPage() {
                 </div>
               </aside>
 
-              <section className="bg-[radial-gradient(circle_at_top,rgba(255,0,127,0.12),transparent_35%),linear-gradient(180deg,#111827,#020617)] p-5 text-white">
-                <div className="flex items-center justify-between gap-3">
+              <section className="relative overflow-hidden bg-[#080B13] p-5 text-white">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,0,127,0.18),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_24%)]" />
+                <div className="relative flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-pink-200">Live preview</p>
-                    <h2 className="mt-1 text-2xl font-black">Editor 9:16</h2>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#FF6FAF]">Preview studio</p>
+                    <h2 className="mt-1 text-2xl font-black text-white">Randare 9:16</h2>
                   </div>
-                  <Badge className="rounded-full border-white/10 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">
-                    {selectedPhotoIds.length} foto selectate
-                  </Badge>
+                  <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-black text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                    <PlayCircle className="h-4 w-4 text-[#FF007F]" />
+                    Preview
+                  </div>
                 </div>
 
-                <div className="mt-5 grid place-items-center">
-                  <div className="relative aspect-[9/16] h-[min(66vh,620px)] overflow-hidden rounded-[34px] border border-white/15 bg-black shadow-[0_35px_90px_rgba(0,0,0,0.48)]">
-                    {selectedPhotoAssets[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={selectedPhotoAssets[0].url} alt="" className="h-full w-full object-cover opacity-95" />
-                    ) : dashboard?.readyVideoTours[0]?.videoTourThumbnailUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={dashboard.readyVideoTours[0].videoTourThumbnailUrl} alt="" className="h-full w-full object-cover opacity-95" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-950">
-                        <Film className="h-16 w-16 text-white/20" />
+                <div className="relative mt-5 rounded-[34px] border border-white/10 bg-[#0D111D]/90 p-4 shadow-[0_34px_100px_rgba(0,0,0,0.48)]">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#FF007F] shadow-[0_0_18px_rgba(255,0,127,0.9)]" />
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-white/60">Preview fotografie</span>
+                    </div>
+                    <Badge className="rounded-full border-white/10 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">
+                      {selectedPhotoIds.length} scene
+                    </Badge>
+                  </div>
+
+                  <div className="grid place-items-center">
+                    <div className="relative aspect-[9/16] h-[min(58vh,560px)] overflow-hidden rounded-[30px] bg-black shadow-[0_26px_70px_rgba(0,0,0,0.58)] ring-1 ring-white/15">
+                      {previewAsset ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={previewAsset.url} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-55 blur-xl" />
+                          <div className="absolute inset-0 bg-black/18" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={previewAsset.url} alt="" className="absolute inset-0 h-full w-full object-contain" />
+                        </>
+                      ) : dashboard?.readyVideoTours[0]?.videoTourThumbnailUrl ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={dashboard.readyVideoTours[0].videoTourThumbnailUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-55 blur-xl" />
+                          <div className="absolute inset-0 bg-black/18" />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={dashboard.readyVideoTours[0].videoTourThumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-contain" />
+                        </>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_18%,rgba(255,0,127,0.16),transparent_34%),linear-gradient(180deg,#141927,#050713)]">
+                          <div className="px-8 text-center">
+                            <Film className="mx-auto h-14 w-14 text-white/22" />
+                            <p className="mt-3 text-sm font-black text-white/55">Selecteaza fotografii pentru preview</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-4 left-4 right-4 h-1.5 overflow-hidden rounded-full bg-white/20">
+                        <div className="h-full w-2/5 rounded-full bg-[#FF007F] shadow-[0_0_20px_rgba(255,0,127,0.8)]" />
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),transparent_28%,transparent_62%,rgba(0,0,0,0.55))]" />
-                    <div className="absolute left-5 top-5 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs font-bold backdrop-blur">
-                      {aiComposer.brandName || 'ImoDeus'}
-                    </div>
-                    <div className="absolute bottom-[18%] left-5 right-5 text-center">
-                      <p className="text-balance text-3xl font-black leading-tight text-white [text-shadow:0_3px_0_#7A164F,0_0_18px_rgba(255,0,127,0.65)]">
-                        {aiComposer.hook || creativeBrief?.hooks?.[0] || 'Un tur video care vinde emotional'}
-                      </p>
-                      <p className="mt-2 inline rounded-full bg-[#FF007F] px-3 py-1 text-sm font-black text-white shadow-[0_12px_30px_rgba(255,0,127,0.35)]">
-                        HeyGen Pink / Avenue style
-                      </p>
-                    </div>
-                    <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/75">
-                      <span>Crop 9:16</span>
-                      <span className="text-center">Karaoke</span>
-                      <span className="text-right">TikTok safe</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.06] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-black">Timeline</p>
-                    <p className="text-sm text-white/55">{timelineScenes.length ? `${timelineScenes.length} scene` : 'Storyboard AI asteapta fotografii'}</p>
+                <div className="relative mt-4 rounded-[26px] border border-white/10 bg-white/[0.06] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <div>
+                      <p className="text-sm font-black text-white">Timeline</p>
+                      <p className="text-xs text-white/45">{selectedPhotoAssets.length ? 'Fotografiile selectate intra in randare in aceasta ordine' : 'Storyboard AI asteapta selectia'}</p>
+                    </div>
+                    <span className="rounded-full bg-[#FF007F]/15 px-3 py-1 text-xs font-black text-[#FF8FC6]">
+                      {selectedPhotoAssets.length || timelineScenes.length || 0} scene
+                    </span>
                   </div>
-                  <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-                    {timelineScenes.length ? timelineScenes.map((scene, index) => (
-                      <div key={scene.id || index} className="min-w-[190px] rounded-2xl border border-white/10 bg-white/10 p-3">
-                        <p className="text-xs font-black text-pink-200">Scena {index + 1}</p>
-                        <p className="mt-1 line-clamp-1 font-semibold">{scene.title}</p>
-                        <p className="mt-1 text-xs text-white/55">{scene.durationSeconds}s / {scene.motion}</p>
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                    {selectedPhotoAssets.length ? selectedPhotoAssets.map((asset, index) => (
+                      <div key={asset.id} className="min-w-[72px] overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+                        <div className="relative aspect-[9/12]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={asset.url} alt="" className="h-full w-full object-cover" />
+                          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/62 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur">#{index + 1}</span>
+                        </div>
+                      </div>
+                    )) : timelineScenes.length ? timelineScenes.map((scene, index) => (
+                      <div key={scene.id || index} className="min-w-[150px] rounded-2xl border border-white/10 bg-white/10 p-3">
+                        <p className="text-xs font-black text-[#FF8FC6]">Scena {index + 1}</p>
+                        <p className="mt-1 line-clamp-1 text-sm font-semibold">{scene.title}</p>
                       </div>
                     )) : STUDIO_STEPS.slice(0, 5).map((step, index) => (
-                      <div key={step.label} className="min-w-[150px] rounded-2xl border border-white/10 bg-white/10 p-3">
-                        <p className="text-xs font-black text-pink-200">Pas {index + 1}</p>
+                      <div key={step.label} className="min-w-[128px] rounded-2xl border border-white/10 bg-white/[0.08] p-3">
+                        <p className="text-xs font-black text-[#FF8FC6]">Pas {index + 1}</p>
                         <p className="mt-1 text-sm font-semibold">{step.label}</p>
                       </div>
                     ))}
