@@ -626,10 +626,44 @@ export async function listTikTokReadyVideoTours(agencyId: string, limit = 60): P
     }));
 }
 
+export async function listTikTokPortfolioProperties(agencyId: string, limit = 120) {
+  const propertiesSnapshot = await adminDb
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('properties')
+    .limit(limit)
+    .get();
+
+  return propertiesSnapshot.docs
+    .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Property, 'id'>) }) as Property)
+    .filter((property) => Array.isArray(property.images) && property.images.some((image) => image?.url))
+    .map((property) => ({
+      id: property.id,
+      title: property.title || 'Proprietate ImoDeus',
+      address: property.address || '',
+      location: getPropertyLocation(property),
+      price: formatPropertyPrice(property),
+      description: property.description || '',
+      keyFeatures: property.keyFeatures || '',
+      rooms: property.rooms || null,
+      bathrooms: property.bathrooms || null,
+      squareFootage: property.squareFootage || null,
+      propertyType: property.propertyType || '',
+      images: (property.images || [])
+        .filter((image) => image?.url)
+        .slice(0, 24)
+        .map((image, index) => ({
+          url: image.url,
+          alt: image.alt || `Fotografie ${index + 1}`,
+        })),
+    }));
+}
+
 export async function getTikTokDashboardSummary(agencyId: string, uid: string) {
-  const [status, readyVideoTours, draftsSnapshot] = await Promise.all([
+  const [status, readyVideoTours, portfolioProperties, draftsSnapshot] = await Promise.all([
     getTikTokMarketingStatus(uid),
     listTikTokReadyVideoTours(agencyId),
+    listTikTokPortfolioProperties(agencyId),
     getDraftsCollection(agencyId).orderBy('updatedAt', 'desc').limit(80).get().catch(() => null),
   ]);
 
@@ -648,6 +682,7 @@ export async function getTikTokDashboardSummary(agencyId: string, uid: string) {
   return {
     status,
     readyVideoTours,
+    portfolioProperties,
     studioAssets: await listTikTokStudioAssets(agencyId).catch(() => []),
     studioProjects: await listTikTokStudioProjects(agencyId).catch(() => []),
     drafts,

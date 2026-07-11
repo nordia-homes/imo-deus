@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
+import { existsSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import ffmpegPath from 'ffmpeg-static';
@@ -44,8 +45,18 @@ const FRAME_RATE = 30;
 const TRANSITION_SECONDS = 0.45;
 
 function getFfmpegBinary() {
-  if (!ffmpegPath) throw new Error('FFmpeg nu este disponibil in mediul curent.');
-  return ffmpegPath;
+  const executable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath || '';
+  const candidates = [
+    process.env.FFMPEG_PATH || '',
+    ffmpegPath || '',
+    path.join(process.cwd(), 'node_modules', 'ffmpeg-static', executable),
+    path.join(process.cwd(), 'resources', 'app.asar.unpacked', 'node_modules', 'ffmpeg-static', executable),
+    path.join(resourcesPath, 'app.asar.unpacked', 'node_modules', 'ffmpeg-static', executable),
+    path.join(resourcesPath, 'app', 'node_modules', 'ffmpeg-static', executable),
+  ].filter(Boolean);
+  const resolved = candidates.find((candidate) => existsSync(candidate));
+  return resolved || 'ffmpeg';
 }
 
 function runFfmpeg(args: string[], cwd?: string) {
@@ -251,17 +262,20 @@ async function renderPhotoSegment(input: {
 }) {
   const frames = Math.max(1, Math.round(input.duration * FRAME_RATE));
   const motion = input.motion || (input.index % 2 === 0 ? 'slow_push' : 'pull_back');
+  const frameProgress = `on/${Math.max(frames - 1, 1)}`;
   const zoomDirection = motion === 'pull_back'
-    ? "max(1.13-on/900,1.0)"
+    ? `max(1.26-0.22*${frameProgress},1.03)`
     : motion === 'detail_zoom'
-      ? "min(zoom+0.0022,1.18)"
-      : "min(zoom+0.0012,1.13)";
+      ? `1.05+0.22*${frameProgress}`
+      : `1.03+0.18*${frameProgress}`;
   const xExpression = motion === 'pan_left'
-    ? '(iw-iw/zoom)*(1-on/900)'
+    ? `(iw-iw/zoom)*(1-${frameProgress})`
     : motion === 'pan_right'
-      ? '(iw-iw/zoom)*(on/900)'
+      ? `(iw-iw/zoom)*${frameProgress}`
       : 'iw/2-(iw/zoom/2)';
-  const yExpression = motion === 'detail_zoom' ? '(ih-ih/zoom)*0.45' : 'ih/2-(ih/zoom/2)';
+  const yExpression = motion === 'detail_zoom'
+    ? `(ih-ih/zoom)*(0.34+0.18*${frameProgress})`
+    : 'ih/2-(ih/zoom/2)';
   const filter = [
     `scale=${input.width}:${input.height}:force_original_aspect_ratio=increase`,
     `crop=${input.width}:${input.height}`,
@@ -286,13 +300,15 @@ async function renderPhotoSegment(input: {
 
 function getStoryboardScenes(project: TikTokStudioProject, photoAssets: LocalPhotoAsset[]) {
   const scenes = project.timeline?.length ? project.timeline : project.storyboard?.length ? project.storyboard : null;
-  const orderedAssets = scenes?.length
+  const orderedItems = scenes?.length
     ? scenes
-      .map((scene) => photoAssets.find((asset) => asset.assetId === scene.assetId))
-      .filter((asset): asset is LocalPhotoAsset => Boolean(asset))
-    : photoAssets;
-  return orderedAssets.map((asset, index) => {
-    const scene = scenes?.find((item) => item.assetId === asset.assetId) || scenes?.[index] || null;
+      .map((scene) => {
+        const asset = photoAssets.find((item) => item.assetId === scene.assetId);
+        return asset ? { asset, scene } : null;
+      })
+      .filter((item): item is { asset: LocalPhotoAsset; scene: TikTokStudioStoryboardScene } => Boolean(item))
+    : photoAssets.map((asset) => ({ asset, scene: null }));
+  return orderedItems.map(({ asset, scene }, index) => {
     return {
       ...asset,
       durationSeconds: Math.max(1.8, Number(scene?.durationSeconds) || 3),
@@ -303,7 +319,8 @@ function getStoryboardScenes(project: TikTokStudioProject, photoAssets: LocalPho
 
 function fitSceneDurationsToAudio(scenes: Array<LocalPhotoAsset & { durationSeconds: number; motion: TikTokStudioStoryboardScene['motion'] }>, audioDuration: number) {
   const storyboardDuration = scenes.reduce((total, scene) => total + scene.durationSeconds, 0);
-  const targetDuration = Math.max(audioDuration + 0.25, storyboardDuration, scenes.length * 2.6);
+  const naturalDuration = Math.max(audioDuration + 0.25, storyboardDuration, scenes.length * 2.6);
+  const targetDuration = naturalDuration <= 105 ? Math.max(90, naturalDuration) : naturalDuration;
   const transitionBudget = Math.max(0, scenes.length - 1) * TRANSITION_SECONDS;
   const scale = (targetDuration + transitionBudget) / Math.max(storyboardDuration, 1);
   return {
