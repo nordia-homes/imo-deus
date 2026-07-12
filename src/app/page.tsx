@@ -301,7 +301,7 @@ export default function HomePage() {
 
         <section className="lux-hero">
           <div className="lux-hero__grid" />
-          <div className="lux-hero-inner mx-auto grid w-full max-w-[1500px] gap-10 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(640px,1.18fr)] lg:items-center lg:px-8 lg:pb-24 lg:pt-16">
+          <div className="lux-hero-inner mx-auto grid w-full max-w-[1500px] gap-10 px-4 pb-12 pt-7 sm:px-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(640px,1.18fr)] lg:items-center lg:px-8 lg:pb-12 lg:pt-8">
             <div className="lux-hero-copy relative z-10 max-w-3xl">
               <div className="lux-pill">
                 <Sparkles className="h-4 w-4 text-emerald-300" />
