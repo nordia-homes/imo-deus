@@ -7747,6 +7747,24 @@
     linear-gradient(180deg, #07111f 0%, #081525 46%, #0c1120 100%);
 }
 
+.lux-hero::before {
+  content: "";
+  position: absolute;
+  right: -8%;
+  top: 8%;
+  z-index: 0;
+  width: 52%;
+  height: 54%;
+  border: 1px solid rgba(45, 212, 191, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(16, 185, 129, 0.08)),
+    rgba(255, 255, 255, 0.025);
+  transform: skewX(-13deg) rotate(-1deg);
+  transform-origin: center;
+  pointer-events: none;
+}
+
 .lux-hero::after {
   content: "";
   position: absolute;
@@ -7907,6 +7925,8 @@
 }
 
 .lux-screen {
+  position: relative;
+  isolation: isolate;
   width: 100%;
   min-width: 0;
   overflow: hidden;
@@ -7920,13 +7940,26 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.lux-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.18), transparent 18% 70%, rgba(52, 211, 153, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%);
+  opacity: 0.58;
+  pointer-events: none;
+}
+
 .lux-screen--hero {
   position: absolute;
   right: 0;
-  top: 7rem;
+  top: 4.25rem;
   z-index: 2;
-  width: min(890px, 100%);
-  transform: rotateX(2deg) rotateY(-7deg) rotateZ(0.2deg);
+  width: min(930px, 100%);
+  transform: rotateX(2deg) rotateY(-6deg) rotateZ(0.2deg);
   transform-origin: center right;
 }
 
@@ -7939,13 +7972,13 @@
 
 .lux-screen--float-left {
   left: 0;
-  bottom: 3.25rem;
+  bottom: 5.75rem;
   transform: rotateZ(-4deg);
 }
 
 .lux-screen--float-right {
   right: 1rem;
-  bottom: 0.4rem;
+  bottom: 2.45rem;
   transform: rotateZ(3deg);
 }
 
@@ -7956,6 +7989,8 @@
 }
 
 .lux-screen__bar {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-height: 2.65rem;
   align-items: center;
@@ -7968,6 +8003,13 @@
   font-weight: 850;
 }
 
+.lux-screen__bar > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lux-dot {
   display: inline-flex;
   width: 0.62rem;
@@ -7977,6 +8019,8 @@
 }
 
 .lux-screen__viewport {
+  position: relative;
+  z-index: 1;
   width: 100%;
   min-width: 0;
   overflow: hidden;
@@ -7999,6 +8043,36 @@
     #07111f;
 }
 
+.lux-proof-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    rgba(15, 23, 42, 0.34);
+  padding: 0.82rem 0.95rem;
+  color: #67e8f9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.lux-proof-item strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.lux-proof-item span {
+  display: block;
+  margin-top: 0.18rem;
+  color: rgba(203, 213, 225, 0.75);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .lux-light-section {
   color: #0f172a;
   background:
@@ -8014,6 +8088,18 @@
   padding: 1.25rem;
   box-shadow:
     0 22px 60px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.lux-capability:hover {
+  transform: translateY(-3px);
+  border-color: rgba(45, 212, 191, 0.36);
+  box-shadow:
+    0 30px 78px rgba(15, 23, 42, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.96);
 }
 
@@ -8042,6 +8128,57 @@
   color: #526278;
   font-size: 0.95rem;
   line-height: 1.7;
+}
+
+.lux-flow-map {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(203, 213, 225, 0.82);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 254, 255, 0.72)),
+    #ffffff;
+  padding: 0.85rem;
+  box-shadow:
+    0 28px 70px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.lux-flow-step {
+  position: relative;
+  min-width: 0;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.84));
+  padding: 1rem;
+}
+
+.lux-flow-step span {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ecfeff, #dcfce7);
+  color: #047857;
+}
+
+.lux-flow-step strong {
+  display: block;
+  margin-top: 0.85rem;
+  color: #07111f;
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.lux-flow-step p {
+  margin-top: 0.42rem;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .lux-showcase,
@@ -8074,6 +8211,9 @@
 }
 
 .lux-feature {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   gap: 2rem;
   align-items: center;
@@ -8087,6 +8227,36 @@
     0 30px 90px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
+}
+
+.lux-feature::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(52, 211, 153, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 28%);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.lux-feature > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lux-feature__index {
+  position: absolute;
+  right: 1.2rem;
+  top: 0.7rem;
+  z-index: 0;
+  color: rgba(255, 255, 255, 0.055);
+  font-family: var(--font-space-grotesk);
+  font-size: 6rem;
+  font-weight: 850;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .lux-feature__copy {
@@ -8147,6 +8317,18 @@
   box-shadow:
     0 22px 72px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.lux-module:hover {
+  transform: translateY(-3px);
+  border-color: rgba(103, 232, 249, 0.32);
+  box-shadow:
+    0 30px 84px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .lux-module__top {
@@ -8183,6 +8365,8 @@
 }
 
 .lux-final-card {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(203, 213, 225, 0.9);
   border-radius: 8px;
   background:
@@ -8191,6 +8375,21 @@
   box-shadow:
     0 24px 70px rgba(15, 23, 42, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.lux-final-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.12), transparent 42%),
+    linear-gradient(250deg, rgba(34, 197, 94, 0.12), transparent 48%);
+  pointer-events: none;
+}
+
+.lux-final-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .lux-final-card p {
@@ -8207,7 +8406,44 @@
   line-height: 1.15;
 }
 
+.lux-final-checks {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.lux-final-check {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #0f766e;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 @media (min-width: 1024px) {
+  .lux-hero-inner {
+    padding-top: 3.25rem;
+    padding-bottom: 4.75rem;
+  }
+
+  .lux-hero-copy {
+    max-width: 45.5rem;
+  }
+
+  .lux-hero-title {
+    max-width: 44rem;
+  }
+
+  .lux-hero-stage {
+    min-height: 620px;
+    transform: translateY(-2.4rem);
+  }
+
+  .lux-orbit-card {
+    top: 1.2rem;
+  }
+
   .lux-feature {
     grid-template-columns: minmax(0, 0.68fr) minmax(620px, 1.32fr);
     padding: 1.25rem;
@@ -8227,6 +8463,16 @@
 
   .lux-module-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lux-flow-map {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .lux-flow-map {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -8303,8 +8549,37 @@
     display: none;
   }
 
+  .lux-flow-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .lux-flow-step {
+    padding: 0.82rem;
+  }
+
+  .lux-flow-step span {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .lux-flow-step strong {
+    margin-top: 0.72rem;
+    font-size: 0.88rem;
+  }
+
+  .lux-flow-step p {
+    font-size: 0.75rem;
+  }
+
   .lux-screen {
     border-radius: 8px;
+  }
+
+  .lux-feature__index {
+    right: 0.75rem;
+    top: 0.65rem;
+    font-size: 4.4rem;
   }
 
   .lux-screen__bar {

@@ -49,6 +49,33 @@ const heroStats = [
   { value: "Go live", label: "website si publicare conectate" },
 ];
 
+const proofSignals = [
+  {
+    icon: Layers3,
+    value: "1 flux",
+    label: "lead, proprietate, vizionare, contract",
+  },
+  {
+    icon: Sparkles,
+    value: "AI in context",
+    label: "scor, matching si briefing comercial",
+  },
+  {
+    icon: Globe2,
+    value: "Go live",
+    label: "website public si distributie conectate",
+  },
+];
+
+const flowSteps = [
+  { icon: Search, title: "Lead captat", text: "intentia intra direct in pipeline" },
+  { icon: Sparkles, title: "Scor AI", text: "prioritatea devine vizibila" },
+  { icon: Building2, title: "Potrivire", text: "proprietati alese cu motiv" },
+  { icon: CalendarCheck2, title: "Vizionare", text: "echipa merge pe urmatorul pas" },
+  { icon: FileText, title: "Contract", text: "documentele raman in context" },
+  { icon: Globe2, title: "Publicare", text: "promovarea pleaca din CRM" },
+];
+
 const capabilities: Capability[] = [
   {
     icon: Search,
@@ -267,13 +294,13 @@ export default function HomePage() {
 
         <section className="lux-hero">
           <div className="lux-hero__grid" />
-          <div className="mx-auto grid w-full max-w-[1500px] gap-10 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(640px,1.18fr)] lg:items-center lg:px-8 lg:pb-24 lg:pt-16">
-            <div className="relative z-10 max-w-3xl">
+          <div className="lux-hero-inner mx-auto grid w-full max-w-[1500px] gap-10 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(640px,1.18fr)] lg:items-center lg:px-8 lg:pb-24 lg:pt-16">
+            <div className="lux-hero-copy relative z-10 max-w-3xl">
               <div className="lux-pill">
                 <Sparkles className="h-4 w-4 text-emerald-300" />
                 Platforma AI pentru agentii imobiliare care vor sa conduca piata
               </div>
-              <h1 className="mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.8rem] xl:text-[5.45rem]">
+              <h1 className="lux-hero-title mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.45rem] xl:text-[5rem]">
                 Agentia ta, orchestrata intr-un singur sistem premium.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
@@ -342,16 +369,18 @@ export default function HomePage() {
 
         <section className="lux-proof">
           <div className="mx-auto grid w-full max-w-[1500px] gap-3 px-4 py-5 sm:px-6 lg:grid-cols-3 lg:px-8">
-            {[
-              "CRM operational pentru toata agentia",
-              "AI integrat in deciziile comerciale",
-              "Website public si publicare conectate",
-            ].map((signal) => (
-              <div key={signal} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
-                <CheckCircle2 className="h-5 w-5 text-emerald-300" />
-                {signal}
-              </div>
-            ))}
+            {proofSignals.map((signal) => {
+              const Icon = signal.icon;
+              return (
+                <div key={signal.value} className="lux-proof-item">
+                  <Icon className="h-5 w-5" />
+                  <div>
+                    <strong>{signal.value}</strong>
+                    <span>{signal.label}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -387,6 +416,21 @@ export default function HomePage() {
                 );
               })}
             </div>
+
+            <div className="lux-flow-map mt-8">
+              {flowSteps.map((step) => {
+                const Icon = step.icon;
+                return (
+                  <div key={step.title} className="lux-flow-step">
+                    <span>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <strong>{step.title}</strong>
+                    <p>{step.text}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -407,6 +451,7 @@ export default function HomePage() {
                 const Icon = screen.icon;
                 return (
                   <article key={screen.title} className={`lux-feature ${index % 2 ? "lux-feature--reverse" : ""}`}>
+                    <span className="lux-feature__index">0{index + 1}</span>
                     <div className="lux-feature__copy">
                       <div className="lux-pill lux-pill--mini">
                         <Icon className="h-4 w-4" />
@@ -482,6 +527,14 @@ export default function HomePage() {
             <div className="lux-final-card">
               <p>Experienta completa</p>
               <h3>CRM, AI, website public si operatiuni intr-un singur loc.</h3>
+              <div className="lux-final-checks">
+                {["Demo separat de date reale", "Toate modulele conectate", "Flux clar pentru decizie"].map((item) => (
+                  <div key={item} className="lux-final-check">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
               <DemoButton className="mt-6 w-full justify-center" label="Intra in demo acum" />
               <Button
                 asChild
