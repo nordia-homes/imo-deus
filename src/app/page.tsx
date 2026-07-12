@@ -49,6 +49,13 @@ const heroStats = [
   { value: "Go live", label: "website si publicare conectate" },
 ];
 
+const publishingPartners = [
+  { name: "Storia", logo: "/storia-official-logo.svg", width: 109, height: 30 },
+  { name: "Imobiliare.ro", logo: "/imobiliare-logo.svg", width: 148, height: 18 },
+  { name: "OLX", logo: "/olx-logo.svg", width: 92, height: 34 },
+  { name: "Publi24.ro", logo: "/publi24-logo.svg", width: 142, height: 26 },
+];
+
 const proofSignals = [
   {
     icon: Layers3,
@@ -267,27 +274,27 @@ export default function HomePage() {
     <>
       <main className="lux-shell min-h-screen overflow-x-clip bg-[#06101d] text-white">
         <header className="lux-nav">
-          <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <ImoDeusTextLogo className="w-[9.5rem] brightness-0 invert sm:w-[12rem]" />
+          <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
+            <ImoDeusTextLogo className="w-[7.75rem] brightness-0 invert sm:w-[8.75rem]" />
             <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 asChild
                 variant="ghost"
-                className="hidden h-11 rounded-full px-4 text-sm font-semibold text-slate-200 hover:bg-white/10 hover:text-white sm:inline-flex"
+                className="hidden h-9 rounded-full px-4 text-sm font-semibold text-slate-200 hover:bg-white/10 hover:text-white sm:inline-flex"
               >
                 <Link href="/login">Autentificare</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="hidden h-11 rounded-full border-white/[0.15] bg-white/[0.08] px-4 text-sm font-semibold text-white hover:bg-white/[0.15] hover:text-white sm:inline-flex"
+                className="hidden h-9 rounded-full border-white/[0.15] bg-white/[0.08] px-4 text-sm font-semibold text-white hover:bg-white/[0.15] hover:text-white sm:inline-flex"
               >
                 <Link href="/register">
                   Creeaza cont
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <DemoButton className="h-11 px-4 text-sm" label="Demo live" />
+              <DemoButton className="h-9 px-4 text-sm" label="Demo live" />
             </div>
           </div>
         </header>
@@ -300,8 +307,8 @@ export default function HomePage() {
                 <Sparkles className="h-4 w-4 text-emerald-300" />
                 Platforma AI pentru agentii imobiliare care vor sa conduca piata
               </div>
-              <h1 className="lux-hero-title mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.45rem] xl:text-[5rem]">
-                Agentia ta, orchestrata intr-un singur sistem premium.
+              <h1 className="lux-hero-title mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.15rem] xl:text-[4.65rem]">
+                Agentia ta, orchestrata intr-un singur <span className="whitespace-nowrap">sistem premium.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
                 ImoDeus.ai aduce lead-uri, proprietati, AI, task-uri, rapoarte si publicare intr-un workspace
@@ -356,12 +363,34 @@ export default function HomePage() {
                 priority
                 className="lux-screen--float lux-screen--float-right"
               />
-              <div className="lux-orbit-card">
-                <ShieldCheck className="h-5 w-5 text-emerald-300" />
-                <div>
-                  <p>Demo sigur</p>
-                  <span>Date separate, produs complet.</span>
-                </div>
+            </div>
+          </div>
+
+          <div className="lux-publish-marquee">
+            <div
+              className="lux-publish-marquee__shell"
+              aria-label="Publicare automata Storia, Imobiliare.ro, OLX si Publi24.ro"
+            >
+              <div className="lux-publish-marquee__track" aria-hidden="true">
+                {[0, 1].map((groupIndex) => (
+                  <div className="lux-publish-marquee__group" key={groupIndex}>
+                    {publishingPartners.map((partner) => (
+                      <div className="lux-publish-item" key={`${partner.name}-${groupIndex}`}>
+                        <span className="lux-publish-item__signal" />
+                        <span className="lux-publish-item__copy">Publicare Automata</span>
+                        <span className="lux-publish-item__logoWrap">
+                          <Image
+                            src={partner.logo}
+                            alt=""
+                            width={partner.width}
+                            height={partner.height}
+                            className="lux-publish-item__logo"
+                          />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
