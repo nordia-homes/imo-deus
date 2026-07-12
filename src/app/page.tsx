@@ -35,6 +35,7 @@ type ProductScreen = {
   icon: LucideIcon;
   stat: string;
   statLabel: string;
+  signals: string[];
 };
 
 type Capability = {
@@ -109,43 +110,47 @@ const capabilities: Capability[] = [
 const productScreens: ProductScreen[] = [
   {
     eyebrow: "Control room",
-    title: "Dashboard-ul iti arata pulsul agentiei, nu doar cifre frumoase.",
+    title: "Dashboard live pentru pulsul agentiei.",
     text: "Comisioane, cumparatori activi, vizionari, conversii si actiuni rapide intr-un singur ecran care se simte ca un centru de comanda.",
     image: "/landing/screenshots/dashboard.png",
     alt: "Dashboard ImoDeus cu KPI-uri, grafice si actiuni rapide",
     icon: BarChart3,
     stat: "Live",
     statLabel: "agentie demo",
+    signals: ["KPI-uri live", "actiuni rapide", "ritm operational"],
   },
   {
     eyebrow: "Lead intelligence",
-    title: "Fiecare cumparator vine cu context, scor si urmatorul pas.",
+    title: "Cumparatori cu context, scor si urmator pas.",
     text: "Profilul, bugetul, potrivirile si explicatia AI stau impreuna, ca agentul sa sune cu un motiv clar, nu cu o presupunere.",
     image: "/landing/screenshots/lead-matching-detail.png",
     alt: "Detaliu lead cu scor AI si proprietati recomandate",
     icon: Users,
     stat: "AI",
     statLabel: "matching explicat",
+    signals: ["scor explicabil", "potriviri AI", "urmatorul pas"],
   },
   {
     eyebrow: "Property hub",
-    title: "Fisa proprietatii devine locul unde se castiga viteza.",
+    title: "Fisa proprietatii devine centru de vanzare.",
     text: "Galerie, pret, agent dedicat, proprietar, vizionari si promovare sunt legate de aceeasi proprietate, fara context switching.",
     image: "/landing/screenshots/property-detail-overview.png",
     alt: "Fisa unei proprietati cu galerie si panou de actiuni",
     icon: Building2,
     stat: "360",
     statLabel: "vedere completa",
+    signals: ["media si pret", "owner view", "vizionari"],
   },
   {
     eyebrow: "Distribution",
-    title: "Publicarea si promovarea pleaca din acelasi sistem.",
+    title: "Publicare si promovare din acelasi sistem.",
     text: "Website public, harta, portaluri si promovare sociala sunt conectate la datele operationale ale agentiei.",
     image: "/landing/screenshots/map-publishing.png",
     alt: "Publicare proprietate in portaluri si promovare cu harta",
     icon: Globe2,
     stat: "Go live",
     statLabel: "din CRM",
+    signals: ["portaluri", "harta live", "promovare"],
   },
 ];
 
@@ -521,18 +526,43 @@ export default function HomePage() {
                   <article key={screen.title} className={`lux-feature ${index % 2 ? "lux-feature--reverse" : ""}`}>
                     <span className="lux-feature__index">0{index + 1}</span>
                     <div className="lux-feature__copy">
-                      <div className="lux-pill lux-pill--mini">
-                        <Icon className="h-4 w-4" />
-                        {screen.eyebrow}
+                      <div className="lux-feature__meta">
+                        <div className="lux-pill lux-pill--mini">
+                          <Icon className="h-4 w-4" />
+                          {screen.eyebrow}
+                        </div>
+                        <span>flow {index + 1}</span>
                       </div>
                       <h3>{screen.title}</h3>
                       <p>{screen.text}</p>
+                      <div className="lux-feature__signals">
+                        {screen.signals.map((signal) => (
+                          <span key={signal}>{signal}</span>
+                        ))}
+                      </div>
                       <div className="lux-feature__stat">
                         <strong>{screen.stat}</strong>
                         <span>{screen.statLabel}</span>
                       </div>
                     </div>
-                    <ScreenFrame image={screen.image} alt={screen.alt} label={`ImoDeus.ai CRM / ${screen.eyebrow}`} />
+                    <div className="lux-feature__media">
+                      <span className="lux-feature__mediaPlate" />
+                      <ScreenFrame
+                        image={screen.image}
+                        alt={screen.alt}
+                        label={`ImoDeus.ai CRM / ${screen.eyebrow}`}
+                        className="lux-screen--feature"
+                      />
+                      <div className="lux-feature__status" aria-hidden="true">
+                        <span />
+                        Sistem conectat
+                      </div>
+                      <div className="lux-feature__rail" aria-hidden="true">
+                        <span>CRM</span>
+                        <span>AI</span>
+                        <span>Publicare</span>
+                      </div>
+                    </div>
                   </article>
                 );
               })}
