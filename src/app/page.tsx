@@ -415,8 +415,8 @@ export default function HomePage() {
 
         <section className="lux-light-section">
           <div className="mx-auto w-full max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,0.86fr)_minmax(540px,1.14fr)] lg:items-end">
-              <div>
+            <div className="lux-system-hero">
+              <div className="lux-system-copy">
                 <div className="lux-light-pill">
                   <Crown className="h-4 w-4 text-amber-500" />
                   Pozitionare de lider
@@ -424,18 +424,57 @@ export default function HomePage() {
                 <h2 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
                   Nu doar CRM. Un layer premium pentru vanzare, management si AI.
                 </h2>
+                <p>
+                  Tot ce conteaza pentru o agentie imobiliara moderna este legat intr-un flux coerent:
+                  oportunitati, portofoliu, echipa, documente, publicare si raportare.
+                </p>
+                <div className="lux-system-proof">
+                  <span>
+                    <strong>360</strong>
+                    vedere operationala
+                  </span>
+                  <span>
+                    <strong>AI</strong>
+                    decizii in context
+                  </span>
+                  <span>
+                    <strong>Go live</strong>
+                    publicare conectata
+                  </span>
+                </div>
               </div>
-              <p className="text-lg leading-8 text-slate-600">
-                Tot ce conteaza pentru o agentie imobiliara moderna este legat intr-un flux coerent:
-                oportunitati, portofoliu, echipa, documente, publicare si raportare.
-              </p>
+
+              <div className="lux-system-panel" aria-hidden="true">
+                <div className="lux-system-panel__top">
+                  <span>Operating layer</span>
+                  <strong>Live control</strong>
+                </div>
+                <div className="lux-system-panel__canvas">
+                  <div className="lux-system-core">
+                    <Sparkles className="h-5 w-5" />
+                    <strong>ImoDeus.ai</strong>
+                    <span>CRM + AI + publicare</span>
+                  </div>
+                  {["Lead", "Portofoliu", "AI", "Echipa", "Contract", "Publicare"].map((node) => (
+                    <span key={node} className="lux-system-node">
+                      {node}
+                    </span>
+                  ))}
+                </div>
+                <div className="lux-system-panel__footer">
+                  <span>pipeline conectat</span>
+                  <span>rapoarte live</span>
+                  <span>actiuni rapide</span>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="lux-capability-grid">
               {capabilities.map((item) => {
                 const Icon = item.icon;
                 return (
                   <article key={item.title} className="lux-capability">
+                    <span className="lux-capability__glow" />
                     <div className="lux-capability__icon">
                       <Icon className="h-5 w-5" />
                     </div>
@@ -446,7 +485,7 @@ export default function HomePage() {
               })}
             </div>
 
-            <div className="lux-flow-map mt-8">
+            <div className="lux-flow-map">
               {flowSteps.map((step) => {
                 const Icon = step.icon;
                 return (
