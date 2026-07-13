@@ -82,6 +82,47 @@ const proofSignals = [
   },
 ];
 
+const finalDemoMetrics = [
+  { value: "1", label: "flux cap-coada" },
+  { value: "17", label: "zone de produs" },
+  { value: "AI", label: "decizii explicate" },
+  { value: "Go", label: "publicare conectata" },
+];
+
+const finalProofHighlights = [
+  {
+    icon: Layers3,
+    title: "Pipeline complet",
+    text: "lead, proprietate, vizionare si contract in acelasi ritm",
+  },
+  {
+    icon: Sparkles,
+    title: "AI explicabil",
+    text: "scor, potriviri si urmatorul pas in context",
+  },
+  {
+    icon: RadioTower,
+    title: "Distributie conectata",
+    text: "portaluri, website public, TikTok si Meta",
+  },
+  {
+    icon: BarChart3,
+    title: "Control managerial",
+    text: "KPI-uri, rapoarte si responsabilitati vizibile",
+  },
+];
+
+const finalConsoleNodes = [
+  { label: "Lead-uri", icon: Search, className: "lux-final-console__node--leads" },
+  { label: "Proprietati", icon: Building2, className: "lux-final-console__node--properties" },
+  { label: "Matching", icon: Bot, className: "lux-final-console__node--matching" },
+  { label: "Echipa", icon: Users, className: "lux-final-console__node--team" },
+  { label: "Portaluri", icon: RadioTower, className: "lux-final-console__node--portals" },
+  { label: "Task-uri", icon: ClipboardCheck, className: "lux-final-console__node--tasks" },
+  { label: "Contracte", icon: FileText, className: "lux-final-console__node--contracts" },
+  { label: "Rapoarte", icon: BarChart3, className: "lux-final-console__node--reports" },
+];
+
 const flowSteps = [
   { icon: Search, title: "Lead captat", text: "intentia intra direct in pipeline" },
   { icon: Sparkles, title: "Scor AI", text: "prioritatea devine vizibila" },
@@ -993,16 +1034,25 @@ export default function HomePage() {
                 sunt conectate in acelasi sistem.
               </p>
               <div className="lux-final__metrics" aria-label="Beneficii demo">
-                {[
-                  ["1", "workspace live"],
-                  ["AI", "decizii explicate"],
-                  ["Go", "publicare conectata"],
-                ].map(([value, label]) => (
+                {finalDemoMetrics.map(({ value, label }) => (
                   <div key={label}>
                     <strong>{value}</strong>
                     <span>{label}</span>
                   </div>
                 ))}
+              </div>
+              <div className="lux-final-proof-grid" aria-label="Ce vede clientul in demo">
+                {finalProofHighlights.map((proof) => {
+                  const ProofIcon = proof.icon;
+
+                  return (
+                    <div key={proof.title} className="lux-final-proof">
+                      <ProofIcon className="h-4 w-4" />
+                      <strong>{proof.title}</strong>
+                      <span>{proof.text}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="lux-final-card">
@@ -1013,23 +1063,24 @@ export default function HomePage() {
               </div>
               <h3>CRM, AI, website public si operatiuni intr-un singur loc.</h3>
               <div className="lux-final-console" aria-hidden="true">
+                <span className="lux-final-console__link lux-final-console__link--one" />
+                <span className="lux-final-console__link lux-final-console__link--two" />
+                <span className="lux-final-console__link lux-final-console__link--three" />
                 <div className="lux-final-console__core">
                   <Sparkles className="h-5 w-5" />
                   <strong>ImoDeus.ai</strong>
                   <span>operating layer</span>
                 </div>
-                <div className="lux-final-console__node lux-final-console__node--crm">
-                  <Layers3 className="h-4 w-4" />
-                  CRM
-                </div>
-                <div className="lux-final-console__node lux-final-console__node--ai">
-                  <Bot className="h-4 w-4" />
-                  AI
-                </div>
-                <div className="lux-final-console__node lux-final-console__node--web">
-                  <Globe2 className="h-4 w-4" />
-                  Website
-                </div>
+                {finalConsoleNodes.map((node) => {
+                  const NodeIcon = node.icon;
+
+                  return (
+                    <div key={node.label} className={`lux-final-console__node ${node.className}`}>
+                      <NodeIcon className="h-4 w-4" />
+                      {node.label}
+                    </div>
+                  );
+                })}
               </div>
               <div className="lux-final-checks">
                 {["Demo separat de date reale", "Toate modulele conectate", "Flux clar pentru decizie"].map((item) => (
