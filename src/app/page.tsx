@@ -161,6 +161,7 @@ const moduleScreens = [
     image: "/landing/screenshots/properties-list.png",
     alt: "Portofoliu proprietati afisat in carduri cu imagini si pret",
     icon: Layers3,
+    signal: "stoc activ",
   },
   {
     eyebrow: "Cumparatori",
@@ -168,6 +169,7 @@ const moduleScreens = [
     image: "/landing/screenshots/buyers.png",
     alt: "Lista de cumparatori cu buget, scor AI si filtre",
     icon: Users,
+    signal: "prioritate vizibila",
   },
   {
     eyebrow: "AI assistant",
@@ -175,6 +177,7 @@ const moduleScreens = [
     image: "/landing/screenshots/ai-assistant.png",
     alt: "Asistent AI cu sugestii si input de chat",
     icon: MessageSquareText,
+    signal: "raspuns in context",
   },
   {
     eyebrow: "Matching",
@@ -182,6 +185,7 @@ const moduleScreens = [
     image: "/landing/screenshots/ai-matching-results.png",
     alt: "Rezultate de potrivire AI intre cumparator si proprietati",
     icon: Sparkles,
+    signal: "scor argumentat",
   },
   {
     eyebrow: "Agenda",
@@ -189,6 +193,7 @@ const moduleScreens = [
     image: "/landing/screenshots/tasks.png",
     alt: "Pagina de task-uri cu KPI-uri si moduri de vizualizare",
     icon: CalendarCheck2,
+    signal: "zi clara",
   },
   {
     eyebrow: "Documente",
@@ -196,6 +201,7 @@ const moduleScreens = [
     image: "/landing/screenshots/contracts.png",
     alt: "Modul de contracte si template-uri",
     icon: ClipboardCheck,
+    signal: "documente pregatite",
   },
   {
     eyebrow: "Echipa",
@@ -203,6 +209,7 @@ const moduleScreens = [
     image: "/landing/screenshots/agents.png",
     alt: "Pagina cu echipa agentiei si carduri pentru agenti",
     icon: Crown,
+    signal: "roluri controlate",
   },
   {
     eyebrow: "Website public",
@@ -210,6 +217,7 @@ const moduleScreens = [
     image: "/landing/screenshots/custom-domain.png",
     alt: "Configurare domeniu custom pentru website-ul agentiei",
     icon: RadioTower,
+    signal: "go live",
   },
 ];
 
@@ -592,14 +600,24 @@ export default function HomePage() {
                 const Icon = module.icon;
                 return (
                   <article key={module.title} className="lux-module">
+                    <span className="lux-module__shine" />
                     <div className="lux-module__top">
                       <div>
-                        <span>{module.eyebrow}</span>
+                        <span className="lux-module__eyebrow">{module.eyebrow}</span>
                         <h3>{module.title}</h3>
                       </div>
-                      <Icon className="h-5 w-5" />
+                      <div className="lux-module__icon">
+                        <Icon className="h-5 w-5" />
+                      </div>
                     </div>
-                    <ScreenFrame image={module.image} alt={module.alt} label={module.eyebrow} className="lux-screen--module" />
+                    <div className="lux-module__signal">
+                      <span />
+                      {module.signal}
+                    </div>
+                    <div className="lux-module__stage">
+                      <span className="lux-module__plate" />
+                      <ScreenFrame image={module.image} alt={module.alt} label={module.eyebrow} className="lux-screen--module" />
+                    </div>
                   </article>
                 );
               })}
