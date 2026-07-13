@@ -8,7 +8,6 @@ import {
   Bot,
   Building2,
   CalendarCheck2,
-  CheckCircle2,
   ClipboardCheck,
   Crown,
   FileText,
@@ -1061,7 +1060,10 @@ export default function HomePage() {
                 <p>Experienta completa</p>
                 <span>demo live</span>
               </div>
-              <h3>CRM, AI, website public si operatiuni intr-un singur loc.</h3>
+              <h3>
+                <span>CRM, AI, website public si</span>
+                <span>operatiuni intr-un singur loc.</span>
+              </h3>
               <div className="lux-final-console" aria-hidden="true">
                 <span className="lux-final-console__link lux-final-console__link--one" />
                 <span className="lux-final-console__link lux-final-console__link--two" />
@@ -1081,14 +1083,6 @@ export default function HomePage() {
                     </div>
                   );
                 })}
-              </div>
-              <div className="lux-final-checks">
-                {["Demo separat de date reale", "Toate modulele conectate", "Flux clar pentru decizie"].map((item) => (
-                  <div key={item} className="lux-final-check">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>{item}</span>
-                  </div>
-                ))}
               </div>
               <div className="lux-final-actions">
                 <DemoButton className="w-full justify-center" label="Intra in demo acum" />

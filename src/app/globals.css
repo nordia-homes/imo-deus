@@ -10034,11 +10034,15 @@
 .lux-final-card h3 {
   margin-top: 1rem;
   color: #ffffff;
-  max-width: 30rem;
-  font-size: 1.84rem;
+  max-width: 100%;
+  font-size: 1.58rem;
   font-weight: 900;
-  line-height: 1.08;
-  text-wrap: balance;
+  line-height: 1.04;
+}
+
+.lux-final-card h3 span {
+  display: block;
+  white-space: nowrap;
 }
 
 .lux-final-console {
@@ -10105,9 +10109,9 @@
   position: relative;
   z-index: 2;
   display: grid;
-  width: min(12rem, 48%);
-  min-height: 6.2rem;
-  gap: 0.3rem;
+  width: min(9.9rem, 38%);
+  min-height: 5.25rem;
+  gap: 0.22rem;
   place-items: center;
   border: 1px solid rgba(94, 234, 212, 0.34);
   border-radius: 8px;
@@ -10120,15 +10124,20 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+.lux-final-console__core svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .lux-final-console__core strong {
   color: #ffffff;
-  font-size: 1.15rem;
+  font-size: 0.98rem;
   line-height: 1;
 }
 
 .lux-final-console__core span {
   color: rgba(203, 213, 225, 0.78);
-  font-size: 0.74rem;
+  font-size: 0.64rem;
   font-weight: 850;
 }
 
@@ -10180,7 +10189,7 @@
 
 .lux-final-console__node--portals {
   top: 50%;
-  right: 1.15rem;
+  right: 0.95rem;
   transform: translateY(-50%);
 }
 
@@ -10200,37 +10209,10 @@
   bottom: 1.12rem;
 }
 
-.lux-final-checks {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.68rem;
-  margin-top: 1.08rem;
-}
-
-.lux-final-check {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.48rem;
-  border: 1px solid rgba(148, 163, 184, 0.17);
-  border-radius: 999px;
-  background: rgba(2, 8, 23, 0.34);
-  padding: 0.6rem 0.7rem;
-  color: rgba(226, 232, 240, 0.86);
-  font-size: 0.72rem;
-  font-weight: 850;
-  line-height: 1.22;
-}
-
-.lux-final-check svg {
-  flex: 0 0 auto;
-  color: #5eead4;
-}
-
 .lux-final-actions {
   display: grid;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 1.12rem;
 }
 
 .lux-final-secondary {
@@ -10869,6 +10851,10 @@
     line-height: 1.08;
   }
 
+  .lux-final-card h3 span {
+    white-space: normal;
+  }
+
   .lux-final-console {
     min-height: 16.8rem;
   }
@@ -10888,10 +10874,6 @@
   .lux-final-console__node svg {
     width: 0.82rem;
     height: 0.82rem;
-  }
-
-  .lux-final-checks {
-    grid-template-columns: 1fr;
   }
 
   .lux-screen__bar {
