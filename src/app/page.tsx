@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -36,6 +37,12 @@ type ProductScreen = {
   stat: string;
   statLabel: string;
   signals: string[];
+};
+
+type ProductConversionCard = {
+  metric: string;
+  title: string;
+  text: string;
 };
 
 type Capability = {
@@ -120,9 +127,64 @@ const productScreens: ProductScreen[] = [
     signals: ["KPI-uri live", "actiuni rapide", "ritm operational"],
   },
   {
-    eyebrow: "Lead intelligence",
-    title: "Cumparatori cu context, scor si urmator pas.",
-    text: "Profilul, bugetul, potrivirile si explicatia AI stau impreuna, ca agentul sa sune cu un motiv clar, nu cu o presupunere.",
+    eyebrow: "Anunturi Proprietari",
+    title: "Oportunitati noi direct din piata proprietarilor.",
+    text: "Anunturile de la proprietari sunt filtrate, sortate si pregatite pentru import rapid, astfel incat agentia reactioneaza inaintea concurentei.",
+    image: "/landing/screenshots/premium-owner-listings.png",
+    alt: "Anunturi de la proprietari cu filtre si carduri de import",
+    icon: Building2,
+    stat: "3000",
+    statLabel: "anunturi scanabile",
+    signals: ["owner listings", "filtre rapide", "import in CRM"],
+  },
+  {
+    eyebrow: "Apeluri AI",
+    title: "Outreach AI controlat pentru proprietari.",
+    text: "Comisionul, limitele de negociere si istoricul apelurilor stau intr-un singur loc, cu setari clare pentru fiecare agentie.",
+    image: "/landing/screenshots/premium-ai-calls.png",
+    alt: "Setari si istoric pentru apeluri AI catre proprietari",
+    icon: Bot,
+    stat: "AI",
+    statLabel: "outreach automat",
+    signals: ["comision controlat", "istoric apeluri", "setari agentie"],
+  },
+  {
+    eyebrow: "Proprietati",
+    title: "Portofoliul devine un centru de selectie rapid.",
+    text: "Stoc activ, status comercial, imagini, pret si actiuni rapide apar intr-o vedere construita pentru scanare si decizie.",
+    image: "/landing/screenshots/properties-list.png",
+    alt: "Portofoliu proprietati afisat in carduri cu imagini si pret",
+    icon: Layers3,
+    stat: "40",
+    statLabel: "proprietati active",
+    signals: ["stoc activ", "imagini si pret", "actiuni rapide"],
+  },
+  {
+    eyebrow: "Publicare portale",
+    title: "Publicarea pleaca din acelasi sistem operational.",
+    text: "Portalurile, harta, website-ul si promovarea sunt conectate la proprietatea reala, nu la un export separat.",
+    image: "/landing/screenshots/map-publishing.png",
+    alt: "Publicare proprietate in portaluri si promovare cu harta",
+    icon: Globe2,
+    stat: "Go live",
+    statLabel: "din CRM",
+    signals: ["portaluri", "harta live", "promovare"],
+  },
+  {
+    eyebrow: "Cumparatori",
+    title: "Pipeline activ pentru lead-uri prioritizate.",
+    text: "Bugetul, zona, vechimea lead-ului si scorul AI sunt vizibile imediat, ca echipa sa stie pe cine suna prima data.",
+    image: "/landing/screenshots/buyers.png",
+    alt: "Lista de cumparatori cu buget, scor AI si filtre",
+    icon: Users,
+    stat: "Pipeline",
+    statLabel: "prioritate vizibila",
+    signals: ["buget", "vechime lead", "scor AI"],
+  },
+  {
+    eyebrow: "Detalii pagina cumparatori",
+    title: "Profil de cumparator cu context si urmator pas.",
+    text: "Profilul, bugetul, potrivirile si explicatia AI stau impreuna, ca agentul sa sune cu un motiv clar.",
     image: "/landing/screenshots/lead-matching-detail.png",
     alt: "Detaliu lead cu scor AI si proprietati recomandate",
     icon: Users,
@@ -131,95 +193,408 @@ const productScreens: ProductScreen[] = [
     signals: ["scor explicabil", "potriviri AI", "urmatorul pas"],
   },
   {
-    eyebrow: "Property hub",
-    title: "Fisa proprietatii devine centru de vanzare.",
-    text: "Galerie, pret, agent dedicat, proprietar, vizionari si promovare sunt legate de aceeasi proprietate, fara context switching.",
-    image: "/landing/screenshots/property-detail-overview.png",
-    alt: "Fisa unei proprietati cu galerie si panou de actiuni",
-    icon: Building2,
-    stat: "360",
-    statLabel: "vedere completa",
-    signals: ["media si pret", "owner view", "vizionari"],
-  },
-  {
-    eyebrow: "Distribution",
-    title: "Publicare si promovare din acelasi sistem.",
-    text: "Website public, harta, portaluri si promovare sociala sunt conectate la datele operationale ale agentiei.",
-    image: "/landing/screenshots/map-publishing.png",
-    alt: "Publicare proprietate in portaluri si promovare cu harta",
-    icon: Globe2,
-    stat: "Go live",
-    statLabel: "din CRM",
-    signals: ["portaluri", "harta live", "promovare"],
-  },
-];
-
-const moduleScreens = [
-  {
-    eyebrow: "Portofoliu",
-    title: "Lista de proprietati",
-    image: "/landing/screenshots/properties-list.png",
-    alt: "Portofoliu proprietati afisat in carduri cu imagini si pret",
-    icon: Layers3,
-    signal: "stoc activ",
-  },
-  {
-    eyebrow: "Cumparatori",
-    title: "Pipeline activ",
-    image: "/landing/screenshots/buyers.png",
-    alt: "Lista de cumparatori cu buget, scor AI si filtre",
-    icon: Users,
-    signal: "prioritate vizibila",
-  },
-  {
-    eyebrow: "AI assistant",
-    title: "Asistent contextual",
-    image: "/landing/screenshots/ai-assistant.png",
-    alt: "Asistent AI cu sugestii si input de chat",
-    icon: MessageSquareText,
-    signal: "raspuns in context",
-  },
-  {
-    eyebrow: "Matching",
-    title: "Rezultate explicabile",
+    eyebrow: "Potrivire AI",
+    title: "Rezultate AI explicabile, nu doar recomandari.",
+    text: "Agentul vede proprietatile potrivite, motivele comerciale si scorurile care transforma matching-ul intr-o conversatie clara.",
     image: "/landing/screenshots/ai-matching-results.png",
     alt: "Rezultate de potrivire AI intre cumparator si proprietati",
     icon: Sparkles,
-    signal: "scor argumentat",
+    stat: "100",
+    statLabel: "potrivire maxima",
+    signals: ["rezultate AI", "motive clare", "comparatie rapida"],
   },
   {
-    eyebrow: "Agenda",
-    title: "Task-uri si follow-up",
-    image: "/landing/screenshots/tasks.png",
-    alt: "Pagina de task-uri cu KPI-uri si moduri de vizualizare",
+    eyebrow: "Vizionari",
+    title: "Vizionarile raman legate de proprietate si client.",
+    text: "Programarile, agentul dedicat si istoricul comercial raman in contextul proprietatii, fara pierdere de informatie intre tab-uri.",
+    image: "/landing/screenshots/property-detail-overview.png",
+    alt: "Fisa unei proprietati cu galerie, agent si vizionari programate",
     icon: CalendarCheck2,
-    signal: "zi clara",
+    stat: "360",
+    statLabel: "vedere completa",
+    signals: ["programari", "agent dedicat", "follow-up"],
   },
   {
-    eyebrow: "Documente",
-    title: "Contracte si template-uri",
+    eyebrow: "Contracte",
+    title: "Contracte si template-uri pregatite in CRM.",
+    text: "Documentele editabile, template-urile si importurile raman in aceeasi zona operationala in care echipa inchide tranzactiile.",
     image: "/landing/screenshots/contracts.png",
     alt: "Modul de contracte si template-uri",
     icon: ClipboardCheck,
-    signal: "documente pregatite",
+    stat: "Docs",
+    statLabel: "context pastrat",
+    signals: ["template-uri", "import Word", "export PDF"],
   },
   {
-    eyebrow: "Echipa",
-    title: "Agenti si roluri",
+    eyebrow: "TikTok Studio",
+    title: "Video tururi generate si pregatite pentru publicare.",
+    text: "Media, storyboard AI, hook, voce, subtitrari si publicare TikTok intr-un singur flux creat pentru agentii premium.",
+    image: "/landing/screenshots/premium-tiktok-studio.png",
+    alt: "TikTok Studio cu AI Video Editor, storyboard si control creativ",
+    icon: Sparkles,
+    stat: "Video",
+    statLabel: "tururi AI",
+    signals: ["media studio", "storyboard AI", "publicare TikTok"],
+  },
+  {
+    eyebrow: "Meta Advertising",
+    title: "Campanii Meta conectate la proprietatile reale.",
+    text: "Business Manager, audiente, buget si performanta sunt urmarite direct pe proprietati, fara fisiere si context pierdut.",
+    image: "/landing/screenshots/premium-meta-advertising.png",
+    alt: "Promovare Meta pentru proprietati cu campanii si metrici",
+    icon: LineChart,
+    stat: "Ads",
+    statLabel: "in CRM",
+    signals: ["Business Manager", "Housing", "performanta"],
+  },
+  {
+    eyebrow: "Asistent AI",
+    title: "Asistent contextual pentru munca reala a agentiei.",
+    text: "Lead-uri, negocieri, proprietati si urmatoarele actiuni pot fi gestionate conversational, direct in produs.",
+    image: "/landing/screenshots/ai-assistant.png",
+    alt: "Asistent AI cu sugestii si input de chat",
+    icon: MessageSquareText,
+    stat: "AI",
+    statLabel: "raspuns in context",
+    signals: ["chat contextual", "sugestii utile", "actiuni rapide"],
+  },
+  {
+    eyebrow: "Task-uri",
+    title: "Ziua de lucru devine clara si actionabila.",
+    text: "Task-urile, follow-up-ul si calendarul scot agentia din haosul listelor separate si pun ritmul intr-un singur ecran.",
+    image: "/landing/screenshots/tasks.png",
+    alt: "Pagina de task-uri cu KPI-uri si moduri de vizualizare",
+    icon: CalendarCheck2,
+    stat: "44",
+    statLabel: "task-uri vizibile",
+    signals: ["panou", "lista", "calendar"],
+  },
+  {
+    eyebrow: "Agenti",
+    title: "Echipa si rolurile raman sub control.",
+    text: "Managementul vede agentii, rolurile, statusul si accesul intr-o structura clara, potrivita pentru agentii in crestere.",
     image: "/landing/screenshots/agents.png",
     alt: "Pagina cu echipa agentiei si carduri pentru agenti",
     icon: Crown,
-    signal: "roluri controlate",
+    stat: "Roluri",
+    statLabel: "controlate",
+    signals: ["admin", "agenti", "portofoliu"],
   },
   {
-    eyebrow: "Website public",
-    title: "Domeniu custom",
+    eyebrow: "Domeniu Custom",
+    title: "Website-ul public primeste infrastructura proprie.",
+    text: "Domeniul agentiei, statusul DNS si instructiunile de conectare sunt integrate in acelasi produs, nu intr-un proces separat.",
     image: "/landing/screenshots/custom-domain.png",
     alt: "Configurare domeniu custom pentru website-ul agentiei",
     icon: RadioTower,
-    signal: "go live",
+    stat: "Web",
+    statLabel: "go live",
+    signals: ["DNS", "SSL", "website public"],
+  },
+  {
+    eyebrow: "Rapoarte",
+    title: "Managementul vede miscarea agentiei, nu doar cifre.",
+    text: "Rapoartele transforma lead-urile, proprietatile, vizionarile si conversiile in semnale usor de citit pentru decizii rapide.",
+    image: "/landing/screenshots/reports.png",
+    alt: "Rapoarte cu KPI-uri si evolutia performantei agentiei",
+    icon: BarChart3,
+    stat: "Live",
+    statLabel: "management",
+    signals: ["KPI-uri", "conversii", "pipeline"],
   },
 ];
+
+const productConversionCards: Record<string, ProductConversionCard[]> = {
+  "Control room": [
+    {
+      metric: "Decizie in 10 secunde",
+      title: "Managementul intelege instant pulsul agentiei.",
+      text: "Comisioane, lead-uri si conversii apar in acelasi cadru, astfel incat demo-ul se simte ca un centru de comanda real.",
+    },
+    {
+      metric: "Actiuni rapide",
+      title: "Agentul nu mai pleaca din dashboard.",
+      text: "Cumparator, proprietate, task si vizionare pornesc direct din primul ecran, cu mai putine click-uri si mai mult ritm.",
+    },
+    {
+      metric: "Proof de produs",
+      title: "Arata maturitate operationala din prima secunda.",
+      text: "Primul ecran convinge ca platforma nu este doar CRM, ci sistemul zilnic al agentiei.",
+    },
+  ],
+  "Anunturi Proprietari": [
+    {
+      metric: "Sursa noua",
+      title: "Oportunitatile de la proprietari ajung inaintea concurentei.",
+      text: "Agentia vede rapid anunturile relevante si poate transforma piata publica intr-un pipeline de prospectare.",
+    },
+    {
+      metric: "Import asistat",
+      title: "Din anunt in CRM fara copiere manuala.",
+      text: "Cardurile de import reduc frictiunea si fac trecerea de la oportunitate la actiune mult mai naturala.",
+    },
+    {
+      metric: "Mai multa acoperire",
+      title: "Conversatia comerciala incepe cu context.",
+      text: "Filtrele si sursele vizibile ajuta agentul sa aleaga proprietarii cu cel mai bun potential.",
+    },
+  ],
+  "Apeluri AI": [
+    {
+      metric: "Outreach scalabil",
+      title: "AI-ul contacteaza proprietari dupa regulile agentiei.",
+      text: "Comisionul, intervalul orar si limitele sunt setate clar, asa ca automatizarea ramane sub control.",
+    },
+    {
+      metric: "Negociere sigura",
+      title: "Fiecare apel pastreaza intentia comerciala corecta.",
+      text: "Agentia poate folosi AI fara sa piarda disciplina de vanzare sau standardul conversatiei.",
+    },
+    {
+      metric: "Istoric verificabil",
+      title: "Rezultatele raman vizibile pentru echipa.",
+      text: "Managementul vede ce s-a incercat, ce a mers si unde merita insistat mai departe.",
+    },
+  ],
+  Proprietati: [
+    {
+      metric: "Portofoliu scanabil",
+      title: "Stocul devine usor de prezentat si de decis.",
+      text: "Imaginile, pretul si statusul comercial sunt suficient de clare incat echipa sa gaseasca rapid urmatorul pas.",
+    },
+    {
+      metric: "Actiune din card",
+      title: "Fiecare proprietate are context si comenzi la indemana.",
+      text: "Agentul poate intra direct in detalii, publicare sau matching fara sa piarda firul.",
+    },
+    {
+      metric: "Imagine premium",
+      title: "Portofoliul arata ca un produs de top.",
+      text: "Prezentarea vizuala creste increderea clientului si transmite ca agentia lucreaza organizat.",
+    },
+  ],
+  "Publicare portale": [
+    {
+      metric: "Go live rapid",
+      title: "Publicarea nu mai este un proces separat.",
+      text: "Portalurile, harta si website-ul raman legate de aceeasi proprietate si aceleasi date operationale.",
+    },
+    {
+      metric: "Mai putine erori",
+      title: "Datele pleaca din sursa corecta.",
+      text: "Cand promovarea este conectata la CRM, echipa evita fisierele paralele si modificarile pierdute.",
+    },
+    {
+      metric: "Vizibilitate extinsa",
+      title: "Agentia poate arata distributie, nu doar administrare.",
+      text: "In demo, publicarea devine un argument puternic pentru agentii care vor vanzare, nu doar evidenta.",
+    },
+  ],
+  Cumparatori: [
+    {
+      metric: "Prioritate reala",
+      title: "Echipa stie pe cine suna prima data.",
+      text: "Bugetul, zona, vechimea si scorul AI scot lead-urile bune in fata.",
+    },
+    {
+      metric: "Pipeline curat",
+      title: "Lead-urile nu mai raman simple randuri in tabel.",
+      text: "Fiecare cumparator capata status, context si o directie clara de lucru.",
+    },
+    {
+      metric: "Conversie mai buna",
+      title: "Agentul intra in apel cu un motiv concret.",
+      text: "Cand informatia e vizibila, follow-up-ul suna mai profesionist si mai relevant.",
+    },
+  ],
+  "Detalii pagina cumparatori": [
+    {
+      metric: "Context complet",
+      title: "Profilul cumparatorului devine briefing comercial.",
+      text: "Bugetul, scorul, istoricul si proprietatile potrivite stau impreuna, pregatite pentru apel.",
+    },
+    {
+      metric: "Matching explicat",
+      title: "AI-ul arata de ce o proprietate se potriveste.",
+      text: "Agentul nu primeste doar o lista, ci un argument pe care il poate folosi in conversatie.",
+    },
+    {
+      metric: "Next step clar",
+      title: "Urmatoarea actiune devine evidenta.",
+      text: "Pagina reduce ezitarea si transforma analiza intr-un pas comercial concret.",
+    },
+  ],
+  "Potrivire AI": [
+    {
+      metric: "Lista scurta",
+      title: "Matching-ul reduce zgomotul din portofoliu.",
+      text: "Agentul vede optiunile cu cel mai bun scor si poate prezenta rapid proprietatile relevante.",
+    },
+    {
+      metric: "Explicatii vandabile",
+      title: "Fiecare recomandare vine cu motiv.",
+      text: "Argumentele AI fac discutia cu clientul mai convingatoare si mai usor de sustinut.",
+    },
+    {
+      metric: "Timp castigat",
+      title: "Mai putina cautare manuala, mai multa vanzare.",
+      text: "Echipa petrece mai putin timp filtrand si mai mult timp ducand clientul spre vizionare.",
+    },
+  ],
+  Vizionari: [
+    {
+      metric: "Programari in context",
+      title: "Vizionarile raman legate de proprietatea potrivita.",
+      text: "Agentul vede galeria, pretul, proprietarul si programarile fara sa sara intre ecrane.",
+    },
+    {
+      metric: "Follow-up vizibil",
+      title: "Nicio vizionare nu ramane fara urmator pas.",
+      text: "Contextul complet ajuta echipa sa inchida bucla dupa fiecare intalnire.",
+    },
+    {
+      metric: "Experienta premium",
+      title: "Clientul simte ca agentia are control.",
+      text: "O fisa coerenta face produsul mai usor de demonstrat si agentia mai usor de ales.",
+    },
+  ],
+  Contracte: [
+    {
+      metric: "Documente pregatite",
+      title: "Contractele nu mai sunt rupte de fluxul de vanzare.",
+      text: "Template-urile si documentele raman in acelasi workspace cu lead-urile si proprietatile.",
+    },
+    {
+      metric: "Timp scurtat",
+      title: "Echipa ajunge mai repede de la acord la document.",
+      text: "Cand totul este centralizat, inchiderea tranzactiei pare mai fluida si mai profesionista.",
+    },
+    {
+      metric: "Control juridic",
+      title: "Procesul devine predictibil pentru management.",
+      text: "Statusurile si importurile reduc haosul documentelor trimise prin canale separate.",
+    },
+  ],
+  "TikTok Studio": [
+    {
+      metric: "Video in flux",
+      title: "Tururile video pornesc din proprietatea reala.",
+      text: "Media, storyboard-ul, vocea si subtitrarile se leaga intr-un proces creativ usor de vandut.",
+    },
+    {
+      metric: "Continut premium",
+      title: "Agentia poate produce mai mult fara echipa separata.",
+      text: "AI-ul ajuta la ritm, hook si structura, astfel incat promovarea arata mai moderna.",
+    },
+    {
+      metric: "Publicare rapida",
+      title: "Continutul pleaca spre TikTok din acelasi sistem.",
+      text: "Demo-ul arata clar ca ImoDeus nu se opreste la CRM, ci atinge marketingul real.",
+    },
+  ],
+  "Meta Advertising": [
+    {
+      metric: "Campanii pe proprietate",
+      title: "Promovarea Meta ramane conectata la stoc.",
+      text: "Bugetul, lead-urile si performanta se citesc langa proprietatea care genereaza interes.",
+    },
+    {
+      metric: "Control buget",
+      title: "Managementul vede unde se duc banii.",
+      text: "Metricile de spend, click-uri si cost pe lead fac conversatia comerciala mai concreta.",
+    },
+    {
+      metric: "Argument premium",
+      title: "Agentia vinde distributie, nu doar listare.",
+      text: "Integrarea Meta arata ca produsul sustine achizitia de cerere, nu doar administrarea ei.",
+    },
+  ],
+  "Asistent AI": [
+    {
+      metric: "Raspuns in context",
+      title: "AI-ul intelege munca din CRM.",
+      text: "Sugestiile sunt legate de lead-uri, proprietati si negocieri, nu de un chat izolat.",
+    },
+    {
+      metric: "Mai putina frictiune",
+      title: "Agentul primeste ajutor exact unde lucreaza.",
+      text: "Intrebarile rapide si actiunile sugerate fac produsul mai usor de adoptat.",
+    },
+    {
+      metric: "Scalare echipa",
+      title: "Noii agenti invata mai repede ritmul agentiei.",
+      text: "Un asistent contextual transforma regulile operationale in ghidaj zilnic.",
+    },
+  ],
+  "Task-uri": [
+    {
+      metric: "Zi clara",
+      title: "Agentia vede ce trebuie facut astazi.",
+      text: "Panoul de task-uri transforma follow-up-ul intr-o rutina vizibila, nu intr-o lista uitata.",
+    },
+    {
+      metric: "Prioritati vizibile",
+      title: "Urgentul si importantul ies la suprafata.",
+      text: "KPI-urile si modurile de vizualizare ajuta echipa sa pastreze ritmul.",
+    },
+    {
+      metric: "Mai putine pierderi",
+      title: "Lead-urile nu mai mor din lipsa de follow-up.",
+      text: "Un sistem clar de task-uri sustine conversia dupa fiecare interactiune.",
+    },
+  ],
+  Agenti: [
+    {
+      metric: "Roluri clare",
+      title: "Echipa creste fara sa piarda controlul.",
+      text: "Adminii, agentii si responsabilitatile sunt vizibile intr-un cadru curat.",
+    },
+    {
+      metric: "Onboarding rapid",
+      title: "Noii agenti intra mai repede in sistem.",
+      text: "Cardurile de echipa si accesul controlat fac produsul mai usor de introdus in agentii mari.",
+    },
+    {
+      metric: "Management scalabil",
+      title: "Operatiunile nu depind de o singura persoana.",
+      text: "Structura de roluri transmite maturitate si incredere in demo.",
+    },
+  ],
+  "Domeniu Custom": [
+    {
+      metric: "Brand propriu",
+      title: "Website-ul agentiei sta pe domeniul ei.",
+      text: "Produsul sustine prezenta publica a agentiei, nu doar partea interna.",
+    },
+    {
+      metric: "Go live ghidat",
+      title: "DNS, status si instructiuni intr-un singur loc.",
+      text: "Procesul tehnic devine usor de urmarit chiar si pentru echipe non-tehnice.",
+    },
+    {
+      metric: "Incredere publica",
+      title: "Clientul vede o agentie cu infrastructura serioasa.",
+      text: "Domeniul custom transforma CRM-ul intr-o platforma completa pentru imagine si vanzare.",
+    },
+  ],
+  Rapoarte: [
+    {
+      metric: "Cifre actionabile",
+      title: "Rapoartele arata ce trebuie schimbat.",
+      text: "Lead-uri, proprietati, vizionari si conversii devin semnale de management, nu doar statistici.",
+    },
+    {
+      metric: "Performanta echipa",
+      title: "Managementul vede unde se castiga ritm.",
+      text: "Datele ajuta la coaching, prioritizare si decizii rapide pe portofoliu.",
+    },
+    {
+      metric: "Demo convingator",
+      title: "Produsul pare pregatit pentru agentii ambitioase.",
+      text: "Un layer de raportare live transmite ca ImoDeus poate deveni sistemul principal al agentiei.",
+    },
+  ],
+};
 
 function DemoButton({
   className = "",
@@ -245,6 +620,8 @@ function ScreenFrame({
   priority = false,
   direct = false,
   className = "",
+  width = 1900,
+  height = 912,
 }: {
   image: string;
   alt: string;
@@ -252,6 +629,8 @@ function ScreenFrame({
   priority?: boolean;
   direct?: boolean;
   className?: string;
+  width?: number;
+  height?: number;
 }) {
   const eager = priority || image.endsWith("/dashboard.png");
 
@@ -269,8 +648,8 @@ function ScreenFrame({
         <Image
           src={image}
           alt={alt}
-          width={1900}
-          height={912}
+          width={width}
+          height={height}
           priority={priority}
           unoptimized={direct}
           loading={eager ? "eager" : "lazy"}
@@ -527,98 +906,72 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div className="mt-12 space-y-10">
+            <div className="lux-product-tour mt-12">
               {productScreens.map((screen, index) => {
                 const Icon = screen.icon;
+                const conversionCards = productConversionCards[screen.eyebrow] ?? [];
                 return (
-                  <article key={screen.title} className={`lux-feature ${index % 2 ? "lux-feature--reverse" : ""}`}>
-                    <span className="lux-feature__index">0{index + 1}</span>
-                    <div className="lux-feature__copy">
-                      <div className="lux-feature__meta">
-                        <div className="lux-pill lux-pill--mini">
-                          <Icon className="h-4 w-4" />
-                          {screen.eyebrow}
+                  <Fragment key={screen.title}>
+                    <article className={`lux-feature ${index % 2 ? "lux-feature--reverse" : ""}`}>
+                      <span className="lux-feature__index">{String(index + 1).padStart(2, "0")}</span>
+                      <div className="lux-feature__copy">
+                        <div className="lux-feature__meta">
+                          <div className="lux-pill lux-pill--mini">
+                            <Icon className="h-4 w-4" />
+                            {screen.eyebrow}
+                          </div>
+                          <span>flow {index + 1}</span>
                         </div>
-                        <span>flow {index + 1}</span>
+                        <h3>{screen.title}</h3>
+                        <p>{screen.text}</p>
+                        <div className="lux-feature__signals">
+                          {screen.signals.map((signal) => (
+                            <span key={signal}>{signal}</span>
+                          ))}
+                        </div>
+                        <div className="lux-feature__stat">
+                          <strong>{screen.stat}</strong>
+                          <span>{screen.statLabel}</span>
+                        </div>
                       </div>
-                      <h3>{screen.title}</h3>
-                      <p>{screen.text}</p>
-                      <div className="lux-feature__signals">
-                        {screen.signals.map((signal) => (
-                          <span key={signal}>{signal}</span>
-                        ))}
+                      <div className="lux-feature__media">
+                        <span className="lux-feature__mediaPlate" />
+                        <ScreenFrame
+                          image={screen.image}
+                          alt={screen.alt}
+                          label={`ImoDeus.ai CRM / ${screen.eyebrow}`}
+                          className="lux-screen--feature"
+                        />
+                        <div className="lux-feature__status" aria-hidden="true">
+                          <span />
+                          Sistem conectat
+                        </div>
+                        <div className="lux-feature__rail" aria-hidden="true">
+                          <span>CRM</span>
+                          <span>AI</span>
+                          <span>Publicare</span>
+                        </div>
                       </div>
-                      <div className="lux-feature__stat">
-                        <strong>{screen.stat}</strong>
-                        <span>{screen.statLabel}</span>
-                      </div>
-                    </div>
-                    <div className="lux-feature__media">
-                      <span className="lux-feature__mediaPlate" />
-                      <ScreenFrame
-                        image={screen.image}
-                        alt={screen.alt}
-                        label={`ImoDeus.ai CRM / ${screen.eyebrow}`}
-                        className="lux-screen--feature"
-                      />
-                      <div className="lux-feature__status" aria-hidden="true">
-                        <span />
-                        Sistem conectat
-                      </div>
-                      <div className="lux-feature__rail" aria-hidden="true">
-                        <span>CRM</span>
-                        <span>AI</span>
-                        <span>Publicare</span>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+                    </article>
 
-        <section className="lux-module-section">
-          <div className="mx-auto w-full max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr)_minmax(520px,1fr)] lg:items-end">
-              <div>
-                <div className="lux-pill lux-pill--muted">
-                  <Layers3 className="h-4 w-4 text-emerald-300" />
-                  Suita completa
-                </div>
-                <h2 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white sm:text-5xl">
-                  O platforma care pare construita pentru agentii mari din prima zi.
-                </h2>
-              </div>
-              <p className="text-lg leading-8 text-slate-300">
-                Modulele sunt prezentate ca un produs matur: vizual, dens, scanabil si gata de folosit.
-              </p>
-            </div>
-
-            <div className="lux-module-grid mt-10">
-              {moduleScreens.map((module) => {
-                const Icon = module.icon;
-                return (
-                  <article key={module.title} className="lux-module">
-                    <span className="lux-module__shine" />
-                    <div className="lux-module__top">
-                      <div>
-                        <span className="lux-module__eyebrow">{module.eyebrow}</span>
-                        <h3>{module.title}</h3>
-                      </div>
-                      <div className="lux-module__icon">
-                        <Icon className="h-5 w-5" />
-                      </div>
+                    <div className="lux-conversion-grid" aria-label={`Argumente ${screen.eyebrow}`}>
+                      {conversionCards.map((card, cardIndex) => (
+                        <article key={card.title} className="lux-conversion-card">
+                          <span className="lux-conversion-card__number">{String(cardIndex + 1).padStart(2, "0")}</span>
+                          <div className="lux-conversion-card__metric">
+                            <span />
+                            {card.metric}
+                          </div>
+                          <h4>{card.title}</h4>
+                          <p>{card.text}</p>
+                          <div className="lux-conversion-card__cue">
+                            <span>Argument de vanzare</span>
+                            <ArrowRight className="h-4 w-4" />
+                          </div>
+                        </article>
+                      ))}
                     </div>
-                    <div className="lux-module__signal">
-                      <span />
-                      {module.signal}
-                    </div>
-                    <div className="lux-module__stage">
-                      <span className="lux-module__plate" />
-                      <ScreenFrame image={module.image} alt={module.alt} label={module.eyebrow} className="lux-screen--module" />
-                    </div>
-                  </article>
+                  </Fragment>
                 );
               })}
             </div>
