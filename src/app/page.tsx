@@ -626,23 +626,58 @@ export default function HomePage() {
         </section>
 
         <section className="lux-final">
-          <div className="mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.48fr)] lg:items-center lg:px-8 lg:py-24">
-            <div>
-              <div className="lux-light-pill">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+          <div className="lux-final__inner mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.48fr)] lg:items-center lg:px-8 lg:py-24">
+            <div className="lux-final__copy">
+              <div className="lux-final__pill">
+                <ShieldCheck className="h-4 w-4" />
                 Demo first
               </div>
-              <h2 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
+              <h2 className="mt-5 font-[family-name:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white sm:text-5xl">
                 Cel mai bun argument este produsul deschis in fata clientului.
               </h2>
-              <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
                 Intra intr-o agentie demo si vezi cum arata o zi de lucru cand CRM-ul, AI-ul si website-ul public
                 sunt conectate in acelasi sistem.
               </p>
+              <div className="lux-final__metrics" aria-label="Beneficii demo">
+                {[
+                  ["1", "workspace live"],
+                  ["AI", "decizii explicate"],
+                  ["Go", "publicare conectata"],
+                ].map(([value, label]) => (
+                  <div key={label}>
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="lux-final-card">
-              <p>Experienta completa</p>
+              <span className="lux-final-card__shine" />
+              <div className="lux-final-card__header">
+                <p>Experienta completa</p>
+                <span>demo live</span>
+              </div>
               <h3>CRM, AI, website public si operatiuni intr-un singur loc.</h3>
+              <div className="lux-final-console" aria-hidden="true">
+                <div className="lux-final-console__core">
+                  <Sparkles className="h-5 w-5" />
+                  <strong>ImoDeus.ai</strong>
+                  <span>operating layer</span>
+                </div>
+                <div className="lux-final-console__node lux-final-console__node--crm">
+                  <Layers3 className="h-4 w-4" />
+                  CRM
+                </div>
+                <div className="lux-final-console__node lux-final-console__node--ai">
+                  <Bot className="h-4 w-4" />
+                  AI
+                </div>
+                <div className="lux-final-console__node lux-final-console__node--web">
+                  <Globe2 className="h-4 w-4" />
+                  Website
+                </div>
+              </div>
               <div className="lux-final-checks">
                 {["Demo separat de date reale", "Toate modulele conectate", "Flux clar pentru decizie"].map((item) => (
                   <div key={item} className="lux-final-check">
@@ -651,18 +686,15 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <DemoButton className="mt-6 w-full justify-center" label="Intra in demo acum" />
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="mt-3 h-14 w-full rounded-full border-slate-200 bg-white px-7 text-base font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                <Link href="/register">
-                  Creeaza cont
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              <div className="lux-final-actions">
+                <DemoButton className="w-full justify-center" label="Intra in demo acum" />
+                <Button asChild size="lg" variant="outline" className="lux-final-secondary h-14 w-full px-7 text-base font-semibold">
+                  <Link href="/register">
+                    Creeaza cont
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
