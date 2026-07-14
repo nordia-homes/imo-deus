@@ -707,7 +707,23 @@ export default function HomePage() {
       <main className="lux-shell min-h-screen overflow-x-clip bg-[#06101d] text-white">
         <header className="lux-nav">
           <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
-            <ImoDeusTextLogo className="w-[7.75rem] brightness-0 invert sm:w-[8.75rem]" />
+            <Link href="/" aria-label="ImoDeus.ai">
+              <ImoDeusTextLogo className="w-[7.75rem] brightness-0 invert sm:w-[8.75rem]" />
+            </Link>
+            <nav className="lux-nav-menu" aria-label="Meniu prezentare">
+              <Link href="/" className="lux-nav-menu__link lux-nav-menu__link--active">
+                Platforma
+              </Link>
+              <Link href="/apeluri-ai" className="lux-nav-menu__link">
+                Apeluri AI
+              </Link>
+              <Link href="/proprietati" className="lux-nav-menu__link">
+                Proprietati
+              </Link>
+              <Link href="/portaluri-online" className="lux-nav-menu__link">
+                Portaluri Online
+              </Link>
+            </nav>
             <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 asChild
