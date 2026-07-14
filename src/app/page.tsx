@@ -720,6 +720,12 @@ export default function HomePage() {
               <Link href="/proprietati" className="lux-nav-menu__link">
                 Proprietati
               </Link>
+              <Link href="/cumparatori" className="lux-nav-menu__link">
+                Cumparatori
+              </Link>
+              <Link href="/ai-matching" className="lux-nav-menu__link">
+                AI Matching
+              </Link>
               <Link href="/portaluri-online" className="lux-nav-menu__link">
                 Portaluri Online
               </Link>

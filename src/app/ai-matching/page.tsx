@@ -5,27 +5,26 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   BadgeCheck,
-  BarChart3,
+  Bot,
   Building2,
   CalendarCheck2,
-  Camera,
-  FileText,
   Layers3,
   LineChart,
-  MapPinned,
-  Megaphone,
+  MessageSquareText,
   Play,
+  Search,
   ShieldCheck,
   Sparkles,
+  Target,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
 
 export const metadata: Metadata = {
-  title: "Modul Proprietati pentru agentii imobiliare | ImoDeus.ai",
+  title: "AI Matching pentru agentii imobiliare | ImoDeus.ai",
   description:
-    "Administreaza portofoliul, proprietarii, media, preturile, vizionarile si publicarea intr-un singur hub operational.",
+    "Potriveste potentialii cumparatori cu proprietatile relevante prin scor AI, explicatii comerciale si urmatorul pas clar pentru agent.",
 };
 
 type FeatureItem = {
@@ -35,56 +34,62 @@ type FeatureItem = {
 };
 
 const heroMetrics = [
-  { value: "360", label: "vedere pe proprietate" },
-  { value: "Live", label: "status comercial" },
-  { value: "1 hub", label: "media, pret, vizionari" },
+  { value: "100", label: "scor de potrivire" },
+  { value: "AI", label: "motiv comercial" },
+  { value: "Next", label: "urmator pas clar" },
 ];
 
-const operatingFlow: FeatureItem[] = [
+const matchingSignals = [
+  { value: "Buget", label: "compatibilitate financiara" },
+  { value: "Zona", label: "preferinte reale" },
+  { value: "Timing", label: "intentia devine actiune" },
+];
+
+const matchingFlow: FeatureItem[] = [
   {
-    icon: Layers3,
-    title: "Portofoliu ordonat",
-    text: "Stoc activ, status, pret, imagini si agent responsabil intr-o vedere usor de scanat.",
+    icon: Users,
+    title: "Citeste intentia",
+    text: "Bugetul, zona, camerele, istoricul si preferintele devin un profil comercial usor de actionat.",
   },
   {
-    icon: Camera,
-    title: "Media si pret in context",
-    text: "Galeria, evaluarea, pretul si promovarea stau pe aceeasi fisa, nu prin tab-uri rupte.",
+    icon: Building2,
+    title: "Scaneaza portofoliul",
+    text: "AI-ul compara cererea cu proprietatile active si scoate in fata variantele cu sanse reale.",
+  },
+  {
+    icon: Sparkles,
+    title: "Explica potrivirea",
+    text: "Agentul vede motivul: ce se potriveste, unde exista compromisuri si ce merita prezentat.",
   },
   {
     icon: CalendarCheck2,
-    title: "Vizionari conectate",
-    text: "Urmatorul pas comercial ramane legat de proprietate, agent si cumparator.",
-  },
-  {
-    icon: Megaphone,
-    title: "Publicare pregatita",
-    text: "Cand proprietatea este gata, distributia pleaca din acelasi sistem operational.",
+    title: "Trimite spre vizionare",
+    text: "O recomandare buna devine apel, WhatsApp, oferta sau vizionare fara cautari manuale.",
   },
 ];
 
 const conversionReasons = [
-  "Agentii gasesc instant proprietatile care cer actiune.",
-  "Managementul vede statusul comercial fara raportari manuale.",
-  "Proprietarul, media, vizionarile si pretul raman in acelasi context.",
-  "Echipa poate trece mai rapid de la administrare la vanzare.",
+  "Cumparatorul primeste recomandari relevante cat intentia este inca activa.",
+  "Agentul prezinta proprietatile cu argument, nu cu o lista rece.",
+  "Portofoliul existent este valorificat mai bine, inclusiv proprietatile usor trecute cu vederea.",
+  "Managementul vede ce potriviri pot produce conversatii si vizionari.",
 ];
 
 const controlCards: FeatureItem[] = [
   {
-    icon: ShieldCheck,
-    title: "Control comercial",
-    text: "Statusuri, agent dedicat, proprietar si urmatoarele actiuni raman vizibile pentru toata echipa.",
+    icon: Target,
+    title: "Scor transparent",
+    text: "Fiecare rezultat arata un scor si motivul din spate, astfel incat agentul intelege rapid de ce merita propus.",
   },
   {
-    icon: MapPinned,
-    title: "Context complet",
-    text: "Zona, caracteristici, galerie, pret si istoric sunt citibile dintr-un singur loc.",
+    icon: MessageSquareText,
+    title: "Conversatie pregatita",
+    text: "Potrivirea vine cu context comercial, iar agentul poate suna cu o recomandare concreta si credibila.",
   },
   {
-    icon: FileText,
-    title: "Documente si operare",
-    text: "Contracte, rapoarte, vizionari si publicare se leaga natural de fisa proprietatii.",
+    icon: LineChart,
+    title: "Prioritate vizibila",
+    text: "Echipa vede unde exista sanse de vizionare si care cumparatori trebuie mutati imediat in urmatorul pas.",
   },
 ];
 
@@ -138,10 +143,10 @@ function ScreenFrame({
   );
 }
 
-export default function PropertiesLandingPage() {
+export default function AiMatchingLandingPage() {
   return (
     <>
-      <main className="lux-shell ai-calls-page properties-page min-h-screen overflow-x-clip bg-[#06101d] text-white">
+      <main className="lux-shell ai-calls-page matching-page min-h-screen overflow-x-clip bg-[#06101d] text-white">
         <header className="lux-nav">
           <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
             <Link href="/" aria-label="ImoDeus.ai">
@@ -154,13 +159,13 @@ export default function PropertiesLandingPage() {
               <Link href="/apeluri-ai" className="lux-nav-menu__link">
                 Apeluri AI
               </Link>
-              <Link href="/proprietati" className="lux-nav-menu__link lux-nav-menu__link--active">
+              <Link href="/proprietati" className="lux-nav-menu__link">
                 Proprietati
               </Link>
               <Link href="/cumparatori" className="lux-nav-menu__link">
                 Cumparatori
               </Link>
-              <Link href="/ai-matching" className="lux-nav-menu__link">
+              <Link href="/ai-matching" className="lux-nav-menu__link lux-nav-menu__link--active">
                 AI Matching
               </Link>
               <Link href="/portaluri-online" className="lux-nav-menu__link">
@@ -190,23 +195,23 @@ export default function PropertiesLandingPage() {
           </div>
         </header>
 
-        <section className="ai-calls-hero properties-hero">
+        <section className="ai-calls-hero matching-hero">
           <div className="ai-calls-hero__grid" />
-          <div className="ai-calls-hero__inner mx-auto grid w-full max-w-[1500px] gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(650px,1.14fr)] lg:items-center lg:px-8 lg:py-20">
+          <div className="ai-calls-hero__inner mx-auto grid w-full max-w-[1500px] gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,0.84fr)_minmax(650px,1.16fr)] lg:items-center lg:px-8 lg:py-20">
             <div className="ai-calls-hero__copy">
               <div className="lux-pill">
-                <Building2 className="h-4 w-4 text-emerald-300" />
-                Modul premium pentru administrarea proprietatilor
+                <Sparkles className="h-4 w-4 text-emerald-300" />
+                Modul premium pentru potriviri explicabile
               </div>
-              <h1 className="mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.45rem]">
-                Proprietatile devin centrul de comanda al fiecarei vanzari.
+              <h1 className="mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.35rem]">
+                Proprietatea potrivita apare exact cand cumparatorul e pregatit.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-                ImoDeus.ai strange galeria, pretul, proprietarul, agentul, vizionarile si actiunile de promovare
-                intr-o fisa vie, construita pentru ritm comercial.
+                ImoDeus.ai citeste intentia cumparatorului si scaneaza portofoliul agentiei, apoi propune proprietati
+                cu scor, motiv si urmator pas clar pentru agent.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <DemoButton className="h-16 w-full justify-center px-8 text-lg sm:w-auto" label="Vezi proprietatile" />
+                <DemoButton className="h-16 w-full justify-center px-8 text-lg sm:w-auto" label="Vezi AI Matching" />
                 <Button
                   asChild
                   size="lg"
@@ -229,58 +234,72 @@ export default function PropertiesLandingPage() {
               </div>
             </div>
 
-            <div className="ai-calls-hero__visual properties-hero__visual" aria-label="Previzualizare modul Proprietati">
+            <div className="ai-calls-hero__visual matching-hero__visual" aria-label="Previzualizare modul AI Matching">
               <div className="ai-calls-visual-plane ai-calls-visual-plane--back" />
               <div className="ai-calls-visual-plane ai-calls-visual-plane--front" />
               <ScreenFrame
-                image="/landing/screenshots/property-detail-overview.png"
-                alt="Fisa proprietatii cu galerie, pret, agent si vizionari"
-                label="ImoDeus.ai CRM / Proprietati"
+                image="/landing/screenshots/ai-matching-results.png"
+                alt="Rezultate AI Matching cu proprietati potrivite pentru cumparator"
+                label="ImoDeus.ai CRM / Potrivire AI"
                 priority
-                className="ai-calls-screen--hero properties-screen--hero"
+                className="ai-calls-screen--hero matching-screen--hero"
               />
               <ScreenFrame
-                image="/landing/screenshots/properties-list.png"
-                alt="Lista de proprietati administrate in portofoliu"
-                label="Portofoliu"
-                className="properties-mini-screen"
+                image="/landing/screenshots/lead-matching-detail.png"
+                alt="Profil de cumparator cu scor si proprietati recomandate"
+                label="Profil cumparator"
+                className="matching-mini-screen"
               />
-              <div className="ai-calls-floating ai-calls-floating--top properties-floating">
+              <div className="matching-score-card">
+                <span>Potrivire</span>
+                <strong>100</strong>
+                <p>argument explicat</p>
+              </div>
+              <div className="ai-calls-floating ai-calls-floating--top matching-floating">
                 <BadgeCheck className="h-4 w-4" />
-                <span>stoc activ</span>
+                <span>scor verificabil</span>
               </div>
-              <div className="ai-calls-floating ai-calls-floating--left properties-floating">
-                <Camera className="h-4 w-4" />
-                <span>media si pret</span>
+              <div className="ai-calls-floating ai-calls-floating--left matching-floating">
+                <Target className="h-4 w-4" />
+                <span>shortlist rapid</span>
               </div>
-              <div className="ai-calls-floating ai-calls-floating--right properties-floating">
-                <CalendarCheck2 className="h-4 w-4" />
-                <span>vizionari live</span>
+              <div className="ai-calls-floating ai-calls-floating--right matching-floating">
+                <MessageSquareText className="h-4 w-4" />
+                <span>motiv de apel</span>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="ai-calls-section properties-flow-section">
+        <section className="ai-calls-section matching-flow-section">
           <div className="mx-auto w-full max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
             <div className="ai-calls-section__head">
               <div className="lux-light-pill">
-                <Sparkles className="h-4 w-4 text-teal-600" />
-                Portofoliu actionabil
+                <Bot className="h-4 w-4 text-teal-600" />
+                Matching comercial, nu cautare manuala
               </div>
-              <h2>Nu doar inventar. Un sistem care spune ce trebuie facut mai departe.</h2>
+              <h2>AI-ul transforma portofoliul intr-o selectie clara pentru fiecare cumparator.</h2>
               <p>
-                Modulul Proprietati transforma administrarea portofoliului intr-un flux comercial: stoc, status,
-                proprietar, media, vizionari, rapoarte si publicare.
+                In loc ca agentul sa caute printre proprietati, sistemul le compara cu intentia clientului si livreaza
+                recomandari care pot fi prezentate imediat.
               </p>
             </div>
 
+            <div className="matching-signal-grid">
+              {matchingSignals.map((signal) => (
+                <article key={signal.value} className="matching-signal-card">
+                  <strong>{signal.value}</strong>
+                  <span>{signal.label}</span>
+                </article>
+              ))}
+            </div>
+
             <div className="ai-calls-flow-grid">
-              {operatingFlow.map((item, index) => {
+              {matchingFlow.map((item, index) => {
                 const ItemIcon = item.icon;
 
                 return (
-                  <article key={item.title} className="ai-calls-flow-card properties-flow-card">
+                  <article key={item.title} className="ai-calls-flow-card matching-flow-card">
                     <span className="ai-calls-flow-card__number">{String(index + 1).padStart(2, "0")}</span>
                     <div className="ai-calls-flow-card__icon">
                       <ItemIcon className="h-5 w-5" />
@@ -294,24 +313,24 @@ export default function PropertiesLandingPage() {
           </div>
         </section>
 
-        <section className="ai-calls-control properties-control">
-          <div className="mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.66fr)] lg:items-center lg:px-8 lg:py-20">
-            <div className="ai-calls-control__media">
+        <section className="ai-calls-control matching-control">
+          <div className="mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.65fr)] lg:items-center lg:px-8 lg:py-20">
+            <div className="ai-calls-control__media matching-control__media">
               <ScreenFrame
-                image="/landing/screenshots/properties-list.png"
-                alt="Portofoliu de proprietati cu filtre si actiuni rapide"
-                label="ImoDeus.ai CRM / Portofoliu"
+                image="/landing/screenshots/lead-matching-detail.png"
+                alt="Profil cumparator cu buget, scor AI si optiuni recomandate"
+                label="ImoDeus.ai CRM / Profil cumparator"
               />
             </div>
             <div className="ai-calls-control__copy">
               <div className="lux-pill lux-pill--muted">
-                <LineChart className="h-4 w-4 text-cyan-300" />
-                Pipeline de proprietati
+                <Users className="h-4 w-4 text-cyan-300" />
+                De la intentie la recomandare
               </div>
-              <h2>Lista devine un panou de prioritizare, nu un tabel static.</h2>
+              <h2>Fiecare cumparator primeste o lista scurta cu motiv, scor si context.</h2>
               <p>
-                Fiecare proprietate arata repede ce este activ, ce merita promovat, unde exista interes si cine
-                trebuie sa faca urmatorul pas.
+                Profilul cumparatorului devine briefing-ul agentului: AI-ul citeste bugetul, preferintele si istoricul,
+                apoi arata de ce anumite proprietati merita prezentate primele.
               </p>
               <div className="ai-calls-reasons">
                 {conversionReasons.map((reason) => (
@@ -325,26 +344,33 @@ export default function PropertiesLandingPage() {
           </div>
         </section>
 
-        <section className="ai-calls-command properties-command">
+        <section className="ai-calls-command matching-command">
           <div className="mx-auto w-full max-w-[1500px] px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-            <div className="ai-calls-command__panel properties-command__panel">
+            <div className="ai-calls-command__panel matching-command__panel">
               <div className="ai-calls-command__copy">
                 <div className="lux-pill lux-pill--mini">
-                  <BarChart3 className="h-4 w-4 text-emerald-300" />
-                  Operating room pentru fiecare proprietate
+                  <Layers3 className="h-4 w-4 text-emerald-300" />
+                  Rezultate explicabile
                 </div>
-                <h2>Tot ce misca vanzarea ramane legat de aceeasi fisa.</h2>
+                <h2>Agentul nu trimite proprietati la intamplare. Trimite argumente.</h2>
                 <p>
-                  Agentul nu mai sare intre fisiere, conversatii si platforme. Proprietatea devine locul unde se
-                  decide pretul, se pregateste promovarea si se urmareste progresul.
+                  Fiecare rezultat AI Matching poate fi transformat intr-un mesaj, un apel sau o invitatie la vizionare
+                  pentru ca motivul potrivirii este deja vizibil.
                 </p>
               </div>
-              <div className="ai-calls-control-cards">
+              <div className="matching-command__media">
+                <ScreenFrame
+                  image="/landing/screenshots/ai-matching-results.png"
+                  alt="Lista de rezultate AI Matching cu proprietati recomandate"
+                  label="ImoDeus.ai CRM / Rezultate AI"
+                />
+              </div>
+              <div className="ai-calls-control-cards matching-control-cards">
                 {controlCards.map((card) => {
                   const CardIcon = card.icon;
 
                   return (
-                    <article key={card.title} className="ai-calls-control-card properties-control-card">
+                    <article key={card.title} className="ai-calls-control-card matching-control-card">
                       <CardIcon className="h-5 w-5" />
                       <h3>{card.title}</h3>
                       <p>{card.text}</p>
@@ -356,17 +382,17 @@ export default function PropertiesLandingPage() {
           </div>
         </section>
 
-        <section className="ai-calls-final-cta properties-final-cta">
+        <section className="ai-calls-final-cta matching-final-cta">
           <div className="mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-8 lg:py-20">
             <div>
               <div className="lux-pill">
-                <Users className="h-4 w-4 text-emerald-300" />
-                Administrare care vinde
+                <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                Mai multe vizionari din aceeasi baza de cumparatori
               </div>
-              <h2>Arata clientului cum portofoliul poate functiona ca un sistem premium de vanzare.</h2>
+              <h2>Arata agentiei cum AI Matching transforma datele existente in oportunitati reale.</h2>
               <p>
-                Pagina demo pune in fata agentiei un flux clar: proprietate, media, pret, agent, vizionari,
-                publicare si raportare in acelasi workspace.
+                Demo-ul pune in fata echipei un workflow complet: profil cumparator, scor, proprietati recomandate,
+                explicatie comerciala si urmator pas.
               </p>
             </div>
             <div className="ai-calls-final-cta__actions">

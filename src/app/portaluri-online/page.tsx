@@ -162,6 +162,12 @@ export default function PortaluriOnlineLandingPage() {
               <Link href="/proprietati" className="lux-nav-menu__link">
                 Proprietati
               </Link>
+              <Link href="/cumparatori" className="lux-nav-menu__link">
+                Cumparatori
+              </Link>
+              <Link href="/ai-matching" className="lux-nav-menu__link">
+                AI Matching
+              </Link>
               <Link href="/portaluri-online" className="lux-nav-menu__link lux-nav-menu__link--active">
                 Portaluri Online
               </Link>
