@@ -172,6 +172,9 @@ export default function MarketingStudioLandingPage() {
               <Link href="/vizionari" className="lux-nav-menu__link">
                 Vizionari
               </Link>
+              <Link href="/contracte" className="lux-nav-menu__link">
+                Contracte
+              </Link>
               <Link href="/marketing-studio" className="lux-nav-menu__link lux-nav-menu__link--active">
                 Marketing Studio
               </Link>
