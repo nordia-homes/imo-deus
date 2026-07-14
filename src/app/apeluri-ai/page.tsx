@@ -157,6 +157,12 @@ export default function AiCallsLandingPage() {
               <Link href="/ai-matching" className="lux-nav-menu__link">
                 AI Matching
               </Link>
+              <Link href="/vizionari" className="lux-nav-menu__link">
+                Vizionari
+              </Link>
+              <Link href="/marketing-studio" className="lux-nav-menu__link">
+                Marketing Studio
+              </Link>
               <Link href="/portaluri-online" className="lux-nav-menu__link">
                 Portaluri Online
               </Link>

@@ -168,6 +168,12 @@ export default function AiMatchingLandingPage() {
               <Link href="/ai-matching" className="lux-nav-menu__link lux-nav-menu__link--active">
                 AI Matching
               </Link>
+              <Link href="/vizionari" className="lux-nav-menu__link">
+                Vizionari
+              </Link>
+              <Link href="/marketing-studio" className="lux-nav-menu__link">
+                Marketing Studio
+              </Link>
               <Link href="/portaluri-online" className="lux-nav-menu__link">
                 Portaluri Online
               </Link>
