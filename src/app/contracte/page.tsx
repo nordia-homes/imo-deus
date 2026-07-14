@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ImoDeusTextLogo } from "@/components/icons/ImoDeusTextLogo";
 
 export const metadata: Metadata = {
-  title: "Modul Contracte pentru agentii imobiliare | ImoDeus.ai",
+  title: "Contracte pentru agentii imobiliare | ImoDeus.ai",
   description:
     "Creeaza, editeaza, completeaza si exporta contractele agentiei din acelasi CRM in care lucreaza agentii, proprietatile si clientii.",
 };
@@ -68,10 +68,10 @@ const contractFlow: FeatureItem[] = [
 ];
 
 const conversionReasons = [
-  "Agentii creeaza contracte fara sa caute ultima versiune prin fisiere si conversatii separate.",
-  "Template-urile raman controlate de agentie, dar usor de completat de echipa din teren.",
-  "Datele comerciale din proprietate si lead pot alimenta documentul fara copiere repetitiva.",
-  "Managementul vede biblioteca de documente si stie ce este activ, draft sau importat.",
+  "Template-ul corect, mereu la indemana.",
+  "Datele se preiau direct din CRM.",
+  "Editezi vizual inainte de export.",
+  "PDF pregatit pentru semnare.",
 ];
 
 const controlCards: FeatureItem[] = [
@@ -96,6 +96,39 @@ const documentRows = [
   { name: "Contract intermediere", status: "Activ" },
   { name: "Promisiune bilaterala", status: "Draft" },
   { name: "Proces verbal predare", status: "PDF" },
+];
+
+const roleBenefits: FeatureItem[] = [
+  {
+    icon: Building2,
+    title: "Managerul pastreaza standardul",
+    text: "Biblioteca spune clar ce template este activ, ce trebuie revizuit si din ce documente lucreaza agentia.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Operatiunile raman controlate",
+    text: "Versiunile de lucru nu se mai imprastie in foldere, conversatii si atasamente trimise intre colegi.",
+  },
+  {
+    icon: Users,
+    title: "Agentul actioneaza mai repede",
+    text: "Porneste de la datele reale ale clientului si proprietatii, apoi ajusteaza doar ce este specific tranzactiei.",
+  },
+];
+
+const contractQuestions = [
+  {
+    question: "Putem porni de la contractele pe care le folosim deja?",
+    answer: "Da. Importi template-urile Word existente in biblioteca agentiei, apoi le pregatesti pentru utilizare recurenta in CRM.",
+  },
+  {
+    question: "Agentul poate adapta un document pentru un caz particular?",
+    answer: "Da. Datele se completeaza din CRM, iar documentul poate fi ajustat vizual inainte de exportul PDF final.",
+  },
+  {
+    question: "Ce ramane sub controlul agentiei?",
+    answer: "Agentia vede ce template-uri sunt active, draft sau importate si pastreaza baza documentara in acelasi workspace cu tranzactiile.",
+  },
 ];
 
 function DemoButton({ className = "", label = "Vezi demo live" }: { className?: string; label?: string }) {
@@ -218,11 +251,11 @@ export default function ContractsLandingPage() {
                 Modul premium pentru contracte editabile
               </div>
               <h1 className="mt-6 font-[family-name:var(--font-space-grotesk)] text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-[4.35rem]">
-                Contractele se creeaza in ritmul tranzactiei, nu dupa vanatoare prin fisiere.
+                Contractul potrivit, in exact momentul potrivit.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-                ImoDeus.ai pune template-urile, datele din CRM, editarea vizuala si exportul PDF intr-un singur flux,
-                construit pentru agentii care vor inchideri rapide si documente controlate.
+                ImoDeus.ai leaga template-urile aprobate, datele din CRM, editarea vizuala si exportul PDF intr-un
+                singur flux. Pentru agentii care vor sa fie gata cand clientul spune "da".
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <DemoButton className="h-16 w-full justify-center px-8 text-lg sm:w-auto" label="Vezi contractele" />
@@ -258,6 +291,21 @@ export default function ContractsLandingPage() {
                 priority
                 className="ai-calls-screen--hero contracte-screen--hero"
               />
+              <div className="contracte-context-rail" aria-hidden="true">
+                <div className="contracte-context-rail__head">
+                  <span>Date conectate</span>
+                  <strong>din CRM</strong>
+                </div>
+                <div className="contracte-context-rail__items">
+                  <span><i /> Client</span>
+                  <span><i /> Proprietate</span>
+                  <span><i /> Comision</span>
+                </div>
+                <div className="contracte-context-rail__result">
+                  <BadgeCheck className="h-4 w-4" />
+                  <span>Document pregatit</span>
+                </div>
+              </div>
               <div className="contracte-doc-panel" aria-hidden="true">
                 <div className="contracte-doc-panel__top">
                   <span>Biblioteca</span>
@@ -334,6 +382,37 @@ export default function ContractsLandingPage() {
           </div>
         </section>
 
+        <section className="contracte-roles">
+          <div className="mx-auto grid w-full max-w-[1500px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-end lg:px-8 lg:py-20">
+            <div className="contracte-roles__intro">
+              <div className="lux-pill lux-pill--muted">
+                <Layers3 className="h-4 w-4 text-amber-300" />
+                Acelasi flux, clar pentru fiecare rol
+              </div>
+              <h2>O biblioteca pentru agentie. Un avantaj concret pentru fiecare agent.</h2>
+              <p>
+                Contractele devin o parte fireasca a felului in care echipa vinde: control pentru agentie, viteza
+                pentru agent si context pastrat pentru fiecare tranzactie.
+              </p>
+            </div>
+            <div className="contracte-role-grid">
+              {roleBenefits.map((benefit, index) => {
+                const BenefitIcon = benefit.icon;
+
+                return (
+                  <article key={benefit.title} className="contracte-role-card">
+                    <span className="contracte-role-card__index">0{index + 1}</span>
+                    <BenefitIcon className="h-5 w-5" />
+                    <h3>{benefit.title}</h3>
+                    <p>{benefit.text}</p>
+                    <span className="contracte-role-card__footer">un singur workspace</span>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         <section className="ai-calls-control contracte-control">
           <div className="mx-auto grid w-full max-w-[1500px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.65fr)] lg:items-center lg:px-8 lg:py-20">
             <div className="ai-calls-control__media contracte-control__media">
@@ -348,10 +427,9 @@ export default function ContractsLandingPage() {
                 <Building2 className="h-4 w-4 text-cyan-300" />
                 Pentru agentii si agenti imobiliari
               </div>
-              <h2>Fiecare document porneste din datele reale ale tranzactiei.</h2>
+              <h2>Datele tranzactiei, direct in document.</h2>
               <p>
-                Modulul Contracte scurteaza drumul dintre acordul comercial si documentul final: alegi sablonul,
-                completezi din CRM, ajustezi vizual si exporti cand este gata.
+                Alegi template-ul, completezi, ajustezi si exporti. Totul ramane in acelasi CRM.
               </p>
               <div className="ai-calls-reasons">
                 {conversionReasons.map((reason) => (
@@ -373,10 +451,9 @@ export default function ContractsLandingPage() {
                   <ShieldCheck className="h-4 w-4 text-amber-300" />
                   Biblioteca controlata
                 </div>
-                <h2>Un centru premium pentru contracte, template-uri si exporturi curate.</h2>
+                <h2>Biblioteca documentelor, sub control.</h2>
                 <p>
-                  Agentia isi pastreaza standardele documentare, iar agentul castiga viteza in momentele in care
-                  clientul este pregatit sa mearga mai departe.
+                  Template-uri clare pentru agentie. Viteza pentru fiecare agent.
                 </p>
               </div>
               <div className="contracte-command__media">
@@ -399,6 +476,33 @@ export default function ContractsLandingPage() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="contracte-questions">
+          <div className="mx-auto grid w-full max-w-[1500px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:px-8 lg:py-20">
+            <div className="contracte-questions__intro">
+              <div className="lux-pill lux-pill--muted">
+                <ShieldCheck className="h-4 w-4 text-cyan-300" />
+                Clar de la primul document
+              </div>
+              <h2>Intrebari pe care echipa ta le va avea.</h2>
+              <p>
+                Un modul bun de contracte nu inseamna doar un editor. Inseamna un flux pe care fiecare coleg il
+                intelege din prima, fara instructiuni greu de urmat.
+              </p>
+            </div>
+            <div className="contracte-question-list">
+              {contractQuestions.map((item, index) => (
+                <details key={item.question} className="contracte-question" open={index === 0}>
+                  <summary>
+                    <span>{item.question}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>

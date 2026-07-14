@@ -13863,3 +13863,752 @@
     font-size: 2.32rem;
   }
 }
+
+/* Contracte landing: a dedicated document-control visual system */
+.contracte-page {
+  --contracts-ink: #06101d;
+  --contracts-mint: #5eead4;
+  --contracts-gold: #fbbf24;
+  --contracts-paper: #fffdf7;
+  background:
+    radial-gradient(circle at 14% 6%, rgba(251, 191, 36, 0.15), transparent 26%),
+    radial-gradient(circle at 86% 12%, rgba(45, 212, 191, 0.15), transparent 28%),
+    linear-gradient(rgba(251, 191, 36, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 234, 212, 0.04) 1px, transparent 1px),
+    #06101d;
+  background-size: auto, auto, 72px 72px, 72px 72px, auto;
+}
+
+.contracte-hero {
+  isolation: isolate;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.14);
+  background:
+    radial-gradient(circle at 74% 26%, rgba(251, 191, 36, 0.19), transparent 17%),
+    radial-gradient(circle at 94% 76%, rgba(45, 212, 191, 0.14), transparent 23%),
+    linear-gradient(108deg, rgba(45, 212, 191, 0.17), transparent 34%),
+    linear-gradient(180deg, #07111f 0%, #081a27 48%, #101d1b 100%);
+}
+
+.contracte-hero::after {
+  position: absolute;
+  z-index: -1;
+  right: -10rem;
+  bottom: -15rem;
+  width: min(64vw, 64rem);
+  height: min(64vw, 64rem);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 5rem rgba(251, 191, 36, 0.025),
+    0 0 0 10rem rgba(94, 234, 212, 0.018);
+  content: "";
+}
+
+.contracte-hero::before {
+  right: -4%;
+  top: 9%;
+  width: 65%;
+  height: 74%;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 2rem;
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.2), transparent 57%),
+    linear-gradient(26deg, transparent 50%, rgba(45, 212, 191, 0.12)),
+    rgba(255, 255, 255, 0.025);
+  transform: rotate(-3deg);
+}
+
+.contracte-hero .ai-calls-hero__grid {
+  opacity: 0.58;
+  mask-image: linear-gradient(90deg, #000 0%, transparent 62%);
+}
+
+.contracte-hero .ai-calls-hero__inner {
+  position: relative;
+}
+
+.contracte-hero .ai-calls-hero__copy {
+  max-width: 44rem;
+}
+
+.contracte-hero h1 {
+  max-width: 42rem;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+
+.contracte-hero h1::selection,
+.contracte-roles h2::selection {
+  background: rgba(251, 191, 36, 0.34);
+}
+
+.contracte-hero .lux-pill {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: linear-gradient(110deg, rgba(251, 191, 36, 0.16), rgba(45, 212, 191, 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.contracte-hero .lux-primary-button {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: linear-gradient(110deg, #fef3c7, #fbbf24 52%, #fde68a);
+  color: #111827;
+  box-shadow: 0 18px 42px rgba(251, 191, 36, 0.2);
+}
+
+.contracte-hero .lux-primary-button::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.55) 45%, transparent 67%);
+  content: "";
+  transform: translateX(-120%);
+  transition: transform 500ms ease;
+}
+
+.contracte-hero .lux-primary-button:hover::before {
+  transform: translateX(120%);
+}
+
+.contracte-hero .lux-primary-button > * {
+  position: relative;
+}
+
+.contracte-hero .ai-calls-hero__metrics {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+}
+
+.contracte-hero .ai-calls-hero__metrics div {
+  position: relative;
+}
+
+.contracte-hero .ai-calls-hero__metrics div:not(:last-child)::after {
+  position: absolute;
+  top: 0.25rem;
+  right: 0;
+  bottom: 0.25rem;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(251, 191, 36, 0.45), transparent);
+  content: "";
+}
+
+.contracte-hero .ai-calls-hero__metrics strong {
+  color: #fef3c7;
+}
+
+.contracte-hero__visual {
+  min-height: 650px;
+}
+
+.contracte-screen--hero {
+  top: 2.05rem;
+  width: min(1080px, 104%);
+  border-radius: 1.25rem;
+  box-shadow:
+    0 42px 110px rgba(2, 8, 23, 0.52),
+    0 0 0 1px rgba(94, 234, 212, 0.12) inset;
+}
+
+.contracte-screen--hero .lux-screen__bar {
+  min-height: 2.8rem;
+  background: linear-gradient(90deg, rgba(25, 42, 57, 0.98), rgba(37, 60, 68, 0.94));
+}
+
+.contracte-screen--hero .lux-screen__viewport {
+  max-height: 474px;
+}
+
+.contracte-screen--hero .lux-screen__image {
+  width: 1150px;
+}
+
+.contracte-context-rail {
+  position: absolute;
+  z-index: 8;
+  top: 8.75rem;
+  right: -0.55rem;
+  width: min(325px, 40%);
+  overflow: hidden;
+  border: 1px solid rgba(94, 234, 212, 0.3);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 94% 5%, rgba(45, 212, 191, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(9, 30, 40, 0.96), rgba(7, 18, 31, 0.91));
+  box-shadow:
+    0 28px 75px rgba(2, 8, 23, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.contracte-context-rail__head,
+.contracte-context-rail__result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.contracte-context-rail__head {
+  padding: 0.78rem 0.9rem 0.64rem;
+  color: rgba(226, 232, 240, 0.7);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.contracte-context-rail__head strong {
+  color: #fde68a;
+  font-size: 0.66rem;
+}
+
+.contracte-context-rail__items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.34rem;
+  padding: 0 0.64rem 0.72rem;
+}
+
+.contracte-context-rail__items span {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.58rem;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0.58rem 0.28rem;
+  color: #e2e8f0;
+  font-size: 0.61rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.contracte-context-rail__items i {
+  display: block;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin: 0 auto 0.34rem;
+  border-radius: 999px;
+  background: #5eead4;
+  box-shadow: 0 0 12px rgba(94, 234, 212, 0.75);
+}
+
+.contracte-context-rail__items span:nth-child(2) i {
+  background: #7dd3fc;
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.75);
+}
+
+.contracte-context-rail__items span:nth-child(3) i {
+  background: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.75);
+}
+
+.contracte-context-rail__result {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(16, 185, 129, 0.09);
+  padding: 0.7rem 0.9rem;
+  color: #ccfbf1;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.contracte-context-rail__result svg {
+  color: #5eead4;
+}
+
+.contracte-doc-panel {
+  right: -0.5rem;
+  bottom: 0.4rem;
+  width: min(355px, 46%);
+  border-radius: 1rem;
+}
+
+.contracte-signature-card {
+  left: -0.2rem;
+  bottom: 1.3rem;
+  border-radius: 1rem;
+}
+
+.contracte-floating {
+  border-radius: 999px;
+}
+
+.contracte-flow-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(251, 191, 36, 0.18), transparent 23%),
+    radial-gradient(circle at 92% 10%, rgba(45, 212, 191, 0.15), transparent 23%),
+    linear-gradient(180deg, #fffdf8 0%, #f4f9f4 100%);
+}
+
+.contracte-flow-section::before {
+  position: absolute;
+  top: 12rem;
+  right: -9rem;
+  width: 32rem;
+  height: 32rem;
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-radius: 50%;
+  content: "";
+}
+
+.contracte-flow-section .ai-calls-section__head {
+  position: relative;
+  z-index: 1;
+  max-width: 68rem;
+}
+
+.contracte-flow-section .ai-calls-section__head h2 {
+  max-width: 58rem;
+  letter-spacing: -0.05em;
+}
+
+.contracte-signal-grid {
+  position: relative;
+  z-index: 1;
+  gap: 1rem;
+  max-width: 1050px;
+}
+
+.contracte-signal-card {
+  border-radius: 1rem;
+  padding: 1.3rem;
+}
+
+.contracte-signal-card strong {
+  font-size: 1.4rem;
+}
+
+.contracte-flow-section .ai-calls-flow-grid {
+  position: relative;
+  z-index: 1;
+  gap: 1rem;
+}
+
+.contracte-flow-card {
+  min-height: 18.5rem;
+  border-radius: 1.25rem;
+  padding: 1.3rem;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.contracte-flow-card:hover {
+  z-index: 2;
+  border-color: rgba(217, 119, 6, 0.44);
+  box-shadow: 0 30px 72px rgba(15, 23, 42, 0.16);
+  transform: translateY(-0.4rem);
+}
+
+.contracte-flow-card .ai-calls-flow-card__number {
+  color: rgba(180, 83, 9, 0.5);
+}
+
+.contracte-flow-card .ai-calls-flow-card__icon {
+  width: 3.35rem;
+  height: 3.35rem;
+  border-radius: 0.9rem;
+}
+
+.contracte-flow-card h3 {
+  margin-top: 4.7rem;
+}
+
+.contracte-roles {
+  position: relative;
+  overflow: hidden;
+  color: white;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(251, 191, 36, 0.16), transparent 25%),
+    radial-gradient(circle at 82% 72%, rgba(45, 212, 191, 0.14), transparent 28%),
+    linear-gradient(126deg, #07131e, #102c2d 52%, #07131e);
+}
+
+.contracte-roles::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 58px 58px;
+  content: "";
+  mask-image: linear-gradient(90deg, #000, transparent 78%);
+}
+
+.contracte-roles > div {
+  position: relative;
+  z-index: 1;
+}
+
+.contracte-roles__intro h2,
+.contracte-questions__intro h2 {
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.96;
+}
+
+.contracte-roles__intro p,
+.contracte-questions__intro p {
+  max-width: 34rem;
+  margin-top: 1.35rem;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.contracte-role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.contracte-role-card {
+  position: relative;
+  min-height: 20rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 43%),
+    rgba(5, 22, 32, 0.59);
+  padding: 1.15rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: transform 220ms ease, border-color 220ms ease;
+}
+
+.contracte-role-card:hover {
+  border-color: rgba(94, 234, 212, 0.4);
+  transform: translateY(-0.35rem);
+}
+
+.contracte-role-card::after {
+  position: absolute;
+  right: -2rem;
+  bottom: -2rem;
+  width: 8rem;
+  height: 8rem;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 50%;
+  content: "";
+}
+
+.contracte-role-card__index {
+  position: absolute;
+  top: 1.05rem;
+  right: 1.1rem;
+  color: rgba(251, 191, 36, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.contracte-role-card svg {
+  color: #5eead4;
+}
+
+.contracte-role-card h3 {
+  margin-top: 5rem;
+  max-width: 12rem;
+  font-size: 1.22rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.contracte-role-card p {
+  margin-top: 0.85rem;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.contracte-role-card__footer {
+  position: absolute;
+  right: 1.15rem;
+  bottom: 1rem;
+  color: rgba(251, 191, 36, 0.8);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.contracte-control__media .lux-screen,
+.contracte-command__media .lux-screen {
+  border-radius: 1.15rem;
+}
+
+.contracte-questions {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(94, 234, 212, 0.12);
+  background:
+    radial-gradient(circle at 9% 85%, rgba(45, 212, 191, 0.13), transparent 24%),
+    linear-gradient(112deg, #081723, #0b1e28 60%, #09151e);
+}
+
+.contracte-question-list {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.contracte-question {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.contracte-question[open] {
+  border-color: rgba(251, 191, 36, 0.38);
+  background: linear-gradient(105deg, rgba(251, 191, 36, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+.contracte-question summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.6rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 1.1rem 1.2rem;
+  color: #f8fafc;
+  font-size: 1.03rem;
+  font-weight: 850;
+}
+
+.contracte-question summary::-webkit-details-marker {
+  display: none;
+}
+
+.contracte-question summary svg {
+  flex: 0 0 auto;
+  color: #fde68a;
+  transition: transform 180ms ease;
+}
+
+.contracte-question[open] summary svg {
+  transform: rotate(90deg);
+}
+
+.contracte-question p {
+  max-width: 48rem;
+  margin: -0.08rem 0 0;
+  padding: 0 1.2rem 1.25rem;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.contracte-final-cta {
+  border-top-color: rgba(251, 191, 36, 0.24);
+}
+
+.contracte-final-cta .lux-primary-button {
+  background: linear-gradient(110deg, #fef3c7, #fbbf24 52%, #fde68a);
+  color: #111827;
+  box-shadow: 0 18px 42px rgba(251, 191, 36, 0.18);
+}
+
+@media (max-width: 1279px) {
+  .contracte-role-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .contracte-role-card {
+    min-height: 19.5rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .contracte-hero__visual {
+    display: grid;
+    min-height: auto;
+    gap: 0.85rem;
+  }
+
+  .contracte-screen--hero,
+  .contracte-context-rail,
+  .contracte-doc-panel,
+  .contracte-signature-card {
+    position: relative;
+    inset: auto;
+    width: min(100%, 940px);
+    transform: none;
+  }
+
+  .contracte-screen--hero {
+    top: auto;
+  }
+
+  .contracte-context-rail {
+    display: block;
+  }
+
+  .contracte-role-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .contracte-hero::before {
+    right: -40%;
+    width: 115%;
+  }
+
+  .contracte-hero .ai-calls-hero__metrics div:not(:last-child)::after {
+    display: none;
+  }
+
+  .contracte-screen--hero .lux-screen__viewport {
+    max-height: none;
+  }
+
+  .contracte-context-rail__items {
+    gap: 0.45rem;
+  }
+
+  .contracte-flow-card {
+    min-height: auto;
+  }
+
+  .contracte-flow-card h3 {
+    margin-top: 3.3rem;
+  }
+
+  .contracte-role-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contracte-role-card {
+    min-height: 16rem;
+  }
+
+  .contracte-role-card h3 {
+    margin-top: 3.2rem;
+  }
+
+  .contracte-question summary {
+    font-size: 0.95rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contracte-flow-card,
+  .contracte-role-card,
+  .contracte-question,
+  .contracte-question summary svg,
+  .contracte-hero .lux-primary-button::before {
+    transition: none;
+  }
+}
+
+/* Keep the product-detail bands compact: the interface is the visual proof. */
+.contracte-control > div {
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+}
+
+.contracte-control .ai-calls-control__copy h2,
+.contracte-command .ai-calls-command__copy h2 {
+  max-width: 12ch;
+  font-size: clamp(2.35rem, 3.2vw, 3.7rem);
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.contracte-control .ai-calls-control__copy p,
+.contracte-command .ai-calls-command__copy p {
+  margin-top: 0.85rem;
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.contracte-control__media .lux-screen__viewport {
+  max-height: 420px;
+}
+
+.contracte-control .ai-calls-reasons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1.15rem;
+}
+
+.contracte-control .ai-calls-reasons div {
+  min-height: 3.7rem;
+  align-items: flex-start;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.8rem;
+  font-size: 0.81rem;
+  line-height: 1.28;
+}
+
+.contracte-control .ai-calls-reasons svg {
+  margin-top: 0.06rem;
+}
+
+.contracte-command > div {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.contracte-command__panel {
+  grid-template-columns: minmax(16rem, 0.72fr) minmax(0, 1.28fr);
+  gap: 0.85rem;
+  border-radius: 1.25rem;
+  padding: 0.9rem;
+}
+
+.contracte-command__copy {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.15rem;
+}
+
+.contracte-command__media .lux-screen__viewport {
+  max-height: 290px;
+}
+
+.contracte-command__media .lux-screen__image {
+  width: 910px;
+}
+
+.contracte-command .ai-calls-control-cards {
+  gap: 0.65rem;
+}
+
+.contracte-command .ai-calls-control-card {
+  min-height: 11.5rem;
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+}
+
+.contracte-command .ai-calls-control-card h3 {
+  margin-top: 2.85rem;
+  font-size: 1rem;
+  line-height: 1.12;
+}
+
+.contracte-command .ai-calls-control-card p {
+  margin-top: 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 767px) {
+  .contracte-control .ai-calls-reasons {
+    grid-template-columns: 1fr;
+  }
+
+  .contracte-command > div {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
