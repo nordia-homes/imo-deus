@@ -22192,3 +22192,533 @@
     padding-bottom: 1rem;
   }
 }
+
+/* Contracts: premium mobile deck for the three document pillars */
+@media (max-width: 767px) {
+  .contracts-engine {
+    background:
+      radial-gradient(circle at 12% 5%, rgba(245, 158, 11, 0.14), transparent 25rem),
+      radial-gradient(circle at 92% 92%, rgba(16, 185, 129, 0.16), transparent 24rem),
+      linear-gradient(180deg, #fffaf2 0%, #edf7f2 100%);
+  }
+
+  .contracts-engine::before {
+    right: -12rem;
+    top: 10rem;
+    width: 25rem;
+    height: 25rem;
+    border-color: rgba(180, 83, 9, 0.08);
+    box-shadow:
+      0 0 0 3.5rem rgba(245, 158, 11, 0.018),
+      0 0 0 7rem rgba(16, 185, 129, 0.016);
+  }
+
+  .contracts-engine .property-automation__grid {
+    gap: 0.95rem;
+    perspective: 1000px;
+  }
+
+  .contracts-engine .property-automation__card {
+    --pillar-accent: #f59e0b;
+    --pillar-accent-2: #2dd4bf;
+    isolation: isolate;
+    display: grid;
+    min-height: 0;
+    justify-items: center;
+    align-content: start;
+    padding: 1rem;
+    border: 1px solid color-mix(in srgb, var(--pillar-accent) 31%, transparent);
+    border-radius: 1.65rem;
+    background:
+      radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--pillar-accent) 22%, transparent), transparent 34%),
+      radial-gradient(circle at 5% 100%, color-mix(in srgb, var(--pillar-accent-2) 14%, transparent), transparent 37%),
+      linear-gradient(145deg, #06111d 0%, #0a2530 100%);
+    box-shadow:
+      0 24px 60px rgba(2, 8, 23, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.055) inset,
+      0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    transform: none;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) {
+    --pillar-accent: #10b981;
+    --pillar-accent-2: #f59e0b;
+    border-color: rgba(16, 185, 129, 0.25);
+    background:
+      radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.18), transparent 35%),
+      radial-gradient(circle at 94% 100%, rgba(245, 158, 11, 0.12), transparent 38%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, #edf9f2 100%);
+    box-shadow:
+      0 24px 60px rgba(15, 118, 110, 0.13),
+      0 0 0 1px rgba(255, 255, 255, 0.92) inset,
+      0 1px 0 #ffffff inset;
+    transform: none;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) {
+    --pillar-accent: #2dd4bf;
+    --pillar-accent-2: #fbbf24;
+    border-color: rgba(45, 212, 191, 0.24);
+    background:
+      radial-gradient(circle at 88% 0%, rgba(45, 212, 191, 0.2), transparent 36%),
+      radial-gradient(circle at 0% 100%, rgba(251, 191, 36, 0.12), transparent 38%),
+      linear-gradient(145deg, #06131a 0%, #0a2c27 100%);
+    box-shadow:
+      0 24px 60px rgba(2, 18, 20, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.055) inset,
+      0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  }
+
+  .contracts-engine .property-automation__card::before {
+    inset: 0;
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+      linear-gradient(118deg, transparent 0 68%, color-mix(in srgb, var(--pillar-accent) 10%, transparent) 68% 68.4%, transparent 68.4%);
+    background-size: 2.65rem 2.65rem, 2.65rem 2.65rem, auto;
+    box-shadow: none;
+    opacity: 0.72;
+    pointer-events: none;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2)::before {
+    background:
+      linear-gradient(rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+      linear-gradient(118deg, transparent 0 68%, rgba(245, 158, 11, 0.09) 68% 68.4%, transparent 68.4%);
+    background-size: 2.65rem 2.65rem, 2.65rem 2.65rem, auto;
+  }
+
+  .contracts-engine .property-automation__card::after {
+    content: "";
+    position: absolute;
+    right: -3rem;
+    bottom: -3.5rem;
+    z-index: -1;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--pillar-accent-2) 28%, transparent);
+    filter: blur(44px);
+    opacity: 0.42;
+    pointer-events: none;
+  }
+
+  .contracts-engine .property-automation__card-top {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    align-items: center;
+  }
+
+  .contracts-engine .property-automation__card-icon {
+    width: 3.05rem;
+    height: 3.05rem;
+    border: 1px solid color-mix(in srgb, var(--pillar-accent) 35%, transparent);
+    border-radius: 1rem;
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--pillar-accent) 18%, transparent), rgba(255, 255, 255, 0.035));
+    color: var(--pillar-accent);
+    box-shadow:
+      0 12px 28px color-mix(in srgb, var(--pillar-accent) 16%, transparent),
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) .property-automation__card-icon {
+    border-color: rgba(16, 185, 129, 0.28);
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.16), rgba(255, 255, 255, 0.78));
+    color: #047857;
+    box-shadow:
+      0 12px 26px rgba(16, 185, 129, 0.14),
+      0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) .property-automation__card-icon {
+    color: #5eead4;
+  }
+
+  .contracts-engine .property-automation__card-number {
+    display: grid;
+    width: 2.55rem;
+    height: 2.55rem;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--pillar-accent-2) 25%, transparent);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--pillar-accent-2) 9%, rgba(3, 12, 20, 0.58));
+    color: color-mix(in srgb, var(--pillar-accent-2) 78%, white);
+    font-size: 0.75rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    opacity: 1;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) .property-automation__card-number {
+    border-color: rgba(180, 83, 9, 0.14);
+    background: rgba(255, 255, 255, 0.68);
+    color: #b45309;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) .property-automation__card-number {
+    color: #fcd34d;
+  }
+
+  .contracts-engine .property-automation__eyebrow {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    min-height: 1.8rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.95rem;
+    padding: 0.36rem 0.68rem;
+    border: 1px solid color-mix(in srgb, var(--pillar-accent) 27%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--pillar-accent) 9%, rgba(255, 255, 255, 0.035));
+    color: color-mix(in srgb, var(--pillar-accent) 78%, white);
+    font-size: 0.57rem;
+    line-height: 1.1;
+    letter-spacing: 0.105em;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--pillar-accent) 8%, transparent);
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) .property-automation__eyebrow {
+    background: rgba(255, 255, 255, 0.66);
+    color: #047857;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) .property-automation__eyebrow {
+    color: #5eead4;
+  }
+
+  .contracts-engine .property-automation__card h3 {
+    position: relative;
+    z-index: 2;
+    max-width: 20rem;
+    margin-top: 0.72rem;
+    color: #f8fafc;
+    font-size: clamp(1.48rem, 6.5vw, 1.72rem);
+    line-height: 1.01;
+    letter-spacing: -0.043em;
+    text-wrap: balance;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) h3 {
+    color: #07111f;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) h3 {
+    color: #f8fafc;
+  }
+
+  .contracts-engine .property-automation__card > p {
+    position: relative;
+    z-index: 2;
+    max-width: 21rem;
+    margin-top: 0.68rem;
+    color: rgba(203, 213, 225, 0.76);
+    font-size: 0.82rem;
+    line-height: 1.48;
+    text-wrap: pretty;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) > p {
+    color: rgba(51, 65, 85, 0.78);
+  }
+
+  .contracts-engine .property-automation__card:nth-child(3) > p {
+    color: rgba(203, 213, 225, 0.76);
+  }
+
+  .contracts-engine .property-automation__chips {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
+    margin-top: 0.88rem;
+  }
+
+  .contracts-engine .property-automation__chips span,
+  .contracts-engine .property-automation__card:nth-child(3) .property-automation__chips span {
+    min-height: 2.25rem;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--pillar-accent) 18%, rgba(148, 163, 184, 0.12));
+    border-radius: 0.78rem;
+    background: color-mix(in srgb, var(--pillar-accent) 7%, rgba(255, 255, 255, 0.045));
+    padding: 0.42rem 0.42rem;
+    color: rgba(241, 245, 249, 0.82);
+    font-size: 0.61rem;
+    line-height: 1.18;
+    text-align: center;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.045) inset;
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) .property-automation__chips span {
+    border-color: rgba(15, 118, 110, 0.13);
+    background: rgba(255, 255, 255, 0.68);
+    color: rgba(15, 23, 42, 0.76);
+    box-shadow: 0 1px 0 #ffffff inset;
+  }
+
+  .contracts-engine .property-automation__chips svg {
+    flex: 0 0 auto;
+    color: color-mix(in srgb, var(--pillar-accent) 78%, #ffffff);
+  }
+
+  .contracts-engine .property-automation__card:nth-child(2) .property-automation__chips svg {
+    color: #10b981;
+  }
+}
+
+/* Contracts: refined document-intelligence cockpit on mobile only */
+@media (max-width: 767px) {
+  .contracts-intelligence .property-anatomy__visual {
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.62rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    border-radius: 1.75rem;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+      radial-gradient(circle at 88% 8%, rgba(245, 158, 11, 0.19), transparent 34%),
+      radial-gradient(circle at 8% 92%, rgba(16, 185, 129, 0.16), transparent 38%),
+      linear-gradient(145deg, rgba(4, 11, 17, 0.97), rgba(7, 31, 29, 0.95));
+    background-size: 2.7rem 2.7rem, 2.7rem 2.7rem, auto, auto, auto;
+    box-shadow:
+      0 28px 70px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.045) inset,
+      0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  }
+
+  .contracts-intelligence .property-anatomy__visual::after {
+    content: "";
+    position: absolute;
+    right: -3.5rem;
+    bottom: 3.5rem;
+    z-index: -1;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: rgba(45, 212, 191, 0.18);
+    filter: blur(48px);
+    pointer-events: none;
+  }
+
+  .contracts-intelligence .property-anatomy__orbit {
+    display: none;
+  }
+
+  .contracts-intelligence .property-anatomy__core-glow {
+    inset: 18% 4% 24%;
+    border-radius: 2rem;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(245, 158, 11, 0.2), rgba(16, 185, 129, 0.1) 46%, transparent 72%);
+    filter: blur(28px);
+    opacity: 0.86;
+    animation: none;
+  }
+
+  .contracts-intelligence .property-anatomy__visual-badge {
+    position: relative;
+    inset: auto;
+    order: 1;
+    grid-column: 1;
+    display: flex;
+    width: 100%;
+    min-height: 2.55rem;
+    justify-content: center;
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    border-radius: 1rem;
+    background:
+      linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.1)),
+      rgba(4, 14, 19, 0.82);
+    padding: 0.55rem 0.7rem;
+    color: #c7fff1;
+    font-size: 0.6rem;
+    line-height: 1.2;
+    letter-spacing: 0.085em;
+    text-align: center;
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.18),
+      0 1px 0 rgba(255, 255, 255, 0.07) inset;
+    transform: none;
+    backdrop-filter: blur(18px);
+  }
+
+  .contracts-intelligence .property-anatomy__visual-badge svg {
+    color: #fbbf24;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+  }
+
+  .contracts-intelligence .property-anatomy__screen {
+    position: relative;
+    order: 2;
+    grid-column: 1;
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 1.25rem;
+    background:
+      linear-gradient(#f8fafc, #f8fafc) padding-box,
+      linear-gradient(125deg, rgba(251, 191, 36, 0.9), rgba(52, 211, 153, 0.75), rgba(103, 232, 249, 0.75)) border-box;
+    padding: 0.18rem;
+    box-shadow:
+      0 24px 58px rgba(0, 0, 0, 0.42),
+      0 0 38px rgba(16, 185, 129, 0.09),
+      0 1px 0 rgba(255, 255, 255, 0.72) inset;
+    transform: none;
+  }
+
+  .contracts-intelligence .property-anatomy__screen .lux-screen__bar {
+    min-height: 2.25rem;
+    border-radius: 1rem 1rem 0 0;
+    padding-inline: 0.65rem;
+  }
+
+  .contracts-intelligence .property-anatomy__screen .lux-screen__viewport {
+    border-radius: 0 0 1rem 1rem;
+  }
+
+  .contracts-intelligence .property-anatomy__hud {
+    --hud-accent: #2dd4bf;
+    position: relative;
+    inset: auto;
+    order: 3;
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    min-height: 3.75rem;
+    grid-template-columns: 2.45rem minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    gap: 0.65rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--hud-accent) 27%, transparent);
+    border-radius: 1.05rem;
+    background:
+      radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--hud-accent) 14%, transparent), transparent 42%),
+      linear-gradient(120deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+      rgba(4, 16, 22, 0.9);
+    padding: 0.58rem 0.65rem;
+    text-align: left;
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.22),
+      0 1px 0 rgba(255, 255, 255, 0.07) inset;
+    backdrop-filter: blur(18px);
+  }
+
+  .contracts-intelligence .property-anatomy__hud::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 2px;
+    border-radius: 999px;
+    background: var(--hud-accent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--hud-accent) 72%, transparent);
+  }
+
+  .contracts-intelligence .property-anatomy__hud::after {
+    content: "01";
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--hud-accent) 22%, transparent);
+    border-radius: 0.7rem;
+    background: color-mix(in srgb, var(--hud-accent) 8%, rgba(3, 12, 18, 0.72));
+    color: color-mix(in srgb, var(--hud-accent) 78%, white);
+    font-size: 0.62rem;
+    font-weight: 950;
+    letter-spacing: 0.05em;
+  }
+
+  .contracts-intelligence .property-anatomy__hud--distribution {
+    --hud-accent: #fbbf24;
+    order: 4;
+    border-color: rgba(251, 191, 36, 0.24);
+  }
+
+  .contracts-intelligence .property-anatomy__hud--distribution::after {
+    content: "02";
+  }
+
+  .contracts-intelligence .property-anatomy__hud-icon,
+  .contracts-intelligence .property-anatomy__hud--distribution .property-anatomy__hud-icon {
+    width: 2.45rem;
+    height: 2.45rem;
+    border: 1px solid color-mix(in srgb, var(--hud-accent) 24%, transparent);
+    border-radius: 0.78rem;
+    background: color-mix(in srgb, var(--hud-accent) 10%, rgba(255, 255, 255, 0.035));
+    color: var(--hud-accent);
+    box-shadow:
+      0 10px 22px color-mix(in srgb, var(--hud-accent) 11%, transparent),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  }
+
+  .contracts-intelligence .property-anatomy__hud > span:last-of-type {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .contracts-intelligence .property-anatomy__hud small {
+    color: color-mix(in srgb, var(--hud-accent) 78%, white);
+    font-size: 0.53rem;
+    line-height: 1.1;
+    letter-spacing: 0.105em;
+  }
+
+  .contracts-intelligence .property-anatomy__hud strong {
+    margin-top: 0.2rem;
+    color: #f8fafc;
+    font-size: 0.75rem;
+    line-height: 1.16;
+    text-align: left;
+  }
+
+  .contracts-intelligence .property-anatomy__visual-proof {
+    position: relative;
+    inset: auto;
+    order: 5;
+    display: grid;
+    width: 100%;
+    grid-column: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
+    border: 0;
+    border-radius: 1rem;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    transform: none;
+    backdrop-filter: none;
+  }
+
+  .contracts-intelligence .property-anatomy__visual-proof span {
+    min-height: 2.45rem;
+    justify-content: center;
+    border: 1px solid rgba(52, 211, 153, 0.16);
+    border-radius: 0.85rem;
+    background:
+      linear-gradient(145deg, rgba(52, 211, 153, 0.1), rgba(255, 255, 255, 0.025));
+    padding: 0.48rem 0.5rem;
+    color: rgba(226, 232, 240, 0.78);
+    font-size: 0.57rem;
+    line-height: 1.2;
+    text-align: center;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .contracts-intelligence .property-anatomy__visual-proof svg {
+    flex: 0 0 auto;
+    color: #34d399;
+  }
+}
