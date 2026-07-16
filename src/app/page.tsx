@@ -1004,6 +1004,11 @@ export default function HomePage() {
                           <strong>{screen.stat}</strong>
                           <span>{screen.statLabel}</span>
                         </div>
+                        <Link href="/demo" className="lux-feature__mobile-cta">
+                          <Play className="h-4 w-4 fill-current" />
+                          <span>Încearcă Aplicația Gratuit</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
                       </div>
                       <div className="lux-feature__media">
                         <span className="lux-feature__mediaPlate" />
