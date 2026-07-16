@@ -338,7 +338,7 @@ function ScreenFrame({
 export default function PropertiesLandingPage() {
   return (
     <>
-      <main className="lux-shell property-showcase min-h-screen overflow-x-clip bg-[#06101d] text-white">
+      <main className="lux-shell property-showcase properties-showcase min-h-screen overflow-x-clip bg-[#06101d] text-white">
         <header className="lux-nav">
           <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
             <Link href="/" aria-label="ImoDeus.ai">
