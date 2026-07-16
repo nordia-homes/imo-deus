@@ -92,7 +92,7 @@ function DemoButton({ className = "", label = "Vezi demo live" }: { className?: 
 }
 
 function ScreenFrame({ image, alt, label, priority = false, className = "" }: { image: string; alt: string; label: string; priority?: boolean; className?: string }) {
-  return <div className={"lux-screen property-screen " + className}><div className="lux-screen__bar"><div className="flex items-center gap-1.5" aria-hidden="true"><span className="lux-dot bg-[#fb7185]" /><span className="lux-dot bg-[#fbbf24]" /><span className="lux-dot bg-[#34d399]" /></div><span>{label}</span></div><div className="lux-screen__viewport"><Image src={image} alt={alt} width={1900} height={1015} priority={priority} loading={priority ? "eager" : "lazy"} sizes="(max-width: 767px) 820px, (max-width: 1279px) 92vw, 900px" className="lux-screen__image" /></div></div>;
+  return <div className={"lux-screen property-screen " + className}><div className="lux-screen__bar"><div className="flex items-center gap-1.5" aria-hidden="true"><span className="lux-dot bg-[#fb7185]" /><span className="lux-dot bg-[#fbbf24]" /><span className="lux-dot bg-[#34d399]" /></div><span>{label}</span></div><div className="lux-screen__viewport"><picture><source media="(max-width: 767px)" srcSet={image} /><Image src={image} alt={alt} width={1900} height={1015} priority={priority} loading={priority ? "eager" : "lazy"} sizes="(max-width: 767px) 820px, (max-width: 1279px) 92vw, 900px" className="lux-screen__image" /></picture></div></div>;
 }
 
 export default function PortaluriOnlineLandingPage() {
