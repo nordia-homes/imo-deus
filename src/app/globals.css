@@ -22722,3 +22722,437 @@
     color: #34d399;
   }
 }
+
+/* Contracts: premium role profiles on mobile only */
+@media (max-width: 767px) {
+  .contracts-roles {
+    background:
+      radial-gradient(circle at 6% 8%, rgba(245, 158, 11, 0.19), transparent 22rem),
+      radial-gradient(circle at 94% 88%, rgba(16, 185, 129, 0.17), transparent 24rem),
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(145deg, #050a11 0%, #0b1722 52%, #0a2a22 100%);
+    background-size: auto, auto, 3rem 3rem, 3rem 3rem, auto;
+  }
+
+  .contracts-roles .property-roles__grid {
+    gap: 0.95rem;
+  }
+
+  .contracts-roles .property-role-card {
+    --role-accent: #fbbf24;
+    --role-accent-2: #34d399;
+    isolation: isolate;
+    display: grid;
+    min-height: 0;
+    grid-template-columns: 3rem minmax(0, 1fr) 2.35rem;
+    grid-template-areas:
+      "icon overline number"
+      "title title title"
+      "copy copy copy"
+      "benefits benefits benefits";
+    align-items: center;
+    gap: 0.72rem 0.58rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--role-accent) 28%, transparent);
+    border-radius: 1.65rem;
+    background:
+      radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--role-accent) 17%, transparent), transparent 34%),
+      radial-gradient(circle at 5% 100%, color-mix(in srgb, var(--role-accent-2) 13%, transparent), transparent 38%),
+      linear-gradient(145deg, #07111d 0%, #10232c 100%);
+    padding: 1rem;
+    text-align: center;
+    box-shadow:
+      0 26px 64px rgba(0, 0, 0, 0.27),
+      0 0 0 1px rgba(255, 255, 255, 0.045) inset,
+      0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    transform: none;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) {
+    --role-accent: #10b981;
+    --role-accent-2: #f59e0b;
+    border-color: rgba(16, 185, 129, 0.25);
+    background:
+      radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.16), transparent 36%),
+      radial-gradient(circle at 94% 100%, rgba(245, 158, 11, 0.11), transparent 38%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.97) 0%, #eaf8f1 100%);
+    box-shadow:
+      0 26px 64px rgba(2, 44, 34, 0.19),
+      0 0 0 1px rgba(255, 255, 255, 0.92) inset,
+      0 1px 0 #ffffff inset;
+    transform: none;
+  }
+
+  .contracts-roles .property-role-card:nth-child(3) {
+    --role-accent: #2dd4bf;
+    --role-accent-2: #67e8f9;
+    border-color: rgba(45, 212, 191, 0.25);
+    background:
+      radial-gradient(circle at 92% 0%, rgba(45, 212, 191, 0.2), transparent 36%),
+      radial-gradient(circle at 0% 100%, rgba(103, 232, 249, 0.1), transparent 40%),
+      linear-gradient(145deg, #06131a 0%, #0a2d27 100%);
+  }
+
+  .contracts-roles .property-role-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+      linear-gradient(118deg, transparent 0 70%, color-mix(in srgb, var(--role-accent) 9%, transparent) 70% 70.4%, transparent 70.4%);
+    background-size: 2.7rem 2.7rem, 2.7rem 2.7rem, auto;
+    opacity: 0.72;
+    pointer-events: none;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2)::before {
+    background:
+      linear-gradient(rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 118, 110, 0.035) 1px, transparent 1px),
+      linear-gradient(118deg, transparent 0 70%, rgba(245, 158, 11, 0.08) 70% 70.4%, transparent 70.4%);
+    background-size: 2.7rem 2.7rem, 2.7rem 2.7rem, auto;
+  }
+
+  .contracts-roles .property-role-card::after {
+    content: "01";
+    position: relative;
+    z-index: 2;
+    grid-area: number;
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    place-items: center;
+    justify-self: end;
+    border: 1px solid color-mix(in srgb, var(--role-accent-2) 24%, transparent);
+    border-radius: 0.82rem;
+    background: color-mix(in srgb, var(--role-accent-2) 8%, rgba(3, 12, 19, 0.65));
+    color: color-mix(in srgb, var(--role-accent-2) 78%, white);
+    font-size: 0.67rem;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--role-accent-2) 9%, transparent);
+  }
+
+  .contracts-roles .property-role-card:nth-child(2)::after {
+    content: "02";
+    border-color: rgba(180, 83, 9, 0.14);
+    background: rgba(255, 255, 255, 0.7);
+    color: #b45309;
+  }
+
+  .contracts-roles .property-role-card:nth-child(3)::after {
+    content: "03";
+  }
+
+  .contracts-roles .property-role-card__icon {
+    position: relative;
+    z-index: 2;
+    grid-area: icon;
+    width: 3rem;
+    height: 3rem;
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--role-accent) 31%, transparent);
+    border-radius: 1rem;
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--role-accent) 17%, transparent), rgba(255, 255, 255, 0.035));
+    color: var(--role-accent);
+    box-shadow:
+      0 12px 28px color-mix(in srgb, var(--role-accent) 13%, transparent),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) .property-role-card__icon {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.16), rgba(255, 255, 255, 0.72));
+    color: #047857;
+    box-shadow:
+      0 12px 26px rgba(16, 185, 129, 0.14),
+      0 1px 0 #ffffff inset;
+  }
+
+  .contracts-roles .property-role-card__overline {
+    position: relative;
+    z-index: 2;
+    grid-area: overline;
+    display: inline-flex;
+    width: fit-content;
+    min-height: 1.8rem;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--role-accent-2) 21%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--role-accent-2) 7%, rgba(255, 255, 255, 0.035));
+    padding: 0.38rem 0.64rem;
+    color: color-mix(in srgb, var(--role-accent-2) 80%, white);
+    font-size: 0.55rem;
+    line-height: 1.08;
+    letter-spacing: 0.095em;
+    text-align: center;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) .property-role-card__overline {
+    border-color: rgba(16, 185, 129, 0.18);
+    background: rgba(255, 255, 255, 0.68);
+    color: #047857;
+  }
+
+  .contracts-roles .property-role-card h3 {
+    position: relative;
+    z-index: 2;
+    grid-area: title;
+    max-width: 20rem;
+    margin: 0.18rem auto 0;
+    color: #f8fafc;
+    font-size: clamp(1.5rem, 6.5vw, 1.72rem);
+    line-height: 1.01;
+    letter-spacing: -0.042em;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) h3 {
+    color: #07111f;
+  }
+
+  .contracts-roles .property-role-card > p {
+    position: relative;
+    z-index: 2;
+    grid-area: copy;
+    max-width: 21rem;
+    margin: 0 auto;
+    color: rgba(203, 213, 225, 0.74);
+    font-size: 0.82rem;
+    line-height: 1.48;
+    text-align: center;
+    text-wrap: pretty;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) > p {
+    color: rgba(51, 65, 85, 0.77);
+  }
+
+  .contracts-roles .property-role-card ul {
+    position: relative;
+    z-index: 2;
+    grid-area: benefits;
+    display: grid;
+    width: 100%;
+    gap: 0.4rem;
+    margin-top: 0.12rem;
+  }
+
+  .contracts-roles .property-role-card li {
+    width: 100%;
+    min-height: 2.35rem;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--role-accent-2) 16%, rgba(148, 163, 184, 0.11));
+    border-radius: 0.82rem;
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--role-accent-2) 7%, transparent), rgba(255, 255, 255, 0.035));
+    padding: 0.5rem 0.65rem;
+    color: rgba(226, 232, 240, 0.82);
+    font-size: 0.65rem;
+    line-height: 1.25;
+    text-align: center;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) li {
+    border-color: rgba(15, 118, 110, 0.12);
+    background: rgba(255, 255, 255, 0.68);
+    color: rgba(15, 23, 42, 0.75);
+    box-shadow: 0 1px 0 #ffffff inset;
+  }
+
+  .contracts-roles .property-role-card li svg {
+    flex: 0 0 auto;
+    color: var(--role-accent-2);
+  }
+
+  .contracts-roles .property-role-card:nth-child(2) li svg {
+    color: #10b981;
+  }
+}
+
+/* Contracts: compact premium final CTA on mobile only */
+@media (max-width: 767px) {
+  .contracts-final {
+    padding: 0.8rem 0 1rem;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(245, 158, 11, 0.2), transparent 21rem),
+      radial-gradient(circle at 92% 90%, rgba(16, 185, 129, 0.18), transparent 23rem),
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(145deg, #050a11 0%, #0a1722 52%, #09271f 100%);
+    background-size: auto, auto, 3rem 3rem, 3rem 3rem, auto;
+  }
+
+  .contracts-final .property-final__orb {
+    right: -7rem;
+    top: -7rem;
+    width: 17rem;
+    height: 17rem;
+    background: rgba(245, 158, 11, 0.2);
+    filter: blur(70px);
+  }
+
+  .contracts-final > div:last-child {
+    isolation: isolate;
+    width: calc(100% - 2rem);
+    max-width: 28rem;
+    gap: 1.1rem;
+    overflow: hidden;
+    margin: 0 auto;
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    border-radius: 1.8rem;
+    background:
+      radial-gradient(circle at 88% 0%, rgba(245, 158, 11, 0.17), transparent 35%),
+      radial-gradient(circle at 5% 100%, rgba(16, 185, 129, 0.13), transparent 40%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.025)),
+      rgba(4, 12, 18, 0.84);
+    padding: 1rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+    box-shadow:
+      0 30px 75px rgba(0, 0, 0, 0.33),
+      0 0 0 1px rgba(255, 255, 255, 0.045) inset,
+      0 1px 0 rgba(255, 255, 255, 0.09) inset;
+    backdrop-filter: blur(18px);
+  }
+
+  .contracts-final > div:last-child::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(118deg, transparent 0 69%, rgba(251, 191, 36, 0.075) 69% 69.4%, transparent 69.4%);
+    background-size: 2.65rem 2.65rem, 2.65rem 2.65rem, auto;
+    opacity: 0.76;
+    pointer-events: none;
+  }
+
+  .contracts-final > div:last-child::after {
+    content: "";
+    position: absolute;
+    right: -3.5rem;
+    bottom: 4rem;
+    z-index: -1;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: rgba(45, 212, 191, 0.16);
+    filter: blur(45px);
+    pointer-events: none;
+  }
+
+  .contracts-final > div:last-child > div:first-child {
+    display: grid;
+    justify-items: center;
+  }
+
+  .contracts-final .property-eyebrow {
+    width: fit-content;
+    max-width: 19rem;
+    min-height: 2rem;
+    justify-content: center;
+    border-color: rgba(251, 191, 36, 0.23);
+    background:
+      linear-gradient(90deg, rgba(245, 158, 11, 0.13), rgba(16, 185, 129, 0.08)),
+      rgba(4, 13, 18, 0.72);
+    padding: 0.48rem 0.68rem;
+    color: #fef3c7;
+    font-size: 0.55rem;
+    line-height: 1.15;
+    letter-spacing: 0.075em;
+    text-align: center;
+    box-shadow:
+      0 12px 26px rgba(0, 0, 0, 0.17),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .contracts-final .property-eyebrow svg {
+    flex: 0 0 auto;
+    color: #fbbf24;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.42));
+  }
+
+  .contracts-final h2 {
+    max-width: 20.5rem;
+    margin-top: 0.9rem;
+    background: linear-gradient(105deg, #ffffff 0%, #fef3c7 52%, #a7f3d0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: clamp(2.2rem, 10.5vw, 2.62rem);
+    line-height: 0.96;
+    letter-spacing: -0.052em;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .contracts-final p {
+    max-width: 21rem;
+    margin-top: 0.85rem;
+    color: rgba(203, 213, 225, 0.73);
+    font-size: 0.84rem;
+    line-height: 1.5;
+    text-align: center;
+    text-wrap: pretty;
+  }
+
+  .contracts-final .property-final__actions {
+    position: relative;
+    display: grid;
+    width: 100%;
+    max-width: none;
+    gap: 0.42rem;
+    margin: 0;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 1.3rem;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+      rgba(3, 11, 17, 0.58);
+    padding: 0.48rem;
+    box-shadow:
+      0 18px 38px rgba(0, 0, 0, 0.2),
+      0 1px 0 rgba(255, 255, 255, 0.055) inset;
+    backdrop-filter: blur(18px);
+  }
+
+  .contracts-final .property-final__actions a {
+    width: 100%;
+    min-height: 3.25rem;
+    justify-content: center;
+    border-radius: 0.95rem;
+    font-size: 0.86rem;
+  }
+
+  .contracts-final .property-final__actions .lux-primary-button {
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(100deg, rgba(255, 255, 255, 0.98), #d1fae5 54%, #86efac);
+    color: #07111f;
+    box-shadow:
+      0 14px 30px rgba(16, 185, 129, 0.19),
+      0 1px 0 #ffffff inset;
+  }
+
+  .contracts-final .property-final__secondary {
+    height: auto !important;
+    min-height: 3rem !important;
+    border-color: rgba(251, 191, 36, 0.15) !important;
+    border-radius: 0.9rem !important;
+    background:
+      linear-gradient(90deg, rgba(245, 158, 11, 0.07), rgba(16, 185, 129, 0.045)) !important;
+    color: rgba(241, 245, 249, 0.86) !important;
+    font-size: 0.8rem !important;
+  }
+}
