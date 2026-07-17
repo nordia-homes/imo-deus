@@ -344,6 +344,26 @@ const productScreens: ProductScreen[] = [
   },
 ];
 
+const productMobileTitles = [
+  { lead: "Dashboard live pentru", accent: "pulsul agentiei." },
+  { lead: "Oportunitati noi direct", accent: "din piata proprietarilor." },
+  { lead: "Outreach AI controlat", accent: "pentru proprietari." },
+  { lead: "Portofoliul devine", accent: "un centru de selectie rapid." },
+  { lead: "Publicarea pleaca", accent: "din acelasi sistem operational." },
+  { lead: "Pipeline activ pentru", accent: "lead-uri prioritizate." },
+  { lead: "Profil de cumparator", accent: "cu context si urmator pas." },
+  { lead: "Rezultate AI explicabile,", accent: "nu doar recomandari." },
+  { lead: "Vizionarile raman legate", accent: "de proprietate si client." },
+  { lead: "Contracte si template-uri", accent: "pregatite in CRM." },
+  { lead: "Video tururi generate", accent: "si pregatite pentru publicare." },
+  { lead: "Campanii Meta conectate", accent: "la proprietatile reale." },
+  { lead: "Asistent contextual", accent: "pentru munca reala a agentiei." },
+  { lead: "Ziua de lucru devine", accent: "clara si actionabila." },
+  { lead: "Echipa si rolurile", accent: "raman sub control." },
+  { lead: "Website-ul public primeste", accent: "infrastructura proprie." },
+  { lead: "Managementul vede miscarea agentiei,", accent: "nu doar cifre." },
+] as const;
+
 const productConversionCards: Record<string, ProductConversionCard[]> = {
   "Control room": [
     {
@@ -980,6 +1000,7 @@ export default function HomePage() {
             <div className="lux-product-tour mt-12">
               {productScreens.map((screen, index) => {
                 const Icon = screen.icon;
+                const mobileTitle = productMobileTitles[index];
                 const conversionCards = productConversionCards[screen.eyebrow] ?? [];
                 return (
                   <Fragment key={screen.title}>
@@ -993,7 +1014,11 @@ export default function HomePage() {
                           </div>
                           <span>flow {index + 1}</span>
                         </div>
-                        <h3>{screen.title}</h3>
+                        <h3 className="lux-feature__title-desktop">{screen.title}</h3>
+                        <h3 className="lux-feature__title-mobile">
+                          <span>{mobileTitle.lead}</span>{" "}
+                          <span>{mobileTitle.accent}</span>
+                        </h3>
                         <p>{screen.text}</p>
                         <div className="lux-feature__signals">
                           {screen.signals.map((signal) => (
