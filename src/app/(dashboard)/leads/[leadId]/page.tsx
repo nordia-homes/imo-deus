@@ -713,6 +713,7 @@ export default function LeadDetailPage() {
                                         onAddInteraction={handleAddInteraction}
                                         onAddTask={handleAddTask}
                                         contacts={[contact]}
+                                        properties={properties || []}
                                         onToggleTask={handleToggleTask}
                                     />
                                 </AccordionContent>
@@ -785,6 +786,7 @@ export default function LeadDetailPage() {
                             onAddInteraction={handleAddInteraction}
                             onAddTask={handleAddTask}
                             contacts={[contact]}
+                            properties={properties || []}
                             onToggleTask={handleToggleTask}
                         />
                     </div>

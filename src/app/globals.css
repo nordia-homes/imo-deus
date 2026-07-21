@@ -770,6 +770,67 @@
     border-color: rgba(196, 215, 239, 0.6) !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-card.agentfinder-viewing-task-card {
+    background:
+      radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 34%),
+      linear-gradient(180deg, rgba(253, 254, 255, 0.98), rgba(242, 248, 255, 0.96)) !important;
+    border-color: rgba(126, 166, 222, 0.72) !important;
+    color: #0f172a !important;
+    box-shadow: 0 18px 42px rgba(37, 55, 88, 0.11) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-date.agentfinder-viewing-task-date {
+    background: #ffffff !important;
+    border-color: #cbd8ea !important;
+    color: #334968 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-status.agentfinder-viewing-task-status {
+    background: #e0f2fe !important;
+    border-color: #7dd3fc !important;
+    color: #075985 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-title.agentfinder-viewing-task-title {
+    color: #0f172a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-time.agentfinder-viewing-task-time {
+    background: #17365c !important;
+    border-color: #285b8f !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 26px rgba(23, 54, 92, 0.22) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-duration.agentfinder-viewing-task-duration {
+    color: #dbeafe !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-property.agentfinder-viewing-task-property,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-meta.agentfinder-viewing-task-meta {
+    background: rgba(255, 255, 255, 0.84) !important;
+    border-color: #d3deed !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-property-label.agentfinder-viewing-task-property-label,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-meta-label.agentfinder-viewing-task-meta-label {
+    color: #526684 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-property-title.agentfinder-viewing-task-property-title,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-meta-value.agentfinder-viewing-task-meta-value {
+    color: #10213b !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-property-address.agentfinder-viewing-task-property-address {
+    color: #5f708a !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-meta-icon.agentfinder-viewing-task-meta-icon,
+  [data-app-theme='agentfinder'] .agentfinder-viewing-task-avatar.agentfinder-viewing-task-avatar {
+    background: #e7f4ff !important;
+    color: #075985 !important;
+  }
   [data-app-theme='agentfinder'] .agentfinder-schedule-viewing-button.agentfinder-schedule-viewing-button {
     background: #dcfce7 !important;
     border-color: #a7f3d0 !important;

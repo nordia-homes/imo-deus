@@ -1013,6 +1013,8 @@ export type Task = {
   contactName?: string | null;
   propertyId?: string | null;
   propertyTitle?: string | null;
+  participantName?: string | null;
+  participantPhone?: string | null;
   startTime?: string;
   duration?: number;
   agentId?: string | null;

@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Interaction, Task } from '@/lib/types';
+import type { Interaction, Property, Task } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Phone, Mail, FileText, CheckSquare, Activity, Users } from 'lucide-react';
@@ -47,10 +47,11 @@ type LeadTimelineProps = {
   onAddInteraction: (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => Promise<void>;
   onAddTask: (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
   contacts: { id: string; name: string; }[];
+  properties: Property[];
   onToggleTask: (task: Task) => void;
 };
 
-export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask, contacts, onToggleTask }: LeadTimelineProps) {
+export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask, contacts, properties, onToggleTask }: LeadTimelineProps) {
   const timelineItems = React.useMemo(() => {
     const combined: TimelineItemData[] = [];
     interactions.forEach(i => combined.push({ ...i, itemKind: 'interaction', sortDate: new Date(i.date) }));
@@ -128,7 +129,7 @@ export function LeadTimeline({ interactions, tasks, onAddInteraction, onAddTask,
             <AddInteractionPopover type="Notiță" onSave={(notes) => handleInteractionSave('Notiță', notes)}>
                 <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><FileText className="mr-2 h-4 w-4" /> Notiță</Button>
             </AddInteractionPopover>
-            <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
+            <AddTaskDialog onAddTask={onAddTask} contacts={contacts} properties={properties}>
                  <Button variant="outline" size="sm" className="agentfinder-button-primary agentfinder-add-to-portal-button h-10 w-full rounded-2xl"><CheckSquare className="mr-2 h-4 w-4" /> Task</Button>
             </AddTaskDialog>
         </div>

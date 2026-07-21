@@ -5,7 +5,7 @@ import { TasksList } from "@/components/tasks/TasksList";
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import type { Task, Contact } from '@/lib/types';
+import type { Task, Contact, Property } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { useAgency } from "@/context/AgencyContext";
 import { TasksCalendar } from "@/components/tasks/TasksCalendar";
@@ -24,6 +24,12 @@ export default function TasksPage() {
         return collection(firestore, 'agencies', agencyId, 'contacts');
     }, [firestore, agencyId]);
     const { data: contacts } = useCollection<Contact>(contactsQuery);
+
+    const propertiesQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'properties');
+    }, [firestore, agencyId]);
+    const { data: properties } = useCollection<Property>(propertiesQuery);
 
     const tasksQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
@@ -77,7 +83,7 @@ export default function TasksPage() {
                             Vezi rapid ce e urgent, ce ai în lucru și ce ai închis, fără să te lupți cu un ecran monoton.
                         </p>
                     </div>
-                    <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []}>
+                    <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []} properties={properties || []}>
                         <Button className="agentfinder-tasks-primary-button h-12 rounded-2xl border border-sky-300/20 bg-sky-400/[0.15] px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(59,130,246,0.18)] hover:bg-sky-400/[0.25]">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adaugă Task

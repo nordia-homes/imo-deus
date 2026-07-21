@@ -3,15 +3,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, addDoc } from 'firebase/firestore';
-import type { Property, Contact, Viewing } from '@/lib/types';
+import type { Property, Contact, Task, Viewing } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, ChevronDown } from 'lucide-react';
+import { PlusCircle, ChevronDown, ListTodo } from 'lucide-react';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { ViewingsCalendar } from '@/components/viewings/ViewingsCalendar';
+import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
+import { EditTaskDialog } from '@/components/tasks/EditTaskDialog';
+import { DeleteTaskAlert } from '@/components/tasks/DeleteTaskAlert';
 import { ViewingList } from '@/components/viewings/ViewingList';
 import { parseISO, addDays, startOfDay } from 'date-fns';
 import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
@@ -28,6 +31,8 @@ export default function ViewingsPage() {
 
     const [editingViewing, setEditingViewing] = useState<Viewing | null>(null);
     const [deletingViewing, setDeletingViewing] = useState<Viewing | null>(null);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [deletingTask, setDeletingTask] = useState<Task | null>(null);
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
     const [isUpcomingOpen, setIsUpcomingOpen] = useState(false);
     const [isPastOpen, setIsPastOpen] = useState(false);
@@ -50,6 +55,12 @@ export default function ViewingsPage() {
         return query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc'));
     }, [firestore, agencyId]);
     const { data: viewings, isLoading: areViewingsLoading } = useCollection<Viewing>(viewingsQuery);
+
+    const tasksQuery = useMemoFirebase(() => {
+        if (!agencyId) return null;
+        return collection(firestore, 'agencies', agencyId, 'tasks');
+    }, [firestore, agencyId]);
+    const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksQuery);
 
     const { upcomingViewings, pastViewings } = useMemo(() => {
         if (!viewings) {
@@ -120,6 +131,57 @@ export default function ViewingsPage() {
         }
     };
 
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => {
+        if (!agencyId || !user) return;
+
+        const taskToAdd: Omit<Task, 'id'> = {
+            ...taskData,
+            status: 'open',
+            agentId: user.uid,
+            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
+        };
+
+        try {
+            await addDoc(collection(firestore, 'agencies', agencyId, 'tasks'), taskToAdd);
+            toast({
+                title: 'Task adăugat!',
+                description: `Task-ul "${taskData.description}" a fost adăugat în calendar.`,
+            });
+        } catch (error) {
+            console.error('Failed to add task:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Eroare',
+                description: 'Task-ul nu a putut fi salvat.',
+            });
+        }
+    };
+
+    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+        if (!agencyId || !editingTask) return;
+
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
+        const { id, ...dataToUpdate } = updatedTask;
+        updateDocumentNonBlocking(taskRef, dataToUpdate);
+        toast({
+            title: 'Task actualizat!',
+            description: `Task-ul "${updatedTask.description}" a fost actualizat.`,
+        });
+        setEditingTask(null);
+    };
+
+    const handleDeleteTask = () => {
+        if (!agencyId || !deletingTask) return;
+
+        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
+        deleteDocumentNonBlocking(taskRef);
+        toast({
+            variant: 'destructive',
+            title: 'Task șters!',
+            description: `Task-ul "${deletingTask.description}" a fost șters.`,
+        });
+        setDeletingTask(null);
+    };
     const handleUpdateViewing = (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
         if (!agencyId || !editingViewing) return;
         const viewingRef = doc(firestore, 'agencies', agencyId, 'viewings', editingViewing.id);
@@ -140,7 +202,7 @@ export default function ViewingsPage() {
         setDeletingViewing(null);
     };
 
-    const isLoading = arePropertiesLoading || areContactsLoading || areViewingsLoading || areAgentsLoading;
+    const isLoading = arePropertiesLoading || areContactsLoading || areViewingsLoading || areTasksLoading || areAgentsLoading;
 
     if (isLoading) {
         return (
@@ -153,18 +215,29 @@ export default function ViewingsPage() {
 
     return (
         <div className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-x-hidden bg-[#0F1E33] px-2 py-2 text-white sm:gap-6 sm:p-2">
-            <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="agentfinder-schedule-viewing-button w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
-                <PlusCircle className="mr-2 h-4 w-4"/>
-                Programează Vizionare
-            </Button>
+            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="agentfinder-schedule-viewing-button w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
+                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    Programează Vizionare
+                </Button>
+                <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []} properties={properties || []} requireSchedule>
+                    <Button variant="outline" className="agentfinder-schedule-task-button h-12 w-full bg-white/10 text-base text-white border-white/20 hover:bg-white/20 hover:text-white">
+                        <ListTodo className="mr-2 h-4 w-4" />
+                        Adaugă Task
+                    </Button>
+                </AddTaskDialog>
+            </div>
             
             <ViewingsCalendar 
-                viewings={viewings} 
+                viewings={viewings || []}
+                tasks={tasks || []}
                 agents={agents} 
-                properties={properties}
-                contacts={contacts}
+                properties={properties || []}
+                contacts={contacts || []}
                 onEdit={setEditingViewing}
                 onDelete={setDeletingViewing}
+                onEditTask={setEditingTask}
+                onDeleteTask={setDeletingTask}
             />
 
             <div className="mt-8 space-y-6">
@@ -192,8 +265,8 @@ export default function ViewingsPage() {
                             title="Vizionări Următoarele 7 Zile" 
                             viewings={upcomingViewings} 
                             agents={agents}
-                            properties={properties}
-                            contacts={contacts}
+                            properties={properties || []}
+                            contacts={contacts || []}
                             onEdit={setEditingViewing}
                             onDelete={setDeletingViewing}
                         />
@@ -224,8 +297,8 @@ export default function ViewingsPage() {
                             title="Istoric Vizionări" 
                             viewings={pastViewings} 
                             agents={agents}
-                            properties={properties}
-                            contacts={contacts}
+                            properties={properties || []}
+                            contacts={contacts || []}
                             onEdit={setEditingViewing}
                             onDelete={setDeletingViewing}
                         />
@@ -257,6 +330,21 @@ export default function ViewingsPage() {
                 onDelete={handleDeleteViewing}
             />
 
+            <EditTaskDialog
+                isOpen={!!editingTask}
+                onOpenChange={(isOpen) => !isOpen && setEditingTask(null)}
+                task={editingTask}
+                onUpdateTask={handleUpdateTask}
+                contacts={contacts || []}
+                properties={properties || []}
+            />
+
+            <DeleteTaskAlert
+                isOpen={!!deletingTask}
+                onOpenChange={(isOpen) => !isOpen && setDeletingTask(null)}
+                task={deletingTask}
+                onDelete={handleDeleteTask}
+            />
         </div>
     );
 }

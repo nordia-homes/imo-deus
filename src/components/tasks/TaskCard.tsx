@@ -1,7 +1,7 @@
 'use client';
 
 import type { Task } from "@/lib/types";
-import { CalendarDays, CheckCircle2, Clock3, Pencil, UserRound } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock3, Pencil, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -62,6 +62,23 @@ export function TaskCard({ task, onEdit, onToggleComplete, className }: TaskCard
                     </div>
                 )}
 
+                {(task.participantName || task.participantPhone) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-sky-200/40 bg-sky-100/95 px-3 py-2 text-xs text-slate-800">
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <UserRound className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate font-medium">{task.participantName || 'Participant'}</span>
+                        </span>
+                        {task.participantPhone && (
+                            <a
+                                href={`tel:${task.participantPhone}`}
+                                className="inline-flex items-center gap-1 font-medium text-sky-800 hover:underline"
+                            >
+                                <Phone className="h-3.5 w-3.5" />
+                                {task.participantPhone}
+                            </a>
+                        )}
+                    </div>
+                )}
                 {(onEdit || onToggleComplete) && (
                     <div className="mt-4 flex items-center gap-2">
                         {onEdit && (

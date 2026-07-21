@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import type { Viewing, UserProfile, Property, Contact } from '@/lib/types';
+import type { Viewing, Task, UserProfile, Property, Contact } from '@/lib/types';
 import {
   format,
   startOfWeek,
@@ -34,11 +34,14 @@ import Image from 'next/image';
 
 interface ViewingsCalendarProps {
   viewings?: Viewing[];
+  tasks?: Task[];
   agents?: UserProfile[];
   properties?: Property[];
   contacts?: Contact[];
   onEdit: (viewing: Viewing) => void;
   onDelete: (viewing: Viewing) => void;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }
 
 const getAgentForViewing = (viewing: Viewing, agents: UserProfile[]) => {
@@ -125,7 +128,193 @@ const formatAvailabilityDuration = (minutes: number) => {
     return `${hours}h ${remainingMinutes}m`;
 };
 
-export function ViewingsCalendar({ viewings = [], agents = [], properties = [], contacts = [], onEdit, onDelete }: ViewingsCalendarProps) {
+const getTaskDayKey = (task: Task) => {
+    const parsedDate = parseISO(task.dueDate);
+    return Number.isNaN(parsedDate.getTime()) ? task.dueDate.slice(0, 10) : format(parsedDate, 'yyyy-MM-dd');
+};
+
+const getTaskStart = (task: Task) => {
+    if (!task.startTime) return null;
+    const start = parseISO(`${getTaskDayKey(task)}T${task.startTime}:00`);
+    return Number.isNaN(start.getTime()) ? null : start;
+};
+
+const formatTaskTimeRange = (task: Task) => {
+    const start = getTaskStart(task);
+    if (!start) return 'Fără oră';
+
+    const end = addMinutes(start, task.duration ?? 30);
+    return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+};
+
+type ViewingTaskCardProps = {
+  task: Task;
+  property?: Property;
+  contact?: Contact;
+  agent?: UserProfile;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
+};
+
+function ViewingTaskCard({ task, property, contact, agent, onEdit, onDelete }: ViewingTaskCardProps) {
+  const propertyTitle = property?.title || task.propertyTitle;
+  const contactName = contact?.name || task.contactName;
+  const agentName = agent?.name || task.agentName;
+  const participantName = task.participantName?.trim();
+  const participantPhone = task.participantPhone?.trim();
+
+  return (
+    <Card
+      id={`task-${task.id}-card`}
+      className="agentfinder-viewing-task-card w-full overflow-hidden rounded-[22px] border border-sky-300/20 bg-[#152A47] text-white shadow-[0_14px_34px_rgba(0,0,0,0.16)]"
+    >
+      <CardContent className="p-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-nowrap lg:items-stretch">
+          <div className="agentfinder-viewing-task-time flex min-h-16 min-w-0 items-center gap-2.5 rounded-2xl border border-sky-300/25 bg-sky-400/20 px-3.5 py-2 text-white lg:w-[166px] lg:shrink-0">
+            <Clock3 className="h-5 w-5 shrink-0" />
+            <div className="min-w-0">
+              <p className="agentfinder-viewing-task-duration text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-100/75">Ora</p>
+              <p className="truncate text-sm font-bold sm:text-base">{formatTaskTimeRange(task)}</p>
+            </div>
+          </div>
+
+          <div className="agentfinder-viewing-task-meta flex min-h-16 min-w-0 items-center rounded-2xl border border-white/10 bg-white/[0.06] px-3.5 py-2 lg:flex-[1.15]">
+            <div className="min-w-0">
+              <p className="agentfinder-viewing-task-meta-label text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Task</p>
+              <p
+                title={task.description}
+                className={cn(
+                  'agentfinder-viewing-task-title truncate text-sm font-semibold text-white sm:text-base',
+                  task.status === 'completed' && 'line-through opacity-60'
+                )}
+              >
+                {task.description}
+              </p>
+            </div>
+          </div>
+
+          {propertyTitle ? (
+            <div className="agentfinder-viewing-task-property flex min-h-16 min-w-0 items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.06] p-2 sm:col-span-2 lg:col-span-1 lg:flex-[1.45]">
+              <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded-xl bg-[#102238]">
+                {property?.images?.[0]?.url ? (
+                  <Image src={property.images[0].url} alt={propertyTitle} fill className="object-cover" sizes="56px" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-white/55">
+                    <Home className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="agentfinder-viewing-task-property-label text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-200/75">Proprietate</p>
+                {task.propertyId ? (
+                  <Link
+                    href={`/properties/${task.propertyId}`}
+                    title={propertyTitle}
+                    className="agentfinder-viewing-task-property-title block truncate text-sm font-semibold text-white hover:underline"
+                  >
+                    {propertyTitle}
+                  </Link>
+                ) : (
+                  <p title={propertyTitle} className="agentfinder-viewing-task-property-title truncate text-sm font-semibold text-white">{propertyTitle}</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {contactName ? (
+            <div className="agentfinder-viewing-task-meta flex min-h-16 min-w-0 items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 lg:flex-1">
+              <Avatar className="h-9 w-9 shrink-0 border border-white/15">
+                <AvatarImage src={contact?.photoUrl} alt={contactName} />
+                <AvatarFallback className="agentfinder-viewing-task-avatar bg-white/10 text-white">
+                  <UserRound className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="agentfinder-viewing-task-meta-label text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Cumpărător</p>
+                {task.contactId ? (
+                  <Link
+                    href={`/leads/${task.contactId}`}
+                    title={contactName}
+                    className="agentfinder-viewing-task-meta-value block truncate text-sm font-medium text-white hover:underline"
+                  >
+                    {contactName}
+                  </Link>
+                ) : (
+                  <p title={contactName} className="agentfinder-viewing-task-meta-value truncate text-sm font-medium text-white">{contactName}</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {(participantName || participantPhone) ? (
+            <div className="agentfinder-viewing-task-meta flex min-h-16 min-w-0 items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 lg:flex-1">
+              <div className="agentfinder-viewing-task-meta-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sky-100">
+                <UserRound className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="agentfinder-viewing-task-meta-label text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Participant</p>
+                <p
+                  title={participantName || 'Participant'}
+                  className="agentfinder-viewing-task-meta-value truncate text-sm font-medium leading-tight text-white"
+                >
+                  {participantName || 'Participant'}
+                </p>
+                {participantPhone ? (
+                  <a
+                    href={`tel:${participantPhone}`}
+                    title={participantPhone}
+                    className="agentfinder-viewing-task-meta-value mt-0.5 flex items-center gap-1 truncate text-xs leading-tight text-white/65 hover:underline"
+                  >
+                    <Phone className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{participantPhone}</span>
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+          {agentName ? (
+            <div className="agentfinder-viewing-task-meta flex min-h-16 min-w-0 items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 lg:flex-1">
+              <Avatar className="h-9 w-9 shrink-0 border border-white/15">
+                <AvatarImage src={agent?.photoUrl} alt={agentName} />
+                <AvatarFallback className="agentfinder-viewing-task-avatar bg-white/10 text-xs text-white">{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="agentfinder-viewing-task-meta-label text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Agent</p>
+                <p title={agentName} className="agentfinder-viewing-task-meta-value truncate text-sm font-medium text-white">{agentName}</p>
+              </div>
+            </div>
+          ) : null}
+          <div className="agentfinder-viewing-task-actions flex min-h-16 items-center justify-end gap-1.5 sm:col-span-2 lg:col-span-1 lg:w-[76px] lg:shrink-0 lg:justify-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(task)}
+              aria-label="Editează task"
+              title="Editează task"
+              className="h-8 w-8 rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-sky-50 hover:text-sky-800"
+            >
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(task)}
+              aria-label="Șterge task"
+              title="Șterge task"
+              className="h-8 w-8 rounded-xl border border-rose-200 bg-white text-rose-600 shadow-sm hover:bg-rose-50 hover:text-rose-700"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ViewingsCalendar({ viewings = [], tasks = [], agents = [], properties = [], contacts = [], onEdit, onDelete, onEditTask, onDeleteTask }: ViewingsCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
 
   const viewingsByDay = useMemo(() => {
@@ -142,8 +331,22 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     return grouped;
   }, [viewings]);
 
+  const tasksByDay = useMemo(() => {
+    const grouped: { [key: string]: Task[] } = {};
+
+    tasks.forEach((task) => {
+      const dayKey = getTaskDayKey(task);
+      if (!grouped[dayKey]) {
+        grouped[dayKey] = [];
+      }
+      grouped[dayKey].push(task);
+    });
+
+    return grouped;
+  }, [tasks]);
+
   const weekDays = useMemo(() => {
-    const start = startOfWeek(selectedDay, { weekStartsOn: 1 }); // Start week on Monday
+    const start = startOfWeek(selectedDay, { weekStartsOn: 1 });
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
   }, [selectedDay]);
 
@@ -163,26 +366,64 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     );
   }, [selectedDay, viewingsByDay, properties, contacts, agents]);
 
+  const selectedDayTasks = useMemo(() => {
+    const dayKey = format(selectedDay, 'yyyy-MM-dd');
+    return (tasksByDay[dayKey] || [])
+      .slice()
+      .sort((a, b) => {
+        const left = getTaskStart(a)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const right = getTaskStart(b)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return left - right;
+      });
+  }, [selectedDay, tasksByDay]);
+
+  const scheduledDayItems = useMemo(() => {
+    const viewingItems = selectedDayViewings.map((viewing) => {
+      const start = parseISO(viewing.viewingDate);
+      return {
+        type: 'viewing' as const,
+        key: `viewing-${viewing.id}`,
+        start,
+        end: addMinutes(start, viewing.duration ?? 30),
+        viewing,
+      };
+    });
+
+    const taskItems = selectedDayTasks.flatMap((task) => {
+      const start = getTaskStart(task);
+      if (!start) return [];
+      return [{
+        type: 'task' as const,
+        key: `task-${task.id}`,
+        start,
+        end: addMinutes(start, task.duration ?? 30),
+        task,
+      }];
+    });
+
+    return [...viewingItems, ...taskItems].sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [selectedDayTasks, selectedDayViewings]);
+
   const timelineEntries = useMemo(() => {
     const dayStart = getDayBoundary(selectedDay, VIEWING_DAY_START_HOUR);
     const dayEnd = getDayBoundary(selectedDay, VIEWING_DAY_END_HOUR);
     const entries: Array<
       | { type: 'free'; key: string; start: Date; end: Date; minutes: number }
-      | { type: 'viewing'; key: string; viewing: (typeof selectedDayViewings)[number] }
+      | (typeof scheduledDayItems)[number]
+      | { type: 'task'; key: string; task: Task; start: null; end: null }
     > = [];
 
     let cursor = dayStart;
 
-    for (const viewing of selectedDayViewings) {
-      const start = parseISO(viewing.viewingDate);
-      const end = addMinutes(start, viewing.duration ?? 30);
+    for (const item of scheduledDayItems) {
+      const { start, end } = item;
 
       if (start > cursor) {
         const freeMinutes = Math.max(0, Math.round((start.getTime() - cursor.getTime()) / 60000));
         if (freeMinutes > 0) {
           entries.push({
             type: 'free',
-            key: `free-before-${viewing.id}-${cursor.toISOString()}`,
+            key: `free-before-${item.key}-${cursor.toISOString()}`,
             start: cursor,
             end: start,
             minutes: freeMinutes,
@@ -190,11 +431,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         }
       }
 
-      entries.push({
-        type: 'viewing',
-        key: viewing.id,
-        viewing,
-      });
+      entries.push(item);
 
       if (end > cursor) {
         cursor = end;
@@ -214,39 +451,38 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
       }
     }
 
-    if (entries.length === 0) {
+    for (const task of selectedDayTasks) {
+      if (getTaskStart(task)) continue;
       entries.push({
-        type: 'free',
-        key: `free-full-${format(selectedDay, 'yyyy-MM-dd')}`,
-        start: dayStart,
-        end: dayEnd,
-        minutes: Math.round((dayEnd.getTime() - dayStart.getTime()) / 60000),
+        type: 'task',
+        key: `task-${task.id}`,
+        task,
+        start: null,
+        end: null,
       });
     }
 
     return entries;
-  }, [selectedDay, selectedDayViewings]);
+  }, [scheduledDayItems, selectedDay, selectedDayTasks]);
 
-  const daySummaryViewings = useMemo(() => {
-    return selectedDayViewings.map((viewing) => {
-      const start = parseISO(viewing.viewingDate);
-      const end = addMinutes(start, viewing.duration ?? 30);
+  const daySummaryEvents = useMemo(() => {
+    return scheduledDayItems.map((item) => {
+      const { start, end } = item;
       const startMinutes = start.getHours() * 60 + start.getMinutes();
       const endMinutes = end.getHours() * 60 + end.getMinutes();
       const offsetMinutes = startMinutes - VIEWING_DAY_START_HOUR * 60;
       const durationMinutes = Math.max(15, endMinutes - startMinutes);
 
       return {
-        id: viewing.id,
-        start,
-        end,
-        label: formatViewingTimeRange(viewing.viewingDate, viewing.duration),
-        title: viewing.propertyTitle,
+        id: item.key,
+        type: item.type,
+        label: item.type === 'viewing' ? formatViewingTimeRange(item.viewing.viewingDate, item.viewing.duration) : formatTaskTimeRange(item.task),
+        title: item.type === 'viewing' ? item.viewing.propertyTitle : item.task.description,
         leftPercent: Math.max(0, Math.min(100, (offsetMinutes / VIEWING_DAY_TOTAL_MINUTES) * 100)),
         widthPercent: Math.max(2.5, Math.min(100, (durationMinutes / VIEWING_DAY_TOTAL_MINUTES) * 100)),
       };
     });
-  }, [selectedDayViewings]);
+  }, [scheduledDayItems]);
 
   const daySummaryItems = useMemo(() => {
     const items: Array<
@@ -257,7 +493,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
           minutes: number;
         }
       | {
-          type: 'viewing';
+          type: 'viewing' | 'task';
           key: string;
           label: string;
           title: string;
@@ -268,9 +504,8 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
     const dayEnd = getDayBoundary(selectedDay, VIEWING_DAY_END_HOUR);
     let cursor = dayStart;
 
-    for (const viewing of selectedDayViewings) {
-      const start = parseISO(viewing.viewingDate);
-      const end = addMinutes(start, viewing.duration ?? 30);
+    for (const item of scheduledDayItems) {
+      const { start, end } = item;
 
       if (start > cursor) {
         const freeMinutes = Math.round((start.getTime() - cursor.getTime()) / 60000);
@@ -285,10 +520,10 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
       }
 
       items.push({
-        type: 'viewing',
-        key: viewing.id,
-        label: formatViewingTimeRange(viewing.viewingDate, viewing.duration),
-        title: viewing.propertyTitle,
+        type: item.type,
+        key: item.key,
+        label: item.type === 'viewing' ? formatViewingTimeRange(item.viewing.viewingDate, item.viewing.duration) : formatTaskTimeRange(item.task),
+        title: item.type === 'viewing' ? item.viewing.propertyTitle : item.task.description,
       });
 
       if (end > cursor) {
@@ -317,16 +552,26 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
       });
     }
 
+    for (const task of selectedDayTasks) {
+      if (getTaskStart(task)) continue;
+      items.push({
+        type: 'task',
+        key: `task-${task.id}`,
+        label: 'Fără oră',
+        title: task.description,
+      });
+    }
+
     return items;
-  }, [selectedDay, selectedDayViewings]);
+  }, [scheduledDayItems, selectedDay, selectedDayTasks]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const amount = direction === 'prev' ? -7 : 7;
     setSelectedDay(current => addDays(current, amount));
   };
 
-  const scrollToViewingCard = (viewingId: string) => {
-    const element = document.getElementById(`viewing-card-${viewingId}`);
+  const scrollToScheduleCard = (itemKey: string) => {
+    const element = document.getElementById(`${itemKey}-card`);
     if (!element) return;
 
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -339,7 +584,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         <header className="mb-4 grid w-full max-w-full grid-cols-[auto,minmax(0,1fr)] items-center gap-2 overflow-hidden px-1">
           <div className="flex min-w-0 items-center gap-1.5 overflow-hidden sm:gap-2">
             <Button onClick={() => setSelectedDay(new Date())} variant="outline" className="h-11 shrink-0 bg-white/10 px-4 text-base text-white border-white/20 hover:bg-white/20">
-              Astăzi ({selectedDayViewings.length})
+              Astăzi ({selectedDayViewings.length + selectedDayTasks.length})
             </Button>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <Button
@@ -371,6 +616,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
             const dayKey = format(day, 'yyyy-MM-dd');
             const dayViewings = viewingsByDay[dayKey] || [];
             const isSelected = isSameDay(day, selectedDay);
+            const dayTasks = tasksByDay[dayKey] || [];
             const isCurrent = isToday(day);
 
             return (
@@ -394,7 +640,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                   {format(day, 'd')}
                 </span>
                 <div className="flex items-center mt-2 h-4">
-                  {dayViewings.slice(0, 3).map((v, i) => {
+                  {dayViewings.slice(0, dayTasks.length > 0 ? 2 : 3).map((v, i) => {
                     const agent = getAgentForViewing(v, agents);
                     return (
                         <Avatar key={i} className={cn("h-4 w-4 border-[#152A47]", i > 0 && "-ml-1.5")}>
@@ -403,6 +649,11 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                         </Avatar>
                     )
                   })}
+                  {dayTasks.length > 0 && (
+                    <span className={cn("flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-400 px-1 text-[8px] font-bold text-slate-950", dayViewings.length > 0 && "-ml-1")}>
+                      {dayTasks.length}
+                    </span>
+                  )}
                 </div>
               </button>
             );
@@ -412,32 +663,32 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
         <div className="agentfinder-viewing-summary-card mb-6 overflow-hidden rounded-[24px] border border-white/10 bg-[#132840] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-lg font-semibold text-white sm:text-xl">Rezumat Ore Vizionări</p>
+              <p className="text-lg font-semibold text-white sm:text-xl">Rezumat program</p>
               <p className="text-sm text-white/55 sm:text-base">Programul zilei 08:00 - 21:00</p>
             </div>
             <div className="agentfinder-viewing-summary-count mt-0.5 shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/75">
-              {selectedDayViewings.length} vizionări
+              {selectedDayViewings.length + selectedDayTasks.length} programări
             </div>
           </div>
 
           <div className="mt-5">
             <div className="agentfinder-viewing-summary-timeline relative h-7 rounded-2xl border border-white/10 bg-[#0F1E33]/90 px-2">
               <div className="agentfinder-viewing-summary-axis absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/10" />
-              {daySummaryViewings.map((viewing) => (
+              {daySummaryEvents.map((event) => (
                 <div
-                  key={viewing.id}
+                  key={event.id}
                   className="absolute top-1/2 -translate-y-1/2"
                   style={{
-                    left: `calc(${viewing.leftPercent}% + 0.5rem)`,
-                    width: `calc(${viewing.widthPercent}% - 0.25rem)`,
+                    left: `calc(${event.leftPercent}% + 0.5rem)`,
+                    width: `calc(${event.widthPercent}% - 0.25rem)`,
                   }}
                 >
-                  <div className="agentfinder-viewing-summary-bar h-3 rounded-full bg-primary shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(34,197,94,0.35)]" />
+                  <div className={cn("agentfinder-viewing-summary-bar h-3 rounded-full", event.type === 'task' ? "bg-sky-400 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(56,189,248,0.35)]" : "bg-primary shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_18px_rgba(34,197,94,0.35)]")} />
                 </div>
               ))}
-              {daySummaryViewings.length === 0 && (
+              {daySummaryEvents.length === 0 && (
                 <div className="agentfinder-viewing-summary-empty absolute inset-0 flex items-center justify-center text-xs text-white/45">
-                  Nicio vizionare în ziua selectată
+                  Nicio programare în ziua selectată
                 </div>
               )}
             </div>
@@ -453,14 +704,14 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
             {daySummaryItems.length > 0 && (
               <div className="mt-4 grid grid-cols-1 gap-2">
                 {daySummaryItems.map((item) =>
-                  item.type === 'viewing' ? (
+                  item.type !== 'free' ? (
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() => scrollToViewingCard(item.key)}
+                      onClick={() => scrollToScheduleCard(item.key)}
                       className="agentfinder-viewing-summary-item flex min-h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/10 sm:min-h-0 sm:py-2"
                     >
-                      <span className="agentfinder-viewing-summary-dot h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                      <span className={cn("agentfinder-viewing-summary-dot h-2.5 w-2.5 shrink-0 rounded-full", item.type === 'task' ? "bg-sky-400" : "bg-primary")} />
                       <span className="agentfinder-viewing-summary-item-time shrink-0 font-medium text-white sm:text-base">{item.label}</span>
                       <span className="agentfinder-viewing-summary-item-title min-w-0 truncate text-white/55 sm:text-base">{item.title}</span>
                     </button>
@@ -550,6 +801,21 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                   );
                 }
 
+                if (entry.type === 'task') {
+                  const task = entry.task;
+                  return (
+                    <ViewingTaskCard
+                      key={entry.key}
+                      task={task}
+                      property={task.propertyId ? properties.find((item) => item.id === task.propertyId) : undefined}
+                      contact={task.contactId ? contacts.find((item) => item.id === task.contactId) : undefined}
+                      agent={task.agentId ? agents.find((item) => item.id === task.agentId) : undefined}
+                      onEdit={onEditTask}
+                      onDelete={onDeleteTask}
+                    />
+                  );
+                }
+
                 const viewing = entry.viewing;
                 const { property, contact, agent } = viewing;
                 const contactPhone = sanitizeForWhatsapp(contact?.phone);
@@ -561,7 +827,7 @@ export function ViewingsCalendar({ viewings = [], agents = [], properties = [], 
                 const ownerConfirmationText = encodeURIComponent(buildOwnerConfirmationText(viewing));
 
                 return (
-                    <Card id={`viewing-card-${viewing.id}`} key={entry.key} className="agentfinder-viewing-card group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
+                    <Card id={`viewing-${viewing.id}-card`} key={entry.key} className="agentfinder-viewing-card group w-full max-w-full overflow-hidden rounded-[26px] border border-white/10 bg-[#152A47] shadow-[0_18px_44px_rgba(0,0,0,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_56px_rgba(0,0,0,0.24)]">
                         <div className="flex flex-col md:max-lg:grid md:max-lg:grid-cols-[200px_minmax(0,1fr)] lg:flex-row">
                             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-[26px] md:h-auto md:w-[200px] md:max-lg:col-start-1 md:max-lg:row-start-1 md:max-lg:aspect-square md:max-lg:w-[200px] md:shrink-0 md:rounded-l-[26px] md:rounded-r-none lg:aspect-[16/10] lg:w-[320px]">
                                 {property?.images?.[0]?.url ? (

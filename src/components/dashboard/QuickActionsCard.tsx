@@ -150,7 +150,7 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                         <Plus className="mr-2 h-4 w-4" />
                         Proprietate
                     </Button>
-                    <AddTaskDialog onAddTask={onAddTask} contacts={contacts}>
+                    <AddTaskDialog onAddTask={onAddTask} contacts={contacts} properties={properties}>
                         <Button className="agentfinder-dashboard-soft-button h-auto py-3 bg-white/10 hover:bg-white/20 text-white w-full text-sm rounded-lg">
                             <Plus className="mr-2 h-4 w-4" />
                             Task

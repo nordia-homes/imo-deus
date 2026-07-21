@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,6 @@ import { ro } from "date-fns/locale";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Calendar as CalendarIcon, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,8 +17,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Task, Property } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
+import { Input } from '../ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '../ui/card';
+import { PropertyPicker, type PropertyPickerOption } from '@/components/viewings/PropertyPicker';
 
 const taskSchema = z.object({
   description: z.string().min(1, { message: "Descrierea este obligatorie." }),
@@ -27,32 +28,57 @@ const taskSchema = z.object({
   startTime: z.string().optional(),
   duration: z.coerce.number().optional(),
   contactId: z.string().optional(),
+  propertyId: z.string().optional(),
+  participantName: z.string().trim().max(120, { message: "Numele este prea lung." }).optional(),
+  participantPhone: z.string().trim().max(40, { message: "Numărul de telefon este prea lung." }).optional(),
+});
+
+const scheduledTaskSchema = taskSchema.extend({
+  startTime: z.string().min(1, { message: "Ora de început este obligatorie." }),
+  duration: z.coerce.number().min(1, { message: "Durata este obligatorie." }),
 });
 
 type ContactStub = { id: string; name: string; };
+const PREDEFINED_TASKS = [
+  'Notariat',
+  'Prospectare pe teren',
+  'Activități administrative',
+] as const;
 
 type TaskFormProps = {
     onClose: () => void;
     onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: ContactStub[];
     property?: Property | null;
+    properties: Property[];
     isMobile: boolean;
+    requireSchedule: boolean;
 };
 
-function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: TaskFormProps) {
+function TaskForm({ onClose, onAddTask, contacts, properties, property = null, isMobile, requireSchedule }: TaskFormProps) {
   const defaultContactId = useMemo(() => {
     if (contacts.length === 1) return contacts[0].id;
     return undefined;
   }, [contacts]);
 
+  const availableProperties = useMemo(() => {
+    if (!property || properties.some((item) => item.id === property.id)) return properties;
+    return [property, ...properties];
+  }, [properties, property]);
+
   const form = useForm<z.infer<typeof taskSchema>>({
-    resolver: zodResolver(taskSchema),
+    resolver: zodResolver(requireSchedule ? scheduledTaskSchema : taskSchema),
     defaultValues: {
       description: '',
       duration: 30,
       contactId: defaultContactId,
+      propertyId: property?.id,
+      participantName: '',
+      participantPhone: '',
     },
   });
+
+  const selectedPreset = form.watch('description');
 
   const timeSlots = useMemo(() => {
       const slots = [];
@@ -76,17 +102,28 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
 
   function onSubmit(values: z.infer<typeof taskSchema>) {
     const selectedContact = contacts.find(c => c.id === values.contactId);
-    
-    onAddTask({
+    const selectedProperty = availableProperties.find(item => item.id === values.propertyId);
+    const participantName = values.participantName?.trim();
+    const participantPhone = values.participantPhone?.trim();
+
+    const taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'> = {
         description: values.description,
         dueDate: format(values.dueDate, 'yyyy-MM-dd'),
-        startTime: values.startTime,
-        duration: values.duration,
-        contactId: values.contactId === 'unassigned' ? undefined : values.contactId,
-        contactName: selectedContact?.name,
-        propertyId: property?.id,
-        propertyTitle: property?.title,
-    });
+        ...(values.startTime ? { startTime: values.startTime } : {}),
+        ...(typeof values.duration === 'number' && Number.isFinite(values.duration) ? { duration: values.duration } : {}),
+        ...(selectedContact ? {
+          contactId: selectedContact.id,
+          contactName: selectedContact.name,
+        } : {}),
+        ...(selectedProperty ? {
+          propertyId: selectedProperty.id,
+          propertyTitle: selectedProperty.title,
+        } : {}),
+        ...(participantName ? { participantName } : {}),
+        ...(participantPhone ? { participantPhone } : {}),
+    };
+
+    onAddTask(taskData);
 
     onClose();
   }
@@ -98,6 +135,25 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
             <Card className={cn("agentfinder-add-task-dialog__panel shadow-xl rounded-2xl", isMobile && "bg-[#152A47] border-none text-white")}>
                 <CardContent className="pt-6 space-y-4">
                     <h3 className="text-lg font-semibold text-primary">Detalii Task</h3>
+                    <div className="space-y-2">
+                      <FormLabel className={cn(isMobile && "text-white/80")}>Task-uri predefinite</FormLabel>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {PREDEFINED_TASKS.map((preset) => (
+                          <Button
+                            key={preset}
+                            type="button"
+                            variant="outline"
+                            onClick={() => form.setValue('description', preset, { shouldDirty: true, shouldValidate: true })}
+                            className={cn(
+                              "h-auto min-h-10 whitespace-normal px-3 py-2 text-sm",
+                              selectedPreset === preset && "border-primary bg-primary/10 text-primary"
+                            )}
+                          >
+                            {preset}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className={cn(isMobile && "text-white/80")}>Descriere Task</FormLabel><FormControl><Textarea {...field} placeholder="ex: Sună clientul X pentru follow-up" className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField
                       control={form.control}
@@ -120,6 +176,79 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="propertyId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className={cn(isMobile && "text-white/80")}>Asociază cu o Proprietate (Opțional)</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <PropertyPicker
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                properties={availableProperties as PropertyPickerOption[]}
+                                placeholder="Selectează proprietatea"
+                                tone={isMobile ? 'dark' : 'light'}
+                              />
+                              {field.value && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => field.onChange(undefined)}
+                                  className={cn("h-8 px-2 text-xs", isMobile && "text-white/65 hover:bg-white/10 hover:text-white")}
+                                >
+                                  Elimină asocierea cu proprietatea
+                                </Button>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="participantName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className={cn(isMobile && "text-white/80")}>Participant (Opțional)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                placeholder="Numele participantului"
+                                className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="participantPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className={cn(isMobile && "text-white/80")}>Telefon participant (Opțional)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                type="tel"
+                                inputMode="tel"
+                                autoComplete="tel"
+                                placeholder="ex: 07xx xxx xxx"
+                                className={cn(isMobile && "bg-white/10 border-white/20 text-white placeholder:text-white/50")}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                 </CardContent>
             </Card>
 
@@ -172,11 +301,13 @@ function TaskForm({ onClose, onAddTask, contacts, property = null, isMobile }: T
 type AddTaskDialogProps = {
     onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
     contacts: ContactStub[];
+    properties?: Property[];
     property?: Property | null;
     children?: React.ReactNode;
+    requireSchedule?: boolean;
 }
 
-export function AddTaskDialog({ onAddTask, contacts, property = null, children }: AddTaskDialogProps) {
+export function AddTaskDialog({ onAddTask, contacts, properties = [], property = null, children, requireSchedule = false }: AddTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
   const formKey = useMemo(() => `add-task-${isOpen}`, [isOpen]);
@@ -192,7 +323,7 @@ export function AddTaskDialog({ onAddTask, contacts, property = null, children }
           {property && <DialogDescription className={cn("text-center -mt-1", isMobile && "text-white/70")}>{property.title}</DialogDescription>}
         </DialogHeader>
         <div className="flex-1 min-h-0">
-            {isOpen && <TaskForm key={formKey} onClose={() => setIsOpen(false)} onAddTask={onAddTask} contacts={contacts} property={property} isMobile={isMobile} />}
+            {isOpen && <TaskForm key={formKey} onClose={() => setIsOpen(false)} onAddTask={onAddTask} contacts={contacts} properties={properties} property={property} isMobile={isMobile} requireSchedule={requireSchedule} />}
         </div>
       </DialogContent>
     </Dialog>

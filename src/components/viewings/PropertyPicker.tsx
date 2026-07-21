@@ -38,16 +38,19 @@ export function PropertyPicker({
   properties,
   placeholder = 'Selecteaza proprietatea',
   className,
+  tone = 'dark',
 }: {
   value?: string;
   onValueChange: (value: string) => void;
   properties: PropertyPickerOption[];
   placeholder?: string;
   className?: string;
+  tone?: 'dark' | 'light';
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const isMobile = useIsMobile();
+  const isLight = tone === 'light';
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === value) || null,
@@ -92,14 +95,15 @@ export function PropertyPicker({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'h-auto min-h-10 w-full justify-between border-white/20 bg-white/10 px-3 py-2 text-left text-white hover:bg-white/15 hover:text-white',
+            isLight ? 'h-auto min-h-10 w-full justify-between border-input bg-background px-3 py-2 text-left text-foreground hover:bg-accent hover:text-accent-foreground'
+              : 'h-auto min-h-10 w-full justify-between border-white/20 bg-white/10 px-3 py-2 text-left text-white hover:bg-white/15 hover:text-white',
             className
           )}
         >
           <div className="min-w-0 flex-1">
             {selectedProperty ? (
               <div className="flex min-w-0 items-center gap-3">
-                <div className="h-11 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                <div className={cn("h-11 w-14 shrink-0 overflow-hidden rounded-lg border", isLight ? "border-border bg-muted" : "border-white/10 bg-white/5")}>
                   <img
                     src={selectedProperty.images?.[0]?.url || 'https://placehold.co/160x120?text=Imobil'}
                     alt={selectedProperty.images?.[0]?.alt || selectedProperty.title}
@@ -108,14 +112,14 @@ export function PropertyPicker({
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{selectedProperty.title}</p>
-                  <p className="truncate text-xs text-white/65">
+                  <p className={cn("truncate text-sm font-medium", isLight ? "text-foreground" : "text-white")}>{selectedProperty.title}</p>
+                  <p className={cn("truncate text-xs", isLight ? "text-muted-foreground" : "text-white/65")}>
                     {selectedProperty.address || selectedProperty.location || selectedProperty.zone || 'Fara adresa'}
                   </p>
                 </div>
               </div>
             ) : (
-              <span className="text-white/55">{placeholder}</span>
+              <span className={cn(isLight ? "text-muted-foreground" : "text-white/55")}>{placeholder}</span>
             )}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
