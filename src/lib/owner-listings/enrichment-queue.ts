@@ -255,7 +255,7 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
     const merged = { ...existing, ...patch } as OwnerListingSummary;
     const missingFields = getOwnerListingMissingFields(merged);
     const publicationStatus: OwnerListingSummary['publicationStatus'] = hasMinimumOwnerListingQuality(merged) ? 'ready' : 'rejected';
-    const qualityPatch = {
+    const qualityPatch = stripUndefined({
       publicationStatus,
       missingFields,
       enrichmentStatus: 'complete' as const,
@@ -264,7 +264,7 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       areaValue: parseArea(merged.area),
       roomsValue: parseRooms(String(merged.rooms ?? '')),
       constructionYearValue: parseExactConstructionYear(merged.constructionYear) ?? parseExactConstructionYear(merged.year),
-    };
+    });
 
     await Promise.all([
       listingRef.set(

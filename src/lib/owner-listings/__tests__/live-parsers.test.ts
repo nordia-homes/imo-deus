@@ -39,6 +39,16 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(cards.length).toBeGreaterThan(0);
   }, 90_000);
 
+  it('parses the current OLX commercial rental category', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.olx.ro/imobiliare/birouri-spatii-comerciale/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at%3Adesc&search%5Bfilter_enum_alege%5D%5B0%5D=inchiriere',
+      60_000
+    );
+    const cards = extractOlxListPageFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(cards.length).toBeGreaterThan(0);
+  }, 90_000);
+
   it('parses the current Publi24 structured offers', async () => {
     const html = await fetchScraperHtml(
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',

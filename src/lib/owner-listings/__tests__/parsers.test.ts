@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchScraperResponse } from '@/lib/owner-listings/browser';
 import {
   extractImoradar24LastPage,
   extractImoradar24ListPageFromHtml,
@@ -17,7 +18,10 @@ import { parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 const fixtures = join(process.cwd(), 'src', 'lib', 'owner-listings', '__tests__', 'fixtures');
 const fixture = (name: string) => readFileSync(join(fixtures, name), 'utf8');
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('owner-listing parser contracts', () => {
   it('parses the current Imoradar24 semantic cards and pagination', () => {
@@ -99,5 +103,43 @@ describe('owner-listing parser contracts', () => {
           .every((entry) => entry.url.includes(`/${locationPath}/?commercial=false`))
       ).toBe(true);
     }
+  });
+
+  it('uses the current OLX commercial category with distinct transaction filters', () => {
+    for (const scope of listOwnerListingScopes()) {
+      const commercialUrls = scope.olxSourceUrls.filter((entry) => entry.propertyType === 'commercial');
+      expect(commercialUrls).toHaveLength(2);
+      expect(commercialUrls.find((entry) => entry.transactionType === 'sale')?.url).toContain(
+        '/birouri-spatii-comerciale/'
+      );
+      expect(commercialUrls.find((entry) => entry.transactionType === 'sale')?.url).toContain(
+        'search%5Bfilter_enum_alege%5D%5B0%5D=vanzare'
+      );
+      expect(commercialUrls.find((entry) => entry.transactionType === 'rent')?.url).toContain(
+        'search%5Bfilter_enum_alege%5D%5B0%5D=inchiriere'
+      );
+    }
+  });
+
+  it('does not retry non-transient scraper HTTP errors', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchScraperResponse('https://example.com/missing', 1000)).rejects.toThrow('status 404');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries transient scraper HTTP errors', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+      .mockResolvedValueOnce(new Response('ok', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchScraperResponse('https://example.com/transient', 1000)).resolves.toMatchObject({
+      html: 'ok',
+      status: 200,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

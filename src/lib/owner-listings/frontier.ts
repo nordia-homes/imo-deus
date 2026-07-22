@@ -447,6 +447,7 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
           lastScanned: result.scanned,
           lastInserted: result.inserted,
           lastParseFailures: result.parseFailures,
+          lastError: FieldValue.delete(),
           firestoreUpdatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }

@@ -93,29 +93,52 @@ export type ScraperResponse = {
 };
 
 export async function fetchScraperResponse(url: string, timeoutMs = 30000): Promise<ScraperResponse> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let lastError: unknown;
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
-      },
-      signal: controller.signal,
-      cache: 'no-store',
-      redirect: 'follow',
-    });
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status} for ${url}`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept-Language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+        signal: controller.signal,
+        cache: 'no-store',
+        redirect: 'follow',
+      });
+
+      if (response.ok) {
+        return { html: await response.text(), finalUrl: response.url || url, status: response.status };
+      }
+
+      const error = new Error(`Request failed with status ${response.status} for ${url}`) as Error & {
+        retryable?: boolean;
+      };
+      const retryable = response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500;
+      error.retryable = retryable;
+      if (!retryable || attempt === 3) {
+        throw error;
+      }
+
+      lastError = error;
+      await response.body?.cancel().catch(() => undefined);
+    } catch (error) {
+      lastError = error;
+      if ((error as { retryable?: boolean })?.retryable === false || attempt === 3) {
+        throw error;
+      }
+    } finally {
+      clearTimeout(timeout);
     }
 
-    return { html: await response.text(), finalUrl: response.url || url, status: response.status };
-  } finally {
-    clearTimeout(timeout);
+    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
   }
+
+  throw lastError instanceof Error ? lastError : new Error(`Request failed for ${url}`);
 }
 
 export async function fetchScraperHtml(url: string, timeoutMs = 30000) {

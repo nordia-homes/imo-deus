@@ -197,6 +197,7 @@ const CATEGORY_MATRIX: Array<{
   transactionType: OwnerListingTransactionType;
   label: string;
   olxPath: string;
+  olxTransactionFilter?: 'vanzare' | 'inchiriere';
   publi24Path: string;
   imoradarPath: string;
 }> = [
@@ -244,7 +245,8 @@ const CATEGORY_MATRIX: Array<{
     propertyType: 'commercial',
     transactionType: 'sale',
     label: 'spatii comerciale de vanzare',
-    olxPath: 'spatii-comerciale-de-vanzare',
+    olxPath: 'birouri-spatii-comerciale',
+    olxTransactionFilter: 'vanzare',
     publi24Path: 'de-vanzare/spatii-comerciale',
     imoradarPath: 'spatii-comerciale-de-vanzare',
   },
@@ -252,7 +254,8 @@ const CATEGORY_MATRIX: Array<{
     propertyType: 'commercial',
     transactionType: 'rent',
     label: 'spatii comerciale de inchiriat',
-    olxPath: 'spatii-comerciale-de-inchiriat',
+    olxPath: 'birouri-spatii-comerciale',
+    olxTransactionFilter: 'inchiriere',
     publi24Path: 'de-inchiriat/spatii-comerciale',
     imoradarPath: 'spatii-comerciale-de-inchiriat',
   },
@@ -266,8 +269,11 @@ function normalizeText(value?: string | null) {
     .trim();
 }
 
-function olxCoverageUrl(citySlug: string, categoryPath: string) {
-  return `https://www.olx.ro/imobiliare/${categoryPath}/${citySlug}/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at:desc`;
+function olxCoverageUrl(citySlug: string, categoryPath: string, transactionFilter?: 'vanzare' | 'inchiriere') {
+  const transactionQuery = transactionFilter
+    ? `&search%5Bfilter_enum_alege%5D%5B0%5D=${transactionFilter}`
+    : '';
+  return `https://www.olx.ro/imobiliare/${categoryPath}/${citySlug}/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at:desc${transactionQuery}`;
 }
 
 function publi24CoverageUrl(locationPath: string, categoryPath: string) {
@@ -303,7 +309,7 @@ function buildCoverageUrls(
       transactionType: category.transactionType,
       url:
         source === 'olx'
-          ? olxCoverageUrl(citySlug, category.olxPath)
+          ? olxCoverageUrl(citySlug, category.olxPath, category.olxTransactionFilter)
           : source === 'publi24'
             ? publi24CoverageUrl(citySlug, category.publi24Path)
             : imoradarCoverageUrl(citySlug, category.imoradarPath),
