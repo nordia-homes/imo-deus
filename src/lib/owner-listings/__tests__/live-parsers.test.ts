@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { fetchScraperHtml } from '@/lib/owner-listings/browser';
 import { extractImoradar24ListPageFromHtml } from '@/lib/owner-listings/sources/imoradar24';
 import { extractOlxListPageFromHtml } from '@/lib/owner-listings/sources/olx';
-import { extractPubli24StructuredOffersFromHtml } from '@/lib/owner-listings/sources/publi24';
+import {
+  extractPubli24StructuredOffersFromHtml,
+  scrapePubli24ListingDetail,
+} from '@/lib/owner-listings/sources/publi24';
 
 const liveDescribe = process.env.LIVE_SCRAPER_TEST === '1' ? describe : describe.skip;
 
@@ -68,4 +71,17 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(html.length).toBeGreaterThan(10_000);
     expect(offers.length).toBeGreaterThan(0);
   }, 90_000);
+
+  it('hydrates a real Publi24 owner phone without Chromium', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
+      60_000
+    );
+    const offers = extractPubli24StructuredOffersFromHtml(html).slice(0, 3);
+    expect(offers.length).toBeGreaterThan(0);
+    const details = await Promise.all(
+      offers.map((offer) => scrapePubli24ListingDetail(new URL(offer.url, 'https://www.publi24.ro/').toString()))
+    );
+    expect(details.some((detail) => /^0\d{9}$|^\d{8}$/.test(detail.contactPhone || ''))).toBe(true);
+  }, 120_000);
 });

@@ -2,6 +2,7 @@ import { chromium, type Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
+import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi24-phone-ocr';
 
 const publi24PhoneCache = new Map<string, string>();
 
@@ -232,7 +233,7 @@ async function fetchPubli24PhoneImageBase64(html: string, url: string) {
   return { ...request, base64 };
 }
 
-async function recognizePubli24PhoneFromBase64(base64: string, hintedLength?: number | null) {
+async function recognizePubli24PhoneViaBrowser(base64: string, hintedLength?: number | null) {
   const browser = await chromium.launch({
     headless: true,
     args: ['--disable-dev-shm-usage', '--no-sandbox'],
@@ -498,7 +499,13 @@ async function extractPubli24PhoneFromHtml(html: string, url: string) {
     return '';
   }
 
-  const recognized = normalizeWhitespace(await recognizePubli24PhoneFromBase64(phonePayload.base64, phonePayload.hintedLength));
+  const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
+  const recognized = normalizeWhitespace(
+    browserlessResult ||
+      (process.env.OWNER_LISTINGS_BROWSER_OCR_FALLBACK === '1'
+        ? await recognizePubli24PhoneViaBrowser(phonePayload.base64, phonePayload.hintedLength)
+        : '')
+  );
   const digits = recognized.replace(/[^\d]/g, '');
 
   if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {

@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createCanvas } from '@napi-rs/canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchScraperResponse } from '@/lib/owner-listings/browser';
+import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi24-phone-ocr';
 import {
   extractImoradar24LastPage,
   extractImoradar24ListPageFromHtml,
@@ -47,6 +49,22 @@ describe('owner-listing parser contracts', () => {
     expect(offers.map((offer) => offer.rooms)).toEqual(['3 camere', '5 camere']);
     expect(offers[0]).toMatchObject({ area: '72 mp', constructionYear: 2016 });
     expect(extractPubli24LastPage(html)).toBe(9);
+  });
+
+  it('decodes a Publi24 phone image without launching Chromium', async () => {
+    const phone = '0723456789';
+    const canvas = createCanvas(180, 40);
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'black';
+    context.font = 'normal 28px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    Array.from(phone).forEach((digit, index) => context.fillText(digit, 9 + index * 18, 20));
+
+    const base64 = canvas.toBuffer('image/png').toString('base64');
+    await expect(recognizePubli24PhoneWithoutBrowser(base64, phone.length)).resolves.toBe(phone);
   });
 
   it('isolates OLX cards and discovers the actual last page', () => {
