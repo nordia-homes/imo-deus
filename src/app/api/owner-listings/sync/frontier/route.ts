@@ -12,7 +12,7 @@ const frontierSchema = z.object({
   scopeKey: z.string().trim().min(1).optional(),
   limit: z.number().int().min(1).max(50).optional(),
   maxRuntimeMs: z.number().int().min(1000).max(15 * 60 * 1000).optional(),
-  maxPage: z.number().int().min(1).max(100).optional(),
+  maxPage: z.number().int().min(1).max(250).optional(),
 });
 
 function formatError(error: unknown) {

@@ -96,8 +96,8 @@ export default function OwnerListingsPage() {
       priceMin,
       priceMax,
       sourceFilter,
-    }),
       aiStatusFilter,
+    }),
     [aiStatusFilter, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter],
   );
 
