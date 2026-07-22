@@ -321,14 +321,19 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
 
   } catch (error) {
     const timestamp = nowIso();
-    const nextStatus = job.entry.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
+    const sourceStatus = (error as { status?: number })?.status;
+    const sourceListingGone = sourceStatus === 404 || sourceStatus === 410;
+    const nextStatus = sourceListingGone ? 'done' : job.entry.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
     const nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
 
     await queueRef.set(
       {
         status: nextStatus,
         updatedAt: timestamp,
-        nextAttemptAt,
+        ...(nextStatus === 'retry'
+          ? { nextAttemptAt }
+          : { completedAt: timestamp, nextAttemptAt: FieldValue.delete() }),
+        ...(sourceListingGone ? { outcome: 'source-gone', sourceStatus } : {}),
         lockedAt: FieldValue.delete(),
         lockedBy: FieldValue.delete(),
         error: error instanceof Error ? error.message : 'Enrichment job a esuat.',
@@ -338,15 +343,20 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
     );
 
 
-    if (nextStatus === 'failed') {
+    if (nextStatus === 'failed' || sourceListingGone) {
       const listingSnapshot = await listingRef.get();
       const listing = (listingSnapshot.data() || {}) as OwnerListingSummary;
       await listingRef.set(
         {
-          publicationStatus: hasMinimumOwnerListingQuality(listing) ? 'ready' : 'rejected',
+          publicationStatus: sourceListingGone
+            ? 'rejected'
+            : hasMinimumOwnerListingQuality(listing)
+              ? 'ready'
+              : 'rejected',
           enrichmentStatus: 'failed',
           missingFields: getOwnerListingMissingFields(listing),
           enrichmentCompletedAt: Math.floor(Date.now() / 1000),
+          ...(sourceListingGone ? { sourceUnavailableAt: Math.floor(Date.now() / 1000) } : {}),
           firestoreUpdatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }

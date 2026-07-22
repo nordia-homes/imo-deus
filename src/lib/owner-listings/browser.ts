@@ -117,9 +117,11 @@ export async function fetchScraperResponse(url: string, timeoutMs = 30000): Prom
 
       const error = new Error(`Request failed with status ${response.status} for ${url}`) as Error & {
         retryable?: boolean;
+        status?: number;
       };
       const retryable = response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500;
       error.retryable = retryable;
+      error.status = response.status;
       if (!retryable || attempt === 3) {
         throw error;
       }

@@ -143,7 +143,11 @@ describe('owner-listing parser contracts', () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 404 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(fetchScraperResponse('https://example.com/missing', 1000)).rejects.toThrow('status 404');
+    await expect(fetchScraperResponse('https://example.com/missing', 1000)).rejects.toMatchObject({
+      message: expect.stringContaining('status 404'),
+      retryable: false,
+      status: 404,
+    });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
