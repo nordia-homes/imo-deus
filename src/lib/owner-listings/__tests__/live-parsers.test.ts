@@ -72,16 +72,14 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(offers.length).toBeGreaterThan(0);
   }, 90_000);
 
-  it('hydrates a real Publi24 owner phone without Chromium', async () => {
+  it('normalizes a relative Publi24 detail URL and hydrates its phone without Chromium', async () => {
     const html = await fetchScraperHtml(
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
       60_000
     );
     const offers = extractPubli24StructuredOffersFromHtml(html).slice(0, 3);
     expect(offers.length).toBeGreaterThan(0);
-    const details = await Promise.all(
-      offers.map((offer) => scrapePubli24ListingDetail(new URL(offer.url, 'https://www.publi24.ro/').toString()))
-    );
+    const details = await Promise.all(offers.map((offer) => scrapePubli24ListingDetail(offer.url)));
     expect(details.some((detail) => /^0\d{9}$|^\d{8}$/.test(detail.contactPhone || ''))).toBe(true);
   }, 120_000);
 });

@@ -807,7 +807,12 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
 }
 
 export async function scrapePubli24ListingDetail(url: string) {
-  const html = await fetchScraperHtml(url, 30000).catch(() => '');
+  url = normalizeUrl(url, 'https://www.publi24.ro/');
+  let directFetchError: unknown;
+  const html = await fetchScraperHtml(url, 30000).catch((error) => {
+    directFetchError = error;
+    return '';
+  });
   if (html) {
     const detail = extractPubli24DetailFromHtml(html, url);
     const contactPhone = await extractPubli24PhoneFromHtml(html, url).catch(() => '');
@@ -835,6 +840,12 @@ export async function scrapePubli24ListingDetail(url: string) {
       contactName: '',
       contactPhone,
     } satisfies OwnerListingDetail;
+  }
+
+  if (process.env.OWNER_LISTINGS_BROWSER_DETAIL_FALLBACK !== '1') {
+    throw directFetchError instanceof Error
+      ? directFetchError
+      : new Error(`Publi24 detail request returned no HTML for ${url}`);
   }
 
   return withScraperPage(async (page) => {
