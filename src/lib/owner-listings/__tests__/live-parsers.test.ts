@@ -1,0 +1,41 @@
+import { describe, expect, it } from 'vitest';
+
+import { fetchScraperHtml } from '@/lib/owner-listings/browser';
+import { extractImoradar24ListPageFromHtml } from '@/lib/owner-listings/sources/imoradar24';
+import { extractOlxListPageFromHtml } from '@/lib/owner-listings/sources/olx';
+import { extractPubli24StructuredOffersFromHtml } from '@/lib/owner-listings/sources/publi24';
+
+const liveDescribe = process.env.LIVE_SCRAPER_TEST === '1' ? describe : describe.skip;
+
+liveDescribe('live owner-listing parser contracts', () => {
+  it('parses the current Imoradar24 owner-listing DOM', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?sort=latest',
+      60_000
+    );
+    const cards = extractImoradar24ListPageFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.some((card) => card.href.includes('/oferta/') || card.href.includes('/link-extern/'))).toBe(true);
+  }, 90_000);
+
+  it('parses the current OLX private-owner cards', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at%3Adesc',
+      60_000
+    );
+    const cards = extractOlxListPageFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(cards.length).toBeGreaterThan(0);
+  }, 90_000);
+
+  it('parses the current Publi24 structured offers', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
+      60_000
+    );
+    const offers = extractPubli24StructuredOffersFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(offers.length).toBeGreaterThan(0);
+  }, 90_000);
+});

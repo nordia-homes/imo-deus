@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
+import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
 import type { OlxPhoneDrainResult, OlxPhoneQueueEntry, OwnerListingSummary } from '@/lib/owner-listings/types';
 
 const OLX_PHONE_QUEUE_COLLECTION = 'ownerListingOlxPhoneQueue';
@@ -27,21 +28,36 @@ export async function upsertRawOlxPhoneQueueEntry(input: {
     return;
   }
 
+  if (existing) {
+    await queueRef.set(
+      {
+        link: input.link,
+        title: input.title || '',
+        updatedAt: timestamp,
+        ...(input.error && !existing.error ? { error: input.error } : {}),
+      },
+      { merge: true }
+    );
+    return;
+  }
+
   await queueRef.set(
     {
       listingId: input.listingId,
       source: 'olx',
       link: input.link,
       title: input.title || '',
-      status: existing?.status === 'processing' ? 'processing' : 'pending',
-      attempts: existing?.attempts || 0,
-      createdAt: existing?.createdAt || timestamp,
+      status: 'pending',
+      attempts: 0,
+      createdAt: timestamp,
       updatedAt: timestamp,
-      nextAttemptAt: existing?.status === 'processing' ? existing.nextAttemptAt || timestamp : timestamp,
-      phone: existing?.phone || '',
+      nextAttemptAt: timestamp,
+      lane: 'fresh',
+      priority: 1000,
+      phone: '',
       ...(input.error ? { error: input.error } : {}),
-      lockedAt: existing?.status === 'processing' ? existing.lockedAt || FieldValue.delete() : FieldValue.delete(),
-      lockedBy: existing?.status === 'processing' ? existing.lockedBy || FieldValue.delete() : FieldValue.delete(),
+      lockedAt: FieldValue.delete(),
+      lockedBy: FieldValue.delete(),
       completedAt: FieldValue.delete(),
     },
     { merge: true }
@@ -96,7 +112,7 @@ export async function upsertOlxPhoneQueueEntry(listingId: string, listing: Owner
     return;
   }
 
-  if (existing && (existing.status === 'processing' || existing.status === 'pending' || existing.status === 'retry')) {
+  if (existing && (existing.status === 'processing' || existing.status === 'pending' || existing.status === 'retry' || existing.status === 'failed')) {
     await queueRef.set(
       {
         listingId,
@@ -116,6 +132,8 @@ export async function upsertOlxPhoneQueueEntry(listingId: string, listing: Owner
       link: listing.link,
       status: 'pending',
       attempts: existing?.attempts || 0,
+      lane: listing.isNew ? 'fresh' : 'backfill',
+      priority: listing.isNew ? 1000 : 400,
       createdAt: existing?.createdAt || timestamp,
       updatedAt: timestamp,
       nextAttemptAt: timestamp,
@@ -130,10 +148,33 @@ export async function upsertOlxPhoneQueueEntry(listingId: string, listing: Owner
 }
 
 async function acquireNextOlxPhoneQueueJob() {
-  const snapshot = await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION).orderBy('updatedAt', 'asc').limit(25).get();
   const now = new Date();
+  const eligibleAt = now.toISOString();
+  const freshSnapshot = await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+    .where('lane', '==', 'fresh')
+    .where('status', 'in', ['pending', 'retry'])
+    .where('nextAttemptAt', '<=', eligibleAt)
+    .orderBy('nextAttemptAt', 'asc')
+    .limit(25)
+    .get();
+  const backfillSnapshot = freshSnapshot.empty
+    ? await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+        .where('status', 'in', ['pending', 'retry'])
+        .where('nextAttemptAt', '<=', eligibleAt)
+        .orderBy('nextAttemptAt', 'asc')
+        .limit(25)
+        .get()
+    : null;
+  const staleSnapshot = freshSnapshot.empty && backfillSnapshot?.empty
+    ? await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+        .where('status', '==', 'processing')
+        .where('lockedAt', '<=', new Date(now.getTime() - PROCESSING_STALE_MS).toISOString())
+        .orderBy('lockedAt', 'asc')
+        .limit(10)
+        .get()
+    : null;
 
-  for (const doc of snapshot.docs) {
+  for (const doc of [...freshSnapshot.docs, ...(backfillSnapshot?.docs || []), ...(staleSnapshot?.docs || [])]) {
     const entry = doc.data() as Partial<OlxPhoneQueueEntry>;
     if (!isQueueEligible(entry, now)) {
       continue;
@@ -230,6 +271,11 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
           { merge: true }
         ),
       ]);
+      const refreshedListing = await listingRef.get();
+      if (refreshedListing.exists) {
+        await registerOwnerListingCanonical(job.entry.listingId, refreshedListing.data() as OwnerListingSummary);
+      }
+
 
       return {
         status: 'processed',
@@ -242,6 +288,11 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
 
     const nextStatus = job.entry.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
     const nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
+    const refreshedListing = await listingRef.get();
+    if (refreshedListing.exists) {
+      await registerOwnerListingCanonical(job.entry.listingId, refreshedListing.data() as OwnerListingSummary);
+    }
+
     await queueRef.set(
       {
         status: nextStatus,
@@ -280,4 +331,30 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
 
     throw error;
   }
+}
+
+export async function drainOlxPhoneQueue(options: {
+  limit?: number;
+  concurrency?: number;
+  maxRuntimeMs?: number;
+} = {}) {
+  const limit = Math.max(1, Math.min(options.limit ?? 8, 50));
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 2, 5));
+  const maxRuntimeMs = Math.max(1000, options.maxRuntimeMs ?? 8 * 60 * 1000);
+  const startedAt = Date.now();
+  const results: OlxPhoneDrainResult[] = [];
+
+  while (results.length < limit && Date.now() - startedAt < maxRuntimeMs) {
+    const size = Math.min(concurrency, limit - results.length);
+    const batch = await Promise.all(Array.from({ length: size }, () => drainNextOlxPhoneQueueItem()));
+    results.push(...batch);
+    if (batch.every((entry) => entry.status === 'empty')) break;
+  }
+
+  return {
+    processed: results.filter((entry) => entry.status === 'processed').length,
+    skipped: results.filter((entry) => entry.status === 'skipped').length,
+    empty: results.filter((entry) => entry.status === 'empty').length,
+    results,
+  };
 }

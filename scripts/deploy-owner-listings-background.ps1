@@ -37,7 +37,7 @@ Write-Host "Owner listings background sync deploy"
 Write-Host "Project: $ProjectId"
 Write-Host "Backend: $BackendId"
 Write-Host "App base URL: $AppBaseUrl"
-Write-Host "Cron secret: $CronSecret"
+Write-Host "Cron secret: [hidden]"
 Write-Host ""
 
 npx firebase-tools use $ProjectId
@@ -69,9 +69,8 @@ finally {
   Pop-Location
 }
 
-npx firebase-tools deploy --only functions:ownerListingsBackgroundSync,functions:ownerListingsLegacyCycleSync --project $ProjectId
+npx firebase-tools deploy --only functions:ownerListingsBackgroundSync,functions:ownerListingsEnrichmentSync,functions:ownerListingsOlxPhoneSync,functions:ownerListingsHealthMonitor --project $ProjectId
 
 Write-Host ""
 Write-Host "Deploy finished."
-Write-Host "Keep this cron secret safe:"
-Write-Host $CronSecret
+Write-Host "Cron secret was stored without printing it."

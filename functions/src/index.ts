@@ -370,7 +370,7 @@ async function postAiOutreachEndpoint(appBaseUrl: string, cronSecret: string, pa
 
 export const ownerListingsBackgroundSync = onSchedule(
   {
-    schedule: 'every 5 minutes',
+    schedule: 'every 2 minutes',
     timeZone: 'Europe/Bucharest',
     region: 'us-central1',
     memory: '1GiB',
@@ -386,32 +386,109 @@ export const ownerListingsBackgroundSync = onSchedule(
       cronSecret,
       '/api/owner-listings/sync/frontier',
       {
-        limit: 8,
-        maxPage: 20,
-        maxRuntimeMs: 420000,
+        limit: 6,
+        maxPage: 250,
+        maxRuntimeMs: 90000,
       }
     );
 
-    const enrichmentPayloads: string[] = [];
-    for (let index = 0; index < 8; index += 1) {
-      const payload = await postOwnerListingsEndpoint(
-        appBaseUrl,
-        cronSecret,
-        '/api/owner-listings/enrichment-drain'
-      );
-      enrichmentPayloads.push(payload);
-      if (payload.includes('"status":"empty"')) {
-        break;
-      }
-    }
-
-    logger.info('Owner listings frontier/enrichment sync completed.', {
-      frontierPayload,
-      enrichmentPayloads,
-    });
+    logger.info('Owner listings discovery tick completed.', { frontierPayload });
   }
 );
 
+
+export const ownerListingsEnrichmentSync = onSchedule(
+  {
+    schedule: 'every 1 minutes',
+    timeZone: 'Europe/Bucharest',
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 540,
+    secrets: [ownerListingsAppBaseUrl, ownerListingsCronSecret],
+  },
+  async () => {
+    const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
+    const cronSecret = ownerListingsCronSecret.value();
+    const payload = await postOwnerListingsEndpoint(appBaseUrl, cronSecret, '/api/owner-listings/enrichment-drain', {
+      limit: 16,
+      concurrency: 4,
+      maxRuntimeMs: 480000,
+    });
+    logger.info('Owner listings enrichment tick completed.', { payload });
+  }
+);
+
+export const ownerListingsOlxPhoneSync = onSchedule(
+  {
+    schedule: 'every 1 minutes',
+    timeZone: 'Europe/Bucharest',
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 540,
+    secrets: [ownerListingsAppBaseUrl, ownerListingsCronSecret],
+  },
+  async () => {
+    const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
+    const cronSecret = ownerListingsCronSecret.value();
+    const payload = await postOwnerListingsEndpoint(appBaseUrl, cronSecret, '/api/owner-listings/olx-phone-drain', {
+      limit: 6,
+      concurrency: 2,
+      maxRuntimeMs: 480000,
+    });
+    logger.info('Owner listings OLX phone tick completed.', { payload });
+  }
+);
+
+export const ownerListingsHealthMonitor = onSchedule(
+  {
+    schedule: 'every 15 minutes',
+    timeZone: 'Europe/Bucharest',
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 120,
+  },
+  async () => {
+    const now = Date.now();
+    const maxSourceSilenceMs = 45 * 60 * 1000;
+    const sourceSnapshots = await Promise.all(
+      ['olx', 'publi24', 'imoradar24'].map((source) =>
+        db.collection('ownerListingScrapeHealth').doc(source).get()
+      )
+    );
+    const [enrichmentSnapshot, phoneSnapshot, failedFrontierSnapshot] = await Promise.all([
+      db.collection('ownerListingEnrichmentQueue').where('status', 'in', ['pending', 'retry']).count().get(),
+      db.collection('ownerListingOlxPhoneQueue').where('status', 'in', ['pending', 'retry']).count().get(),
+      db.collection('ownerListingScrapeFrontier').where('status', '==', 'failed').count().get(),
+    ]);
+
+    const staleSources = sourceSnapshots.flatMap((snapshot) => {
+      const data = snapshot.data();
+      const lastSuccessMs = data?.lastSuccessAt ? new Date(String(data.lastSuccessAt)).getTime() : 0;
+      return !snapshot.exists || !Number.isFinite(lastSuccessMs) || now - lastSuccessMs > maxSourceSilenceMs
+        ? [snapshot.id]
+        : [];
+    });
+    const degradedSources = sourceSnapshots.flatMap((snapshot) =>
+      snapshot.data()?.status === 'degraded' ? [snapshot.id] : []
+    );
+    const metrics = {
+      checkedAt: nowIso(),
+      staleSources,
+      degradedSources,
+      enrichmentBacklog: enrichmentSnapshot.data().count,
+      olxPhoneBacklog: phoneSnapshot.data().count,
+      failedFrontierJobs: failedFrontierSnapshot.data().count,
+      healthy: staleSources.length === 0 && degradedSources.length === 0,
+    };
+
+    await db.collection('ownerListingScrapeHealth').doc('monitor').set(metrics, { merge: true });
+    if (!metrics.healthy) {
+      logger.error('OWNER_LISTINGS_PIPELINE_DEGRADED', metrics);
+      return;
+    }
+    logger.info('Owner listings pipeline health check passed.', metrics);
+  }
+);
 export const aiOutreachScheduledCallsDrain = onSchedule(
   {
     schedule: 'every 5 minutes',
@@ -472,7 +549,7 @@ export const propertyVideoTourJobsDrain = onSchedule(
   }
 );
 
-export const ownerListingsLegacyCycleSync = onSchedule(
+const ownerListingsLegacyCycleSync = onSchedule(
   {
     schedule: 'every 24 hours',
     timeZone: 'Europe/Bucharest',

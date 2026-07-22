@@ -6,7 +6,7 @@ param(
   [string]$Location = "us-central1",
 
   [Parameter(Mandatory = $false)]
-  [string]$AppBaseUrl = "https://studio-652232171-42fb6.web.app",
+  [string]$AppBaseUrl = "https://studio--studio-652232171-42fb6.us-central1.hosted.app",
 
   [Parameter(Mandatory = $true)]
   [string]$CronSecret,
@@ -15,7 +15,7 @@ param(
   [string]$JobName = "owner-listings-olx-phone-drain",
 
   [Parameter(Mandatory = $false)]
-  [string]$Schedule = "*/5 * * * *",
+  [string]$Schedule = "* * * * *",
 
   [Parameter(Mandatory = $false)]
   [string]$TimeZone = "Europe/Bucharest"

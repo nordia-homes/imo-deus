@@ -13,6 +13,92 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "isCanonical", "order": "ASCENDING" },
+        { "fieldPath": "firstDiscoveredAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "isCanonical", "order": "ASCENDING" },
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "firstDiscoveredAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingScrapeFrontier",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextRunAt", "order": "ASCENDING" },
+        { "fieldPath": "priority", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingScrapeFrontier",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextRunAt", "order": "ASCENDING" },
+        { "fieldPath": "priority", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingEnrichmentQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" },
+        { "fieldPath": "priority", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingEnrichmentQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lockedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingOlxPhoneQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lane", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingOlxPhoneQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListingOlxPhoneQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lockedAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

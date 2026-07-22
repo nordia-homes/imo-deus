@@ -1,6 +1,6 @@
-import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
+import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
 import { scrapeImoradar24ListingDetail } from '@/lib/owner-listings/sources/imoradar24';
 import { scrapeOlxListingDetail } from '@/lib/owner-listings/sources/olx';
 import { scrapePubli24ListingDetail } from '@/lib/owner-listings/sources/publi24';
@@ -9,6 +9,7 @@ import type {
   OwnerListingSource,
   OwnerListingSummary,
 } from '@/lib/owner-listings/types';
+import { getOwnerListingMissingFields, hasMinimumOwnerListingQuality, parseArea, parseExactConstructionYear, parsePriceNumber, parseRooms, stripUndefined } from '@/lib/owner-listings/utils';
 
 const ENRICHMENT_COLLECTION = 'ownerListingEnrichmentQueue';
 const PROCESSING_STALE_MS = 15 * 60 * 1000;
@@ -72,51 +73,40 @@ function taskPriority(listing: OwnerListingSummary, taskType: OwnerListingEnrich
 function shouldQueueTask(listing: OwnerListingSummary, taskType: OwnerListingEnrichmentTaskType) {
   if (!listing.link) return false;
   if (taskType === 'phone') return !hasUsefulPhone(listing);
-  if (taskType === 'detail') return !hasUsefulDetailFields(listing);
+  if (taskType === 'detail') return listing.publicationStatus !== 'ready' || !hasUsefulDetailFields(listing);
   if (taskType === 'images') return !listing.imageUrl;
   if (taskType === 'origin-source') return listing.source === 'imoradar24' && !listing.originSourceUrl;
   return false;
 }
 
 export async function upsertOwnerListingEnrichmentQueueEntries(listingId: string, listing: OwnerListingSummary) {
-  const taskTypes: OwnerListingEnrichmentTaskType[] = ['phone', 'detail', 'images', 'origin-source'];
+  const taskType: OwnerListingEnrichmentTaskType = 'detail';
+  if (!shouldQueueTask(listing, taskType) || listing.publicationStatus === 'ready') return 0;
+
   const timestamp = nowIso();
-  const batch = adminDb.batch();
-  let queued = 0;
+  const id = queueId(listingId, taskType);
+  const ref = adminDb.collection(ENRICHMENT_COLLECTION).doc(id);
+  const existing = await ref.get();
+  if (existing.exists) return 0;
 
-  for (const taskType of taskTypes) {
-    if (!shouldQueueTask(listing, taskType)) {
-      continue;
-    }
+  await ref.create({
+    listingId,
+    source: listing.source,
+    link: listing.link,
+    taskType,
+    status: 'pending',
+    priority: taskPriority(listing, taskType),
+    attempts: 0,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    nextAttemptAt: timestamp,
+    firestoreUpdatedAt: FieldValue.serverTimestamp(),
+  }).catch((error: unknown) => {
+    const code = String((error as { code?: unknown })?.code || '');
+    if (code !== '6' && !code.toLowerCase().includes('already')) throw error;
+  });
 
-    const id = queueId(listingId, taskType);
-    const ref = adminDb.collection(ENRICHMENT_COLLECTION).doc(id);
-    batch.set(
-      ref,
-      {
-        listingId,
-        source: listing.source,
-        link: listing.link,
-        taskType,
-        status: 'pending',
-        priority: taskPriority(listing, taskType),
-        attempts: 0,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        nextAttemptAt: timestamp,
-        fingerprint: crypto.createHash('sha1').update(`${listingId}:${taskType}:${listing.link}`).digest('hex'),
-        firestoreUpdatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-    queued += 1;
-  }
-
-  if (queued > 0) {
-    await batch.commit();
-  }
-
-  return queued;
+  return 1;
 }
 
 function isQueueEligible(entry: Partial<OwnerListingEnrichmentQueueEntry> | undefined, now: Date) {
@@ -136,15 +126,25 @@ function isQueueEligible(entry: Partial<OwnerListingEnrichmentQueueEntry> | unde
 }
 
 async function acquireNextEnrichmentJob() {
-  const snapshot = await adminDb
+  const now = new Date();
+  const eligibleSnapshot = await adminDb
     .collection(ENRICHMENT_COLLECTION)
+    .where('status', 'in', ['pending', 'retry'])
+    .where('nextAttemptAt', '<=', now.toISOString())
+    .orderBy('nextAttemptAt', 'asc')
     .orderBy('priority', 'desc')
-    .orderBy('updatedAt', 'asc')
     .limit(50)
     .get();
-  const now = new Date();
+  const staleSnapshot = eligibleSnapshot.empty
+    ? await adminDb.collection(ENRICHMENT_COLLECTION)
+        .where('status', '==', 'processing')
+        .where('lockedAt', '<=', new Date(now.getTime() - PROCESSING_STALE_MS).toISOString())
+        .orderBy('lockedAt', 'asc')
+        .limit(10)
+        .get()
+    : null;
 
-  for (const docSnapshot of snapshot.docs) {
+  for (const docSnapshot of [...eligibleSnapshot.docs, ...(staleSnapshot?.docs || [])]) {
     const entry = docSnapshot.data() as Partial<OwnerListingEnrichmentQueueEntry>;
     if (!isQueueEligible(entry, now)) {
       continue;
@@ -202,29 +202,17 @@ async function acquireNextEnrichmentJob() {
   return null;
 }
 
-function detailPatch(detail: OwnerListingDetail, taskType: OwnerListingEnrichmentTaskType) {
-  if (taskType === 'phone') {
-    return {
-      ownerPhone: detail.contactPhone || detail.ownerPhone || '',
-      ownerName: detail.contactName || detail.ownerName || '',
-    };
-  }
+function removeEmptyDetailValues<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => {
+      if (entry === undefined || entry === null) return false;
+      return typeof entry !== 'string' || entry.trim().length > 0;
+    })
+  ) as T;
+}
 
-  if (taskType === 'images') {
-    return {
-      imageUrl: detail.imageUrl || detail.images?.[0] || '',
-      images: detail.images || [],
-    };
-  }
-
-  if (taskType === 'origin-source') {
-    return {
-      originSourceUrl: detail.originSourceUrl || '',
-      originSourceLabel: detail.originSourceLabel || '',
-    };
-  }
-
-  return {
+function detailPatch(detail: OwnerListingDetail, _taskType: OwnerListingEnrichmentTaskType) {
+  return removeEmptyDetailValues(stripUndefined({
     title: detail.title,
     price: detail.price,
     area: detail.area,
@@ -239,12 +227,12 @@ function detailPatch(detail: OwnerListingDetail, taskType: OwnerListingEnrichmen
     ownerName: detail.contactName || detail.ownerName || '',
     originSourceUrl: detail.originSourceUrl || '',
     originSourceLabel: detail.originSourceLabel || '',
-    enrichmentStatus: 'complete',
-  };
+    enrichmentStatus: 'complete' as const,
+  }));
 }
 
 function scrapeDetail(source: OwnerListingSource, link: string) {
-  if (source === 'olx') return scrapeOlxListingDetail(link);
+  if (source === 'olx') return scrapeOlxListingDetail(link, { includePhone: false });
   if (source === 'publi24') return scrapePubli24ListingDetail(link);
   return scrapeImoradar24ListingDetail(link);
 }
@@ -262,6 +250,21 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
     const detail = await scrapeDetail(job.entry.source, job.entry.link);
     const patch = detailPatch(detail, job.entry.taskType);
     const timestamp = nowIso();
+    const existingSnapshot = await listingRef.get();
+    const existing = (existingSnapshot.data() || {}) as OwnerListingSummary;
+    const merged = { ...existing, ...patch } as OwnerListingSummary;
+    const missingFields = getOwnerListingMissingFields(merged);
+    const publicationStatus: OwnerListingSummary['publicationStatus'] = hasMinimumOwnerListingQuality(merged) ? 'ready' : 'rejected';
+    const qualityPatch = {
+      publicationStatus,
+      missingFields,
+      enrichmentStatus: 'complete' as const,
+      enrichmentCompletedAt: Math.floor(Date.now() / 1000),
+      priceValue: parsePriceNumber(merged.price),
+      areaValue: parseArea(merged.area),
+      roomsValue: parseRooms(String(merged.rooms ?? '')),
+      constructionYearValue: parseExactConstructionYear(merged.constructionYear) ?? parseExactConstructionYear(merged.year),
+    };
 
     await Promise.all([
       listingRef.set(
@@ -269,6 +272,8 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
           ...patch,
           lastVerifiedAt: Math.floor(Date.now() / 1000),
           updatedAt: timestamp,
+          ...qualityPatch,
+          enrichmentAttemptedAt: Math.floor(Date.now() / 1000),
           firestoreUpdatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
@@ -288,6 +293,24 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       ),
     ]);
 
+    await registerOwnerListingCanonical(job.entry.listingId, {
+      ...merged,
+      ...qualityPatch,
+      lastVerifiedAt: Math.floor(Date.now() / 1000),
+      lastSeenAt: merged.lastSeenAt || Math.floor(Date.now() / 1000),
+      scrapedAt: merged.scrapedAt || Math.floor(Date.now() / 1000),
+    });
+
+    const siblingSnapshot = await adminDb.collection(ENRICHMENT_COLLECTION).where('listingId', '==', job.entry.listingId).get();
+    if (siblingSnapshot.size > 1) {
+      const siblingBatch = adminDb.batch();
+      for (const sibling of siblingSnapshot.docs) {
+        if (sibling.id === job.id) continue;
+        siblingBatch.set(sibling.ref, { status: 'done', completedAt: timestamp, updatedAt: timestamp, supersededBy: job.id }, { merge: true });
+      }
+      await siblingBatch.commit();
+    }
+
     return {
       status: 'processed',
       queueId: job.id,
@@ -295,6 +318,7 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       taskType: job.entry.taskType,
       attempts: job.entry.attempts,
     };
+
   } catch (error) {
     const timestamp = nowIso();
     const nextStatus = job.entry.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
@@ -313,13 +337,57 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       { merge: true }
     );
 
+
+    if (nextStatus === 'failed') {
+      const listingSnapshot = await listingRef.get();
+      const listing = (listingSnapshot.data() || {}) as OwnerListingSummary;
+      await listingRef.set(
+        {
+          publicationStatus: hasMinimumOwnerListingQuality(listing) ? 'ready' : 'rejected',
+          enrichmentStatus: 'failed',
+          missingFields: getOwnerListingMissingFields(listing),
+          enrichmentCompletedAt: Math.floor(Date.now() / 1000),
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
     return {
       status: 'skipped',
       queueId: job.id,
       listingId: job.entry.listingId,
       taskType: job.entry.taskType,
+
       attempts: job.entry.attempts,
       reason: error instanceof Error ? error.message : 'Enrichment job a esuat.',
     };
   }
+}
+
+export async function drainOwnerListingEnrichmentQueue(options: {
+  limit?: number;
+  concurrency?: number;
+  maxRuntimeMs?: number;
+} = {}) {
+  const limit = Math.max(1, Math.min(options.limit ?? 12, 100));
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 4, 10));
+  const maxRuntimeMs = Math.max(1000, options.maxRuntimeMs ?? 8 * 60 * 1000);
+  const startedAt = Date.now();
+  const results: OwnerListingEnrichmentDrainResult[] = [];
+
+  while (results.length < limit && Date.now() - startedAt < maxRuntimeMs) {
+    const batchSize = Math.min(concurrency, limit - results.length);
+    const batch = await Promise.all(
+      Array.from({ length: batchSize }, () => drainNextOwnerListingEnrichmentQueueItem())
+    );
+    results.push(...batch);
+    if (batch.every((entry) => entry.status === 'empty')) break;
+  }
+
+  return {
+    processed: results.filter((entry) => entry.status === 'processed').length,
+    skipped: results.filter((entry) => entry.status === 'skipped').length,
+    empty: results.filter((entry) => entry.status === 'empty').length,
+    results,
+  };
 }

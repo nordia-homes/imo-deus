@@ -2,6 +2,7 @@ export type OwnerListingSource = 'olx' | 'imoradar24' | 'publi24';
 export type OwnerListingPropertyType = 'apartment' | 'house' | 'land' | 'commercial' | 'unknown';
 export type OwnerListingTransactionType = 'sale' | 'rent' | 'unknown';
 export type OwnerListingEnrichmentStatus = 'pending' | 'partial' | 'complete' | 'failed';
+export type OwnerListingPublicationStatus = 'discovered' | 'enriching' | 'ready' | 'rejected';
 
 export type OwnerListingSummary = {
   scopeKey?: string;
@@ -44,6 +45,17 @@ export type OwnerListingSummary = {
   ownerPhone?: string;
   ownerConfidence?: number;
   enrichmentStatus?: OwnerListingEnrichmentStatus;
+  publicationStatus?: OwnerListingPublicationStatus;
+  missingFields?: string[];
+  enrichmentAttemptedAt?: number;
+  enrichmentCompletedAt?: number;
+  canonicalListingId?: string;
+  isCanonical?: boolean;
+  canonicalIdentity?: string;
+  priceValue?: number | null;
+  areaValue?: number | null;
+  roomsValue?: number | null;
+  constructionYearValue?: number | null;
   scrapedAt: number;
   lastSeenAt: number;
   lastVerifiedAt?: number;
@@ -67,6 +79,11 @@ export type OwnerListingSyncResult = {
   accepted: number;
   stored: number;
   skipped: number;
+  inserted: number;
+  updated: number;
+  duplicates: number;
+  filtered: number;
+  parseFailures: number;
   errors: Array<{ source: OwnerListingSource; message: string }>;
 };
 
@@ -81,13 +98,18 @@ export type SourceScrapeOptions = {
   searchKeywords: string[];
   searchUrls: string[];
   sourceUrlKind?: 'coverage' | 'fresh-radar';
+  propertyTypeHint?: OwnerListingPropertyType;
+  transactionTypeHint?: OwnerListingTransactionType;
 };
 
 export type OwnerListingSourcePageResult = {
   listings: OwnerListingSummary[];
   reachedEnd: boolean;
+  availableLastPage?: number;
+  cardsFound?: number;
+  parseFailures?: number;
+  oldestPostedAt?: number;
 };
-
 export type OlxPhoneQueueStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed';
 
 export type OlxPhoneQueueEntry = {
@@ -96,6 +118,8 @@ export type OlxPhoneQueueEntry = {
   link: string;
   status: OlxPhoneQueueStatus;
   attempts: number;
+  lane?: 'fresh' | 'backfill';
+  priority?: number;
   phone?: string;
   error?: string;
   lastAttemptAt?: string;

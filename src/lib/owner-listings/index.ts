@@ -1,8 +1,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { upsertOwnerListingEnrichmentQueueEntries } from '@/lib/owner-listings/enrichment-queue';
+import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
 import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
-import { getOwnerListingScope, matchesScopeLocation } from '@/lib/owner-listings/scope';
+import { getOwnerListingScope } from '@/lib/owner-listings/scope';
 import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
 import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
 import { scrapePubli24ListingDetail, scrapePubli24Listings, scrapePubli24ListingsPage } from '@/lib/owner-listings/sources/publi24';
@@ -28,9 +29,9 @@ const DEFAULT_OPTIONS: SourceScrapeOptions = {
 };
 
 const SOURCE_HARD_PAGE_LIMITS: Record<OwnerListingSource, number> = {
-  olx: 20,
-  imoradar24: 6,
-  publi24: 35,
+  olx: 250,
+  imoradar24: 250,
+  publi24: 250,
 };
 
 const NEW_BADGE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
@@ -112,25 +113,8 @@ type PersistOwnerListingsOptions = {
   newUntilAt?: number | null;
 };
 
-function isListingAllowedForScope(listing: OwnerListingSummary) {
-  if (listing.scopeKey !== 'iasi') {
-    return true;
-  }
-
-  const scope = getOwnerListingScope('iasi');
-  if (!scope) {
-    return true;
-  }
-
-  return matchesScopeLocation(
-    scope,
-    [
-      listing.location,
-      listing.title,
-      listing.description,
-      listing.originSourceUrl,
-    ].join(' ')
-  );
+function isListingAllowedForScope(_listing: OwnerListingSummary) {
+  return true;
 }
 
 async function storeOwnerListingsBatch(
@@ -141,17 +125,24 @@ async function storeOwnerListingsBatch(
   const result = {
     accepted: 0,
     stored: 0,
+    inserted: 0,
+    updated: 0,
+    duplicates: 0,
+    filtered: 0,
+    parseFailures: 0,
     skipped: 0,
   };
 
   for (const listing of listings) {
     if (!isListingAllowedForScope(listing)) {
       result.skipped += 1;
+      result.filtered += 1;
       continue;
     }
 
     if (unique.has(listing.fingerprint)) {
       result.skipped += 1;
+      result.duplicates += 1;
       continue;
     }
 
@@ -174,6 +165,7 @@ async function storeOwnerListingsBatch(
             isBaselineListing: isNewListing ? Boolean(persistOptions.isBaselineListing) : undefined,
             discoveredCycleNumber: isNewListing ? (persistOptions.discoveredCycleNumber ?? undefined) : undefined,
             firstDiscoveredAt: isNewListing ? listing.scrapedAt : undefined,
+            publicationStatus: isNewListing ? 'discovered' : existing?.publicationStatus || 'ready',
             newUntilAt:
               isNewListing && persistOptions.markNew && persistOptions.newUntilAt
                 ? persistOptions.newUntilAt
@@ -183,6 +175,7 @@ async function storeOwnerListingsBatch(
           },
           existing
         ),
+        isNewListing,
       };
     })
   );
@@ -218,17 +211,22 @@ async function storeOwnerListingsBatch(
       { merge: true }
     );
     result.stored += 1;
+    if (entry.isNewListing) result.inserted += 1;
+    else result.updated += 1;
   }
 
   await batch.commit();
-  await Promise.all(
+  const canonicalResults = await Promise.all(
     listingsToStore.map(async (entry) => {
-      await Promise.all([
+      const [canonical] = await Promise.all([
+        registerOwnerListingCanonical(entry.docRef.id, entry.listing),
         upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing),
         upsertOwnerListingEnrichmentQueueEntries(entry.docRef.id, entry.listing),
       ]);
+      return canonical;
     })
   );
+  result.duplicates += canonicalResults.filter((entry) => !entry.isCanonical).length;
 
   return result;
 }
@@ -362,6 +360,11 @@ export async function syncOwnerListingsSourcePage(
     accepted: persisted.accepted,
     stored: persisted.stored,
     skipped: persisted.skipped,
+    inserted: persisted.inserted,
+    updated: persisted.updated,
+    duplicates: persisted.duplicates,
+    filtered: persisted.filtered,
+    parseFailures: pageResult.parseFailures || 0,
     errors: [],
   };
 }
@@ -397,6 +400,11 @@ export async function syncOwnerListingsSourceUrlPage(
     accepted: persisted.accepted,
     stored: persisted.stored,
     skipped: persisted.skipped,
+    inserted: persisted.inserted,
+    updated: persisted.updated,
+    duplicates: persisted.duplicates,
+    filtered: persisted.filtered,
+    parseFailures: pageResult.parseFailures || 0,
     errors: [],
   };
 }
@@ -414,6 +422,11 @@ export async function syncOwnerListings(
     accepted: 0,
     stored: 0,
     skipped: 0,
+    inserted: 0,
+    updated: 0,
+    duplicates: 0,
+    filtered: 0,
+    parseFailures: 0,
     errors: [],
   };
 
@@ -444,6 +457,11 @@ export async function syncOwnerListings(
   result.accepted = persisted.accepted;
   result.stored = persisted.stored;
   result.skipped += persisted.skipped;
+  result.inserted = persisted.inserted;
+  result.updated = persisted.updated;
+  result.duplicates += persisted.duplicates;
+  result.filtered += persisted.filtered;
+  result.parseFailures += persisted.parseFailures;
 
   return result;
 }

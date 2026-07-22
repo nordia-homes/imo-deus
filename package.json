@@ -22,6 +22,10 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "facebook:helper": "node scripts/facebook-promotion-helper.mjs",
+    "test:owner-listings": "vitest run src/lib/owner-listings/__tests__",
+    "test:owner-listings:live": "set LIVE_SCRAPER_TEST=1&& vitest run src/lib/owner-listings/__tests__/live-parsers.test.ts",
+    "migrate:owner-listings": "node scripts/migrate-owner-listings-pipeline.mjs",
+    "verify:owner-listings": "node scripts/verify-owner-listings-production.mjs",
     "meta:test-runner": "node scripts/meta-api-test-runner.mjs"
   },
   "dependencies": {
@@ -98,7 +102,8 @@
     "firebase-tools": "^15.17.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
   "main": "desktop/main.cjs",
   "build": {

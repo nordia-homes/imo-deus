@@ -86,7 +86,13 @@ export async function waitForScraperReady(page: Page, selectors: string[], timeo
   await page.waitForTimeout(1500).catch(() => undefined);
 }
 
-export async function fetchScraperHtml(url: string, timeoutMs = 30000) {
+export type ScraperResponse = {
+  html: string;
+  finalUrl: string;
+  status: number;
+};
+
+export async function fetchScraperResponse(url: string, timeoutMs = 30000): Promise<ScraperResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -99,16 +105,21 @@ export async function fetchScraperHtml(url: string, timeoutMs = 30000) {
       },
       signal: controller.signal,
       cache: 'no-store',
+      redirect: 'follow',
     });
 
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status} for ${url}`);
     }
 
-    return await response.text();
+    return { html: await response.text(), finalUrl: response.url || url, status: response.status };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function fetchScraperHtml(url: string, timeoutMs = 30000) {
+  return (await fetchScraperResponse(url, timeoutMs)).html;
 }
 
 export async function fetchScraperHtmlViaBrowser(
@@ -120,5 +131,21 @@ export async function fetchScraperHtmlViaBrowser(
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
     await waitForScraperReady(page, selectors, Math.min(timeoutMs, 12000));
     return page.content();
+  });
+}
+
+export async function fetchScraperResponseViaBrowser(
+  url: string,
+  selectors: string[] = ['body'],
+  timeoutMs = 30000
+): Promise<ScraperResponse> {
+  return withScraperPage(async (page) => {
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+    await waitForScraperReady(page, selectors, Math.min(timeoutMs, 12000));
+    return {
+      html: await page.content(),
+      finalUrl: page.url() || url,
+      status: response?.status() || 200,
+    };
   });
 }

@@ -22,10 +22,8 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
   noua: '9',
 };
 const olxPhoneCache = new Map<string, string>();
-const MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE = 24;
-const MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE = MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE;
+const MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE = 60;
 const OLX_LIST_PAGE_TIMEOUT_MS = 15000;
-const OLX_DETAIL_HYDRATION_TIMEOUT_MS = 5000;
 
 function normalizeComparableText(value: string) {
   return normalizeWhitespace(value)
@@ -169,6 +167,14 @@ function extractPriceText(text: string) {
 function extractAreaTextStrict(text: string) {
   const normalized = normalizeWhitespace(text);
   const comparable = normalizeComparableText(text);
+  const unicodeSquareMeterMatch = normalized.match(/\b([1-9]\d{1,2}(?:[.,]\d{1,2})?)\s*(?:mp|m2|m\u00b2)\b/i);
+  if (unicodeSquareMeterMatch) {
+    const areaValue = Number(unicodeSquareMeterMatch[1].replace(',', '.'));
+    if (Number.isFinite(areaValue) && areaValue >= 10 && areaValue <= 500) {
+      return `${String(unicodeSquareMeterMatch[1]).replace('.', ',')} mp`;
+    }
+  }
+
   const match =
     normalized.match(/\b([1-9]\d{1,2}(?:[.,]\d{1,2})?)\s*(?:mp|m2|m²|㎡)\b/i) ||
     comparable.match(/\b([1-9]\d{1,2}(?:[.,]\d{1,2})?)\s*(?:mp|m2|m²)\b/i);
@@ -816,7 +822,7 @@ function extractPriceFromChunk(chunk: string) {
   return priceMatches[0] || '';
 }
 
-function extractListPageFromHtml(html: string) {
+export function extractOlxListPageFromHtml(html: string) {
   const hrefMatches = Array.from(html.matchAll(/href="([^"]*\/d\/oferta\/[^"]+)"/gi));
   const cards: Array<{ href: string; title: string; text: string; price: string; imageCandidates: string[]; isolated: boolean }> = [];
   const seen = new Set<string>();
@@ -852,6 +858,13 @@ function extractListPageFromHtml(html: string) {
   }
 
   return cards;
+}
+
+export function extractOlxLastPage(html: string) {
+  const pages = Array.from(html.matchAll(/[?&](?:page|search%5Bpage%5D)=(\d+)/gi))
+    .map((match) => Number(match[1]))
+    .filter((page) => Number.isFinite(page) && page > 0);
+  return pages.length ? Math.max(...pages) : 1;
 }
 
 function extractOlxParamsFromHtml(html: string) {
@@ -1118,7 +1131,6 @@ export async function scrapeOlxListingsPage(
 
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
-  let detailHydrations = 0;
   const effectiveListingLimit = Math.min(
     options.maxListingsPerSource ?? MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE,
     MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE
@@ -1129,14 +1141,17 @@ export async function scrapeOlxListingsPage(
     pageUrl.searchParams.set('page', String(virtualPage.sourcePageNumber));
   }
 
-  const html = await fetchScraperHtml(pageUrl.toString(), OLX_LIST_PAGE_TIMEOUT_MS).catch(() => '');
+  const html = await fetchScraperHtml(pageUrl.toString(), OLX_LIST_PAGE_TIMEOUT_MS);
   if (!html) {
-    return { listings, reachedEnd: false };
+    if (/(?:data-testid|data-cy)=["']l-card["']/i.test(html)) {
+      throw new Error(`OLX parser contract failed for ${pageUrl.toString()}: card markup exists, but zero cards were parsed.`);
+    }
+    return { listings, reachedEnd: true, cardsFound: 0 };
   }
 
-  const cards = extractListPageFromHtml(html);
+  const cards = extractOlxListPageFromHtml(html);
   if (!cards.length) {
-    return { listings, reachedEnd: false };
+    throw new Error(`OLX returned an empty response for ${pageUrl.toString()}.`);
   }
 
   for (const card of cards) {
@@ -1150,31 +1165,7 @@ export async function scrapeOlxListingsPage(
     let parsed: ParsedOlxCard = parseCard(card.title, card.text);
     parsed.price = card.price || parsed.price;
 
-    const shouldHydrateFromDetail =
-      detailHydrations < MAX_OLX_DETAIL_HYDRATIONS_PER_PAGE &&
-      (!parsed.area || !parsed.location || !card.imageCandidates.length);
-
-    if (shouldHydrateFromDetail) {
-      detailHydrations += 1;
-      const detailHtml = await fetchScraperHtml(absoluteUrl, OLX_DETAIL_HYDRATION_TIMEOUT_MS).catch(() => '');
-      if (detailHtml) {
-        const detailParams = extractOlxParamsFromHtml(detailHtml);
-        const detailTitle = extractOlxTitleFromHtml(detailHtml);
-        const detailDescription = extractOlxDescriptionFromHtml(detailHtml);
-        const detailBody = `${detailTitle} ${detailDescription} ${stripHtml(detailHtml)}`;
-        const detailLocation = extractOlxLocationFromHtml(detailHtml) || extractLocationText(detailTitle);
-        parsed = {
-          ...parsed,
-          price: detailParams.price || extractPriceText(detailBody) || parsed.price,
-          area: parsed.area || detailParams.area || extractAreaFromOlxBodyText(detailBody),
-          location: detailLocation || parsed.location,
-          constructionYear: detailParams.constructionYear || parsed.constructionYear,
-        };
-
-        card.imageCandidates.push(...extractOlxImagesFromHtml(detailHtml));
-      }
-    }
-
+    // Discovery is list-only; missing fields are completed by the detail enrichment queue.
     const externalIdMatch = card.href.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/);
     const externalId = externalIdMatch?.[1] || externalIdMatch?.[2] || card.href;
 
@@ -1187,11 +1178,13 @@ export async function scrapeOlxListingsPage(
         externalId,
         title: resolvedTitle,
         price: parsed.price,
+        propertyType: options.propertyTypeHint,
+        transactionType: options.transactionTypeHint,
         area: parsed.area,
         rooms: parsed.rooms,
         constructionYear: parsed.constructionYear,
         year: parsed.constructionYear,
-        location: parsed.location,
+        location: parsed.location || options.scopeCity,
         postedAt: Math.floor(Date.now() / 1000),
         postedAtText: '',
         link: absoluteUrl,
@@ -1201,7 +1194,14 @@ export async function scrapeOlxListingsPage(
     );
   }
 
-  return { listings, reachedEnd: false };
+  const availableLastPage = extractOlxLastPage(html);
+  return {
+    listings,
+    reachedEnd: virtualPage.sourcePageNumber >= availableLastPage,
+    availableLastPage,
+    cardsFound: cards.length,
+    parseFailures: 0,
+  };
 }
 
 export async function scrapeOlxListings(options: SourceScrapeOptions) {
@@ -1221,7 +1221,7 @@ export async function scrapeOlxListings(options: SourceScrapeOptions) {
   return listings;
 }
 
-export async function scrapeOlxListingDetail(url: string) {
+export async function scrapeOlxListingDetail(url: string, options: { includePhone?: boolean } = {}) {
   const html = await fetchScraperHtml(url, 30000).catch(() => '');
 
   let title = '';
@@ -1257,7 +1257,7 @@ export async function scrapeOlxListingDetail(url: string) {
   if (!title || !detailParams.area || !detailParams.price || !images.length) {
     domParams = await extractOlxParamsFromDom(url).catch(() => null);
   }
-  const contactPhone = await resolveOlxPhone(url, html).catch(() => '');
+  const contactPhone = options.includePhone === false ? '' : await resolveOlxPhone(url, html).catch(() => '');
   const summary = buildSummary({
     source: 'olx',
     externalId: url.match(/-(\w+)\.html|ID([A-Za-z0-9]+)/)?.[1] || url.match(/ID([A-Za-z0-9]+)/)?.[1] || url,

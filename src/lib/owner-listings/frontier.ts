@@ -85,11 +85,11 @@ function sourceUrlsForScope(scope: ReturnType<typeof listOwnerListingScopes>[num
 
 function initialPriority(entry: OwnerListingSourceUrl, source: OwnerListingSource) {
   let priority = entry.kind === 'fresh-radar' ? 1000 : 500;
-  if (source === 'imoradar24') priority -= 80;
   if (entry.propertyType === 'apartment') priority += 30;
   if (entry.transactionType === 'sale') priority += 10;
   return priority;
 }
+    let createdJobs = 0;
 
 async function ensureFrontierJobs(scopeKey?: string | null) {
   const scopes = listOwnerListingScopes().filter((scope) => !scopeKey || scope.key === scopeKey);
@@ -98,6 +98,8 @@ async function ensureFrontierJobs(scopeKey?: string | null) {
 
   for (const scope of scopes) {
     const batch = adminDb.batch();
+    const existingSnapshot = await adminDb.collection(FRONTIER_COLLECTION).where('scopeKey', '==', scope.key).get();
+    const existingIds = new Set(existingSnapshot.docs.map((doc) => doc.id));
     for (const entry of sourceUrlsForScope(scope)) {
       const id = jobId(scope.key, entry.source, entry.url);
       if (entry.source === 'imoradar24') {
@@ -105,7 +107,10 @@ async function ensureFrontierJobs(scopeKey?: string | null) {
       }
 
       const ref = adminDb.collection(FRONTIER_COLLECTION).doc(id);
-      batch.set(
+      if (existingIds.has(id)) {
+        continue;
+      }
+      batch.create(
         ref,
         {
           id,
@@ -129,11 +134,13 @@ async function ensureFrontierJobs(scopeKey?: string | null) {
           createdAt: timestamp,
           updatedAt: timestamp,
           firestoreUpdatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
+        }
       );
     }
-    await batch.commit();
+      createdJobs += 1;
+    if (createdJobs) {
+      await batch.commit();
+    }
   }
 
   await retireObsoleteImoradarFrontierJobs(activeImoradarJobIds, scopes.map((scope) => scope.key), timestamp);
@@ -192,31 +199,32 @@ function isLockStale(job: Partial<OwnerListingScrapeFrontierJob>) {
   return Date.now() - new Date(job.lockedAt).getTime() > LOCK_STALE_MS;
 }
 
-async function acquireFrontierJob(scopeKey?: string | null) {
+async function acquireFrontierJob(source: OwnerListingSource, scopeKey?: string | null) {
   const now = nowIso();
   let query: FirebaseFirestore.Query = adminDb
     .collection(FRONTIER_COLLECTION)
+    .where('source', '==', source)
+    .where('status', 'in', ['pending', 'cooldown', 'failed'])
     .where('nextRunAt', '<=', now)
     .orderBy('nextRunAt', 'asc')
-    .limit(50);
+    .orderBy('priority', 'desc')
+    .limit(25);
 
   if (scopeKey) {
     query = adminDb
       .collection(FRONTIER_COLLECTION)
       .where('scopeKey', '==', scopeKey)
+      .where('source', '==', source)
+      .where('status', 'in', ['pending', 'cooldown', 'failed'])
       .where('nextRunAt', '<=', now)
       .orderBy('nextRunAt', 'asc')
-      .limit(50);
+      .orderBy('priority', 'desc')
+      .limit(25);
   }
 
   const snapshot = await query.get();
   const lockId = crypto.randomUUID();
-
-  const candidates = [...snapshot.docs].sort((left, right) => {
-    const leftData = left.data() as Partial<OwnerListingScrapeFrontierJob>;
-    const rightData = right.data() as Partial<OwnerListingScrapeFrontierJob>;
-    return (rightData.priority || 0) - (leftData.priority || 0);
-  });
+  const candidates = snapshot.docs;
 
   for (const docSnapshot of candidates) {
     const candidate = docSnapshot.data() as OwnerListingScrapeFrontierJob;
@@ -269,27 +277,17 @@ async function acquireFrontierJobWithSourceLimits(
   processedBySource: Record<OwnerListingSource, number>,
   scopeKey?: string | null
 ) {
-  for (let attempts = 0; attempts < 20; attempts += 1) {
-    const acquired = await acquireFrontierJob(scopeKey);
-    if (!acquired) return null;
+  const sources = (['imoradar24', 'olx', 'publi24'] as OwnerListingSource[])
+    .filter((source) => processedBySource[source] < SOURCE_LIMITS_PER_TICK[source])
+    .sort((left, right) => {
+      const leftRatio = processedBySource[left] / SOURCE_LIMITS_PER_TICK[left];
+      const rightRatio = processedBySource[right] / SOURCE_LIMITS_PER_TICK[right];
+      return leftRatio - rightRatio;
+    });
 
-    const currentCount = processedBySource[acquired.job.source] || 0;
-    if (currentCount < SOURCE_LIMITS_PER_TICK[acquired.job.source]) {
-      return acquired;
-    }
-
-    const timestamp = nowIso();
-    await acquired.ref.set(
-      {
-        status: 'pending',
-        lockedAt: FieldValue.delete(),
-        lockedBy: FieldValue.delete(),
-        nextRunAt: addMs(timestamp, 2 * 60 * 1000),
-        updatedAt: timestamp,
-        firestoreUpdatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+  for (const source of sources) {
+    const acquired = await acquireFrontierJob(source, scopeKey);
+    if (acquired) return acquired;
   }
 
   return null;
@@ -310,11 +308,11 @@ function nextRunDelayMs(job: OwnerListingScrapeFrontierJob, reachedEnd: boolean,
 function shouldPauseForLowYield(input: {
   job: OwnerListingScrapeFrontierJob;
   scanned: number;
-  stored: number;
+  inserted: number;
   reachedEnd: boolean;
 }) {
-  const storedRatio = input.scanned > 0 ? input.stored / input.scanned : 0;
-  const consecutiveEmptyPages = input.scanned === 0 || input.stored === 0 ? (input.job.consecutiveEmptyPages || 0) + 1 : 0;
+  const storedRatio = input.scanned > 0 ? input.inserted / input.scanned : 0;
+  const consecutiveEmptyPages = input.scanned === 0 ? (input.job.consecutiveEmptyPages || 0) + 1 : 0;
   const duplicateHeavy = input.scanned >= 10 && storedRatio <= 0.05;
   const consecutiveDuplicateHeavyPages = duplicateHeavy ? (input.job.consecutiveDuplicateHeavyPages || 0) + 1 : 0;
 
@@ -336,7 +334,7 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
   const startedMs = Date.now();
   const maxRuntimeMs = options.maxRuntimeMs ?? 8 * 60 * 1000;
   const limit = options.limit ?? 10;
-  const maxPage = options.maxPage ?? 20;
+  const maxPage = options.maxPage ?? 250;
   const processedBySource: Record<OwnerListingSource, number> = {
     olx: 0,
     publi24: 0,
@@ -349,6 +347,10 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
     sourceUrlKind: string;
     page: number;
     scanned: number;
+    inserted: number;
+    updated: number;
+    duplicates: number;
+    filtered: number;
     stored: number;
     skipped: number;
     errors: number;
@@ -374,6 +376,8 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
           hardPageLimit: maxPage,
           maxAgeDays: job.sourceUrlKind === 'fresh-radar' ? 14 : 60,
           sourceUrlKind: job.sourceUrlKind,
+          propertyTypeHint: job.propertyType,
+          transactionTypeHint: job.transactionType,
         },
         {
           markNew: true,
@@ -387,7 +391,7 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
       const lowYield = shouldPauseForLowYield({
         job,
         scanned: result.scanned,
-        stored: result.stored,
+        inserted: result.inserted,
         reachedEnd,
       });
       const timestamp = nowIso();
@@ -431,9 +435,28 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
         reachedEnd,
         startedAt: new Date(runStartedMs).toISOString(),
         finishedAt: timestamp,
+        inserted: result.inserted,
+        updated: result.updated,
+        duplicates: result.duplicates,
+        filtered: result.filtered,
         durationMs: Date.now() - runStartedMs,
         firestoreCreatedAt: FieldValue.serverTimestamp(),
       });
+      await adminDb.collection('ownerListingScrapeHealth').doc(job.source).set(
+        {
+          source: job.source,
+          status: 'healthy',
+          lastSuccessAt: timestamp,
+          lastScopeKey: job.scopeKey,
+          lastSourceUrl: job.sourceUrl,
+          lastPage: page,
+          lastScanned: result.scanned,
+          lastInserted: result.inserted,
+          lastParseFailures: result.parseFailures,
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       results.push({
         jobId: job.id,
@@ -446,6 +469,10 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
         skipped: result.skipped,
         errors: result.errors.length,
         reachedEnd,
+        inserted: result.inserted,
+        updated: result.updated,
+        duplicates: result.duplicates,
+        filtered: result.filtered,
         message: shouldCooldown ? 'Jobul a intrat in cooldown dupa stop condition.' : 'Pagina procesata.',
       });
     } catch (error) {
@@ -469,6 +496,18 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
         { merge: true }
       );
 
+      await adminDb.collection('ownerListingScrapeHealth').doc(job.source).set(
+        {
+          source: job.source,
+          status: 'degraded',
+          lastFailureAt: timestamp,
+          lastError: message,
+          lastScopeKey: job.scopeKey,
+          lastSourceUrl: job.sourceUrl,
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
       results.push({
         jobId: job.id,
         scopeKey: job.scopeKey,
@@ -480,6 +519,10 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
         skipped: 0,
         errors: 1,
         reachedEnd: false,
+        inserted: 0,
+        updated: 0,
+        duplicates: 0,
+        filtered: 0,
         message,
       });
 

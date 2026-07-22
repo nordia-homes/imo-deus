@@ -29,12 +29,11 @@ import { getAgencyThemePreset } from '@/lib/theme';
 import { listOwnerListingScopes, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { collection, doc, limit as firestoreLimit, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
 
 const LISTINGS_PER_PAGE = 100;
-const LISTINGS_FETCH_BATCH = 3000;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 type AiStatusFilter = 'all' | 'uncalled' | AiOutreachOutcome;
 type DesktopOlxBridgeWindow = Window & {
@@ -64,8 +63,14 @@ export default function OwnerListingsPage() {
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
-  const [ownerListingsFetchLimit, setOwnerListingsFetchLimit] = useState(LISTINGS_FETCH_BATCH);
   const pageTopRef = useRef<HTMLDivElement | null>(null);
+  const [listings, setListings] = useState<OwnerListing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pageCursor, setPageCursor] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([]);
+  const [hasMoreListings, setHasMoreListings] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
   const previousPageRef = useRef(currentPage);
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -80,18 +85,98 @@ export default function OwnerListingsPage() {
   );
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
-  const ownerListingsQuery = useMemoFirebase(
-    () =>
-      currentScope?.key
-        ? query(
-            collection(firestore, 'ownerListings'),
-            where('scopeKey', '==', currentScope.key),
-            orderBy('firstDiscoveredAt', 'desc'),
-            firestoreLimit(ownerListingsFetchLimit),
-          )
-        : query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc'), firestoreLimit(ownerListingsFetchLimit)),
-    [currentScope?.key, firestore, ownerListingsFetchLimit],
+  const listingFiltersKey = useMemo(
+    () => JSON.stringify({
+      scopeKey: currentScope?.key || '',
+      searchQuery,
+      roomsFilter,
+      propertyTypeFilter,
+      transactionTypeFilter,
+      constructionYearFilter,
+      priceMin,
+      priceMax,
+      sourceFilter,
+    }),
+      aiStatusFilter,
+    [aiStatusFilter, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter],
   );
+
+  useEffect(() => {
+    setPageCursor(null);
+    setNextCursor(null);
+    setCursorHistory([]);
+    setHasMoreListings(false);
+    setCurrentPage(1);
+  }, [listingFiltersKey]);
+
+  useEffect(() => {
+    if (!user || !currentScope?.key) {
+      setListings([]);
+      setIsLoading(Boolean(currentScope?.key));
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setIsLoading(true);
+      setListingsError(null);
+
+      try {
+        const propertyType = propertyTypeFilter === 'apartamente'
+          ? 'apartment'
+          : propertyTypeFilter === 'case'
+            ? 'house'
+            : propertyTypeFilter === 'terenuri'
+              ? 'land'
+              : propertyTypeFilter === 'spatii-comerciale'
+                ? 'commercial'
+                : 'all';
+        const params = new URLSearchParams({
+          scopeKey: currentScope.key,
+          pageSize: String(LISTINGS_PER_PAGE),
+          propertyType,
+          transactionType: transactionTypeFilter,
+          constructionYear: constructionYearFilter,
+        });
+        if (pageCursor) params.set('cursor', pageCursor);
+        if (sourceFilter) params.set('source', sourceFilter);
+        if (roomsFilter !== 'all') params.set('rooms', roomsFilter);
+        if (priceMin) params.set('priceMin', priceMin);
+        if (priceMax) params.set('priceMax', priceMax);
+        if (searchQuery.trim()) params.set('search', searchQuery.trim());
+
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/owner-listings/query?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        const payload = await response.json().catch(() => ({})) as {
+          listings?: OwnerListing[];
+          nextCursor?: string | null;
+          hasMore?: boolean;
+          message?: string;
+        };
+        if (!response.ok) throw new Error(payload.message || 'Nu am putut incarca anunturile.');
+
+        setListings(Array.isArray(payload.listings) ? payload.listings : []);
+        setNextCursor(payload.nextCursor || null);
+        setHasMoreListings(Boolean(payload.hasMore && payload.nextCursor));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setListings([]);
+        setListingsError(error instanceof Error ? error.message : 'Nu am putut incarca anunturile.');
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [currentScope?.key, listingFiltersKey, pageCursor, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, roomsFilter, priceMin, priceMax, searchQuery, sourceFilter, user]);
+
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
     [agencyId, firestore],
@@ -101,7 +186,6 @@ export default function OwnerListingsPage() {
     [agencyId, firestore],
   );
 
-  const { data: listings, isLoading } = useCollection<OwnerListing>(ownerListingsQuery);
   const { data: favorites } = useCollection<OwnerListingFavorite>(favoritesQuery);
   const { data: aiCalls } = useCollection<AiOutreachCall>(aiCallsQuery);
 
@@ -151,9 +235,6 @@ export default function OwnerListingsPage() {
     return () => window.clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    setOwnerListingsFetchLimit(LISTINGS_FETCH_BATCH);
-  }, [currentScope?.key]);
 
   const filteredListings = useMemo(() => {
     if (!Array.isArray(listings)) return [];
@@ -247,13 +328,9 @@ export default function OwnerListingsPage() {
     setCurrentPage(1);
   }, [searchQuery, roomsFilter, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, aiStatusFilter, currentScope?.key]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredListings.length / LISTINGS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const hasLoadedOwnerListingLimit = Array.isArray(listings) && listings.length >= ownerListingsFetchLimit;
-  const paginatedListings = useMemo(() => {
-    const startIndex = (safeCurrentPage - 1) * LISTINGS_PER_PAGE;
-    return filteredListings.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
-  }, [filteredListings, safeCurrentPage]);
+  const totalPages = currentPage + (hasMoreListings ? 1 : 0);
+  const safeCurrentPage = currentPage;
+  const paginatedListings = filteredListings;
 
   useEffect(() => {
     if (previousPageRef.current === safeCurrentPage) return;
@@ -282,15 +359,20 @@ export default function OwnerListingsPage() {
   };
 
   const handleNextPage = () => {
-    if (safeCurrentPage < totalPages) {
-      setCurrentPage((page) => Math.min(totalPages, page + 1));
-      return;
-    }
+    if (!hasMoreListings || !nextCursor) return;
+    setCursorHistory((history) => [...history, pageCursor]);
+    setPageCursor(nextCursor);
+    setCurrentPage((page) => page + 1);
+  };
 
-    if (hasLoadedOwnerListingLimit) {
-      setOwnerListingsFetchLimit((currentLimit) => currentLimit + LISTINGS_FETCH_BATCH);
-      setCurrentPage((page) => page + 1);
-    }
+  const handlePreviousPage = () => {
+    if (safeCurrentPage <= 1) return;
+    setCursorHistory((history) => {
+      const previousCursor = history.at(-1) ?? null;
+      setPageCursor(previousCursor);
+      return history.slice(0, -1);
+    });
+    setCurrentPage((page) => Math.max(1, page - 1));
   };
 
   const handleImport = async (listing: OwnerListing) => {
@@ -1076,20 +1158,20 @@ export default function OwnerListingsPage() {
           })
         ) : (
           <div className="col-span-full py-10 text-center">
-            <p className="text-muted-foreground">Niciun anunt gasit.</p>
+            <p className="text-muted-foreground">{listingsError || 'Niciun anunt gasit.'}</p>
           </div>
         )}
       </div>
 
-      {filteredListings.length > 0 && (totalPages > 1 || hasLoadedOwnerListingLimit) ? (
+      {filteredListings.length > 0 && (safeCurrentPage > 1 || hasMoreListings) ? (
         <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={safeCurrentPage === 1}>
+          <Button variant="outline" onClick={handlePreviousPage} disabled={safeCurrentPage === 1}>
             Anterioara
           </Button>
           <span className="text-sm text-white/75">
             Pagina {safeCurrentPage} din {totalPages}
           </span>
-          <Button variant="outline" onClick={handleNextPage} disabled={safeCurrentPage === totalPages && !hasLoadedOwnerListingLimit}>
+          <Button variant="outline" onClick={handleNextPage} disabled={!hasMoreListings || !nextCursor}>
             Urmatoare
           </Button>
         </div>

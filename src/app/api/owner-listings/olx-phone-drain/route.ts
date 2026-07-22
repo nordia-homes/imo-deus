@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized.' }, { status: 401 });
     }
 
-    const result = await runOwnerListingsOlxPhoneDrain();
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+    const result = await runOwnerListingsOlxPhoneDrain({
+      limit: typeof body.limit === 'number' ? body.limit : undefined,
+      concurrency: typeof body.concurrency === 'number' ? body.concurrency : undefined,
+      maxRuntimeMs: typeof body.maxRuntimeMs === 'number' ? body.maxRuntimeMs : undefined,
+    });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

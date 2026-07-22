@@ -134,6 +134,24 @@ export function parseRomanianDateToUnix(value: string | null | undefined) {
   if (!normalized) return Math.floor(Date.now() / 1000);
 
   const now = new Date();
+  const relative = normalized.match(/\b(?:acum\s+)?(\d+)\s*(minut(?:e)?|ora|ore|zi|zile|saptamana|saptamani|luna|luni|an|ani)\s*(?:in\s+urma)?\b/i);
+  if (relative) {
+    const amount = Number(relative[1]);
+    const unit = relative[2];
+    const unitMs = unit.startsWith('minut')
+      ? 60 * 1000
+      : unit === 'ora' || unit === 'ore'
+        ? 60 * 60 * 1000
+        : unit === 'zi' || unit === 'zile'
+          ? 24 * 60 * 60 * 1000
+          : unit.startsWith('saptaman')
+            ? 7 * 24 * 60 * 60 * 1000
+            : unit === 'luna' || unit === 'luni'
+              ? 30 * 24 * 60 * 60 * 1000
+              : 365 * 24 * 60 * 60 * 1000;
+    return Math.floor((now.getTime() - amount * unitMs) / 1000);
+  }
+
   if (normalized.includes('azi')) {
     return Math.floor(now.getTime() / 1000);
   }
@@ -319,6 +337,41 @@ export function createListingDedupeSignature(input: {
     normalizedLocation,
   };
 }
+export function getOwnerListingMissingFields(listing: Partial<OwnerListingSummary>) {
+  const missing: string[] = [];
+  if (!normalizeWhitespace(listing.price)) missing.push('price');
+  if (!normalizeWhitespace(listing.location)) missing.push('location');
+  if (!normalizeWhitespace(listing.area)) missing.push('area');
+  if (
+    (listing.propertyType === 'apartment' || listing.propertyType === 'house' || listing.propertyType === 'unknown') &&
+    !normalizeWhitespace(String(listing.rooms ?? ''))
+  ) {
+    missing.push('rooms');
+  }
+  if (
+    (listing.propertyType === 'apartment' || listing.propertyType === 'house') &&
+    !normalizeWhitespace(String(listing.constructionYear ?? listing.year ?? ''))
+  ) {
+    missing.push('constructionYear');
+  }
+  if (!normalizeWhitespace(listing.description)) missing.push('description');
+  if (!normalizeWhitespace(listing.imageUrl || listing.image)) missing.push('image');
+  if (!normalizeWhitespace(listing.ownerPhone)) missing.push('ownerPhone');
+  return missing;
+}
+
+export function hasMinimumOwnerListingQuality(listing: Partial<OwnerListingSummary>) {
+  return Boolean(
+    normalizeWhitespace(listing.title) &&
+    normalizeWhitespace(listing.link) &&
+    normalizeWhitespace(listing.location) &&
+    listing.propertyType &&
+    listing.propertyType !== 'unknown' &&
+    listing.transactionType &&
+    listing.transactionType !== 'unknown'
+  );
+}
+
 
 export function stripUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
@@ -351,6 +404,11 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
     price: input.price,
     area: input.area,
   });
+  const priceValue = parsePriceNumber(input.price);
+  const areaValue = parseArea(input.area);
+  const roomsValue = parseRooms(String(input.rooms ?? ''));
+  const constructionYearValue = parseExactConstructionYear(input.constructionYear) ?? parseExactConstructionYear(input.year);
+  const missingFields = input.missingFields || getOwnerListingMissingFields({ ...input, propertyType, transactionType });
 
   return {
     ...input,
@@ -372,11 +430,18 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
     dedupeGroupId: input.dedupeGroupId || dedupe.signature,
     normalizedTitle: input.normalizedTitle || dedupe.normalizedTitle,
     normalizedLocation: input.normalizedLocation || dedupe.normalizedLocation,
+    publicationStatus: input.publicationStatus || 'discovered',
+    missingFields,
+    priceValue,
+    areaValue,
+    roomsValue,
+    constructionYearValue,
+    isCanonical: input.isCanonical ?? true,
     enrichmentStatus: input.enrichmentStatus || (input.ownerPhone ? 'partial' : 'pending'),
     ownerType: 'owner' as const,
     scrapedAt: now,
     lastSeenAt: now,
-    lastVerifiedAt: input.lastVerifiedAt || now,
+    lastVerifiedAt: input.lastVerifiedAt,
   } satisfies OwnerListingSummary;
 }
 

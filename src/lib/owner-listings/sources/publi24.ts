@@ -636,8 +636,32 @@ function collectStructuredOffers(node: unknown, target: StructuredPubli24Offer[]
   Object.values(record).forEach((value) => collectStructuredOffers(value, target));
 }
 
-function extractStructuredOffersFromHtml(html: string) {
+export function extractPubli24StructuredOffersFromHtml(html: string) {
   const offers: StructuredPubli24Offer[] = [];
+  for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    const payload = normalizeWhitespace(match[1] || '')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .trim();
+    if (!payload) continue;
+
+    try {
+      collectStructuredOffers(JSON.parse(payload), offers);
+    } catch {
+      // The legacy fallback below still handles malformed JSON-LD payloads.
+    }
+  }
+
+  if (offers.length) {
+    return Array.from(
+      new Map(
+        offers
+          .filter((offer) => Boolean(offer.title && offer.url))
+          .map((offer) => [normalizeUrl(offer.url, 'https://www.publi24.ro'), offer])
+      ).values()
+    );
+  }
+
   const script = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i)?.[1] || '';
   const chunks = script
     .split(/\{\s*"name"\s*:/g)
@@ -670,6 +694,13 @@ function extractStructuredOffersFromHtml(html: string) {
 
   return offers;
 }
+export function extractPubli24LastPage(html: string) {
+  const pages = Array.from(html.matchAll(/[?&]page=(\d+)/gi))
+    .map((match) => Number(match[1]))
+    .filter((page) => Number.isFinite(page) && page > 0);
+  return pages.length ? Math.max(...pages) : 1;
+}
+
 
 export async function scrapePubli24ListingsPage(
   options: SourceScrapeOptions,
@@ -682,6 +713,7 @@ export async function scrapePubli24ListingsPage(
 
   const listings: OwnerListingSummary[] = [];
   const seenLinks = new Set<string>();
+  let detectedLastPage = 1;
 
   for (const baseUrl of options.searchUrls) {
     const pageUrl = new URL(baseUrl);
@@ -689,13 +721,17 @@ export async function scrapePubli24ListingsPage(
       pageUrl.searchParams.set('page', String(pageNumber));
     }
 
-    const html = await fetchScraperHtml(pageUrl.toString(), 30000).catch(() => '');
+    const html = await fetchScraperHtml(pageUrl.toString(), 30000);
+    detectedLastPage = Math.max(detectedLastPage, extractPubli24LastPage(html));
     if (!html) {
-      continue;
+      throw new Error(`Publi24 returned an empty response for ${pageUrl.toString()}.`);
     }
 
-    const structuredOffers = extractStructuredOffersFromHtml(html);
+    const structuredOffers = extractPubli24StructuredOffersFromHtml(html);
     if (!structuredOffers.length) {
+      if (/href=["'][^"']+\.html/i.test(html)) {
+        throw new Error(`Publi24 parser contract failed for ${pageUrl.toString()}: offer links exist, but zero cards were parsed.`);
+      }
       continue;
     }
 
@@ -706,25 +742,7 @@ export async function scrapePubli24ListingsPage(
       const absoluteUrl = normalizeUrl(offer.url, 'https://www.publi24.ro');
       if (seenLinks.has(absoluteUrl)) continue;
 
-      let enrichedOffer = { ...offer, url: absoluteUrl };
-      if (!enrichedOffer.area || !enrichedOffer.rooms || !enrichedOffer.constructionYear) {
-        const detailHtml = await fetchScraperHtml(absoluteUrl, 15000).catch(() => '');
-        if (detailHtml) {
-          const detail = extractPubli24DetailFromHtml(detailHtml, absoluteUrl);
-          const ownerPhone = await extractPubli24PhoneFromHtml(detailHtml, absoluteUrl).catch(() => '');
-          enrichedOffer = {
-            ...enrichedOffer,
-            title: detail.title || enrichedOffer.title,
-            description: detail.description || enrichedOffer.description,
-            price: enrichedOffer.price || detail.price,
-            area: enrichedOffer.area || detail.area,
-            rooms: enrichedOffer.rooms || detail.rooms,
-            imageUrl: enrichedOffer.imageUrl || detail.images[0] || '',
-            constructionYear: enrichedOffer.constructionYear || detail.constructionYear,
-            ownerPhone,
-          };
-        }
-      }
+      const enrichedOffer = { ...offer, url: absoluteUrl };
 
       const idMatch = absoluteUrl.match(/\/([a-z0-9]+)\.html/i);
       seenLinks.add(absoluteUrl);
@@ -738,9 +756,11 @@ export async function scrapePubli24ListingsPage(
           price: enrichedOffer.price,
           area: enrichedOffer.area,
           rooms: enrichedOffer.rooms,
+          propertyType: options.propertyTypeHint,
+          transactionType: options.transactionTypeHint,
           constructionYear: enrichedOffer.constructionYear,
           year: enrichedOffer.constructionYear,
-          location: enrichedOffer.location,
+          location: enrichedOffer.location || options.scopeCity,
           postedAt: Math.floor(Date.now() / 1000),
           postedAtText: '',
           link: absoluteUrl,
@@ -752,7 +772,14 @@ export async function scrapePubli24ListingsPage(
     }
   }
 
-  return { listings, reachedEnd: pageNumber >= hardPageLimit };
+  const availableLastPage = detectedLastPage;
+  return {
+    listings,
+    reachedEnd: listings.length === 0 || pageNumber >= hardPageLimit || pageNumber >= availableLastPage,
+    availableLastPage,
+    cardsFound: listings.length,
+    parseFailures: 0,
+  };
 }
 
 export async function scrapePubli24Listings(options: SourceScrapeOptions) {

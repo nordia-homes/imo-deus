@@ -12,6 +12,8 @@
     "src/lib/owner-listings/sources/publi24.ts",
     "src/lib/owner-listings/scope.ts",
     "src/app/api/owner-listings/olx-phone-drain/route.ts",
+    "src/app/api/owner-listings/query/route.ts",
+    "src/app/(dashboard)/owner-listings/page.tsx",
     "src/components/properties/add-property-dialog.tsx"
   ],
   "exclude": ["node_modules", ".next"]

@@ -1,6 +1,6 @@
 import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
-import { drainNextOlxPhoneQueueItem } from '@/lib/owner-listings/olx-phone-queue';
+import { drainOlxPhoneQueue } from '@/lib/owner-listings/olx-phone-queue';
 import { getNewBadgeLifetimeUnix, syncOwnerListings, syncOwnerListingsFreshRadar } from '@/lib/owner-listings';
 import { runOwnerListingsSyncSchedulerTick } from '@/lib/owner-listings/cycle';
 import { getOwnerListingScope, listOwnerListingScopes } from '@/lib/owner-listings/scope';
@@ -18,8 +18,8 @@ export function isValidOwnerListingsCronSecret(secret: string | null | undefined
   return Boolean(expected) && Boolean(secret) && secret === expected;
 }
 
-export async function runOwnerListingsOlxPhoneDrain(): Promise<OlxPhoneDrainResult> {
-  return drainNextOlxPhoneQueueItem();
+export async function runOwnerListingsOlxPhoneDrain(options: { limit?: number; concurrency?: number; maxRuntimeMs?: number } = {}) {
+  return drainOlxPhoneQueue(options);
 }
 
 type CycleTickOptions = {

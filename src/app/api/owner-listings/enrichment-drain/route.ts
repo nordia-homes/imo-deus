@@ -3,7 +3,7 @@ import {
   isValidOwnerListingsCronSecret,
   OWNER_LISTINGS_CRON_SECRET_HEADER,
 } from '@/lib/owner-listings/background';
-import { drainNextOwnerListingEnrichmentQueueItem } from '@/lib/owner-listings/enrichment-queue';
+import { drainOwnerListingEnrichmentQueue } from '@/lib/owner-listings/enrichment-queue';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized.' }, { status: 401 });
     }
 
-    const result = await drainNextOwnerListingEnrichmentQueueItem();
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+    const result = await drainOwnerListingEnrichmentQueue({
+      limit: typeof body.limit === 'number' ? body.limit : undefined,
+      concurrency: typeof body.concurrency === 'number' ? body.concurrency : undefined,
+      maxRuntimeMs: typeof body.maxRuntimeMs === 'number' ? body.maxRuntimeMs : undefined,
+    });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);
