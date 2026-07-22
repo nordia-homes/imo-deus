@@ -74,6 +74,15 @@ export function parseNumberFromText(value: string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function parseOptionalNumber(value: unknown) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const numeric = raw.replace(/[^\d.,-]/g, '').replace(',', '.');
+  if (!numeric || numeric === '-' || numeric === '.' || numeric === '-.') return null;
+  const parsed = Number(numeric);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function parsePriceNumber(value: string | null | undefined) {
   const normalized = normalizeWhitespace(value).replace(/[^\d]/g, '');
   if (!normalized) return null;

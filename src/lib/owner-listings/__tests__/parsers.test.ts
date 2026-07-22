@@ -15,7 +15,7 @@ import {
   extractPubli24StructuredOffersFromHtml,
 } from '@/lib/owner-listings/sources/publi24';
 import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
-import { parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import { parseOptionalNumber, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 
 const fixtures = join(process.cwd(), 'src', 'lib', 'owner-listings', '__tests__', 'fixtures');
 const fixture = (name: string) => readFileSync(join(fixtures, name), 'utf8');
@@ -87,6 +87,14 @@ describe('owner-listing parser contracts', () => {
     expect(parseRomanianDateToUnix('3 zile in urma')).toBe(
       Math.floor(new Date('2026-07-19T12:00:00.000Z').getTime() / 1000)
     );
+  });
+
+  it('does not turn absent optional query filters into zero', () => {
+    expect(parseOptionalNumber(null)).toBeNull();
+    expect(parseOptionalNumber('')).toBeNull();
+    expect(parseOptionalNumber('   ')).toBeNull();
+    expect(parseOptionalNumber('2 camere')).toBe(2);
+    expect(parseOptionalNumber(125000)).toBe(125000);
   });
 
   it('uses the Publi24 county/city hierarchy for every configured scope', () => {

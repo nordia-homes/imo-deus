@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/firebase/admin';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
+import { parseOptionalNumber } from '@/lib/owner-listings/utils';
 
 export const runtime = 'nodejs';
 
@@ -15,12 +16,6 @@ function normalize(value: unknown) {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function parseNumber(value: unknown) {
-  const digits = String(value || '').replace(/[^\d.,-]/g, '').replace(',', '.');
-  const parsed = Number(digits);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function encodeCursor(cursor: CursorPayload) {
@@ -52,21 +47,21 @@ function matchesFilters(listing: OwnerListingSummary, params: URLSearchParams) {
   const transactionType = params.get('transactionType');
   if (transactionType && transactionType !== 'all' && listing.transactionType !== transactionType) return false;
 
-  const rooms = parseNumber(params.get('rooms'));
-  if (rooms !== null && parseNumber(listing.roomsValue ?? listing.rooms) !== rooms) return false;
+  const rooms = parseOptionalNumber(params.get('rooms'));
+  if (rooms !== null && parseOptionalNumber(listing.roomsValue ?? listing.rooms) !== rooms) return false;
 
   const constructionYear = params.get('constructionYear');
   if (constructionYear && constructionYear !== 'all') {
-    const year = parseNumber(listing.constructionYearValue ?? listing.constructionYear ?? listing.year);
+    const year = parseOptionalNumber(listing.constructionYearValue ?? listing.constructionYear ?? listing.year);
     if (year === null) return false;
     if (constructionYear === '1977-1990' && (year < 1977 || year > 1990)) return false;
     if (constructionYear === '1990-2000' && (year < 1990 || year > 2000)) return false;
     if (constructionYear === 'after-2000' && year <= 2000) return false;
   }
 
-  const price = parseNumber(listing.priceValue ?? listing.price);
-  const priceMin = parseNumber(params.get('priceMin'));
-  const priceMax = parseNumber(params.get('priceMax'));
+  const price = parseOptionalNumber(listing.priceValue ?? listing.price);
+  const priceMin = parseOptionalNumber(params.get('priceMin'));
+  const priceMax = parseOptionalNumber(params.get('priceMax'));
   if (priceMin !== null && (price === null || price < priceMin)) return false;
   if (priceMax !== null && (price === null || price > priceMax)) return false;
 
