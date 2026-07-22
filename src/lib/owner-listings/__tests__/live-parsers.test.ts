@@ -19,6 +19,16 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(cards.some((card) => card.href.includes('/oferta/') || card.href.includes('/link-extern/'))).toBe(true);
   }, 90_000);
 
+  it('parses a nested county/city Imoradar24 owner route', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.imoradar24.ro/case-de-vanzare/judetul-timis/timisoara/proprietar?sort=latest',
+      60_000
+    );
+    const cards = extractImoradar24ListPageFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(cards.length).toBeGreaterThan(0);
+  }, 90_000);
+
   it('parses the current OLX private-owner cards', async () => {
     const html = await fetchScraperHtml(
       'https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/bucuresti-ilfov-judet/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at%3Adesc',
@@ -32,6 +42,16 @@ liveDescribe('live owner-listing parser contracts', () => {
   it('parses the current Publi24 structured offers', async () => {
     const html = await fetchScraperHtml(
       'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/bucuresti/?commercial=false',
+      60_000
+    );
+    const offers = extractPubli24StructuredOffersFromHtml(html);
+    expect(html.length).toBeGreaterThan(10_000);
+    expect(offers.length).toBeGreaterThan(0);
+  }, 90_000);
+
+  it('parses a Publi24 county/city route', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.publi24.ro/anunturi/imobiliare/de-vanzare/apartamente/timis/timisoara/?commercial=false',
       60_000
     );
     const offers = extractPubli24StructuredOffersFromHtml(html);

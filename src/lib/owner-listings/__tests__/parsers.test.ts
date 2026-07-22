@@ -11,6 +11,7 @@ import {
   extractPubli24LastPage,
   extractPubli24StructuredOffersFromHtml,
 } from '@/lib/owner-listings/sources/publi24';
+import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
 import { parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 
 const fixtures = join(process.cwd(), 'src', 'lib', 'owner-listings', '__tests__', 'fixtures');
@@ -64,5 +65,39 @@ describe('owner-listing parser contracts', () => {
     expect(parseRomanianDateToUnix('3 zile in urma')).toBe(
       Math.floor(new Date('2026-07-19T12:00:00.000Z').getTime() / 1000)
     );
+  });
+
+  it('uses the Publi24 county/city hierarchy for every configured scope', () => {
+    const expectedLocationPaths: Record<string, string> = {
+      'bucuresti-ilfov': 'bucuresti',
+      'cluj-napoca': 'cluj/cluj-napoca',
+      timisoara: 'timis/timisoara',
+      brasov: 'brasov/brasov',
+      iasi: 'iasi/iasi',
+      constanta: 'constanta/constanta',
+      oradea: 'bihor/oradea',
+      arad: 'arad/arad',
+      craiova: 'dolj/craiova',
+      galati: 'galati/galati',
+      braila: 'braila/braila',
+      buzau: 'buzau/buzau',
+      ploiesti: 'prahova/ploiesti',
+      'alba-iulia': 'alba/alba-iulia',
+      'baia-mare': 'maramures/baia-mare',
+    };
+
+    for (const scope of listOwnerListingScopes()) {
+      const locationPath = expectedLocationPaths[scope.key];
+      expect(locationPath).toBeTruthy();
+      expect(scope.publi24FreshRadarUrls).toEqual([
+        `https://www.publi24.ro/anunturi/imobiliare/${locationPath}/?commercial=false`,
+      ]);
+      expect(scope.publi24SourceUrls.filter((entry) => entry.kind === 'coverage')).toHaveLength(7);
+      expect(
+        scope.publi24SourceUrls
+          .filter((entry) => entry.kind === 'coverage')
+          .every((entry) => entry.url.includes(`/${locationPath}/?commercial=false`))
+      ).toBe(true);
+    }
   });
 });

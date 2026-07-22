@@ -34,7 +34,7 @@ type CityConfig = {
   displayName: string;
   keywords: string[];
   olxSlug: string;
-  publi24Slug: string;
+  publi24LocationPath: string;
   imoradarSlug: string;
   includeIlfovVariants?: boolean;
 };
@@ -60,7 +60,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
       'tunari',
     ],
     olxSlug: 'bucuresti-ilfov-judet',
-    publi24Slug: 'bucuresti',
+    publi24LocationPath: 'bucuresti',
     imoradarSlug: 'bucuresti',
     includeIlfovVariants: true,
   },
@@ -70,7 +70,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Cluj-Napoca',
     keywords: ['cluj', 'cluj-napoca', 'floresti', 'baciu', 'apahida', 'gilau'],
     olxSlug: 'cluj-napoca',
-    publi24Slug: 'cluj-napoca',
+    publi24LocationPath: 'cluj/cluj-napoca',
     imoradarSlug: 'judetul-cluj/cluj-napoca',
   },
   {
@@ -79,7 +79,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Timisoara',
     keywords: ['timisoara', 'giroc', 'dumbravita', 'ghiroda', 'mosnita'],
     olxSlug: 'timisoara',
-    publi24Slug: 'timisoara',
+    publi24LocationPath: 'timis/timisoara',
     imoradarSlug: 'judetul-timis/timisoara',
   },
   {
@@ -88,7 +88,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Brasov',
     keywords: ['brasov', 'sanpetru', 'sacele'],
     olxSlug: 'brasov',
-    publi24Slug: 'brasov',
+    publi24LocationPath: 'brasov/brasov',
     imoradarSlug: 'judetul-brasov/brasov',
   },
   {
@@ -97,7 +97,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Iasi',
     keywords: ['iasi', 'miroslava', 'valea lupului', 'rediu', 'barnova'],
     olxSlug: 'iasi-judet',
-    publi24Slug: 'iasi',
+    publi24LocationPath: 'iasi/iasi',
     imoradarSlug: 'judetul-iasi/iasi',
   },
   {
@@ -106,7 +106,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Constanta',
     keywords: ['constanta', 'mamaia', 'navodari', 'ovidiu', 'eforie'],
     olxSlug: 'constanta',
-    publi24Slug: 'constanta',
+    publi24LocationPath: 'constanta/constanta',
     imoradarSlug: 'judetul-constanta/constanta',
   },
   {
@@ -115,7 +115,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Oradea',
     keywords: ['oradea', 'santandrei', 'sanmartin'],
     olxSlug: 'oradea',
-    publi24Slug: 'oradea',
+    publi24LocationPath: 'bihor/oradea',
     imoradarSlug: 'judetul-bihor/oradea',
   },
   {
@@ -124,7 +124,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Arad',
     keywords: ['arad'],
     olxSlug: 'arad',
-    publi24Slug: 'arad',
+    publi24LocationPath: 'arad/arad',
     imoradarSlug: 'judetul-arad/arad',
   },
   {
@@ -133,7 +133,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Craiova',
     keywords: ['craiova'],
     olxSlug: 'craiova',
-    publi24Slug: 'craiova',
+    publi24LocationPath: 'dolj/craiova',
     imoradarSlug: 'judetul-dolj/craiova',
   },
   {
@@ -142,7 +142,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Galati',
     keywords: ['galati', 'galati'],
     olxSlug: 'galati',
-    publi24Slug: 'galati',
+    publi24LocationPath: 'galati/galati',
     imoradarSlug: 'judetul-galati/galati',
   },
   {
@@ -151,7 +151,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Braila',
     keywords: ['braila'],
     olxSlug: 'braila',
-    publi24Slug: 'braila',
+    publi24LocationPath: 'braila/braila',
     imoradarSlug: 'judetul-braila/braila',
   },
   {
@@ -160,7 +160,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Buzau',
     keywords: ['buzau'],
     olxSlug: 'buzau',
-    publi24Slug: 'buzau',
+    publi24LocationPath: 'buzau/buzau',
     imoradarSlug: 'judetul-buzau/buzau',
   },
   {
@@ -169,7 +169,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Ploiesti',
     keywords: ['ploiesti'],
     olxSlug: 'ploiesti',
-    publi24Slug: 'ploiesti',
+    publi24LocationPath: 'prahova/ploiesti',
     imoradarSlug: 'judetul-prahova/ploiesti',
   },
   {
@@ -178,7 +178,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Alba Iulia',
     keywords: ['alba iulia', 'alba-iulia'],
     olxSlug: 'alba-iulia',
-    publi24Slug: 'alba-iulia',
+    publi24LocationPath: 'alba/alba-iulia',
     imoradarSlug: 'judetul-alba/alba-iulia',
   },
   {
@@ -187,7 +187,7 @@ const TARGET_CITY_CONFIGS: CityConfig[] = [
     displayName: 'Baia Mare',
     keywords: ['baia mare', 'baia-mare'],
     olxSlug: 'baia-mare',
-    publi24Slug: 'baia-mare',
+    publi24LocationPath: 'maramures/baia-mare',
     imoradarSlug: 'judetul-maramures/baia-mare',
   },
 ];
@@ -270,8 +270,8 @@ function olxCoverageUrl(citySlug: string, categoryPath: string) {
   return `https://www.olx.ro/imobiliare/${categoryPath}/${citySlug}/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at:desc`;
 }
 
-function publi24CoverageUrl(citySlug: string, categoryPath: string) {
-  return `https://www.publi24.ro/anunturi/imobiliare/${categoryPath}/${citySlug}/?commercial=false`;
+function publi24CoverageUrl(locationPath: string, categoryPath: string) {
+  return `https://www.publi24.ro/anunturi/imobiliare/${categoryPath}/${locationPath}/?commercial=false`;
 }
 
 function imoradarCoverageUrl(citySlug: string, categoryPath: string) {
@@ -282,8 +282,8 @@ function olxFreshRadarUrl(citySlug: string) {
   return `https://www.olx.ro/imobiliare/${citySlug}/?currency=EUR&search%5Bprivate_business%5D=private&search%5Border%5D=created_at:desc`;
 }
 
-function publi24FreshRadarUrl(citySlug: string) {
-  return `https://www.publi24.ro/anunturi/imobiliare/${citySlug}/?commercial=false`;
+function publi24FreshRadarUrl(locationPath: string) {
+  return `https://www.publi24.ro/anunturi/imobiliare/${locationPath}/?commercial=false`;
 }
 
 function buildCoverageUrls(
@@ -293,7 +293,7 @@ function buildCoverageUrls(
   const citySlugs =
     config.includeIlfovVariants && source === 'imoradar24'
       ? [config.imoradarSlug, 'judetul-ilfov']
-      : [source === 'olx' ? config.olxSlug : source === 'publi24' ? config.publi24Slug : config.imoradarSlug];
+      : [source === 'olx' ? config.olxSlug : source === 'publi24' ? config.publi24LocationPath : config.imoradarSlug];
 
   return citySlugs.flatMap((citySlug) =>
     CATEGORY_MATRIX.map((category) => ({
@@ -316,7 +316,7 @@ function buildScope(config: CityConfig): OwnerListingScope {
   const publi24CoverageUrls = buildCoverageUrls(config, 'publi24');
   const imoradar24CoverageUrls = buildCoverageUrls(config, 'imoradar24');
   const olxFreshRadarUrls = [olxFreshRadarUrl(config.olxSlug)];
-  const publi24FreshRadarUrls = [publi24FreshRadarUrl(config.publi24Slug)];
+  const publi24FreshRadarUrls = [publi24FreshRadarUrl(config.publi24LocationPath)];
 
   return {
     key: config.key,

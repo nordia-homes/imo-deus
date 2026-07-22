@@ -200,12 +200,12 @@ async function storeOwnerListingsBatch(
         normalizedTitle: listing.normalizedTitle,
         normalizedLocation: listing.normalizedLocation,
         searchText: [listing.title, listing.location, listing.price, listing.sourceLabel, listing.scopeCity].join(' '),
-        syncMetadata: {
+        syncMetadata: stripUndefined({
           lastSeenAt: listing.lastSeenAt,
           scrapedAt: listing.scrapedAt,
           firstDiscoveredAt: listing.firstDiscoveredAt,
           lastVerifiedAt: listing.lastVerifiedAt,
-        },
+        }),
         firestoreUpdatedAt: FieldValue.serverTimestamp(),
       }),
       { merge: true }
