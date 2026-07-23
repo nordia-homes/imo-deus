@@ -93,6 +93,22 @@ function formatError(error: unknown) {
   return { status: 500, message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile.' };
 }
 
+function buildOwnerListingsBaseQuery(scopeKey: string, source: string | null) {
+  let query: FirebaseFirestore.Query = adminDb
+    .collection('ownerListings')
+    .where('scopeKey', '==', scopeKey)
+    .where('publicationStatus', '==', 'ready')
+    .where('isCanonical', '==', true);
+
+  if (source === 'imobiliare') {
+    query = query.where('originSourceLabel', '==', 'Imobiliare.ro');
+  } else if (source && ['olx', 'imoradar24', 'publi24'].includes(source)) {
+    query = query.where('source', '==', source);
+  }
+
+  return query;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
@@ -110,21 +126,11 @@ export async function GET(request: NextRequest) {
     let hasMore = true;
     const maxScannedDocuments = 5000;
     let scannedDocuments = 0;
+    const baseQuery = buildOwnerListingsBaseQuery(scopeKey, source);
+    const totalAvailableCountPromise = baseQuery.count().get();
 
     while (matches.length < pageSize && hasMore && scannedDocuments < maxScannedDocuments) {
-      let query: FirebaseFirestore.Query = adminDb
-        .collection('ownerListings')
-        .where('scopeKey', '==', scopeKey)
-        .where('publicationStatus', '==', 'ready')
-        .where('isCanonical', '==', true);
-
-      if (source === 'imobiliare') {
-        query = query.where('originSourceLabel', '==', 'Imobiliare.ro');
-      } else if (source && ['olx', 'imoradar24', 'publi24'].includes(source)) {
-        query = query.where('source', '==', source);
-      }
-
-      query = query
+      let query = baseQuery
         .orderBy('firstDiscoveredAt', 'desc')
         .orderBy(FieldPath.documentId(), 'desc');
 
@@ -162,10 +168,13 @@ export async function GET(request: NextRequest) {
       if (scannedDocuments >= maxScannedDocuments) hasMore = true;
     }
 
+    const totalAvailableCount = (await totalAvailableCountPromise).data().count;
+
     return NextResponse.json({
       listings: matches,
       nextCursor: hasMore && scanCursor ? encodeCursor(scanCursor) : null,
       hasMore,
+      totalAvailableCount,
     });
   } catch (error) {
     const formatted = formatError(error);

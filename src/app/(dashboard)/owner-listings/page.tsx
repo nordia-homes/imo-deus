@@ -44,6 +44,7 @@ type DesktopOlxBridgeWindow = Window & {
 
 export default function OwnerListingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyTypeFilter>('all');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>('all');
@@ -70,6 +71,7 @@ export default function OwnerListingsPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([]);
   const [hasMoreListings, setHasMoreListings] = useState(false);
+  const [totalListingCount, setTotalListingCount] = useState<number | null>(null);
   const [listingsError, setListingsError] = useState<string | null>(null);
   const previousPageRef = useRef(currentPage);
   const firestore = useFirestore();
@@ -88,7 +90,7 @@ export default function OwnerListingsPage() {
   const listingFiltersKey = useMemo(
     () => JSON.stringify({
       scopeKey: currentScope?.key || '',
-      searchQuery,
+      searchQuery: appliedSearchQuery,
       roomsFilter,
       propertyTypeFilter,
       transactionTypeFilter,
@@ -98,8 +100,14 @@ export default function OwnerListingsPage() {
       sourceFilter,
       aiStatusFilter,
     }),
-    [aiStatusFilter, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter],
+    [aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter],
   );
+
+  useEffect(() => {
+    if (searchQuery === appliedSearchQuery) return;
+    const timer = window.setTimeout(() => setAppliedSearchQuery(searchQuery), 500);
+    return () => window.clearTimeout(timer);
+  }, [appliedSearchQuery, searchQuery]);
 
   useEffect(() => {
     setPageCursor(null);
@@ -108,6 +116,15 @@ export default function OwnerListingsPage() {
     setHasMoreListings(false);
     setCurrentPage(1);
   }, [listingFiltersKey]);
+
+  useEffect(() => {
+    setListings([]);
+    setTotalListingCount(null);
+  }, [currentScope?.key]);
+
+  useEffect(() => {
+    setTotalListingCount(null);
+  }, [sourceFilter]);
 
   useEffect(() => {
     if (!user || !currentScope?.key) {
@@ -143,7 +160,7 @@ export default function OwnerListingsPage() {
         if (roomsFilter !== 'all') params.set('rooms', roomsFilter);
         if (priceMin) params.set('priceMin', priceMin);
         if (priceMax) params.set('priceMax', priceMax);
-        if (searchQuery.trim()) params.set('search', searchQuery.trim());
+        if (appliedSearchQuery.trim()) params.set('search', appliedSearchQuery.trim());
 
         const token = await user.getIdToken();
         const response = await fetch(`/api/owner-listings/query?${params.toString()}`, {
@@ -155,6 +172,7 @@ export default function OwnerListingsPage() {
           listings?: OwnerListing[];
           nextCursor?: string | null;
           hasMore?: boolean;
+          totalAvailableCount?: number;
           message?: string;
         };
         if (!response.ok) throw new Error(payload.message || 'Nu am putut incarca anunturile.');
@@ -162,6 +180,9 @@ export default function OwnerListingsPage() {
         setListings(Array.isArray(payload.listings) ? payload.listings : []);
         setNextCursor(payload.nextCursor || null);
         setHasMoreListings(Boolean(payload.hasMore && payload.nextCursor));
+        setTotalListingCount(
+          typeof payload.totalAvailableCount === 'number' ? payload.totalAvailableCount : null,
+        );
       } catch (error) {
         if (controller.signal.aborted) return;
         setListings([]);
@@ -175,7 +196,7 @@ export default function OwnerListingsPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [currentScope?.key, listingFiltersKey, pageCursor, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, roomsFilter, priceMin, priceMax, searchQuery, sourceFilter, user]);
+  }, [appliedSearchQuery, constructionYearFilter, currentScope?.key, listingFiltersKey, pageCursor, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter, user]);
 
   const favoritesQuery = useMemoFirebase(
     () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
@@ -221,14 +242,9 @@ export default function OwnerListingsPage() {
   }, [aiCalls, localAiCalls]);
 
   const validFavoriteCount = useMemo(() => {
-    if (!Array.isArray(listings) || !Array.isArray(favorites)) return 0;
-
-    const validListingIds = new Set(
-      listings.filter((listing) => !currentScope || listing.scopeKey === currentScope.key).map((listing) => listing.id),
-    );
-
-    return favorites.filter((favorite) => favorite.isFavoriteActive !== false && validListingIds.has(favorite.ownerListingId)).length;
-  }, [currentScope, favorites, listings]);
+    if (!Array.isArray(favorites)) return 0;
+    return favorites.filter((favorite) => favorite.isFavoriteActive !== false).length;
+  }, [favorites]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
@@ -250,8 +266,8 @@ export default function OwnerListingsPage() {
       });
     }
 
-    const normalizedSearchQuery = normalizeText(searchQuery);
-    const numericSearchQuery = normalizeDigits(searchQuery);
+    const normalizedSearchQuery = normalizeText(appliedSearchQuery);
+    const numericSearchQuery = normalizeDigits(appliedSearchQuery);
 
     if (normalizedSearchQuery) {
       const searchTerms = normalizedSearchQuery.split(' ').filter(Boolean);
@@ -322,13 +338,24 @@ export default function OwnerListingsPage() {
     });
 
     return result;
-  }, [aiCallsByListingId, aiStatusFilter, constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, searchQuery, sourceFilter, transactionTypeFilter]);
+  }, [aiCallsByListingId, aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roomsFilter, propertyTypeFilter, transactionTypeFilter, constructionYearFilter, priceMin, priceMax, sourceFilter, aiStatusFilter, currentScope?.key]);
+  }, [aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter]);
 
-  const totalPages = currentPage + (hasMoreListings ? 1 : 0);
+  const hasRefinementFilters =
+    Boolean(appliedSearchQuery.trim()) ||
+    roomsFilter !== 'all' ||
+    propertyTypeFilter !== 'all' ||
+    transactionTypeFilter !== 'all' ||
+    constructionYearFilter !== 'all' ||
+    Boolean(priceMin || priceMax) ||
+    aiStatusFilter !== 'all';
+  const totalPages =
+    !hasRefinementFilters && typeof totalListingCount === 'number'
+      ? Math.max(1, Math.ceil(totalListingCount / LISTINGS_PER_PAGE))
+      : null;
   const safeCurrentPage = currentPage;
   const paginatedListings = filteredListings;
 
@@ -900,7 +927,7 @@ export default function OwnerListingsPage() {
     </div>
   );
 
-  if (isLoading) {
+  if (isLoading && listings.length === 0) {
     return (
       <div ref={pageTopRef} className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
@@ -933,7 +960,7 @@ export default function OwnerListingsPage() {
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
         favoriteCount={validFavoriteCount}
-        listingCount={filteredListings.length}
+        listingCount={totalListingCount}
         adminClassic={isClassicTheme}
       />
 
@@ -1102,7 +1129,7 @@ export default function OwnerListingsPage() {
             </div>
             <SheetFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button onClick={() => setIsSheetOpen(false)} className="w-full">
-                Vezi {filteredListings.length} anunturi
+                Vezi {filteredListings.length} anunturi afisate
               </Button>
             </SheetFooter>
           </SheetContent>
@@ -1169,7 +1196,7 @@ export default function OwnerListingsPage() {
             Anterioara
           </Button>
           <span className="text-sm text-white/75">
-            Pagina {safeCurrentPage} din {totalPages}
+            Pagina {safeCurrentPage}{totalPages ? ` din ${totalPages}` : ''}
           </span>
           <Button variant="outline" onClick={handleNextPage} disabled={!hasMoreListings || !nextCursor}>
             Urmatoare

@@ -23,10 +23,14 @@ export function OwnerListingHeader({
   listingCount,
   adminClassic = false,
 }: OwnerListingHeaderProps) {
+  const formattedListingCount =
+    typeof listingCount === 'number'
+      ? new Intl.NumberFormat('ro-RO').format(listingCount)
+      : null;
   const tabs = [
     {
       href: '/owner-listings',
-      label: `Anunturi${typeof listingCount === 'number' ? ` (${listingCount})` : ''}`,
+      label: `Anunturi${formattedListingCount ? ` (${formattedListingCount})` : ''}`,
       icon: LayoutGrid,
       active: activeTab === 'listings',
     },
