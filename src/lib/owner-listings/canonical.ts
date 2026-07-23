@@ -1,51 +1,13 @@
 import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
+import { getOwnerListingCanonicalIdentity } from '@/lib/owner-listings/canonical-identity';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
-import { normalizeWhitespace, stripUndefined } from '@/lib/owner-listings/utils';
+import { stripUndefined } from '@/lib/owner-listings/utils';
 
 const CANONICAL_COLLECTION = 'ownerListingCanonicalGroups';
 
-function normalizeCanonicalUrl(value?: string | null) {
-  const normalized = normalizeWhitespace(value);
-  if (!normalized) return '';
-
-  try {
-    const url = new URL(normalized);
-    url.hash = '';
-    for (const key of [...url.searchParams.keys()]) {
-      if (/^(?:utm_|fbclid|gclid|ref|source)/i.test(key)) url.searchParams.delete(key);
-    }
-    url.hostname = url.hostname.toLowerCase().replace(/^www\./, '');
-    url.pathname = url.pathname.replace(/\/+$/, '') || '/';
-    return url.toString();
-  } catch {
-    return normalized;
-  }
-}
-
-function isAggregatorUrl(value: string) {
-  try {
-    return /(?:^|\.)imoradar24\.ro$/i.test(new URL(value).hostname);
-  } catch {
-    return false;
-  }
-}
-
-export function getOwnerListingCanonicalIdentity(listing: Partial<OwnerListingSummary>) {
-  const originUrl = normalizeCanonicalUrl(listing.originSourceUrl);
-  if (originUrl && !isAggregatorUrl(originUrl)) return `url:${originUrl}`;
-
-  const link = normalizeCanonicalUrl(listing.link);
-  if (link && !isAggregatorUrl(link)) return `url:${link}`;
-
-  const phone = normalizeWhitespace(listing.ownerPhone).replace(/\D/g, '');
-  if (phone.length >= 8) {
-    return `phone:${phone}:${listing.scopeKey || ''}:${listing.propertyType || ''}:${listing.transactionType || ''}`;
-  }
-
-  return `content:${listing.dedupeSignature || listing.fingerprint || link}`;
-}
+export { getOwnerListingCanonicalIdentity, isListingSpecificExternalUrl } from '@/lib/owner-listings/canonical-identity';
 
 function groupIdForIdentity(identity: string) {
   return crypto.createHash('sha256').update(identity).digest('hex');

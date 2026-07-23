@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { fetchScraperHtml } from '@/lib/owner-listings/browser';
-import { extractImoradar24ListPageFromHtml } from '@/lib/owner-listings/sources/imoradar24';
+import {
+  extractImoradar24ListPageFromHtml,
+  scrapeImoradar24ListingDetail,
+} from '@/lib/owner-listings/sources/imoradar24';
 import { extractOlxListPageFromHtml } from '@/lib/owner-listings/sources/olx';
 import {
   extractPubli24StructuredOffersFromHtml,
@@ -20,7 +23,26 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(html.length).toBeGreaterThan(10_000);
     expect(cards.length).toBeGreaterThan(0);
     expect(cards.some((card) => card.href.includes('/oferta/') || card.href.includes('/link-extern/'))).toBe(true);
+    expect(cards.some((card) => Boolean(card.originSourceLabel))).toBe(true);
   }, 90_000);
+
+  it('preserves the exact Imobiliare.ro redirect even when the portal blocks the response', async () => {
+    const html = await fetchScraperHtml(
+      'https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?sort=latest',
+      60_000
+    );
+    const card = extractImoradar24ListPageFromHtml(html).find(
+      (candidate) =>
+        candidate.originSourceLabel === 'Imobiliare.ro' &&
+        candidate.href.includes('/link-extern/')
+    );
+    expect(card).toBeTruthy();
+
+    const detail = await scrapeImoradar24ListingDetail(card!.href);
+    expect(detail.originSourceLabel).toBe('Imobiliare.ro');
+    expect(detail.originSourceUrl).toMatch(/^https:\/\/(?:www\.)?imobiliare\.ro\/.+/);
+    expect(new URL(detail.originSourceUrl!).pathname).not.toBe('/');
+  }, 120_000);
 
   it('parses a nested county/city Imoradar24 owner route', async () => {
     const html = await fetchScraperHtml(

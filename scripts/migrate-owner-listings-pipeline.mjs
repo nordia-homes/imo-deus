@@ -99,11 +99,22 @@ function isImoradar(value) {
   }
 }
 
+function isListingSpecificExternalUrl(value) {
+  const normalized = normalizedUrl(value);
+  if (!normalized || isImoradar(normalized)) return false;
+  try {
+    const path = new URL(normalized).pathname.replace(/\/+$/, '');
+    return Boolean(path && path !== '/');
+  } catch {
+    return false;
+  }
+}
+
 function canonicalIdentity(row, id) {
   const origin = normalizedUrl(row.originSourceUrl);
-  if (origin && !isImoradar(origin)) return `url:${origin}`;
+  if (isListingSpecificExternalUrl(origin)) return `url:${origin}`;
   const link = normalizedUrl(row.link);
-  if (link && !isImoradar(link)) return `url:${link}`;
+  if (isListingSpecificExternalUrl(link)) return `url:${link}`;
   const phone = text(row.ownerPhone).replace(/\D/g, '');
   if (phone.length >= 8) {
     return `phone:${phone}:${row.scopeKey || ''}:${row.propertyType || ''}:${row.transactionType || ''}`;

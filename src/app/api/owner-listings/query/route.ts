@@ -118,7 +118,9 @@ export async function GET(request: NextRequest) {
         .where('publicationStatus', '==', 'ready')
         .where('isCanonical', '==', true);
 
-      if (source && source !== 'imobiliare' && ['olx', 'imoradar24', 'publi24'].includes(source)) {
+      if (source === 'imobiliare') {
+        query = query.where('originSourceLabel', '==', 'Imobiliare.ro');
+      } else if (source && ['olx', 'imoradar24', 'publi24'].includes(source)) {
         query = query.where('source', '==', source);
       }
 

@@ -275,6 +275,9 @@ function getPortalLabelFromUrl(value: string | null | undefined) {
     if (/(?:^|\.)autovit\.ro$/.test(hostname)) return 'Autovit';
     if (/(?:^|\.)imovirtual\.ro$/.test(hostname)) return 'Imovirtual';
     if (/(?:^|\.)anuntul\.ro$/.test(hostname)) return 'Anuntul.ro';
+    if (/(?:^|\.)lajumate\.ro$/.test(hostname)) return 'LaJumate.ro';
+    if (/(?:^|\.)homezz\.ro$/.test(hostname)) return 'HomeZZ.ro';
+    if (/(?:^|\.)romimo\.ro$/.test(hostname)) return 'Romimo.ro';
     return hostname;
   } catch {
     return '';
@@ -295,6 +298,9 @@ function getPortalLabelFromText(value: string | null | undefined) {
   if (normalized.includes('autovit')) return 'Autovit';
   if (normalized.includes('imovirtual')) return 'Imovirtual';
   if (normalized.includes('anuntul.ro') || normalized.includes('anuntul')) return 'Anuntul.ro';
+  if (normalized.includes('lajumate.ro') || normalized.includes('lajumate')) return 'LaJumate.ro';
+  if (normalized.includes('homezz.ro') || normalized.includes('homezz')) return 'HomeZZ.ro';
+  if (normalized.includes('romimo.ro') || normalized.includes('romimo')) return 'Romimo.ro';
   return '';
 }
 
@@ -307,6 +313,12 @@ function getPortalBaseUrlFromLabel(value: string | null | undefined) {
   if (label === 'Autovit') return 'https://www.autovit.ro/';
   if (label === 'Imovirtual') return 'https://www.imovirtual.ro/';
   if (label === 'Anuntul.ro') return 'https://www.anuntul.ro/';
+  if (label === 'LaJumate.ro') return 'https://www.lajumate.ro/';
+  if (label === 'HomeZZ.ro') return 'https://www.homezz.ro/';
+  if (label === 'Romimo.ro') return 'https://www.romimo.ro/';
+
+  const domain = normalizeWhitespace(value).toLowerCase().match(/\b([a-z0-9-]+\.(?:ro|com))\b/)?.[1];
+  if (domain) return `https://www.${domain}/`;
   return '';
 }
 
@@ -438,13 +450,13 @@ function extractImoradarSourceUrls(html: string, url: string) {
     html.match(/"external_url":"(https?:\\\/\\\/[^"]+)"/i)?.[1] || '',
     html.match(/"external_url"\s*:\s*"(https?:\/\/[^"]+)"/i)?.[1] || '',
     ...Array.from(
-      html.matchAll(/(?:href|data-href)="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"]+)"/gi)
+      html.matchAll(/(?:href|data-href)="(https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro|anuntul\.ro|lajumate\.ro|homezz\.ro|romimo\.ro)[^"]+)"/gi)
     ).map((match) => match[1] || ''),
     ...Array.from(
-      html.matchAll(/https?:\\\/\\\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"'\\\s<]+/gi)
+      html.matchAll(/https?:\\\/\\\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro|anuntul\.ro|lajumate\.ro|homezz\.ro|romimo\.ro)[^"'\\\s<]+/gi)
     ).map((match) => match[0]?.replace(/\\\//g, '/') || ''),
     ...Array.from(
-      html.matchAll(/https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro)[^"'\\\s<]+/gi)
+      html.matchAll(/https?:\/\/(?:www\.)?(?:olx\.ro|storia\.ro|publi24\.ro|autovit\.ro|imovirtual\.ro|imobiliare\.ro|anuntul\.ro|lajumate\.ro|homezz\.ro|romimo\.ro)[^"'\\\s<]+/gi)
     ).map((match) => match[0] || ''),
   ];
 
@@ -463,6 +475,7 @@ function extractImoradarSourceUrl(html: string, url: string) {
 
 function extractImoradarSourceLabel(html: string) {
   const labelCandidates = [
+    stripHtml(html.match(/>\s*Vezi\s+anun(?:ț|ţ|t)ul\s+pe\s*([^<]+?)\s*</iu)?.[1] || ''),
     stripHtml(html.match(/>\s*Vezi anun(?:È›|ț)ul pe\s*([^<]+?)\s*</i)?.[1] || ''),
     stripHtml(html.match(/>\s*Vezi anuntul pe\s*([^<]+?)\s*</i)?.[1] || ''),
     normalizeWhitespace(html.match(/"external_source_name"\s*:\s*"([^"]+)"/i)?.[1] || ''),
@@ -470,7 +483,7 @@ function extractImoradarSourceLabel(html: string) {
   ];
 
   for (const candidate of labelCandidates) {
-    const label = getPortalLabelFromText(candidate);
+    const label = getPortalLabelFromText(candidate) || normalizeWhitespace(candidate).slice(0, 80);
     if (label) {
       return label;
     }
@@ -480,8 +493,12 @@ function extractImoradarSourceLabel(html: string) {
 }
 
 function extractImoradarSourceMetadata(html: string, url: string) {
-  const originSourceUrl = normalizeWhitespace(extractImoradarSourceUrl(html, url));
-  const originSourceLabel = getPortalLabelFromUrl(originSourceUrl) || extractImoradarSourceLabel(html);
+  const candidateSourceUrl = normalizeWhitespace(extractImoradarSourceUrl(html, url));
+  const originSourceUrl = isImoradarSelfSource(candidateSourceUrl) ? '' : candidateSourceUrl;
+  const extractedLabel = extractImoradarSourceLabel(html);
+  const originSourceLabel =
+    getPortalLabelFromUrl(originSourceUrl) ||
+    (isImoradarSelfSource(extractedLabel) ? '' : extractedLabel);
   return { originSourceUrl, originSourceLabel };
 }
 
@@ -493,24 +510,26 @@ function mergeImoradarSourceMetadata(
   const currentLabel = getPortalLabelFromText(current.originSourceLabel) || normalizeWhitespace(current.originSourceLabel);
   const incomingUrl = normalizeWhitespace(incoming.originSourceUrl);
   const incomingLabel = getPortalLabelFromText(incoming.originSourceLabel) || normalizeWhitespace(incoming.originSourceLabel);
+  const usableCurrentUrl = isImoradarSelfSource(currentUrl) ? '' : currentUrl;
+  const usableIncomingUrl = isImoradarSelfSource(incomingUrl) ? '' : incomingUrl;
 
-  if (incomingLabel && !isImoradarSelfSource(incomingLabel) && !isImoradarSelfSource(incomingUrl)) {
+  if (incomingLabel && !isImoradarSelfSource(incomingLabel)) {
     return {
-      originSourceUrl: incomingUrl || getPortalBaseUrlFromLabel(incomingLabel),
+      originSourceUrl: usableIncomingUrl || getPortalBaseUrlFromLabel(incomingLabel),
       originSourceLabel: incomingLabel,
     };
   }
 
-  if (currentLabel) {
+  if (currentLabel && !isImoradarSelfSource(currentLabel)) {
     return {
-      originSourceUrl: currentUrl || getPortalBaseUrlFromLabel(currentLabel),
+      originSourceUrl: usableCurrentUrl || getPortalBaseUrlFromLabel(currentLabel),
       originSourceLabel: currentLabel,
     };
   }
 
   return {
-    originSourceUrl: incomingUrl || getPortalBaseUrlFromLabel(incomingLabel),
-    originSourceLabel: incomingLabel,
+    originSourceUrl: usableIncomingUrl,
+    originSourceLabel: isImoradarSelfSource(incomingLabel) ? '' : incomingLabel,
   };
 }
 
@@ -680,7 +699,10 @@ function extractDataCyText(html: string, dataCy: string) {
   return stripHtml(match?.[1] || '');
 }
 
-function extractModernImoradarCards(html: string): ExtractedCard[] {
+function extractModernImoradarCards(
+  html: string,
+  sourceMetadataByListingId: Map<string, { originSourceLabel?: string; originSourceUrl?: string }>
+): ExtractedCard[] {
   return extractArticleBlocks(html)
     .map((article) => {
       const listingId =
@@ -709,7 +731,7 @@ function extractModernImoradarCards(html: string): ExtractedCard[] {
       const image = sortImageUrls(extractImageCandidatesFromHtml(article))[0] || '';
       const sourceMetadata = mergeImoradarSourceMetadata(
         extractImoradarSourceMetadata(article, 'https://www.imoradar24.ro'),
-        {}
+        sourceMetadataByListingId.get(listingId) || {}
       );
 
       return {
@@ -739,9 +761,9 @@ export function extractImoradar24LastPage(html: string) {
 }
 
 export function extractImoradar24ListPageFromHtml(html: string): ExtractedCard[] {
-  const modernCards = extractModernImoradarCards(html);
-  if (modernCards.length) return modernCards;
   const sourceMetadataByListingId = extractImoradarListSourceMetadataMap(html);
+  const modernCards = extractModernImoradarCards(html, sourceMetadataByListingId);
+  if (modernCards.length) return modernCards;
   const listingMarkers = Array.from(html.matchAll(/id="listing-link-(\d+)"/gi));
   if (listingMarkers.length) {
     return listingMarkers
@@ -846,7 +868,31 @@ export function extractImoradar24ListPageFromHtml(html: string): ExtractedCard[]
 }
 
 async function loadImoradar24ListPageHtml(url: string) {
-  return fetchScraperHtmlViaBrowser(url, ['article[data-listing-id]', 'article[id^="listing-"]', 'article'], 30000);
+  let directError: unknown;
+  try {
+    const html = await fetchScraperHtml(url, 30000);
+    const cards = extractImoradar24ListPageFromHtml(html);
+    if (cards.length || !/<article[^>]+(?:data-listing-id|id=["']listing-\d+)/i.test(html)) {
+      return html;
+    }
+    throw new Error('Imoradar24 a returnat markup de anunturi, dar parserul direct nu a extras niciun card.');
+  } catch (error) {
+    directError = error;
+  }
+
+  try {
+    return await fetchScraperHtmlViaBrowser(
+      url,
+      ['article[data-listing-id]', 'article[id^="listing-"]', 'article'],
+      30000
+    );
+  } catch (browserError) {
+    const directMessage = directError instanceof Error ? directError.message : String(directError || 'necunoscut');
+    const browserMessage = browserError instanceof Error ? browserError.message : String(browserError || 'necunoscut');
+    throw new Error(
+      `Imoradar24 nu a putut fi incarcat nici direct, nici prin browser. Direct: ${directMessage}. Browser: ${browserMessage}.`
+    );
+  }
 }
 
 export async function scrapeImoradar24ListingsPage(
@@ -873,7 +919,7 @@ export async function scrapeImoradar24ListingsPage(
       pageUrl.searchParams.set('page', String(pageNumber));
     }
 
-    const html = await loadImoradar24ListPageHtml(pageUrl.toString()).catch(() => '');
+    const html = await loadImoradar24ListPageHtml(pageUrl.toString());
     if (!html) {
       continue;
     }
@@ -895,10 +941,10 @@ export async function scrapeImoradar24ListingsPage(
 
       const postedAt = parseRomanianDateToUnix(card.postedAtText || '');
       if (!isWithinMaxAgeDays(postedAt, maxAgeDays)) {
-      oldestPostedAt = oldestPostedAt === undefined ? postedAt : Math.min(oldestPostedAt, postedAt);
+        sawExpiredCard = true;
+        oldestPostedAt = oldestPostedAt === undefined ? postedAt : Math.min(oldestPostedAt, postedAt);
         continue;
       }
-        sawExpiredCard = true;
 
       const absoluteUrl = normalizeUrl(card.href, 'https://www.imoradar24.ro');
       if (seenLinks.has(absoluteUrl)) continue;
@@ -964,11 +1010,36 @@ export async function scrapeImoradar24Listings(options: SourceScrapeOptions) {
 }
 
 export async function scrapeImoradar24ListingDetail(url: string) {
-  const response = await fetchScraperResponse(url, 30000).catch(() => null);
+  const response = await fetchScraperResponse(url, 30000, { acceptHttpErrors: true }).catch(() => null);
   const html = response?.html || '';
   if (html) {
     const resolvedUrl = response?.finalUrl || url;
     const redirectedToOrigin = !isImoradarSelfSource(resolvedUrl);
+    if (redirectedToOrigin && (response?.status || 0) >= 400) {
+      const summary = buildSummary({
+        source: 'imoradar24',
+        originSourceUrl: resolvedUrl,
+        originSourceLabel: getPortalLabelFromUrl(resolvedUrl),
+        externalId: url,
+        title: '',
+        price: '',
+        area: '',
+        rooms: '',
+        location: '',
+        postedAt: Math.floor(Date.now() / 1000),
+        link: url,
+        imageUrl: '',
+        description: '',
+        ownerPhone: '',
+      });
+      return {
+        ...summary,
+        images: [],
+        fullDescription: '',
+        contactName: '',
+        contactPhone: '',
+      } satisfies OwnerListingDetail;
+    }
     const detail = extractImoradarDetailFromHtml(html, resolvedUrl);
     const contactPhone = redirectedToOrigin
       ? await resolveImoradarPhoneFromSourceUrl(resolvedUrl).catch(() => '')
@@ -1008,6 +1079,7 @@ export async function scrapeImoradar24ListingDetail(url: string) {
   return withScraperPage(async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await waitForScraperReady(page, ['h1', 'meta[property="og:title"]', 'img'], 10000);
+    const resolvedPageUrl = page.url() || url;
 
     const payload = await page.evaluate(() => {
       const normalizeText = (value?: string | null) => (value || '').replace(/\s+/g, ' ').trim();
@@ -1048,7 +1120,9 @@ export async function scrapeImoradar24ListingDetail(url: string) {
     });
     const contactPhone = await extractImoradarPhoneFromHtml(await page.content(), url).catch(() => '');
     const pageHtml = await page.content();
-    const sourceMetadata = extractImoradarSourceMetadata(pageHtml, url);
+    const sourceMetadata = !isImoradarSelfSource(resolvedPageUrl)
+      ? { originSourceUrl: resolvedPageUrl, originSourceLabel: getPortalLabelFromUrl(resolvedPageUrl) }
+      : extractImoradarSourceMetadata(pageHtml, url);
     const coverImage = pickImoradarCardCoverImage([...extractCanonicalGalleryImages(pageHtml), ...payload.images]);
 
     const summary = buildSummary({

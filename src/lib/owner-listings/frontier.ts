@@ -437,19 +437,30 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
         firestoreCreatedAt: FieldValue.serverTimestamp(),
       });
       await adminDb.collection('ownerListingScrapeHealth').doc(job.source).set(
-        {
-          source: job.source,
-          status: 'healthy',
-          lastSuccessAt: timestamp,
-          lastScopeKey: job.scopeKey,
-          lastSourceUrl: job.sourceUrl,
-          lastPage: page,
-          lastScanned: result.scanned,
-          lastInserted: result.inserted,
-          lastParseFailures: result.parseFailures,
-          lastError: FieldValue.delete(),
-          firestoreUpdatedAt: FieldValue.serverTimestamp(),
-        },
+        result.scanned > 0
+          ? {
+              source: job.source,
+              status: 'healthy',
+              lastSuccessAt: timestamp,
+              lastScopeKey: job.scopeKey,
+              lastSourceUrl: job.sourceUrl,
+              lastPage: page,
+              lastScanned: result.scanned,
+              lastInserted: result.inserted,
+              lastParseFailures: result.parseFailures,
+              lastError: FieldValue.delete(),
+              firestoreUpdatedAt: FieldValue.serverTimestamp(),
+            }
+          : {
+              source: job.source,
+              lastZeroScanAt: timestamp,
+              lastZeroScanScopeKey: job.scopeKey,
+              lastZeroScanSourceUrl: job.sourceUrl,
+              lastScanned: 0,
+              lastInserted: 0,
+              lastParseFailures: result.parseFailures,
+              firestoreUpdatedAt: FieldValue.serverTimestamp(),
+            },
         { merge: true }
       );
 

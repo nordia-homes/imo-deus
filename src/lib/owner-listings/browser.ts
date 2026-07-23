@@ -92,7 +92,15 @@ export type ScraperResponse = {
   status: number;
 };
 
-export async function fetchScraperResponse(url: string, timeoutMs = 30000): Promise<ScraperResponse> {
+export type FetchScraperResponseOptions = {
+  acceptHttpErrors?: boolean;
+};
+
+export async function fetchScraperResponse(
+  url: string,
+  timeoutMs = 30000,
+  options: FetchScraperResponseOptions = {}
+): Promise<ScraperResponse> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -111,7 +119,7 @@ export async function fetchScraperResponse(url: string, timeoutMs = 30000): Prom
         redirect: 'follow',
       });
 
-      if (response.ok) {
+      if (response.ok || options.acceptHttpErrors) {
         return { html: await response.text(), finalUrl: response.url || url, status: response.status };
       }
 

@@ -8,7 +8,9 @@ import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi2
 import {
   extractImoradar24LastPage,
   extractImoradar24ListPageFromHtml,
+  scrapeImoradar24ListingsPage,
 } from '@/lib/owner-listings/sources/imoradar24';
+import { getOwnerListingCanonicalIdentity } from '@/lib/owner-listings/canonical-identity';
 import { extractOlxLastPage, extractOlxListPageFromHtml } from '@/lib/owner-listings/sources/olx';
 import {
   extractPubli24LastPage,
@@ -40,9 +42,98 @@ describe('owner-listing parser contracts', () => {
       rooms: '2 camere',
       constructionYear: 2018,
       location: 'Bucuresti, Aviatiei',
+      originSourceLabel: 'Storia',
+      originSourceUrl: 'https://www.storia.ro/',
     });
-    expect(cards[1]?.href).toBe('/link-extern/1942044');
+    expect(cards[1]).toMatchObject({
+      href: '/link-extern/1942044',
+      originSourceLabel: 'Imobiliare.ro',
+      originSourceUrl: 'https://www.imobiliare.ro/',
+    });
     expect(extractImoradar24LastPage(html)).toBe(12);
+  });
+
+  it('reads the external portal label from the card when GA metadata drifts', () => {
+    const cards = extractImoradar24ListPageFromHtml(`
+      <article data-listing-id="1952009">
+        <a href="https://www.imoradar24.ro/link-extern/1952009">
+          <p class="listing-title">Apartament cu 2 camere în Obor</p>
+          <span>Vezi anunțul pe Imobiliare.ro</span>
+        </a>
+        <span class="text-price">110.000 EUR</span>
+        <span class="posted-at">Azi</span>
+      </article>
+    `);
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({
+      originSourceLabel: 'Imobiliare.ro',
+      originSourceUrl: 'https://www.imobiliare.ro/',
+    });
+  });
+
+  it('loads Imoradar24 directly and advances beyond a non-expired first page', async () => {
+    const html = fixture('imoradar24-current.html');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(html, { status: 200 })));
+
+    const result = await scrapeImoradar24ListingsPage({
+      scopeKey: 'bucuresti-ilfov',
+      scopeCity: 'Bucuresti - Ilfov',
+      searchKeywords: [],
+      searchUrls: ['https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?sort=latest'],
+      maxAgeDays: 60,
+      hardPageLimit: 250,
+      propertyTypeHint: 'apartment',
+      transactionTypeHint: 'sale',
+    });
+
+    expect(result.cardsFound).toBe(2);
+    expect(result.listings).toHaveLength(2);
+    expect(result.reachedEnd).toBe(false);
+  });
+
+  it('keeps the final redirect URL even when an external portal returns an HTTP error', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      url: 'https://www.imobiliare.ro/oferta/apartament-test-123',
+      text: async () => 'blocked',
+      body: { cancel: vi.fn().mockResolvedValue(undefined) },
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      fetchScraperResponse('https://www.imoradar24.ro/link-extern/123', 1000, { acceptHttpErrors: true })
+    ).resolves.toMatchObject({
+      status: 403,
+      finalUrl: 'https://www.imobiliare.ro/oferta/apartament-test-123',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not collapse different aggregator listings onto a portal root URL', () => {
+    const first = getOwnerListingCanonicalIdentity({
+      source: 'imoradar24',
+      originSourceUrl: 'https://www.imobiliare.ro/',
+      link: 'https://www.imoradar24.ro/link-extern/1',
+      dedupeSignature: 'first',
+    });
+    const second = getOwnerListingCanonicalIdentity({
+      source: 'imoradar24',
+      originSourceUrl: 'https://www.imobiliare.ro/',
+      link: 'https://www.imoradar24.ro/link-extern/2',
+      dedupeSignature: 'second',
+    });
+    const exact = getOwnerListingCanonicalIdentity({
+      source: 'imoradar24',
+      originSourceUrl: 'https://www.imobiliare.ro/oferta/apartament-test-123',
+      link: 'https://www.imoradar24.ro/link-extern/3',
+    });
+
+    expect(first).toBe('content:first');
+    expect(second).toBe('content:second');
+    expect(first).not.toBe(second);
+    expect(exact).toBe('url:https://imobiliare.ro/oferta/apartament-test-123');
   });
 
   it('parses every Publi24 JSON-LD product instead of only the first one', () => {
