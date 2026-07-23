@@ -1,22 +1,46 @@
 import { FieldPath } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/firebase/admin';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import {
+  hasOwnerListingRefinementFilters,
+  matchesOwnerListingFilters,
+} from '@/lib/owner-listings/search';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
-import { parseOptionalNumber } from '@/lib/owner-listings/utils';
 
 export const runtime = 'nodejs';
 
 type CursorPayload = { firstDiscoveredAt: number; id: string };
+type SearchCorpusListing = OwnerListingSummary & { id: string };
+type SearchCorpusCacheEntry = {
+  expiresAt: number;
+  lastAccessedAt: number;
+  promise: Promise<SearchCorpusListing[]>;
+};
 
-function normalize(value: unknown) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+const SEARCH_CORPUS_TTL_MS = 60_000;
+const SEARCH_CORPUS_MAX_CACHE_ENTRIES = 3;
+const SEARCH_CORPUS_FIELDS = [
+  'source',
+  'sourceLabel',
+  'originSourceUrl',
+  'originSourceLabel',
+  'propertyType',
+  'transactionType',
+  'rooms',
+  'roomsValue',
+  'constructionYear',
+  'constructionYearValue',
+  'year',
+  'price',
+  'priceValue',
+  'title',
+  'location',
+  'ownerPhone',
+  'area',
+  'description',
+  'firstDiscoveredAt',
+] as const;
+const searchCorpusCache = new Map<string, SearchCorpusCacheEntry>();
 
 function encodeCursor(cursor: CursorPayload) {
   return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
@@ -34,55 +58,6 @@ function decodeCursor(value: string | null): CursorPayload | null {
   }
 }
 
-function matchesFilters(listing: OwnerListingSummary, params: URLSearchParams) {
-  const source = params.get('source');
-  if (source === 'imobiliare') {
-    const origin = normalize(`${listing.originSourceLabel || ''} ${listing.originSourceUrl || ''}`);
-    if (!origin.includes('imobiliare')) return false;
-  }
-
-  const propertyType = params.get('propertyType');
-  if (propertyType && propertyType !== 'all' && listing.propertyType !== propertyType) return false;
-
-  const transactionType = params.get('transactionType');
-  if (transactionType && transactionType !== 'all' && listing.transactionType !== transactionType) return false;
-
-  const rooms = parseOptionalNumber(params.get('rooms'));
-  if (rooms !== null && parseOptionalNumber(listing.roomsValue ?? listing.rooms) !== rooms) return false;
-
-  const constructionYear = params.get('constructionYear');
-  if (constructionYear && constructionYear !== 'all') {
-    const year = parseOptionalNumber(listing.constructionYearValue ?? listing.constructionYear ?? listing.year);
-    if (year === null) return false;
-    if (constructionYear === '1977-1990' && (year < 1977 || year > 1990)) return false;
-    if (constructionYear === '1990-2000' && (year < 1990 || year > 2000)) return false;
-    if (constructionYear === 'after-2000' && year <= 2000) return false;
-  }
-
-  const price = parseOptionalNumber(listing.priceValue ?? listing.price);
-  const priceMin = parseOptionalNumber(params.get('priceMin'));
-  const priceMax = parseOptionalNumber(params.get('priceMax'));
-  if (priceMin !== null && (price === null || price < priceMin)) return false;
-  if (priceMax !== null && (price === null || price > priceMax)) return false;
-
-  const search = normalize(params.get('search'));
-  if (search) {
-    const haystack = normalize([
-      listing.title,
-      listing.location,
-      listing.ownerPhone,
-      listing.price,
-      listing.area,
-      listing.description,
-      listing.sourceLabel,
-      listing.originSourceLabel,
-    ].join(' '));
-    if (!search.split(' ').filter(Boolean).every((token) => haystack.includes(token))) return false;
-  }
-
-  return true;
-}
-
 function formatError(error: unknown) {
   if (error && typeof error === 'object' && 'status' in error) {
     const status = typeof (error as { status?: unknown }).status === 'number'
@@ -93,8 +68,12 @@ function formatError(error: unknown) {
   return { status: 500, message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile.' };
 }
 
-function buildOwnerListingsBaseQuery(scopeKey: string, source: string | null) {
-  let query: FirebaseFirestore.Query = adminDb
+function buildOwnerListingsBaseQuery(
+  db: FirebaseFirestore.Firestore,
+  scopeKey: string,
+  source: string | null,
+) {
+  let query: FirebaseFirestore.Query = db
     .collection('ownerListings')
     .where('scopeKey', '==', scopeKey)
     .where('publicationStatus', '==', 'ready')
@@ -109,9 +88,118 @@ function buildOwnerListingsBaseQuery(scopeKey: string, source: string | null) {
   return query;
 }
 
+async function loadSearchCorpus(baseQuery: FirebaseFirestore.Query) {
+  const snapshot = await baseQuery.select(...SEARCH_CORPUS_FIELDS).get();
+  return snapshot.docs
+    .map((document) => ({
+      ...(document.data() as OwnerListingSummary),
+      id: document.id,
+    }))
+    .sort((left, right) => {
+      const firstDiscoveredAtDifference =
+        Number(right.firstDiscoveredAt || 0) - Number(left.firstDiscoveredAt || 0);
+      if (firstDiscoveredAtDifference !== 0) return firstDiscoveredAtDifference;
+      if (left.id === right.id) return 0;
+      return left.id > right.id ? -1 : 1;
+    });
+}
+
+function pruneSearchCorpusCache(now: number) {
+  for (const [key, entry] of searchCorpusCache) {
+    if (entry.expiresAt <= now) searchCorpusCache.delete(key);
+  }
+
+  while (searchCorpusCache.size >= SEARCH_CORPUS_MAX_CACHE_ENTRIES) {
+    const oldestEntry = [...searchCorpusCache.entries()]
+      .sort((left, right) => left[1].lastAccessedAt - right[1].lastAccessedAt)[0];
+    if (!oldestEntry) break;
+    searchCorpusCache.delete(oldestEntry[0]);
+  }
+}
+
+function getSearchCorpus(cacheKey: string, baseQuery: FirebaseFirestore.Query) {
+  const now = Date.now();
+  const cached = searchCorpusCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    cached.lastAccessedAt = now;
+    return cached.promise;
+  }
+
+  if (cached) searchCorpusCache.delete(cacheKey);
+  pruneSearchCorpusCache(now);
+
+  const promise = loadSearchCorpus(baseQuery);
+  const entry: SearchCorpusCacheEntry = {
+    expiresAt: now + SEARCH_CORPUS_TTL_MS,
+    lastAccessedAt: now,
+    promise,
+  };
+  searchCorpusCache.set(cacheKey, entry);
+  promise.catch(() => {
+    if (searchCorpusCache.get(cacheKey) === entry) {
+      searchCorpusCache.delete(cacheKey);
+    }
+  });
+  return promise;
+}
+
+function findPageStartIndex(matches: SearchCorpusListing[], cursor: CursorPayload | null) {
+  if (!cursor) return 0;
+
+  const exactIndex = matches.findIndex(
+    (listing) => listing.id === cursor.id
+      && Number(listing.firstDiscoveredAt || 0) === cursor.firstDiscoveredAt,
+  );
+  if (exactIndex >= 0) return exactIndex + 1;
+
+  const nextIndex = matches.findIndex((listing) => {
+    const firstDiscoveredAt = Number(listing.firstDiscoveredAt || 0);
+    return firstDiscoveredAt < cursor.firstDiscoveredAt
+      || (firstDiscoveredAt === cursor.firstDiscoveredAt && listing.id < cursor.id);
+  });
+  return nextIndex >= 0 ? nextIndex : matches.length;
+}
+
+async function getRefinedListingPage(input: {
+  db: FirebaseFirestore.Firestore;
+  corpus: SearchCorpusListing[];
+  cursor: CursorPayload | null;
+  pageSize: number;
+  params: URLSearchParams;
+}) {
+  const matches = input.corpus.filter((listing) => matchesOwnerListingFilters(listing, input.params));
+  const startIndex = findPageStartIndex(matches, input.cursor);
+  const pageEntries = matches.slice(startIndex, startIndex + input.pageSize);
+  const snapshots = pageEntries.length > 0
+    ? await input.db.getAll(...pageEntries.map((listing) => input.db.collection('ownerListings').doc(listing.id)))
+    : [];
+  const listingsById = new Map(
+    snapshots
+      .filter((snapshot) => snapshot.exists)
+      .map((snapshot) => [snapshot.id, { ...(snapshot.data() as OwnerListingSummary), id: snapshot.id }]),
+  );
+  const listings = pageEntries
+    .map((listing) => listingsById.get(listing.id))
+    .filter((listing): listing is OwnerListingSummary & { id: string } => Boolean(listing));
+  const hasMore = startIndex + pageEntries.length < matches.length;
+  const lastPageEntry = pageEntries.at(-1);
+
+  return {
+    listings,
+    nextCursor: hasMore && lastPageEntry
+      ? encodeCursor({
+          firstDiscoveredAt: Number(lastPageEntry.firstDiscoveredAt || 0),
+          id: lastPageEntry.id,
+        })
+      : null,
+    hasMore,
+    totalMatchingCount: matches.length,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const authContext = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const params = request.nextUrl.searchParams;
     const scopeKey = params.get('scopeKey')?.trim();
     if (!scopeKey) {
@@ -121,60 +209,60 @@ export async function GET(request: NextRequest) {
     const pageSize = Math.max(1, Math.min(Number(params.get('pageSize') || 100), 100));
     const source = params.get('source');
     const cursor = decodeCursor(params.get('cursor'));
-    const matches: Array<OwnerListingSummary & { id: string }> = [];
-    let scanCursor = cursor;
-    let hasMore = true;
-    const maxScannedDocuments = 5000;
-    let scannedDocuments = 0;
-    const baseQuery = buildOwnerListingsBaseQuery(scopeKey, source);
+    const baseQuery = buildOwnerListingsBaseQuery(authContext.adminDb, scopeKey, source);
     const totalAvailableCountPromise = baseQuery.count().get();
 
-    while (matches.length < pageSize && hasMore && scannedDocuments < maxScannedDocuments) {
-      let query = baseQuery
+    if (hasOwnerListingRefinementFilters(params)) {
+      const corpus = await getSearchCorpus(
+        `${authContext.runtimeMode}:${scopeKey}:${source || 'all'}`,
+        baseQuery,
+      );
+      const [page, totalAvailableSnapshot] = await Promise.all([
+        getRefinedListingPage({
+          db: authContext.adminDb,
+          corpus,
+          cursor,
+          pageSize,
+          params,
+        }),
+        totalAvailableCountPromise,
+      ]);
+
+      return NextResponse.json({
+        ...page,
+        totalAvailableCount: totalAvailableSnapshot.data().count,
+      });
+    }
+
+    let query = baseQuery
         .orderBy('firstDiscoveredAt', 'desc')
         .orderBy(FieldPath.documentId(), 'desc');
 
-      if (scanCursor) {
-        query = query.startAfter(scanCursor.firstDiscoveredAt, scanCursor.id);
-      }
-
-      const snapshot = await query.limit(250).get();
-      if (snapshot.empty) {
-        hasMore = false;
-        break;
-      }
-
-      let consumedFromSnapshot = 0;
-      for (const doc of snapshot.docs) {
-        const listing = doc.data() as OwnerListingSummary;
-        scanCursor = {
-          firstDiscoveredAt: Number(listing.firstDiscoveredAt || 0),
-          id: doc.id,
-        };
-        consumedFromSnapshot += 1;
-        scannedDocuments += 1;
-        if (matchesFilters(listing, params)) {
-          matches.push({ ...listing, id: doc.id });
-          if (matches.length >= pageSize) break;
-        }
-        if (scannedDocuments >= maxScannedDocuments) break;
-      }
-
-      if (matches.length >= pageSize) {
-        hasMore = consumedFromSnapshot < snapshot.size || snapshot.size === 250;
-        break;
-      }
-      if (snapshot.size < 250) hasMore = false;
-      if (scannedDocuments >= maxScannedDocuments) hasMore = true;
+    if (cursor) {
+      query = query.startAfter(cursor.firstDiscoveredAt, cursor.id);
     }
 
+    const snapshot = await query.limit(pageSize + 1).get();
+    const pageDocuments = snapshot.docs.slice(0, pageSize);
+    const listings = pageDocuments.map((document) => ({
+      ...(document.data() as OwnerListingSummary),
+      id: document.id,
+    }));
+    const hasMore = snapshot.size > pageSize;
+    const lastDocument = pageDocuments.at(-1);
     const totalAvailableCount = (await totalAvailableCountPromise).data().count;
 
     return NextResponse.json({
-      listings: matches,
-      nextCursor: hasMore && scanCursor ? encodeCursor(scanCursor) : null,
+      listings,
+      nextCursor: hasMore && lastDocument
+        ? encodeCursor({
+            firstDiscoveredAt: Number(lastDocument.get('firstDiscoveredAt') || 0),
+            id: lastDocument.id,
+          })
+        : null,
       hasMore,
       totalAvailableCount,
+      totalMatchingCount: totalAvailableCount,
     });
   } catch (error) {
     const formatted = formatError(error);

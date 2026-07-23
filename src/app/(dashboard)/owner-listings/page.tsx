@@ -6,15 +6,6 @@ import { AiOutreachCallModal } from '@/components/ai-outreach/ai-outreach-call-m
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
 import type { OwnerListing, OwnerListingFavorite, PropertyTypeFilter, SourceFilterValue, TransactionTypeFilter } from '@/components/owner-listings/types';
-import {
-  extractPrice,
-  extractRoomsValue,
-  matchesPropertyType,
-  matchesSourceFilter,
-  matchesTransactionType,
-  normalizeDigits,
-  normalizeText,
-} from '@/components/owner-listings/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,6 +63,7 @@ export default function OwnerListingsPage() {
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([]);
   const [hasMoreListings, setHasMoreListings] = useState(false);
   const [totalListingCount, setTotalListingCount] = useState<number | null>(null);
+  const [totalMatchingCount, setTotalMatchingCount] = useState<number | null>(null);
   const [listingsError, setListingsError] = useState<string | null>(null);
   const previousPageRef = useRef(currentPage);
   const firestore = useFirestore();
@@ -98,9 +90,8 @@ export default function OwnerListingsPage() {
       priceMin,
       priceMax,
       sourceFilter,
-      aiStatusFilter,
     }),
-    [aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter],
+    [appliedSearchQuery, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter],
   );
 
   useEffect(() => {
@@ -115,15 +106,18 @@ export default function OwnerListingsPage() {
     setCursorHistory([]);
     setHasMoreListings(false);
     setCurrentPage(1);
+    setTotalMatchingCount(null);
   }, [listingFiltersKey]);
 
   useEffect(() => {
     setListings([]);
     setTotalListingCount(null);
+    setTotalMatchingCount(null);
   }, [currentScope?.key]);
 
   useEffect(() => {
     setTotalListingCount(null);
+    setTotalMatchingCount(null);
   }, [sourceFilter]);
 
   useEffect(() => {
@@ -173,6 +167,7 @@ export default function OwnerListingsPage() {
           nextCursor?: string | null;
           hasMore?: boolean;
           totalAvailableCount?: number;
+          totalMatchingCount?: number;
           message?: string;
         };
         if (!response.ok) throw new Error(payload.message || 'Nu am putut incarca anunturile.');
@@ -182,6 +177,9 @@ export default function OwnerListingsPage() {
         setHasMoreListings(Boolean(payload.hasMore && payload.nextCursor));
         setTotalListingCount(
           typeof payload.totalAvailableCount === 'number' ? payload.totalAvailableCount : null,
+        );
+        setTotalMatchingCount(
+          typeof payload.totalMatchingCount === 'number' ? payload.totalMatchingCount : null,
         );
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -199,7 +197,7 @@ export default function OwnerListingsPage() {
   }, [appliedSearchQuery, constructionYearFilter, currentScope?.key, listingFiltersKey, pageCursor, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter, user]);
 
   const favoritesQuery = useMemoFirebase(
-    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('updatedAt', 'desc')) : null),
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites')) : null),
     [agencyId, firestore],
   );
   const aiCallsQuery = useMemoFirebase(
@@ -256,74 +254,11 @@ export default function OwnerListingsPage() {
     if (!Array.isArray(listings)) return [];
     let result = [...listings];
 
-    result = result.filter((listing) => matchesSourceFilter(listing, sourceFilter));
-
     if (aiStatusFilter !== 'all') {
       result = result.filter((listing) => {
         const latestCall = aiCallsByListingId.get(listing.id);
         const outcome = latestCall?.outcome || 'uncalled';
         return outcome === aiStatusFilter;
-      });
-    }
-
-    const normalizedSearchQuery = normalizeText(appliedSearchQuery);
-    const numericSearchQuery = normalizeDigits(appliedSearchQuery);
-
-    if (normalizedSearchQuery) {
-      const searchTerms = normalizedSearchQuery.split(' ').filter(Boolean);
-      result = result.filter((listing) => {
-        const numericPrice = extractPrice(listing.price);
-        const searchableText = normalizeText(
-          [listing.title, listing.location, listing.ownerPhone, listing.price, numericPrice !== null ? String(numericPrice) : ''].join(' '),
-        );
-        const searchableDigits = [normalizeDigits(listing.ownerPhone), normalizeDigits(listing.price), numericPrice !== null ? String(numericPrice) : '']
-          .filter(Boolean)
-          .join(' ');
-
-        const matchesText = searchTerms.every((term) => searchableText.includes(term));
-        const matchesDigits = numericSearchQuery ? searchableDigits.includes(numericSearchQuery) : false;
-        return matchesText || matchesDigits;
-      });
-    }
-
-    result = result.filter((listing) => matchesPropertyType(listing, propertyTypeFilter));
-    result = result.filter((listing) => matchesTransactionType(listing, transactionTypeFilter));
-
-    if (roomsFilter !== 'all') {
-      result = result.filter((listing) => extractRoomsValue(listing.rooms) === Number(roomsFilter));
-    }
-
-    if (constructionYearFilter !== 'all') {
-      result = result.filter((listing) => {
-        const year = Number(listing.constructionYear);
-        if (!Number.isFinite(year)) return false;
-
-        if (constructionYearFilter === '1977-1990') {
-          return year >= 1977 && year <= 1990;
-        }
-
-        if (constructionYearFilter === '1990-2000') {
-          return year >= 1990 && year <= 2000;
-        }
-
-        if (constructionYearFilter === 'after-2000') {
-          return year > 2000;
-        }
-
-        return true;
-      });
-    }
-
-    const min = priceMin ? Number(priceMin) : null;
-    const max = priceMax ? Number(priceMax) : null;
-
-    if (min !== null || max !== null) {
-      result = result.filter((listing) => {
-        const price = extractPrice(listing.price);
-        if (!price) return false;
-        if (min !== null && price < min) return false;
-        if (max !== null && price > max) return false;
-        return true;
       });
     }
 
@@ -338,24 +273,27 @@ export default function OwnerListingsPage() {
     });
 
     return result;
-  }, [aiCallsByListingId, aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope, listings, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter]);
+  }, [aiCallsByListingId, aiStatusFilter, listings]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [aiStatusFilter, appliedSearchQuery, constructionYearFilter, currentScope?.key, priceMax, priceMin, propertyTypeFilter, roomsFilter, sourceFilter, transactionTypeFilter]);
 
-  const hasRefinementFilters =
+  const hasServerRefinementFilters =
     Boolean(appliedSearchQuery.trim()) ||
     roomsFilter !== 'all' ||
     propertyTypeFilter !== 'all' ||
     transactionTypeFilter !== 'all' ||
     constructionYearFilter !== 'all' ||
-    Boolean(priceMin || priceMax) ||
-    aiStatusFilter !== 'all';
+    Boolean(priceMin || priceMax);
   const totalPages =
-    !hasRefinementFilters && typeof totalListingCount === 'number'
-      ? Math.max(1, Math.ceil(totalListingCount / LISTINGS_PER_PAGE))
+    aiStatusFilter === 'all' && typeof totalMatchingCount === 'number'
+      ? Math.max(1, Math.ceil(totalMatchingCount / LISTINGS_PER_PAGE))
       : null;
+  const displayedListingCount =
+    hasServerRefinementFilters && aiStatusFilter === 'all'
+      ? totalMatchingCount
+      : totalListingCount;
   const safeCurrentPage = currentPage;
   const paginatedListings = filteredListings;
 
@@ -794,7 +732,7 @@ export default function OwnerListingsPage() {
     });
   };
 
-  const FilterControls = () => (
+  const mobileFilterControls = (
     <div className="flex flex-col gap-6">
       <div>
         <Label className="mb-2 block font-semibold">Cautare</Label>
@@ -960,7 +898,7 @@ export default function OwnerListingsPage() {
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
         favoriteCount={validFavoriteCount}
-        listingCount={totalListingCount}
+        listingCount={displayedListingCount}
         adminClassic={isClassicTheme}
       />
 
@@ -1125,11 +1063,15 @@ export default function OwnerListingsPage() {
               <SheetTitle>Filtre</SheetTitle>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-              <FilterControls />
+              {mobileFilterControls}
             </div>
             <SheetFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button onClick={() => setIsSheetOpen(false)} className="w-full">
-                Vezi {filteredListings.length} anunturi afisate
+                Vezi {
+                  aiStatusFilter === 'all' && typeof totalMatchingCount === 'number'
+                    ? new Intl.NumberFormat('ro-RO').format(totalMatchingCount)
+                    : filteredListings.length
+                } anunturi
               </Button>
             </SheetFooter>
           </SheetContent>
@@ -1138,6 +1080,22 @@ export default function OwnerListingsPage() {
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
+
+      {appliedSearchQuery.trim() ? (
+        <div
+          aria-live="polite"
+          className={cn(
+            'flex min-h-6 items-center text-sm font-medium',
+            isClassicTheme ? 'text-white/72' : 'text-slate-600',
+          )}
+        >
+          {isLoading
+            ? 'Cautam in toate anunturile disponibile...'
+            : aiStatusFilter === 'all' && typeof totalMatchingCount === 'number'
+              ? `${new Intl.NumberFormat('ro-RO').format(totalMatchingCount)} anunturi potrivite`
+              : `${filteredListings.length} anunturi potrivite in pagina curenta`}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredListings.length > 0 ? (

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { collection, doc, orderBy, query } from 'firebase/firestore';
+import { collection, doc, query } from 'firebase/firestore';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingFavoriteEditor } from '@/components/owner-listings/owner-listing-favorite-editor';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
@@ -25,22 +25,111 @@ export default function FavoriteOwnerListingsPage() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
+  const [listings, setListings] = useState<OwnerListing[]>([]);
+  const [isFavoriteListingsLoading, setIsFavoriteListingsLoading] = useState(true);
+  const [favoriteListingsError, setFavoriteListingsError] = useState<string | null>(null);
+  const [missingFavoriteListingsCount, setMissingFavoriteListingsCount] = useState(0);
+  const [favoriteReloadKey, setFavoriteReloadKey] = useState(0);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
-  const { agency, agencyId, userProfile } = useAgency();
+  const { agency, agencyId, userProfile, isAgencyLoading } = useAgency();
   const isClassicTheme = getAgencyThemePreset(agency) === 'classic';
   const currentScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
   const currentAgentName = userProfile?.name || user?.displayName || user?.email || 'Agent neatribuit';
 
-  const ownerListingsQuery = useMemoFirebase(() => query(collection(firestore, 'ownerListings'), orderBy('firstDiscoveredAt', 'desc')), [firestore]);
   const favoritesQuery = useMemoFirebase(
-    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites'), orderBy('createdAt', 'desc')) : null),
+    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'ownerListingFavorites')) : null),
     [agencyId, firestore],
   );
 
-  const { data: listings, isLoading: isListingsLoading } = useCollection<OwnerListing>(ownerListingsQuery);
-  const { data: favorites, isLoading: isFavoritesLoading } = useCollection<OwnerListingFavorite>(favoritesQuery);
+  const {
+    data: favorites,
+    isLoading: isFavoritesLoading,
+    error: favoritesError,
+  } = useCollection<OwnerListingFavorite>(favoritesQuery);
+  const activeFavorites = useMemo(
+    () => (favorites ?? []).filter((favorite) => favorite.isFavoriteActive !== false),
+    [favorites],
+  );
+  const activeFavoriteIdsKey = useMemo(
+    () => activeFavorites
+      .map((favorite) => favorite.ownerListingId || favorite.id)
+      .filter(Boolean)
+      .sort()
+      .join('|'),
+    [activeFavorites],
+  );
+
+  useEffect(() => {
+    if (isAgencyLoading || isFavoritesLoading) return;
+
+    if (!user || !agencyId) {
+      setListings([]);
+      setMissingFavoriteListingsCount(0);
+      setFavoriteListingsError('Utilizatorul nu este asociat unei agentii.');
+      setIsFavoriteListingsLoading(false);
+      return;
+    }
+
+    if (!activeFavoriteIdsKey) {
+      setListings([]);
+      setFavoriteListingsError(null);
+      setMissingFavoriteListingsCount(0);
+      setIsFavoriteListingsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    void (async () => {
+      setIsFavoriteListingsLoading(true);
+      setFavoriteListingsError(null);
+
+      try {
+        const token = await user.getIdToken();
+        const params = new URLSearchParams();
+        if (currentScope?.key) params.set('scopeKey', currentScope.key);
+        const response = await fetch(`/api/owner-listings/favorites?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        const payload = await response.json().catch(() => ({})) as {
+          listings?: OwnerListing[];
+          missingListingsCount?: number;
+          message?: string;
+        };
+        if (!response.ok) {
+          throw new Error(payload.message || 'Nu am putut incarca anunturile favorite.');
+        }
+
+        setListings(Array.isArray(payload.listings) ? payload.listings : []);
+        setMissingFavoriteListingsCount(
+          typeof payload.missingListingsCount === 'number' ? payload.missingListingsCount : 0,
+        );
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setListings([]);
+        setMissingFavoriteListingsCount(0);
+        setFavoriteListingsError(
+          error instanceof Error ? error.message : 'Nu am putut incarca anunturile favorite.',
+        );
+      } finally {
+        if (!controller.signal.aborted) setIsFavoriteListingsLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [
+    activeFavoriteIdsKey,
+    agencyId,
+    currentScope?.key,
+    favoriteReloadKey,
+    isAgencyLoading,
+    isFavoritesLoading,
+    user,
+  ]);
 
   const listingsById = useMemo(() => {
     const map = new Map<string, OwnerListing>();
@@ -61,14 +150,18 @@ export default function FavoriteOwnerListingsPage() {
   }, [currentScope, listings]);
 
   const favoriteEntries = useMemo(() => {
-    return (favorites ?? [])
-      .filter((favorite) => favorite.isFavoriteActive !== false)
+    return [...activeFavorites]
+      .sort((left, right) => {
+        const leftTimestamp = new Date(left.updatedAt || left.createdAt || 0).getTime();
+        const rightTimestamp = new Date(right.updatedAt || right.createdAt || 0).getTime();
+        return rightTimestamp - leftTimestamp;
+      })
       .map((favorite) => {
-        const listing = listingsById.get(favorite.ownerListingId);
+        const listing = listingsById.get(favorite.ownerListingId || favorite.id);
         return listing ? { favorite, listing } : null;
       })
       .filter((entry): entry is { favorite: OwnerListingFavorite; listing: OwnerListing } => Boolean(entry));
-  }, [favorites, listingsById]);
+  }, [activeFavorites, listingsById]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
@@ -266,7 +359,7 @@ export default function FavoriteOwnerListingsPage() {
     });
   };
 
-  if (isListingsLoading || isFavoritesLoading) {
+  if (isAgencyLoading || isFavoriteListingsLoading || isFavoritesLoading) {
     return (
       <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
         <OwnerListingHeader
@@ -274,7 +367,7 @@ export default function FavoriteOwnerListingsPage() {
           subtitle="Pregatim lista agentului cu anunturile salvate pentru contact manual."
           currentScopeLabel={currentScope?.displayName}
           activeTab="favorite"
-          favoriteCount={favoriteEntries.length}
+          favoriteCount={activeFavorites.length}
           adminClassic={isClassicTheme}
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
@@ -296,7 +389,7 @@ export default function FavoriteOwnerListingsPage() {
         subtitle="Lista de lucru a agentilor pentru apeluri manuale, cu status de colaborare, comision si notite direct sub fiecare card."
         currentScopeLabel={currentScope?.displayName}
         activeTab="favorite"
-        favoriteCount={favoriteEntries.length}
+        favoriteCount={activeFavorites.length}
         adminClassic={isClassicTheme}
       />
 
@@ -325,6 +418,16 @@ export default function FavoriteOwnerListingsPage() {
             </div>
           ))}
         </div>
+      ) : favoriteListingsError || favoritesError ? (
+        <div className="rounded-[1.75rem] border border-red-300/25 bg-red-950/20 px-6 py-14 text-center text-white/78">
+          <p className="text-lg font-semibold text-white">Favoritele nu au putut fi incarcate.</p>
+          <p className="mt-2 text-sm text-white/65">
+            {favoriteListingsError || favoritesError?.message || 'A aparut o eroare temporara.'}
+          </p>
+          <Button type="button" onClick={() => setFavoriteReloadKey((value) => value + 1)} className="mt-5 rounded-full">
+            Incearca din nou
+          </Button>
+        </div>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-white/20 bg-white/8 px-6 py-14 text-center text-white/78">
           <p className="text-lg font-semibold text-white">Nu ai anunturi in Favorite inca.</p>
@@ -336,6 +439,12 @@ export default function FavoriteOwnerListingsPage() {
           </Button>
         </div>
       )}
+
+      {missingFavoriteListingsCount > 0 ? (
+        <p className="text-center text-sm text-white/60">
+          {missingFavoriteListingsCount} favorite nu mai exista in inventarul de anunturi si nu pot fi afisate.
+        </p>
+      ) : null}
 
       <AddPropertyDialog isOpen={isImportDialogOpen} onOpenChange={setIsImportDialogOpen} property={propertyToImport as Property | null} />
     </div>
