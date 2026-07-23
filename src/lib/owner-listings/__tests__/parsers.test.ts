@@ -15,7 +15,11 @@ import {
   extractPubli24StructuredOffersFromHtml,
 } from '@/lib/owner-listings/sources/publi24';
 import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
-import { parseOptionalNumber, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
+import {
+  compareOwnerListingEnrichmentPriority,
+  parseOptionalNumber,
+  parseRomanianDateToUnix,
+} from '@/lib/owner-listings/utils';
 
 const fixtures = join(process.cwd(), 'src', 'lib', 'owner-listings', '__tests__', 'fixtures');
 const fixture = (name: string) => readFileSync(join(fixtures, name), 'utf8');
@@ -95,6 +99,22 @@ describe('owner-listing parser contracts', () => {
     expect(parseOptionalNumber('   ')).toBeNull();
     expect(parseOptionalNumber('2 camere')).toBe(2);
     expect(parseOptionalNumber(125000)).toBe(125000);
+  });
+
+  it('prioritizes fresh pending enrichment work over an equally important retry', () => {
+    const jobs = [
+      { status: 'pending', priority: 1080, createdAt: '2026-07-23T07:08:00.000Z' },
+      { status: 'retry', priority: 1120, createdAt: '2026-07-22T07:08:00.000Z' },
+      { status: 'retry', priority: 1080, createdAt: '2026-07-23T07:09:00.000Z' },
+      { status: 'pending', priority: 1080, createdAt: '2026-07-23T07:10:00.000Z' },
+    ].sort(compareOwnerListingEnrichmentPriority);
+
+    expect(jobs.map((job) => `${job.status}:${job.priority}:${job.createdAt}`)).toEqual([
+      'retry:1120:2026-07-22T07:08:00.000Z',
+      'pending:1080:2026-07-23T07:10:00.000Z',
+      'pending:1080:2026-07-23T07:08:00.000Z',
+      'retry:1080:2026-07-23T07:09:00.000Z',
+    ]);
   });
 
   it('uses the Publi24 county/city hierarchy for every configured scope', () => {

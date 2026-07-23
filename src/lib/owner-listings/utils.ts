@@ -83,6 +83,19 @@ export function parseOptionalNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function compareOwnerListingEnrichmentPriority(
+  left: { priority?: number; status?: string; createdAt?: string },
+  right: { priority?: number; status?: string; createdAt?: string }
+) {
+  const priorityDelta = (right.priority || 0) - (left.priority || 0);
+  if (priorityDelta !== 0) return priorityDelta;
+  if (left.status !== right.status) {
+    if (left.status === 'pending') return -1;
+    if (right.status === 'pending') return 1;
+  }
+  return String(right.createdAt || '').localeCompare(String(left.createdAt || ''));
+}
+
 export function parsePriceNumber(value: string | null | undefined) {
   const normalized = normalizeWhitespace(value).replace(/[^\d]/g, '');
   if (!normalized) return null;

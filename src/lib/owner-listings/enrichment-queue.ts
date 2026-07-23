@@ -9,7 +9,7 @@ import type {
   OwnerListingSource,
   OwnerListingSummary,
 } from '@/lib/owner-listings/types';
-import { getOwnerListingMissingFields, hasMinimumOwnerListingQuality, parseArea, parseExactConstructionYear, parsePriceNumber, parseRooms, stripUndefined } from '@/lib/owner-listings/utils';
+import { compareOwnerListingEnrichmentPriority, getOwnerListingMissingFields, hasMinimumOwnerListingQuality, parseArea, parseExactConstructionYear, parsePriceNumber, parseRooms, stripUndefined } from '@/lib/owner-listings/utils';
 
 const ENRICHMENT_COLLECTION = 'ownerListingEnrichmentQueue';
 const PROCESSING_STALE_MS = 15 * 60 * 1000;
@@ -127,15 +127,30 @@ function isQueueEligible(entry: Partial<OwnerListingEnrichmentQueueEntry> | unde
 
 async function acquireNextEnrichmentJob() {
   const now = new Date();
-  const eligibleSnapshot = await adminDb
-    .collection(ENRICHMENT_COLLECTION)
-    .where('status', 'in', ['pending', 'retry'])
-    .where('nextAttemptAt', '<=', now.toISOString())
-    .orderBy('nextAttemptAt', 'asc')
-    .orderBy('priority', 'desc')
-    .limit(50)
-    .get();
-  const staleSnapshot = eligibleSnapshot.empty
+  const [pendingSnapshot, retrySnapshot] = await Promise.all([
+    adminDb
+      .collection(ENRICHMENT_COLLECTION)
+      .where('status', '==', 'pending')
+      .orderBy('priority', 'desc')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get(),
+    adminDb
+      .collection(ENRICHMENT_COLLECTION)
+      .where('status', '==', 'retry')
+      .where('nextAttemptAt', '<=', now.toISOString())
+      .orderBy('nextAttemptAt', 'asc')
+      .orderBy('priority', 'desc')
+      .limit(20)
+      .get(),
+  ]);
+  const eligibleDocs = [...pendingSnapshot.docs, ...retrySnapshot.docs].sort((left, right) =>
+    compareOwnerListingEnrichmentPriority(
+      left.data() as Partial<OwnerListingEnrichmentQueueEntry>,
+      right.data() as Partial<OwnerListingEnrichmentQueueEntry>
+    )
+  );
+  const staleSnapshot = eligibleDocs.length === 0
     ? await adminDb.collection(ENRICHMENT_COLLECTION)
         .where('status', '==', 'processing')
         .where('lockedAt', '<=', new Date(now.getTime() - PROCESSING_STALE_MS).toISOString())
@@ -144,7 +159,7 @@ async function acquireNextEnrichmentJob() {
         .get()
     : null;
 
-  for (const docSnapshot of [...eligibleSnapshot.docs, ...(staleSnapshot?.docs || [])]) {
+  for (const docSnapshot of [...eligibleDocs, ...(staleSnapshot?.docs || [])]) {
     const entry = docSnapshot.data() as Partial<OwnerListingEnrichmentQueueEntry>;
     if (!isQueueEligible(entry, now)) {
       continue;
