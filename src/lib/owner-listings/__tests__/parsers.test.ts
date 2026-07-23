@@ -92,6 +92,26 @@ describe('owner-listing parser contracts', () => {
     expect(result.reachedEnd).toBe(false);
   });
 
+  it('keeps HTTP rate limits on the direct retry path instead of launching Chromium', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('rate limited', { status: 429 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      scrapeImoradar24ListingsPage({
+        scopeKey: 'bucuresti-ilfov',
+        scopeCity: 'Bucuresti - Ilfov',
+        searchKeywords: [],
+        searchUrls: ['https://www.imoradar24.ro/apartamente-de-vanzare/bucuresti/proprietar?sort=latest'],
+        maxAgeDays: 60,
+        hardPageLimit: 250,
+        propertyTypeHint: 'apartment',
+        transactionTypeHint: 'sale',
+      })
+    ).rejects.toThrow('Request failed with status 429');
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('keeps the final redirect URL even when an external portal returns an HTTP error', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,

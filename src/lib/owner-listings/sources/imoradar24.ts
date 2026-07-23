@@ -869,15 +869,25 @@ export function extractImoradar24ListPageFromHtml(html: string): ExtractedCard[]
 
 async function loadImoradar24ListPageHtml(url: string) {
   let directError: unknown;
+  let shouldTryBrowserFallback = false;
   try {
     const html = await fetchScraperHtml(url, 30000);
     const cards = extractImoradar24ListPageFromHtml(html);
-    if (cards.length || !/<article[^>]+(?:data-listing-id|id=["']listing-\d+)/i.test(html)) {
+    const hasListingMarkup = /<article[^>]+(?:data-listing-id|id=["']listing-\d+)/i.test(html);
+    const looksBlocked = /captcha|cloudflare|challenge|access denied|verify you are human/i.test(html);
+    if (cards.length || (!hasListingMarkup && !looksBlocked)) {
       return html;
     }
+    shouldTryBrowserFallback = true;
     throw new Error('Imoradar24 a returnat markup de anunturi, dar parserul direct nu a extras niciun card.');
   } catch (error) {
     directError = error;
+  }
+
+  // HTTP/network failures have already exhausted fetch retries. Chromium cannot
+  // repair rate limiting and is intentionally reserved for a real DOM-contract drift.
+  if (!shouldTryBrowserFallback) {
+    throw directError;
   }
 
   try {

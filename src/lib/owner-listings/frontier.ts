@@ -399,7 +399,7 @@ export async function runOwnerListingsFrontierTick(options: FrontierTickOptions 
           scanned: (job.scanned || 0) + result.scanned,
           stored: (job.stored || 0) + result.stored,
           skipped: (job.skipped || 0) + result.skipped,
-          errors: job.errors || 0,
+          errors: 0,
           consecutiveEmptyPages: lowYield.consecutiveEmptyPages,
           consecutiveDuplicateHeavyPages: lowYield.consecutiveDuplicateHeavyPages,
           lastStoredRatio: lowYield.storedRatio,
