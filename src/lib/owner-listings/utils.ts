@@ -84,15 +84,24 @@ export function parseOptionalNumber(value: unknown) {
 }
 
 export function compareOwnerListingEnrichmentPriority(
-  left: { priority?: number; status?: string; createdAt?: string },
-  right: { priority?: number; status?: string; createdAt?: string }
+  left: { priority?: number; status?: string; createdAt?: string; nextAttemptAt?: string },
+  right: { priority?: number; status?: string; createdAt?: string; nextAttemptAt?: string }
 ) {
-  const priorityDelta = (right.priority || 0) - (left.priority || 0);
-  if (priorityDelta !== 0) return priorityDelta;
   if (left.status !== right.status) {
     if (left.status === 'pending') return -1;
     if (right.status === 'pending') return 1;
   }
+
+  if (left.status === 'retry' && right.status === 'retry') {
+    const retryAgeDelta = String(left.nextAttemptAt || '').localeCompare(String(right.nextAttemptAt || ''));
+    if (retryAgeDelta !== 0) return retryAgeDelta;
+  } else {
+    const freshnessDelta = String(right.createdAt || '').localeCompare(String(left.createdAt || ''));
+    if (freshnessDelta !== 0) return freshnessDelta;
+  }
+
+  const priorityDelta = (right.priority || 0) - (left.priority || 0);
+  if (priorityDelta !== 0) return priorityDelta;
   return String(right.createdAt || '').localeCompare(String(left.createdAt || ''));
 }
 

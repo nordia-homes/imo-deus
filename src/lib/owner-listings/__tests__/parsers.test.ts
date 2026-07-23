@@ -101,19 +101,29 @@ describe('owner-listing parser contracts', () => {
     expect(parseOptionalNumber(125000)).toBe(125000);
   });
 
-  it('prioritizes fresh pending enrichment work over an equally important retry', () => {
+  it('prioritizes fresh detail enrichment work ahead of retries and older pending work', () => {
     const jobs = [
       { status: 'pending', priority: 1080, createdAt: '2026-07-23T07:08:00.000Z' },
-      { status: 'retry', priority: 1120, createdAt: '2026-07-22T07:08:00.000Z' },
-      { status: 'retry', priority: 1080, createdAt: '2026-07-23T07:09:00.000Z' },
+      {
+        status: 'retry',
+        priority: 1120,
+        createdAt: '2026-07-22T07:08:00.000Z',
+        nextAttemptAt: '2026-07-23T07:05:00.000Z',
+      },
+      {
+        status: 'retry',
+        priority: 1080,
+        createdAt: '2026-07-23T07:09:00.000Z',
+        nextAttemptAt: '2026-07-23T07:04:00.000Z',
+      },
       { status: 'pending', priority: 1080, createdAt: '2026-07-23T07:10:00.000Z' },
     ].sort(compareOwnerListingEnrichmentPriority);
 
     expect(jobs.map((job) => `${job.status}:${job.priority}:${job.createdAt}`)).toEqual([
-      'retry:1120:2026-07-22T07:08:00.000Z',
       'pending:1080:2026-07-23T07:10:00.000Z',
       'pending:1080:2026-07-23T07:08:00.000Z',
       'retry:1080:2026-07-23T07:09:00.000Z',
+      'retry:1120:2026-07-22T07:08:00.000Z',
     ]);
   });
 

@@ -131,13 +131,15 @@ async function acquireNextEnrichmentJob() {
     adminDb
       .collection(ENRICHMENT_COLLECTION)
       .where('status', '==', 'pending')
-      .orderBy('priority', 'desc')
+      .where('taskType', '==', 'detail')
       .orderBy('createdAt', 'desc')
+      .orderBy('priority', 'desc')
       .limit(50)
       .get(),
     adminDb
       .collection(ENRICHMENT_COLLECTION)
       .where('status', '==', 'retry')
+      .where('taskType', '==', 'detail')
       .where('nextAttemptAt', '<=', now.toISOString())
       .orderBy('nextAttemptAt', 'asc')
       .orderBy('priority', 'desc')
