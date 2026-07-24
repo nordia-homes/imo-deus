@@ -71,18 +71,35 @@ async function getBrowser() {
     browserInstance = null;
   }
 
-  const launchPromise = chromium.launch({
+  const commonArgs = [
+    '--disable-dev-shm-usage',
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-software-rasterizer',
+    '--disable-background-networking',
+    '--no-zygote',
+    '--single-process',
+  ];
+  const isAppHostingRuntime = process.platform === 'linux' && Boolean(process.env.K_SERVICE);
+  const serverlessRuntime = isAppHostingRuntime
+    ? await (async () => {
+        process.env.AWS_LAMBDA_JS_RUNTIME ||= 'nodejs22.x';
+        const { default: serverlessChromium } = await import('@sparticuz/chromium');
+        serverlessChromium.setGraphicsMode = false;
+        return {
+          executablePath: await serverlessChromium.executablePath(),
+          args: [...serverlessChromium.args, ...commonArgs],
+        };
+      })()
+    : {
+        channel: 'chromium' as const,
+        args: commonArgs,
+      };
+
+  const launchPromise = chromium
+    .launch({
       headless: true,
-      channel: 'chromium',
-      args: [
-        '--disable-dev-shm-usage',
-        '--no-sandbox',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-background-networking',
-        '--no-zygote',
-        '--single-process',
-      ],
+      ...serverlessRuntime,
     })
     .then((browser) => {
       browserInstance = browser;

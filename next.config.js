@@ -1,7 +1,10 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@napi-rs/canvas'],
+  serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium'],
+  outputFileTracingIncludes: {
+    '/*': ['node_modules/@sparticuz/chromium/bin/**/*'],
+  },
   turbopack: {
     root: __dirname,
   },
