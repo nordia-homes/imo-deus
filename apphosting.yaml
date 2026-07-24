@@ -8,6 +8,11 @@ runConfig:
   maxInstances: 10
 
 env:
+  - variable: OLX_PHONE_BROWSER_URL
+    value: "https://olx-phone-browser-lz5qfusjya-uc.a.run.app"
+    availability:
+      - RUNTIME
+
   - variable: PLAYWRIGHT_BROWSERS_PATH
     value: "0"
     availability:

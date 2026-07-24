@@ -1,7 +1,12 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentData, Firestore } from 'firebase-admin/firestore';
 import { scrapeOlxPhoneForAgent } from '@/lib/owner-listings/agent-olx-phone';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
 import { upsertRawOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
+import {
+  describeRemoteOlxPhoneStage,
+  hasRemoteOlxPhoneBrowser,
+  resolveOlxPhoneViaRemoteWorker,
+} from '@/lib/owner-listings/remote-olx-phone';
 
 type OlxPhoneResolverInput = {
   adminDb: Firestore;
@@ -12,7 +17,12 @@ type OlxPhoneResolverInput = {
   title?: string | null;
 };
 
-export type OlxPhoneResolutionSource = 'cache' | 'agent-browser' | 'internal-scraper' | 'queued';
+export type OlxPhoneResolutionSource =
+  | 'cache'
+  | 'agent-browser'
+  | 'remote-browser'
+  | 'internal-scraper'
+  | 'queued';
 
 type OlxPhoneResolutionResult = {
   phone: string;
@@ -59,10 +69,44 @@ function normalizePhoneCandidate(value: unknown) {
 }
 
 async function getStoredOwnerPhone(input: OlxPhoneResolverInput) {
+  let listingData: DocumentData | undefined;
   if (input.listingId) {
     const listingSnapshot = await input.adminDb.collection('ownerListings').doc(input.listingId).get();
-    const phone = normalizePhoneCandidate(listingSnapshot.data()?.ownerPhone);
+    listingData = listingSnapshot.data();
+    const phone = normalizePhoneCandidate(listingData?.ownerPhone);
     if (phone) return phone;
+
+    const canonicalListingId = String(listingData?.canonicalListingId || '').trim();
+    if (canonicalListingId && canonicalListingId !== input.listingId) {
+      const canonicalSnapshot = await input.adminDb
+        .collection('ownerListings')
+        .doc(canonicalListingId)
+        .get();
+      const canonicalPhone = normalizePhoneCandidate(canonicalSnapshot.data()?.ownerPhone);
+      if (canonicalPhone) {
+        await persistResolvedPhone(input, canonicalPhone, 'cache');
+        return canonicalPhone;
+      }
+    }
+
+    const identityFields = ['dedupeGroupId', 'canonicalIdentity', 'canonicalKey'] as const;
+    for (const field of identityFields) {
+      const value = String(listingData?.[field] || '').trim();
+      if (!value) continue;
+      const siblingSnapshot = await input.adminDb
+        .collection('ownerListings')
+        .where(field, '==', value)
+        .limit(12)
+        .get();
+      const siblingPhone = siblingSnapshot.docs
+        .filter((document) => document.id !== input.listingId)
+        .map((document) => normalizePhoneCandidate(document.data()?.ownerPhone))
+        .find(Boolean);
+      if (siblingPhone) {
+        await persistResolvedPhone(input, siblingPhone, 'cache');
+        return siblingPhone;
+      }
+    }
   }
 
   const byUrlSnapshot = await input.adminDb
@@ -118,6 +162,28 @@ async function resolveOlxPhoneOnce(input: OlxPhoneResolverInput): Promise<OlxPho
       phone: directPhone,
       message: 'Telefon preluat direct din OLX.',
       source: 'internal-scraper',
+    };
+  }
+
+  const remoteResult = await resolveOlxPhoneViaRemoteWorker(input.url);
+  if (remoteResult.phone) {
+    await persistResolvedPhone(input, remoteResult.phone, 'remote-browser');
+    return {
+      phone: remoteResult.phone,
+      message: 'Telefon preluat prin browserul OLX securizat.',
+      source: 'remote-browser',
+      debug: { stage: remoteResult.stage },
+    };
+  }
+
+  if (hasRemoteOlxPhoneBrowser() && process.env.K_SERVICE) {
+    const message = describeRemoteOlxPhoneStage(remoteResult.stage);
+    await queueRetry(input, message);
+    return {
+      phone: '',
+      message,
+      source: 'queued',
+      debug: { stage: remoteResult.stage },
     };
   }
 

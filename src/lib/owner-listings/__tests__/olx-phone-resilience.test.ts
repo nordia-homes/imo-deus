@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getSafeOlxBrowserFailure } from '@/lib/owner-listings/agent-olx-phone';
 import { isBrowserLifecycleError } from '@/lib/owner-listings/browser';
+import { describeRemoteOlxPhoneStage } from '@/lib/owner-listings/remote-olx-phone';
 
 describe('OLX phone browser resilience', () => {
   it('recognizes the closed Chromium process reported by App Hosting', () => {
@@ -36,5 +37,12 @@ describe('OLX phone browser resilience', () => {
     expect(safeFailure.stage).toBe('browser_failed');
     expect(safeFailure.message).toContain('retry');
     expect(safeFailure.message).not.toContain('sensitive details');
+  });
+
+  it('classifies OLX authentication and throttling without leaking technical errors', () => {
+    expect(describeRemoteOlxPhoneStage('login_required')).toContain('autentificare');
+    expect(describeRemoteOlxPhoneStage('access_denied')).toContain('limitat');
+    expect(describeRemoteOlxPhoneStage('rate_limited')).toContain('Limita');
+    expect(describeRemoteOlxPhoneStage('browserType.launch')).not.toContain('browserType');
   });
 });

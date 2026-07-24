@@ -1,6 +1,10 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { adminDb as primaryAdminDb } from '@/firebase/admin';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
+import {
+  describeRemoteOlxPhoneStage,
+  resolveOlxPhoneViaRemoteWorker,
+} from '@/lib/owner-listings/remote-olx-phone';
 import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
 import type { OlxPhoneDrainResult, OlxPhoneQueueEntry, OwnerListingSummary } from '@/lib/owner-listings/types';
 
@@ -264,7 +268,12 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
   const listingRef = primaryAdminDb.collection('ownerListings').doc(job.entry.listingId);
 
   try {
-    const phone = await scrapeOlxPhoneNumber(job.entry.link, { allowLocalBrowser: false });
+    const directPhone = await scrapeOlxPhoneNumber(job.entry.link, { allowLocalBrowser: false });
+    const remoteResult = directPhone
+      ? { phone: '', stage: 'not_needed' }
+      : await resolveOlxPhoneViaRemoteWorker(job.entry.link);
+    const phone = directPhone || remoteResult.phone;
+    const resolutionSource = directPhone ? 'internal-scraper' : 'remote-browser';
     const timestamp = nowIso();
 
     if (phone) {
@@ -272,6 +281,8 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
         listingRef.set(
           {
             ownerPhone: phone,
+            phoneResolvedAt: timestamp,
+            phoneResolvedBy: resolutionSource,
             updatedAt: timestamp,
             firestoreUpdatedAt: FieldValue.serverTimestamp(),
           },
@@ -308,6 +319,7 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
 
     const nextStatus = job.entry.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
     const nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
+    const failureMessage = describeRemoteOlxPhoneStage(remoteResult.stage);
     const refreshedListing = await listingRef.get();
     if (refreshedListing.exists) {
       await registerOwnerListingCanonical(job.entry.listingId, refreshedListing.data() as OwnerListingSummary);
@@ -320,7 +332,7 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
         nextAttemptAt,
         lockedAt: FieldValue.delete(),
         lockedBy: FieldValue.delete(),
-        error: 'Numarul de telefon nu a putut fi extras din OLX. Fallback-urile API/DOM nu au returnat niciun numar.',
+        error: failureMessage,
       },
       { merge: true }
     );
@@ -330,7 +342,7 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
       queueId: job.id,
       listingId: job.entry.listingId,
       attempts: job.entry.attempts,
-      reason: 'Numarul de telefon nu a fost disponibil la aceasta rulare.',
+      reason: failureMessage,
     };
   } catch (error) {
     const timestamp = nowIso();
