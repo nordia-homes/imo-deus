@@ -84,12 +84,10 @@ async function getBrowser() {
         process.env.AWS_LAMBDA_JS_RUNTIME ||= 'nodejs22.x';
         const { default: serverlessChromium } = await import('@sparticuz/chromium');
         serverlessChromium.setGraphicsMode = false;
-        // App Hosting's base image omits Chromium's shared libraries. Extract the
-        // compatible AL2023 library pack, but use Playwright's full Chromium:
-        // the Lambda-optimized binary itself receives SIGTRAP under Cloud Run.
-        await serverlessChromium.executablePath();
+        // Use the self-contained executable, but not its Lambda-only process/GPU
+        // flags: Cloud Run supports Chromium's normal multiprocess architecture.
         return {
-          channel: 'chromium' as const,
+          executablePath: await serverlessChromium.executablePath(),
           args: commonArgs,
         };
       })()
