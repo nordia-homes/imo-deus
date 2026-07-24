@@ -77,8 +77,6 @@ async function getBrowser() {
     '--disable-gpu',
     '--disable-software-rasterizer',
     '--disable-background-networking',
-    '--no-zygote',
-    '--single-process',
   ];
   const isAppHostingRuntime = process.platform === 'linux' && Boolean(process.env.K_SERVICE);
   const serverlessRuntime = isAppHostingRuntime
@@ -86,14 +84,18 @@ async function getBrowser() {
         process.env.AWS_LAMBDA_JS_RUNTIME ||= 'nodejs22.x';
         const { default: serverlessChromium } = await import('@sparticuz/chromium');
         serverlessChromium.setGraphicsMode = false;
+        // App Hosting's base image omits Chromium's shared libraries. Extract the
+        // compatible AL2023 library pack, but use Playwright's full Chromium:
+        // the Lambda-optimized binary itself receives SIGTRAP under Cloud Run.
+        await serverlessChromium.executablePath();
         return {
-          executablePath: await serverlessChromium.executablePath(),
-          args: [...serverlessChromium.args, ...commonArgs],
+          channel: 'chromium' as const,
+          args: commonArgs,
         };
       })()
     : {
         channel: 'chromium' as const,
-        args: commonArgs,
+        args: [...commonArgs, '--no-zygote', '--single-process'],
       };
 
   const launchPromise = chromium
