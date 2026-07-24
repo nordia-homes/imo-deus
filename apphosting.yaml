@@ -2,8 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
+  cpu: 1
+  memoryMiB: 1024
+  concurrency: 10
   maxInstances: 10
 
 env:

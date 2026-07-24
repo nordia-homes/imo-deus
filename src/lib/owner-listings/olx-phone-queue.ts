@@ -1,5 +1,5 @@
-import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb } from '@/firebase/admin';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { adminDb as primaryAdminDb } from '@/firebase/admin';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
 import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
 import type { OlxPhoneDrainResult, OlxPhoneQueueEntry, OwnerListingSummary } from '@/lib/owner-listings/types';
@@ -14,13 +14,16 @@ function nowIso() {
 }
 
 export async function upsertRawOlxPhoneQueueEntry(input: {
+  adminDb?: Firestore;
   listingId: string;
   link: string;
   title?: string;
   error?: string;
+  forceRetry?: boolean;
 }) {
   const timestamp = nowIso();
-  const queueRef = adminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(input.listingId);
+  const targetDb = input.adminDb || primaryAdminDb;
+  const queueRef = targetDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(input.listingId);
   const snapshot = await queueRef.get();
   const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
 
@@ -29,6 +32,30 @@ export async function upsertRawOlxPhoneQueueEntry(input: {
   }
 
   if (existing) {
+    if (input.forceRetry && existing.status !== 'processing') {
+      await queueRef.set(
+        {
+          listingId: input.listingId,
+          source: 'olx',
+          link: input.link,
+          title: input.title || '',
+          status: 'pending',
+          attempts: existing.status === 'failed' ? 0 : existing.attempts || 0,
+          lane: 'interactive',
+          priority: Math.max(existing.priority || 0, 2000),
+          updatedAt: timestamp,
+          nextAttemptAt: timestamp,
+          phone: '',
+          ...(input.error ? { error: input.error } : {}),
+          lockedAt: FieldValue.delete(),
+          lockedBy: FieldValue.delete(),
+          completedAt: FieldValue.delete(),
+        },
+        { merge: true }
+      );
+      return;
+    }
+
     await queueRef.set(
       {
         link: input.link,
@@ -52,8 +79,8 @@ export async function upsertRawOlxPhoneQueueEntry(input: {
       createdAt: timestamp,
       updatedAt: timestamp,
       nextAttemptAt: timestamp,
-      lane: 'fresh',
-      priority: 1000,
+      lane: 'interactive',
+      priority: 2000,
       phone: '',
       ...(input.error ? { error: input.error } : {}),
       lockedAt: FieldValue.delete(),
@@ -87,7 +114,7 @@ export async function upsertOlxPhoneQueueEntry(listingId: string, listing: Owner
     return;
   }
 
-  const queueRef = adminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(listingId);
+  const queueRef = primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(listingId);
   const snapshot = await queueRef.get();
   const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
   const timestamp = nowIso();
@@ -150,23 +177,16 @@ export async function upsertOlxPhoneQueueEntry(listingId: string, listing: Owner
 async function acquireNextOlxPhoneQueueJob() {
   const now = new Date();
   const eligibleAt = now.toISOString();
-  const freshSnapshot = await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
-    .where('lane', '==', 'fresh')
+  const interactiveSnapshot = await primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+    .where('lane', '==', 'interactive')
     .where('status', 'in', ['pending', 'retry'])
     .where('nextAttemptAt', '<=', eligibleAt)
     .orderBy('nextAttemptAt', 'asc')
     .limit(25)
     .get();
-  const backfillSnapshot = freshSnapshot.empty
-    ? await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
-        .where('status', 'in', ['pending', 'retry'])
-        .where('nextAttemptAt', '<=', eligibleAt)
-        .orderBy('nextAttemptAt', 'asc')
-        .limit(25)
-        .get()
-    : null;
-  const staleSnapshot = freshSnapshot.empty && backfillSnapshot?.empty
-    ? await adminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+  const staleSnapshot = interactiveSnapshot.empty
+    ? await primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION)
+        .where('lane', '==', 'interactive')
         .where('status', '==', 'processing')
         .where('lockedAt', '<=', new Date(now.getTime() - PROCESSING_STALE_MS).toISOString())
         .orderBy('lockedAt', 'asc')
@@ -174,13 +194,13 @@ async function acquireNextOlxPhoneQueueJob() {
         .get()
     : null;
 
-  for (const doc of [...freshSnapshot.docs, ...(backfillSnapshot?.docs || []), ...(staleSnapshot?.docs || [])]) {
+  for (const doc of [...interactiveSnapshot.docs, ...(staleSnapshot?.docs || [])]) {
     const entry = doc.data() as Partial<OlxPhoneQueueEntry>;
     if (!isQueueEligible(entry, now)) {
       continue;
     }
 
-    const acquired = await adminDb.runTransaction(async (transaction) => {
+    const acquired = await primaryAdminDb.runTransaction(async (transaction) => {
       const fresh = await transaction.get(doc.ref);
       if (!fresh.exists) {
         return null;
@@ -240,11 +260,11 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
     return { status: 'empty', reason: 'Nu exista joburi OLX phone eligibile.' };
   }
 
-  const queueRef = adminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(job.id);
-  const listingRef = adminDb.collection('ownerListings').doc(job.entry.listingId);
+  const queueRef = primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(job.id);
+  const listingRef = primaryAdminDb.collection('ownerListings').doc(job.entry.listingId);
 
   try {
-    const phone = await scrapeOlxPhoneNumber(job.entry.link);
+    const phone = await scrapeOlxPhoneNumber(job.entry.link, { allowLocalBrowser: false });
     const timestamp = nowIso();
 
     if (phone) {

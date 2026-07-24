@@ -1,7 +1,5 @@
-import { chromium, type Browser } from 'playwright';
 import type { Firestore } from 'firebase-admin/firestore';
-
-let browserPromise: Promise<Browser> | null = null;
+import { isBrowserLifecycleError, withScraperPage } from '@/lib/owner-listings/browser';
 
 type AgentOlxPhoneInput = {
   adminDb: Firestore;
@@ -106,17 +104,6 @@ function extractPhoneFromLimitedPhonesPayload(text: string) {
   }
 }
 
-async function getBrowser() {
-  if (!browserPromise) {
-    browserPromise = chromium.launch({
-      headless: true,
-      args: ['--disable-dev-shm-usage', '--no-sandbox'],
-    });
-  }
-
-  return browserPromise;
-}
-
 function extractAdIdFromHtml(html: string) {
   const normalized = html.replace(/\s+/g, ' ');
   return (
@@ -176,31 +163,33 @@ function buildOlxPhoneApiUrls(adId: string) {
   ];
 }
 
+export function getSafeOlxBrowserFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  if (message.includes('Executable doesn') || message.includes('playwright install')) {
+    return {
+      message: 'Serviciul de extragere OLX nu are browserul instalat corect. Anuntul a fost trimis automat la retry.',
+      stage: 'browser_missing',
+    };
+  }
+
+  if (isBrowserLifecycleError(error)) {
+    return {
+      message: 'Serviciul OLX s-a reincarcat dupa o intrerupere temporara. Anuntul a fost trimis automat la retry.',
+      stage: 'browser_restarted',
+    };
+  }
+
+  return {
+    message: 'Serviciul de extragere OLX este temporar indisponibil. Anuntul a fost trimis automat la retry.',
+    stage: 'browser_failed',
+  };
+}
+
 export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
   const debug: OlxPhoneDebug = { stage: 'start' };
 
   if (!/^https:\/\/(?:www\.)?olx\.ro\//i.test(input.url || '')) {
     return { phone: '', message: 'URL-ul OLX este invalid.', debug: { ...debug, stage: 'invalid_url' } };
-  }
-
-  let browser: Browser;
-  try {
-    browser = await getBrowser();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '';
-    if (message.includes('Executable doesn') || message.includes('playwright install')) {
-      return {
-        phone: '',
-        message: 'Browserul Playwright pentru scraping OLX nu este instalat pe server. Ruleaza un redeploy cu build-ul actualizat, care instaleaza Chromium in artefactul aplicatiei.',
-        debug: { ...debug, stage: 'browser_missing' },
-      };
-    }
-
-    return {
-      phone: '',
-      message: error instanceof Error ? error.message : 'Nu am putut porni browserul pentru scraping OLX.',
-      debug: { ...debug, stage: 'browser_failed' },
-    };
   }
 
   const sessionRef = input.adminDb
@@ -210,17 +199,9 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     .doc(input.uid);
   const sessionSnapshot = input.skipStoredSession ? null : await sessionRef.get();
   const session = sessionSnapshot?.data() as StoredOlxSession | undefined;
-  const context = await browser.newContext({
-    locale: 'ro-RO',
-    timezoneId: 'Europe/Bucharest',
-    userAgent:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    viewport: { width: 1440, height: 2200 },
-    ...(session?.storageState ? { storageState: session.storageState as never } : {}),
-  });
-  await context.route('**/*.{png,jpg,jpeg,gif,webp,avif,svg,woff,woff2,ttf,otf,mp4,webm}', (route) => route.abort());
 
-  const page = await context.newPage();
+  try {
+    const browserResult = await withScraperPage(async (page, context) => {
   const capturedPhones: string[] = [];
 
   const capturePhoneResponse = async (response: { url: () => string; text: () => Promise<string> }) => {
@@ -251,10 +232,12 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     debug.hasChallenge = /captcha|robot|verify|challenge|cloudflare|checking your browser/i.test(html);
     debug.hasLoginSignal = /autentific|login|conecteaz/i.test(html);
     if (debug.hasChallenge && session?.storageState) {
-      await sessionRef.delete().catch(() => undefined);
-      await page.close().catch(() => undefined);
-      await context.close().catch(() => undefined);
-      return scrapeOlxPhoneForAgent({ ...input, skipStoredSession: true });
+      return {
+        phone: '',
+        message: 'Sesiunea OLX salvata a expirat si va fi reinnoita automat.',
+        retryWithoutStoredSession: true,
+        debug: { ...debug, stage: 'stored_session_challenge' },
+      };
     }
 
     debug.stage = 'click_reveal';
@@ -370,13 +353,46 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
       debug: { ...debug, stage: 'not_found' },
     };
   } catch (error) {
+    if (isBrowserLifecycleError(error)) {
+      throw error;
+    }
+
     return {
       phone: '',
-      message: error instanceof Error ? error.message : 'Nu am putut prelua telefonul OLX.',
+      message: 'Nu am putut prelua imediat telefonul din pagina OLX. Anuntul va fi reincercat automat.',
       debug: { ...debug, stage: 'failed' },
     };
   } finally {
     await page.close().catch(() => undefined);
-    await context.close().catch(() => undefined);
+  }
+
+    }, {
+      storageState: session?.storageState as never,
+    });
+
+    if ('retryWithoutStoredSession' in browserResult && browserResult.retryWithoutStoredSession) {
+      await sessionRef.delete().catch(() => undefined);
+      return scrapeOlxPhoneForAgent({ ...input, skipStoredSession: true });
+    }
+
+    return browserResult;
+  } catch (error) {
+    const safeFailure = getSafeOlxBrowserFailure(error);
+    console.warn('OLX phone browser attempt failed.', {
+      stage: safeFailure.stage,
+      agencyId: input.agencyId,
+      listingUrlHost: (() => {
+        try {
+          return new URL(input.url).host;
+        } catch {
+          return 'invalid';
+        }
+      })(),
+    });
+    return {
+      phone: '',
+      message: safeFailure.message,
+      debug: { ...debug, stage: safeFailure.stage },
+    };
   }
 }

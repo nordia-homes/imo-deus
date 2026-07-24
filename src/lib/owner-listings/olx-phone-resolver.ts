@@ -21,6 +21,25 @@ type OlxPhoneResolutionResult = {
   debug?: unknown;
 };
 
+const activeOlxPhoneResolutions = new Map<string, Promise<OlxPhoneResolutionResult>>();
+
+export function sanitizeOlxPhoneMessage(message: unknown) {
+  const normalized = String(message || '').replace(/\s+/g, ' ').trim();
+  if (!normalized) {
+    return 'Telefonul OLX nu a fost disponibil imediat. Anuntul a fost trimis automat la retry.';
+  }
+
+  if (
+    /browserType|target (?:page|context|browser)|--(?:disable|no-sandbox)|\/workspace|\\workspace|node_modules|playwright|pid=\d+/i.test(
+      normalized
+    )
+  ) {
+    return 'Serviciul OLX s-a reincarcat dupa o intrerupere temporara. Anuntul a fost trimis automat la retry.';
+  }
+
+  return normalized.slice(0, 360);
+}
+
 function normalizePhoneCandidate(value: unknown) {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -75,22 +94,36 @@ async function queueRetry(input: OlxPhoneResolverInput, message: string) {
   }
 
   await upsertRawOlxPhoneQueueEntry({
+    adminDb: input.adminDb,
     listingId: input.listingId,
     link: input.url,
     title: input.title || '',
-    error: message,
+    error: sanitizeOlxPhoneMessage(message),
+    forceRetry: true,
   });
 }
 
-export async function resolveOlxPhoneInternally(input: OlxPhoneResolverInput): Promise<OlxPhoneResolutionResult> {
+async function resolveOlxPhoneOnce(input: OlxPhoneResolverInput): Promise<OlxPhoneResolutionResult> {
   const storedPhone = await getStoredOwnerPhone(input);
   if (storedPhone) {
     return { phone: storedPhone, message: 'Telefon preluat din cache-ul ownerListings.', source: 'cache' };
   }
 
+  const directPhone = normalizePhoneCandidate(
+    await scrapeOlxPhoneNumber(input.url, { allowLocalBrowser: false }).catch(() => '')
+  );
+  if (directPhone) {
+    await persistResolvedPhone(input, directPhone, 'internal-scraper');
+    return {
+      phone: directPhone,
+      message: 'Telefon preluat direct din OLX.',
+      source: 'internal-scraper',
+    };
+  }
+
   const agentResult = await scrapeOlxPhoneForAgent(input).catch((error) => ({
     phone: '',
-    message: error instanceof Error ? error.message : 'Browserul intern OLX a esuat.',
+    message: sanitizeOlxPhoneMessage(error instanceof Error ? error.message : ''),
     debug: { stage: 'agent_browser_exception' },
   }));
   const agentPhone = normalizePhoneCandidate(agentResult.phone);
@@ -104,19 +137,7 @@ export async function resolveOlxPhoneInternally(input: OlxPhoneResolverInput): P
     };
   }
 
-  const scraperPhone = normalizePhoneCandidate(await scrapeOlxPhoneNumber(input.url).catch(() => ''));
-  if (scraperPhone) {
-    await persistResolvedPhone(input, scraperPhone, 'internal-scraper');
-    return {
-      phone: scraperPhone,
-      message: 'Telefon preluat prin scraperul intern OLX.',
-      source: 'internal-scraper',
-    };
-  }
-
-  const message =
-    agentResult.message ||
-    'Telefonul OLX nu a fost disponibil imediat. Anuntul a fost trimis in coada interna de retry.';
+  const message = sanitizeOlxPhoneMessage(agentResult.message);
   await queueRetry(input, message);
 
   return {
@@ -125,4 +146,22 @@ export async function resolveOlxPhoneInternally(input: OlxPhoneResolverInput): P
     source: 'queued',
     debug: agentResult.debug,
   };
+}
+
+export async function resolveOlxPhoneInternally(input: OlxPhoneResolverInput): Promise<OlxPhoneResolutionResult> {
+  const key = `${input.agencyId}:${input.uid}:${input.listingId || input.url}`;
+  const activeResolution = activeOlxPhoneResolutions.get(key);
+  if (activeResolution) {
+    return activeResolution;
+  }
+
+  const resolution = resolveOlxPhoneOnce(input);
+  activeOlxPhoneResolutions.set(key, resolution);
+  try {
+    return await resolution;
+  } finally {
+    if (activeOlxPhoneResolutions.get(key) === resolution) {
+      activeOlxPhoneResolutions.delete(key);
+    }
+  }
 }

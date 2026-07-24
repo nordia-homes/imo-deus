@@ -175,6 +175,15 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "lockedAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "ownerListingOlxPhoneQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lane", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lockedAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

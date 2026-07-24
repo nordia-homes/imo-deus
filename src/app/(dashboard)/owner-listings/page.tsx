@@ -446,8 +446,19 @@ export default function OwnerListingsPage() {
 
     try {
       let localOwnerPhone = '';
+      let olxPhoneMessage = '';
+      let phoneResolutionLabel = '';
       const desktopBridge = typeof window !== 'undefined' ? (window as DesktopOlxBridgeWindow).imodeusDesktop : undefined;
       const hasDesktopOlxBridge = Boolean(listing.source === 'olx' && desktopBridge?.getOlxPhoneNumber);
+
+      if (hasDesktopOlxBridge && desktopBridge?.getOlxPhoneNumber) {
+        const localResult = await desktopBridge.getOlxPhoneNumber({ url: listing.link });
+        localOwnerPhone = localResult.phone?.trim() || '';
+        olxPhoneMessage = localResult.message || '';
+        if (localOwnerPhone) {
+          phoneResolutionLabel = 'sesiunea OLX locala';
+        }
+      }
 
       if (!localOwnerPhone && listing.source === 'olx') {
         const token = await user.getIdToken(true);
@@ -461,22 +472,13 @@ export default function OwnerListingsPage() {
         });
         const payload = await response.json().catch(() => ({}));
         localOwnerPhone = payload.phone?.trim() || '';
+        olxPhoneMessage = payload.message || olxPhoneMessage;
+        if (localOwnerPhone) {
+          phoneResolutionLabel = 'serviciul OLX';
+        }
 
         if (!localOwnerPhone && payload.debug) {
           console.info('OLX phone debug', payload.debug);
-        }
-
-        if (!localOwnerPhone && payload.message && !hasDesktopOlxBridge) {
-          toast({ title: 'Telefon OLX negasit', description: payload.message });
-        }
-      }
-
-      if (!localOwnerPhone && hasDesktopOlxBridge && desktopBridge?.getOlxPhoneNumber) {
-        const localResult = await desktopBridge.getOlxPhoneNumber({ url: listing.link });
-        localOwnerPhone = localResult.phone?.trim() || '';
-
-        if (!localOwnerPhone && localResult.message) {
-          toast({ title: 'Telefon OLX local negasit', description: localResult.message });
         }
       }
 
@@ -495,7 +497,10 @@ export default function OwnerListingsPage() {
         }
 
         setSelectedAiListing(enrichedListing);
-        toast({ title: 'Telefon preluat', description: 'Numarul proprietarului a fost preluat din sesiunea OLX locala.' });
+        toast({
+          title: 'Telefon preluat',
+          description: `Numarul proprietarului a fost preluat din ${phoneResolutionLabel || 'anunt'}.`,
+        });
         return;
       }
 
@@ -544,7 +549,12 @@ export default function OwnerListingsPage() {
       if (ownerPhone) {
         toast({ title: 'Telefon preluat', description: 'Numarul proprietarului a fost pregatit pentru apelul AI.' });
       } else {
-        toast({ title: 'Telefon negasit', description: 'Am deschis apelul AI, dar anuntul nu a returnat un numar de telefon.' });
+        toast({
+          title: 'Telefon negasit',
+          description:
+            olxPhoneMessage ||
+            'Am deschis apelul AI, dar anuntul nu a returnat un numar de telefon.',
+        });
       }
     } catch (error) {
       setSelectedAiListing(listing);

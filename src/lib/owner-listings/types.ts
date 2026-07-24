@@ -118,7 +118,7 @@ export type OlxPhoneQueueEntry = {
   link: string;
   status: OlxPhoneQueueStatus;
   attempts: number;
-  lane?: 'fresh' | 'backfill';
+  lane?: 'interactive' | 'fresh' | 'backfill';
   priority?: number;
   phone?: string;
   error?: string;

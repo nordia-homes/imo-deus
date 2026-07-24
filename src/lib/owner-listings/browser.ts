@@ -1,17 +1,105 @@
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type BrowserContextOptions,
+  type Page,
+} from 'playwright';
 
 let browserPromise: Promise<Browser> | null = null;
+let browserInstance: Browser | null = null;
+let browserUseCount = 0;
+let browserLeaseTail: Promise<void> = Promise.resolve();
 const remoteBrowserPromises = new Map<string, Promise<Browser>>();
+const MAX_BROWSER_USES = Math.max(1, Number(process.env.SCRAPER_BROWSER_MAX_USES || 6));
+const SCRAPER_ASSET_PATTERN = '**/*.{png,jpg,jpeg,gif,webp,avif,svg,woff,woff2,ttf,otf,mp4,webm}';
+
+export type ScraperPageOptions = {
+  storageState?: BrowserContextOptions['storageState'];
+  blockAssets?: boolean;
+};
+
+export function isBrowserLifecycleError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return /target (?:page|context|browser).*closed|browser.*(?:closed|disconnected)|connection closed|browser process|process exited|has been closed|crash|econnreset|epipe/i.test(
+    message
+  );
+}
+
+async function disposeLocalBrowser() {
+  const browser = browserInstance;
+  browserInstance = null;
+  browserPromise = null;
+  browserUseCount = 0;
+
+  if (browser?.isConnected()) {
+    await browser.close().catch(() => undefined);
+  }
+}
+
+async function withBrowserLease<T>(handler: () => Promise<T>) {
+  const previousLease = browserLeaseTail;
+  let releaseLease: () => void = () => undefined;
+  browserLeaseTail = new Promise<void>((resolve) => {
+    releaseLease = resolve;
+  });
+
+  await previousLease.catch(() => undefined);
+  try {
+    return await handler();
+  } finally {
+    releaseLease();
+  }
+}
 
 async function getBrowser() {
-  if (!browserPromise) {
-    browserPromise = chromium.launch({
-      headless: true,
-      args: ['--disable-dev-shm-usage', '--no-sandbox'],
-    });
+  if (browserInstance?.isConnected()) {
+    return browserInstance;
   }
 
-  return browserPromise;
+  if (browserPromise) {
+    try {
+      const existingBrowser = await browserPromise;
+      if (existingBrowser.isConnected()) {
+        browserInstance = existingBrowser;
+        return existingBrowser;
+      }
+    } catch {
+      // The rejected launch must not poison every subsequent request.
+    }
+    browserPromise = null;
+    browserInstance = null;
+  }
+
+  const launchPromise = chromium.launch({
+      headless: true,
+      args: [
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-background-networking',
+      ],
+    })
+    .then((browser) => {
+      browserInstance = browser;
+      browser.on('disconnected', () => {
+        if (browserInstance === browser) {
+          browserInstance = null;
+          browserPromise = null;
+          browserUseCount = 0;
+        }
+      });
+      return browser;
+    })
+    .catch((error) => {
+      browserInstance = null;
+      browserPromise = null;
+      throw error;
+    });
+
+  browserPromise = launchPromise;
+  return launchPromise;
 }
 
 async function getRemoteBrowser(cdpUrl: string) {
@@ -20,35 +108,90 @@ async function getRemoteBrowser(cdpUrl: string) {
     throw new Error('Missing CDP browser URL');
   }
 
-  let remoteBrowserPromise = remoteBrowserPromises.get(normalizedUrl);
-  if (!remoteBrowserPromise) {
-    remoteBrowserPromise = chromium.connectOverCDP(normalizedUrl);
-    remoteBrowserPromises.set(normalizedUrl, remoteBrowserPromise);
+  const existingPromise = remoteBrowserPromises.get(normalizedUrl);
+  if (existingPromise) {
+    try {
+      const existingBrowser = await existingPromise;
+      if (existingBrowser.isConnected()) {
+        return existingBrowser;
+      }
+    } catch {
+      // Reconnect below.
+    }
+    remoteBrowserPromises.delete(normalizedUrl);
   }
 
+  const remoteBrowserPromise = chromium.connectOverCDP(normalizedUrl)
+    .then((browser) => {
+      browser.on('disconnected', () => {
+        if (remoteBrowserPromises.get(normalizedUrl) === remoteBrowserPromise) {
+          remoteBrowserPromises.delete(normalizedUrl);
+        }
+      });
+      return browser;
+    })
+    .catch((error) => {
+      remoteBrowserPromises.delete(normalizedUrl);
+      throw error;
+    });
+  remoteBrowserPromises.set(normalizedUrl, remoteBrowserPromise);
   return remoteBrowserPromise;
 }
 
-export async function withScraperPage<T>(handler: (page: Page, context: BrowserContext) => Promise<T>) {
-  const browser = await getBrowser();
+function buildContextOptions(options: ScraperPageOptions): BrowserContextOptions {
   const storageStatePath = process.env.OLX_STORAGE_STATE_PATH;
-  const context = await browser.newContext({
+  return {
     locale: 'ro-RO',
     timezoneId: 'Europe/Bucharest',
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     viewport: { width: 1440, height: 2200 },
-    ...(storageStatePath ? { storageState: storageStatePath } : {}),
+    ...(options.storageState
+      ? { storageState: options.storageState }
+      : storageStatePath
+        ? { storageState: storageStatePath }
+        : {}),
+  };
+}
+
+export async function withScraperPage<T>(
+  handler: (page: Page, context: BrowserContext) => Promise<T>,
+  options: ScraperPageOptions = {}
+) {
+  return withBrowserLease(async () => {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      if (browserUseCount >= MAX_BROWSER_USES) {
+        await disposeLocalBrowser();
+      }
+
+      let context: BrowserContext | null = null;
+      try {
+        const browser = await getBrowser();
+        context = await browser.newContext(buildContextOptions(options));
+        browserUseCount += 1;
+
+        if (options.blockAssets !== false) {
+          await context.route(SCRAPER_ASSET_PATTERN, (route) => route.abort());
+        }
+
+        const page = await context.newPage();
+        return await handler(page, context);
+      } catch (error) {
+        lastError = error;
+        if (attempt === 2 || !isBrowserLifecycleError(error)) {
+          throw error;
+        }
+
+        await disposeLocalBrowser();
+      } finally {
+        await context?.close().catch(() => undefined);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Browserul de scraping nu este disponibil.');
   });
-
-  await context.route('**/*.{png,jpg,jpeg,gif,webp,avif,svg,woff,woff2,ttf,otf,mp4,webm}', (route) => route.abort());
-  const page = await context.newPage();
-
-  try {
-    return await handler(page, context);
-  } finally {
-    await context.close();
-  }
 }
 
 export async function withRemoteBrowserPage<T>(
@@ -94,6 +237,7 @@ export type ScraperResponse = {
 
 export type FetchScraperResponseOptions = {
   acceptHttpErrors?: boolean;
+  maxAttempts?: number;
 };
 
 export async function fetchScraperResponse(
@@ -102,8 +246,9 @@ export async function fetchScraperResponse(
   options: FetchScraperResponseOptions = {}
 ): Promise<ScraperResponse> {
   let lastError: unknown;
+  const maxAttempts = Math.max(1, Math.min(options.maxAttempts ?? 3, 3));
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -130,7 +275,7 @@ export async function fetchScraperResponse(
       const retryable = response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500;
       error.retryable = retryable;
       error.status = response.status;
-      if (!retryable || attempt === 3) {
+      if (!retryable || attempt === maxAttempts) {
         throw error;
       }
 
@@ -138,7 +283,7 @@ export async function fetchScraperResponse(
       await response.body?.cancel().catch(() => undefined);
     } catch (error) {
       lastError = error;
-      if ((error as { retryable?: boolean })?.retryable === false || attempt === 3) {
+      if ((error as { retryable?: boolean })?.retryable === false || attempt === maxAttempts) {
         throw error;
       }
     } finally {
@@ -151,8 +296,12 @@ export async function fetchScraperResponse(
   throw lastError instanceof Error ? lastError : new Error(`Request failed for ${url}`);
 }
 
-export async function fetchScraperHtml(url: string, timeoutMs = 30000) {
-  return (await fetchScraperResponse(url, timeoutMs)).html;
+export async function fetchScraperHtml(
+  url: string,
+  timeoutMs = 30000,
+  options: FetchScraperResponseOptions = {}
+) {
+  return (await fetchScraperResponse(url, timeoutMs, options)).html;
 }
 
 export async function fetchScraperHtmlViaBrowser(

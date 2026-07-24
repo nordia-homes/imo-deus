@@ -21,9 +21,33 @@ const ROMANIAN_PHONE_WORD_DIGITS: Record<string, string> = {
   opt: '8',
   noua: '9',
 };
-const olxPhoneCache = new Map<string, string>();
+type OlxPhoneCacheEntry = {
+  phone: string;
+  expiresAt: number;
+};
+
+const olxPhoneCache = new Map<string, OlxPhoneCacheEntry>();
+const OLX_PHONE_CACHE_SUCCESS_MS = 30 * 60 * 1000;
+const OLX_PHONE_CACHE_MISS_MS = 15 * 1000;
 const MAX_OLX_LISTINGS_PER_VIRTUAL_PAGE = 60;
 const OLX_LIST_PAGE_TIMEOUT_MS = 15000;
+
+function readOlxPhoneCache(cacheKey: string) {
+  const cached = olxPhoneCache.get(cacheKey);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= Date.now()) {
+    olxPhoneCache.delete(cacheKey);
+    return undefined;
+  }
+  return cached.phone;
+}
+
+function writeOlxPhoneCache(cacheKey: string, phone: string) {
+  olxPhoneCache.set(cacheKey, {
+    phone,
+    expiresAt: Date.now() + (phone ? OLX_PHONE_CACHE_SUCCESS_MS : OLX_PHONE_CACHE_MISS_MS),
+  });
+}
 
 function normalizeComparableText(value: string) {
   return normalizeWhitespace(value)
@@ -546,7 +570,7 @@ async function fetchOlxPhoneByAdId(adId: string, frictionToken?: string) {
   }
 
   const cacheKey = frictionToken ? `${normalizedAdId}:${frictionToken}` : normalizedAdId;
-  const cached = olxPhoneCache.get(cacheKey);
+  const cached = readOlxPhoneCache(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
@@ -567,13 +591,13 @@ async function fetchOlxPhoneByAdId(adId: string, frictionToken?: string) {
   }).catch(() => null);
 
   if (!response?.ok) {
-    olxPhoneCache.set(cacheKey, '');
+    writeOlxPhoneCache(cacheKey, '');
     return '';
   }
 
   const text = await response.text().catch(() => '');
   const phone = extractOlxPhoneFromLimitedPhonesPayload(text);
-  olxPhoneCache.set(cacheKey, phone);
+  writeOlxPhoneCache(cacheKey, phone);
   return phone;
 }
 
@@ -600,7 +624,7 @@ async function fetchOlxPhoneViaRemoteBrowser(url: string, adId: string) {
   }
 
   const cacheKey = `remote:${normalizedAdId}`;
-  const cached = olxPhoneCache.get(cacheKey);
+  const cached = readOlxPhoneCache(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
@@ -635,7 +659,7 @@ async function fetchOlxPhoneViaRemoteBrowser(url: string, adId: string) {
     return extractOlxPhoneFromLimitedPhonesPayload(payload.text);
   }).catch(() => '');
 
-  olxPhoneCache.set(cacheKey, phone);
+  writeOlxPhoneCache(cacheKey, phone);
   return phone;
 }
 
@@ -1093,7 +1117,7 @@ async function extractOlxPhoneFromDom(url: string) {
   }).catch(() => '');
 }
 
-async function resolveOlxPhone(url: string, html = '') {
+async function resolveOlxPhone(url: string, html = '', options: { allowLocalBrowser?: boolean } = {}) {
   const adId = extractOlxAdId(url) || extractOlxAdId(html);
   const frictionToken = html ? extractOlxFrictionTokenFromHtml(html) : '';
   const apiPhone = adId ? await fetchOlxPhoneByAdId(adId, frictionToken).catch(() => '') : '';
@@ -1111,12 +1135,16 @@ async function resolveOlxPhone(url: string, html = '') {
     return htmlPhone;
   }
 
+  if (options.allowLocalBrowser === false) {
+    return '';
+  }
+
   return extractOlxPhoneFromDom(url).catch(() => '');
 }
 
-export async function scrapeOlxPhoneNumber(url: string) {
-  const html = await fetchScraperHtml(url, 30000).catch(() => '');
-  return resolveOlxPhone(url, html).catch(() => '');
+export async function scrapeOlxPhoneNumber(url: string, options: { allowLocalBrowser?: boolean } = {}) {
+  const html = await fetchScraperHtml(url, 12000, { maxAttempts: 1 }).catch(() => '');
+  return resolveOlxPhone(url, html, options).catch(() => '');
 }
 
 export async function scrapeOlxListingsPage(

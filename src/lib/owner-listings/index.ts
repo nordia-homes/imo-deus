@@ -2,7 +2,6 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { upsertOwnerListingEnrichmentQueueEntries } from '@/lib/owner-listings/enrichment-queue';
 import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
-import { upsertOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
 import { getOwnerListingScope } from '@/lib/owner-listings/scope';
 import { scrapeImoradar24ListingDetail, scrapeImoradar24Listings, scrapeImoradar24ListingsPage } from '@/lib/owner-listings/sources/imoradar24';
 import { scrapeOlxListingDetail, scrapeOlxListings, scrapeOlxListingsPage } from '@/lib/owner-listings/sources/olx';
@@ -220,7 +219,6 @@ async function storeOwnerListingsBatch(
     listingsToStore.map(async (entry) => {
       const [canonical] = await Promise.all([
         registerOwnerListingCanonical(entry.docRef.id, entry.listing),
-        upsertOlxPhoneQueueEntry(entry.docRef.id, entry.listing),
         upsertOwnerListingEnrichmentQueueEntries(entry.docRef.id, entry.listing),
       ]);
       return canonical;

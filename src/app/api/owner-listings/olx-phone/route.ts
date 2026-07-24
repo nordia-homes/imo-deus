@@ -20,7 +20,13 @@ function formatError(error: unknown) {
     return { status: (error as { status: number }).status, message: error instanceof Error ? error.message : 'Cererea a esuat.' };
   }
 
-  return { status: 500, message: error instanceof Error ? error.message : 'Nu am putut prelua telefonul OLX.' };
+  console.error('OLX phone endpoint failed.', {
+    errorType: error instanceof Error ? error.name : typeof error,
+  });
+  return {
+    status: 500,
+    message: 'Serviciul de extragere OLX este temporar indisponibil. Te rugam sa incerci din nou.',
+  };
 }
 
 export async function POST(request: NextRequest) {

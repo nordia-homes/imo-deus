@@ -431,8 +431,8 @@ export const ownerListingsOlxPhoneSync = onSchedule(
     const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
     const cronSecret = ownerListingsCronSecret.value();
     const payload = await postOwnerListingsEndpoint(appBaseUrl, cronSecret, '/api/owner-listings/olx-phone-drain', {
-      limit: 6,
-      concurrency: 2,
+      limit: 4,
+      concurrency: 1,
       maxRuntimeMs: 480000,
     });
     logger.info('Owner listings OLX phone tick completed.', { payload });
@@ -457,7 +457,11 @@ export const ownerListingsHealthMonitor = onSchedule(
     );
     const [enrichmentSnapshot, phoneSnapshot, failedFrontierSnapshot] = await Promise.all([
       db.collection('ownerListingEnrichmentQueue').where('status', 'in', ['pending', 'retry']).count().get(),
-      db.collection('ownerListingOlxPhoneQueue').where('status', 'in', ['pending', 'retry']).count().get(),
+      db.collection('ownerListingOlxPhoneQueue')
+        .where('lane', '==', 'interactive')
+        .where('status', 'in', ['pending', 'retry'])
+        .count()
+        .get(),
       db.collection('ownerListingScrapeFrontier').where('status', '==', 'failed').count().get(),
     ]);
 
