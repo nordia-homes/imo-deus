@@ -73,6 +73,7 @@ async function getBrowser() {
 
   const launchPromise = chromium.launch({
       headless: true,
+      channel: 'chromium',
       args: [
         '--disable-dev-shm-usage',
         '--no-sandbox',

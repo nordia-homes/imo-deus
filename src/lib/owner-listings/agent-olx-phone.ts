@@ -381,7 +381,7 @@ export async function scrapeOlxPhoneForAgent(input: AgentOlxPhoneInput) {
     console.warn('OLX phone browser attempt failed.', {
       stage: safeFailure.stage,
       agencyId: input.agencyId,
-      errorMessage: error instanceof Error ? error.message.slice(0, 1600) : String(error || '').slice(0, 1600),
+      errorMessage: error instanceof Error ? error.message.slice(0, 6000) : String(error || '').slice(0, 6000),
       listingUrlHost: (() => {
         try {
           return new URL(input.url).host;
