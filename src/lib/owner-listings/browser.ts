@@ -79,6 +79,8 @@ async function getBrowser() {
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-background-networking',
+        '--no-zygote',
+        '--single-process',
       ],
     })
     .then((browser) => {
