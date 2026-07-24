@@ -50,6 +50,41 @@
       ]
     },
     {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "isCanonical", "order": "ASCENDING" },
+        { "fieldPath": "postedAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "isCanonical", "order": "ASCENDING" },
+        { "fieldPath": "originSourceLabel", "order": "ASCENDING" },
+        { "fieldPath": "postedAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "isCanonical", "order": "ASCENDING" },
+        { "fieldPath": "source", "order": "ASCENDING" },
+        { "fieldPath": "postedAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "ownerListingScrapeFrontier",
       "queryScope": "COLLECTION",
       "fields": [

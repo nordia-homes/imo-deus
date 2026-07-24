@@ -389,7 +389,7 @@ export default function FavoriteOwnerListingsPage() {
         subtitle="Lista de lucru a agentilor pentru apeluri manuale, cu status de colaborare, comision si notite direct sub fiecare card."
         currentScopeLabel={currentScope?.displayName}
         activeTab="favorite"
-        favoriteCount={activeFavorites.length}
+        favoriteCount={favoriteEntries.length}
         adminClassic={isClassicTheme}
       />
 

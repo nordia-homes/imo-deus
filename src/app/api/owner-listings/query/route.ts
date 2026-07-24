@@ -9,7 +9,7 @@ import type { OwnerListingSummary } from '@/lib/owner-listings/types';
 
 export const runtime = 'nodejs';
 
-type CursorPayload = { firstDiscoveredAt: number; id: string };
+type CursorPayload = { postedAt: number; id: string };
 type SearchCorpusListing = OwnerListingSummary & { id: string };
 type SearchCorpusCacheEntry = {
   expiresAt: number;
@@ -38,6 +38,7 @@ const SEARCH_CORPUS_FIELDS = [
   'ownerPhone',
   'area',
   'description',
+  'postedAt',
   'firstDiscoveredAt',
 ] as const;
 const searchCorpusCache = new Map<string, SearchCorpusCacheEntry>();
@@ -50,8 +51,8 @@ function decodeCursor(value: string | null): CursorPayload | null {
   if (!value) return null;
   try {
     const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as Partial<CursorPayload>;
-    return typeof parsed.firstDiscoveredAt === 'number' && typeof parsed.id === 'string'
-      ? { firstDiscoveredAt: parsed.firstDiscoveredAt, id: parsed.id }
+    return typeof parsed.postedAt === 'number' && typeof parsed.id === 'string'
+      ? { postedAt: parsed.postedAt, id: parsed.id }
       : null;
   } catch {
     return null;
@@ -96,9 +97,8 @@ async function loadSearchCorpus(baseQuery: FirebaseFirestore.Query) {
       id: document.id,
     }))
     .sort((left, right) => {
-      const firstDiscoveredAtDifference =
-        Number(right.firstDiscoveredAt || 0) - Number(left.firstDiscoveredAt || 0);
-      if (firstDiscoveredAtDifference !== 0) return firstDiscoveredAtDifference;
+      const postedAtDifference = Number(right.postedAt || 0) - Number(left.postedAt || 0);
+      if (postedAtDifference !== 0) return postedAtDifference;
       if (left.id === right.id) return 0;
       return left.id > right.id ? -1 : 1;
     });
@@ -148,14 +148,14 @@ function findPageStartIndex(matches: SearchCorpusListing[], cursor: CursorPayloa
 
   const exactIndex = matches.findIndex(
     (listing) => listing.id === cursor.id
-      && Number(listing.firstDiscoveredAt || 0) === cursor.firstDiscoveredAt,
+      && Number(listing.postedAt || 0) === cursor.postedAt,
   );
   if (exactIndex >= 0) return exactIndex + 1;
 
   const nextIndex = matches.findIndex((listing) => {
-    const firstDiscoveredAt = Number(listing.firstDiscoveredAt || 0);
-    return firstDiscoveredAt < cursor.firstDiscoveredAt
-      || (firstDiscoveredAt === cursor.firstDiscoveredAt && listing.id < cursor.id);
+    const postedAt = Number(listing.postedAt || 0);
+    return postedAt < cursor.postedAt
+      || (postedAt === cursor.postedAt && listing.id < cursor.id);
   });
   return nextIndex >= 0 ? nextIndex : matches.length;
 }
@@ -188,7 +188,7 @@ async function getRefinedListingPage(input: {
     listings,
     nextCursor: hasMore && lastPageEntry
       ? encodeCursor({
-          firstDiscoveredAt: Number(lastPageEntry.firstDiscoveredAt || 0),
+          postedAt: Number(lastPageEntry.postedAt || 0),
           id: lastPageEntry.id,
         })
       : null,
@@ -235,11 +235,11 @@ export async function GET(request: NextRequest) {
     }
 
     let query = baseQuery
-        .orderBy('firstDiscoveredAt', 'desc')
+        .orderBy('postedAt', 'desc')
         .orderBy(FieldPath.documentId(), 'desc');
 
     if (cursor) {
-      query = query.startAfter(cursor.firstDiscoveredAt, cursor.id);
+      query = query.startAfter(cursor.postedAt, cursor.id);
     }
 
     const snapshot = await query.limit(pageSize + 1).get();
@@ -256,7 +256,7 @@ export async function GET(request: NextRequest) {
       listings,
       nextCursor: hasMore && lastDocument
         ? encodeCursor({
-            firstDiscoveredAt: Number(lastDocument.get('firstDiscoveredAt') || 0),
+            postedAt: Number(lastDocument.get('postedAt') || 0),
             id: lastDocument.id,
           })
         : null,

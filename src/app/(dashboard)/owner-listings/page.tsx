@@ -64,6 +64,7 @@ export default function OwnerListingsPage() {
   const [hasMoreListings, setHasMoreListings] = useState(false);
   const [totalListingCount, setTotalListingCount] = useState<number | null>(null);
   const [totalMatchingCount, setTotalMatchingCount] = useState<number | null>(null);
+  const [availableFavoriteCount, setAvailableFavoriteCount] = useState<number | null>(null);
   const [listingsError, setListingsError] = useState<string | null>(null);
   const previousPageRef = useRef(currentPage);
   const firestore = useFirestore();
@@ -208,6 +209,56 @@ export default function OwnerListingsPage() {
   const { data: favorites } = useCollection<OwnerListingFavorite>(favoritesQuery);
   const { data: aiCalls } = useCollection<AiOutreachCall>(aiCallsQuery);
 
+  const activeFavoriteIdsKey = useMemo(
+    () => (favorites ?? [])
+      .filter((favorite) => favorite.isFavoriteActive !== false)
+      .map((favorite) => favorite.ownerListingId || favorite.id)
+      .filter(Boolean)
+      .sort()
+      .join('|'),
+    [favorites],
+  );
+
+  useEffect(() => {
+    if (!user || !agencyId) {
+      setAvailableFavoriteCount(null);
+      return;
+    }
+
+    if (!activeFavoriteIdsKey) {
+      setAvailableFavoriteCount(0);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const params = new URLSearchParams();
+        if (currentScope?.key) params.set('scopeKey', currentScope.key);
+        const response = await fetch(`/api/owner-listings/favorites?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        const payload = await response.json().catch(() => ({})) as {
+          displayableFavoriteCount?: number;
+        };
+        if (!response.ok) return;
+        setAvailableFavoriteCount(
+          typeof payload.displayableFavoriteCount === 'number'
+            ? payload.displayableFavoriteCount
+            : null,
+        );
+      } catch {
+        if (!controller.signal.aborted) setAvailableFavoriteCount(null);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [activeFavoriteIdsKey, agencyId, currentScope?.key, user]);
+
   useEffect(() => {
     if (hasSelectedScopeManually) return;
     if (agencyDefaultScope?.key) {
@@ -240,9 +291,10 @@ export default function OwnerListingsPage() {
   }, [aiCalls, localAiCalls]);
 
   const validFavoriteCount = useMemo(() => {
+    if (typeof availableFavoriteCount === 'number') return availableFavoriteCount;
     if (!Array.isArray(favorites)) return 0;
     return favorites.filter((favorite) => favorite.isFavoriteActive !== false).length;
-  }, [favorites]);
+  }, [availableFavoriteCount, favorites]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
@@ -263,13 +315,13 @@ export default function OwnerListingsPage() {
     }
 
     result.sort((left, right) => {
-      const leftFirstSeen = left.firstDiscoveredAt || 0;
-      const rightFirstSeen = right.firstDiscoveredAt || 0;
-      if (rightFirstSeen !== leftFirstSeen) {
-        return rightFirstSeen - leftFirstSeen;
+      const leftPostedAt = left.postedAt || 0;
+      const rightPostedAt = right.postedAt || 0;
+      if (rightPostedAt !== leftPostedAt) {
+        return rightPostedAt - leftPostedAt;
       }
 
-      return (right.postedAt || 0) - (left.postedAt || 0);
+      return (right.firstDiscoveredAt || 0) - (left.firstDiscoveredAt || 0);
     });
 
     return result;

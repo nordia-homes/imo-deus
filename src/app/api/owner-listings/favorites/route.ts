@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       listings,
       activeFavoriteCount: activeFavoriteIds.length,
+      displayableFavoriteCount: listings.length,
       missingListingsCount,
       recoveredListingsCount,
     });
