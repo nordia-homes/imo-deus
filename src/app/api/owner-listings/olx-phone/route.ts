@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 
 const requestSchema = z.object({
   url: z.string().url('URL-ul OLX este invalid.'),
-  listingId: z.string().min(1).optional(),
+  listingId: z.string().min(1),
   title: z.string().optional(),
 });
 
@@ -33,12 +33,27 @@ export async function POST(request: NextRequest) {
   try {
     const context = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = requestSchema.parse(await request.json().catch(() => ({})));
+    const prospectingSnapshot = await context.adminDb
+      .collection('agencies')
+      .doc(context.agencyId)
+      .collection('ownerListingFavorites')
+      .doc(body.listingId)
+      .get();
+    if (!prospectingSnapshot.exists || prospectingSnapshot.data()?.isFavoriteActive === false) {
+      return NextResponse.json(
+        {
+          phone: '',
+          message: 'Adauga anuntul in Prospectare pentru preluarea numarului OLX.',
+        },
+        { status: 409 }
+      );
+    }
     const result = await resolveOlxPhoneInternally({
       adminDb: context.adminDb,
       agencyId: context.agencyId,
       uid: context.uid,
       url: body.url,
-      listingId: body.listingId || null,
+      listingId: body.listingId,
       title: body.title || null,
     });
 

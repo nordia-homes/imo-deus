@@ -5,6 +5,7 @@ import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { AiOutreachCallModal } from '@/components/ai-outreach/ai-outreach-call-modal';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
+import { OlxConnectionBanner } from '@/components/owner-listings/olx-connection-banner';
 import type { OwnerListing, OwnerListingFavorite, PropertyTypeFilter, SourceFilterValue, TransactionTypeFilter } from '@/components/owner-listings/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,7 @@ export default function OwnerListingsPage() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
+  const [isUpdatingProspecting, setIsUpdatingProspecting] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const pageTopRef = useRef<HTMLDivElement | null>(null);
   const [listings, setListings] = useState<OwnerListing[]>([]);
@@ -442,6 +444,19 @@ export default function OwnerListingsPage() {
       return;
     }
 
+    const existingFavorite = favoritesByListingId.get(listing.id);
+    const hasOlxSource =
+      listing.source === 'olx' ||
+      /^OLX$/i.test(String(listing.originSourceLabel || '').trim()) ||
+      /https:\/\/(?:www\.)?olx\.ro\//i.test(String(listing.originSourceUrl || ''));
+    if (hasOlxSource && (!existingFavorite || existingFavorite.isFavoriteActive === false)) {
+      toast({
+        title: 'Adauga anuntul in Prospectare',
+        description: 'Numerele OLX sunt preluate numai pentru anunturile selectate pentru prospectare.',
+      });
+      return;
+    }
+
     setIsLoadingAiDetails(listing.id);
 
     try {
@@ -568,79 +583,56 @@ export default function OwnerListingsPage() {
     }
   };
 
-  const handleToggleFavorite = (listing: OwnerListing) => {
+  const handleToggleFavorite = async (listing: OwnerListing) => {
     if (!agencyId) {
       toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
       return;
     }
 
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
     const existingFavorite = favoritesByListingId.get(listing.id);
-
-    if (existingFavorite?.isFavoriteActive !== false && existingFavorite) {
-      updateDocumentNonBlocking(favoriteRef, {
-        isFavoriteActive: false,
-        wasRemovedFromFavorites: true,
-        removedAt: new Date().toISOString(),
-        removedBy: user?.uid ?? null,
-        removedByName: currentAgentName,
-        updatedAt: new Date().toISOString(),
-        updatedBy: user?.uid ?? null,
+    const isActive = Boolean(existingFavorite && existingFavorite.isFavoriteActive !== false);
+    if (!user) return;
+    setIsUpdatingProspecting(listing.id);
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/prospecting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          action: isActive ? 'remove' : 'add',
+        }),
       });
-      toast({ title: 'Scos din Favorite', description: 'Anuntul a fost scos, dar istoricul si statusul au fost pastrate.' });
-      return;
-    }
-
-    const timestamp = new Date().toISOString();
-    if (existingFavorite) {
-      updateDocumentNonBlocking(favoriteRef, {
-        isFavoriteActive: true,
-        wasRemovedFromFavorites: existingFavorite.wasRemovedFromFavorites ?? true,
-        removedAt: null,
-        removedBy: null,
-        removedByName: null,
-        updatedAt: timestamp,
-        updatedBy: user?.uid ?? null,
+      const payload = await response.json().catch(() => ({})) as {
+        message?: string;
+        phoneExtractionMessage?: string;
+      };
+      if (!response.ok) throw new Error(payload.message || 'Nu am putut actualiza Prospectarea.');
+      toast(
+        isActive
+          ? {
+              title: 'Scos din Prospectare',
+              description: 'Istoricul si statusurile anuntului au fost pastrate.',
+            }
+          : {
+              title: existingFavorite ? 'Readaugat in Prospectare' : 'Adaugat in Prospectare',
+              description:
+                payload.phoneExtractionMessage ||
+                'Anuntul a fost adaugat in lista de prospectare.',
+            }
+      );
+    } catch (error) {
+      toast({
+        title: 'Actualizare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut actualiza Prospectarea.',
+        variant: 'destructive',
       });
-      toast({ title: 'Readaugat in Favorite', description: 'Anuntul a fost reactivat in Favorite cu istoricul anterior pastrat.' });
-      return;
+    } finally {
+      setIsUpdatingProspecting(null);
     }
-
-    setDocumentNonBlocking(
-      favoriteRef,
-      {
-        ownerListingId: listing.id,
-        isFavoriteActive: true,
-        wasRemovedFromFavorites: false,
-        removedAt: null,
-        removedBy: null,
-        removedByName: null,
-        reservedByAgentId: user?.uid ?? null,
-        reservedByAgentName: currentAgentName,
-        reservedAt: timestamp,
-        calledByAgentId: null,
-        calledByAgentName: null,
-        calledAt: null,
-        takenByAgentId: null,
-        takenByAgentName: null,
-        takenAt: null,
-        contactOutcome: null,
-        contactOutcomeAt: null,
-        contactOutcomeByAgentId: null,
-        contactOutcomeByAgentName: null,
-        collaborationStatus: null,
-        commissionValue: '',
-        propertyAddress: '',
-        notes: '',
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        createdBy: user?.uid ?? null,
-        updatedBy: user?.uid ?? null,
-      },
-      {},
-    );
-
-    toast({ title: 'Adaugat in Favorite', description: 'Anuntul este pregatit pentru urmarire in pagina Favorite.' });
   };
 
   const upsertFavoriteBase = (listing: OwnerListing) => {
@@ -939,6 +931,7 @@ export default function OwnerListingsPage() {
         listingCount={null}
         adminClassic={isClassicTheme}
       />
+      <OlxConnectionBanner adminClassic={isClassicTheme} />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, index) => (
             <div key={index} className="space-y-3 p-4">
@@ -963,6 +956,7 @@ export default function OwnerListingsPage() {
         listingCount={displayedListingCount}
         adminClassic={isClassicTheme}
       />
+      <OlxConnectionBanner adminClassic={isClassicTheme} />
 
       <div className="sticky top-20 z-20 hidden md:block">
         <div
@@ -1163,10 +1157,12 @@ export default function OwnerListingsPage() {
         {filteredListings.length > 0 ? (
           paginatedListings.map((listing, index) => {
             const favorite = favoritesByListingId.get(listing.id);
+            const isProspecting = favorite?.isFavoriteActive !== false && Boolean(favorite);
             const latestAiCall = aiCallsByListingId.get(listing.id);
             const listingWithAi = latestAiCall
               ? {
                   ...listing,
+                  ownerPhone: favorite?.ownerPhone || listing.ownerPhone,
                   latestAiCallId: latestAiCall.id,
                   aiOutreachStatus: latestAiCall.status,
                   aiOutreachOutcome: latestAiCall.outcome,
@@ -1175,6 +1171,7 @@ export default function OwnerListingsPage() {
                 }
               : {
                   ...listing,
+                  ownerPhone: favorite?.ownerPhone || listing.ownerPhone,
                   latestAiCallId: undefined,
                   aiOutreachStatus: undefined,
                   aiOutreachOutcome: undefined,
@@ -1191,14 +1188,16 @@ export default function OwnerListingsPage() {
                 currentTimestamp={currentTimestamp}
                 onImport={handleImport}
                 onToggleFavorite={handleToggleFavorite}
-                onSetReserved={handleSetReserved}
-                onSetTaken={handleSetTaken}
-                onSetOutcome={handleSetOutcome}
-                isFavorite={favorite?.isFavoriteActive !== false && Boolean(favorite)}
+                onSetReserved={isProspecting ? handleSetReserved : undefined}
+                onSetTaken={isProspecting ? handleSetTaken : undefined}
+                onSetOutcome={isProspecting ? handleSetOutcome : undefined}
+                isFavorite={isProspecting}
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
-                isLoadingAiDetails={isLoadingAiDetails === listing.id}
+                isLoadingAiDetails={
+                  isLoadingAiDetails === listing.id || isUpdatingProspecting === listing.id
+                }
                 onAiBadgeClick={handleAiBadgeClick}
               />
             );

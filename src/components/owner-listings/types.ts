@@ -73,6 +73,24 @@ export type OwnerListingFavorite = {
   commissionValue?: string;
   propertyAddress?: string;
   notes?: string;
+  ownerPhone?: string;
+  phoneExtractionStatus?:
+    | 'available'
+    | 'awaiting_connection'
+    | 'queued'
+    | 'processing'
+    | 'retrying'
+    | 'unavailable'
+    | 'failed'
+    | 'not_required';
+  phoneExtractionMessage?: string | null;
+  phoneExtractionRequestedAt?: string | null;
+  phoneExtractionRequestedBy?: string | null;
+  phoneExtractionRequestedByName?: string | null;
+  phoneExtractionLastAttemptAt?: string | null;
+  phoneExtractionNextAttemptAt?: string | null;
+  phoneExtractionCompletedAt?: string | null;
+  phoneExtractionError?: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string | null;

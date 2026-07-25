@@ -1,7 +1,8 @@
 import type { DocumentData, Firestore } from 'firebase-admin/firestore';
 import { scrapeOlxPhoneForAgent } from '@/lib/owner-listings/agent-olx-phone';
 import { scrapeOlxPhoneNumber } from '@/lib/owner-listings/sources/olx';
-import { upsertRawOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
+import { upsertProspectingOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
+import { resolveOlxPhoneViaAgentCloud } from '@/lib/owner-listings/olx-cloud-phone';
 import {
   describeRemoteOlxPhoneStage,
   hasRemoteOlxPhoneBrowser,
@@ -20,6 +21,7 @@ type OlxPhoneResolverInput = {
 export type OlxPhoneResolutionSource =
   | 'cache'
   | 'agent-browser'
+  | 'agent-cloud-browser'
   | 'remote-browser'
   | 'internal-scraper'
   | 'queued';
@@ -120,16 +122,35 @@ async function getStoredOwnerPhone(input: OlxPhoneResolverInput) {
 async function persistResolvedPhone(input: OlxPhoneResolverInput, phone: string, source: OlxPhoneResolutionSource) {
   if (!input.listingId || !phone) return;
 
-  await input.adminDb.collection('ownerListings').doc(input.listingId).set(
-    {
-      ownerPhone: phone,
-      enrichmentStatus: 'partial',
-      phoneResolvedAt: new Date().toISOString(),
-      phoneResolvedBy: source,
-      updatedAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
+  const timestamp = new Date().toISOString();
+  await Promise.all([
+    input.adminDb.collection('ownerListings').doc(input.listingId).set(
+      {
+        ownerPhone: phone,
+        enrichmentStatus: 'partial',
+        phoneResolvedAt: timestamp,
+        phoneResolvedBy: source,
+        updatedAt: timestamp,
+      },
+      { merge: true }
+    ),
+    input.adminDb
+      .collection('agencies')
+      .doc(input.agencyId)
+      .collection('ownerListingFavorites')
+      .doc(input.listingId)
+      .set(
+        {
+          ownerPhone: phone,
+          phoneExtractionStatus: 'available',
+          phoneExtractionMessage: 'Numarul proprietarului a fost preluat.',
+          phoneExtractionCompletedAt: timestamp,
+          phoneExtractionError: null,
+          updatedAt: timestamp,
+        },
+        { merge: true }
+      ),
+  ]);
 }
 
 async function queueRetry(input: OlxPhoneResolverInput, message: string) {
@@ -137,8 +158,10 @@ async function queueRetry(input: OlxPhoneResolverInput, message: string) {
     return;
   }
 
-  await upsertRawOlxPhoneQueueEntry({
+  await upsertProspectingOlxPhoneQueueEntry({
     adminDb: input.adminDb,
+    agencyId: input.agencyId,
+    requestedByUid: input.uid,
     listingId: input.listingId,
     link: input.url,
     title: input.title || '',
@@ -165,6 +188,22 @@ async function resolveOlxPhoneOnce(input: OlxPhoneResolverInput): Promise<OlxPho
     };
   }
 
+  const cloudResult = await resolveOlxPhoneViaAgentCloud({
+    adminDb: input.adminDb,
+    agencyId: input.agencyId,
+    uid: input.uid,
+    url: input.url,
+  });
+  if (cloudResult.phone) {
+    await persistResolvedPhone(input, cloudResult.phone, 'agent-cloud-browser');
+    return {
+      phone: cloudResult.phone,
+      message: cloudResult.message,
+      source: 'agent-cloud-browser',
+      debug: { stage: cloudResult.stage },
+    };
+  }
+
   const remoteResult = await resolveOlxPhoneViaRemoteWorker(input.url);
   if (remoteResult.phone) {
     await persistResolvedPhone(input, remoteResult.phone, 'remote-browser');
@@ -177,7 +216,10 @@ async function resolveOlxPhoneOnce(input: OlxPhoneResolverInput): Promise<OlxPho
   }
 
   if (hasRemoteOlxPhoneBrowser() && process.env.K_SERVICE) {
-    const message = describeRemoteOlxPhoneStage(remoteResult.stage);
+    const message =
+      cloudResult.stage === 'not_connected' || cloudResult.stage === 'login_required'
+        ? cloudResult.message
+        : describeRemoteOlxPhoneStage(remoteResult.stage);
     await queueRetry(input, message);
     return {
       phone: '',

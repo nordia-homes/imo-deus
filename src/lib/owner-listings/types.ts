@@ -110,16 +110,27 @@ export type OwnerListingSourcePageResult = {
   parseFailures?: number;
   oldestPostedAt?: number;
 };
-export type OlxPhoneQueueStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed';
+export type OlxPhoneQueueStatus =
+  | 'pending'
+  | 'processing'
+  | 'done'
+  | 'retry'
+  | 'failed'
+  | 'cancelled';
 
 export type OlxPhoneQueueEntry = {
   listingId: string;
   source: 'olx';
   link: string;
+  title?: string;
   status: OlxPhoneQueueStatus;
   attempts: number;
-  lane?: 'interactive' | 'fresh' | 'backfill';
+  lane?: 'prospecting' | 'interactive' | 'fresh' | 'backfill';
   priority?: number;
+  agencyId?: string;
+  requestedByUid?: string;
+  requestedByName?: string;
+  trigger?: 'prospecting' | 'ai-call';
   phone?: string;
   error?: string;
   lastAttemptAt?: string;

@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type OwnerListingHeaderProps = {
   title: string;
   subtitle: string;
   currentScopeLabel?: string | null;
-  activeTab: 'listings' | 'favorite';
+  activeTab: 'listings' | 'prospecting';
   favoriteCount?: number;
   listingCount?: number | null;
   adminClassic?: boolean;
@@ -35,10 +35,10 @@ export function OwnerListingHeader({
       active: activeTab === 'listings',
     },
     {
-      href: '/owner-listings/favorite',
-      label: `Favorite (${favoriteCount})`,
-      icon: Heart,
-      active: activeTab === 'favorite',
+      href: '/owner-listings/prospecting',
+      label: `Prospectare (${favoriteCount})`,
+      icon: Target,
+      active: activeTab === 'prospecting',
     },
   ];
 

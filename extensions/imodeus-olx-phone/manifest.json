@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "ImoDeus OLX Prospecting",
+  "description": "Extrage numarul afisat de OLX in profilul cloud securizat al agentului.",
+  "version": "1.0.0",
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://olx.ro/*",
+        "https://*.olx.ro/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://olx.ro/*",
+    "https://*.olx.ro/*"
+  ]
+}

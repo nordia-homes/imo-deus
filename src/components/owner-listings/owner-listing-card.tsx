@@ -14,6 +14,7 @@ import {
   Clock,
   Home,
   Loader2,
+  Phone,
   Rocket,
   Ruler,
   UserCheck,
@@ -208,6 +209,47 @@ export function OwnerListingCard({
     return '';
   }, [activeWorkflowStatus, favoriteMeta]);
   const showRemovedFavoriteWarning = Boolean(favoriteMeta?.wasRemovedFromFavorites && !favoriteMeta?.isFavoriteActive);
+  const phoneExtractionMeta = (() => {
+    switch (favoriteMeta?.phoneExtractionStatus) {
+      case 'available':
+        return {
+          label: favoriteMeta.ownerPhone || listing.ownerPhone || 'Telefon disponibil',
+          className: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200',
+        };
+      case 'processing':
+        return {
+          label: 'Se preia telefonul OLX',
+          className: 'border-blue-400/30 bg-blue-500/15 text-blue-200',
+        };
+      case 'queued':
+        return {
+          label: 'Telefon OLX in asteptare',
+          className: 'border-blue-400/30 bg-blue-500/15 text-blue-200',
+        };
+      case 'awaiting_connection':
+        return {
+          label: 'Conecteaza contul OLX',
+          className: 'border-amber-300/30 bg-amber-400/15 text-amber-200',
+        };
+      case 'retrying':
+        return {
+          label: 'Telefonul va fi reincercat',
+          className: 'border-amber-300/30 bg-amber-400/15 text-amber-200',
+        };
+      case 'unavailable':
+        return {
+          label: 'Telefon indisponibil',
+          className: 'border-slate-300/20 bg-slate-400/10 text-slate-300',
+        };
+      case 'failed':
+        return {
+          label: 'Preluare telefon esuata',
+          className: 'border-rose-300/30 bg-rose-400/15 text-rose-200',
+        };
+      default:
+        return null;
+    }
+  })();
 
   const collaborationButtons =
     collaborationMode === 'hidden' ? null : (
@@ -334,7 +376,7 @@ export function OwnerListingCard({
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
             <button
               type="button"
-              title={isFavorite ? 'Scoate din Favorite' : 'Adauga in Favorite'}
+              title={isFavorite ? 'Scoate din Prospectare' : 'Adauga in Prospectare'}
               onClick={() => onToggleFavorite?.(listing)}
               className={cn(
                 'inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] transition-colors',
@@ -423,6 +465,23 @@ export function OwnerListingCard({
             </div>
           </div>
 
+          {phoneExtractionMeta ? (
+            <div
+              title={favoriteMeta?.phoneExtractionMessage || undefined}
+              className={cn(
+                'inline-flex w-fit max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-medium',
+                phoneExtractionMeta.className,
+              )}
+            >
+              {favoriteMeta?.phoneExtractionStatus === 'processing' ? (
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              ) : (
+                <Phone className="h-3.5 w-3.5 shrink-0" />
+              )}
+              <span className="truncate">{phoneExtractionMeta.label}</span>
+            </div>
+          ) : null}
+
           {canShowWorkflowActions ? (
             <div className={cn("flex items-center gap-2 border-t pt-3", adminClassic ? "border-white/12" : "border-white/10")}>
               <Button
@@ -495,7 +554,7 @@ export function OwnerListingCard({
 
           {showRemovedFavoriteWarning ? (
             <p className="text-[12px] font-medium text-rose-400">
-              Atentie: aceasta proprietate a fost deja in Favorite si a fost scoasa.
+              Atentie: aceasta proprietate a fost deja in Prospectare si a fost scoasa.
             </p>
           ) : null}
         </div>

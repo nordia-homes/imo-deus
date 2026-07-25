@@ -458,7 +458,7 @@ export const ownerListingsHealthMonitor = onSchedule(
     const [enrichmentSnapshot, phoneSnapshot, failedFrontierSnapshot] = await Promise.all([
       db.collection('ownerListingEnrichmentQueue').where('status', 'in', ['pending', 'retry']).count().get(),
       db.collection('ownerListingOlxPhoneQueue')
-        .where('lane', '==', 'interactive')
+        .where('lane', '==', 'prospecting')
         .where('status', 'in', ['pending', 'retry'])
         .count()
         .get(),

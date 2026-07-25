@@ -6,6 +6,7 @@ import { collection, doc, query } from 'firebase/firestore';
 import { OwnerListingCard } from '@/components/owner-listings/owner-listing-card';
 import { OwnerListingFavoriteEditor } from '@/components/owner-listings/owner-listing-favorite-editor';
 import { OwnerListingHeader } from '@/components/owner-listings/owner-listing-header';
+import { OlxConnectionBanner } from '@/components/owner-listings/olx-connection-banner';
 import type { CollaborationStatus, OwnerListing, OwnerListingFavorite } from '@/components/owner-listings/types';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ export default function FavoriteOwnerListingsPage() {
   const [favoriteListingsError, setFavoriteListingsError] = useState<string | null>(null);
   const [missingFavoriteListingsCount, setMissingFavoriteListingsCount] = useState(0);
   const [favoriteReloadKey, setFavoriteReloadKey] = useState(0);
+  const [phoneRetryListingId, setPhoneRetryListingId] = useState<string | null>(null);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
@@ -101,7 +103,7 @@ export default function FavoriteOwnerListingsPage() {
           message?: string;
         };
         if (!response.ok) {
-          throw new Error(payload.message || 'Nu am putut incarca anunturile favorite.');
+          throw new Error(payload.message || 'Nu am putut incarca anunturile din Prospectare.');
         }
 
         setListings(Array.isArray(payload.listings) ? payload.listings : []);
@@ -113,7 +115,7 @@ export default function FavoriteOwnerListingsPage() {
         setListings([]);
         setMissingFavoriteListingsCount(0);
         setFavoriteListingsError(
-          error instanceof Error ? error.message : 'Nu am putut incarca anunturile favorite.',
+          error instanceof Error ? error.message : 'Nu am putut incarca anunturile din Prospectare.',
         );
       } finally {
         if (!controller.signal.aborted) setIsFavoriteListingsLoading(false);
@@ -184,24 +186,52 @@ export default function FavoriteOwnerListingsPage() {
     return true;
   };
 
+  const updateProspecting = async (listingId: string, action: 'remove' | 'retry') => {
+    if (!user) return;
+    if (action === 'retry') setPhoneRetryListingId(listingId);
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/prospecting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId, action }),
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        message?: string;
+        phoneExtractionMessage?: string;
+      };
+      if (!response.ok) throw new Error(payload.message || 'Nu am putut actualiza Prospectarea.');
+      if (action === 'retry') {
+        toast({
+          title: 'Preluare relansata',
+          description: payload.phoneExtractionMessage || 'Telefonul OLX va fi reincercat automat.',
+        });
+      } else {
+        toast({
+          title: 'Scos din Prospectare',
+          description: 'Istoricul si statusurile anuntului au fost pastrate.',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Actualizare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut actualiza Prospectarea.',
+        variant: 'destructive',
+      });
+    } finally {
+      if (action === 'retry') setPhoneRetryListingId(null);
+    }
+  };
+
   const handleToggleFavorite = (listing: OwnerListing) => {
     if (!agencyId) {
       toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
       return;
     }
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
-    const timestamp = new Date().toISOString();
-    updateDocumentNonBlocking(favoriteRef, {
-      isFavoriteActive: false,
-      wasRemovedFromFavorites: true,
-      removedAt: timestamp,
-      removedBy: user?.uid ?? null,
-      removedByName: currentAgentName,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({ title: 'Scos din Favorite', description: 'Anuntul a fost scos, dar istoricul si statusul au fost pastrate.' });
+    void updateProspecting(listing.id, 'remove');
   };
 
   const handleSetCollaborationStatus = (listing: OwnerListing, status: CollaborationStatus | null) => {
@@ -363,13 +393,14 @@ export default function FavoriteOwnerListingsPage() {
     return (
       <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
         <OwnerListingHeader
-          title="Favorite"
-          subtitle="Pregatim lista agentului cu anunturile salvate pentru contact manual."
+          title="Prospectare"
+          subtitle="Pregatim proprietatile selectate si statusurile numerelor de telefon."
           currentScopeLabel={currentScope?.displayName}
-          activeTab="favorite"
+          activeTab="prospecting"
           favoriteCount={activeFavorites.length}
           adminClassic={isClassicTheme}
         />
+        <OlxConnectionBanner adminClassic={isClassicTheme} />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="space-y-3">
@@ -385,20 +416,21 @@ export default function FavoriteOwnerListingsPage() {
   return (
     <div className="space-y-6 px-3 pb-6 pt-2 sm:px-4 sm:pt-3 xl:px-5">
       <OwnerListingHeader
-        title="Favorite"
-        subtitle="Lista de lucru a agentilor pentru apeluri manuale, cu status de colaborare, comision si notite direct sub fiecare card."
+        title="Prospectare"
+        subtitle="Proprietatile selectate de agent, cu preluarea automata a numerelor OLX, status de colaborare, comision si notite."
         currentScopeLabel={currentScope?.displayName}
-        activeTab="favorite"
+        activeTab="prospecting"
         favoriteCount={favoriteEntries.length}
         adminClassic={isClassicTheme}
       />
+      <OlxConnectionBanner adminClassic={isClassicTheme} />
 
       {favoriteEntries.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {favoriteEntries.map(({ favorite, listing }) => (
             <div key={favorite.id} className="space-y-3">
               <OwnerListingCard
-                listing={listing}
+                listing={{ ...listing, ownerPhone: favorite.ownerPhone || listing.ownerPhone }}
                 adminClassic={isClassicTheme}
                 favoriteMeta={favorite}
                 currentAgentId={user?.uid ?? null}
@@ -414,13 +446,28 @@ export default function FavoriteOwnerListingsPage() {
                 onSetCollaborationStatus={handleSetCollaborationStatus}
                 isLoadingImport={isLoadingImport === listing.id}
               />
+              {['failed', 'unavailable', 'awaiting_connection'].includes(
+                favorite.phoneExtractionStatus || ''
+              ) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-full"
+                  disabled={phoneRetryListingId === listing.id}
+                  onClick={() => void updateProspecting(listing.id, 'retry')}
+                >
+                  {phoneRetryListingId === listing.id
+                    ? 'Relansam preluarea...'
+                    : 'Reincearca preluarea telefonului'}
+                </Button>
+              ) : null}
               <OwnerListingFavoriteEditor favorite={favorite} onSave={(updates) => handleSaveFavorite(listing.id, updates)} />
             </div>
           ))}
         </div>
       ) : favoriteListingsError || favoritesError ? (
         <div className="rounded-[1.75rem] border border-red-300/25 bg-red-950/20 px-6 py-14 text-center text-white/78">
-          <p className="text-lg font-semibold text-white">Favoritele nu au putut fi incarcate.</p>
+          <p className="text-lg font-semibold text-white">Prospectarea nu a putut fi incarcata.</p>
           <p className="mt-2 text-sm text-white/65">
             {favoriteListingsError || favoritesError?.message || 'A aparut o eroare temporara.'}
           </p>
@@ -430,9 +477,9 @@ export default function FavoriteOwnerListingsPage() {
         </div>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-white/20 bg-white/8 px-6 py-14 text-center text-white/78">
-          <p className="text-lg font-semibold text-white">Nu ai anunturi in Favorite inca.</p>
+          <p className="text-lg font-semibold text-white">Nu ai anunturi in Prospectare inca.</p>
           <p className="mt-2 text-sm text-white/60">
-            Din pagina Anunturi de la proprietari, apasa inimioara de pe card ca sa-ti construiesti lista de contact.
+            Din pagina Anunturi de la proprietari, selecteaza anunturile pe care vrei sa le contactezi.
           </p>
           <Button asChild className="mt-5 rounded-full">
             <Link href="/owner-listings">Mergi la Anunturi de la proprietari</Link>
@@ -442,7 +489,7 @@ export default function FavoriteOwnerListingsPage() {
 
       {missingFavoriteListingsCount > 0 ? (
         <p className="text-center text-sm text-white/60">
-          {missingFavoriteListingsCount} favorite nu mai exista in inventarul de anunturi si nu pot fi afisate.
+          {missingFavoriteListingsCount} anunturi din Prospectare nu mai exista in inventar si nu pot fi afisate.
         </p>
       ) : null}
 

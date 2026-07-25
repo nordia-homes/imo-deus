@@ -13,12 +13,12 @@ function formatError(error: unknown) {
       : 500;
     return {
       status,
-      message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile favorite.',
+      message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile din Prospectare.',
     };
   }
   return {
     status: 500,
-    message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile favorite.',
+    message: error instanceof Error ? error.message : 'Nu am putut incarca anunturile din Prospectare.',
   };
 }
 

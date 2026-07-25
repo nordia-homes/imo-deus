@@ -13,6 +13,36 @@ env:
     availability:
       - RUNTIME
 
+  - variable: BROWSERBASE_API_KEY
+    secret: BROWSERBASE_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: BROWSERBASE_PROJECT_ID
+    secret: BROWSERBASE_PROJECT_ID
+    availability:
+      - RUNTIME
+
+  - variable: BROWSERBASE_EXTENSION_ID
+    secret: BROWSERBASE_EXTENSION_ID
+    availability:
+      - RUNTIME
+
+  - variable: BROWSERBASE_REGION
+    value: "eu-central-1"
+    availability:
+      - RUNTIME
+
+  - variable: BROWSERBASE_PROXY_COUNTRY
+    value: "RO"
+    availability:
+      - RUNTIME
+
+  - variable: BROWSERBASE_USE_PROXY
+    value: "true"
+    availability:
+      - RUNTIME
+
   - variable: PLAYWRIGHT_BROWSERS_PATH
     value: "0"
     availability:

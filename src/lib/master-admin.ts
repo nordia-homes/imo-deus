@@ -404,7 +404,7 @@ export async function getMasterAdminScrapingOverview(): Promise<MasterAdminScrap
     adminDb.collection('ownerListingSyncCycles').get(),
     adminDb.collection('ownerListingSyncCycleJobs').get(),
     adminDb.collection('ownerListingSyncRuns').orderBy('finishedAt', 'desc').limit(100).get(),
-    adminDb.collection('ownerListingOlxPhoneQueue').where('lane', '==', 'interactive').get(),
+    adminDb.collection('ownerListingOlxPhoneQueue').where('lane', '==', 'prospecting').get(),
     adminDb.collection('ownerListingScrapeFrontier').get(),
     adminDb.collection('ownerListingEnrichmentQueue').get(),
   ]);
