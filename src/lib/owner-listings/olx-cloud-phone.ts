@@ -392,21 +392,21 @@ export async function confirmAgentOlxConnection(
   uid: string
 ) {
   const connection = await getAgentOlxConnection(adminDb, agencyId, uid);
-  if (!connection?.loginSessionId) {
+  if (!connection?.loginSessionId && !connection?.contextId) {
     return {
       connected: false,
-      message: 'Sesiunea de conectare OLX nu mai este activa.',
+      message: 'Profilul de conectare OLX nu mai este disponibil.',
     };
   }
 
   let browser: Awaited<ReturnType<typeof connectToBrowserbaseSession>>['browser'] | null = null;
   let shouldReleaseSession = false;
   try {
-    const loginSession = await getBrowserbaseSession(connection.loginSessionId).catch(
-      () => null
-    );
+    const loginSession = connection.loginSessionId
+      ? await getBrowserbaseSession(connection.loginSessionId).catch(() => null)
+      : null;
     let verification: Awaited<ReturnType<typeof verifyOlxAccountPage>>;
-    if (loginSession?.connectUrl) {
+    if (loginSession?.connectUrl && connection.loginSessionId) {
       const resources = await connectToBrowserbaseSession(connection.loginSessionId);
       browser = resources.browser;
       verification = await verifyOlxAccountPage(resources.page, resources.context);
@@ -458,7 +458,7 @@ export async function confirmAgentOlxConnection(
     };
   } finally {
     await browser?.close().catch(() => undefined);
-    if (shouldReleaseSession) {
+    if (shouldReleaseSession && connection.loginSessionId) {
       await releaseBrowserbaseSession(connection.loginSessionId).catch(() => undefined);
     }
   }
