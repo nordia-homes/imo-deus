@@ -52,6 +52,7 @@ describe('OLX phone browser resilience', () => {
       <main>
         <h1>Anunturile tale</h1>
         <p>Pentru a continua sa vinzi, confirma cateva date.</p>
+        <div class="captcha__legal-placeholder"></div>
         <a href="/myaccount/settings">Setari</a>
       </main>
     `;

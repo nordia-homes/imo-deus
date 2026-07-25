@@ -2,6 +2,7 @@ import type { BrowserContext, Page, Response } from 'playwright';
 import type { Firestore } from 'firebase-admin/firestore';
 import {
   connectToBrowserbaseSession,
+  getBrowserbaseSession,
   releaseBrowserbaseSession,
   withBrowserbaseSession,
 } from '@/lib/owner-listings/browserbase';
@@ -40,7 +41,7 @@ export function hasOlxSecurityChallengeSignals(urlValue: string, html: string) {
     challengePath = false;
   }
   const challengeMarkup =
-    /(?:cf-chl-|challenges\.cloudflare\.com|g-recaptcha|h-captcha|cf-turnstile|client-api\.arkoselabs\.com|checking your browser|captcha-container|captcha__)/i.test(
+    /(?:cf-chl-|challenges\.cloudflare\.com|g-recaptcha|h-captcha|cf-turnstile|client-api\.arkoselabs\.com|checking your browser|captcha-container)/i.test(
       html
     );
   return challengePath || challengeMarkup;
@@ -401,9 +402,28 @@ export async function confirmAgentOlxConnection(
   let browser: Awaited<ReturnType<typeof connectToBrowserbaseSession>>['browser'] | null = null;
   let shouldReleaseSession = false;
   try {
-    const resources = await connectToBrowserbaseSession(connection.loginSessionId);
-    browser = resources.browser;
-    const verification = await verifyOlxAccountPage(resources.page, resources.context);
+    const loginSession = await getBrowserbaseSession(connection.loginSessionId).catch(
+      () => null
+    );
+    let verification: Awaited<ReturnType<typeof verifyOlxAccountPage>>;
+    if (loginSession?.connectUrl) {
+      const resources = await connectToBrowserbaseSession(connection.loginSessionId);
+      browser = resources.browser;
+      verification = await verifyOlxAccountPage(resources.page, resources.context);
+    } else if (connection.contextId) {
+      shouldReleaseSession = true;
+      verification = await withBrowserbaseSession(
+        {
+          contextId: connection.contextId,
+          purpose: 'olx-phone',
+          agencyId,
+          uid,
+        },
+        async ({ page, context }) => verifyOlxAccountPage(page, context)
+      );
+    } else {
+      throw new Error('Profilul persistent OLX nu mai este disponibil.');
+    }
     if (!verification.connected) {
       const message = verification.challenge
         ? 'OLX solicita finalizarea verificarii de securitate in fereastra de conectare.'
