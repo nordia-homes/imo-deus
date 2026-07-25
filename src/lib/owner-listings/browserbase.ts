@@ -166,10 +166,23 @@ export async function createBrowserbaseSession(input: {
     ];
   }
 
-  return browserbaseRequest<BrowserbaseSession>('/sessions', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
+  try {
+    return await browserbaseRequest<BrowserbaseSession>('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    const proxyUnavailable =
+      configuration.useProxy &&
+      error instanceof BrowserbaseApiError &&
+      /proxies? (?:are|is) not included|proxy.+(?:plan|upgrade)/i.test(error.message);
+    if (!proxyUnavailable) throw error;
+    delete body.proxies;
+    return browserbaseRequest<BrowserbaseSession>('/sessions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
 }
 
 export async function getBrowserbaseSession(sessionId: string) {

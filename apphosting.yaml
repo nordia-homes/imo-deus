@@ -39,7 +39,7 @@ env:
       - RUNTIME
 
   - variable: BROWSERBASE_USE_PROXY
-    value: "true"
+    value: "false"
     availability:
       - RUNTIME
 

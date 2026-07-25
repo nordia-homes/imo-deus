@@ -16,7 +16,7 @@ Variabile optionale:
 
 - `BROWSERBASE_REGION` (implicit `eu-central-1`)
 - `BROWSERBASE_PROXY_COUNTRY` (implicit `RO`)
-- `BROWSERBASE_USE_PROXY` (implicit `true`)
+- `BROWSERBASE_USE_PROXY` (implicit in cod `true`; in productie este `false` pe planul Free)
 
 Extensia se incarca in Browserbase astfel:
 
@@ -36,8 +36,10 @@ scrise in repository:
 .\node_modules\.bin\firebase.cmd apphosting:secrets:set BROWSERBASE_EXTENSION_ID --project studio-652232171-42fb6
 ```
 
-`apphosting.yaml` le expune numai la runtime. Regiunea este `eu-central-1`,
-iar proxy-ul Browserbase este geolocalizat in Romania.
+`apphosting.yaml` le expune numai la runtime. Regiunea este `eu-central-1`.
+Planul Browserbase Free nu include proxy, deci productia ruleaza cu
+`BROWSERBASE_USE_PROXY=false`. Dupa activarea unui plan care include proxy,
+valoarea poate fi schimbata la `true` pentru geolocalizare in Romania.
 
 ## Flux
 

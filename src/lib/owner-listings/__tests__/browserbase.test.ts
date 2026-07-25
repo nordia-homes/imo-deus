@@ -150,6 +150,53 @@ describe('Browserbase OLX profiles', () => {
     expect(body.proxies).toBeUndefined();
   });
 
+  it('falls back cleanly when the Browserbase plan does not include proxies', async () => {
+    process.env.BROWSERBASE_API_KEY = 'bb-test-key';
+    process.env.BROWSERBASE_PROJECT_ID = 'project-test';
+    process.env.BROWSERBASE_USE_PROXY = 'true';
+
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message: 'Proxies are not included in the free plan. Please upgrade.',
+          }),
+          {
+            status: 402,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'session-without-proxy',
+            status: 'RUNNING',
+            connectUrl: 'wss://connect.browserbase.test',
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      );
+
+    const session = await createBrowserbaseSession({
+      contextId: 'context-test',
+      purpose: 'olx-phone',
+      agencyId: 'agency-test',
+      uid: 'agent-test',
+    });
+
+    expect(session.id).toBe('session-without-proxy');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body || '{}'));
+    const fallbackBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body || '{}'));
+    expect(firstBody.proxies).toHaveLength(1);
+    expect(fallbackBody.proxies).toBeUndefined();
+  });
+
   it('opens and activates the OLX account page before showing Live View', async () => {
     process.env.BROWSERBASE_API_KEY = 'bb-test-key';
     process.env.BROWSERBASE_PROJECT_ID = 'project-test';
