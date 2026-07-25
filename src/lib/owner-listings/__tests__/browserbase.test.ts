@@ -198,7 +198,7 @@ describe('Browserbase OLX profiles', () => {
     expect(fallbackBody.proxies).toBeUndefined();
   });
 
-  it('opens and activates the OLX account page before showing Live View', async () => {
+  it('navigates the tab already tracked by Live View to the OLX account page', async () => {
     process.env.BROWSERBASE_API_KEY = 'bb-test-key';
     process.env.BROWSERBASE_PROJECT_ID = 'project-test';
     const sentMessages: Array<Record<string, unknown>> = [];
@@ -220,12 +220,28 @@ describe('Browserbase OLX profiles', () => {
         const message = JSON.parse(value) as { id: number; method: string };
         sentMessages.push(message);
         queueMicrotask(() => {
+          const resultById = {
+            1: {
+              id: 1,
+              result: {
+                targetInfos: [
+                  {
+                    targetId: 'live-view-target',
+                    type: 'page',
+                    url: 'about:blank',
+                  },
+                ],
+              },
+            },
+            2: {
+              id: 2,
+              result: { sessionId: 'live-view-session' },
+            },
+            3: { id: 3, result: { frameId: 'frame-test' } },
+            4: { id: 4, result: {} },
+          } as const;
           this.emit('message', {
-            data: JSON.stringify(
-              message.id === 1
-                ? { id: 1, result: { targetId: 'olx-target' } }
-                : { id: 2, result: {} }
-            ),
+            data: JSON.stringify(resultById[message.id]),
           });
         });
       }
@@ -262,15 +278,28 @@ describe('Browserbase OLX profiles', () => {
     expect(sentMessages).toEqual([
       {
         id: 1,
-        method: 'Target.createTarget',
-        params: {
-          url: 'https://www.olx.ro/myaccount/?backUrl=%2Fmyaccount',
-        },
+        method: 'Target.getTargets',
       },
       {
         id: 2,
+        method: 'Target.attachToTarget',
+        params: {
+          targetId: 'live-view-target',
+          flatten: true,
+        },
+      },
+      {
+        id: 3,
+        method: 'Page.navigate',
+        params: {
+          url: 'https://www.olx.ro/myaccount/?backUrl=%2Fmyaccount',
+        },
+        sessionId: 'live-view-session',
+      },
+      {
+        id: 4,
         method: 'Target.activateTarget',
-        params: { targetId: 'olx-target' },
+        params: { targetId: 'live-view-target' },
       },
     ]);
   });

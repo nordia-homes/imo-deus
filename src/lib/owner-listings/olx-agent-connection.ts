@@ -156,6 +156,14 @@ export async function startAgentOlxConnection(
       'https://www.olx.ro/myaccount/?backUrl=%2Fmyaccount'
     );
     const liveUrls = await getBrowserbaseSessionLiveUrls(session.id);
+    const olxPageLiveUrl = liveUrls.pages?.find((page) => {
+      try {
+        return /(^|\.)olx\.ro$/i.test(new URL(page.url).hostname);
+      } catch {
+        return false;
+      }
+    })?.debuggerFullscreenUrl;
+    const liveViewUrl = olxPageLiveUrl || liveUrls.debuggerFullscreenUrl;
     const timestamp = new Date().toISOString();
     await connectionRef.set(
       {
@@ -171,7 +179,7 @@ export async function startAgentOlxConnection(
 
     return {
       status: 'connecting' as const,
-      liveViewUrl: `${liveUrls.debuggerFullscreenUrl}${liveUrls.debuggerFullscreenUrl.includes('?') ? '&' : '?'}navbar=false`,
+      liveViewUrl: `${liveViewUrl}${liveViewUrl.includes('?') ? '&' : '?'}navbar=false`,
       expiresAt: session.expiresAt || null,
     };
   } catch (error) {

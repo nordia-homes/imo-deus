@@ -16,6 +16,13 @@ type BrowserbaseLiveUrls = {
   debuggerFullscreenUrl: string;
   debuggerUrl: string;
   wsUrl: string;
+  pages?: Array<{
+    id: string;
+    url: string;
+    title?: string;
+    debuggerUrl: string;
+    debuggerFullscreenUrl: string;
+  }>;
 };
 
 export class BrowserbaseConfigurationError extends Error {
@@ -204,6 +211,8 @@ export async function openBrowserbasePage(sessionId: string, url: string) {
   await new Promise<void>((resolve, reject) => {
     const socket = new WebSocket(session.connectUrl!);
     let settled = false;
+    let targetId = '';
+    let targetSessionId = '';
     const timeout = setTimeout(() => {
       finish(new BrowserbaseApiError('Sesiunea OLX nu a deschis pagina de autentificare.', 504));
     }, 20_000);
@@ -221,8 +230,7 @@ export async function openBrowserbasePage(sessionId: string, url: string) {
       socket.send(
         JSON.stringify({
           id: 1,
-          method: 'Target.createTarget',
-          params: { url },
+          method: 'Target.getTargets',
         })
       );
     });
@@ -230,7 +238,15 @@ export async function openBrowserbasePage(sessionId: string, url: string) {
       try {
         const payload = JSON.parse(String(event.data || '{}')) as {
           id?: number;
-          result?: { targetId?: string };
+          result?: {
+            targetId?: string;
+            sessionId?: string;
+            targetInfos?: Array<{
+              targetId?: string;
+              type?: string;
+              url?: string;
+            }>;
+          };
           error?: { message?: string };
         };
         if (payload.error) {
@@ -242,17 +258,52 @@ export async function openBrowserbasePage(sessionId: string, url: string) {
           );
           return;
         }
-        if (payload.id === 1 && payload.result?.targetId) {
+        if (payload.id === 1) {
+          const pageTarget = payload.result?.targetInfos?.find(
+            (target) => target.type === 'page' && target.targetId
+          );
+          if (!pageTarget?.targetId) {
+            finish(new BrowserbaseApiError('Sesiunea OLX nu contine un tab activ.', 409));
+            return;
+          }
+          targetId = pageTarget.targetId;
           socket.send(
             JSON.stringify({
               id: 2,
-              method: 'Target.activateTarget',
-              params: { targetId: payload.result.targetId },
+              method: 'Target.attachToTarget',
+              params: {
+                targetId,
+                flatten: true,
+              },
             })
           );
           return;
         }
-        if (payload.id === 2) finish();
+        if (payload.id === 2 && payload.result?.sessionId) {
+          targetSessionId = payload.result.sessionId;
+          socket.send(
+            JSON.stringify({
+              id: 3,
+              method: 'Page.navigate',
+              params: { url },
+              sessionId: targetSessionId,
+            })
+          );
+          return;
+        }
+        if (payload.id === 3) {
+          socket.send(
+            JSON.stringify({
+              id: 4,
+              method: 'Target.activateTarget',
+              params: { targetId },
+            })
+          );
+          return;
+        }
+        if (payload.id === 4) {
+          setTimeout(() => finish(), 250);
+        }
       } catch {
         // Ignore unrelated Chrome DevTools Protocol events.
       }
