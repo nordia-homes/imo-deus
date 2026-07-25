@@ -30,6 +30,34 @@ type OlxCloudPhoneResult = {
   message: string;
 };
 
+export function hasOlxSecurityChallengeSignals(urlValue: string, html: string) {
+  let challengePath = false;
+  try {
+    challengePath = /\/(?:captcha|challenge|checkpoint)(?:[/?#]|$)/i.test(
+      new URL(urlValue).pathname
+    );
+  } catch {
+    challengePath = false;
+  }
+  const challengeMarkup =
+    /(?:cf-chl-|challenges\.cloudflare\.com|g-recaptcha|h-captcha|cf-turnstile|client-api\.arkoselabs\.com|checking your browser|captcha-container|captcha__)/i.test(
+      html
+    );
+  return challengePath || challengeMarkup;
+}
+
+async function hasVisibleOlxSecurityChallenge(page: Page, html: string) {
+  if (hasOlxSecurityChallengeSignals(page.url(), html)) return true;
+  return (
+    (await page
+      .locator(
+        'iframe[src*="captcha" i]:visible, iframe[src*="challenges.cloudflare.com" i]:visible, .g-recaptcha:visible, [data-testid*="captcha" i]:visible, [class*="hcaptcha" i]:visible'
+      )
+      .count()
+      .catch(() => 0)) > 0
+  );
+}
+
 function normalizePhoneCandidate(value: unknown) {
   const digits = String(value || '').replace(/\D/g, '');
   if (digits.startsWith('004') && digits.length === 13) return digits.slice(3);
@@ -160,7 +188,7 @@ async function resolvePhoneInPage(page: Page, url: string): Promise<OlxCloudPhon
     });
     await page.waitForTimeout(900);
     const html = await page.content().catch(() => '');
-    const challenge = /captcha|robot|verify|challenge|checking your browser|sigur esti tu/i.test(html);
+    const challenge = await hasVisibleOlxSecurityChallenge(page, html);
     const loginRequired =
       /\/(?:account|login|auth)(?:[/?#]|$)/i.test(new URL(page.url()).pathname) ||
       (await page
@@ -346,7 +374,7 @@ async function verifyOlxAccountPage(page: Page, context: BrowserContext) {
       .count()
       .catch(() => 0)) > 0;
   const accountPath = /^\/myaccount(?:\/|$)/i.test(url.pathname);
-  const challenge = /captcha|robot|verify|challenge|checking your browser|sigur esti tu/i.test(html);
+  const challenge = await hasVisibleOlxSecurityChallenge(page, html);
   return {
     connected:
       accountPath &&

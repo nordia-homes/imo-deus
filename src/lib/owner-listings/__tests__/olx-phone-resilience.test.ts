@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getSafeOlxBrowserFailure } from '@/lib/owner-listings/agent-olx-phone';
 import { isBrowserLifecycleError } from '@/lib/owner-listings/browser';
+import { hasOlxSecurityChallengeSignals } from '@/lib/owner-listings/olx-cloud-phone';
 import { describeRemoteOlxPhoneStage } from '@/lib/owner-listings/remote-olx-phone';
 
 describe('OLX phone browser resilience', () => {
@@ -44,5 +45,34 @@ describe('OLX phone browser resilience', () => {
     expect(describeRemoteOlxPhoneStage('access_denied')).toContain('limitat');
     expect(describeRemoteOlxPhoneStage('rate_limited')).toContain('Limita');
     expect(describeRemoteOlxPhoneStage('browserType.launch')).not.toContain('browserType');
+  });
+
+  it('does not confuse ordinary OLX seller verification copy with a CAPTCHA', () => {
+    const accountHtml = `
+      <main>
+        <h1>Anunturile tale</h1>
+        <p>Pentru a continua sa vinzi, confirma cateva date.</p>
+        <a href="/myaccount/settings">Setari</a>
+      </main>
+    `;
+
+    expect(
+      hasOlxSecurityChallengeSignals('https://www.olx.ro/myaccount/', accountHtml)
+    ).toBe(false);
+  });
+
+  it('still recognizes explicit CAPTCHA and Cloudflare challenge signals', () => {
+    expect(
+      hasOlxSecurityChallengeSignals(
+        'https://www.olx.ro/challenge/',
+        '<iframe src="https://challenges.cloudflare.com/turnstile"></iframe>'
+      )
+    ).toBe(true);
+    expect(
+      hasOlxSecurityChallengeSignals(
+        'https://www.olx.ro/myaccount/',
+        '<div class="g-recaptcha"></div>'
+      )
+    ).toBe(true);
   });
 });
