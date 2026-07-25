@@ -40,6 +40,8 @@ scrise in repository:
 Planul Browserbase Free nu include proxy, deci productia ruleaza cu
 `BROWSERBASE_USE_PROXY=false`. Dupa activarea unui plan care include proxy,
 valoarea poate fi schimbata la `true` pentru geolocalizare in Romania.
+Profilurile Free folosesc Linux Chromium; selectarea sistemului Windows este
+rezervata planului Browserbase Enterprise si nu este necesara pentru extensie.
 
 ## Flux
 

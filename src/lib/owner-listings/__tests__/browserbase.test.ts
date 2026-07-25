@@ -102,6 +102,7 @@ describe('Browserbase OLX profiles', () => {
           persist: true,
         },
         solveCaptchas: false,
+        os: 'linux',
       },
       proxies: [
         {

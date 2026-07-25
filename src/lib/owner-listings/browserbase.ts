@@ -141,7 +141,7 @@ export async function createBrowserbaseSession(input: {
         height: 960,
       },
       solveCaptchas: false,
-      os: 'windows',
+      os: 'linux',
     },
     userMetadata: {
       app: 'imodeus',
