@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchScraperResponse } from '@/lib/owner-listings/browser';
 import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi24-phone-ocr';
+import { recognizePubli24PhonePure } from '@/lib/owner-listings/publi24-phone-ocr-pure';
 import {
   extractImoradar24LastPage,
   extractImoradar24ListPageFromHtml,
@@ -181,6 +182,7 @@ describe('owner-listing parser contracts', () => {
 
     const base64 = canvas.toBuffer('image/png').toString('base64');
     await expect(recognizePubli24PhoneWithoutBrowser(base64, phone.length)).resolves.toBe(phone);
+    await expect(recognizePubli24PhonePure(base64, phone.length)).resolves.toBe(phone);
   });
 
   it('decodes a Publi24 phone image with the serialized local Chromium fallback', async () => {

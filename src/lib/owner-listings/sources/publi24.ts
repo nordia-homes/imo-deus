@@ -3,6 +3,7 @@ import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, n
 import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi24-phone-ocr';
+import { recognizePubli24PhonePure } from '@/lib/owner-listings/publi24-phone-ocr-pure';
 
 const publi24PhoneCache = new Map<string, string>();
 
@@ -492,8 +493,12 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
   }
 
   const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
+  const pureJavaScriptResult = browserlessResult
+    ? ''
+    : await recognizePubli24PhonePure(phonePayload.base64, phonePayload.hintedLength);
   const recognized = normalizeWhitespace(
     browserlessResult ||
+      pureJavaScriptResult ||
       await recognizePubli24PhoneViaBrowser(phonePayload.base64, phonePayload.hintedLength)
   );
   const digits = recognized.replace(/[^\d]/g, '');
