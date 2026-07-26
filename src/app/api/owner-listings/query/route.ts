@@ -6,6 +6,7 @@ import {
   matchesOwnerListingFilters,
 } from '@/lib/owner-listings/search';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 export const runtime = 'nodejs';
 
@@ -35,13 +36,37 @@ const SEARCH_CORPUS_FIELDS = [
   'priceValue',
   'title',
   'location',
-  'ownerPhone',
   'area',
   'description',
   'postedAt',
   'firstDiscoveredAt',
 ] as const;
 const searchCorpusCache = new Map<string, SearchCorpusCacheEntry>();
+
+function withoutGlobalPhone<T extends OwnerListingSummary & { id: string }>(listing: T) {
+  const { ownerPhone: _globalOwnerPhone, ...safeListing } = listing;
+  return safeListing as Omit<T, 'ownerPhone'>;
+}
+
+async function loadAgencyProspectingPhones(
+  db: FirebaseFirestore.Firestore,
+  agencyId: string
+) {
+  const snapshot = await db
+    .collection('agencies')
+    .doc(agencyId)
+    .collection('ownerListingFavorites')
+    .get();
+  return new Map(
+    snapshot.docs
+      .filter((document) => document.data().isFavoriteActive !== false)
+      .map((document) => [
+        String(document.data().ownerListingId || document.id),
+        normalizeRomanianPhone(document.data().ownerPhone),
+      ])
+      .filter((entry): entry is [string, string] => Boolean(entry[0] && entry[1]))
+  );
+}
 
 function encodeCursor(cursor: CursorPayload) {
   return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
@@ -176,7 +201,10 @@ async function getRefinedListingPage(input: {
   const listingsById = new Map(
     snapshots
       .filter((snapshot) => snapshot.exists)
-      .map((snapshot) => [snapshot.id, { ...(snapshot.data() as OwnerListingSummary), id: snapshot.id }]),
+      .map((snapshot) => [
+        snapshot.id,
+        withoutGlobalPhone({ ...(snapshot.data() as OwnerListingSummary), id: snapshot.id }),
+      ]),
   );
   const listings = pageEntries
     .map((listing) => listingsById.get(listing.id))
@@ -213,14 +241,21 @@ export async function GET(request: NextRequest) {
     const totalAvailableCountPromise = baseQuery.count().get();
 
     if (hasOwnerListingRefinementFilters(params)) {
-      const corpus = await getSearchCorpus(
-        `${authContext.runtimeMode}:${scopeKey}:${source || 'all'}`,
-        baseQuery,
-      );
+      const [corpus, prospectingPhones] = await Promise.all([
+        getSearchCorpus(
+          `${authContext.runtimeMode}:${scopeKey}:${source || 'all'}`,
+          baseQuery,
+        ),
+        loadAgencyProspectingPhones(authContext.adminDb, authContext.agencyId),
+      ]);
+      const agencyScopedCorpus = corpus.map((listing) => ({
+        ...listing,
+        ownerPhone: prospectingPhones.get(listing.id) || '',
+      }));
       const [page, totalAvailableSnapshot] = await Promise.all([
         getRefinedListingPage({
           db: authContext.adminDb,
-          corpus,
+          corpus: agencyScopedCorpus,
           cursor,
           pageSize,
           params,
@@ -244,10 +279,12 @@ export async function GET(request: NextRequest) {
 
     const snapshot = await query.limit(pageSize + 1).get();
     const pageDocuments = snapshot.docs.slice(0, pageSize);
-    const listings = pageDocuments.map((document) => ({
-      ...(document.data() as OwnerListingSummary),
-      id: document.id,
-    }));
+    const listings = pageDocuments.map((document) =>
+      withoutGlobalPhone({
+        ...(document.data() as OwnerListingSummary),
+        id: document.id,
+      })
+    );
     const hasMore = snapshot.size > pageSize;
     const lastDocument = pageDocuments.at(-1);
     const totalAvailableCount = (await totalAvailableCountPromise).data().count;

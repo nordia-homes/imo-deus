@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { Filter, RotateCcw } from 'lucide-react';
 import type { AiOutreachCall, AiOutreachOutcome } from '@/lib/ai-outreach/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const LISTINGS_PER_PAGE = 100;
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
@@ -400,6 +401,8 @@ export default function OwnerListingsPage() {
       return;
     }
 
+    const favorite = favoritesByListingId.get(listing.id);
+    const isProspecting = Boolean(favorite && favorite.isFavoriteActive !== false);
     setIsLoadingImport(listing.id);
     toast({ title: 'Import in curs...', description: 'Se preiau datele reale din anunt.' });
 
@@ -414,7 +417,8 @@ export default function OwnerListingsPage() {
         body: JSON.stringify({
           source: listing.source,
           url: listing.link,
-          ownerPhone: listing.ownerPhone || '',
+          listingId: listing.id,
+          ownerPhone: isProspecting ? normalizeRomanianPhone(favorite?.ownerPhone) : '',
           sourceDescription: listing.description || '',
         }),
       });
@@ -449,10 +453,15 @@ export default function OwnerListingsPage() {
       listing.source === 'olx' ||
       /^OLX$/i.test(String(listing.originSourceLabel || '').trim()) ||
       /https:\/\/(?:www\.)?olx\.ro\//i.test(String(listing.originSourceUrl || ''));
-    if (hasOlxSource && (!existingFavorite || existingFavorite.isFavoriteActive === false)) {
+    const hasPubli24Source =
+      listing.source === 'publi24' ||
+      /^Publi24$/i.test(String(listing.originSourceLabel || '').trim()) ||
+      /https:\/\/(?:www\.)?publi24\.ro\//i.test(String(listing.originSourceUrl || ''));
+    const requiresProspecting = hasOlxSource || hasPubli24Source;
+    if (requiresProspecting && (!existingFavorite || existingFavorite.isFavoriteActive === false)) {
       toast({
         title: 'Adauga anuntul in Prospectare',
-        description: 'Numerele OLX sunt preluate numai pentru anunturile selectate pentru prospectare.',
+        description: 'Numerele OLX si Publi24 sunt disponibile numai pentru anunturile active in Prospectare.',
       });
       return;
     }
@@ -460,15 +469,15 @@ export default function OwnerListingsPage() {
     setIsLoadingAiDetails(listing.id);
 
     try {
-      let localOwnerPhone = '';
+      let localOwnerPhone = normalizeRomanianPhone(existingFavorite?.ownerPhone);
       let olxPhoneMessage = '';
-      let phoneResolutionLabel = '';
+      let phoneResolutionLabel = localOwnerPhone ? 'Prospectarea agentiei' : '';
       const desktopBridge = typeof window !== 'undefined' ? (window as DesktopOlxBridgeWindow).imodeusDesktop : undefined;
-      const hasDesktopOlxBridge = Boolean(listing.source === 'olx' && desktopBridge?.getOlxPhoneNumber);
+      const hasDesktopOlxBridge = Boolean(!localOwnerPhone && listing.source === 'olx' && desktopBridge?.getOlxPhoneNumber);
 
       if (hasDesktopOlxBridge && desktopBridge?.getOlxPhoneNumber) {
         const localResult = await desktopBridge.getOlxPhoneNumber({ url: listing.link });
-        localOwnerPhone = localResult.phone?.trim() || '';
+        localOwnerPhone = normalizeRomanianPhone(localResult.phone);
         olxPhoneMessage = localResult.message || '';
         if (localOwnerPhone) {
           phoneResolutionLabel = 'sesiunea OLX locala';
@@ -486,7 +495,7 @@ export default function OwnerListingsPage() {
           body: JSON.stringify({ url: listing.link, listingId: listing.id, title: listing.title }),
         });
         const payload = await response.json().catch(() => ({}));
-        localOwnerPhone = payload.phone?.trim() || '';
+        localOwnerPhone = normalizeRomanianPhone(payload.phone);
         olxPhoneMessage = payload.message || olxPhoneMessage;
         if (localOwnerPhone) {
           phoneResolutionLabel = 'serviciul OLX';
@@ -503,10 +512,12 @@ export default function OwnerListingsPage() {
           ownerPhone: localOwnerPhone,
         };
 
-        if (localOwnerPhone !== listing.ownerPhone) {
-          updateDocumentNonBlocking(doc(firestore, 'ownerListings', listing.id), {
+        if (agencyId && localOwnerPhone !== normalizeRomanianPhone(existingFavorite?.ownerPhone)) {
+          updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id), {
             ownerPhone: localOwnerPhone,
-            enrichmentStatus: 'partial',
+            phoneExtractionStatus: 'available',
+            phoneExtractionMessage: 'Numarul proprietarului a fost preluat.',
+            phoneExtractionCompletedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
         }
@@ -515,6 +526,27 @@ export default function OwnerListingsPage() {
         toast({
           title: 'Telefon preluat',
           description: `Numarul proprietarului a fost preluat din ${phoneResolutionLabel || 'anunt'}.`,
+        });
+        return;
+      }
+
+      if (requiresProspecting) {
+        if (hasPubli24Source) {
+          const token = await user.getIdToken(true);
+          await fetch('/api/owner-listings/prospecting', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ listingId: listing.id, action: 'retry' }),
+          });
+        }
+        toast({
+          title: 'Telefon in curs de preluare',
+          description:
+            olxPhoneMessage ||
+            'Telefonul va aparea automat in Prospectare imediat ce preluarea este finalizata.',
         });
         return;
       }
@@ -529,7 +561,8 @@ export default function OwnerListingsPage() {
         body: JSON.stringify({
           source: listing.source,
           url: listing.link,
-          ownerPhone: listing.ownerPhone || '',
+          listingId: listing.id,
+          ownerPhone: '',
           sourceDescription: listing.description || '',
         }),
       });
@@ -543,21 +576,12 @@ export default function OwnerListingsPage() {
         payload.property?.ownerPhone ||
         payload.detail?.contactPhone ||
         payload.detail?.ownerPhone ||
-        listing.ownerPhone ||
         '';
       const enrichedListing = {
         ...listing,
         ownerPhone,
         description: payload.property?.description || listing.description,
       };
-
-      if (ownerPhone && ownerPhone !== listing.ownerPhone) {
-        updateDocumentNonBlocking(doc(firestore, 'ownerListings', listing.id), {
-          ownerPhone,
-          enrichmentStatus: 'partial',
-          updatedAt: new Date().toISOString(),
-        });
-      }
 
       setSelectedAiListing(enrichedListing);
 
@@ -572,7 +596,7 @@ export default function OwnerListingsPage() {
         });
       }
     } catch (error) {
-      setSelectedAiListing(listing);
+      setSelectedAiListing({ ...listing, ownerPhone: '' });
       toast({
         title: 'Preluare telefon esuata',
         description: error instanceof Error ? error.message : 'Nu am putut prelua telefonul din anunt.',
@@ -1158,11 +1182,14 @@ export default function OwnerListingsPage() {
           paginatedListings.map((listing, index) => {
             const favorite = favoritesByListingId.get(listing.id);
             const isProspecting = favorite?.isFavoriteActive !== false && Boolean(favorite);
+            const prospectingPhone = isProspecting
+              ? normalizeRomanianPhone(favorite?.ownerPhone)
+              : '';
             const latestAiCall = aiCallsByListingId.get(listing.id);
             const listingWithAi = latestAiCall
               ? {
                   ...listing,
-                  ownerPhone: favorite?.ownerPhone || listing.ownerPhone,
+                  ownerPhone: prospectingPhone,
                   latestAiCallId: latestAiCall.id,
                   aiOutreachStatus: latestAiCall.status,
                   aiOutreachOutcome: latestAiCall.outcome,
@@ -1171,7 +1198,7 @@ export default function OwnerListingsPage() {
                 }
               : {
                   ...listing,
-                  ownerPhone: favorite?.ownerPhone || listing.ownerPhone,
+                  ownerPhone: prospectingPhone,
                   latestAiCallId: undefined,
                   aiOutreachStatus: undefined,
                   aiOutreachOutcome: undefined,

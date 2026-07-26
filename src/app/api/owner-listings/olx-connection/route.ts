@@ -9,6 +9,7 @@ import {
 import { confirmAgentOlxConnection } from '@/lib/owner-listings/olx-cloud-phone';
 import { upsertProspectingOlxPhoneQueueEntry } from '@/lib/owner-listings/olx-phone-queue';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 export const runtime = 'nodejs';
 
@@ -86,10 +87,10 @@ async function resumeAgentProspectingJobs(input: {
   for (const [index, listingSnapshot] of listingSnapshots.entries()) {
     if (!listingSnapshot.exists) continue;
     const listing = listingSnapshot.data() as OwnerListingSummary;
-    if (listing.ownerPhone) continue;
+    const favorite = favorites[index].data();
+    if (normalizeRomanianPhone(favorite.ownerPhone)) continue;
     const url = getOlxUrl(listing);
     if (!url) continue;
-    const favorite = favorites[index].data();
     await upsertProspectingOlxPhoneQueueEntry({
       adminDb: input.adminDb,
       agencyId: input.agencyId,

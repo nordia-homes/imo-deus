@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
 import { matchesScopeLocation, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
 import type { Property } from '@/lib/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -266,7 +267,10 @@ export default function FavoriteOwnerListingsPage() {
         body: JSON.stringify({
           source: listing.source,
           url: listing.link,
-          ownerPhone: listing.ownerPhone || '',
+          listingId: listing.id,
+          ownerPhone: normalizeRomanianPhone(
+            activeFavorites.find((favorite) => (favorite.ownerListingId || favorite.id) === listing.id)?.ownerPhone
+          ),
           sourceDescription: listing.description || '',
         }),
       });
@@ -430,7 +434,7 @@ export default function FavoriteOwnerListingsPage() {
           {favoriteEntries.map(({ favorite, listing }) => (
             <div key={favorite.id} className="space-y-3">
               <OwnerListingCard
-                listing={{ ...listing, ownerPhone: favorite.ownerPhone || listing.ownerPhone }}
+                listing={{ ...listing, ownerPhone: normalizeRomanianPhone(favorite.ownerPhone) }}
                 adminClassic={isClassicTheme}
                 favoriteMeta={favorite}
                 currentAgentId={user?.uid ?? null}
@@ -446,7 +450,7 @@ export default function FavoriteOwnerListingsPage() {
                 onSetCollaborationStatus={handleSetCollaborationStatus}
                 isLoadingImport={isLoadingImport === listing.id}
               />
-              {!listing.ownerPhone &&
+              {!normalizeRomanianPhone(favorite.ownerPhone) &&
               ['failed', 'unavailable', 'awaiting_connection'].includes(
                 favorite.phoneExtractionStatus || ''
               ) ? (

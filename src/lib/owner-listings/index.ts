@@ -245,13 +245,16 @@ function mergeListingWithExisting(
   listing: Partial<OwnerListingSummary> & Pick<OwnerListingSummary, 'source' | 'externalId' | 'title' | 'price' | 'link' | 'area' | 'location' | 'postedAt' | 'fingerprint' | 'sourceLabel' | 'ownerType' | 'scrapedAt' | 'lastSeenAt'>,
   existing?: Partial<OwnerListingSummary>
 ): OwnerListingSummary {
+  const { ownerPhone: _incomingOwnerPhone, ...safeListing } = listing;
+  const { ownerPhone: _existingOwnerPhone, ...safeExisting } = existing || {};
+
   if (!existing) {
-    return listing as OwnerListingSummary;
+    return safeListing as OwnerListingSummary;
   }
 
   return {
-    ...existing,
-    ...listing,
+    ...safeExisting,
+    ...safeListing,
     scopeKey: preferIncomingValue(listing.scopeKey, existing.scopeKey),
     scopeCity: preferIncomingValue(listing.scopeCity, existing.scopeCity),
     title: preferIncomingValue(listing.title, existing.title) || '',
@@ -278,7 +281,6 @@ function mergeListingWithExisting(
     imageUrl: preferIncomingValue(listing.imageUrl, existing.imageUrl),
     description: preferIncomingValue(listing.description, existing.description),
     ownerName: preferIncomingValue(listing.ownerName, existing.ownerName),
-    ownerPhone: preferIncomingValue(listing.ownerPhone, existing.ownerPhone),
     ownerConfidence: preferIncomingValue(listing.ownerConfidence, existing.ownerConfidence),
     enrichmentStatus: preferIncomingValue(listing.enrichmentStatus, existing.enrichmentStatus),
     isNew: listing.isNew ?? existing.isNew,

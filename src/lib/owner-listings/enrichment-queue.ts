@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
@@ -10,6 +11,7 @@ import type {
   OwnerListingSummary,
 } from '@/lib/owner-listings/types';
 import { compareOwnerListingEnrichmentPriority, getOwnerListingMissingFields, hasMinimumOwnerListingQuality, parseArea, parseExactConstructionYear, parsePriceNumber, parseRooms, stripUndefined } from '@/lib/owner-listings/utils';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const ENRICHMENT_COLLECTION = 'ownerListingEnrichmentQueue';
 const PROCESSING_STALE_MS = 15 * 60 * 1000;
@@ -24,7 +26,7 @@ class PublicPhoneUnavailableError extends Error {
 }
 
 export type OwnerListingEnrichmentTaskType = 'phone' | 'detail' | 'images' | 'origin-source';
-export type OwnerListingEnrichmentStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed';
+export type OwnerListingEnrichmentStatus = 'pending' | 'processing' | 'done' | 'retry' | 'failed' | 'cancelled';
 
 export type OwnerListingEnrichmentQueueEntry = {
   listingId: string;
@@ -65,8 +67,12 @@ function queueId(listingId: string, taskType: OwnerListingEnrichmentTaskType) {
   return `${listingId}_${taskType}`.replace(/[^a-zA-Z0-9_-]+/g, '_');
 }
 
+function prospectingPhoneQueueId(agencyId: string, listingId: string) {
+  return `prospecting_${createHash('sha256').update(`${agencyId}:${listingId}`).digest('hex')}_phone`;
+}
+
 function hasUsefulPhone(listing: Partial<OwnerListingSummary>) {
-  return Boolean(listing.ownerPhone && String(listing.ownerPhone).trim());
+  return Boolean(normalizeRomanianPhone(listing.ownerPhone));
 }
 
 function hasUsefulDetailFields(listing: Partial<OwnerListingSummary>) {
@@ -149,7 +155,7 @@ export async function upsertPubli24ProspectingPhoneQueueEntry(input: {
   const timestamp = nowIso();
   const ref = targetDb
     .collection(ENRICHMENT_COLLECTION)
-    .doc(queueId(input.listingId, 'phone'));
+    .doc(prospectingPhoneQueueId(input.agencyId, input.listingId));
   const snapshot = await ref.get();
   const existing = snapshot.exists
     ? (snapshot.data() as Partial<OwnerListingEnrichmentQueueEntry>)
@@ -191,6 +197,50 @@ export async function upsertPubli24ProspectingPhoneQueueEntry(input: {
     },
     { merge: true }
   );
+}
+
+export async function cancelProspectingPubli24PhoneQueueEntry(input: {
+  adminDb?: Firestore;
+  agencyId: string;
+  listingId: string;
+}) {
+  const targetDb = input.adminDb || adminDb;
+  const refs = [
+    targetDb.collection(ENRICHMENT_COLLECTION).doc(
+      prospectingPhoneQueueId(input.agencyId, input.listingId)
+    ),
+    targetDb.collection(ENRICHMENT_COLLECTION).doc(queueId(input.listingId, 'phone')),
+  ];
+  const snapshots = await targetDb.getAll(...refs);
+  const batch = targetDb.batch();
+  let changed = false;
+
+  for (const snapshot of snapshots) {
+    if (!snapshot.exists) continue;
+    const entry = snapshot.data() as Partial<OwnerListingEnrichmentQueueEntry>;
+    if (
+      entry.trigger !== 'prospecting' ||
+      entry.agencyId !== input.agencyId ||
+      entry.listingId !== input.listingId
+    ) {
+      continue;
+    }
+    batch.set(
+      snapshot.ref,
+      {
+        status: 'cancelled',
+        updatedAt: nowIso(),
+        lockedAt: FieldValue.delete(),
+        lockedBy: FieldValue.delete(),
+        nextAttemptAt: FieldValue.delete(),
+        firestoreUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    changed = true;
+  }
+
+  if (changed) await batch.commit();
 }
 
 function isQueueEligible(entry: Partial<OwnerListingEnrichmentQueueEntry> | undefined, now: Date) {
@@ -312,15 +362,6 @@ function removeEmptyDetailValues<T extends Record<string, unknown>>(value: T): T
   ) as T;
 }
 
-function normalizeRomanianPhone(value: unknown) {
-  const digits = String(value || '').replace(/\D/g, '');
-  if (digits.startsWith('004') && digits.length === 13) return digits.slice(3);
-  if (digits.startsWith('4') && digits.length === 11) return digits.slice(1);
-  if (/^0[237]\d{8}$/.test(digits)) return digits;
-  if (/^[237]\d{7}$/.test(digits)) return digits;
-  return '';
-}
-
 function detailPatch(detail: OwnerListingDetail, taskType: OwnerListingEnrichmentTaskType) {
   const ownerPhone = normalizeRomanianPhone(detail.contactPhone || detail.ownerPhone || '');
   if (taskType === 'phone') {
@@ -342,7 +383,6 @@ function detailPatch(detail: OwnerListingDetail, taskType: OwnerListingEnrichmen
     description: detail.description,
     fullDescription: detail.fullDescription,
     imageUrl: detail.imageUrl || detail.images?.[0] || '',
-    ownerPhone,
     ownerName: detail.contactName || detail.ownerName || '',
     originSourceUrl: detail.originSourceUrl || '',
     originSourceLabel: detail.originSourceLabel || '',
@@ -382,6 +422,44 @@ async function updateProspectingPhoneState(
   );
 }
 
+async function hasActiveProspectingPhoneContext(
+  entry: Partial<OwnerListingEnrichmentQueueEntry>
+) {
+  if (
+    entry.taskType !== 'phone' ||
+    entry.source !== 'publi24' ||
+    entry.trigger !== 'prospecting' ||
+    !entry.agencyId ||
+    !entry.requestedByUid
+  ) {
+    return false;
+  }
+  const favoriteRef = getProspectingFavoriteRef(adminDb, entry);
+  if (!favoriteRef) return false;
+  const snapshot = await favoriteRef.get();
+  if (!snapshot.exists || snapshot.data()?.isFavoriteActive === false) return false;
+  const requestedBy = String(snapshot.data()?.phoneExtractionRequestedBy || '');
+  return !requestedBy || requestedBy === entry.requestedByUid;
+}
+
+async function cancelEnrichmentPhoneJob(
+  queueRef: FirebaseFirestore.DocumentReference,
+  reason: string
+) {
+  await queueRef.set(
+    {
+      status: 'cancelled',
+      error: reason,
+      updatedAt: nowIso(),
+      lockedAt: FieldValue.delete(),
+      lockedBy: FieldValue.delete(),
+      nextAttemptAt: FieldValue.delete(),
+      firestoreUpdatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
 async function scrapeDetail(
   source: OwnerListingSource,
   link: string,
@@ -406,42 +484,24 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
   const listingRef = adminDb.collection('ownerListings').doc(job.entry.listingId);
 
   try {
-    const existingSnapshot = await listingRef.get();
-    const existing = (existingSnapshot.data() || {}) as OwnerListingSummary;
-    const existingPhone = normalizeRomanianPhone(existing.ownerPhone);
-    if (job.entry.taskType === 'phone' && existingPhone) {
-      const timestamp = nowIso();
-      await Promise.all([
-        queueRef.set(
-          {
-            status: 'done',
-            updatedAt: timestamp,
-            completedAt: timestamp,
-            lockedAt: FieldValue.delete(),
-            lockedBy: FieldValue.delete(),
-            error: FieldValue.delete(),
-            nextAttemptAt: FieldValue.delete(),
-            firestoreUpdatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        ),
-        updateProspectingPhoneState(job.entry, {
-          ownerPhone: existingPhone,
-          phoneExtractionStatus: 'available',
-          phoneExtractionMessage: 'Numarul proprietarului este disponibil.',
-          phoneExtractionCompletedAt: timestamp,
-          phoneExtractionError: null,
-          phoneExtractionNextAttemptAt: null,
-        }),
-      ]);
+    if (
+      job.entry.taskType === 'phone' &&
+      !(await hasActiveProspectingPhoneContext(job.entry))
+    ) {
+      const reason = 'Job Publi24 fara o Prospectare activa.';
+      await cancelEnrichmentPhoneJob(queueRef, reason);
       return {
-        status: 'processed',
+        status: 'skipped',
         queueId: job.id,
         listingId: job.entry.listingId,
         taskType: job.entry.taskType,
         attempts: job.entry.attempts,
+        reason,
       };
     }
+
+    const existingSnapshot = await listingRef.get();
+    const existing = (existingSnapshot.data() || {}) as OwnerListingSummary;
 
     if (job.entry.taskType === 'phone') {
       await updateProspectingPhoneState(job.entry, {
@@ -473,6 +533,21 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
             : 'Publi24 nu a returnat temporar numarul de telefon.')
       );
     }
+    if (
+      job.entry.taskType === 'phone' &&
+      !(await hasActiveProspectingPhoneContext(job.entry))
+    ) {
+      const reason = 'Anuntul a fost scos din Prospectare in timpul preluarii.';
+      await cancelEnrichmentPhoneJob(queueRef, reason);
+      return {
+        status: 'skipped',
+        queueId: job.id,
+        listingId: job.entry.listingId,
+        taskType: job.entry.taskType,
+        attempts: job.entry.attempts,
+        reason,
+      };
+    }
     const patch = detailPatch(detail, job.entry.taskType);
     const timestamp = nowIso();
     const merged = { ...existing, ...patch } as OwnerListingSummary;
@@ -495,19 +570,19 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
         : {};
 
     await Promise.all([
-      listingRef.set(
-        {
-          ...patch,
-          lastVerifiedAt: Math.floor(Date.now() / 1000),
-          updatedAt: timestamp,
-          ...qualityPatch,
-          ...(job.entry.taskType === 'detail'
-            ? { enrichmentAttemptedAt: Math.floor(Date.now() / 1000) }
-            : { phoneExtractionAttemptedAt: Math.floor(Date.now() / 1000) }),
-          firestoreUpdatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      ),
+      job.entry.taskType === 'detail'
+        ? listingRef.set(
+            {
+              ...patch,
+              lastVerifiedAt: Math.floor(Date.now() / 1000),
+              updatedAt: timestamp,
+              ...qualityPatch,
+              enrichmentAttemptedAt: Math.floor(Date.now() / 1000),
+              firestoreUpdatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          )
+        : Promise.resolve(),
       queueRef.set(
         {
           status: 'done',
@@ -534,13 +609,15 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
         : Promise.resolve(),
     ]);
 
-    await registerOwnerListingCanonical(job.entry.listingId, {
-      ...merged,
-      ...qualityPatch,
-      lastVerifiedAt: Math.floor(Date.now() / 1000),
-      lastSeenAt: merged.lastSeenAt || Math.floor(Date.now() / 1000),
-      scrapedAt: merged.scrapedAt || Math.floor(Date.now() / 1000),
-    });
+    if (job.entry.taskType === 'detail') {
+      await registerOwnerListingCanonical(job.entry.listingId, {
+        ...merged,
+        ...qualityPatch,
+        lastVerifiedAt: Math.floor(Date.now() / 1000),
+        lastSeenAt: merged.lastSeenAt || Math.floor(Date.now() / 1000),
+        scrapedAt: merged.scrapedAt || Math.floor(Date.now() / 1000),
+      });
+    }
 
     return {
       status: 'processed',

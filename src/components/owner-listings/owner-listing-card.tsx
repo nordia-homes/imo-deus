@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import type { CollaborationStatus, OwnerListing, OwnerListingContactOutcome, OwnerListingFavorite } from '@/components/owner-listings/types';
 import { extractPrice, extractRoomsValue, formatAreaValue, formatPriceNumber, isListingNew } from '@/components/owner-listings/utils';
 import { getAiOutreachOutcomeMeta } from '@/lib/ai-outreach/status';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 function FavoriteHeartIcon({ filled = false }: { filled?: boolean }) {
   return (
@@ -215,14 +216,20 @@ export function OwnerListingCard({
     /https:\/\/(?:www\.)?publi24\.ro\//i.test(String(listing.originSourceUrl || ''))
       ? 'Publi24'
       : 'OLX';
-  const effectivePhoneExtractionStatus = String(listing.ownerPhone || '').trim()
-    ? 'available'
-    : favoriteMeta?.phoneExtractionStatus;
+  const prospectingPhone =
+    isFavorite && favoriteMeta?.isFavoriteActive !== false
+      ? normalizeRomanianPhone(favoriteMeta?.ownerPhone || listing.ownerPhone)
+      : '';
+  const effectivePhoneExtractionStatus = !isFavorite
+    ? undefined
+    : prospectingPhone
+      ? 'available'
+      : favoriteMeta?.phoneExtractionStatus;
   const phoneExtractionMeta = (() => {
     switch (effectivePhoneExtractionStatus) {
       case 'available':
         return {
-          label: favoriteMeta?.ownerPhone || listing.ownerPhone || 'Telefon disponibil',
+          label: prospectingPhone || 'Telefon disponibil',
           className: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200',
         };
       case 'processing':

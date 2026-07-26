@@ -38,7 +38,6 @@ function mergeDuplicateIntoPrimary(
     description: preferIncoming(primary.description, duplicate.description),
     imageUrl: preferIncoming(primary.imageUrl, duplicate.imageUrl),
     ownerName: preferIncoming(primary.ownerName, duplicate.ownerName),
-    ownerPhone: preferIncoming(primary.ownerPhone, duplicate.ownerPhone),
     originSourceUrl: preferIncoming(primary.originSourceUrl, duplicate.originSourceUrl),
     originSourceLabel: preferIncoming(primary.originSourceLabel, duplicate.originSourceLabel),
     lastSeenAt: Math.max(primary.lastSeenAt || 0, duplicate.lastSeenAt || 0),

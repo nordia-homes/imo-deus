@@ -344,23 +344,20 @@ export function createListingDedupeSignature(input: {
   transactionType?: OwnerListingTransactionType;
   scopeKey?: string | null;
 }) {
-  const phoneDigits = normalizeWhitespace(input.ownerPhone).replace(/\D/g, '');
   const normalizedTitle = compactComparable(input.title).slice(0, 90);
   const normalizedLocation = compactComparable(input.location).slice(0, 80);
   const price = normalizeWhitespace(input.price).replace(/[^\d]/g, '');
   const area = normalizeWhitespace(input.area).replace(/[^\d.,]/g, '').replace(',', '.');
-  const seed = phoneDigits
-    ? ['phone', phoneDigits, input.scopeKey || '', input.propertyType || '', input.transactionType || ''].join('|')
-    : [
-        'listing',
-        input.scopeKey || '',
-        input.propertyType || '',
-        input.transactionType || '',
-        normalizedTitle,
-        normalizedLocation,
-        price,
-        area,
-      ].join('|');
+  const seed = [
+    'listing',
+    input.scopeKey || '',
+    input.propertyType || '',
+    input.transactionType || '',
+    normalizedTitle,
+    normalizedLocation,
+    price,
+    area,
+  ].join('|');
 
   return {
     signature: crypto.createHash('sha1').update(seed).digest('hex'),
@@ -387,7 +384,6 @@ export function getOwnerListingMissingFields(listing: Partial<OwnerListingSummar
   }
   if (!normalizeWhitespace(listing.description)) missing.push('description');
   if (!normalizeWhitespace(listing.imageUrl || listing.image)) missing.push('image');
-  if (!normalizeWhitespace(listing.ownerPhone)) missing.push('ownerPhone');
   return missing;
 }
 
@@ -413,7 +409,9 @@ export function docIdForListing(listing: Pick<OwnerListingSummary, 'source' | 'e
   return `${listing.source}_${sourceId.replace(/[^a-zA-Z0-9_-]+/g, '_')}`;
 }
 
-export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'fingerprint' | 'scrapedAt' | 'lastSeenAt' | 'ownerType'>) {
+export function buildSummary(
+  input: Omit<OwnerListingSummary, 'sourceLabel' | 'fingerprint' | 'scrapedAt' | 'lastSeenAt' | 'ownerType'>
+): OwnerListingSummary {
   const now = Math.floor(Date.now() / 1000);
   const propertyType = input.propertyType || inferPropertyTypeFromListing(input);
   const transactionType = input.transactionType || inferTransactionTypeFromListing(input);
@@ -441,8 +439,10 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
   const constructionYearValue = parseExactConstructionYear(input.constructionYear) ?? parseExactConstructionYear(input.year);
   const missingFields = input.missingFields || getOwnerListingMissingFields({ ...input, propertyType, transactionType });
 
+  const { ownerPhone: _discardedOwnerPhone, ...publicInput } = input;
+
   return {
-    ...input,
+    ...publicInput,
     title: normalizeWhitespace(input.title),
     price: normalizeWhitespace(input.price),
     link: normalizeUrl(input.link),
@@ -468,7 +468,7 @@ export function buildSummary(input: Omit<OwnerListingSummary, 'sourceLabel' | 'f
     roomsValue,
     constructionYearValue,
     isCanonical: input.isCanonical ?? true,
-    enrichmentStatus: input.enrichmentStatus || (input.ownerPhone ? 'partial' : 'pending'),
+    enrichmentStatus: input.enrichmentStatus || 'pending',
     ownerType: 'owner' as const,
     scrapedAt: now,
     lastSeenAt: now,

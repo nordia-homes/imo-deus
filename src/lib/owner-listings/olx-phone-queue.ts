@@ -7,8 +7,8 @@ import {
   resolveOlxPhoneViaRemoteWorker,
 } from '@/lib/owner-listings/remote-olx-phone';
 import { resolveOlxPhoneViaAgentCloud } from '@/lib/owner-listings/olx-cloud-phone';
-import { registerOwnerListingCanonical } from '@/lib/owner-listings/canonical';
-import type { OlxPhoneDrainResult, OlxPhoneQueueEntry, OwnerListingSummary } from '@/lib/owner-listings/types';
+import type { OlxPhoneDrainResult, OlxPhoneQueueEntry } from '@/lib/owner-listings/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const OLX_PHONE_QUEUE_COLLECTION = 'ownerListingOlxPhoneQueue';
 const PROCESSING_STALE_MS = 15 * 60 * 1000;
@@ -41,6 +41,7 @@ export async function upsertProspectingOlxPhoneQueueEntry(input: {
     .doc(getProspectingQueueId(input.agencyId, input.listingId));
   const snapshot = await queueRef.get();
   const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
+  const existingPhone = normalizeRomanianPhone(existing?.phone);
 
   await queueRef.set(
     {
@@ -54,11 +55,11 @@ export async function upsertProspectingOlxPhoneQueueEntry(input: {
       trigger: 'prospecting',
       lane: 'prospecting',
       priority: 3000,
-      status: existing?.status === 'done' && existing.phone && !input.forceRetry ? 'done' : 'pending',
+      status: existing?.status === 'done' && existingPhone && !input.forceRetry ? 'done' : 'pending',
       attempts: input.forceRetry || existing?.status === 'failed' || existing?.status === 'cancelled'
         ? 0
         : existing?.attempts || 0,
-      phone: existing?.status === 'done' && !input.forceRetry ? existing.phone || '' : '',
+      phone: existing?.status === 'done' && !input.forceRetry ? existingPhone : '',
       createdAt: existing?.createdAt || timestamp,
       updatedAt: timestamp,
       nextAttemptAt: timestamp,
@@ -66,7 +67,7 @@ export async function upsertProspectingOlxPhoneQueueEntry(input: {
       lockedBy: FieldValue.delete(),
       error: input.error || FieldValue.delete(),
       completedAt:
-        existing?.status === 'done' && existing.phone && !input.forceRetry
+        existing?.status === 'done' && existingPhone && !input.forceRetry
           ? existing.completedAt || timestamp
           : FieldValue.delete(),
     },
@@ -97,84 +98,6 @@ export async function cancelProspectingOlxPhoneQueueEntry(input: {
   );
 }
 
-export async function upsertRawOlxPhoneQueueEntry(input: {
-  adminDb?: Firestore;
-  listingId: string;
-  link: string;
-  title?: string;
-  error?: string;
-  forceRetry?: boolean;
-}) {
-  const timestamp = nowIso();
-  const targetDb = input.adminDb || primaryAdminDb;
-  const queueRef = targetDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(input.listingId);
-  const snapshot = await queueRef.get();
-  const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
-
-  if (existing?.status === 'done' && existing.phone) {
-    return;
-  }
-
-  if (existing) {
-    if (input.forceRetry && existing.status !== 'processing') {
-      await queueRef.set(
-        {
-          listingId: input.listingId,
-          source: 'olx',
-          link: input.link,
-          title: input.title || '',
-          status: 'pending',
-          attempts: existing.status === 'failed' ? 0 : existing.attempts || 0,
-          lane: 'interactive',
-          priority: Math.max(existing.priority || 0, 2000),
-          updatedAt: timestamp,
-          nextAttemptAt: timestamp,
-          phone: '',
-          ...(input.error ? { error: input.error } : {}),
-          lockedAt: FieldValue.delete(),
-          lockedBy: FieldValue.delete(),
-          completedAt: FieldValue.delete(),
-        },
-        { merge: true }
-      );
-      return;
-    }
-
-    await queueRef.set(
-      {
-        link: input.link,
-        title: input.title || '',
-        updatedAt: timestamp,
-        ...(input.error && !existing.error ? { error: input.error } : {}),
-      },
-      { merge: true }
-    );
-    return;
-  }
-
-  await queueRef.set(
-    {
-      listingId: input.listingId,
-      source: 'olx',
-      link: input.link,
-      title: input.title || '',
-      status: 'pending',
-      attempts: 0,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      nextAttemptAt: timestamp,
-      lane: 'interactive',
-      priority: 2000,
-      phone: '',
-      ...(input.error ? { error: input.error } : {}),
-      lockedAt: FieldValue.delete(),
-      lockedBy: FieldValue.delete(),
-      completedAt: FieldValue.delete(),
-    },
-    { merge: true }
-  );
-}
-
 function isQueueEligible(entry: Partial<OlxPhoneQueueEntry> | undefined, now: Date) {
   if (!entry) {
     return false;
@@ -191,71 +114,6 @@ function isQueueEligible(entry: Partial<OlxPhoneQueueEntry> | undefined, now: Da
   }
 
   return false;
-}
-
-export async function upsertOlxPhoneQueueEntry(listingId: string, listing: OwnerListingSummary) {
-  if (listing.source !== 'olx') {
-    return;
-  }
-
-  const queueRef = primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(listingId);
-  const snapshot = await queueRef.get();
-  const existing = snapshot.exists ? (snapshot.data() as Partial<OlxPhoneQueueEntry>) : undefined;
-  const timestamp = nowIso();
-
-  if (listing.ownerPhone) {
-    await queueRef.set(
-      {
-        listingId,
-        source: 'olx',
-        link: listing.link,
-        status: 'done',
-        phone: listing.ownerPhone,
-        updatedAt: timestamp,
-        completedAt: timestamp,
-        lockedAt: FieldValue.delete(),
-        lockedBy: FieldValue.delete(),
-        error: FieldValue.delete(),
-        nextAttemptAt: FieldValue.delete(),
-      },
-      { merge: true }
-    );
-    return;
-  }
-
-  if (existing && (existing.status === 'processing' || existing.status === 'pending' || existing.status === 'retry' || existing.status === 'failed')) {
-    await queueRef.set(
-      {
-        listingId,
-        source: 'olx',
-        link: listing.link,
-        updatedAt: timestamp,
-      },
-      { merge: true }
-    );
-    return;
-  }
-
-  await queueRef.set(
-    {
-      listingId,
-      source: 'olx',
-      link: listing.link,
-      status: 'pending',
-      attempts: existing?.attempts || 0,
-      lane: listing.isNew ? 'fresh' : 'backfill',
-      priority: listing.isNew ? 1000 : 400,
-      createdAt: existing?.createdAt || timestamp,
-      updatedAt: timestamp,
-      nextAttemptAt: timestamp,
-      phone: existing?.phone || '',
-      error: FieldValue.delete(),
-      lockedAt: FieldValue.delete(),
-      lockedBy: FieldValue.delete(),
-      completedAt: FieldValue.delete(),
-    },
-    { merge: true }
-  );
 }
 
 async function acquireNextOlxPhoneQueueJob() {
@@ -345,7 +203,6 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
   }
 
   const queueRef = primaryAdminDb.collection(OLX_PHONE_QUEUE_COLLECTION).doc(job.id);
-  const listingRef = primaryAdminDb.collection('ownerListings').doc(job.entry.listingId);
   const favoriteRef =
     job.entry.agencyId
       ? primaryAdminDb
@@ -419,7 +276,9 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
     const remoteResult = directPhone || cloudResult.phone
       ? { phone: '', stage: 'not_needed' }
       : await resolveOlxPhoneViaRemoteWorker(job.entry.link);
-    const phone = directPhone || cloudResult.phone || remoteResult.phone;
+    const phone = normalizeRomanianPhone(
+      directPhone || cloudResult.phone || remoteResult.phone
+    );
     const resolutionSource = directPhone
       ? 'internal-scraper'
       : cloudResult.phone
@@ -428,17 +287,30 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
     const timestamp = nowIso();
 
     if (phone) {
-      await Promise.all([
-        listingRef.set(
+      const completionFavoriteSnapshot = await favoriteRef.get();
+      if (
+        !completionFavoriteSnapshot.exists ||
+        completionFavoriteSnapshot.data()?.isFavoriteActive === false
+      ) {
+        await queueRef.set(
           {
-            ownerPhone: phone,
-            phoneResolvedAt: timestamp,
-            phoneResolvedBy: resolutionSource,
+            status: 'cancelled',
+            error: 'Anuntul a fost scos din Prospectare in timpul preluarii.',
             updatedAt: timestamp,
-            firestoreUpdatedAt: FieldValue.serverTimestamp(),
+            lockedAt: FieldValue.delete(),
+            lockedBy: FieldValue.delete(),
           },
           { merge: true }
-        ),
+        );
+        return {
+          status: 'skipped',
+          queueId: job.id,
+          listingId: job.entry.listingId,
+          attempts: job.entry.attempts,
+          reason: 'Anuntul a fost scos din Prospectare in timpul preluarii.',
+        };
+      }
+      await Promise.all([
         queueRef.set(
           {
             status: 'done',
@@ -455,6 +327,8 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
         favoriteRef.set(
           {
             ownerPhone: phone,
+            phoneResolvedAt: timestamp,
+            phoneResolvedBy: resolutionSource,
             phoneExtractionStatus: 'available',
             phoneExtractionMessage: 'Numarul proprietarului a fost preluat.',
             phoneExtractionCompletedAt: timestamp,
@@ -465,10 +339,6 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
           { merge: true }
         ),
       ]);
-      const refreshedListing = await listingRef.get();
-      if (refreshedListing.exists) {
-        await registerOwnerListingCanonical(job.entry.listingId, refreshedListing.data() as OwnerListingSummary);
-      }
 
 
       return {
@@ -493,11 +363,6 @@ export async function drainNextOlxPhoneQueueItem(): Promise<OlxPhoneDrainResult>
     const failureMessage =
       cloudResult.message ||
       describeRemoteOlxPhoneStage(remoteResult.stage);
-    const refreshedListing = await listingRef.get();
-    if (refreshedListing.exists) {
-      await registerOwnerListingCanonical(job.entry.listingId, refreshedListing.data() as OwnerListingSummary);
-    }
-
     await queueRef.set(
       {
         status: nextStatus,

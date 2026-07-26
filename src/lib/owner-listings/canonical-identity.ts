@@ -47,10 +47,5 @@ export function getOwnerListingCanonicalIdentity(listing: Partial<OwnerListingSu
   const link = normalizeCanonicalUrl(listing.link);
   if (isListingSpecificExternalUrl(link)) return `url:${link}`;
 
-  const phone = normalizeWhitespace(listing.ownerPhone).replace(/\D/g, '');
-  if (phone.length >= 8) {
-    return `phone:${phone}:${listing.scopeKey || ''}:${listing.propertyType || ''}:${listing.transactionType || ''}`;
-  }
-
   return `content:${listing.dedupeSignature || listing.fingerprint || link}`;
 }

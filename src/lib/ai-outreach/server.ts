@@ -2,6 +2,7 @@ import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { createVapiOutboundCall } from '@/lib/ai-outreach/vapi';
 import type { AiOutreachCall, AiOutreachSettings, AiOwnerListingSnapshot } from '@/lib/ai-outreach/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const ACTIVE_CALL_STATUSES = new Set(['queued', 'scheduled', 'calling']);
 const MAX_LISTING_ATTEMPTS_PER_DAY = 3;
@@ -102,7 +103,7 @@ async function getAgencyCalls(adminDb: Firestore, agencyId: string, since: Date)
 }
 
 export function normalizeAiOutreachPhone(phone?: string) {
-  return (phone || '').replace(/[^\d+]/g, '').trim();
+  return normalizeRomanianPhone(phone);
 }
 
 export async function getAiOutreachSettings(adminDb: Firestore, agencyId: string) {

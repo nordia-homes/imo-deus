@@ -71,7 +71,8 @@ export async function GET(request: NextRequest) {
         }
 
         if (scopeKey && listing.scopeKey !== scopeKey) continue;
-        listings.push({ ...listing, id: favoriteListingId });
+        const { ownerPhone: _globalOwnerPhone, ...safeListing } = listing;
+        listings.push({ ...safeListing, id: favoriteListingId });
       }
     }
 

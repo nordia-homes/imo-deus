@@ -63,8 +63,23 @@ export async function POST(request: NextRequest) {
   try {
     const context = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = callSchema.parse(await request.json().catch(() => ({})));
-    const ownerListing: AiOwnerListingSnapshot = body.ownerListing;
-    const ownerPhone = normalizeAiOutreachPhone(ownerListing.ownerPhone);
+    const favoriteSnapshot = await context.adminDb
+      .collection('agencies')
+      .doc(context.agencyId)
+      .collection('ownerListingFavorites')
+      .doc(body.ownerListing.id)
+      .get();
+    if (!favoriteSnapshot.exists || favoriteSnapshot.data()?.isFavoriteActive === false) {
+      return NextResponse.json(
+        { message: 'Anuntul trebuie sa fie activ in Prospectare pentru apelul AI.' },
+        { status: 409 }
+      );
+    }
+    const ownerPhone = normalizeAiOutreachPhone(favoriteSnapshot.data()?.ownerPhone);
+    const ownerListing: AiOwnerListingSnapshot = {
+      ...body.ownerListing,
+      ownerPhone,
+    };
 
     if (!ownerPhone) {
       return NextResponse.json({ message: 'Anuntul nu are numar de telefon valid pentru apel AI.' }, { status: 400 });

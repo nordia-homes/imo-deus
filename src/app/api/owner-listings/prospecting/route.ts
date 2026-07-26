@@ -6,9 +6,13 @@ import {
   cancelProspectingOlxPhoneQueueEntry,
   upsertProspectingOlxPhoneQueueEntry,
 } from '@/lib/owner-listings/olx-phone-queue';
-import { upsertPubli24ProspectingPhoneQueueEntry } from '@/lib/owner-listings/enrichment-queue';
+import {
+  cancelProspectingPubli24PhoneQueueEntry,
+  upsertPubli24ProspectingPhoneQueueEntry,
+} from '@/lib/owner-listings/enrichment-queue';
 import { getAgentOlxConnection } from '@/lib/owner-listings/olx-agent-connection';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 export const runtime = 'nodejs';
 
@@ -127,6 +131,13 @@ export async function POST(request: NextRequest) {
           listingId: body.listingId,
         });
       }
+      if (publi24Url) {
+        await cancelProspectingPubli24PhoneQueueEntry({
+          adminDb: context.adminDb,
+          agencyId: context.agencyId,
+          listingId: body.listingId,
+        });
+      }
       return NextResponse.json({
         active: false,
         phoneExtractionStatus: existing.phoneExtractionStatus || null,
@@ -143,7 +154,8 @@ export async function POST(request: NextRequest) {
     const connection = olxUrl
       ? await getAgentOlxConnection(context.adminDb, context.agencyId, context.uid)
       : null;
-    const hasPhone = Boolean(String(listing.ownerPhone || '').trim());
+    const existingPhone = normalizeRomanianPhone(existing.ownerPhone);
+    const hasPhone = Boolean(existingPhone);
     const phoneExtractionStatus = hasPhone
       ? 'available'
       : olxUrl
@@ -190,6 +202,7 @@ export async function POST(request: NextRequest) {
         notes: existing.notes ?? '',
         phoneExtractionStatus,
         phoneExtractionMessage,
+        ownerPhone: hasPhone ? existingPhone : FieldValue.delete(),
         phoneExtractionRequestedAt: timestamp,
         phoneExtractionRequestedBy: context.uid,
         phoneExtractionRequestedByName: agentName,

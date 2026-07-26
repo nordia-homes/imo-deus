@@ -4,6 +4,7 @@ import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSumm
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
 import { recognizePubli24PhoneWithoutBrowser } from '@/lib/owner-listings/publi24-phone-ocr';
 import { recognizePubli24PhonePure } from '@/lib/owner-listings/publi24-phone-ocr-pure';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 const publi24PhoneCache = new Map<string, string>();
 
@@ -197,14 +198,7 @@ function extractPubli24PhoneRequest(html: string, url: string) {
 }
 
 export function normalizePubli24RecognizedPhone(value: string) {
-  const digits = normalizeWhitespace(value).replace(/[^\d]/g, '');
-  if (/^0[237]\d{8}$/.test(digits) || /^[237]\d{7}$/.test(digits)) {
-    return digits;
-  }
-  if (/^[237]\d{8}$/.test(digits)) {
-    return `0${digits}`;
-  }
-  return '';
+  return normalizeRomanianPhone(value);
 }
 
 async function fetchPubli24PhoneImageBase64(
@@ -845,14 +839,7 @@ export async function scrapePubli24ListingDetail(
       error?: string;
     } = options.requirePhone
       ? await resolvePubli24PhoneFromHtml(html, url)
-      : await resolvePubli24PhoneFromHtml(html, url).catch((error) => ({
-          phone: '',
-          status: 'retryable' as const,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Publi24 phone extraction failed.',
-        }));
+      : { phone: '', status: 'unavailable' };
     const contactPhone = phoneResolution.phone;
     const summary = buildSummary({
       source: 'publi24',
@@ -926,14 +913,7 @@ export async function scrapePubli24ListingDetail(
       error?: string;
     } = options.requirePhone
       ? await resolvePubli24PhoneFromHtml(pageHtml, url)
-      : await resolvePubli24PhoneFromHtml(pageHtml, url).catch((error) => ({
-          phone: '',
-          status: 'retryable' as const,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Publi24 phone extraction failed.',
-        }));
+      : { phone: '', status: 'unavailable' };
     const contactPhone = phoneResolution.phone;
 
     const summary = buildSummary({

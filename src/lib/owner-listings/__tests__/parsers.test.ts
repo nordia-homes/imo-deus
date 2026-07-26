@@ -192,6 +192,7 @@ describe('owner-listing parser contracts', () => {
     expect(normalizePubli24RecognizedPhone('71234567')).toBe('71234567');
     expect(normalizePubli24RecognizedPhone('0721234567')).toBe('0721234567');
     expect(normalizePubli24RecognizedPhone('721234567')).toBe('0721234567');
+    expect(normalizePubli24RecognizedPhone('0000000000')).toBe('');
   });
 
   it('decodes a Publi24 phone image with the serialized local Chromium fallback', async () => {

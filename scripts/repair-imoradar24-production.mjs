@@ -94,10 +94,6 @@ function canonicalIdentity(row, id) {
   const link = normalizeUrl(row.link);
   if (isListingSpecificExternalUrl(link)) return `url:${link}`;
 
-  const phone = text(row.ownerPhone).replace(/\D/g, '');
-  if (phone.length >= 8) {
-    return `phone:${phone}:${row.scopeKey || ''}:${row.propertyType || ''}:${row.transactionType || ''}`;
-  }
   return `content:${row.dedupeSignature || row.fingerprint || link || id}`;
 }
 

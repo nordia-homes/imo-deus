@@ -115,10 +115,6 @@ function canonicalIdentity(row, id) {
   if (isListingSpecificExternalUrl(origin)) return `url:${origin}`;
   const link = normalizedUrl(row.link);
   if (isListingSpecificExternalUrl(link)) return `url:${link}`;
-  const phone = text(row.ownerPhone).replace(/\D/g, '');
-  if (phone.length >= 8) {
-    return `phone:${phone}:${row.scopeKey || ''}:${row.propertyType || ''}:${row.transactionType || ''}`;
-  }
   return `content:${row.dedupeSignature || row.fingerprint || link || id}`;
 }
 
@@ -135,12 +131,11 @@ function missingFields(row) {
   if (['apartment', 'house'].includes(row.propertyType) && !text(row.constructionYear ?? row.year)) missing.push('constructionYear');
   if (!text(row.description)) missing.push('description');
   if (!text(row.imageUrl || row.image)) missing.push('image');
-  if (!text(row.ownerPhone)) missing.push('ownerPhone');
   return missing;
 }
 
 function qualityScore(row) {
-  const fields = ['title', 'price', 'area', 'rooms', 'constructionYear', 'year', 'location', 'description', 'imageUrl', 'ownerPhone'];
+  const fields = ['title', 'price', 'area', 'rooms', 'constructionYear', 'year', 'location', 'description', 'imageUrl'];
   return (row.source === 'imoradar24' ? 0 : 100) + fields.reduce((score, field) => score + (text(row[field]) ? 1 : 0), 0);
 }
 
@@ -155,7 +150,7 @@ function preferPrimary(current, incoming) {
 
 const MERGE_FIELDS = [
   'title', 'price', 'area', 'rooms', 'constructionYear', 'year', 'location', 'description',
-  'imageUrl', 'image', 'ownerName', 'ownerPhone', 'originSourceUrl', 'originSourceLabel',
+  'imageUrl', 'image', 'ownerName', 'originSourceUrl', 'originSourceLabel',
 ];
 
 function mergeRicher(current, row) {
