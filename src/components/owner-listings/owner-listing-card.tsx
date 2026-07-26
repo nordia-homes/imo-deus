@@ -222,7 +222,7 @@ export function OwnerListingCard({
     switch (effectivePhoneExtractionStatus) {
       case 'available':
         return {
-          label: favoriteMeta.ownerPhone || listing.ownerPhone || 'Telefon disponibil',
+          label: favoriteMeta?.ownerPhone || listing.ownerPhone || 'Telefon disponibil',
           className: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200',
         };
       case 'processing':
