@@ -85,10 +85,12 @@ export async function cancelProspectingOlxPhoneQueueEntry(input: {
     .collection(OLX_PHONE_QUEUE_COLLECTION)
     .doc(getProspectingQueueId(input.agencyId, input.listingId));
   const snapshot = await queueRef.get();
-  if (!snapshot.exists || snapshot.data()?.status === 'done') return;
+  if (!snapshot.exists) return;
   await queueRef.set(
     {
       status: 'cancelled',
+      phone: FieldValue.delete(),
+      completedAt: FieldValue.delete(),
       updatedAt: nowIso(),
       lockedAt: FieldValue.delete(),
       lockedBy: FieldValue.delete(),

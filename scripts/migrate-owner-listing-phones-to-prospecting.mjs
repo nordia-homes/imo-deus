@@ -58,7 +58,7 @@ async function commitMutations(mutations) {
   }
 }
 
-const [listingSnapshot, favoriteSnapshot] = await Promise.all([
+const [listingSnapshot, favoriteSnapshot, olxQueueSnapshot] = await Promise.all([
   db.collection('ownerListings').select(
     'ownerPhone',
     'source',
@@ -68,6 +68,7 @@ const [listingSnapshot, favoriteSnapshot] = await Promise.all([
     'title'
   ).get(),
   db.collectionGroup('ownerListingFavorites').get(),
+  db.collection('ownerListingOlxPhoneQueue').get(),
 ]);
 
 const listings = new Map(listingSnapshot.docs.map((document) => [document.id, document.data()]));
@@ -84,10 +85,14 @@ const stats = {
   activeFavorites: 0,
   phonesCopiedToActiveProspecting: 0,
   invalidFavoritePhonesCleared: 0,
+  inactiveFavoritePhonesCleared: 0,
   publi24JobsQueued: 0,
   olxJobsQueued: 0,
+  legacyOlxQueueEntriesCancelled: 0,
+  legacyOlxQueuePhonesCleared: 0,
   mutations: 0,
 };
+const activeProspectingKeys = new Set();
 
 for (const [listingId, rawPhone] of globalPhones) {
   if (!normalizeRomanianPhone(rawPhone)) stats.globalInvalidPhones += 1;
@@ -110,9 +115,40 @@ for (const favoriteDocument of favoriteSnapshot.docs) {
   const pathSegments = favoriteDocument.ref.path.split('/');
   const agencyId = pathSegments[1] || '';
   const active = favorite.isFavoriteActive !== false;
-  if (active) stats.activeFavorites += 1;
+  if (active) {
+    stats.activeFavorites += 1;
+    activeProspectingKeys.add(`${agencyId}:${listingId}`);
+  }
 
   const favoritePhoneRaw = String(favorite.ownerPhone || '');
+  if (!active) {
+    if (
+      favoritePhoneRaw ||
+      favorite.phoneResolvedAt ||
+      favorite.phoneResolvedBy ||
+      favorite.phoneExtractionCompletedAt
+    ) {
+      mutations.push({
+        ref: favoriteDocument.ref,
+        data: {
+          ownerPhone: FieldValue.delete(),
+          phoneResolvedAt: FieldValue.delete(),
+          phoneResolvedBy: FieldValue.delete(),
+          phoneExtractionStatus: 'cancelled',
+          phoneExtractionMessage: 'Telefon eliminat deoarece anuntul nu mai este in Prospectare.',
+          phoneExtractionCompletedAt: FieldValue.delete(),
+          phoneExtractionError: FieldValue.delete(),
+          phoneExtractionLastAttemptAt: FieldValue.delete(),
+          phoneExtractionNextAttemptAt: FieldValue.delete(),
+          updatedAt: new Date().toISOString(),
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
+        },
+      });
+      stats.inactiveFavoritePhonesCleared += 1;
+    }
+    continue;
+  }
+
   const phone = normalizeRomanianPhone(favoritePhoneRaw) || normalizeRomanianPhone(globalPhones.get(listingId));
   if (active && phone) {
     mutations.push({
@@ -146,7 +182,7 @@ for (const favoriteDocument of favoriteSnapshot.docs) {
     stats.invalidFavoritePhonesCleared += 1;
   }
 
-  if (!active || phone || !agencyId) continue;
+  if (phone || !agencyId) continue;
   const listing = listings.get(listingId);
   if (!listing) continue;
   const requestedByUid = String(favorite.phoneExtractionRequestedBy || favorite.createdBy || '');
@@ -210,6 +246,42 @@ for (const favoriteDocument of favoriteSnapshot.docs) {
     });
     stats.olxJobsQueued += 1;
   }
+}
+
+for (const queueDocument of olxQueueSnapshot.docs) {
+  const entry = queueDocument.data();
+  const agencyId = String(entry.agencyId || '');
+  const listingId = String(entry.listingId || '');
+  const isActiveProspectingJob =
+    entry.trigger === 'prospecting' &&
+    entry.lane === 'prospecting' &&
+    Boolean(agencyId && listingId) &&
+    activeProspectingKeys.has(`${agencyId}:${listingId}`);
+  if (isActiveProspectingJob) continue;
+
+  const hasStoredPhone = Boolean(String(entry.phone || '').trim());
+  const needsCancellation =
+    entry.status !== 'cancelled' ||
+    hasStoredPhone ||
+    Boolean(entry.lockedAt || entry.lockedBy || entry.nextAttemptAt || entry.completedAt);
+  if (!needsCancellation) continue;
+
+  mutations.push({
+    ref: queueDocument.ref,
+    data: {
+      status: 'cancelled',
+      phone: FieldValue.delete(),
+      completedAt: FieldValue.delete(),
+      lockedAt: FieldValue.delete(),
+      lockedBy: FieldValue.delete(),
+      nextAttemptAt: FieldValue.delete(),
+      error: 'Job OLX istoric anulat: nu apartine unei Prospectari active.',
+      phonePrivacyMigratedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  });
+  stats.legacyOlxQueueEntriesCancelled += 1;
+  if (hasStoredPhone) stats.legacyOlxQueuePhonesCleared += 1;
 }
 
 stats.mutations = mutations.length;

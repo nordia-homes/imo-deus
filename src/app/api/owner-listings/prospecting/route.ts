@@ -118,9 +118,18 @@ export async function POST(request: NextRequest) {
           removedAt: timestamp,
           removedBy: context.uid,
           removedByName: agentName,
-          phoneExtractionStatus: existing.phoneExtractionStatus || null,
+          ownerPhone: FieldValue.delete(),
+          phoneResolvedAt: FieldValue.delete(),
+          phoneResolvedBy: FieldValue.delete(),
+          phoneExtractionStatus: 'cancelled',
+          phoneExtractionMessage: 'Preluarea telefonului a fost oprita deoarece anuntul nu mai este in Prospectare.',
+          phoneExtractionCompletedAt: FieldValue.delete(),
+          phoneExtractionError: FieldValue.delete(),
+          phoneExtractionLastAttemptAt: FieldValue.delete(),
+          phoneExtractionNextAttemptAt: FieldValue.delete(),
           updatedAt: timestamp,
           updatedBy: context.uid,
+          firestoreUpdatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -140,7 +149,7 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({
         active: false,
-        phoneExtractionStatus: existing.phoneExtractionStatus || null,
+        phoneExtractionStatus: 'cancelled',
       });
     }
 
