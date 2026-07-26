@@ -6,6 +6,7 @@ import {
   cancelProspectingOlxPhoneQueueEntry,
   upsertProspectingOlxPhoneQueueEntry,
 } from '@/lib/owner-listings/olx-phone-queue';
+import { upsertPubli24ProspectingPhoneQueueEntry } from '@/lib/owner-listings/enrichment-queue';
 import { getAgentOlxConnection } from '@/lib/owner-listings/olx-agent-connection';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
 
@@ -56,6 +57,25 @@ function getOlxUrl(listing: OwnerListingSummary) {
   return '';
 }
 
+function getPubli24Url(listing: OwnerListingSummary) {
+  const candidates = [
+    listing.source === 'publi24' ? listing.link : '',
+    listing.originSourceUrl || '',
+    listing.sourceUrl || '',
+  ];
+  for (const candidate of candidates) {
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol === 'https:' && /(^|\.)publi24\.ro$/i.test(parsed.hostname)) {
+        return parsed.toString();
+      }
+    } catch {
+      // Continue with the next source URL.
+    }
+  }
+  return '';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const context = await requireAgencyUserFromBearerToken(
@@ -84,6 +104,7 @@ export async function POST(request: NextRequest) {
     const agentName = userData?.name || userData?.email || 'Agent';
     const timestamp = new Date().toISOString();
     const olxUrl = getOlxUrl(listing);
+    const publi24Url = getPubli24Url(listing);
 
     if (body.action === 'remove') {
       await favoriteRef.set(
@@ -129,14 +150,18 @@ export async function POST(request: NextRequest) {
         ? connection?.status === 'connected'
           ? 'queued'
           : 'awaiting_connection'
-        : 'not_required';
+        : publi24Url
+          ? 'queued'
+          : 'not_required';
     const phoneExtractionMessage = hasPhone
       ? 'Numarul proprietarului este disponibil.'
       : olxUrl
         ? connection?.status === 'connected'
           ? 'Anuntul a fost adaugat in coada de preluare OLX.'
           : 'Conecteaza contul OLX pentru preluarea automata a numarului.'
-        : 'Pentru aceasta sursa se folosesc datele publice disponibile.';
+        : publi24Url
+          ? 'Anuntul a fost adaugat in coada de preluare Publi24.'
+          : 'Pentru aceasta sursa se folosesc datele publice disponibile.';
 
     await favoriteRef.set(
       {
@@ -189,6 +214,18 @@ export async function POST(request: NextRequest) {
         requestedByName: agentName,
         listingId: body.listingId,
         link: olxUrl,
+        title: listing.title,
+        forceRetry: body.action === 'retry',
+      });
+    }
+    if (publi24Url && !hasPhone) {
+      await upsertPubli24ProspectingPhoneQueueEntry({
+        adminDb: context.adminDb,
+        agencyId: context.agencyId,
+        requestedByUid: context.uid,
+        requestedByName: agentName,
+        listingId: body.listingId,
+        link: publi24Url,
         title: listing.title,
         forceRetry: body.action === 'retry',
       });

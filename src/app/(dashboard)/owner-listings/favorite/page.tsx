@@ -207,7 +207,7 @@ export default function FavoriteOwnerListingsPage() {
       if (action === 'retry') {
         toast({
           title: 'Preluare relansata',
-          description: payload.phoneExtractionMessage || 'Telefonul OLX va fi reincercat automat.',
+          description: payload.phoneExtractionMessage || 'Telefonul va fi reincercat automat.',
         });
       } else {
         toast({
@@ -446,7 +446,8 @@ export default function FavoriteOwnerListingsPage() {
                 onSetCollaborationStatus={handleSetCollaborationStatus}
                 isLoadingImport={isLoadingImport === listing.id}
               />
-              {['failed', 'unavailable', 'awaiting_connection'].includes(
+              {!listing.ownerPhone &&
+              ['failed', 'unavailable', 'awaiting_connection'].includes(
                 favorite.phoneExtractionStatus || ''
               ) ? (
                 <Button

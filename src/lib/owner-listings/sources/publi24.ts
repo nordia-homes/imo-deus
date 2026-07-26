@@ -493,10 +493,16 @@ async function recognizePubli24PhoneViaBrowser(base64: string, hintedLength?: nu
   }
 }
 
-async function extractPubli24PhoneFromHtml(html: string, url: string) {
+async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
+  phone: string;
+  status: 'available' | 'unavailable' | 'retryable';
+}> {
+  if (!extractPubli24PhoneRequest(html, url)) {
+    return { phone: '', status: 'unavailable' };
+  }
   const phonePayload = await fetchPubli24PhoneImageBase64(html, url);
   if (!phonePayload?.base64) {
-    return '';
+    return { phone: '', status: 'retryable' };
   }
 
   const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
@@ -509,14 +515,14 @@ async function extractPubli24PhoneFromHtml(html: string, url: string) {
   const digits = recognized.replace(/[^\d]/g, '');
 
   if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {
-    return digits;
+    return { phone: digits, status: 'available' };
   }
 
   if (/^7\d{8}$/.test(digits)) {
-    return `0${digits}`;
+    return { phone: `0${digits}`, status: 'available' };
   }
 
-  return '';
+  return { phone: '', status: 'retryable' };
 }
 
 function extractPubli24DetailFromHtml(html: string, url: string) {
@@ -815,7 +821,11 @@ export async function scrapePubli24ListingDetail(url: string) {
   });
   if (html) {
     const detail = extractPubli24DetailFromHtml(html, url);
-    const contactPhone = await extractPubli24PhoneFromHtml(html, url).catch(() => '');
+    const phoneResolution = await resolvePubli24PhoneFromHtml(html, url).catch(() => ({
+      phone: '',
+      status: 'retryable' as const,
+    }));
+    const contactPhone = phoneResolution.phone;
     const summary = buildSummary({
       source: 'publi24',
       externalId: url.match(/\/([a-z0-9]+)\.html/i)?.[1] || url,
@@ -839,6 +849,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       fullDescription: detail.description,
       contactName: '',
       contactPhone,
+      contactPhoneStatus: phoneResolution.status,
     } satisfies OwnerListingDetail;
   }
 
@@ -879,7 +890,14 @@ export async function scrapePubli24ListingDetail(url: string) {
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
-    const contactPhone = await extractPubli24PhoneFromHtml(await page.content(), url).catch(() => '');
+    const phoneResolution = await resolvePubli24PhoneFromHtml(
+      await page.content(),
+      url
+    ).catch(() => ({
+      phone: '',
+      status: 'retryable' as const,
+    }));
+    const contactPhone = phoneResolution.phone;
 
     const summary = buildSummary({
       source: 'publi24',
@@ -904,6 +922,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       fullDescription: payload.description,
       contactName: '',
       contactPhone,
+      contactPhoneStatus: phoneResolution.status,
     } satisfies OwnerListingDetail;
   });
 }

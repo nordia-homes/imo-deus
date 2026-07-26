@@ -72,6 +72,7 @@ export type OwnerListingDetail = OwnerListingSummary & {
   floor?: string;
   contactName?: string;
   contactPhone?: string;
+  contactPhoneStatus?: 'available' | 'unavailable' | 'retryable';
 };
 
 export type OwnerListingSyncResult = {

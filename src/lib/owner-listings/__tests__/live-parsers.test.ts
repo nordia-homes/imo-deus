@@ -103,5 +103,10 @@ liveDescribe('live owner-listing parser contracts', () => {
     expect(offers.length).toBeGreaterThan(0);
     const details = await Promise.all(offers.map((offer) => scrapePubli24ListingDetail(offer.url)));
     expect(details.some((detail) => /^0\d{9}$|^\d{8}$/.test(detail.contactPhone || ''))).toBe(true);
+    expect(
+      details
+        .filter((detail) => detail.contactPhone)
+        .every((detail) => detail.contactPhoneStatus === 'available')
+    ).toBe(true);
   }, 120_000);
 });

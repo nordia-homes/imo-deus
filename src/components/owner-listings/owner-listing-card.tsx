@@ -209,8 +209,17 @@ export function OwnerListingCard({
     return '';
   }, [activeWorkflowStatus, favoriteMeta]);
   const showRemovedFavoriteWarning = Boolean(favoriteMeta?.wasRemovedFromFavorites && !favoriteMeta?.isFavoriteActive);
+  const phoneProviderLabel =
+    listing.source === 'publi24' ||
+    /^Publi24$/i.test(String(listing.originSourceLabel || '').trim()) ||
+    /https:\/\/(?:www\.)?publi24\.ro\//i.test(String(listing.originSourceUrl || ''))
+      ? 'Publi24'
+      : 'OLX';
+  const effectivePhoneExtractionStatus = String(listing.ownerPhone || '').trim()
+    ? 'available'
+    : favoriteMeta?.phoneExtractionStatus;
   const phoneExtractionMeta = (() => {
-    switch (favoriteMeta?.phoneExtractionStatus) {
+    switch (effectivePhoneExtractionStatus) {
       case 'available':
         return {
           label: favoriteMeta.ownerPhone || listing.ownerPhone || 'Telefon disponibil',
@@ -218,12 +227,12 @@ export function OwnerListingCard({
         };
       case 'processing':
         return {
-          label: 'Se preia telefonul OLX',
+          label: `Se preia telefonul ${phoneProviderLabel}`,
           className: 'border-blue-400/30 bg-blue-500/15 text-blue-200',
         };
       case 'queued':
         return {
-          label: 'Telefon OLX in asteptare',
+          label: `Telefon ${phoneProviderLabel} in asteptare`,
           className: 'border-blue-400/30 bg-blue-500/15 text-blue-200',
         };
       case 'awaiting_connection':
@@ -473,7 +482,7 @@ export function OwnerListingCard({
                 phoneExtractionMeta.className,
               )}
             >
-              {favoriteMeta?.phoneExtractionStatus === 'processing' ? (
+              {effectivePhoneExtractionStatus === 'processing' ? (
                 <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
               ) : (
                 <Phone className="h-3.5 w-3.5 shrink-0" />
