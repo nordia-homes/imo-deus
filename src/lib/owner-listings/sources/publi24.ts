@@ -196,12 +196,10 @@ function extractPubli24PhoneRequest(html: string, url: string) {
   };
 }
 
-async function fetchPubli24PhoneImageBase64(html: string, url: string) {
-  const request = extractPubli24PhoneRequest(html, url);
-  if (!request) {
-    return null;
-  }
-
+async function fetchPubli24PhoneImageBase64(
+  request: NonNullable<ReturnType<typeof extractPubli24PhoneRequest>>,
+  url: string
+) {
   const cached = publi24PhoneCache.get(request.cacheKey);
   if (cached) {
     return { ...request, base64: cached };
@@ -491,35 +489,55 @@ export async function recognizePubli24PhoneViaBrowser(base64: string, hintedLeng
 async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
   phone: string;
   status: 'available' | 'unavailable' | 'retryable';
+  error?: string;
 }> {
-  if (!extractPubli24PhoneRequest(html, url)) {
+  const request = extractPubli24PhoneRequest(html, url);
+  if (!request) {
     return { phone: '', status: 'unavailable' };
   }
-  const phonePayload = await fetchPubli24PhoneImageBase64(html, url);
-  if (!phonePayload?.base64) {
-    return { phone: '', status: 'retryable' };
-  }
+  const phonePayload = await fetchPubli24PhoneImageBase64(request, url);
+
+  const normalizeRecognizedPhone = (value: string) => {
+    const digits = normalizeWhitespace(value).replace(/[^\d]/g, '');
+    if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {
+      return digits;
+    }
+    if (/^7\d{8}$/.test(digits)) {
+      return `0${digits}`;
+    }
+    return '';
+  };
 
   const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
-  const pureJavaScriptResult = browserlessResult
-    ? ''
-    : await recognizePubli24PhonePure(phonePayload.base64, phonePayload.hintedLength);
-  const recognized = normalizeWhitespace(
-    browserlessResult ||
-      pureJavaScriptResult ||
-      await recognizePubli24PhoneViaBrowser(phonePayload.base64, phonePayload.hintedLength)
+  const browserlessPhone = normalizeRecognizedPhone(browserlessResult);
+  if (browserlessPhone) {
+    return { phone: browserlessPhone, status: 'available' };
+  }
+
+  const pureJavaScriptResult = await recognizePubli24PhonePure(
+    phonePayload.base64,
+    phonePayload.hintedLength
   );
-  const digits = recognized.replace(/[^\d]/g, '');
-
-  if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {
-    return { phone: digits, status: 'available' };
+  const pureJavaScriptPhone = normalizeRecognizedPhone(pureJavaScriptResult);
+  if (pureJavaScriptPhone) {
+    return { phone: pureJavaScriptPhone, status: 'available' };
   }
 
-  if (/^7\d{8}$/.test(digits)) {
-    return { phone: `0${digits}`, status: 'available' };
+  const browserResult = await recognizePubli24PhoneViaBrowser(
+    phonePayload.base64,
+    phonePayload.hintedLength
+  );
+  const browserPhone = normalizeRecognizedPhone(browserResult);
+  if (browserPhone) {
+    return { phone: browserPhone, status: 'available' };
   }
 
-  throw new Error('Publi24 phone OCR could not recognize a valid Romanian number.');
+  throw new Error(
+    `Publi24 phone OCR could not recognize a valid Romanian number ` +
+      `(native=${browserlessResult ? 'invalid' : 'empty'}, ` +
+      `pure=${pureJavaScriptResult ? 'invalid' : 'empty'}, ` +
+      `browser=${browserResult ? 'invalid' : 'empty'}).`
+  );
 }
 
 function extractPubli24DetailFromHtml(html: string, url: string) {

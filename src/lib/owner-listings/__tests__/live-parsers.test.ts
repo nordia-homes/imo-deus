@@ -10,8 +10,10 @@ import {
   extractPubli24StructuredOffersFromHtml,
   scrapePubli24ListingDetail,
 } from '@/lib/owner-listings/sources/publi24';
+import { recognizePubli24PhonePure } from '@/lib/owner-listings/publi24-phone-ocr-pure';
 
 const liveDescribe = process.env.LIVE_SCRAPER_TEST === '1' ? describe : describe.skip;
+const exactPubli24PhoneUrl = process.env.PUBLI24_PHONE_TEST_URL;
 
 liveDescribe('live owner-listing parser contracts', () => {
   it('parses the current Imoradar24 owner-listing DOM', async () => {
@@ -109,4 +111,56 @@ liveDescribe('live owner-listing parser contracts', () => {
         .every((detail) => detail.contactPhoneStatus === 'available')
     ).toBe(true);
   }, 120_000);
+
+  it.skipIf(!exactPubli24PhoneUrl)(
+    'hydrates the phone for an exact Publi24 prospecting URL',
+    async () => {
+      const detail = await scrapePubli24ListingDetail(exactPubli24PhoneUrl!, {
+        requirePhone: true,
+      });
+
+      expect(detail.contactPhoneStatus).toBe('available');
+      expect(detail.contactPhone).toMatch(/^0\d{9}$|^\d{8}$/);
+    },
+    120_000
+  );
+
+  it.skipIf(!exactPubli24PhoneUrl)(
+    'hydrates an exact Publi24 phone with the cloud-safe pure JavaScript OCR',
+    async () => {
+      const html = await fetchScraperHtml(exactPubli24PhoneUrl!, 60_000);
+      const formAction = html.match(
+        /<form action="([^"]*PhoneNumberImages[^"]*)"/i
+      )?.[1];
+      const encryptedPhone = html.match(
+        /name="EncryptedPhone"[^>]*value="([^"]+)"/i
+      )?.[1];
+      expect(Boolean(formAction && encryptedPhone)).toBe(true);
+
+      const endpoint = new URL(formAction!, exactPubli24PhoneUrl!).toString();
+      const hintedLength = Number(endpoint.match(/Length=(\d+)/i)?.[1] || 0);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type':
+            'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36',
+          Origin: 'https://www.publi24.ro',
+          Referer: exactPubli24PhoneUrl!,
+        },
+        body: new URLSearchParams({ EncryptedPhone: encryptedPhone! }).toString(),
+      });
+      expect(response.ok).toBe(true);
+
+      const base64 = (await response.text()).trim();
+      const recognized = await recognizePubli24PhonePure(
+        base64,
+        hintedLength || null
+      );
+      expect(/^0\d{9}$|^\d{8}$/.test(recognized)).toBe(true);
+    },
+    120_000
+  );
 });
