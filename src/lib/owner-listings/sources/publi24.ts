@@ -196,6 +196,17 @@ function extractPubli24PhoneRequest(html: string, url: string) {
   };
 }
 
+export function normalizePubli24RecognizedPhone(value: string) {
+  const digits = normalizeWhitespace(value).replace(/[^\d]/g, '');
+  if (/^0[237]\d{8}$/.test(digits) || /^[237]\d{7}$/.test(digits)) {
+    return digits;
+  }
+  if (/^[237]\d{8}$/.test(digits)) {
+    return `0${digits}`;
+  }
+  return '';
+}
+
 async function fetchPubli24PhoneImageBase64(
   request: NonNullable<ReturnType<typeof extractPubli24PhoneRequest>>,
   url: string
@@ -497,19 +508,8 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
   }
   const phonePayload = await fetchPubli24PhoneImageBase64(request, url);
 
-  const normalizeRecognizedPhone = (value: string) => {
-    const digits = normalizeWhitespace(value).replace(/[^\d]/g, '');
-    if (/^0\d{9}$/.test(digits) || /^\d{8}$/.test(digits)) {
-      return digits;
-    }
-    if (/^7\d{8}$/.test(digits)) {
-      return `0${digits}`;
-    }
-    return '';
-  };
-
   const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
-  const browserlessPhone = normalizeRecognizedPhone(browserlessResult);
+  const browserlessPhone = normalizePubli24RecognizedPhone(browserlessResult);
   if (browserlessPhone) {
     return { phone: browserlessPhone, status: 'available' };
   }
@@ -518,7 +518,7 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
     phonePayload.base64,
     phonePayload.hintedLength
   );
-  const pureJavaScriptPhone = normalizeRecognizedPhone(pureJavaScriptResult);
+  const pureJavaScriptPhone = normalizePubli24RecognizedPhone(pureJavaScriptResult);
   if (pureJavaScriptPhone) {
     return { phone: pureJavaScriptPhone, status: 'available' };
   }
@@ -527,7 +527,7 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
     phonePayload.base64,
     phonePayload.hintedLength
   );
-  const browserPhone = normalizeRecognizedPhone(browserResult);
+  const browserPhone = normalizePubli24RecognizedPhone(browserResult);
   if (browserPhone) {
     return { phone: browserPhone, status: 'available' };
   }

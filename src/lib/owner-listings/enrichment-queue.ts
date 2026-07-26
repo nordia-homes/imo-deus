@@ -468,7 +468,9 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       }
       throw new Error(
         detail.contactPhoneError ||
-          'Publi24 nu a returnat temporar numarul de telefon.'
+          (detail.contactPhoneStatus === 'available'
+            ? 'Publi24 OCR a returnat un numar care nu a trecut validarea pentru Romania.'
+            : 'Publi24 nu a returnat temporar numarul de telefon.')
       );
     }
     const patch = detailPatch(detail, job.entry.taskType);

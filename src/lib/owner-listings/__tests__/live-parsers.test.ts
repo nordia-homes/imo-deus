@@ -104,7 +104,11 @@ liveDescribe('live owner-listing parser contracts', () => {
     const offers = extractPubli24StructuredOffersFromHtml(html).slice(0, 3);
     expect(offers.length).toBeGreaterThan(0);
     const details = await Promise.all(offers.map((offer) => scrapePubli24ListingDetail(offer.url)));
-    expect(details.some((detail) => /^0\d{9}$|^\d{8}$/.test(detail.contactPhone || ''))).toBe(true);
+    expect(
+      details.some((detail) =>
+        /^0[237]\d{8}$|^[237]\d{7}$/.test(detail.contactPhone || '')
+      )
+    ).toBe(true);
     expect(
       details
         .filter((detail) => detail.contactPhone)
@@ -120,7 +124,7 @@ liveDescribe('live owner-listing parser contracts', () => {
       });
 
       expect(detail.contactPhoneStatus).toBe('available');
-      expect(detail.contactPhone).toMatch(/^0\d{9}$|^\d{8}$/);
+      expect(detail.contactPhone).toMatch(/^0[237]\d{8}$|^[237]\d{7}$/);
     },
     120_000
   );
@@ -159,7 +163,7 @@ liveDescribe('live owner-listing parser contracts', () => {
         base64,
         hintedLength || null
       );
-      expect(/^0\d{9}$|^\d{8}$/.test(recognized)).toBe(true);
+      expect(/^0[237]\d{8}$|^[237]\d{7}$/.test(recognized)).toBe(true);
     },
     120_000
   );

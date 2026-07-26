@@ -16,6 +16,7 @@ import { extractOlxLastPage, extractOlxListPageFromHtml } from '@/lib/owner-list
 import {
   extractPubli24LastPage,
   extractPubli24StructuredOffersFromHtml,
+  normalizePubli24RecognizedPhone,
   recognizePubli24PhoneViaBrowser,
 } from '@/lib/owner-listings/sources/publi24';
 import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
@@ -183,6 +184,14 @@ describe('owner-listing parser contracts', () => {
     const base64 = canvas.toBuffer('image/png').toString('base64');
     await expect(recognizePubli24PhoneWithoutBrowser(base64, phone.length)).resolves.toBe(phone);
     await expect(recognizePubli24PhonePure(base64, phone.length)).resolves.toBe(phone);
+  });
+
+  it('rejects invalid 8-digit OCR results so the next Publi24 fallback can run', () => {
+    expect(normalizePubli24RecognizedPhone('12345678')).toBe('');
+    expect(normalizePubli24RecognizedPhone('49876543')).toBe('');
+    expect(normalizePubli24RecognizedPhone('71234567')).toBe('71234567');
+    expect(normalizePubli24RecognizedPhone('0721234567')).toBe('0721234567');
+    expect(normalizePubli24RecognizedPhone('721234567')).toBe('0721234567');
   });
 
   it('decodes a Publi24 phone image with the serialized local Chromium fallback', async () => {
