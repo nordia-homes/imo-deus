@@ -29,7 +29,6 @@
     "test:owner-listings:live": "set LIVE_SCRAPER_TEST=1&& vitest run src/lib/owner-listings/__tests__/live-parsers.test.ts",
     "migrate:owner-listings": "node scripts/migrate-owner-listings-pipeline.mjs",
     "repair:imoradar24": "node scripts/repair-imoradar24-production.mjs",
-    "backfill:publi24-phones": "node scripts/backfill-publi24-phone-queue.mjs",
     "verify:owner-listings": "node scripts/verify-owner-listings-production.mjs",
     "meta:test-runner": "node scripts/meta-api-test-runner.mjs"
   },

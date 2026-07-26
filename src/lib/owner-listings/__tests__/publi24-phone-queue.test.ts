@@ -28,8 +28,8 @@ function listing(
 }
 
 describe('Publi24 phone enrichment policy', () => {
-  it('queues a separate phone job for a ready Publi24 listing without a phone', () => {
-    expect(getOwnerListingEnrichmentTaskTypes(listing())).toEqual(['phone']);
+  it('does not queue phone extraction globally for a ready Publi24 listing', () => {
+    expect(getOwnerListingEnrichmentTaskTypes(listing())).toEqual([]);
   });
 
   it('does not queue a phone job when Publi24 already has a phone', () => {
@@ -38,7 +38,7 @@ describe('Publi24 phone enrichment policy', () => {
     ).toEqual([]);
   });
 
-  it('lets detail enrichment extract the phone before creating a redundant phone job', () => {
+  it('queues only detail enrichment for newly discovered Publi24 listings', () => {
     expect(
       getOwnerListingEnrichmentTaskTypes(
         listing({ publicationStatus: 'discovered', description: '' })

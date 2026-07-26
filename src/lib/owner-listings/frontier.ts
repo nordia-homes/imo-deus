@@ -20,6 +20,12 @@ const SOURCE_LIMITS_PER_TICK: Record<OwnerListingSource, number> = {
   publi24: 3,
   imoradar24: 2,
 };
+export const OWNER_LISTING_FRONTIER_ACQUIRABLE_STATUSES = [
+  'pending',
+  'cooldown',
+  'failed',
+  'running',
+] as const;
 
 export type OwnerListingScrapeFrontierJob = {
   id: string;
@@ -198,7 +204,7 @@ async function acquireFrontierJob(source: OwnerListingSource, scopeKey?: string 
   let query: FirebaseFirestore.Query = adminDb
     .collection(FRONTIER_COLLECTION)
     .where('source', '==', source)
-    .where('status', 'in', ['pending', 'cooldown', 'failed'])
+    .where('status', 'in', OWNER_LISTING_FRONTIER_ACQUIRABLE_STATUSES)
     .where('nextRunAt', '<=', now)
     .orderBy('nextRunAt', 'asc')
     .orderBy('priority', 'desc')
@@ -209,7 +215,7 @@ async function acquireFrontierJob(source: OwnerListingSource, scopeKey?: string 
       .collection(FRONTIER_COLLECTION)
       .where('scopeKey', '==', scopeKey)
       .where('source', '==', source)
-      .where('status', 'in', ['pending', 'cooldown', 'failed'])
+      .where('status', 'in', OWNER_LISTING_FRONTIER_ACQUIRABLE_STATUSES)
       .where('nextRunAt', '<=', now)
       .orderBy('nextRunAt', 'asc')
       .orderBy('priority', 'desc')

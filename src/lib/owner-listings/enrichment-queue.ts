@@ -93,22 +93,10 @@ function shouldQueueTask(listing: OwnerListingSummary, taskType: OwnerListingEnr
 export function getOwnerListingEnrichmentTaskTypes(
   listing: OwnerListingSummary
 ): OwnerListingEnrichmentTaskType[] {
-  const tasks: OwnerListingEnrichmentTaskType[] = [];
   const needsDetail =
     listing.publicationStatus !== 'ready' &&
     shouldQueueTask(listing, 'detail');
-  if (needsDetail) {
-    tasks.push('detail');
-  }
-  if (
-    !needsDetail &&
-    listing.source === 'publi24' &&
-    listing.publicationStatus !== 'rejected' &&
-    shouldQueueTask(listing, 'phone')
-  ) {
-    tasks.push('phone');
-  }
-  return tasks;
+  return needsDetail ? ['detail'] : [];
 }
 
 export async function upsertOwnerListingEnrichmentQueueEntries(listingId: string, listing: OwnerListingSummary) {
