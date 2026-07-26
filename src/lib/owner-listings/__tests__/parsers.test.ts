@@ -15,6 +15,7 @@ import { extractOlxLastPage, extractOlxListPageFromHtml } from '@/lib/owner-list
 import {
   extractPubli24LastPage,
   extractPubli24StructuredOffersFromHtml,
+  recognizePubli24PhoneViaBrowser,
 } from '@/lib/owner-listings/sources/publi24';
 import { listOwnerListingScopes } from '@/lib/owner-listings/scope';
 import {
@@ -181,6 +182,22 @@ describe('owner-listing parser contracts', () => {
     const base64 = canvas.toBuffer('image/png').toString('base64');
     await expect(recognizePubli24PhoneWithoutBrowser(base64, phone.length)).resolves.toBe(phone);
   });
+
+  it('decodes a Publi24 phone image with the serialized local Chromium fallback', async () => {
+    const phone = '0723456789';
+    const canvas = createCanvas(180, 40);
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'black';
+    context.font = 'normal 28px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    Array.from(phone).forEach((digit, index) => context.fillText(digit, 9 + index * 18, 20));
+
+    const base64 = canvas.toBuffer('image/png').toString('base64');
+    await expect(recognizePubli24PhoneViaBrowser(base64, phone.length)).resolves.toBe(phone);
+  }, 30_000);
 
   it('isolates OLX cards and discovers the actual last page', () => {
     const html = fixture('olx-current.html');

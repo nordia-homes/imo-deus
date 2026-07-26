@@ -1,4 +1,4 @@
-import { chromium, type Page } from 'playwright';
+import type { Page } from 'playwright';
 import { buildSummary, extractAreaText, extractConstructionYear, normalizeUrl, normalizeWhitespace, parseRomanianDateToUnix } from '@/lib/owner-listings/utils';
 import type { OwnerListingDetail, OwnerListingSourcePageResult, OwnerListingSummary, SourceScrapeOptions } from '@/lib/owner-listings/types';
 import { fetchScraperHtml, waitForScraperReady, withScraperPage } from '@/lib/owner-listings/browser';
@@ -233,25 +233,13 @@ async function fetchPubli24PhoneImageBase64(html: string, url: string) {
   return { ...request, base64 };
 }
 
-async function recognizePubli24PhoneViaBrowser(base64: string, hintedLength?: number | null) {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--disable-dev-shm-usage', '--no-sandbox'],
-  });
-
+export async function recognizePubli24PhoneViaBrowser(base64: string, hintedLength?: number | null) {
   try {
-    const context = await browser.newContext({
-      locale: 'ro-RO',
-      timezoneId: 'Europe/Bucharest',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      viewport: { width: 800, height: 600 },
-    });
-    const page = await context.newPage();
-    await page.setContent('<html><body></body></html>');
-
-    const result = await page.evaluate(
-      async ({ imageBase64, hintedLength }) => {
+    return await withScraperPage(
+      async (page) => {
+        await page.setContent('<html><body></body></html>');
+        return page.evaluate(
+          async ({ imageBase64, hintedLength }) => {
         function toBinaryFromCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, threshold = 245) {
           const { data } = ctx.getImageData(0, 0, width, height);
           const bin = Array.from({ length: height }, () => Array(width).fill(0));
@@ -480,16 +468,14 @@ async function recognizePubli24PhoneViaBrowser(base64: string, hintedLength?: nu
         }
 
         return bestPhone;
+          },
+          { imageBase64: base64, hintedLength: hintedLength || 0 }
+        );
       },
-      { imageBase64: base64, hintedLength: hintedLength || 0 }
+      { blockAssets: false }
     );
-
-    await context.close();
-    return result;
   } catch {
     return '';
-  } finally {
-    await browser.close().catch(() => undefined);
   }
 }
 
@@ -508,9 +494,7 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
   const browserlessResult = await recognizePubli24PhoneWithoutBrowser(phonePayload.base64, phonePayload.hintedLength);
   const recognized = normalizeWhitespace(
     browserlessResult ||
-      (process.env.OWNER_LISTINGS_BROWSER_OCR_FALLBACK === '1'
-        ? await recognizePubli24PhoneViaBrowser(phonePayload.base64, phonePayload.hintedLength)
-        : '')
+      await recognizePubli24PhoneViaBrowser(phonePayload.base64, phonePayload.hintedLength)
   );
   const digits = recognized.replace(/[^\d]/g, '');
 
