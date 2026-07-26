@@ -809,7 +809,10 @@ export async function scrapePubli24Listings(options: SourceScrapeOptions) {
   return listings;
 }
 
-export async function scrapePubli24ListingDetail(url: string) {
+export async function scrapePubli24ListingDetail(
+  url: string,
+  options: { requirePhone?: boolean } = {}
+) {
   url = normalizeUrl(url, 'https://www.publi24.ro/');
   let directFetchError: unknown;
   const html = await fetchScraperHtml(url, 30000).catch((error) => {
@@ -818,14 +821,20 @@ export async function scrapePubli24ListingDetail(url: string) {
   });
   if (html) {
     const detail = extractPubli24DetailFromHtml(html, url);
-    const phoneResolution = await resolvePubli24PhoneFromHtml(html, url).catch((error) => ({
-      phone: '',
-      status: 'retryable' as const,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Publi24 phone extraction failed.',
-    }));
+    const phoneResolution: {
+      phone: string;
+      status: 'available' | 'unavailable' | 'retryable';
+      error?: string;
+    } = options.requirePhone
+      ? await resolvePubli24PhoneFromHtml(html, url)
+      : await resolvePubli24PhoneFromHtml(html, url).catch((error) => ({
+          phone: '',
+          status: 'retryable' as const,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Publi24 phone extraction failed.',
+        }));
     const contactPhone = phoneResolution.phone;
     const summary = buildSummary({
       source: 'publi24',
@@ -851,7 +860,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       contactName: '',
       contactPhone,
       contactPhoneStatus: phoneResolution.status,
-      contactPhoneError: 'error' in phoneResolution ? phoneResolution.error : undefined,
+      contactPhoneError: phoneResolution.error,
     } satisfies OwnerListingDetail;
   }
 
@@ -892,17 +901,21 @@ export async function scrapePubli24ListingDetail(url: string) {
         .filter((src) => src.startsWith('http'));
       return { bodyText, title, description, images };
     });
-    const phoneResolution = await resolvePubli24PhoneFromHtml(
-      await page.content(),
-      url
-    ).catch((error) => ({
-      phone: '',
-      status: 'retryable' as const,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Publi24 phone extraction failed.',
-    }));
+    const pageHtml = await page.content();
+    const phoneResolution: {
+      phone: string;
+      status: 'available' | 'unavailable' | 'retryable';
+      error?: string;
+    } = options.requirePhone
+      ? await resolvePubli24PhoneFromHtml(pageHtml, url)
+      : await resolvePubli24PhoneFromHtml(pageHtml, url).catch((error) => ({
+          phone: '',
+          status: 'retryable' as const,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Publi24 phone extraction failed.',
+        }));
     const contactPhone = phoneResolution.phone;
 
     const summary = buildSummary({
@@ -929,7 +942,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       contactName: '',
       contactPhone,
       contactPhoneStatus: phoneResolution.status,
-      contactPhoneError: 'error' in phoneResolution ? phoneResolution.error : undefined,
+      contactPhoneError: phoneResolution.error,
     } satisfies OwnerListingDetail;
   });
 }

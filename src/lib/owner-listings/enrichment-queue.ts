@@ -396,10 +396,15 @@ async function updateProspectingPhoneState(
 
 async function scrapeDetail(
   source: OwnerListingSource,
-  link: string
+  link: string,
+  taskType: OwnerListingEnrichmentTaskType
 ): Promise<OwnerListingDetail> {
   if (source === 'olx') return scrapeOlxListingDetail(link, { includePhone: false });
-  if (source === 'publi24') return scrapePubli24ListingDetail(link);
+  if (source === 'publi24') {
+    return scrapePubli24ListingDetail(link, {
+      requirePhone: taskType === 'phone',
+    });
+  }
   return scrapeImoradar24ListingDetail(link);
 }
 
@@ -459,7 +464,11 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
       });
     }
 
-    const detail = await scrapeDetail(job.entry.source, job.entry.link);
+    const detail = await scrapeDetail(
+      job.entry.source,
+      job.entry.link,
+      job.entry.taskType
+    );
     const resolvedPhone = normalizeRomanianPhone(
       detail.contactPhone || detail.ownerPhone || ''
     );
