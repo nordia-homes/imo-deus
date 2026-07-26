@@ -73,6 +73,7 @@ export type OwnerListingDetail = OwnerListingSummary & {
   contactName?: string;
   contactPhone?: string;
   contactPhoneStatus?: 'available' | 'unavailable' | 'retryable';
+  contactPhoneError?: string;
 };
 
 export type OwnerListingSyncResult = {

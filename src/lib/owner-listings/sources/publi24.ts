@@ -219,15 +219,23 @@ async function fetchPubli24PhoneImageBase64(html: string, url: string) {
       Referer: url,
     },
     body: new URLSearchParams({ EncryptedPhone: request.encryptedPhone }).toString(),
-  }).catch(() => null);
+  }).catch((error) => {
+    throw new Error(
+      `Publi24 phone image network error: ${
+        error instanceof Error ? error.message : 'unknown'
+      }`
+    );
+  });
 
-  if (!response?.ok) {
-    return null;
+  if (!response.ok) {
+    throw new Error(`Publi24 phone image HTTP ${response.status}.`);
   }
 
   const base64 = normalizeWhitespace(await response.text().catch(() => ''));
   if (!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length < 200) {
-    return null;
+    throw new Error(
+      `Publi24 phone image returned an invalid payload (${base64.length} chars).`
+    );
   }
 
   publi24PhoneCache.set(request.cacheKey, base64);
@@ -511,7 +519,7 @@ async function resolvePubli24PhoneFromHtml(html: string, url: string): Promise<{
     return { phone: `0${digits}`, status: 'available' };
   }
 
-  return { phone: '', status: 'retryable' };
+  throw new Error('Publi24 phone OCR could not recognize a valid Romanian number.');
 }
 
 function extractPubli24DetailFromHtml(html: string, url: string) {
@@ -810,9 +818,13 @@ export async function scrapePubli24ListingDetail(url: string) {
   });
   if (html) {
     const detail = extractPubli24DetailFromHtml(html, url);
-    const phoneResolution = await resolvePubli24PhoneFromHtml(html, url).catch(() => ({
+    const phoneResolution = await resolvePubli24PhoneFromHtml(html, url).catch((error) => ({
       phone: '',
       status: 'retryable' as const,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Publi24 phone extraction failed.',
     }));
     const contactPhone = phoneResolution.phone;
     const summary = buildSummary({
@@ -839,6 +851,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       contactName: '',
       contactPhone,
       contactPhoneStatus: phoneResolution.status,
+      contactPhoneError: 'error' in phoneResolution ? phoneResolution.error : undefined,
     } satisfies OwnerListingDetail;
   }
 
@@ -882,9 +895,13 @@ export async function scrapePubli24ListingDetail(url: string) {
     const phoneResolution = await resolvePubli24PhoneFromHtml(
       await page.content(),
       url
-    ).catch(() => ({
+    ).catch((error) => ({
       phone: '',
       status: 'retryable' as const,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Publi24 phone extraction failed.',
     }));
     const contactPhone = phoneResolution.phone;
 
@@ -912,6 +929,7 @@ export async function scrapePubli24ListingDetail(url: string) {
       contactName: '',
       contactPhone,
       contactPhoneStatus: phoneResolution.status,
+      contactPhoneError: 'error' in phoneResolution ? phoneResolution.error : undefined,
     } satisfies OwnerListingDetail;
   });
 }

@@ -469,7 +469,10 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
           'Acest anunt Publi24 nu publica un numar de telefon.'
         );
       }
-      throw new Error('Publi24 nu a returnat temporar numarul de telefon.');
+      throw new Error(
+        detail.contactPhoneError ||
+          'Publi24 nu a returnat temporar numarul de telefon.'
+      );
     }
     const patch = detailPatch(detail, job.entry.taskType);
     const timestamp = nowIso();
