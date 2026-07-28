@@ -379,7 +379,7 @@ export function OwnerListingCard({
             ) : null}
           </div>
 
-          <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-6rem)] items-center gap-2">
+          <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-9rem)] items-center">
             <button
               type="button"
               title="Pregateste apel AI"
@@ -398,12 +398,12 @@ export function OwnerListingCard({
               {isLoadingAiDetails ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Bot className="h-3.5 w-3.5 shrink-0" />}
               <span className="truncate">{aiBadgeLabel}</span>
             </button>
+          </div>
 
-            <div
-              className="inline-flex min-h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-200 !bg-white px-3.5 py-1.5 text-[13px] font-semibold leading-4 tracking-[0.015em] !text-[#172033] antialiased shadow-[0_10px_24px_-14px_rgba(15,23,42,0.9),inset_0_1px_0_rgba(255,255,255,1)]"
-            >
-              {displayPrice}
-            </div>
+          <div
+            className="absolute bottom-3 right-3 inline-flex min-h-7 items-center justify-center whitespace-nowrap rounded-full border border-slate-200 !bg-white px-3.5 py-1.5 text-[13px] font-semibold leading-4 tracking-[0.015em] !text-[#172033] antialiased shadow-[0_10px_24px_-14px_rgba(15,23,42,0.9),inset_0_1px_0_rgba(255,255,255,1)]"
+          >
+            {displayPrice}
           </div>
 
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
@@ -425,7 +425,7 @@ export function OwnerListingCard({
             </button>
           </div>
 
-          {collaborationButtons ? <div className="absolute bottom-3 right-3">{collaborationButtons}</div> : null}
+          {collaborationButtons ? <div className="absolute bottom-12 right-3">{collaborationButtons}</div> : null}
         </div>
 
         <div className="space-y-3 p-4">
@@ -474,7 +474,7 @@ export function OwnerListingCard({
           </div>
 
           <div className="flex items-center justify-start pt-2">
-            <div className="-ml-1 flex shrink-0 items-center gap-2">
+            <div className="-ml-1 flex w-[calc(100%+0.5rem)] items-center justify-between gap-2 sm:w-auto sm:shrink-0 sm:justify-start">
               {onToggleProspecting ? (
                 <Button
                   type="button"
@@ -485,7 +485,7 @@ export function OwnerListingCard({
                   onClick={() => onToggleProspecting(listing)}
                   disabled={isUpdatingProspecting}
                   className={cn(
-                    'h-9 gap-1 rounded-full px-2 text-[12px] font-semibold shadow-sm sm:text-[12.5px]',
+                    'h-9 shrink-0 gap-1 rounded-full px-2 text-[12px] font-semibold shadow-sm sm:text-[12.5px]',
                     isProspecting
                       ? 'border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600'
                       : 'border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800',
@@ -502,7 +502,7 @@ export function OwnerListingCard({
 
               {showImportAction && onImport ? (
                 <Button
-                  className="gap-1 rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-2.5 text-[12px] text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)] sm:text-[12.5px]"
+                  className="shrink-0 gap-1 rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-2.5 text-[12px] text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)] sm:text-[12.5px]"
                   size="sm"
                   onClick={() => onImport(listing)}
                   disabled={isLoadingImport}
@@ -512,7 +512,7 @@ export function OwnerListingCard({
                 </Button>
               ) : null}
 
-              <Button asChild size="icon" className={cn(adminClassic ? "bg-white/10 text-white hover:bg-white/20" : "bg-green-500 text-white hover:bg-green-600")}>
+              <Button asChild size="icon" className={cn("shrink-0", adminClassic ? "bg-white/10 text-white hover:bg-white/20" : "bg-green-500 text-white hover:bg-green-600")}>
                 <Link href={listing.link} target="_blank">
                   <Rocket className="h-4 w-4" />
                 </Link>
