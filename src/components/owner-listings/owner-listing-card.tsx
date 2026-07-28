@@ -473,8 +473,8 @@ export function OwnerListingCard({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <div className="flex shrink-0 items-center gap-2">
+          <div className="flex items-center justify-start pt-2">
+            <div className="-ml-1 flex shrink-0 items-center gap-2">
               {onToggleProspecting ? (
                 <Button
                   type="button"
