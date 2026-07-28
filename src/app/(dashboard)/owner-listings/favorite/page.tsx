@@ -33,6 +33,8 @@ export default function FavoriteOwnerListingsPage() {
   const [missingFavoriteListingsCount, setMissingFavoriteListingsCount] = useState(0);
   const [favoriteReloadKey, setFavoriteReloadKey] = useState(0);
   const [phoneRetryListingId, setPhoneRetryListingId] = useState<string | null>(null);
+  const [isUpdatingProspecting, setIsUpdatingProspecting] = useState<string | null>(null);
+  const [isUpdatingFavorite, setIsUpdatingFavorite] = useState<string | null>(null);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user } = useUser();
@@ -53,6 +55,10 @@ export default function FavoriteOwnerListingsPage() {
   } = useCollection<OwnerListingFavorite>(favoritesQuery);
   const activeFavorites = useMemo(
     () => (favorites ?? []).filter((favorite) => favorite.isFavoriteActive !== false),
+    [favorites],
+  );
+  const savedFavoriteCount = useMemo(
+    () => (favorites ?? []).filter((favorite) => favorite.isSavedFavorite === true).length,
     [favorites],
   );
   const activeFavoriteIdsKey = useMemo(
@@ -190,6 +196,7 @@ export default function FavoriteOwnerListingsPage() {
   const updateProspecting = async (listingId: string, action: 'remove' | 'retry') => {
     if (!user) return;
     if (action === 'retry') setPhoneRetryListingId(listingId);
+    if (action === 'remove') setIsUpdatingProspecting(listingId);
     try {
       const token = await user.getIdToken(true);
       const response = await fetch('/api/owner-listings/prospecting', {
@@ -224,15 +231,59 @@ export default function FavoriteOwnerListingsPage() {
       });
     } finally {
       if (action === 'retry') setPhoneRetryListingId(null);
+      if (action === 'remove') setIsUpdatingProspecting(null);
     }
   };
 
-  const handleToggleFavorite = (listing: OwnerListing) => {
+  const handleToggleProspecting = (listing: OwnerListing) => {
     if (!agencyId) {
       toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
       return;
     }
     void updateProspecting(listing.id, 'remove');
+  };
+
+  const handleToggleFavorite = async (listing: OwnerListing) => {
+    if (!user || !agencyId) {
+      toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
+      return;
+    }
+
+    const existingFavorite = favorites?.find((entry) => (entry.ownerListingId || entry.id) === listing.id);
+    const isSavedFavorite = existingFavorite?.isSavedFavorite === true;
+    setIsUpdatingFavorite(listing.id);
+
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          action: isSavedFavorite ? 'remove' : 'add',
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(payload.message || 'Nu am putut actualiza Favoritele.');
+
+      toast({
+        title: isSavedFavorite ? 'Scos de la Favorite' : 'Adaugat la Favorite',
+        description: isSavedFavorite
+          ? 'Anuntul a fost eliminat din lista Favorite.'
+          : 'Anuntul este disponibil acum in tabul Favorite.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Actualizare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut actualiza Favoritele.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingFavorite(null);
+    }
   };
 
   const handleSetCollaborationStatus = (listing: OwnerListing, status: CollaborationStatus | null) => {
@@ -401,7 +452,8 @@ export default function FavoriteOwnerListingsPage() {
           subtitle="Pregatim proprietatile selectate si statusurile numerelor de telefon."
           currentScopeLabel={currentScope?.displayName}
           activeTab="prospecting"
-          favoriteCount={activeFavorites.length}
+          prospectingCount={activeFavorites.length}
+          favoriteCount={savedFavoriteCount}
           adminClassic={isClassicTheme}
         />
         <OlxConnectionBanner adminClassic={isClassicTheme} />
@@ -424,7 +476,8 @@ export default function FavoriteOwnerListingsPage() {
         subtitle="Proprietatile selectate de agent, cu preluarea automata a numerelor OLX, status de colaborare, comision si notite."
         currentScopeLabel={currentScope?.displayName}
         activeTab="prospecting"
-        favoriteCount={favoriteEntries.length}
+        prospectingCount={favoriteEntries.length}
+        favoriteCount={savedFavoriteCount}
         adminClassic={isClassicTheme}
       />
       <OlxConnectionBanner adminClassic={isClassicTheme} />
@@ -439,8 +492,10 @@ export default function FavoriteOwnerListingsPage() {
                 favoriteMeta={favorite}
                 currentAgentId={user?.uid ?? null}
                 currentTimestamp={currentTimestamp}
-                isFavorite
+                isProspecting
+                isFavorite={favorite.isSavedFavorite === true}
                 onImport={handleImport}
+                onToggleProspecting={handleToggleProspecting}
                 onToggleFavorite={handleToggleFavorite}
                 onSetReserved={() => handleSetReserved(listing.id)}
                 onSetTaken={() => handleSetTaken(listing.id)}
@@ -449,6 +504,8 @@ export default function FavoriteOwnerListingsPage() {
                 collaborationMode="interactive"
                 onSetCollaborationStatus={handleSetCollaborationStatus}
                 isLoadingImport={isLoadingImport === listing.id}
+                isUpdatingProspecting={isUpdatingProspecting === listing.id}
+                isUpdatingFavorite={isUpdatingFavorite === listing.id}
               />
               {!normalizeRomanianPhone(favorite.ownerPhone) &&
               ['failed', 'unavailable', 'awaiting_connection'].includes(

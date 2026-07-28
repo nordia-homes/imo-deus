@@ -14,6 +14,7 @@ import {
   Clock,
   Home,
   Loader2,
+  MessageCircle,
   Phone,
   Rocket,
   Ruler,
@@ -49,13 +50,17 @@ type OwnerListingCardProps = {
   currentAgentId?: string | null;
   currentTimestamp?: number;
   collaborationStatus?: CollaborationStatus | null;
+  isProspecting?: boolean;
   isFavorite?: boolean;
   isLoadingImport?: boolean;
   isLoadingAiDetails?: boolean;
+  isUpdatingProspecting?: boolean;
+  isUpdatingFavorite?: boolean;
   collaborationMode?: 'hidden' | 'readonly' | 'interactive';
   showImportAction?: boolean;
   adminClassic?: boolean;
   onImport?: (listing: OwnerListing) => void;
+  onToggleProspecting?: (listing: OwnerListing) => void;
   onToggleFavorite?: (listing: OwnerListing) => void;
   onSetCollaborationStatus?: (listing: OwnerListing, status: CollaborationStatus | null) => void;
   onSetReserved?: (listing: OwnerListing) => void;
@@ -70,13 +75,17 @@ export function OwnerListingCard({
   currentAgentId,
   currentTimestamp,
   collaborationStatus,
+  isProspecting = false,
   isFavorite = false,
   isLoadingImport = false,
   isLoadingAiDetails = false,
+  isUpdatingProspecting = false,
+  isUpdatingFavorite = false,
   collaborationMode = 'readonly',
   showImportAction = true,
   adminClassic = false,
   onImport,
+  onToggleProspecting,
   onToggleFavorite,
   onSetCollaborationStatus,
   onSetReserved,
@@ -217,7 +226,7 @@ export function OwnerListingCard({
       ? 'Publi24'
       : 'OLX';
   const prospectingPhone =
-    isFavorite && favoriteMeta?.isFavoriteActive !== false
+    isProspecting && favoriteMeta?.isFavoriteActive !== false
       ? normalizeRomanianPhone(favoriteMeta?.ownerPhone || listing.ownerPhone)
       : '';
   const effectivePhoneExtractionStatus = !isFavorite
@@ -400,18 +409,19 @@ export function OwnerListingCard({
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
             <button
               type="button"
-              title={isFavorite ? 'Scoate din Prospectare' : 'Adauga in Prospectare'}
+              title={isFavorite ? 'Scoate de la Favorite' : 'Adauga la Favorite'}
               onClick={() => onToggleFavorite?.(listing)}
+              disabled={isUpdatingFavorite}
               className={cn(
                 'inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white shadow-[0_16px_32px_-24px_rgba(15,23,42,0.95)] transition-colors',
                 isFavorite
-                  ? 'border-white text-emerald-600 hover:bg-white'
+                  ? 'border-rose-100 text-rose-500 hover:bg-rose-50'
                   : adminClassic
                     ? 'border-white text-slate-800 hover:bg-white'
                     : 'border-white text-slate-800 hover:bg-white',
               )}
             >
-              <FavoriteHeartIcon filled={isFavorite} />
+              {isUpdatingFavorite ? <Loader2 className="h-4 w-4 animate-spin" /> : <FavoriteHeartIcon filled={isFavorite} />}
             </button>
           </div>
 
@@ -465,14 +475,39 @@ export function OwnerListingCard({
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <div className="flex shrink-0 items-center gap-2">
+              {onToggleProspecting ? (
+                <Button
+                  type="button"
+                  variant={isProspecting ? 'default' : 'outline'}
+                  size="sm"
+                  title={isProspecting ? 'Scoate din Prospectare WhatsApp' : 'Adauga in Prospectare WhatsApp'}
+                  aria-pressed={isProspecting}
+                  onClick={() => onToggleProspecting(listing)}
+                  disabled={isUpdatingProspecting}
+                  className={cn(
+                    'h-9 gap-1 rounded-full px-2 text-[12px] font-semibold shadow-sm sm:text-[12.5px]',
+                    isProspecting
+                      ? 'border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600'
+                      : 'border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800',
+                  )}
+                >
+                  {isUpdatingProspecting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <MessageCircle className={cn('h-3.5 w-3.5', isProspecting ? 'text-white' : 'text-green-500')} />
+                  )}
+                  <span>Prospectare WhatsApp</span>
+                </Button>
+              ) : null}
+
               {showImportAction && onImport ? (
                 <Button
-                  className="rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-3 text-[13px] text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)]"
+                  className="gap-1 rounded-full border border-emerald-300/30 bg-[linear-gradient(135deg,rgba(24,63,49,0.96)_0%,rgba(20,86,65,0.98)_52%,rgba(16,115,81,0.98)_100%)] px-2.5 text-[12px] text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.52),0_0_24px_-10px_rgba(34,197,94,0.48),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[linear-gradient(135deg,rgba(28,76,58,0.98)_0%,rgba(24,102,76,1)_52%,rgba(18,133,92,1)_100%)] sm:text-[12.5px]"
                   size="sm"
                   onClick={() => onImport(listing)}
                   disabled={isLoadingImport}
                 >
-                  {isLoadingImport ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="mr-1 h-3.5 w-3.5" />}
+                  {isLoadingImport ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="h-3.5 w-3.5" />}
                   Importa
                 </Button>
               ) : null}

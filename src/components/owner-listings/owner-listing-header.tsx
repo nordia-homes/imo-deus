@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutGrid, Target } from 'lucide-react';
+import { Heart, LayoutGrid, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type OwnerListingHeaderProps = {
   title: string;
   subtitle: string;
   currentScopeLabel?: string | null;
-  activeTab: 'listings' | 'prospecting';
+  activeTab: 'listings' | 'prospecting' | 'favorites';
+  prospectingCount?: number;
   favoriteCount?: number;
   listingCount?: number | null;
   adminClassic?: boolean;
@@ -19,6 +20,7 @@ export function OwnerListingHeader({
   subtitle,
   currentScopeLabel,
   activeTab,
+  prospectingCount = 0,
   favoriteCount = 0,
   listingCount,
   adminClassic = false,
@@ -33,12 +35,21 @@ export function OwnerListingHeader({
       label: `Anunturi${formattedListingCount ? ` (${formattedListingCount})` : ''}`,
       icon: LayoutGrid,
       active: activeTab === 'listings',
+      mobileCount: null,
     },
     {
       href: '/owner-listings/prospecting',
-      label: `Prospectare (${favoriteCount})`,
+      label: `Prospectare (${prospectingCount})`,
       icon: Target,
       active: activeTab === 'prospecting',
+      mobileCount: prospectingCount,
+    },
+    {
+      href: '/owner-listings/favorites',
+      label: `Favorite (${favoriteCount})`,
+      icon: Heart,
+      active: activeTab === 'favorites',
+      mobileCount: favoriteCount,
     },
   ];
 
@@ -89,6 +100,7 @@ export function OwnerListingHeader({
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  aria-label={tab.label}
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-all',
                     tab.active
@@ -101,7 +113,14 @@ export function OwnerListingHeader({
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
+                  {tab.mobileCount === null ? (
+                    <span>{tab.label}</span>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">({tab.mobileCount})</span>
+                    </>
+                  )}
                 </Link>
               );
             })}

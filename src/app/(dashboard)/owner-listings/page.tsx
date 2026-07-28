@@ -57,6 +57,7 @@ export default function OwnerListingsPage() {
   const [isLoadingImport, setIsLoadingImport] = useState<string | null>(null);
   const [isLoadingAiDetails, setIsLoadingAiDetails] = useState<string | null>(null);
   const [isUpdatingProspecting, setIsUpdatingProspecting] = useState<string | null>(null);
+  const [isUpdatingFavorite, setIsUpdatingFavorite] = useState<string | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   const pageTopRef = useRef<HTMLDivElement | null>(null);
   const [listings, setListings] = useState<OwnerListing[]>([]);
@@ -298,6 +299,10 @@ export default function OwnerListingsPage() {
     if (!Array.isArray(favorites)) return 0;
     return favorites.filter((favorite) => favorite.isFavoriteActive !== false).length;
   }, [availableFavoriteCount, favorites]);
+  const savedFavoriteCount = useMemo(
+    () => (favorites ?? []).filter((favorite) => favorite.isSavedFavorite === true).length,
+    [favorites],
+  );
 
   useEffect(() => {
     const interval = window.setInterval(() => setCurrentTimestamp(Date.now()), 60_000);
@@ -607,7 +612,7 @@ export default function OwnerListingsPage() {
     }
   };
 
-  const handleToggleFavorite = async (listing: OwnerListing) => {
+  const handleToggleProspecting = async (listing: OwnerListing) => {
     if (!agencyId) {
       toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
       return;
@@ -656,6 +661,49 @@ export default function OwnerListingsPage() {
       });
     } finally {
       setIsUpdatingProspecting(null);
+    }
+  };
+
+  const handleToggleFavorite = async (listing: OwnerListing) => {
+    if (!user || !agencyId) {
+      toast({ title: 'Agentia nu este disponibila', description: 'Mai incearca dupa ce se incarca profilul agentiei.' });
+      return;
+    }
+
+    const existingFavorite = favoritesByListingId.get(listing.id);
+    const isSavedFavorite = existingFavorite?.isSavedFavorite === true;
+    setIsUpdatingFavorite(listing.id);
+
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch('/api/owner-listings/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          action: isSavedFavorite ? 'remove' : 'add',
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(payload.message || 'Nu am putut actualiza Favoritele.');
+
+      toast({
+        title: isSavedFavorite ? 'Scos de la Favorite' : 'Adaugat la Favorite',
+        description: isSavedFavorite
+          ? 'Anuntul a fost eliminat din lista Favorite.'
+          : 'Anuntul este disponibil acum in tabul Favorite.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Actualizare esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut actualiza Favoritele.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingFavorite(null);
     }
   };
 
@@ -951,7 +999,8 @@ export default function OwnerListingsPage() {
         subtitle="Incarcam lista de proprietati si pregatim filtrele."
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
-        favoriteCount={validFavoriteCount}
+        prospectingCount={validFavoriteCount}
+        favoriteCount={savedFavoriteCount}
         listingCount={null}
         adminClassic={isClassicTheme}
       />
@@ -976,7 +1025,8 @@ export default function OwnerListingsPage() {
         subtitle=""
         currentScopeLabel={currentScope?.displayName}
         activeTab="listings"
-        favoriteCount={validFavoriteCount}
+        prospectingCount={validFavoriteCount}
+        favoriteCount={savedFavoriteCount}
         listingCount={displayedListingCount}
         adminClassic={isClassicTheme}
       />
@@ -1214,17 +1264,19 @@ export default function OwnerListingsPage() {
                 currentAgentId={user?.uid ?? null}
                 currentTimestamp={currentTimestamp}
                 onImport={handleImport}
+                onToggleProspecting={handleToggleProspecting}
                 onToggleFavorite={handleToggleFavorite}
                 onSetReserved={isProspecting ? handleSetReserved : undefined}
                 onSetTaken={isProspecting ? handleSetTaken : undefined}
                 onSetOutcome={isProspecting ? handleSetOutcome : undefined}
-                isFavorite={isProspecting}
+                isProspecting={isProspecting}
+                isFavorite={favorite?.isSavedFavorite === true}
                 collaborationStatus={favorite?.collaborationStatus ?? null}
                 collaborationMode={favorite?.collaborationStatus ? 'readonly' : 'hidden'}
                 isLoadingImport={isLoadingImport === listing.id}
-                isLoadingAiDetails={
-                  isLoadingAiDetails === listing.id || isUpdatingProspecting === listing.id
-                }
+                isLoadingAiDetails={isLoadingAiDetails === listing.id}
+                isUpdatingProspecting={isUpdatingProspecting === listing.id}
+                isUpdatingFavorite={isUpdatingFavorite === listing.id}
                 onAiBadgeClick={handleAiBadgeClick}
               />
             );
