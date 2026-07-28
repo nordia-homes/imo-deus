@@ -370,24 +370,32 @@ export function OwnerListingCard({
             ) : null}
           </div>
 
-          <button
-            type="button"
-            title="Pregateste apel AI"
-            disabled={isLoadingAiDetails}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onAiBadgeClick?.(listing);
-            }}
-            className={cn(
-              'absolute bottom-3 left-3 inline-flex max-w-[calc(100%-6rem)] items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[0_18px_34px_-22px_rgba(15,23,42,0.95)] backdrop-blur transition-transform hover:scale-[1.02]',
-              aiBadgeClassName,
-              isLoadingAiDetails && 'cursor-wait opacity-85',
-            )}
-          >
-            {isLoadingAiDetails ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Bot className="h-3.5 w-3.5 shrink-0" />}
-            <span className="truncate">{aiBadgeLabel}</span>
-          </button>
+          <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-6rem)] items-center gap-2">
+            <button
+              type="button"
+              title="Pregateste apel AI"
+              disabled={isLoadingAiDetails}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onAiBadgeClick?.(listing);
+              }}
+              className={cn(
+                'inline-flex min-w-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[0_18px_34px_-22px_rgba(15,23,42,0.95)] backdrop-blur transition-transform hover:scale-[1.02]',
+                aiBadgeClassName,
+                isLoadingAiDetails && 'cursor-wait opacity-85',
+              )}
+            >
+              {isLoadingAiDetails ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Bot className="h-3.5 w-3.5 shrink-0" />}
+              <span className="truncate">{aiBadgeLabel}</span>
+            </button>
+
+            <div
+              className="inline-flex min-h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-slate-200 !bg-white px-3.5 py-1.5 text-[13px] font-semibold leading-4 tracking-[0.015em] !text-[#172033] antialiased shadow-[0_10px_24px_-14px_rgba(15,23,42,0.9),inset_0_1px_0_rgba(255,255,255,1)]"
+            >
+              {displayPrice}
+            </div>
+          </div>
 
           <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
             <button
@@ -455,11 +463,7 @@ export function OwnerListingCard({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <p className={cn("min-w-0 flex-1 text-[0.96rem] font-bold leading-none tracking-[-0.01em] sm:text-[1rem]", adminClassic ? "text-white" : "text-stone-100")}>
-              {displayPrice}
-            </p>
-
+          <div className="flex items-center justify-end gap-3 pt-2">
             <div className="flex shrink-0 items-center gap-2">
               {showImportAction && onImport ? (
                 <Button
@@ -469,7 +473,7 @@ export function OwnerListingCard({
                   disabled={isLoadingImport}
                 >
                   {isLoadingImport ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="mr-1 h-3.5 w-3.5" />}
-                  Importa anuntul
+                  Importa
                 </Button>
               ) : null}
 
