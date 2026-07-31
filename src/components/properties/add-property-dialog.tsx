@@ -1972,7 +1972,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                   <SelectItem value="none">Fără cont atribuit</SelectItem>
                                                   {facebookConnections.map((connection) => (
                                                     <SelectItem key={connection.id} value={connection.id}>
-                                                      {connection.displayName || connection.label}
+                                                      {connection.label || connection.displayName}
                                                       {connection.status !== 'connected' ? ' · reconectare necesară' : ''}
                                                     </SelectItem>
                                                   ))}

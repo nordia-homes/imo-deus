@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       agencyId,
       ownerUid: uid,
       connectionId,
-      connectionLabel: connection.displayName || connection.label,
+      connectionLabel: connection.label || connection.displayName,
       propertyId,
       propertyTitle: property.title,
       status: 'queued',

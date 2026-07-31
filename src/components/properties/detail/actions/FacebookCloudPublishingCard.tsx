@@ -128,7 +128,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
         { defaultFacebookConnectionId: selectedConnectionId }
       );
       setPropertyDefaultId(selectedConnectionId);
-      toast({ title: 'Cont atribuit proprietății', description: selectedConnection?.displayName || selectedConnection?.label });
+      toast({ title: 'Cont atribuit proprietății', description: selectedConnection?.label || selectedConnection?.displayName });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Atribuire eșuată', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
     } finally {
@@ -153,7 +153,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
       setJobs((current) => [body.job, ...current]);
       toast({
         title: 'Publicarea a început',
-        description: `${selectedUrls.length} grupuri · ${selectedConnection?.displayName || selectedConnection?.label}`,
+        description: `${selectedUrls.length} grupuri · ${selectedConnection?.label || selectedConnection?.displayName}`,
       });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Publicare eșuată', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
@@ -228,7 +228,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
                 <SelectContent>
                   {connections.map((connection) => (
                     <SelectItem key={connection.id} value={connection.id}>
-                      {connection.displayName || connection.label}
+                      {connection.label || connection.displayName}
                       {connection.status !== 'connected' ? ' · reconectare necesară' : ''}
                     </SelectItem>
                   ))}

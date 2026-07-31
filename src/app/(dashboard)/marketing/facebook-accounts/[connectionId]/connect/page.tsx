@@ -133,7 +133,7 @@ export default function FacebookConnectionConsolePage() {
           </Button>
           <div>
             <h1 className="text-2xl font-semibold">Conectare cont Facebook</h1>
-            <p className="text-sm text-white/60">{connection?.displayName || connection?.label || connectionId}</p>
+            <p className="text-sm text-white/60">{connection?.label || connection?.displayName || connectionId}</p>
           </div>
         </div>
         {connected ? (

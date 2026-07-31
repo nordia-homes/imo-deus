@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Facebook,
   Loader2,
+  Pencil,
   Plus,
   RefreshCw,
   Star,
@@ -51,6 +52,8 @@ export default function FacebookAccountsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [newLabel, setNewLabel] = useState('');
+  const [editingConnection, setEditingConnection] = useState<FacebookCloudConnection | null>(null);
+  const [editLabel, setEditLabel] = useState('');
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -110,7 +113,7 @@ export default function FacebookAccountsPage() {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || 'Contul implicit nu a putut fi salvat.');
       setPayload((current) => ({ ...current, defaultConnectionId: connection.id }));
-      toast({ title: 'Cont implicit salvat', description: connection.displayName || connection.label });
+      toast({ title: 'Cont implicit salvat', description: connection.label || connection.displayName });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Salvare eșuată', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
     } finally {
@@ -118,8 +121,36 @@ export default function FacebookAccountsPage() {
     }
   }
 
+  async function renameConnection() {
+    if (!user || !editingConnection || actionId) return;
+    const label = editLabel.trim();
+    if (!label) return;
+    setActionId(editingConnection.id);
+    try {
+      const response = await facebookCloudFetch(user, `/api/marketing/facebook-cloud/connections/${editingConnection.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ label }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Numele contului nu a putut fi salvat.');
+      setPayload((current) => ({
+        ...current,
+        connections: current.connections.map((connection) => (
+          connection.id === editingConnection.id ? { ...connection, label } : connection
+        )),
+      }));
+      setEditingConnection(null);
+      setEditLabel('');
+      toast({ title: 'Nume actualizat', description: label });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Redenumire eșuată', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
+    } finally {
+      setActionId(null);
+    }
+  }
+
   async function removeConnection(connection: FacebookCloudConnection) {
-    if (!user || !window.confirm(`Elimini contul „${connection.displayName || connection.label}” și sesiunea lui cloud?`)) return;
+    if (!user || !window.confirm(`Elimini contul „${connection.label || connection.displayName}” și sesiunea lui cloud?`)) return;
     setActionId(connection.id);
     try {
       const response = await facebookCloudFetch(user, `/api/marketing/facebook-cloud/connections/${connection.id}`, {
@@ -194,8 +225,10 @@ export default function FacebookAccountsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <CardTitle>{connection.displayName || connection.label}</CardTitle>
-                      <CardDescription className="mt-1 text-white/55">{connection.label}</CardDescription>
+                      <CardTitle>{connection.label || connection.displayName}</CardTitle>
+                      {connection.displayName ? (
+                        <CardDescription className="mt-1 text-white/55">Cont Facebook: {connection.displayName}</CardDescription>
+                      ) : null}
                     </div>
                     <Badge className={view.className}>
                       <StatusIcon className={`mr-1 h-3.5 w-3.5 ${connection.status === 'connecting' ? 'animate-spin' : ''}`} />
@@ -215,6 +248,18 @@ export default function FacebookAccountsPage() {
                       onClick={() => router.push(`/marketing/facebook-accounts/${connection.id}/connect`)}
                     >
                       {connection.status === 'connected' ? 'Deschide sesiunea' : 'Conectează'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={actionId === connection.id}
+                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      onClick={() => {
+                        setEditingConnection(connection);
+                        setEditLabel(connection.label || connection.displayName || '');
+                      }}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editează numele
                     </Button>
                     <Button
                       variant="outline"
@@ -265,6 +310,58 @@ export default function FacebookAccountsPage() {
             <Button disabled={actionId === 'new'} onClick={() => void addConnection()}>
               {actionId === 'new' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Continuă la Facebook
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(editingConnection)}
+        onOpenChange={(open) => {
+          if (!open && !actionId) {
+            setEditingConnection(null);
+            setEditLabel('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editează numele contului</DialogTitle>
+            <DialogDescription>
+              Numele este folosit numai pentru afișare în ImoDeus. Contul și sesiunea Facebook nu se modifică.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="facebook-account-edit-label">Nume afișat</Label>
+            <Input
+              id="facebook-account-edit-label"
+              value={editLabel}
+              onChange={(event) => setEditLabel(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void renameConnection();
+                }
+              }}
+              placeholder="Ex: Cont Oana București"
+              maxLength={80}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={Boolean(actionId)}
+              onClick={() => {
+                setEditingConnection(null);
+                setEditLabel('');
+              }}
+            >
+              Anulează
+            </Button>
+            <Button disabled={!editLabel.trim() || Boolean(actionId)} onClick={() => void renameConnection()}>
+              {actionId === editingConnection?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Salvează numele
             </Button>
           </DialogFooter>
         </DialogContent>
