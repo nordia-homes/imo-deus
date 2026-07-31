@@ -51,6 +51,7 @@ import { FacebookPromotionCard } from '@/components/properties/detail/actions/Fa
 import { FacebookGroupPromotionLauncherCard } from '@/components/properties/detail/actions/FacebookGroupPromotionLauncherCard';
 import { MetaAdsCard } from '@/components/properties/detail/actions/MetaAdsCard';
 import { VideoTourCard } from '@/components/properties/detail/actions/VideoTourCard';
+import { FacebookCloudPublishingCard } from '@/components/properties/detail/actions/FacebookCloudPublishingCard';
 import { SocialMediaCard } from '@/components/properties/detail/actions/SocialMediaCard';
 import { WebsiteToggleCard } from '@/components/properties/detail/actions/WebsiteToggleCard';
 import { PropertyNotesCard } from '@/components/properties/detail/actions/PropertyNotesCard';
@@ -325,6 +326,7 @@ export default function PropertyDetailPage() {
                             <PublishCard property={property} />
                             <MetaAdsCard property={property} />
                             <VideoTourCard property={property} isMobile={true} />
+                            <FacebookCloudPublishingCard property={property} />
                             <FacebookGroupPromotionLauncherCard property={property} />
                             <FacebookPromotionCard />
                             <SocialMediaCard property={property} />
