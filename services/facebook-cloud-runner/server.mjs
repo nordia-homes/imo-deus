@@ -395,7 +395,7 @@ async function openComposer(page) {
 }
 
 async function fillComposer(page, description) {
-  const dialog = page.locator('[role="dialog"]').last();
+  const dialog = page.locator('[role="dialog"]:visible').last();
   const scope = await dialog.count().catch(() => 0) ? dialog : page;
   const editor = scope.locator('[contenteditable="true"][role="textbox"]').last();
   await editor.waitFor({ state: 'visible', timeout: 15000 });
@@ -408,7 +408,7 @@ async function fillComposer(page, description) {
 
 async function attachImages(page, files) {
   if (!files.length) return;
-  const dialog = page.locator('[role="dialog"]').last();
+  const dialog = page.locator('[role="dialog"]:visible').last();
   const scope = await dialog.count().catch(() => 0) ? dialog : page;
   let input = scope.locator('input[type="file"]').last();
   if (!await input.count().catch(() => 0)) {
@@ -427,10 +427,43 @@ async function attachImages(page, files) {
 }
 
 async function clickPublish(page) {
-  const dialog = page.locator('[role="dialog"]').last();
+  const dialog = page.locator('[role="dialog"]:visible').last();
   const scope = await dialog.count().catch(() => 0) ? dialog : page;
-  const publishButton = scope.getByRole('button', { name: /^(Public[ăa]|Post)$/i }).last();
-  await publishButton.waitFor({ state: 'visible', timeout: 15000 });
+  const publishName = /^(Public[ăa]|Posteaz[ăa]|Post)$/i;
+  const candidates = [
+    scope.getByRole('button', { name: publishName }),
+    scope.locator([
+      '[role="button"][aria-label="Post"]',
+      'button[aria-label="Post"]',
+      '[role="button"][aria-label="Publică"]',
+      'button[aria-label="Publică"]',
+      '[role="button"][aria-label="Postează"]',
+      'button[aria-label="Postează"]',
+    ].join(', ')),
+    scope.locator('button, [role="button"]').filter({ hasText: publishName }),
+  ];
+  let publishButton = null;
+  for (const candidate of candidates) {
+    const count = await candidate.count().catch(() => 0);
+    for (let index = count - 1; index >= 0; index -= 1) {
+      const item = candidate.nth(index);
+      if (await item.isVisible().catch(() => false)) {
+        publishButton = item;
+        break;
+      }
+    }
+    if (publishButton) break;
+  }
+  if (!publishButton) {
+    const visibleLabels = await scope.locator('button:visible, [role="button"]:visible')
+      .evaluateAll((elements) => elements
+        .map((element) => element.getAttribute('aria-label') || element.textContent || '')
+        .map((label) => label.trim())
+        .filter(Boolean)
+        .slice(-20))
+      .catch(() => []);
+    throw new Error(`Butonul de publicare Facebook nu a fost găsit. Butoane vizibile: ${visibleLabels.join(' | ')}`);
+  }
   const uploadDeadline = Date.now() + 120_000;
   while (!await publishButton.isEnabled().catch(() => false)) {
     if (Date.now() >= uploadDeadline) throw new Error('Fotografiile nu au terminat încărcarea în Facebook.');
