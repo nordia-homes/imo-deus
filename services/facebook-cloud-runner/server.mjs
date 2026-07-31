@@ -397,12 +397,16 @@ async function openComposer(page) {
 async function fillComposer(page, description) {
   const dialog = page.locator('[role="dialog"]:visible').last();
   const scope = await dialog.count().catch(() => 0) ? dialog : page;
-  const editor = scope.locator('[contenteditable="true"][role="textbox"]').last();
+  const editor = scope.locator('[contenteditable="true"][role="textbox"]:visible').last();
   await editor.waitFor({ state: 'visible', timeout: 15000 });
   await humanClick(editor);
   await humanPause(page, 180, 420);
-  await page.keyboard.press('Control+A').catch(() => undefined);
-  await page.keyboard.insertText(String(description || ''));
+  const text = String(description || '');
+  await editor.fill(text, { timeout: 20_000 });
+  if (text.trim()) {
+    const insertedText = await editor.innerText().catch(() => '');
+    if (!insertedText.trim()) throw new Error('Descrierea proprietății nu a fost introdusă în composerul Facebook.');
+  }
   await humanPause(page, 350, 850);
 }
 
