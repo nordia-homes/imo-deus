@@ -394,10 +394,30 @@ async function openComposer(page) {
   throw new Error('Composerul Facebook nu a fost găsit.');
 }
 
+async function getVisibleComposerDialog(page) {
+  const dialogs = page.locator('[role="dialog"]:visible');
+  const count = await dialogs.count().catch(() => 0);
+  let largest = null;
+  let largestArea = 0;
+  for (let index = 0; index < count; index += 1) {
+    const dialog = dialogs.nth(index);
+    const box = await dialog.boundingBox().catch(() => null);
+    const area = box ? box.width * box.height : 0;
+    if (area > largestArea) {
+      largest = dialog;
+      largestArea = area;
+    }
+  }
+  return largest;
+}
+
 async function fillComposer(page, description) {
-  const dialog = page.locator('[role="dialog"]:visible').last();
-  const scope = await dialog.count().catch(() => 0) ? dialog : page;
-  const editor = scope.locator('[contenteditable="true"][role="textbox"]:visible').last();
+  const dialog = await getVisibleComposerDialog(page);
+  const scope = dialog || page;
+  let editor = scope.locator('[contenteditable="true"][role="textbox"]:visible').last();
+  if (!await editor.count().catch(() => 0)) {
+    editor = page.locator('[contenteditable="true"][role="textbox"]:visible').last();
+  }
   await editor.waitFor({ state: 'visible', timeout: 15000 });
   await humanClick(editor);
   await humanPause(page, 180, 420);
@@ -412,8 +432,8 @@ async function fillComposer(page, description) {
 
 async function attachImages(page, files) {
   if (!files.length) return;
-  const dialog = page.locator('[role="dialog"]:visible').last();
-  const scope = await dialog.count().catch(() => 0) ? dialog : page;
+  const dialog = await getVisibleComposerDialog(page);
+  const scope = dialog || page;
   let input = scope.locator('input[type="file"]').last();
   if (!await input.count().catch(() => 0)) {
     const photoButton = scope.getByRole('button', { name: /Foto|Photo|fotograf/i }).last();
@@ -424,6 +444,9 @@ async function attachImages(page, files) {
     }
   }
   if (!await input.count().catch(() => 0)) {
+    input = page.locator('input[type="file"]').last();
+  }
+  if (!await input.count().catch(() => 0)) {
     throw new Error('Controlul de încărcare a fotografiilor nu a fost găsit.');
   }
   await input.setInputFiles(files);
@@ -431,19 +454,24 @@ async function attachImages(page, files) {
 }
 
 async function clickPublish(page) {
-  const dialog = page.locator('[role="dialog"]:visible').last();
-  const scope = await dialog.count().catch(() => 0) ? dialog : page;
+  const dialog = await getVisibleComposerDialog(page);
+  const scope = dialog || page;
+  const composerBox = dialog ? await dialog.boundingBox().catch(() => null) : null;
   const publishName = /^(Public[ăa]|Posteaz[ăa]|Post)$/i;
+  const labelledPublishButtons = [
+    '[role="button"][aria-label="Post"]',
+    'button[aria-label="Post"]',
+    '[role="button"][aria-label="Publică"]',
+    'button[aria-label="Publică"]',
+    '[role="button"][aria-label="Postează"]',
+    'button[aria-label="Postează"]',
+  ].join(', ');
   const candidates = [
+    page.getByRole('button', { name: publishName }),
+    page.locator(labelledPublishButtons),
+    page.locator('button, [role="button"]').filter({ hasText: publishName }),
     scope.getByRole('button', { name: publishName }),
-    scope.locator([
-      '[role="button"][aria-label="Post"]',
-      'button[aria-label="Post"]',
-      '[role="button"][aria-label="Publică"]',
-      'button[aria-label="Publică"]',
-      '[role="button"][aria-label="Postează"]',
-      'button[aria-label="Postează"]',
-    ].join(', ')),
+    scope.locator(labelledPublishButtons),
     scope.locator('button, [role="button"]').filter({ hasText: publishName }),
   ];
   let publishButton = null;
@@ -451,15 +479,24 @@ async function clickPublish(page) {
     const count = await candidate.count().catch(() => 0);
     for (let index = count - 1; index >= 0; index -= 1) {
       const item = candidate.nth(index);
-      if (await item.isVisible().catch(() => false)) {
-        publishButton = item;
-        break;
+      if (!await item.isVisible().catch(() => false)) continue;
+      const itemBox = await item.boundingBox().catch(() => null);
+      if (composerBox && itemBox) {
+        const centerX = itemBox.x + itemBox.width / 2;
+        const centerY = itemBox.y + itemBox.height / 2;
+        const insideComposer = centerX >= composerBox.x
+          && centerX <= composerBox.x + composerBox.width
+          && centerY >= composerBox.y
+          && centerY <= composerBox.y + composerBox.height;
+        if (!insideComposer) continue;
       }
+      publishButton = item;
+      break;
     }
     if (publishButton) break;
   }
   if (!publishButton) {
-    const visibleLabels = await scope.locator('button:visible, [role="button"]:visible')
+    const visibleLabels = await page.locator('button:visible, [role="button"]:visible')
       .evaluateAll((elements) => elements
         .map((element) => element.getAttribute('aria-label') || element.textContent || '')
         .map((label) => label.trim())
@@ -475,11 +512,13 @@ async function clickPublish(page) {
   }
   await humanPause(page, 500, 1_100);
   await humanClick(publishButton, 20_000);
-  const composerClosed = await dialog.waitFor({ state: 'hidden', timeout: 45_000 })
+  const composerClosed = await (dialog
+    ? dialog.waitFor({ state: 'hidden', timeout: 45_000 })
+    : publishButton.waitFor({ state: 'hidden', timeout: 45_000 }))
     .then(() => true)
     .catch(() => false);
-  if (!composerClosed && await dialog.isVisible().catch(() => false)) {
-    const alertText = await dialog.locator('[role="alert"]').last().textContent().catch(() => '');
+  if (!composerClosed && (!dialog || await dialog.isVisible().catch(() => false))) {
+    const alertText = await scope.locator('[role="alert"]').last().textContent().catch(() => '');
     throw new Error(alertText?.trim() || 'Facebook nu a confirmat publicarea postării.');
   }
   await humanPause(page, 1_400, 2_400);
