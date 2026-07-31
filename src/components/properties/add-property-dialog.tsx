@@ -35,7 +35,8 @@ import { useUser, useFirestore, useStorage } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import type { Property, PropertyStatusEvent } from '@/lib/types';
+import type { FacebookCloudConnection, Property, PropertyStatusEvent } from '@/lib/types';
+import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
 import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -388,6 +389,7 @@ const propertySchema = z.object({
   ownerPhone: z.string().optional(),
   salesScore: z.string().optional(),
   agentId: z.string().optional(),
+  defaultFacebookConnectionId: z.string().optional(),
   
   buildingState: z.string().optional(),
   seismicRisk: z.string().optional(),
@@ -433,6 +435,7 @@ const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
   ownerPhone: '',
   salesScore: 'Mediu',
   agentId: userId || 'unassigned',
+  defaultFacebookConnectionId: 'none',
   buildingState: '',
   seismicRisk: '',
   balconyTerrace: '',
@@ -511,6 +514,7 @@ const getPropertyFormValues = (propertyData: Property | null, userId?: string): 
         mic: 'Scăzut',
       }) || 'Mediu',
     agentId: propertyData.agentId || userId || 'unassigned',
+    defaultFacebookConnectionId: propertyData.defaultFacebookConnectionId || 'none',
     buildingState: pickAllowedOrOriginalValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
       noua: 'Nouă',
       reabilitata: 'Reabilitată',
@@ -737,6 +741,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const firestore = useFirestore();
     const storage = useStorage();
     const { agents, error: agentsError } = useAgencyAgents();
+    const [facebookConnections, setFacebookConnections] = useState<FacebookCloudConnection[]>([]);
     
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -773,6 +778,26 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         defaultValues: initialFormValues,
         values: initialFormValues,
     });
+
+    useEffect(() => {
+      if (!user) {
+        setFacebookConnections([]);
+        return;
+      }
+      let cancelled = false;
+      void facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections')
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.message || 'Conturile Facebook nu au putut fi încărcate.');
+          if (!cancelled) setFacebookConnections(payload.connections || []);
+        })
+        .catch((error) => {
+          if (!cancelled) console.warn('Failed to load Facebook cloud connections.', error);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [user]);
 
     const watchedImobiliareLocationId = form.watch('imobiliareLocationId');
     const watchedCity = form.watch('city');
@@ -963,6 +988,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     mic: 'Scăzut',
                 }) || 'Mediu',
                 agentId: propertyData.agentId || user?.uid || 'unassigned',
+                defaultFacebookConnectionId: propertyData.defaultFacebookConnectionId || 'none',
                 buildingState: pickAllowedOrOriginalValue(propertyData.buildingState, BUILDING_STATE_OPTIONS, {
                     noua: 'Nouă',
                     reabilitata: 'Reabilitată',
@@ -1010,6 +1036,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
                 description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
+                defaultFacebookConnectionId: 'none',
                 buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '', nearMetro: false,
                 commissionType: 'percentage',
                 commissionValue: 2,
@@ -1458,6 +1485,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               ownerPhone: values.ownerPhone,
               salesScore: values.salesScore as Property['salesScore'],
               agentId: values.agentId === 'unassigned' ? null : values.agentId,
+              defaultFacebookConnectionId:
+                values.defaultFacebookConnectionId && values.defaultFacebookConnectionId !== 'none'
+                  ? values.defaultFacebookConnectionId
+                  : null,
               agentName: selectedAgent?.name || null,
               agent: selectedAgent
                 ? {
@@ -1925,6 +1956,35 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, STATUS_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Agent</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Nealocat</SelectItem>{agents.map(agent => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                        <FormField
+                                          control={form.control}
+                                          name="defaultFacebookConnectionId"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel className="text-white/80">Cont Facebook implicit</FormLabel>
+                                              <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                                                <FormControl>
+                                                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                                    <SelectValue placeholder="Fără cont atribuit" />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  <SelectItem value="none">Fără cont atribuit</SelectItem>
+                                                  {facebookConnections.map((connection) => (
+                                                    <SelectItem key={connection.id} value={connection.id}>
+                                                      {connection.displayName || connection.label}
+                                                      {connection.status !== 'connected' ? ' · reconectare necesară' : ''}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                              <FormDescription className="text-white/50">
+                                                Va fi preselectat la publicarea în grupuri.
+                                              </FormDescription>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
                                         <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, SALES_SCORE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

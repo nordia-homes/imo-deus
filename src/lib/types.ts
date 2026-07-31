@@ -328,6 +328,68 @@ export type FacebookPromotionSession = {
   startedAt: string;
 };
 
+export type FacebookCloudConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'needs_reauthentication'
+  | 'error'
+  | 'disconnected';
+
+export type FacebookCloudConnection = {
+  id: string;
+  agencyId: string;
+  ownerUid: string;
+  label: string;
+  displayName?: string | null;
+  facebookUserId?: string | null;
+  status: FacebookCloudConnectionStatus;
+  currentUrl?: string | null;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastVerifiedAt?: string | null;
+};
+
+export type FacebookCloudGroupJobStatus =
+  | 'queued'
+  | 'publishing'
+  | 'submitted'
+  | 'pending_approval'
+  | 'needs_reauthentication'
+  | 'error'
+  | 'skipped';
+
+export type FacebookCloudPublishingJob = {
+  id: string;
+  agencyId: string;
+  ownerUid: string;
+  connectionId: string;
+  connectionLabel?: string | null;
+  propertyId: string;
+  propertyTitle: string;
+  status:
+    | 'queued'
+    | 'running'
+    | 'cooldown'
+    | 'completed'
+    | 'cancelled'
+    | 'needs_reauthentication'
+    | 'error';
+  groups: Array<FacebookGroup & {
+    status: FacebookCloudGroupJobStatus;
+    startedAt?: string | null;
+    submittedAt?: string | null;
+    failedAt?: string | null;
+    errorMessage?: string | null;
+  }>;
+  currentGroupIndex: number;
+  nextRunAt?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+};
+
 export type MetaMarketingIntegrationPublicStatus = {
   provider: 'meta';
   connected: boolean;
@@ -824,6 +886,7 @@ export type Property = {
   metaFacebookPost?: MetaFacebookPagePost | null;
   videoTour?: PropertyVideoTour | null;
   locationProfile?: PropertyLocationProfile | null;
+  defaultFacebookConnectionId?: string | null;
 
   // Commission fields
   commissionType?: 'percentage' | 'fixed';

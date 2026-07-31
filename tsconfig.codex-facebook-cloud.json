@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "skipLibCheck": true
+  },
+  "files": [
+    "src/lib/types.ts",
+    "src/lib/facebook-cloud-server.ts",
+    "src/lib/facebook-cloud-client.ts",
+    "src/app/api/marketing/facebook-cloud/connections/route.ts",
+    "src/app/api/marketing/facebook-cloud/connections/[connectionId]/route.ts",
+    "src/app/api/marketing/facebook-cloud/connections/[connectionId]/session/route.ts",
+    "src/app/api/marketing/facebook-cloud/connections/[connectionId]/snapshot/route.ts",
+    "src/app/api/marketing/facebook-cloud/connections/[connectionId]/input/route.ts",
+    "src/app/api/marketing/facebook-cloud/jobs/route.ts",
+    "src/app/api/marketing/facebook-cloud/jobs/[jobId]/route.ts",
+    "src/app/api/marketing/facebook-cloud/internal/events/route.ts",
+    "src/app/(dashboard)/marketing/facebook-accounts/page.tsx",
+    "src/app/(dashboard)/marketing/facebook-accounts/[connectionId]/connect/page.tsx",
+    "src/components/layout/app-shell.tsx",
+    "src/components/properties/add-property-dialog.tsx",
+    "src/components/properties/detail/ActionsColumn.tsx",
+    "src/components/properties/detail/actions/FacebookCloudPublishingCard.tsx"
+  ]
+}

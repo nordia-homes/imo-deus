@@ -1,0 +1,46 @@
+services:
+  facebook-cloud-runner:
+    build:
+      context: .
+    init: true
+    restart: unless-stopped
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    environment:
+      PORT: "8080"
+      FACEBOOK_CLOUD_RUNNER_TOKEN: "${FACEBOOK_CLOUD_RUNNER_TOKEN}"
+      FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN: "${FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN}"
+      IMODEUS_APP_URL: "${IMODEUS_APP_URL}"
+      FACEBOOK_PROFILE_ROOT: "/data/profiles"
+      FACEBOOK_RUNNER_STATE_PATH: "/data/state/runner-state.json"
+      FACEBOOK_COOLDOWN_MIN_SECONDS: "90"
+      FACEBOOK_COOLDOWN_MAX_SECONDS: "120"
+      FACEBOOK_CONTEXT_IDLE_SECONDS: "300"
+    volumes:
+      - facebook-runner-data:/data
+
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    depends_on:
+      - facebook-cloud-runner
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      RUNNER_DOMAIN: "${RUNNER_DOMAIN}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  facebook-runner-data:
+  caddy-data:
+  caddy-config:

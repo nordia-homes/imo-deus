@@ -43,6 +43,21 @@ env:
     availability:
       - RUNTIME
 
+  - variable: FACEBOOK_CLOUD_RUNNER_URL
+    secret: FACEBOOK_CLOUD_RUNNER_URL
+    availability:
+      - RUNTIME
+
+  - variable: FACEBOOK_CLOUD_RUNNER_TOKEN
+    secret: FACEBOOK_CLOUD_RUNNER_TOKEN
+    availability:
+      - RUNTIME
+
+  - variable: FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN
+    secret: FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN
+    availability:
+      - RUNTIME
+
   - variable: PLAYWRIGHT_BROWSERS_PATH
     value: "0"
     availability:

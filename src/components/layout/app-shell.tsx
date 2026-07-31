@@ -26,6 +26,7 @@ import {
   PhoneCall,
   Megaphone,
   Facebook,
+  UserRoundCog,
   Video,
 } from 'lucide-react';
 import {
@@ -124,6 +125,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <Link href="/marketing/meta-advertising">
                         <Facebook />
                         <span>Meta Advertising</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/facebook-accounts')}>
+                      <Link href="/marketing/facebook-accounts">
+                        <UserRoundCog />
+                        <span>Conturi Facebook</span>
                       </Link>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
