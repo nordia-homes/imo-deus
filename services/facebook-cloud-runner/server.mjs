@@ -379,6 +379,7 @@ async function downloadImages(job) {
 const composerTriggerName = /Creeaz(?:\u0103|a) (?:o )?postare(?: public(?:\u0103|a))?|Create (?:a )?(?:public )?post|Scrie ceva|Write something|La ce te g(?:\u00e2|a)nde(?:\u0219|s)ti|What(?:'|\u2019)s on your mind/i;
 const groupJoinName = /^(?:Al(?:\u0103|a)tur(?:\u0103|a)-te(?: grupului)?|(?:\u00ce|I)nscrie-te (?:\u00een|in) grup|Join group|Join)$/i;
 const unavailableGroupText = /(?:Acest )?con(?:\u021b|t)inut(?:ul)? nu este disponibil(?: momentan)?|(?:This )?content isn't available(?: right now)?|Grupul nu este disponibil|This group isn't available/i;
+const unavailableGroupActionName = /^(?:Mergi la flux|Go to Feed)$/i;
 
 async function hasVisibleMatch(locator) {
   const count = await locator.count().catch(() => 0);
@@ -389,7 +390,7 @@ async function hasVisibleMatch(locator) {
 }
 
 async function pageTextMatches(page, pattern) {
-  const text = await page.locator('body').innerText({ timeout: 2_000 }).catch(() => '');
+  const text = await page.locator('body').textContent({ timeout: 5_000 }).catch(() => '');
   return pattern.test(text);
 }
 
@@ -432,7 +433,8 @@ async function assertGroupCanBePostedTo(page) {
     error.code = 'GROUP_MEMBERSHIP_REQUIRED';
     throw error;
   }
-  if (await pageTextMatches(page, unavailableGroupText)) {
+  const unavailableAction = page.getByRole('button', { name: unavailableGroupActionName });
+  if (await hasVisibleMatch(unavailableAction) || await pageTextMatches(page, unavailableGroupText)) {
     const error = new Error('Grupul Facebook nu este disponibil pentru acest cont.');
     error.code = 'GROUP_UNAVAILABLE';
     throw error;
