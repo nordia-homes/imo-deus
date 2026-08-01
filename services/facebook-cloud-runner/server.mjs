@@ -376,23 +376,109 @@ async function downloadImages(job) {
   }
 }
 
-async function openComposer(page) {
+const composerTriggerName = /Creeaz(?:\u0103|a) (?:o )?postare(?: public(?:\u0103|a))?|Create (?:a )?(?:public )?post|Scrie ceva|Write something|La ce te g(?:\u00e2|a)nde(?:\u0219|s)ti|What(?:'|\u2019)s on your mind/i;
+const groupJoinName = /^(?:Al(?:\u0103|a)tur(?:\u0103|a)-te(?: grupului)?|(?:\u00ce|I)nscrie-te (?:\u00een|in) grup|Join group|Join)$/i;
+const unavailableGroupText = /Acest con(?:\u021b|t)inut nu este disponibil|This content isn't available|Grupul nu este disponibil|This group isn't available/i;
+
+async function hasVisibleMatch(locator) {
+  const count = await locator.count().catch(() => 0);
+  for (let index = 0; index < count; index += 1) {
+    if (await locator.nth(index).isVisible().catch(() => false)) return true;
+  }
+  return false;
+}
+
+async function composerIsOpen(page) {
+  const editors = page.locator([
+    '[role="dialog"] [contenteditable="true"][role="textbox"]',
+    '[role="dialog"] [contenteditable="true"][data-lexical-editor="true"]',
+    '[aria-label="Create post"] [contenteditable="true"]',
+    '[aria-label="Creeaz\u0103 o postare"] [contenteditable="true"]',
+  ].join(', '));
+  return hasVisibleMatch(editors);
+}
+
+async function clickVisibleComposerTrigger(page) {
   const candidates = [
-    page.getByRole('button', { name: /Creeaz[ăa] o postare|Create post|Scrie ceva|Write something/i }),
-    page.locator('[role="button"]').filter({ hasText: /Scrie ceva|Write something|Creeaz[ăa] o postare|Create post/i }),
+    page.getByRole('button', { name: composerTriggerName }),
+    page.locator('button, [role="button"]').filter({ hasText: composerTriggerName }),
   ];
   for (const candidate of candidates) {
     const count = await candidate.count().catch(() => 0);
-    if (!count) continue;
-    const target = candidate.first();
-    if (await target.isVisible().catch(() => false)) {
-      await humanClick(target, 10_000);
-      await humanPause(page, 700, 1_250);
-      return;
+    for (let index = 0; index < count; index += 1) {
+      const target = candidate.nth(index);
+      if (!await target.isVisible().catch(() => false)) continue;
+      const box = await target.boundingBox().catch(() => null);
+      if (!box || box.width < 20 || box.height < 16) continue;
+      try {
+        await humanClick(target, 10_000);
+        return true;
+      } catch {
+        // Facebook can replace the node while the feed is hydrating; try the next visible match.
+      }
     }
   }
-  throw new Error('Composerul Facebook nu a fost găsit.');
+  return false;
 }
+
+async function assertGroupCanBePostedTo(page) {
+  if (await hasVisibleMatch(page.getByRole('button', { name: groupJoinName }))) {
+    const error = new Error('Contul Facebook nu este membru al acestui grup. \u00censcrie contul \u00een grup \u0219i reia publicarea.');
+    error.code = 'GROUP_MEMBERSHIP_REQUIRED';
+    throw error;
+  }
+  if (await hasVisibleMatch(page.getByText(unavailableGroupText, { exact: false }))) {
+    const error = new Error('Grupul Facebook nu este disponibil pentru acest cont.');
+    error.code = 'GROUP_UNAVAILABLE';
+    throw error;
+  }
+}
+
+async function tryOpenComposer(page, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let lastClickAt = 0;
+  while (Date.now() < deadline) {
+    if (await composerIsOpen(page)) return true;
+    await assertGroupCanBePostedTo(page);
+
+    if (Date.now() - lastClickAt > 2_000 && await clickVisibleComposerTrigger(page)) {
+      lastClickAt = Date.now();
+      await humanPause(page, 700, 1_250);
+      if (await composerIsOpen(page)) return true;
+    }
+    await page.waitForTimeout(500);
+  }
+  return false;
+}
+
+async function openComposer(page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })).catch(() => undefined);
+  if (await tryOpenComposer(page, 30_000)) return;
+
+  await assertGroupCanBePostedTo(page);
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await humanPause(page, 1_500, 2_500);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })).catch(() => undefined);
+  if (await tryOpenComposer(page, 30_000)) return;
+
+  await assertGroupCanBePostedTo(page);
+  const visibleButtons = await page.locator('button:visible, [role="button"]:visible')
+    .evaluateAll((elements) => elements
+      .map((element) => element.getAttribute('aria-label') || element.textContent || '')
+      .map((label) => label.trim())
+      .filter(Boolean)
+      .slice(0, 20))
+    .catch(() => []);
+  console.warn('Facebook composer not found after retry.', {
+    url: page.url(),
+    title: await page.title().catch(() => ''),
+    visibleButtons,
+  });
+  const error = new Error('Composerul Facebook nu a fost g\u0103sit dup\u0103 re\u00eenc\u0103rcarea grupului.');
+  error.code = 'COMPOSER_NOT_FOUND';
+  throw error;
+}
+
 
 async function getVisibleComposerDialog(page) {
   const dialogs = page.locator('[role="dialog"]:visible');
