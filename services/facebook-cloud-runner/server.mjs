@@ -378,7 +378,7 @@ async function downloadImages(job) {
 
 const composerTriggerName = /Creeaz(?:\u0103|a) (?:o )?postare(?: public(?:\u0103|a))?|Create (?:a )?(?:public )?post|Scrie ceva|Write something|La ce te g(?:\u00e2|a)nde(?:\u0219|s)ti|What(?:'|\u2019)s on your mind/i;
 const groupJoinName = /^(?:Al(?:\u0103|a)tur(?:\u0103|a)-te(?: grupului)?|(?:\u00ce|I)nscrie-te (?:\u00een|in) grup|Join group|Join)$/i;
-const unavailableGroupText = /Acest con(?:\u021b|t)inut nu este disponibil|This content isn't available|Grupul nu este disponibil|This group isn't available/i;
+const unavailableGroupText = /(?:Acest )?con(?:\u021b|t)inut(?:ul)? nu este disponibil(?: momentan)?|This content isn't available|Grupul nu este disponibil|This group isn't available/i;
 
 async function hasVisibleMatch(locator) {
   const count = await locator.count().catch(() => 0);
@@ -724,6 +724,18 @@ async function processJob(job) {
           await persistState();
           await reportJob(job);
           return;
+        }
+        if (['GROUP_MEMBERSHIP_REQUIRED', 'GROUP_UNAVAILABLE'].includes(error?.code)) {
+          group.status = 'skipped';
+          group.errorMessage = error instanceof Error ? error.message : String(error);
+          group.failedAt = nowIso();
+          job.status = 'running';
+          job.errorMessage = null;
+          job.nextRunAt = null;
+          job.updatedAt = nowIso();
+          await persistState();
+          await reportJob(job);
+          continue;
         }
         group.status = error?.code === 'NEEDS_REAUTHENTICATION' ? 'needs_reauthentication' : 'error';
         group.errorMessage = error instanceof Error ? error.message : String(error);
