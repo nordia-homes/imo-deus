@@ -390,8 +390,10 @@ async function hasVisibleMatch(locator) {
 }
 
 async function pageTextMatches(page, pattern) {
-  const text = await page.locator('body').textContent({ timeout: 5_000 }).catch(() => '');
-  return pattern.test(text);
+  return page.evaluate(({ source, flags }) => {
+    const text = document.body?.textContent || '';
+    return new RegExp(source, flags).test(text);
+  }, { source: pattern.source, flags: pattern.flags }).catch(() => false);
 }
 
 async function composerIsOpen(page) {
@@ -433,8 +435,19 @@ async function assertGroupCanBePostedTo(page) {
     error.code = 'GROUP_MEMBERSHIP_REQUIRED';
     throw error;
   }
-  const unavailableAction = page.getByRole('button', { name: unavailableGroupActionName });
-  if (await hasVisibleMatch(unavailableAction) || await pageTextMatches(page, unavailableGroupText)) {
+  const unavailableActions = [
+    page.getByRole('button', { name: unavailableGroupActionName }),
+    page.getByRole('link', { name: unavailableGroupActionName }),
+    page.locator('a, button, [role="button"], [role="link"]').filter({ hasText: unavailableGroupActionName }),
+  ];
+  let hasUnavailableAction = false;
+  for (const action of unavailableActions) {
+    if (await hasVisibleMatch(action)) {
+      hasUnavailableAction = true;
+      break;
+    }
+  }
+  if (hasUnavailableAction || await pageTextMatches(page, unavailableGroupText)) {
     const error = new Error('Grupul Facebook nu este disponibil pentru acest cont.');
     error.code = 'GROUP_UNAVAILABLE';
     throw error;
@@ -469,7 +482,13 @@ async function openComposer(page) {
   if (await tryOpenComposer(page, 30_000)) return;
 
   await assertGroupCanBePostedTo(page);
-  const visibleButtons = await page.locator('button:visible, [role="button"]:visible')
+  const pageTitle = await page.title().catch(() => '');
+  if (pageTitle.trim().toLowerCase() === 'facebook' && /facebook\.com\/groups\//i.test(page.url())) {
+    const error = new Error('Grupul Facebook nu este disponibil pentru acest cont.');
+    error.code = 'GROUP_UNAVAILABLE';
+    throw error;
+  }
+  const visibleActions = await page.locator('a:visible, button:visible, [role="button"]:visible, [role="link"]:visible')
     .evaluateAll((elements) => elements
       .map((element) => element.getAttribute('aria-label') || element.textContent || '')
       .map((label) => label.trim())
@@ -478,8 +497,8 @@ async function openComposer(page) {
     .catch(() => []);
   console.warn('Facebook composer not found after retry.', {
     url: page.url(),
-    title: await page.title().catch(() => ''),
-    visibleButtons,
+    title: pageTitle,
+    visibleActions,
   });
   const error = new Error('Composerul Facebook nu a fost g\u0103sit dup\u0103 re\u00eenc\u0103rcarea grupului.');
   error.code = 'COMPOSER_NOT_FOUND';
