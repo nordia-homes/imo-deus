@@ -673,6 +673,7 @@ function publicJob(job) {
     status: job.status,
     groups: job.groups,
     currentGroupIndex: job.currentGroupIndex,
+    scheduledAt: job.scheduledAt || null,
     nextRunAt: job.nextRunAt || null,
     errorMessage: job.errorMessage || null,
     createdAt: job.createdAt,
@@ -826,14 +827,36 @@ function scheduleConnection(connectionId) {
   })();
 }
 
+async function activateDueScheduledJobs() {
+  const dueJobs = Object.values(state.jobs).filter((job) => (
+    job.status === 'scheduled'
+    && job.scheduledAt
+    && new Date(job.scheduledAt).getTime() <= Date.now()
+  ));
+  if (!dueJobs.length) return;
+  const activatedAt = nowIso();
+  for (const job of dueJobs) {
+    job.status = 'queued';
+    job.updatedAt = activatedAt;
+  }
+  await persistState();
+  await Promise.allSettled(dueJobs.map((job) => reportJob(job)));
+  for (const job of dueJobs) scheduleConnection(job.connectionId);
+}
+
 async function enqueueJob(payload) {
   const id = safeId(payload.id);
   const connectionId = safeId(payload.connectionId);
   const existing = state.jobs[id];
   if (existing) {
-    scheduleConnection(existing.connectionId);
+    if (existing.status !== 'scheduled') scheduleConnection(existing.connectionId);
     return publicJob(existing);
   }
+  const requestedSchedule = payload.scheduledAt ? new Date(String(payload.scheduledAt)) : null;
+  if (payload.scheduledAt && (!requestedSchedule || Number.isNaN(requestedSchedule.getTime()))) {
+    throw new Error('Scheduled time is invalid.');
+  }
+  const scheduledAt = requestedSchedule && requestedSchedule.getTime() > Date.now() ? requestedSchedule.toISOString() : null;
   const job = {
     id,
     agencyId: String(payload.agencyId || ''),
@@ -851,8 +874,9 @@ async function enqueueJob(payload) {
         }))
       : [],
     currentGroupIndex: 0,
-    status: 'queued',
+    status: scheduledAt ? 'scheduled' : 'queued',
     cancelRequested: false,
+    scheduledAt,
     nextRunAt: null,
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -860,7 +884,38 @@ async function enqueueJob(payload) {
   if (!job.groups.length) throw new Error('At least one Facebook group is required.');
   state.jobs[id] = job;
   await persistState();
-  scheduleConnection(connectionId);
+  if (job.status === 'queued') scheduleConnection(connectionId);
+  return publicJob(job);
+}
+
+async function updateScheduledJob(jobId, payload) {
+  const id = safeId(jobId);
+  const job = state.jobs[id];
+  if (!job) return null;
+  if (job.status !== 'scheduled') throw new Error('Only a scheduled job can be updated.');
+  const connectionId = safeId(payload.connectionId);
+  const scheduledDate = new Date(String(payload.scheduledAt || ''));
+  if (Number.isNaN(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()) {
+    throw new Error('Scheduled time must be in the future.');
+  }
+  const groups = Array.isArray(payload.groups)
+    ? payload.groups.map((group) => ({
+        name: String(group.name || ''),
+        url: normalizeFacebookGroupUrl(group.url),
+        status: 'queued',
+      }))
+    : [];
+  if (!groups.length) throw new Error('At least one Facebook group is required.');
+  job.connectionId = connectionId;
+  job.groups = groups;
+  job.currentGroupIndex = 0;
+  job.scheduledAt = scheduledDate.toISOString();
+  job.nextRunAt = null;
+  job.errorMessage = null;
+  job.cancelRequested = false;
+  job.updatedAt = nowIso();
+  await persistState();
+  await reportJob(job);
   return publicJob(job);
 }
 
@@ -869,7 +924,7 @@ async function cancelJob(jobId) {
   const job = state.jobs[id];
   if (!job) return null;
   job.cancelRequested = true;
-  if (job.status === 'queued') job.status = 'cancelled';
+  if (['scheduled', 'queued'].includes(job.status)) job.status = 'cancelled';
   job.updatedAt = nowIso();
   await persistState();
   await reportJob(job);
@@ -912,6 +967,7 @@ const server = http.createServer(async (request, response) => {
         connections: Object.keys(state.connections).length,
         activeContexts: contexts.size,
         queuedJobs: Object.values(state.jobs).filter((job) => ['queued', 'running', 'cooldown'].includes(job.status)).length,
+        scheduledJobs: Object.values(state.jobs).filter((job) => job.status === 'scheduled').length,
       });
       return;
     }
@@ -966,6 +1022,11 @@ const server = http.createServer(async (request, response) => {
     }
 
     match = matchPath(request.url, /^\/v1\/jobs\/([^/]+)$/);
+    if (match && request.method === 'PATCH') {
+      const job = await updateScheduledJob(match[1], await readJson(request));
+      sendJson(response, job ? 200 : 404, job ? { job } : { message: 'Job not found.' });
+      return;
+    }
     if (match && request.method === 'GET') {
       const job = state.jobs[safeId(match[1])];
       sendJson(response, job ? 200 : 404, job ? { job: publicJob(job) } : { message: 'Job not found.' });
@@ -1014,6 +1075,13 @@ if (recoveredJobs.length) {
   await persistState();
   await Promise.allSettled(recoveredJobs.map((job) => reportJob(job)));
 }
+await activateDueScheduledJobs();
+
+setInterval(() => {
+  void activateDueScheduledJobs().catch((error) => {
+    console.warn('Could not activate due Facebook publishing jobs.', error);
+  });
+}, 10_000).unref();
 
 setInterval(() => {
   const cutoff = Date.now() - contextIdleMs;

@@ -2,8 +2,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight } from "lucide-react";
-import type { Property } from "@/lib/types";
+import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight, Facebook, CalendarClock } from "lucide-react";
+import type { FacebookCloudPublishingJob, Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { Button } from "../ui/button";
@@ -21,20 +21,29 @@ import { useToast } from "@/hooks/use-toast";
 import { buildAgencyPublicUrl } from "@/lib/domain-routing";
 import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { getAgencyThemePreset } from "@/lib/theme";
+import { formatBucharestDateTime } from "@/lib/bucharest-time";
+import { FacebookCloudPublishDialog } from "./FacebookCloudPublishDialog";
 
 export function PropertyCard({
   property,
   agencyId,
   publicBasePath,
   onDeleteRequest,
+  enableFacebookPublishing = false,
+  facebookJob,
+  onFacebookJobChange,
 }: {
   property: Property;
   agencyId?: string;
   publicBasePath?: string;
   onDeleteRequest?: () => void;
+  enableFacebookPublishing?: boolean;
+  facebookJob?: FacebookCloudPublishingJob | null;
+  onFacebookJobChange?: (job: FacebookCloudPublishingJob) => void;
 }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [facebookDialogOpen, setFacebookDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const displaySurface = property.totalSurface ?? property.squareFootage;
   const { agencyId: dashboardAgencyId, agency: dashboardAgency } = useAgency();
@@ -167,14 +176,46 @@ export function PropertyCard({
                 </Badge>
                ) : null}
             </div>
-            <Button
-              size="icon"
-              variant="secondary"
-              className={cn("absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? (isAgentfinderTheme ? "border border-white bg-white text-slate-700 hover:bg-white hover:text-slate-900" : "bg-black/45 text-stone-100 hover:bg-black/70") : "bg-black/30 text-white hover:bg-black/50")}
-              onClick={() => setIsFavorite(!isFavorite)}
-            >
-              <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />
-            </Button>
+            {facebookJob?.status === 'scheduled' && facebookJob.scheduledAt ? (
+              <Badge className="absolute bottom-3 left-3 border-0 bg-slate-950/75 text-white backdrop-blur-sm">
+                <CalendarClock className="mr-1 h-3.5 w-3.5" />
+                {formatBucharestDateTime(facebookJob.scheduledAt)}
+              </Badge>
+            ) : null}
+            <div className={cn('absolute right-3 flex items-center gap-2', enableFacebookPublishing ? 'bottom-3' : 'top-3')}>
+              {enableFacebookPublishing ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  title={facebookJob?.status === 'scheduled' ? 'Modifică programarea Facebook' : 'Publică în grupurile Facebook'}
+                  aria-label={facebookJob?.status === 'scheduled' ? 'Modifică programarea Facebook' : 'Publică în grupurile Facebook'}
+                  className={cn(
+                    'h-9 w-9 rounded-full border border-white/20 bg-[#1877F2] text-white shadow-lg backdrop-blur-sm hover:bg-[#166FE5]',
+                    facebookJob && ['queued', 'running', 'cooldown'].includes(facebookJob.status) && 'animate-pulse'
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setFacebookDialogOpen(true);
+                  }}
+                >
+                  <Facebook className="h-4 w-4 fill-current" />
+                </Button>
+              ) : null}
+              <Button
+                size="icon"
+                variant="secondary"
+                className={cn("h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? (isAgentfinderTheme ? "border border-white bg-white text-slate-700 hover:bg-white hover:text-slate-900" : "bg-black/45 text-stone-100 hover:bg-black/70") : "bg-black/30 text-white hover:bg-black/50")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setIsFavorite(!isFavorite);
+                }}
+              >
+                <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />
+              </Button>
+            </div>
           </div>
           
           <div className="p-4 space-y-3">
@@ -251,6 +292,16 @@ export function PropertyCard({
         </CardContent>
       </Card>
       
+      {enableFacebookPublishing ? (
+        <FacebookCloudPublishDialog
+          property={property}
+          open={facebookDialogOpen}
+          onOpenChange={setFacebookDialogOpen}
+          existingJob={facebookJob && ['scheduled', 'queued', 'running', 'cooldown'].includes(facebookJob.status) ? facebookJob : null}
+          onJobChange={(job) => onFacebookJobChange?.(job)}
+        />
+      ) : null}
+
       {!agencyId && isEditDialogOpen && (
         <AddPropertyDialog 
           property={property}

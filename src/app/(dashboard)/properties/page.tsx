@@ -379,7 +379,7 @@ export default function PropertiesPage() {
                 </PropertyFilters>
             </div>
             <div className="px-2">
-              <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} />
+              <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} enableFacebookPublishing={isMobile} />
             </div>
         </div>
 
@@ -487,7 +487,7 @@ export default function PropertiesPage() {
                 ) : null}
             </div>
             
-            <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} />
+            <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} enableFacebookPublishing={!isMobile} />
         </div>
         <DeletePropertyAlert
             isOpen={!!deletingProperty}

@@ -106,5 +106,6 @@ export function toRunnerJob(
     propertyDescription: property.description || '',
     propertyImages: property.images || [],
     groups: job.groups.map(({ name, url }) => ({ name, url })),
+    scheduledAt: job.scheduledAt || null,
   };
 }

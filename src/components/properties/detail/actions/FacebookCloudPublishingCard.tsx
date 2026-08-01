@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { doc, updateDoc } from 'firebase/firestore';
 import {
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -17,6 +18,7 @@ import {
 import { useAgency } from '@/context/AgencyContext';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { FacebookCloudPublishDialog } from '@/components/properties/FacebookCloudPublishDialog';
 import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
 import { getAgencyFacebookGroups } from '@/lib/facebook-groups';
 import type {
@@ -41,6 +43,7 @@ function formatDuration(groupCount: number) {
 
 function jobLabel(job: FacebookCloudPublishingJob) {
   const labels: Record<FacebookCloudPublishingJob['status'], string> = {
+    scheduled: 'Programată',
     queued: 'În coadă',
     running: 'Se publică',
     cooldown: 'În așteptare',
@@ -66,8 +69,8 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   const [showGroups, setShowGroups] = useState(false);
   const [jobs, setJobs] = useState<FacebookCloudPublishingJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [publishing, setPublishing] = useState(false);
   const [savingDefault, setSavingDefault] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   const load = useCallback(async (quiet = false) => {
     if (!user) return;
@@ -103,14 +106,15 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   }, [load]);
 
   useEffect(() => {
-    const hasActiveJob = jobs.some((job) => ['queued', 'running', 'cooldown'].includes(job.status));
+    const hasActiveJob = jobs.some((job) => ['scheduled', 'queued', 'running', 'cooldown'].includes(job.status));
     if (!hasActiveJob) return;
-    const timer = window.setInterval(() => void load(true), 7000);
+    const hasRunningJob = jobs.some((job) => ['queued', 'running', 'cooldown'].includes(job.status));
+    const timer = window.setInterval(() => void load(true), hasRunningJob ? 7000 : 60_000);
     return () => window.clearInterval(timer);
   }, [jobs, load]);
 
   const selectedConnection = connections.find((connection) => connection.id === selectedConnectionId) || null;
-  const activeJob = jobs.find((job) => ['queued', 'running', 'cooldown'].includes(job.status)) || null;
+  const activeJob = jobs.find((job) => ['scheduled', 'queued', 'running', 'cooldown'].includes(job.status)) || null;
   const latestJob = activeJob || jobs[0] || null;
   const isActive = Boolean(activeJob);
   const completedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval'].includes(group.status)).length || 0;
@@ -136,32 +140,6 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
     }
   }
 
-  async function publish() {
-    if (!user || !selectedConnectionId || !selectedUrls.length) return;
-    setPublishing(true);
-    try {
-      const response = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/jobs', {
-        method: 'POST',
-        body: JSON.stringify({
-          propertyId: property.id,
-          connectionId: selectedConnectionId,
-          groupUrls: selectedUrls,
-        }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.message || 'Publicarea nu a putut fi pornită.');
-      setJobs((current) => [body.job, ...current]);
-      toast({
-        title: 'Publicarea a început',
-        description: `${selectedUrls.length} grupuri · ${selectedConnection?.label || selectedConnection?.displayName}`,
-      });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Publicare eșuată', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
-    } finally {
-      setPublishing(false);
-    }
-  }
-
   async function cancelJob() {
     if (!user || !latestJob) return;
     const response = await facebookCloudFetch(user, `/api/marketing/facebook-cloud/jobs/${latestJob.id}`, { method: 'DELETE' });
@@ -175,7 +153,8 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   }
 
   return (
-    <Card className="overflow-hidden border-sky-300/15 bg-[#152A47] p-0 text-white shadow-xl">
+    <>
+      <Card className="overflow-hidden border-sky-300/15 bg-[#152A47] p-0 text-white shadow-xl">
       <CardContent className="space-y-4 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -293,6 +272,12 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
                   <span>{jobLabel(latestJob)}</span>
                   <span>{completedGroups}/{latestJob.groups.length}</span>
                 </div>
+                {latestJob.status === 'scheduled' && latestJob.scheduledAt ? (
+                  <p className="mt-2 flex items-center text-xs text-white/60">
+                    <CalendarClock className="mr-1 h-3.5 w-3.5" />
+                    Programată pentru {new Date(latestJob.scheduledAt).toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest' })}
+                  </p>
+                ) : null}
                 {latestJob.nextRunAt && latestJob.status === 'cooldown' ? (
                   <p className="mt-2 flex items-center text-xs text-white/50">
                     <Timer className="mr-1 h-3.5 w-3.5" />
@@ -308,7 +293,12 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
                 <p>{formatDuration(selectedUrls.length)}</p>
                 <p>pauză 90–120 sec. per cont</p>
               </div>
-              {isActive ? (
+              {latestJob?.status === 'scheduled' ? (
+                <Button type="button" variant="outline" className="border-sky-300/20 bg-sky-500/10 text-sky-100" onClick={() => setPublishDialogOpen(true)}>
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  Modifică
+                </Button>
+              ) : isActive ? (
                 <Button type="button" variant="outline" className="border-rose-300/20 bg-rose-500/10 text-rose-100" onClick={() => void cancelJob()}>
                   <Square className="mr-2 h-3.5 w-3.5" />
                   Oprește
@@ -316,12 +306,12 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
               ) : (
                 <Button
                   type="button"
-                  disabled={publishing || !selectedConnection || selectedConnection.status !== 'connected' || selectedUrls.length === 0}
+                  disabled={!selectedConnection || selectedConnection.status !== 'connected' || selectedUrls.length === 0}
                   className="bg-sky-400 text-slate-950 hover:bg-sky-300"
-                  onClick={() => void publish()}
+                  onClick={() => setPublishDialogOpen(true)}
                 >
-                  {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                  Publică în {selectedUrls.length} {selectedUrls.length === 1 ? 'grup' : 'grupuri'}
+                  <Play className="mr-2 h-4 w-4" />
+                  Continuă
                 </Button>
               )}
             </div>
@@ -335,6 +325,25 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
           </>
         )}
       </CardContent>
-    </Card>
+      </Card>
+      <FacebookCloudPublishDialog
+        property={property}
+        open={publishDialogOpen}
+        onOpenChange={setPublishDialogOpen}
+        connections={connections}
+        groups={groups}
+        initialConnectionId={selectedConnectionId}
+        initialGroupUrls={selectedUrls}
+        existingJob={latestJob?.status === 'scheduled' ? latestJob : null}
+        onJobChange={(changedJob) => {
+          setJobs((current) => {
+            const exists = current.some((job) => job.id === changedJob.id);
+            return exists
+              ? current.map((job) => job.id === changedJob.id ? changedJob : job)
+              : [changedJob, ...current];
+          });
+        }}
+      />
+    </>
   );
 }

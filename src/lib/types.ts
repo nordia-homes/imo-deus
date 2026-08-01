@@ -368,6 +368,7 @@ export type FacebookCloudPublishingJob = {
   propertyId: string;
   propertyTitle: string;
   status:
+    | 'scheduled'
     | 'queued'
     | 'running'
     | 'cooldown'
@@ -383,6 +384,7 @@ export type FacebookCloudPublishingJob = {
     errorMessage?: string | null;
   }>;
   currentGroupIndex: number;
+  scheduledAt?: string | null;
   nextRunAt?: string | null;
   errorMessage?: string | null;
   createdAt: string;
