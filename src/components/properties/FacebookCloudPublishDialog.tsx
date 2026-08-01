@@ -260,8 +260,8 @@ export function FacebookCloudPublishDialog({
     <Dialog open={open} onOpenChange={(nextOpen) => {
       if (!submitting && !cancelling) onOpenChange(nextOpen);
     }}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-2xl grid-cols-none flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-h-[92vh] sm:w-full">
+        <DialogHeader className="shrink-0 border-b px-4 py-4 pr-12 sm:px-6 sm:py-5">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1877F2]/10 text-[#1877F2]">
               <Facebook className="h-5 w-5" />
@@ -273,6 +273,7 @@ export function FacebookCloudPublishDialog({
           </div>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
         {loadingOptions ? (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -312,7 +313,7 @@ export function FacebookCloudPublishDialog({
                   </Button>
                 </div>
               </div>
-              <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border bg-muted/20 p-2">
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border bg-muted/20 p-2 sm:max-h-52">
                 {groups.map((group, index) => {
                   const id = `facebook-dialog-${property.id}-${index}`;
                   return (
@@ -391,15 +392,16 @@ export function FacebookCloudPublishDialog({
             ) : null}
           </div>
         )}
+        </div>
 
-        <DialogFooter className="gap-2 sm:justify-between">
+        <DialogFooter className="shrink-0 gap-2 border-t bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-between sm:px-6 sm:py-4">
           {existingJob && (isEditing || isInProgress) ? (
-            <Button type="button" variant="destructive" disabled={submitting || cancelling} onClick={() => void cancelSchedule()}>
+            <Button type="button" variant="destructive" className="w-full sm:w-auto" disabled={submitting || cancelling} onClick={() => void cancelSchedule()}>
               {cancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
               {isEditing ? 'Anulează programarea' : 'Oprește publicarea'}
             </Button>
-          ) : <span />}
-          <Button type="button" disabled={!canSubmit || submitting || cancelling} onClick={() => void submit()}>
+          ) : <span className="hidden sm:block" />}
+          <Button type="button" className="w-full sm:w-auto" disabled={!canSubmit || submitting || cancelling} onClick={() => void submit()}>
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : mode === 'schedule' ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
             {isEditing ? 'Salvează modificările' : mode === 'schedule' ? 'Programează publicarea' : 'Publică acum'}
           </Button>

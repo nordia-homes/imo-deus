@@ -182,8 +182,8 @@ export function PropertyCard({
                 {formatBucharestDateTime(facebookJob.scheduledAt)}
               </Badge>
             ) : null}
-            <div className={cn('absolute right-3 flex items-center gap-2', enableFacebookPublishing ? 'bottom-3' : 'top-3')}>
-              {enableFacebookPublishing ? (
+            {enableFacebookPublishing ? (
+              <div className="absolute bottom-3 right-3">
                 <Button
                   type="button"
                   size="icon"
@@ -202,7 +202,9 @@ export function PropertyCard({
                 >
                   <Facebook className="h-4 w-4 fill-current" />
                 </Button>
-              ) : null}
+              </div>
+            ) : null}
+            <div className="absolute right-3 top-3">
               <Button
                 size="icon"
                 variant="secondary"
