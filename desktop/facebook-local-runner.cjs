@@ -24,6 +24,11 @@ function psQuote(value) {
   return "'" + String(value).replace(/'/g, "''") + "'";
 }
 
+function windowsExecutable(name) {
+  const windowsRoot = process.env.SystemRoot || process.env.WINDIR || 'C:\\Windows';
+  return path.join(windowsRoot, 'System32', name);
+}
+
 function runProcess(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -141,7 +146,8 @@ function createFacebookLocalRunner({
   }
 
   async function runPowerShell(script) {
-    return runProcess('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script]);
+    const executable = process.platform === 'win32' ? windowsExecutable('WindowsPowerShell\\v1.0\\powershell.exe') : 'powershell.exe';
+    return runProcess(executable, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script]);
   }
 
   function taskArguments(reason) {
@@ -210,7 +216,7 @@ function createFacebookLocalRunner({
   async function wakeTimersEnabled() {
     if (process.platform !== 'win32') return null;
     try {
-      const result = await runProcess('powercfg.exe', ['/query', 'SCHEME_CURRENT', 'SUB_SLEEP', 'RTCWAKE']);
+      const result = await runProcess(windowsExecutable('powercfg.exe'), ['/query', 'SCHEME_CURRENT', 'SUB_SLEEP', 'RTCWAKE']);
       return /Current AC Power Setting Index:\s*0x00000001/i.test(result.stdout);
     } catch {
       return null;
@@ -369,7 +375,7 @@ function createFacebookLocalRunner({
     if (powerMonitor.getSystemIdleTime() < IDLE_BEFORE_SLEEP_SECONDS) return;
     const powerSource = await getPowerSource();
     if (powerSource !== 'ac') return;
-    await runProcess('shutdown.exe', ['/h']).catch(() => undefined);
+    await runProcess(windowsExecutable('shutdown.exe'), ['/h']).catch(() => undefined);
   }
 
   function scheduleReturnToSleep() {
