@@ -348,6 +348,30 @@ export type FacebookCloudConnection = {
   createdAt: string;
   updatedAt: string;
   lastVerifiedAt?: string | null;
+  runnerMode?: 'cloud' | 'local';
+  deviceId?: string | null;
+  deletedAt?: string | null;
+  localProfileDeleteRequestedAt?: string | null;
+  localProfileDeletedAt?: string | null;
+};
+
+export type FacebookLocalRunnerDevice = {
+  id: string;
+  agencyId: string;
+  ownerUid: string;
+  name: string;
+  platform: 'windows';
+  appVersion?: string | null;
+  timezone: 'Europe/Bucharest';
+  status: 'online' | 'offline' | 'on_battery' | 'error';
+  isPrimary: boolean;
+  lastSeenAt?: string | null;
+  lastError?: string | null;
+  nextWakeAt?: string | null;
+  powerSource?: 'ac' | 'battery' | 'unknown';
+  wakeTimersEnabled?: boolean | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type FacebookCloudGroupJobStatus =
@@ -357,7 +381,8 @@ export type FacebookCloudGroupJobStatus =
   | 'pending_approval'
   | 'needs_reauthentication'
   | 'error'
-  | 'skipped';
+  | 'skipped'
+  | 'uncertain';
 
 export type FacebookCloudPublishingJob = {
   id: string;
@@ -390,6 +415,12 @@ export type FacebookCloudPublishingJob = {
   createdAt: string;
   updatedAt: string;
   completedAt?: string | null;
+  runnerMode?: 'cloud' | 'local';
+  deviceId?: string | null;
+  leaseToken?: string | null;
+  leaseExpiresAt?: string | null;
+  claimedAt?: string | null;
+  actualStartedAt?: string | null;
 };
 
 export type MetaMarketingIntegrationPublicStatus = {

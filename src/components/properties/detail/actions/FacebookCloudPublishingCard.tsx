@@ -117,7 +117,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   const activeJob = jobs.find((job) => ['scheduled', 'queued', 'running', 'cooldown'].includes(job.status)) || null;
   const latestJob = activeJob || jobs[0] || null;
   const isActive = Boolean(activeJob);
-  const completedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval'].includes(group.status)).length || 0;
+  const completedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval', 'skipped', 'uncertain'].includes(group.status)).length || 0;
 
   function toggleGroup(url: string, checked: boolean) {
     setSelectedUrls((current) => checked ? [...current, url] : current.filter((item) => item !== url));
@@ -163,7 +163,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
             </div>
             <div>
               <p className="font-semibold">Publicare automată în grupuri</p>
-              <p className="text-xs text-white/55">Runner cloud self-hosted</p>
+              <p className="text-xs text-white/55">{(latestJob?.runnerMode || selectedConnection?.runnerMode) === 'local' ? 'Runner local pe laptop' : 'Runner cloud self-hosted'}</p>
             </div>
           </div>
           {latestJob ? (

@@ -51,25 +51,35 @@ export default function FacebookConnectionConsolePage() {
     let stopped = false;
     void (async () => {
       try {
-        const response = await facebookCloudFetch(
-          user,
-          `/api/marketing/facebook-cloud/connections/${connectionId}/session`,
-          { method: 'POST' }
-        );
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.message || 'Sesiunea nu a putut fi pornită.');
-        if (!stopped) setConnection(body.connection);
+        const listResponse = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections');
+        const listBody = await listResponse.json().catch(() => ({}));
+        if (!listResponse.ok) throw new Error(listBody.message || 'Contul nu a putut fi incarcat.');
+        let selected = (listBody.connections || []).find((item: FacebookCloudConnection) => item.id === connectionId) || null;
+        if (!selected) throw new Error('Contul Facebook nu a fost gasit.');
+        if (!stopped) setConnection(selected);
+        if (selected.runnerMode === 'local') {
+          if (!window.imodeusDesktop) throw new Error('Conectarea acestui cont trebuie facuta din aplicatia Desktop.');
+          await window.imodeusDesktop.openFacebookLocalConnection({ connectionId });
+          const refreshed = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections');
+          const refreshedBody = await refreshed.json().catch(() => ({}));
+          selected = (refreshedBody.connections || []).find((item: FacebookCloudConnection) => item.id === connectionId) || selected;
+          if (!stopped) setConnection(selected);
+        } else {
+          const response = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections/' + connectionId + '/session', { method: 'POST' });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.message || 'Sesiunea nu a putut fi pornita.');
+          if (!stopped) setConnection(body.connection);
+        }
       } catch (error) {
-        if (!stopped) toast({ variant: 'destructive', title: 'Runner indisponibil', description: error instanceof Error ? error.message : 'A apărut o eroare.' });
+        if (!stopped) toast({ variant: 'destructive', title: 'Runner indisponibil', description: error instanceof Error ? error.message : 'A aparut o eroare.' });
       } finally {
         if (!stopped) setLoading(false);
       }
     })();
     return () => { stopped = true; };
   }, [connectionId, toast, user]);
-
   useEffect(() => {
-    if (!user) return;
+    if (!user || connection?.runnerMode === 'local') return;
     let stopped = false;
     let currentObjectUrl = '';
     async function refresh() {
@@ -95,17 +105,17 @@ export default function FacebookConnectionConsolePage() {
       window.clearInterval(timer);
       if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
     };
-  }, [connectionId, user]);
+  }, [connection?.runnerMode, connectionId, user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || connection?.runnerMode === 'local') return;
     const timer = window.setInterval(async () => {
       const response = await facebookCloudFetch(user, `/api/marketing/facebook-cloud/connections/${connectionId}/session`);
       const body = await response.json().catch(() => ({}));
       if (response.ok) setConnection(body.connection);
     }, 2500);
     return () => window.clearInterval(timer);
-  }, [connectionId, user]);
+  }, [connection?.runnerMode, connectionId, user]);
 
   function clickBrowser(event: MouseEvent<HTMLImageElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -144,15 +154,25 @@ export default function FacebookConnectionConsolePage() {
         ) : (
           <div className="flex items-center text-sm text-sky-100">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Autentifică-te în browserul de mai jos
+            {connection?.runnerMode === 'local' ? 'Finalizeaza autentificarea in fereastra Facebook' : 'Autentifica-te in browserul de mai jos'}
           </div>
         )}
       </header>
 
       <Card className="overflow-hidden border-white/10 bg-[#152A47] text-white">
         <CardHeader className="border-b border-white/10">
-          <CardTitle className="text-base">Browser securizat pe runnerul ImoDeus</CardTitle>
+          <CardTitle className="text-base">{connection?.runnerMode === 'local' ? 'Browser local pe laptop' : 'Browser securizat pe runnerul ImoDeus'}</CardTitle>
         </CardHeader>
+          {connection?.runnerMode === 'local' ? (
+            <div className="flex min-h-[20rem] flex-col items-center justify-center rounded-xl border border-white/10 bg-black/10 p-8 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-sky-300" />
+              <h2 className="mt-5 text-lg font-semibold">Conectare prin IP-ul acestui laptop</h2>
+              <p className="mt-2 max-w-xl text-sm text-white/60">
+                Fereastra Facebook s-a deschis separat. Finalizeaza autentificarea acolo; profilul ramane salvat numai pe acest laptop.
+              </p>
+            </div>
+          ) : (
+            <>
         <CardContent className="space-y-4 p-4">
           <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
             {snapshotUrl ? (
@@ -213,6 +233,8 @@ export default function FacebookConnectionConsolePage() {
             Clickurile și textul sunt transmise prin conexiunea autentificată către browserul tău izolat. ImoDeus nu salvează parola introdusă.
           </p>
         </CardContent>
+            </>
+          )}
       </Card>
     </div>
   );

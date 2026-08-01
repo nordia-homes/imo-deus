@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
       .slice(0, 250);
     const reconciled = new Map<string, FacebookCloudPublishingJob>();
     await Promise.allSettled(jobDocs
-      .filter(({ job }) => ['scheduled', 'queued', 'running', 'cooldown', 'needs_reauthentication'].includes(job.status))
+      .filter(({ job }) => (
+        job.runnerMode !== 'local'
+        && ['scheduled', 'queued', 'running', 'cooldown', 'needs_reauthentication'].includes(job.status)))
       .map(async ({ doc, job }) => {
         const result = await facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${job.id}`);
         const merged = { ...job, ...result.job };
@@ -74,6 +76,16 @@ export async function POST(request: NextRequest) {
     if (connection.status !== 'connected') {
       return NextResponse.json({ message: 'Contul Facebook trebuie reconectat înainte de publicare.' }, { status: 409 });
     }
+    if (connection.runnerMode === 'local') {
+      const deviceId = String(connection.deviceId || '');
+      const deviceSnapshot = await adminDb.collection('agencies').doc(agencyId)
+        .collection('facebookLocalRunnerDevices').doc(deviceId).get();
+      if (!deviceSnapshot.exists || deviceSnapshot.data()?.ownerUid !== uid || deviceSnapshot.data()?.revokedAt) {
+        return NextResponse.json({
+          message: 'Laptopul asociat contului Facebook nu mai este inregistrat.',
+        }, { status: 409 });
+      }
+    }
 
     const [propertySnapshot, agencySnapshot] = await Promise.all([
       adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).get(),
@@ -113,6 +125,8 @@ export async function POST(request: NextRequest) {
       ownerUid: uid,
       connectionId,
       connectionLabel: connection.label || connection.displayName,
+      runnerMode: connection.runnerMode === 'local' ? 'local' : 'cloud',
+      deviceId: connection.runnerMode === 'local' ? connection.deviceId || null : null,
       propertyId,
       propertyTitle: property.title,
       status: scheduledAt ? 'scheduled' : 'queued',
@@ -124,7 +138,8 @@ export async function POST(request: NextRequest) {
       updatedAt: timestamp,
     };
     await ref.set(job);
-    try {
+    if (job.runnerMode !== 'local') {
+      try {
       const runnerResult = await server.facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>('/v1/jobs', {
         method: 'POST',
         body: JSON.stringify(server.toRunnerJob(job, property, uid)),
@@ -137,6 +152,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date().toISOString(),
       }, { merge: true });
       throw runnerError;
+      }
     }
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {

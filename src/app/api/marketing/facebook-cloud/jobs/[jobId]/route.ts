@@ -51,6 +51,11 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (connection.status !== 'connected') {
       return NextResponse.json({ message: 'Contul Facebook trebuie reconectat înainte de programare.' }, { status: 409 });
     }
+    const connectionMode = connection.runnerMode === 'local' ? 'local' : 'cloud';
+    const existingMode = existing.runnerMode === 'local' ? 'local' : 'cloud';
+    if (connectionMode !== existingMode) {
+      return NextResponse.json({ message: 'Schimbarea tipului de runner pentru o programare existenta nu este permisa.' }, { status: 409 });
+    }
     const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
     const agencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
     const groups = groupUrls.map((url) => agencyGroups.find((group) => group.url === url)).filter(Boolean) as FacebookGroup[];
@@ -58,17 +63,33 @@ export async function PATCH(request: NextRequest, context: Context) {
       return NextResponse.json({ message: 'Unul dintre grupurile selectate nu mai este configurat în agenție.' }, { status: 400 });
     }
 
-    const result = await server.facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
+    let runnerJob: Partial<FacebookCloudPublishingJob>;
+    if (existingMode === 'local') {
+      runnerJob = {
         connectionId,
-        groups: groups.map(({ name, url }) => ({ name, url })),
+        connectionLabel: connection.label || connection.displayName,
+        deviceId: connection.deviceId || null,
+        groups: groups.map((group) => ({ ...group, status: 'queued' as const })),
         scheduledAt: schedule.scheduledAt,
-      }),
-    });
+        nextRunAt: null,
+        currentGroupIndex: 0,
+        status: 'scheduled',
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      const result = await server.facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          connectionId,
+          groups: groups.map(({ name, url }) => ({ name, url })),
+          scheduledAt: schedule.scheduledAt,
+        }),
+      });
+      runnerJob = result.job;
+    }
     const job = {
       ...existing,
-      ...result.job,
+      ...runnerJob,
       connectionLabel: connection.label || connection.displayName,
     };
     await ref.set(job, { merge: true });
@@ -93,6 +114,19 @@ export async function DELETE(request: NextRequest, context: Context) {
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ message: 'Jobul nu a fost găsit.' }, { status: 404 });
     if (snapshot.data()?.ownerUid !== uid) return NextResponse.json({ message: 'Nu poți opri acest job.' }, { status: 403 });
+    if (snapshot.data()?.runnerMode === 'local') {
+      const timestamp = new Date().toISOString();
+      const job = {
+        ...snapshot.data(),
+        status: 'cancelled' as const,
+        nextRunAt: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        updatedAt: timestamp,
+      };
+      await ref.set(job, { merge: true });
+      return NextResponse.json({ job: { id: snapshot.id, ...job } });
+    }
     const result = await facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}/cancel`, {
       method: 'POST',
     });

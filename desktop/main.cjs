@@ -1,12 +1,37 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawn } = require('node:child_process');
-const { app, BrowserWindow, dialog, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, clipboard, safeStorage, powerMonitor, powerSaveBlocker } = require('electron');
 const { autoUpdater } = require('electron-updater');
+const { createFacebookLocalRunner } = require('./facebook-local-runner.cjs');
 
 const isDev = !app.isPackaged;
+const backgroundLaunch = process.argv.includes('--background-runner');
+const wakeArgument = process.argv.find((value) => value.startsWith('--wake-reason='));
+const launchReason = wakeArgument ? wakeArgument.slice('--wake-reason='.length) : backgroundLaunch ? 'background' : 'interactive';
+let appIsQuitting = false;
 let mainWindow = null;
+let localFacebookRunner = null;
 let runnerProcess = null;
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+
+app.on('second-instance', (_event, argv) => {
+  const isWakeRequest = argv.some((value) => value === '--background-runner' || value.startsWith('--wake-reason='));
+  if (isWakeRequest) {
+    void localFacebookRunner?.syncNow('second-instance');
+    return;
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  } else if (app.isReady()) {
+    createWindow();
+  }
+});
 let olxContextPromise = null;
 let runnerStatus = {
   state: 'idle',
@@ -677,8 +702,25 @@ async function advanceDesktopSession(nextStatus) {
   return { status: runnerStatus, session };
 }
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  localFacebookRunner = createFacebookLocalRunner({
+    app,
+    safeStorage,
+    powerMonitor,
+    powerSaveBlocker,
+    isDev,
+    launchReason,
+    onStatus: (status) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('facebook-local-runner:status-changed', status);
+      }
+    },
+  });
+  await localFacebookRunner.init();
+
+  if (!backgroundLaunch) {
+    createWindow();
+  }
 
   if (!isDev) {
     autoUpdater.checkForUpdatesAndNotify().catch(() => {
@@ -693,13 +735,22 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', () => {
+  appIsQuitting = true;
+  void localFacebookRunner?.stop();
+});
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && (appIsQuitting || !localFacebookRunner?.shouldKeepAlive())) {
     app.quit();
   }
 });
 
 ipcMain.handle('desktop:is-desktop', async () => true);
+ipcMain.handle('facebook-local-runner:get-status', async () => localFacebookRunner?.getStatus() || { paired: false, running: false });
+ipcMain.handle('facebook-local-runner:pair', async (_event, input) => localFacebookRunner.pair(input));
+ipcMain.handle('facebook-local-runner:sync-now', async () => localFacebookRunner.syncNow('renderer'));
+ipcMain.handle('facebook-local-runner:open-connection', async (_event, { connectionId }) => localFacebookRunner.openConnection(connectionId));
 
 ipcMain.handle('property-presentation:generate-pdf', async (_event, input) => {
   return generatePropertyPresentationPdfLocally(input);

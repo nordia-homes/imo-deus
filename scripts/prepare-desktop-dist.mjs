@@ -81,6 +81,16 @@ async function main() {
 
     child.on('error', reject);
   });
+
+  const browserSourceDir = path.join(rootDir, 'node_modules', 'playwright-core', '.local-browsers');
+  const browserTargetDir = path.join(appDir, 'node_modules', 'playwright-core', '.local-browsers');
+  try {
+    await fs.access(browserSourceDir);
+    await copyDir(browserSourceDir, browserTargetDir);
+    console.log('Copied Playwright Chromium into the desktop application.');
+  } catch {
+    throw new Error('Playwright Chromium lipseste. Ruleaza mai intai scriptul de instalare Playwright.');
+  }
 }
 
 main().catch((error) => {

@@ -5,10 +5,32 @@ import type {
   StartFacebookRunnerInput,
 } from '@/lib/desktop/facebook-promotion';
 
+type FacebookLocalRunnerStatus = {
+  paired: boolean;
+  running: boolean;
+  deviceId?: string | null;
+  agencyId?: string | null;
+  apiBase?: string | null;
+  lastSeenAt?: string | null;
+  lastError?: string | null;
+  nextWakeAt?: string | null;
+  launchReason?: string | null;
+  wakeTasksConfigured?: boolean;
+};
+
 declare global {
   interface Window {
     imodeusDesktop?: {
       isDesktop: () => Promise<boolean>;
+      getFacebookLocalRunnerStatus: () => Promise<FacebookLocalRunnerStatus>;
+      pairFacebookLocalRunner: (input: {
+        idToken: string;
+        apiBase: string;
+        deviceName?: string;
+      }) => Promise<FacebookLocalRunnerStatus>;
+      syncFacebookLocalRunnerNow: () => Promise<FacebookLocalRunnerStatus>;
+      openFacebookLocalConnection: (input: { connectionId: string }) => Promise<{ connected: boolean }>;
+      onFacebookLocalRunnerStatusChanged: (callback: (status: FacebookLocalRunnerStatus) => void) => () => void;
       generatePropertyPresentationPdf: (input: {
         url: string;
         token: string;

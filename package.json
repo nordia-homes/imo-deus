@@ -1,6 +1,6 @@
 {
   "name": "nextn",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "ImoDeus.ai CRM desktop companion",
   "author": "ImoDeus.ai",
   "private": true,
@@ -129,7 +129,8 @@
     ],
     "asar": true,
     "asarUnpack": [
-      "node_modules/ffmpeg-static/**"
+      "node_modules/ffmpeg-static/**",
+      "node_modules/playwright-core/.local-browsers/**"
     ],
     "win": {
       "icon": "desktop/assets/icon.ico",

@@ -30,6 +30,14 @@ type Payload = {
   defaultConnectionId: string | null;
 };
 
+type LocalRunnerStatus = {
+  paired: boolean;
+  running: boolean;
+  deviceId?: string | null;
+  lastSeenAt?: string | null;
+  lastError?: string | null;
+  nextWakeAt?: string | null;
+};
 function statusView(status: FacebookCloudConnection['status']) {
   if (status === 'connected') {
     return { label: 'Conectat', className: 'bg-emerald-500/15 text-emerald-200', icon: CheckCircle2 };
@@ -54,6 +62,8 @@ export default function FacebookAccountsPage() {
   const [newLabel, setNewLabel] = useState('');
   const [editingConnection, setEditingConnection] = useState<FacebookCloudConnection | null>(null);
   const [editLabel, setEditLabel] = useState('');
+  const [localRunner, setLocalRunner] = useState<LocalRunnerStatus | null>(null);
+  const [pairingRunner, setPairingRunner] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -77,14 +87,52 @@ export default function FacebookAccountsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    if (!user || !window.imodeusDesktop) {
+      setLocalRunner(null);
+      return;
+    }
+    let stopped = false;
+    const desktop = window.imodeusDesktop;
+    const unsubscribe = desktop.onFacebookLocalRunnerStatusChanged((status) => {
+      if (!stopped) setLocalRunner(status);
+    });
+    void (async () => {
+      setPairingRunner(true);
+      try {
+        let status = await desktop.getFacebookLocalRunnerStatus();
+        if (!status.paired) {
+          status = await desktop.pairFacebookLocalRunner({
+            idToken: await user.getIdToken(),
+            apiBase: window.location.origin,
+          });
+        }
+        if (!stopped) setLocalRunner(status);
+      } catch (error) {
+        if (!stopped) {
+          toast({
+            variant: 'destructive',
+            title: 'Runner local indisponibil',
+            description: error instanceof Error ? error.message : 'Laptopul nu a putut fi activat.',
+          });
+        }
+      } finally {
+        if (!stopped) setPairingRunner(false);
+      }
+    })();
+    return () => {
+      stopped = true;
+      unsubscribe();
+    };
+  }, [toast, user]);
 
   async function addConnection() {
-    if (!user || actionId) return;
+    if (!user || actionId || !localRunner?.paired || !localRunner.deviceId) return;
     setActionId('new');
     try {
       const response = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections', {
         method: 'POST',
-        body: JSON.stringify({ label: newLabel }),
+        body: JSON.stringify({ label: newLabel, runnerMode: 'local', deviceId: localRunner.deviceId }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || 'Contul nu a putut fi creat.');
@@ -149,6 +197,28 @@ export default function FacebookAccountsPage() {
     }
   }
 
+  async function migrateConnectionToLocal(connection: FacebookCloudConnection) {
+    if (!user || !localRunner?.paired || !localRunner.deviceId) return;
+    setActionId(connection.id);
+    try {
+      const response = await facebookCloudFetch(user, '/api/marketing/facebook-cloud/connections/' + connection.id, {
+        method: 'PATCH',
+        body: JSON.stringify({ migrateToLocal: true, deviceId: localRunner.deviceId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Contul nu a putut fi mutat pe laptop.');
+      setPayload((current) => ({
+        ...current,
+        connections: current.connections.map((item) => item.id === connection.id ? body.connection : item),
+      }));
+      router.push('/marketing/facebook-accounts/' + connection.id + '/connect');
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Migrare esuata', description: error instanceof Error ? error.message : 'A aparut o eroare.' });
+    } finally {
+      setActionId(null);
+    }
+  }
+
   async function removeConnection(connection: FacebookCloudConnection) {
     if (!user || !window.confirm(`Elimini contul „${connection.label || connection.displayName}” și sesiunea lui cloud?`)) return;
     setActionId(connection.id);
@@ -188,7 +258,23 @@ export default function FacebookAccountsPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Reîmprospătează
           </Button>
-          <Button className="bg-sky-400 text-slate-950 hover:bg-sky-300" onClick={() => setAddOpen(true)}>
+          <Button disabled={!localRunner?.paired || pairingRunner} className="bg-sky-400 text-slate-950 hover:bg-sky-300" onClick={() => setAddOpen(true)}>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm">
+        <div>
+          <p className="font-medium">
+            {localRunner?.paired ? 'Runner local activ pe acest laptop' : pairingRunner ? 'Se activeaza runnerul local...' : 'Deschide aceasta pagina in aplicatia Desktop pentru activare'}
+          </p>
+          <p className="mt-1 text-white/55">
+            {localRunner?.lastError || (localRunner?.nextWakeAt ? 'Urmatoarea trezire: ' + new Date(localRunner.nextWakeAt).toLocaleString('ro-RO') : 'Sincronizare la pornire si zilnic la 06:00, ora Bucuresti.')}
+          </p>
+        </div>
+        {localRunner?.paired ? (
+          <Button variant="outline" className="border-white/10 bg-white/5 text-white" onClick={() => void window.imodeusDesktop?.syncFacebookLocalRunnerNow()}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${localRunner.running ? 'animate-spin' : ''}`} />
+            Sincronizeaza acum
+          </Button>
+        ) : null}
+      </div>
             <Plus className="mr-2 h-4 w-4" />
             Adaugă un cont
           </Button>
@@ -208,7 +294,7 @@ export default function FacebookAccountsPage() {
             <Facebook className="h-12 w-12 text-sky-200" />
             <h2 className="mt-4 text-xl font-semibold">Nu ai conturi conectate</h2>
             <p className="mt-2 max-w-lg text-white/60">Adaugă primul cont pentru a putea porni publicări automate direct din proprietăți.</p>
-            <Button className="mt-6 bg-sky-400 text-slate-950 hover:bg-sky-300" onClick={() => setAddOpen(true)}>
+            <Button disabled={!localRunner?.paired || pairingRunner} className="mt-6 bg-sky-400 text-slate-950 hover:bg-sky-300" onClick={() => setAddOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Adaugă primul cont
             </Button>
@@ -249,6 +335,17 @@ export default function FacebookAccountsPage() {
                     >
                       {connection.status === 'connected' ? 'Deschide sesiunea' : 'Conectează'}
                     </Button>
+                    {connection.runnerMode !== 'local' && localRunner?.paired ? (
+                      <Button
+                        variant="outline"
+                        disabled={actionId === connection.id}
+                        className="border-sky-300/20 bg-sky-500/10 text-sky-100 hover:bg-sky-500/15"
+                        onClick={() => void migrateConnectionToLocal(connection)}
+                      >
+                        {actionId === connection.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Muta pe acest laptop
+                      </Button>
+                    ) : null}
                     <Button
                       variant="outline"
                       disabled={actionId === connection.id}

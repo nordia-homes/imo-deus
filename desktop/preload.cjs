@@ -3,6 +3,16 @@ const { contextBridge, ipcRenderer } = require('electron');
 const api = {
   isDesktop: () => ipcRenderer.invoke('desktop:is-desktop'),
   generatePropertyPresentationPdf: (input) => ipcRenderer.invoke('property-presentation:generate-pdf', input),
+  getFacebookLocalRunnerStatus: () => ipcRenderer.invoke('facebook-local-runner:get-status'),
+  pairFacebookLocalRunner: (input) => ipcRenderer.invoke('facebook-local-runner:pair', input),
+  syncFacebookLocalRunnerNow: () => ipcRenderer.invoke('facebook-local-runner:sync-now'),
+  openFacebookLocalConnection: (input) => ipcRenderer.invoke('facebook-local-runner:open-connection', input),
+  onFacebookLocalRunnerStatusChanged: (callback) => {
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('facebook-local-runner:status-changed', listener);
+    return () => ipcRenderer.removeListener('facebook-local-runner:status-changed', listener);
+  },
+
   getOlxPhoneNumber: (input) => ipcRenderer.invoke('olx-phone:get-number', input),
   startFacebookRunner: (input) => ipcRenderer.invoke('facebook-runner:start', input),
   retryFacebookRunnerCurrentGroup: () => ipcRenderer.invoke('facebook-runner:retry-current-group'),

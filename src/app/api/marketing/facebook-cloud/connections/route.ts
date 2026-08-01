@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     ]);
     const connections = connectionsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }) as FacebookCloudConnection)
+      .filter((connection) => !connection.deletedAt)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return NextResponse.json({
       connections,
@@ -30,13 +31,29 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const [{ requireAgencyUserFromBearerToken }, { facebookRunnerRequest }] = await Promise.all([
+    const [{ requireAgencyUserFromBearerToken }, { facebookRunnerRequest }, local] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
       import('@/lib/facebook-cloud-server'),
+      import('@/lib/facebook-local-server'),
     ]);
     const { uid, agencyId, adminDb } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
-    const body = await request.json().catch(() => ({})) as { label?: string };
+    const body = await request.json().catch(() => ({})) as {
+      label?: string;
+      runnerMode?: 'cloud' | 'local';
+      deviceId?: string | null;
+    };
     const label = String(body.label || '').trim().slice(0, 80) || 'Cont Facebook';
+    const runnerMode = body.runnerMode === 'local' ? 'local' : 'cloud';
+    const deviceId = runnerMode === 'local' ? String(body.deviceId || '') : '';
+    if (runnerMode === 'local') {
+      const deviceSnapshot = await adminDb.collection('agencies').doc(agencyId)
+        .collection(local.FACEBOOK_LOCAL_DEVICE_COLLECTION).doc(deviceId).get();
+      if (!deviceSnapshot.exists || deviceSnapshot.data()?.ownerUid !== uid || deviceSnapshot.data()?.revokedAt) {
+        return NextResponse.json({
+          message: 'Runnerul local trebuie activat pe laptop inainte de conectarea contului.',
+        }, { status: 409 });
+      }
+    }
     const ref = adminDb.collection('agencies').doc(agencyId).collection('facebookCloudConnections').doc();
     const timestamp = new Date().toISOString();
     const connection: FacebookCloudConnection = {
@@ -45,11 +62,14 @@ export async function POST(request: NextRequest) {
       ownerUid: uid,
       label,
       status: 'connecting',
+      runnerMode,
+      deviceId: runnerMode === 'local' ? deviceId : null,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
     await ref.set(connection);
-    try {
+    if (runnerMode === 'cloud') {
+      try {
       await facebookRunnerRequest(`/v1/connections/${ref.id}/open`, {
         method: 'POST',
         body: JSON.stringify({ agencyId, ownerUid: uid, label }),
@@ -61,6 +81,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date().toISOString(),
       }, { merge: true });
       throw runnerError;
+      }
     }
     return NextResponse.json({
       connection,
