@@ -28,9 +28,9 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <PublishCard property={property} />
+            <FacebookCloudPublishingCard property={property} />
             <MetaAdsCard property={property} />
             <VideoTourCard property={property} />
-            <FacebookCloudPublishingCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />
             <FacebookPromotionCard />
             <SocialMediaCard property={property} />
