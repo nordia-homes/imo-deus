@@ -5,6 +5,20 @@ export const runtime = 'nodejs';
 
 const TERMINAL_GROUP_STATUSES = new Set(['submitted', 'pending_approval', 'skipped', 'uncertain']);
 
+function normalizePropertyImageUrl(value: unknown) {
+  const objectUrl = value && typeof value === 'object'
+    ? (value as { url?: unknown }).url
+    : null;
+  const candidate = (typeof value === 'string' ? value : typeof objectUrl === 'string' ? objectUrl : '').trim();
+  if (!candidate) return null;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const local = await import('@/lib/facebook-local-server');
@@ -142,7 +156,10 @@ export async function POST(request: NextRequest) {
             id: claimed.propertyId,
             title: claimed.propertyTitle || property.title || '',
             description: property.description || '',
-            images: Array.isArray(property.images) ? property.images.slice(0, 16) : [],
+            images: Array.isArray(property.images)
+              ? property.images.map(normalizePropertyImageUrl)
+                .filter((image): image is string => Boolean(image)).slice(0, 16)
+              : [],
           },
         },
       });

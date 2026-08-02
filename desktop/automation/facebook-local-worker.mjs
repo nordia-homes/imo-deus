@@ -248,11 +248,24 @@ async function clickPublish(page) {
   await pause(page, 1_400, 2_400);
 }
 
+function normalizeImageUrl(source, index) {
+  const objectUrl = source && typeof source === 'object' ? source.url : null;
+  const candidate = (typeof source === 'string' ? source : typeof objectUrl === 'string' ? objectUrl : '').trim();
+  let parsed;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error('URL invalid pentru imaginea ' + (index + 1) + '.');
+  }
+  if (parsed.protocol !== 'https:') throw new Error('URL invalid pentru imaginea ' + (index + 1) + '.');
+  return parsed;
+}
+
 async function downloadImages(claim) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'imodeus-facebook-local-'));
   const files = [];
-  for (const [index, url] of (claim.property.images || []).entries()) {
-    const response = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+  for (const [index, source] of (claim.property.images || []).entries()) {
+    const response = await fetch(normalizeImageUrl(source, index), { signal: AbortSignal.timeout(45_000) });
     if (!response.ok) throw new Error('Imaginea ' + (index + 1) + ' nu a putut fi descarcata.');
     const type = response.headers.get('content-type') || '';
     const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
