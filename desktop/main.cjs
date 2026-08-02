@@ -1,7 +1,7 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawn } = require('node:child_process');
-const { app, BrowserWindow, dialog, ipcMain, clipboard, safeStorage, powerMonitor, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, Notification, dialog, ipcMain, clipboard, safeStorage, powerMonitor, powerSaveBlocker } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const { createFacebookLocalRunner } = require('./facebook-local-runner.cjs');
 
@@ -13,6 +13,8 @@ let appIsQuitting = false;
 let mainWindow = null;
 let localFacebookRunner = null;
 let runnerProcess = null;
+const activeNativeNotifications = new Set();
+let pendingNotificationNavigation = null;
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -747,6 +749,33 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('desktop:is-desktop', async () => true);
+ipcMain.handle('notifications:consume-pending-navigation', async () => {
+  const path = pendingNotificationNavigation;
+  pendingNotificationNavigation = null;
+  return path;
+});
+ipcMain.handle('notifications:show', async (_event, input) => {
+  if (!Notification.isSupported()) return { shown: false };
+  const title = String(input?.title || 'Notificare noua').slice(0, 160);
+  const body = String(input?.body || 'Ai o actualizare noua.').slice(0, 500);
+  const actionUrl = typeof input?.actionUrl === 'string' && input.actionUrl.startsWith('/')
+    ? input.actionUrl.slice(0, 1000)
+    : '/notifications';
+  const nativeNotification = new Notification({ title, body, icon: path.join(__dirname, 'assets', 'icon.ico') });
+  activeNativeNotifications.add(nativeNotification);
+  nativeNotification.on('close', () => activeNativeNotifications.delete(nativeNotification));
+  nativeNotification.on('click', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) createWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    if (mainWindow.webContents.isLoading()) pendingNotificationNavigation = actionUrl;
+    else mainWindow.webContents.send('notifications:navigate', actionUrl);
+  });
+  nativeNotification.show();
+  return { shown: true };
+});
 ipcMain.handle('facebook-local-runner:get-status', async () => localFacebookRunner?.getStatus() || { paired: false, running: false });
 ipcMain.handle('facebook-local-runner:pair', async (_event, input) => localFacebookRunner.pair(input));
 ipcMain.handle('facebook-local-runner:sync-now', async () => localFacebookRunner.syncNow('renderer'));

@@ -5,6 +5,18 @@ import { logger } from 'firebase-functions';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+export {
+  notificationDeliveriesCreated,
+  notificationEventsCreated,
+  notificationFacebookJobsWritten,
+  notificationPropertiesWritten,
+  notificationStoriaMessagesWritten,
+  notificationTasksWritten,
+  notificationViewingsWritten,
+  notificationsMinuteTick,
+  viewingTomorrowDigest,
+} from './notifications';
+
 const ownerListingsAppBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');
 const ownerListingsCronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECRET');
 const aiOutreachCronSecret = defineSecret('AI_OUTREACH_CRON_SECRET');

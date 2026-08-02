@@ -51,6 +51,53 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
       allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
     }
+
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       resource.data.recipientId == userId &&
+                       request.resource.data.recipientId == userId &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
+      allow create, delete: if false;
+    }
+
+    match /users/{userId}/notificationPreferences/{preferenceId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() &&
+                              request.auth.uid == userId &&
+                              preferenceId == 'default' &&
+                              request.resource.data.keys().hasOnly(['pushEnabled', 'categories', 'updatedAt']) &&
+                              request.resource.data.pushEnabled is bool &&
+                              request.resource.data.categories is map &&
+                              request.resource.data.categories.keys().hasOnly([
+                                'storiaMessages', 'viewingAssignments', 'viewingRescheduled', 'viewingReminders',
+                                'taskAssignments', 'taskUpdates', 'facebookCompleted', 'facebookFailed',
+                                'propertyAssignments', 'clientPortalFeedback'
+                              ]);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/messagingRegistrations/{registrationId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /notificationEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /notificationSchedules/{scheduleId} {
+      allow read, write: if false;
+    }
+
+    match /notificationDeliveryJobs/{deliveryId} {
+      allow read, write: if false;
+    }
+
+    match /portalFeedbackRateLimits/{portalId} {
+      allow read, write: if false;
+    }
     
     // --- Specific Rule for Contacts ---
     match /agencies/{agencyId}/contacts/{contactId} {
@@ -137,7 +184,8 @@ service cloud.firestore {
     // --- Client Portals ---
     match /portals/{portalId} {
       // Anyone with the link can read portal and recommendation data.
-      allow get, list: if true;
+      allow get: if true;
+      allow list: if isSignedIn() && isUserInAgency(resource.data.agencyId);
       
       // Agency members can create portals for contacts in their agency.
       allow create: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
@@ -152,9 +200,8 @@ service cloud.firestore {
         // Agency members can add/delete recommendations.
         allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
                                 
-        // An agent can update anything. A client (public/anonymous) can only update feedback fields.
-        allow update: if (isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
-                        (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
+        // Public feedback is validated and written only by the server endpoint.
+        allow update: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       }
     }
 

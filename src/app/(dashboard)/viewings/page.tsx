@@ -110,20 +110,6 @@ export default function ViewingsPage() {
         try {
             await addDoc(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
 
-            await fetch('/api/viewings/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    agencyId,
-                    agentId: viewingToAdd.agentId,
-                    contactName: viewingToAdd.contactName,
-                    propertyTitle: viewingToAdd.propertyTitle,
-                    viewingDate: viewingToAdd.viewingDate,
-                }),
-            }).catch((error) => {
-                console.error('Viewing push notification request failed:', error);
-            });
-
             toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
         } catch (error) {
             console.error('Failed to add viewing:', error);

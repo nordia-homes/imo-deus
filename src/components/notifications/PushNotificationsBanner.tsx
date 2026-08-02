@@ -1,28 +1,31 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAgency } from '@/context/AgencyContext';
-import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
-import { registerPushNotifications } from '@/lib/push-notifications';
+import { useFirebaseApp, useUser } from '@/firebase';
+import { getCurrentNotificationRegistrationId, isElectronDesktop, registerPushNotifications } from '@/lib/push-notifications';
 import { useToast } from '@/hooks/use-toast';
 
 export function PushNotificationsBanner() {
   const { user } = useUser();
-  const { userProfile } = useAgency();
-  const firestore = useFirestore();
   const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
   const [isEnabling, setIsEnabling] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const tokenCount = userProfile?.pushTokens?.filter(Boolean).length || 0;
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+    setIsRegistered(Boolean(getCurrentNotificationRegistrationId(user.uid)));
+    setIsDismissed(window.localStorage.getItem(`imodeus:notifications:banner-dismissed:${user.uid}`) === 'true');
+  }, [user]);
 
   const shouldShow = useMemo(() => {
-    if (!user || !userProfile || isDismissed) return false;
+    if (!user || isDismissed || isRegistered || isElectronDesktop()) return false;
     if (typeof window === 'undefined' || !('Notification' in window)) return false;
-    return tokenCount === 0 || (!userProfile.pushNotificationsEnabled && Notification.permission !== 'granted');
-  }, [isDismissed, tokenCount, user, userProfile]);
+    return Notification.permission !== 'denied';
+  }, [isDismissed, isRegistered, user]);
 
   if (!shouldShow) {
     return null;
@@ -35,8 +38,7 @@ export function PushNotificationsBanner() {
     try {
       await registerPushNotifications({
         firebaseApp,
-        firestore,
-        userId: user.uid,
+        user,
       });
 
       toast({
@@ -44,6 +46,7 @@ export function PushNotificationsBanner() {
         description: 'Vei primi notificări push pentru vizionări.',
       });
       setIsDismissed(true);
+      setIsRegistered(true);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -69,7 +72,10 @@ export function PushNotificationsBanner() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" onClick={() => setIsDismissed(true)} className="text-white/70 hover:bg-white/10 hover:text-white">
+            <Button type="button" variant="ghost" onClick={() => {
+              setIsDismissed(true);
+              if (user) window.localStorage.setItem(`imodeus:notifications:banner-dismissed:${user.uid}`, 'true');
+            }} className="text-white/70 hover:bg-white/10 hover:text-white">
               Mai târziu
             </Button>
             <Button type="button" onClick={handleEnable} disabled={isEnabling} className="bg-primary text-primary-foreground hover:bg-primary/90">

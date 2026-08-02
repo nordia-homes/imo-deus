@@ -2,6 +2,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const api = {
   isDesktop: () => ipcRenderer.invoke('desktop:is-desktop'),
+  showDesktopNotification: (input) => ipcRenderer.invoke('notifications:show', input),
+  consumePendingNotificationNavigation: () => ipcRenderer.invoke('notifications:consume-pending-navigation'),
+  onDesktopNotificationNavigate: (callback) => {
+    const listener = (_event, path) => callback(path);
+    ipcRenderer.on('notifications:navigate', listener);
+    return () => ipcRenderer.removeListener('notifications:navigate', listener);
+  },
   generatePropertyPresentationPdf: (input) => ipcRenderer.invoke('property-presentation:generate-pdf', input),
   getFacebookLocalRunnerStatus: () => ipcRenderer.invoke('facebook-local-runner:get-status'),
   pairFacebookLocalRunner: (input) => ipcRenderer.invoke('facebook-local-runner:pair', input),

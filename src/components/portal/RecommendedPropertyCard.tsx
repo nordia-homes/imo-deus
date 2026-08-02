@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Property, PortalRecommendation } from '@/lib/types';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -31,7 +29,6 @@ export function RecommendedPropertyCard({
   contactId,
 }: RecommendedPropertyCardProps) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const { isCustomDomain, agency } = usePublicAgency();
   const publicPath = usePublicPath();
   const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
@@ -39,10 +36,9 @@ export function RecommendedPropertyCard({
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | 'none'>(recommendation.clientFeedback);
   const [isCommentDirty, setIsCommentDirty] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(Boolean(recommendation.clientComment?.trim()));
+  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
   const [isFavorite] = useState(false);
 
-  const recommendationRef = doc(firestore, 'portals', portalId, 'recommendations', recommendation.id);
-  const contactRef = doc(firestore, 'agencies', agencyId, 'contacts', contactId);
   const detailHref = isCustomDomain
     ? publicPath(`/properties/${property.id}`)
     : `/agencies/${agencyId}/properties/${property.id}`;
@@ -56,26 +52,49 @@ export function RecommendedPropertyCard({
     return 'Asteapta feedback';
   }, [feedback]);
 
-  const handleFeedback = (newFeedback: 'liked' | 'disliked') => {
-    const finalFeedback = feedback === newFeedback ? 'none' : newFeedback;
-    setFeedback(finalFeedback);
-
-    updateDocumentNonBlocking(recommendationRef, { clientFeedback: finalFeedback });
-    updateDocumentNonBlocking(contactRef, {
-      [`recommendationHistory.${recommendation.id}.clientFeedback`]: finalFeedback,
+  const savePortalFeedback = async (update: { clientFeedback?: 'liked' | 'disliked' | 'none'; clientComment?: string }) => {
+    const clientEventId = typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const response = await fetch(`/api/client-portal/${encodeURIComponent(portalId)}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recommendationId: recommendation.id, clientEventId, ...update }),
     });
-
-    toast({ title: 'Feedback trimis', description: 'Agentul tau vede acum preferinta ta.' });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message || 'Feedbackul nu a putut fi salvat.');
   };
 
-  const handleSaveComment = () => {
-    updateDocumentNonBlocking(recommendationRef, { clientComment: comment });
-    updateDocumentNonBlocking(contactRef, {
-      [`recommendationHistory.${recommendation.id}.clientComment`]: comment,
-    });
+  const handleFeedback = async (newFeedback: 'liked' | 'disliked') => {
+    if (isSavingFeedback) return;
+    const previousFeedback = feedback;
+    const finalFeedback = feedback === newFeedback ? 'none' : newFeedback;
+    setFeedback(finalFeedback);
+    setIsSavingFeedback(true);
+    try {
+      await savePortalFeedback({ clientFeedback: finalFeedback });
+      toast({ title: 'Feedback trimis', description: 'Agentul tau vede acum preferinta ta.' });
+    } catch (error) {
+      setFeedback(previousFeedback);
+      toast({ variant: 'destructive', title: 'Feedback nesalvat', description: error instanceof Error ? error.message : 'Incearca din nou.' });
+    } finally {
+      setIsSavingFeedback(false);
+    }
+  };
 
-    setIsCommentDirty(false);
-    toast({ title: 'Comentariu salvat', description: 'Mesajul tau a fost trimis agentului.' });
+  const handleSaveComment = async () => {
+    if (!isCommentDirty || isSavingFeedback) return;
+    setIsSavingFeedback(true);
+    try {
+      await savePortalFeedback({ clientComment: comment });
+      setComment(comment.trim());
+      setIsCommentDirty(false);
+      toast({ title: comment.trim() ? 'Comentariu salvat' : 'Comentariu sters', description: 'Agentul tau a fost instiintat.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Comentariu nesalvat', description: error instanceof Error ? error.message : 'Incearca din nou.' });
+    } finally {
+      setIsSavingFeedback(false);
+    }
   };
 
   const handleShare = async () => {
@@ -241,6 +260,7 @@ export function RecommendedPropertyCard({
           <button
             type="button"
             onClick={() => handleFeedback('liked')}
+            disabled={isSavingFeedback}
             className={cn(
               'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
               feedback === 'liked'
@@ -269,6 +289,7 @@ export function RecommendedPropertyCard({
           <button
             type="button"
             onClick={() => handleFeedback('disliked')}
+            disabled={isSavingFeedback}
             className={cn(
               'group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[1.05rem] border px-3 py-2 text-center transition-all duration-200 hover:-translate-y-0.5',
               feedback === 'disliked'
@@ -353,10 +374,10 @@ export function RecommendedPropertyCard({
               <button
                 type="button"
                 onClick={handleSaveComment}
-                disabled={!comment.trim() || !isCommentDirty}
+                disabled={!isCommentDirty || isSavingFeedback}
                 className={cn(
                   'block w-full rounded-[1rem] px-5 py-3 text-base font-semibold transition-all duration-200',
-                  !comment.trim() || !isCommentDirty
+                  !isCommentDirty || isSavingFeedback
                     ? isAgentfinderTheme
                       ? 'cursor-not-allowed border border-[#d3ddea] bg-[linear-gradient(180deg,#eef3f9_0%,#e3eaf4_100%)] text-[#6d7f9f] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
                       : 'cursor-not-allowed border border-white/10 bg-white/[0.05] text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'

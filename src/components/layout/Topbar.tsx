@@ -13,9 +13,13 @@ import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getStoredRuntimeMode } from '@/lib/runtime-mode';
+import { NotificationBell } from '@/components/layout/NotificationBell';
+import { unregisterPushNotifications } from '@/lib/push-notifications';
+import { useFirebaseApp } from '@/firebase';
 
 export function Topbar() {
     const auth = useAuth();
+    const firebaseApp = useFirebaseApp();
     const router = useRouter();
     const { user } = useUser();
 
@@ -119,10 +123,14 @@ export function Topbar() {
         setQuery('');
     }
     
-    const handleLogout = () => {
-        signOut(auth).then(() => {
-            router.push('/login');
-        });
+    const handleLogout = async () => {
+        if (user) {
+            await unregisterPushNotifications({ firebaseApp, user }).catch((error) => {
+                console.warn('Notification device cleanup failed during logout:', error);
+            });
+        }
+        await signOut(auth);
+        router.push('/login');
     }
 
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
@@ -219,6 +227,7 @@ export function Topbar() {
                         </Link>
                     </Button>
                  ) : null}
+                 <NotificationBell />
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full hover:bg-[var(--app-nav-hover-bg)]">

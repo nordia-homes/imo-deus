@@ -22,6 +22,9 @@ declare global {
   interface Window {
     imodeusDesktop?: {
       isDesktop: () => Promise<boolean>;
+      showDesktopNotification: (input: { title: string; body: string; actionUrl?: string }) => Promise<{ shown: boolean }>;
+      consumePendingNotificationNavigation: () => Promise<string | null>;
+      onDesktopNotificationNavigate: (callback: (path: string) => void) => () => void;
       getFacebookLocalRunnerStatus: () => Promise<FacebookLocalRunnerStatus>;
       pairFacebookLocalRunner: (input: {
         idToken: string;
