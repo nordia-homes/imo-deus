@@ -13,6 +13,7 @@ import { getMessaging } from 'firebase-admin/messaging';
 import { getStorage } from 'firebase-admin/storage';
 
 const REAL_ADMIN_APP_NAME = 'real-admin';
+const DEFAULT_PROJECT_ID = 'studio-652232171-42fb6';
 const DEFAULT_STORAGE_BUCKET = 'studio-652232171-42fb6.firebasestorage.app';
 
 function resolveStorageBucket(projectId?: string | null) {
@@ -29,51 +30,39 @@ function getRealAdminApp(): App {
     return getApp(REAL_ADMIN_APP_NAME);
   }
 
-  const isHostedRuntime = Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT);
-
-  if (isHostedRuntime) {
-    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
-    if (!projectId) {
-      throw new Error(
-        'FIREBASE_PROJECT_ID sau GOOGLE_CLOUD_PROJECT trebuie setat pentru Firebase Admin in mediul gazduit.'
-      );
-    }
-
-    return initializeApp(
-      {
-        credential: applicationDefault(),
-        projectId,
-        storageBucket: resolveStorageBucket(projectId),
-      },
-      REAL_ADMIN_APP_NAME
-    );
-  }
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    DEFAULT_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const hasAnyExplicitCredential = Boolean(clientEmail || privateKey);
 
-  if (!projectId || !clientEmail || !privateKey) {
+  if (hasAnyExplicitCredential && (!clientEmail || !privateKey)) {
     throw new Error(
-      'Variabilele de mediu Firebase (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) nu sunt setate corect in environment variables ale aplicatiei.'
+      'Credentialele Firebase explicite sunt incomplete. Configureaza FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL si FIREBASE_PRIVATE_KEY impreuna sau elimina-le pentru Application Default Credentials.'
     );
   }
 
-  if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----') || !privateKey.includes('-----END PRIVATE KEY-----')) {
+  if (
+    privateKey &&
+    (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----') ||
+      !privateKey.includes('-----END PRIVATE KEY-----'))
+  ) {
     throw new Error(
       'Cheia privata FIREBASE_PRIVATE_KEY din environment variables pare a fi invalida.'
     );
   }
 
-  const serviceAccount: ServiceAccount = {
-    projectId,
-    clientEmail,
-    privateKey,
-  };
+  const credential =
+    clientEmail && privateKey
+      ? cert({ projectId, clientEmail, privateKey } satisfies ServiceAccount)
+      : applicationDefault();
 
   return initializeApp(
     {
-      credential: cert(serviceAccount),
+      credential,
       projectId,
       storageBucket: resolveStorageBucket(projectId),
     },
