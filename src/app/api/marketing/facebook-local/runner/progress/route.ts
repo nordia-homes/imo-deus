@@ -73,6 +73,15 @@ export async function POST(request: NextRequest) {
           errorCode: body.code || null,
           errorMessage: body.message || 'Grupul a fost sarit.',
         };
+      } else if (body.action === 'failed' && groups[index]?.submissionPhase === 'submitting') {
+        groups[index] = {
+          ...groups[index],
+          status: 'uncertain',
+          failedAt: timestamp,
+          submissionPhase: 'unconfirmed',
+          errorCode: body.code || null,
+          errorMessage: body.message || 'Facebook nu a confirmat publicarea; grupul nu este repetat.',
+        };
       } else {
         groups[index] = {
           ...groups[index],
