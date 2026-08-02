@@ -46,6 +46,8 @@ type CacheEntry = { expiresAt: number; results: HartaBlocuriResult[] };
 const lookupCache = new Map<string, CacheEntry>();
 
 const STREET_PREFIX_PATTERN = /\b(?:str(?:ada)?\.?|bd(?:ul)?\.?|b-dul\.?|bulevard(?:ul)?|sos(?:eaua)?\.?|șos(?:eaua)?\.?|calea|alee(?:a)?\.?|intrarea|dr(?:umul)?\.?|spl(?:aiul)?\.?|piata|piața)\b/i;
+const HOUSE_NUMBER_PATTERN = '\\d+[a-zA-Z]?(?:[\\/-]\\d+[a-zA-Z]?)?';
+const ADDRESS_DETAIL_SUFFIX_PATTERN = '(?:(?:bloc|bl)\\.?\\s*[a-zA-Z0-9/-]+|(?:scar[aă]|sc)\\.?\\s*[a-zA-Z0-9/-]+|(?:apartament(?:ul)?|ap)\\.?\\s*[a-zA-Z0-9/-]+|(?:etaj(?:ul)?|et)\\.?\\s*[a-zA-Z0-9/-]+|sector(?:ul)?\\s*[1-6]\\b|bucure[sș]ti(?:-ilfov)?\\b|ilfov\\b|rom[aâ]nia\\b|cod(?:ul)?\\s+postal\\b)';
 
 function collapseWhitespace(value: string) {
   return value.replace(/\s+/g, ' ').trim();
@@ -95,6 +97,29 @@ function normalizeStreetPrefix(value: string) {
     .replace(/^piata\s+/i, 'Piața ');
 }
 
+function stripAddressContextAfterStreetNumber(value: string) {
+  const explicitNumberMatch = value.match(new RegExp(`\\bnr\\.\\s*${HOUSE_NUMBER_PATTERN}`, 'i'));
+  if (explicitNumberMatch?.index !== undefined) {
+    return value.slice(0, explicitNumberMatch.index + explicitNumberMatch[0].length);
+  }
+
+  const knownSuffixMatch = value.match(
+    new RegExp(`^(.*?\\s)(${HOUSE_NUMBER_PATTERN})(?=\\s+${ADDRESS_DETAIL_SUFFIX_PATTERN})`, 'i')
+  );
+  if (knownSuffixMatch) {
+    return `${knownSuffixMatch[1]}${knownSuffixMatch[2]}`;
+  }
+
+  const cityWithoutCommaMatch = value.match(
+    new RegExp(`^(.*\\s)(${HOUSE_NUMBER_PATTERN})(?=\\s+[a-zA-ZĂÂÎȘȚăâîșț-]+(?:\\s+[a-zA-ZĂÂÎȘȚăâîșț-]+)*$)`, 'i')
+  );
+  if (cityWithoutCommaMatch) {
+    return `${cityWithoutCommaMatch[1]}${cityWithoutCommaMatch[2]}`;
+  }
+
+  return value;
+}
+
 export function normalizeHartaBlocuriAddressInput(input: string) {
   const cleanedInput = collapseWhitespace(input.replace(/[\r\n\t]+/g, ' ')).slice(0, 240);
   if (!cleanedInput) return '';
@@ -108,9 +133,15 @@ export function normalizeHartaBlocuriAddressInput(input: string) {
     address = `${address} ${nextSegment}`;
   }
 
+  const prefixInsideAddress = address.match(STREET_PREFIX_PATTERN);
+  if (prefixInsideAddress?.index !== undefined && prefixInsideAddress.index > 0) {
+    address = address.slice(prefixInsideAddress.index);
+  }
+
   address = normalizeStreetPrefix(address)
     .replace(/\b(?:num[aă]r(?:ul)?|no|#|nr)\.?\s*(\d)/i, 'nr. $1')
     .replace(/\s*[,;]+\s*$/, '');
+  address = stripAddressContextAfterStreetNumber(address);
 
   if (!/\bnr\.\s*\d/i.test(address) && /\s(\d+[a-zA-Z]?(?:[\/-]\d+[a-zA-Z]?)?)\s*$/.test(address)) {
     address = address.replace(/\s(\d+[a-zA-Z]?(?:[\/-]\d+[a-zA-Z]?)?)\s*$/, ' nr. $1');

@@ -209,19 +209,17 @@ export function BuildingYearLookupDialog({ initialAddress }: { initialAddress: s
               {results.map((result) => (
                 <article key={result.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
                   <div className="border-b border-white/10 bg-emerald-400/[0.08] px-4 py-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-white">
-                          {result.name || 'Imobil identificat'}
-                        </h3>
-                        {result.address ? <p className="mt-1 text-sm text-white/65">{result.address}</p> : null}
-                      </div>
-                      <div className="shrink-0 rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-2 text-center">
-                        <p className="text-[11px] uppercase tracking-[0.15em] text-emerald-200/70">An finalizare</p>
-                        <p className="mt-0.5 text-lg font-semibold text-emerald-100">
-                          {result.constructionYear || 'Necunoscut'}
-                        </p>
-                      </div>
+                    <div className="min-w-0">
+                      <h3 className="break-words font-semibold text-white">
+                        {result.name || 'Imobil identificat'}
+                      </h3>
+                      {result.address ? <p className="mt-1 break-words text-sm text-white/65">{result.address}</p> : null}
+                    </div>
+                    <div className="mt-4 w-full min-w-0 rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.15em] text-emerald-200/70">An finalizare</p>
+                      <p className="mt-1 whitespace-normal break-words text-base font-semibold leading-relaxed text-emerald-100 [overflow-wrap:anywhere]">
+                        {result.constructionYear || 'Necunoscut'}
+                      </p>
                     </div>
                   </div>
 

@@ -19,6 +19,22 @@ describe('HartaBlocuri address lookup', () => {
       .toBe('Bulevardul Mircea Vodă nr. 52');
   });
 
+  it.each([
+    ['Calea Victoriei 101 Bucuresti', 'Calea Victoriei nr. 101'],
+    ['Calea Victoriei 101 sector 1', 'Calea Victoriei nr. 101'],
+    ['Strada Patriotilor 9 bloc PM27', 'Strada Patriotilor nr. 9'],
+    ['Strada Patrioților nr. 9, bloc PM27, București', 'Strada Patrioților nr. 9'],
+    ['București Sector 1 Calea Victoriei 101', 'Calea Victoriei nr. 101'],
+    ['Strada 11 Iunie 75 București', 'Strada 11 Iunie nr. 75'],
+  ])('removes location and building details from %s', (input, expected) => {
+    expect(normalizeHartaBlocuriAddressInput(input)).toBe(expected);
+  });
+
+  it('keeps city words that are part of the street name', () => {
+    expect(normalizeHartaBlocuriAddressInput('Șoseaua București-Ploiești 42'))
+      .toBe('Șoseaua București-Ploiești nr. 42');
+  });
+
   it('removes external HTML while preserving its text', () => {
     expect(cleanHartaBlocuriText('9 apartamente <span style="color:red">(trimiteți tabel)</span> &amp; planuri'))
       .toBe('9 apartamente (trimiteți tabel) & planuri');
@@ -59,4 +75,3 @@ describe('HartaBlocuri address lookup', () => {
     });
   });
 });
-
