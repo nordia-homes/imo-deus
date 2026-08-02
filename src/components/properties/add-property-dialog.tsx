@@ -51,6 +51,7 @@ import {
   PropertyStatusChangeDialog,
   type PropertyStatusChangePayload,
 } from './PropertyStatusChangeDialog';
+import { BuildingYearLookupDialog } from './building-year-lookup-dialog';
 
 type AddressSuggestion = {
   label: string;
@@ -812,6 +813,14 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedBathrooms = form.watch('bathrooms');
     const watchedSquareFootage = form.watch('squareFootage');
     const watchedConstructionYear = form.watch('constructionYear');
+
+    const buildingLookupInitialAddress = useMemo(() => {
+        const address = (watchedAddress || '').trim();
+        const city = watchedCity === 'Bucuresti-Ilfov' ? 'București' : (watchedCity || '').trim();
+        if (!address) return city;
+        if (!city || normalizeText(address).includes(normalizeText(city))) return address;
+        return `${address}, ${city}`;
+    }, [watchedAddress, watchedCity]);
 
     const selectedImobiliareLocation = useMemo(
         () =>
@@ -1929,6 +1938,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl>
                                             <SelectContent>{needsLegacyOption(field.value, PARTITIONING_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Decomandat">Decomandat</SelectItem><SelectItem value="Semidecomandat">Semidecomandat</SelectItem><SelectItem value="Circular">Circular</SelectItem><SelectItem value="Nedecomandat">Nedecomandat</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                     </div>
+                                    <BuildingYearLookupDialog initialAddress={buildingLookupInitialAddress} />
                                 </CardContent>
                             </Card>
                             
@@ -1953,8 +1963,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Detalii Interne</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, STATUS_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FormField control={form.control} name="agentId" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Agent</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue placeholder="Selectează" /></SelectTrigger></FormControl><SelectContent><SelectItem value="unassigned">Nealocat</SelectItem>{agents.map(agent => <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField
                                           control={form.control}
@@ -1978,16 +1987,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                   ))}
                                                 </SelectContent>
                                               </Select>
-                                              <FormDescription className="text-white/50">
-                                                Va fi preselectat la publicarea în grupuri.
-                                              </FormDescription>
                                               <FormMessage />
                                             </FormItem>
                                           )}
                                         />
+                                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, STATUS_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Activ">Activ</SelectItem><SelectItem value="Inactiv">Inactiv</SelectItem><SelectItem value="Rezervat">Rezervat</SelectItem><SelectItem value="Vândut">Vândut</SelectItem><SelectItem value="Închiriat">Închiriat</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, SALES_SCORE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                     </div>
@@ -2054,15 +2059,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                     </div>
 
                                     <div className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0f1013] text-stone-100 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.72)] md:mt-auto">
-                                        <div className="relative aspect-[16/10] overflow-hidden rounded-t-[1.75rem] bg-[#0c1727]">
+                                        <div className="relative aspect-[4/3] overflow-hidden rounded-t-[1.75rem] bg-[#0c1727]">
                                             {previewImageUrl ? (
-                                                <Image
-                                                    src={previewImageUrl}
-                                                    alt={watchedTitle || 'Previzualizare proprietate'}
-                                                    fill
-                                                    sizes="(max-width: 768px) 100vw, 420px"
-                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
+                                                <>
+                                                    <Image
+                                                        src={previewImageUrl}
+                                                        alt=""
+                                                        aria-hidden="true"
+                                                        fill
+                                                        sizes="(max-width: 768px) 100vw, 420px"
+                                                        className="scale-110 object-cover opacity-35 blur-2xl"
+                                                    />
+                                                    <Image
+                                                        src={previewImageUrl}
+                                                        alt={watchedTitle || 'Previzualizare proprietate'}
+                                                        fill
+                                                        sizes="(max-width: 768px) 100vw, 420px"
+                                                        className="object-contain"
+                                                    />
+                                                </>
                                             ) : (
                                                 <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/45">
                                                     Prima fotografie incarcata va aparea aici.
