@@ -74,6 +74,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: GOOGLE_MAPS_BROWSER_API_KEY
+    secret: GOOGLE_MAPS_BROWSER_API_KEY
+    availability:
+      - RUNTIME
+
   - variable: META_APP_SECRET
     secret: META_APP_SECRET
     availability:
