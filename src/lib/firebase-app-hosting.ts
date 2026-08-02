@@ -123,6 +123,7 @@ async function verifyTokenAgainstAvailableBackends(token: string): Promise<Verif
 function getAppHostingProjectId() {
   return process.env.FIREBASE_APP_HOSTING_PROJECT_ID
     || process.env.FIREBASE_PROJECT_ID
+    || process.env.GOOGLE_CLOUD_PROJECT
     || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
     || '';
 }
@@ -135,14 +136,16 @@ function getAppHostingBackendId() {
   return process.env.FIREBASE_APP_HOSTING_BACKEND_ID || 'studio';
 }
 
-function getServiceAccountCredentials() {
+function getExplicitServiceAccountCredentials() {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
+  if (!projectId && !clientEmail && !privateKey) return null;
+
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
-      'Variabilele de mediu Firebase (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) nu sunt setate corect în fișierul .env.'
+      'Credentialele Firebase explicite sunt incomplete. Configurează toate cele trei variabile sau folosește Application Default Credentials.'
     );
   }
 
@@ -167,9 +170,11 @@ function getDomainResourceName(domain: string) {
 }
 
 async function getAccessToken() {
+  const projectId = getAppHostingProjectId();
+  const credentials = getExplicitServiceAccountCredentials();
   const auth = new GoogleAuth({
-    credentials: getServiceAccountCredentials(),
-    projectId: getAppHostingProjectId() || getServiceAccountCredentials().projectId,
+    ...(credentials ? { credentials } : {}),
+    ...(projectId ? { projectId } : {}),
     scopes: [APP_HOSTING_SCOPE],
   });
   const client = await auth.getClient();

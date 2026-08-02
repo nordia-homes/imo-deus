@@ -69,6 +69,46 @@ env:
     availability:
       - RUNTIME
 
+  - variable: GOOGLE_MAPS_API_KEY
+    secret: GOOGLE_MAPS_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: META_APP_SECRET
+    secret: META_APP_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: META_TOKEN_ENCRYPTION_KEY
+    secret: META_TOKEN_ENCRYPTION_KEY
+    availability:
+      - RUNTIME
+
+  - variable: STORIA_API_KEY
+    secret: STORIA_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: STORIA_CLIENT_SECRET
+    secret: STORIA_CLIENT_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: STORIA_WEBHOOK_SECRET
+    secret: STORIA_WEBHOOK_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_CLIENT_SECRET
+    secret: TIKTOK_CLIENT_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_TOKEN_ENCRYPTION_KEY
+    secret: TIKTOK_TOKEN_ENCRYPTION_KEY
+    availability:
+      - RUNTIME
+
   - variable: OWNER_LISTINGS_CRON_SECRET
     secret: OWNER_LISTINGS_CRON_SECRET
     availability:

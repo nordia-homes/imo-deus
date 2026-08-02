@@ -1,19 +1,14 @@
 "use client";
 
-import { Bell, CheckCheck } from 'lucide-react';
+import { ArrowUpRight, Bell, BellRing, CheckCheck, Sparkles } from 'lucide-react';
 import { collection, doc, limit, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { AppNotification } from '@/lib/notifications/types';
-
-function relativeDate(value: AppNotification['createdAt']) {
-  const date = typeof value === 'string' ? new Date(value) : value?.toDate?.();
-  if (!date || Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('ro-RO', { dateStyle: 'short', timeStyle: 'short' }).format(date);
-}
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +25,7 @@ export function NotificationBell() {
   }, [firestore, user]);
   const { data: notifications } = useCollection<AppNotification>(notificationsQuery);
   const unreadCount = notifications?.filter((item) => !item.isRead).length || 0;
+  const recentNotifications = notifications?.slice(0, 8) || [];
 
   const openNotification = async (notification: AppNotification) => {
     if (!user) return;
@@ -61,46 +57,75 @@ export function NotificationBell() {
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(92vw,390px)] p-0">
-        <div className="flex items-center justify-between border-b p-3">
-          <p className="font-semibold">Notificari</p>
-          {unreadCount > 0 ? (
-            <Button variant="ghost" size="sm" onClick={markAllRead} className="h-8 gap-1 text-xs">
-              <CheckCheck className="h-4 w-4" /> Marcheaza toate
-            </Button>
-          ) : null}
-        </div>
-        <div className="max-h-[430px] overflow-y-auto">
-          {!notifications?.length ? (
-            <p className="p-8 text-center text-sm text-muted-foreground">Nu ai notificari.</p>
-          ) : notifications.slice(0, 30).map((notification) => (
-            <button
-              key={notification.id}
-              type="button"
-              onClick={() => void openNotification(notification)}
-              className={`block w-full border-b p-3 text-left transition-colors hover:bg-accent ${notification.isRead ? '' : 'bg-primary/5'}`}
-            >
-              <span className="flex items-start gap-2">
-                {!notification.isRead ? <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" /> : <span className="w-2" />}
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">{notification.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">{notification.body}</span>
-                  <span className="mt-1 block text-[11px] text-muted-foreground">{relativeDate(notification.createdAt)}</span>
+      <PopoverContent
+        align="end"
+        sideOffset={12}
+        className="w-[min(calc(100vw-1rem),440px)] overflow-hidden rounded-[28px] border border-white/70 bg-background/95 p-0 shadow-[0_28px_90px_-34px_rgba(15,35,61,0.55)] backdrop-blur-2xl dark:border-white/10"
+      >
+        <div className="relative overflow-hidden border-b border-white/10 bg-[#10233d] px-5 py-5 text-white">
+          <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-emerald-400/25 blur-3xl" />
+          <span className="pointer-events-none absolute -bottom-16 left-12 h-36 w-36 rounded-full bg-violet-400/25 blur-3xl" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[0_12px_30px_-12px_rgba(52,211,153,0.7)] backdrop-blur">
+                <BellRing className="h-6 w-6 text-emerald-200" />
+              </span>
+              <span>
+                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200/90">
+                  <Sparkles className="h-3.5 w-3.5" /> Centru de activitate
+                </span>
+                <span className="mt-1 block text-xl font-bold tracking-tight">Notificări</span>
+                <span className="mt-0.5 block text-xs text-white/60">
+                  {unreadCount ? `${unreadCount} ${unreadCount === 1 ? 'eveniment nou' : 'evenimente noi'}` : 'Ești la zi cu tot ce contează'}
                 </span>
               </span>
-            </button>
+            </div>
+            {unreadCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void markAllRead()}
+                className="h-9 shrink-0 gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 text-[11px] text-white hover:bg-white/20 hover:text-white"
+              >
+                <CheckCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Citește toate</span>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="max-h-[min(62vh,560px)] space-y-2 overflow-y-auto bg-gradient-to-b from-muted/35 via-background to-background p-3">
+          {!recentNotifications.length ? (
+            <div className="flex flex-col items-center px-6 py-12 text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-emerald-400/15 to-violet-400/15 ring-1 ring-primary/10">
+                <Bell className="h-7 w-7 text-primary/70" />
+              </span>
+              <p className="mt-4 font-semibold">Totul este liniștit</p>
+              <p className="mt-1 max-w-[250px] text-xs leading-relaxed text-muted-foreground">Noile activități importante din agenție vor apărea aici.</p>
+            </div>
+          ) : recentNotifications.map((notification) => (
+            <NotificationItem
+              key={notification.id}
+              item={notification}
+              compact
+              onOpen={(item) => void openNotification(item)}
+            />
           ))}
         </div>
-        <Button
-          variant="ghost"
-          className="w-full rounded-none"
-          onClick={() => {
-            setIsOpen(false);
-            router.push('/notifications');
-          }}
-        >
-          Vezi toate notificarile
-        </Button>
+
+        <div className="border-t bg-background/90 p-3">
+          <Button
+            variant="ghost"
+            className="group h-12 w-full justify-between rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-violet-500/10 px-4 font-semibold text-foreground hover:from-emerald-500/15 hover:via-cyan-500/15 hover:to-violet-500/15"
+            onClick={() => {
+              setIsOpen(false);
+              router.push('/notifications');
+            }}
+          >
+            <span>Deschide centrul de notificări</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

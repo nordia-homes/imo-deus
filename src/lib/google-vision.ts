@@ -4,7 +4,7 @@ const GOOGLE_VISION_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 const GOOGLE_VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
 const GOOGLE_VISION_FILES_API_URL = 'https://vision.googleapis.com/v1/files:annotate';
 
-function getGoogleVisionCredentials() {
+function getGoogleVisionAuthOptions() {
   const normalizePrivateKey = (value: string) => {
     const trimmed = value.trim().replace(/^"(.*)"$/s, '$1').replace(/^'(.*)'$/s, '$1');
     const withNewlines = trimmed.replace(/\\n/g, '\n');
@@ -26,27 +26,38 @@ function getGoogleVisionCredentials() {
   const rawPrivateKey = process.env.GOOGLE_CLOUD_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY || '';
   const privateKey = rawPrivateKey ? normalizePrivateKey(rawPrivateKey) : '';
 
+  if (projectId && clientEmail && privateKey) {
+    return {
+      credentials: {
+        project_id: projectId,
+        client_email: clientEmail,
+        private_key: privateKey,
+      },
+      projectId,
+      scopes: [GOOGLE_VISION_SCOPE],
+    };
+  }
+
+  const isHostedRuntime = Boolean(process.env.K_SERVICE || process.env.GOOGLE_CLOUD_PROJECT);
+  if (isHostedRuntime) {
+    return {
+      projectId: projectId || undefined,
+      scopes: [GOOGLE_VISION_SCOPE],
+    };
+  }
+
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
-      'Lipsesc variabilele Google Vision: GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_CLIENT_EMAIL, GOOGLE_CLOUD_PRIVATE_KEY.'
+      'Pentru Google Vision configurează Application Default Credentials sau variabilele GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_CLIENT_EMAIL și GOOGLE_CLOUD_PRIVATE_KEY.'
     );
   }
 
-  return {
-    projectId,
-    client_email: clientEmail,
-    private_key: privateKey,
-  };
+  throw new Error('Configurația Google Vision este incompletă.');
 }
 
 async function getGoogleVisionAccessToken() {
-  const credentials = getGoogleVisionCredentials();
   try {
-    const auth = new GoogleAuth({
-      credentials,
-      projectId: credentials.projectId,
-      scopes: [GOOGLE_VISION_SCOPE],
-    });
+    const auth = new GoogleAuth(getGoogleVisionAuthOptions());
 
     const client = await auth.getClient();
     const tokenResponse = await client.getAccessToken();
