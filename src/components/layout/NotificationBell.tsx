@@ -3,6 +3,7 @@
 import { Bell, CheckCheck } from 'lucide-react';
 import { collection, doc, limit, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -15,6 +16,7 @@ function relativeDate(value: AppNotification['createdAt']) {
 }
 
 export function NotificationBell() {
+  const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
@@ -31,6 +33,7 @@ export function NotificationBell() {
 
   const openNotification = async (notification: AppNotification) => {
     if (!user) return;
+    setIsOpen(false);
     if (!notification.isRead) {
       await updateDoc(doc(firestore, 'users', user.uid, 'notifications', notification.id), {
         isRead: true,
@@ -47,7 +50,7 @@ export function NotificationBell() {
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-full" aria-label="Notificari">
           <Bell className="h-5 w-5" />
@@ -88,7 +91,14 @@ export function NotificationBell() {
             </button>
           ))}
         </div>
-        <Button variant="ghost" className="w-full rounded-none" onClick={() => router.push('/notifications')}>
+        <Button
+          variant="ghost"
+          className="w-full rounded-none"
+          onClick={() => {
+            setIsOpen(false);
+            router.push('/notifications');
+          }}
+        >
           Vezi toate notificarile
         </Button>
       </PopoverContent>

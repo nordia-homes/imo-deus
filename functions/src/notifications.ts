@@ -128,6 +128,22 @@ function formatTime(value: unknown) {
   }).format(date);
 }
 
+function formatTaskStart(dueDate: unknown, startTime: unknown) {
+  const time = stringValue(startTime).trim();
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return '';
+
+  const dateValue = stringValue(dueDate).trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
+  if (!match) return `Începe la ${time}.`;
+
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
+  const formattedDate = new Intl.DateTimeFormat('ro-RO', {
+    timeZone: 'UTC',
+    dateStyle: 'medium',
+  }).format(date);
+  return `Începe pe ${formattedDate} la ${time}.`;
+}
+
 function sourceUpdateTime(snapshot: FirebaseFirestore.DocumentSnapshot | undefined) {
   return snapshot?.updateTime ? Timestamp.fromMillis(snapshot.updateTime.toMillis()) : null;
 }
@@ -340,24 +356,28 @@ function buildPresentation(event: NotificationEventDocument, recipient: Recipien
         ttlSeconds: 12 * 60 * 60,
       };
     }
-    case 'task.assigned':
+    case 'task.assigned': {
+      const startLabel = formatTaskStart(p.dueDate, p.startTime);
       return {
         category: 'taskAssignments',
         title: 'Task atribuit',
-        body: `Ți-a fost atribuit taskul „${stringValue(p.description, 'Task')}”${p.dueDate ? `, scadent ${stringValue(p.dueDate)}` : ''}.`,
+        body: `Ți-a fost atribuit taskul „${stringValue(p.description, 'Task')}”.${startLabel ? ` ${startLabel}` : ''}`,
         actionUrl: '/tasks',
         tag: `task-assignment:${event.entityId}`,
         ttlSeconds: 24 * 60 * 60,
       };
-    case 'task.updated':
+    }
+    case 'task.updated': {
+      const startLabel = formatTaskStart(p.dueDate, p.startTime);
       return {
         category: 'taskUpdates',
         title: 'Task modificat',
-        body: `Taskul „${stringValue(p.description, 'Task')}” a fost actualizat${p.dueDate ? ` pentru ${stringValue(p.dueDate)}` : ''}.`,
+        body: `Taskul „${stringValue(p.description, 'Task')}” a fost actualizat.${startLabel ? ` ${startLabel}` : ''}`,
         actionUrl: '/tasks',
         tag: `task-updated:${event.entityId}`,
         ttlSeconds: 24 * 60 * 60,
       };
+    }
     case 'facebook_groups.publish_completed':
       return {
         category: 'facebookCompleted',
@@ -919,7 +939,7 @@ export const notificationTasksWritten = onDocumentWritten(
       await createNotificationEvent({
         type: 'task.assigned', agencyId, entityType: 'task', entityId: taskId,
         sourceEventId: `${event.id}:assigned`, sourceUpdateTime: updateTime, priority: 'action_required',
-        payload: { agentId: newAgentId, description: after.description, dueDate: after.dueDate },
+        payload: { agentId: newAgentId, description: after.description, dueDate: after.dueDate, startTime: after.startTime },
       });
       return;
     }
@@ -928,7 +948,7 @@ export const notificationTasksWritten = onDocumentWritten(
       await createNotificationEvent({
         type: 'task.updated', agencyId, entityType: 'task', entityId: taskId,
         sourceEventId: `${event.id}:updated`, sourceUpdateTime: updateTime, priority: 'action_required',
-        payload: { agentId: newAgentId, description: after.description, dueDate: after.dueDate },
+        payload: { agentId: newAgentId, description: after.description, dueDate: after.dueDate, startTime: after.startTime },
       });
     }
   },
