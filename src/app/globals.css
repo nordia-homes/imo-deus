@@ -21598,6 +21598,30 @@
     grid-template-columns: 2.1rem 2.4rem minmax(0, 1fr);
   }
 }
+
+/* Notification headers intentionally stay dark inside the light AgentFinder theme. */
+[data-app-theme='agentfinder'] .notification-dark-header .notification-on-dark-primary {
+  color: #ffffff !important;
+}
+
+[data-app-theme='agentfinder'] .notification-dark-header .notification-on-dark-muted {
+  color: rgba(226, 236, 250, 0.82) !important;
+}
+
+[data-app-theme='agentfinder'] .notification-dark-header .notification-on-dark-accent {
+  color: #a7f3d0 !important;
+}
+
+[data-app-theme='agentfinder'] .notification-dark-header .notification-dark-stat {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-app-theme='agentfinder'] .notification-dark-header .notification-dark-stat-accent {
+  border-color: rgba(167, 243, 208, 0.4) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+}
 @media (max-width: 767px) {
   .contracts-premium-hero .property-hero__actions .property-hero__secondary {
     display: none;

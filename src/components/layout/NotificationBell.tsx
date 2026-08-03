@@ -62,7 +62,7 @@ export function NotificationBell() {
         sideOffset={12}
         className="w-[min(calc(100vw-1rem),440px)] overflow-hidden rounded-[28px] border border-white/70 bg-background/95 p-0 shadow-[0_28px_90px_-34px_rgba(15,35,61,0.55)] backdrop-blur-2xl dark:border-white/10"
       >
-        <div className="relative overflow-hidden border-b border-white/10 bg-[#10233d] px-4 py-3 text-white sm:px-5 sm:py-5">
+        <div className="notification-dark-header relative overflow-hidden border-b border-white/10 bg-[#10233d] px-4 py-3 text-white sm:px-5 sm:py-5">
           <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-emerald-400/25 blur-3xl" />
           <span className="pointer-events-none absolute -bottom-16 left-12 h-36 w-36 rounded-full bg-violet-400/25 blur-3xl" />
           <div className="relative flex items-start justify-between gap-3">
@@ -71,11 +71,11 @@ export function NotificationBell() {
                 <BellRing className="h-5 w-5 text-emerald-100 sm:h-6 sm:w-6" />
               </span>
               <span>
-                <span className="hidden items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 sm:flex">
+                <span className="notification-on-dark-accent hidden items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 sm:flex">
                   <Sparkles className="h-3.5 w-3.5" /> Centru de activitate
                 </span>
-                <span className="block text-lg font-bold tracking-tight text-white sm:mt-1 sm:text-xl">Notificări</span>
-                <span className="mt-0.5 block text-[11px] text-white/75 sm:text-xs">
+                <span className="notification-on-dark-primary block text-lg font-bold tracking-tight text-white sm:mt-1 sm:text-xl">Notificări</span>
+                <span className="notification-on-dark-muted mt-0.5 block text-[11px] text-white/75 sm:text-xs">
                   {unreadCount ? `${unreadCount} noi` : 'Ești la zi'}
                 </span>
               </span>

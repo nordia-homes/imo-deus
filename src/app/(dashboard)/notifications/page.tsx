@@ -51,14 +51,14 @@ export default function NotificationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-3 p-3 pb-28 sm:space-y-5 md:p-6 md:pb-10">
-      <section className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#10233d] px-4 py-4 text-white shadow-[0_30px_80px_-42px_rgba(15,35,61,0.85)] sm:rounded-[32px] sm:px-7 sm:py-7">
+      <section className="notification-dark-header relative overflow-hidden rounded-[24px] border border-white/10 bg-[#10233d] px-4 py-4 text-white shadow-[0_30px_80px_-42px_rgba(15,35,61,0.85)] sm:rounded-[32px] sm:px-7 sm:py-7">
         <span className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
         <span className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-cyan-400/15 blur-3xl" />
         <span className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
 
         <div className="relative grid gap-4 sm:gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <span className="hidden items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 sm:inline-flex">
+            <span className="notification-on-dark-accent hidden items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 sm:inline-flex">
               <Sparkles className="h-3.5 w-3.5" /> Fluxul agenției
             </span>
             <div className="flex items-center gap-3 sm:mt-4">
@@ -66,24 +66,24 @@ export default function NotificationsPage() {
                 <BellRing className="h-5 w-5 text-emerald-100 sm:h-7 sm:w-7" />
               </span>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">Notificări</h1>
-                <p className="mt-1 hidden text-sm text-white/70 sm:block">Activitatea importantă a agenției, într-un singur loc.</p>
+                <h1 className="notification-on-dark-primary text-2xl font-bold tracking-tight text-white sm:text-4xl">Notificări</h1>
+                <p className="notification-on-dark-muted mt-1 hidden text-sm text-white/70 sm:block">Activitatea importantă a agenției, într-un singur loc.</p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
-            <div className="min-w-0 rounded-xl border border-white/15 bg-white/[0.08] px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/65 sm:text-[10px] sm:tracking-[0.16em]">Total</p>
-              <p className="mt-0.5 text-xl font-bold text-white sm:mt-1 sm:text-2xl">{allNotifications.length}</p>
+            <div className="notification-dark-stat min-w-0 rounded-xl border border-white/15 bg-white/[0.08] px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="notification-on-dark-muted text-[9px] font-bold uppercase tracking-[0.12em] text-white/65 sm:text-[10px] sm:tracking-[0.16em]">Total</p>
+              <p className="notification-on-dark-primary mt-0.5 text-xl font-bold text-white sm:mt-1 sm:text-2xl">{allNotifications.length}</p>
             </div>
-            <div className="min-w-0 rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-100/80 sm:text-[10px] sm:tracking-[0.16em]">Noi</p>
-              <p className="mt-0.5 text-xl font-bold text-emerald-100 sm:mt-1 sm:text-2xl">{unreadCount}</p>
+            <div className="notification-dark-stat notification-dark-stat-accent min-w-0 rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="notification-on-dark-accent text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-100/80 sm:text-[10px] sm:tracking-[0.16em]">Noi</p>
+              <p className="notification-on-dark-accent mt-0.5 text-xl font-bold text-emerald-100 sm:mt-1 sm:text-2xl">{unreadCount}</p>
             </div>
-            <div className="min-w-0 rounded-xl border border-violet-300/25 bg-violet-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-violet-100/80 sm:text-[10px] sm:tracking-[0.16em]">Astăzi</p>
-              <p className="mt-0.5 text-xl font-bold text-violet-100 sm:mt-1 sm:text-2xl">{todayCount}</p>
+            <div className="notification-dark-stat min-w-0 rounded-xl border border-violet-300/25 bg-violet-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="notification-on-dark-muted text-[9px] font-bold uppercase tracking-[0.12em] text-violet-100/80 sm:text-[10px] sm:tracking-[0.16em]">Astăzi</p>
+              <p className="notification-on-dark-primary mt-0.5 text-xl font-bold text-violet-100 sm:mt-1 sm:text-2xl">{todayCount}</p>
             </div>
           </div>
         </div>
