@@ -50,40 +50,40 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5 p-4 pb-28 md:p-6 md:pb-10">
-      <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#10233d] px-5 py-6 text-white shadow-[0_30px_80px_-42px_rgba(15,35,61,0.85)] sm:px-7 sm:py-7">
+    <div className="mx-auto w-full max-w-5xl space-y-3 p-3 pb-28 sm:space-y-5 md:p-6 md:pb-10">
+      <section className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#10233d] px-4 py-4 text-white shadow-[0_30px_80px_-42px_rgba(15,35,61,0.85)] sm:rounded-[32px] sm:px-7 sm:py-7">
         <span className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
         <span className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-cyan-400/15 blur-3xl" />
         <span className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
 
-        <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="relative grid gap-4 sm:gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
+            <span className="hidden items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 sm:inline-flex">
               <Sparkles className="h-3.5 w-3.5" /> Fluxul agenției
             </span>
-            <div className="mt-4 flex items-center gap-3">
-              <span className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-white/15 bg-white/10 shadow-[0_16px_35px_-16px_rgba(52,211,153,0.8)] backdrop-blur">
-                <BellRing className="h-7 w-7 text-emerald-200" />
+            <div className="flex items-center gap-3 sm:mt-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-[16px] border border-white/20 bg-white/10 shadow-[0_16px_35px_-16px_rgba(52,211,153,0.8)] backdrop-blur sm:h-14 sm:w-14 sm:rounded-[20px]">
+                <BellRing className="h-5 w-5 text-emerald-100 sm:h-7 sm:w-7" />
               </span>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Centrul de notificări</h1>
-                <p className="mt-1 text-sm text-white/60">Tot ce necesită atenția ta, într-un singur loc.</p>
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">Notificări</h1>
+                <p className="mt-1 hidden text-sm text-white/70 sm:block">Activitatea importantă a agenției, într-un singur loc.</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-3 backdrop-blur sm:min-w-[112px] sm:px-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">Total</p>
-              <p className="mt-1 text-2xl font-bold">{allNotifications.length}</p>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+            <div className="min-w-0 rounded-xl border border-white/15 bg-white/[0.08] px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/65 sm:text-[10px] sm:tracking-[0.16em]">Total</p>
+              <p className="mt-0.5 text-xl font-bold text-white sm:mt-1 sm:text-2xl">{allNotifications.length}</p>
             </div>
-            <div className="min-w-0 rounded-2xl border border-emerald-300/15 bg-emerald-300/10 px-3 py-3 backdrop-blur sm:min-w-[112px] sm:px-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-100/60">Noi</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-100">{unreadCount}</p>
+            <div className="min-w-0 rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-100/80 sm:text-[10px] sm:tracking-[0.16em]">Noi</p>
+              <p className="mt-0.5 text-xl font-bold text-emerald-100 sm:mt-1 sm:text-2xl">{unreadCount}</p>
             </div>
-            <div className="min-w-0 rounded-2xl border border-violet-300/15 bg-violet-300/10 px-3 py-3 backdrop-blur sm:min-w-[112px] sm:px-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-100/60">Astăzi</p>
-              <p className="mt-1 text-2xl font-bold text-violet-100">{todayCount}</p>
+            <div className="min-w-0 rounded-xl border border-violet-300/25 bg-violet-300/10 px-2.5 py-2 backdrop-blur sm:min-w-[112px] sm:rounded-2xl sm:px-4 sm:py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-violet-100/80 sm:text-[10px] sm:tracking-[0.16em]">Astăzi</p>
+              <p className="mt-0.5 text-xl font-bold text-violet-100 sm:mt-1 sm:text-2xl">{todayCount}</p>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <div className="space-y-3 bg-gradient-to-b from-muted/25 via-background to-background p-3 sm:p-4">
+        <div className="space-y-2 bg-gradient-to-b from-muted/25 via-background to-background p-2 sm:space-y-3 sm:p-4">
           {isLoading ? Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="flex animate-pulse gap-4 rounded-[24px] border border-border/50 bg-background/70 p-4">
               <span className="h-14 w-14 shrink-0 rounded-2xl bg-muted" />

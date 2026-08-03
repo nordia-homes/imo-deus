@@ -143,7 +143,7 @@ export function NotificationItem({
       onClick={() => onOpen(item)}
       className={cn(
         'group relative flex w-full items-start overflow-hidden border text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-        compact ? 'gap-3 rounded-2xl px-3 py-3' : 'gap-4 rounded-[24px] px-4 py-4 sm:px-5',
+        compact ? 'gap-3 rounded-2xl px-3 py-3' : 'gap-3 rounded-[20px] px-3 py-3 sm:gap-4 sm:rounded-[24px] sm:px-5 sm:py-4',
         item.isRead
           ? 'border-border/60 bg-background/65 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-background hover:shadow-lg'
           : 'border-primary/15 bg-gradient-to-br from-background via-background to-emerald-50/70 shadow-[0_14px_40px_-28px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl dark:to-emerald-950/20',
@@ -154,32 +154,40 @@ export function NotificationItem({
 
       <span className={cn(
         'relative flex shrink-0 items-center justify-center rounded-2xl ring-1 transition-transform duration-300 group-hover:scale-105',
-        compact ? 'h-11 w-11' : 'h-12 w-12 sm:h-14 sm:w-14',
+        compact ? 'h-11 w-11' : 'h-10 w-10 sm:h-14 sm:w-14',
         visual.iconClassName,
       )}>
         <Icon className={compact ? 'h-5 w-5' : 'h-6 w-6'} />
         {!item.isRead ? <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.9)]" /> : null}
       </span>
 
-      <span className="relative min-w-0 flex-1">
+      <span className={cn('relative min-w-0 flex-1', !compact && 'max-sm:pr-8')}>
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{visual.label}</span>
-          {item.priority === 'reminder' ? (
-            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">Reminder</span>
-          ) : null}
           {item.priority === 'action_required' && !item.isRead ? (
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Nou</span>
           ) : null}
         </span>
-        <span className={cn('mt-1 block font-semibold leading-snug text-foreground', compact ? 'text-sm' : 'text-base sm:text-[17px]')}>{item.title}</span>
-        <span className={cn('mt-1 block text-muted-foreground', compact ? 'line-clamp-2 text-xs leading-relaxed' : 'text-sm leading-relaxed')}>{item.body}</span>
-        <span className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/80">
+        <span className={cn('mt-1 block font-semibold leading-snug text-foreground', compact ? 'text-sm' : 'text-[15px] sm:text-[17px]')}>{item.title}</span>
+        <span className={cn(
+          'mt-1 block text-muted-foreground',
+          compact
+            ? 'line-clamp-2 text-xs leading-relaxed'
+            : 'text-sm leading-relaxed max-sm:-ml-[52px] max-sm:mt-3 max-sm:w-[calc(100%+52px)] max-sm:pr-0 max-sm:text-[13px] max-sm:leading-5',
+        )}>{item.body}</span>
+        <span className={cn(
+          'mt-2 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/80',
+          !compact && 'max-sm:-ml-[52px]',
+        )}>
           <Clock3 className="h-3.5 w-3.5" />
           {timeLabel}
         </span>
       </span>
 
-      <span className="relative mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/70 text-muted-foreground transition-all duration-300 group-hover:translate-x-0.5 group-hover:bg-primary/10 group-hover:text-primary">
+      <span className={cn(
+        'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/70 text-muted-foreground transition-all duration-300 group-hover:translate-x-0.5 group-hover:bg-primary/10 group-hover:text-primary',
+        compact ? 'relative mt-3' : 'absolute right-3 top-3 sm:relative sm:right-auto sm:top-auto sm:mt-3',
+      )}>
         {item.category === 'facebookCompleted' ? <Send className="h-3.5 w-3.5" /> : <ChevronRight className="h-4 w-4" />}
       </span>
     </button>
