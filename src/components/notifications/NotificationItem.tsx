@@ -9,7 +9,9 @@ import {
   ClipboardCheck,
   Clock3,
   Facebook,
+  FileText,
   HousePlus,
+  Mail,
   MessageCircleMore,
   MessageSquareHeart,
   Send,
@@ -86,6 +88,24 @@ const CATEGORY_VISUALS: Record<NotificationCategory, CategoryVisual> = {
     label: 'Feedback client',
     iconClassName: 'bg-fuchsia-500/[0.12] text-fuchsia-700 ring-fuchsia-500/20 dark:text-fuchsia-300',
     haloClassName: 'bg-fuchsia-400/20',
+  },
+  salesReplies: {
+    icon: Mail,
+    label: 'Răspuns tranzacție',
+    iconClassName: 'text-emerald-600 dark:text-emerald-300',
+    haloClassName: 'bg-emerald-500/12 ring-emerald-500/20',
+  },
+  salesDocuments: {
+    icon: FileText,
+    label: 'Documente tranzacție',
+    iconClassName: 'text-sky-600 dark:text-sky-300',
+    haloClassName: 'bg-sky-500/12 ring-sky-500/20',
+  },
+  salesDigest: {
+    icon: ClipboardCheck,
+    label: 'Rezumat tranzacții',
+    iconClassName: 'text-violet-600 dark:text-violet-300',
+    haloClassName: 'bg-violet-500/12 ring-violet-500/20',
   },
 };
 

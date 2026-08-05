@@ -28,6 +28,7 @@ import {
   Facebook,
   UserRoundCog,
   Video,
+  Handshake,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -60,6 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     currentPath.startsWith('/leads') ||
     currentPath.startsWith('/properties') ||
     currentPath.startsWith('/sold-properties') ||
+    currentPath.startsWith('/sales-management') ||
     currentPath.startsWith('/inbox');
   const publicWebsiteHref = agencyId
     ? buildAgencyPublicUrl(agency ?? { id: agencyId })
@@ -145,6 +147,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Gestionare vânzări" asChild isActive={currentPath.startsWith('/sales-management')}>
+                    <Link href="/sales-management">
+                        <Handshake />
+                        <span>Gestionare vânzări</span>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Proprietati Vandute" asChild isActive={currentPath.startsWith('/sold-properties')}>

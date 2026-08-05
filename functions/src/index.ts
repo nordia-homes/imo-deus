@@ -10,11 +10,14 @@ export {
   notificationEventsCreated,
   notificationFacebookJobsWritten,
   notificationPropertiesWritten,
+  notificationSalesWritten,
   notificationStoriaMessagesWritten,
   notificationTasksWritten,
   notificationViewingsWritten,
   notificationsMinuteTick,
   viewingTomorrowDigest,
+  salesDailyDigest,
+  salesRetentionCleanup,
 } from './notifications';
 
 const ownerListingsAppBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');

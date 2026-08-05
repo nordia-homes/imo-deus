@@ -168,3 +168,23 @@ env:
     value: gpt-4.1-mini
     availability:
       - RUNTIME
+
+  - variable: EMAIL_INBOUND_DOMAIN
+    value: reply.imodeus.ro
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_INBOUND_WEBHOOK_SECRET
+    secret: EMAIL_INBOUND_WEBHOOK_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: SALES_DOCUMENT_OCR_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: GOOGLE_CLOUD_PROJECT_ID
+    value: studio-652232171-42fb6
+    availability:
+      - RUNTIME

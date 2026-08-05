@@ -28,6 +28,14 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
+    function canAccessSale(agencyId, saleId) {
+      return isUserAdminForAgency(agencyId) ||
+             (
+               isUserInAgency(agencyId) &&
+               get(/databases/$(database)/documents/agencies/$(agencyId)/sales/$(saleId)).data.agentId == request.auth.uid
+             );
+    }
+
     function isPublicAgencyRead() {
       return true;
     }
@@ -73,7 +81,8 @@ service cloud.firestore {
                               request.resource.data.categories.keys().hasOnly([
                                 'storiaMessages', 'viewingAssignments', 'viewingRescheduled', 'viewingReminders',
                                 'taskAssignments', 'taskUpdates', 'facebookCompleted', 'facebookFailed',
-                                'propertyAssignments', 'clientPortalFeedback'
+                                'propertyAssignments', 'clientPortalFeedback',
+                                'salesReplies', 'salesDocuments', 'salesDigest'
                               ]);
       allow delete: if false;
     }
@@ -121,8 +130,46 @@ service cloud.firestore {
     }
 
     // --- Generic Rule for other Agency Subcollections ---
-    match /agencies/{agencyId}/{document=**} {
-      allow read, write: if isUserInAgency(agencyId);
+    match /agencies/{agencyId}/{collectionId}/{document=**} {
+      allow read, write: if collectionId != 'sales' &&
+                            collectionId != 'salesEmailTemplates' &&
+                            collectionId != 'salesSettings' &&
+                            collectionId != 'salesTemplateAudit' &&
+                            isUserInAgency(agencyId);
+    }
+
+    match /agencies/{agencyId}/salesEmailTemplates/{templateId} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/salesSettings/{settingsId} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/salesTemplateAudit/{eventId} {
+      allow read: if isUserAdminForAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/sales/{saleId} {
+      allow read: if isUserAdminForAgency(agencyId) ||
+                     (isUserInAgency(agencyId) && resource.data.agentId == request.auth.uid);
+      allow create: if isUserAdminForAgency(agencyId) ||
+                       (isUserInAgency(agencyId) && request.resource.data.agentId == request.auth.uid);
+      allow update: if isUserAdminForAgency(agencyId) ||
+                       (
+                         isUserInAgency(agencyId) &&
+                         resource.data.agentId == request.auth.uid &&
+                         request.resource.data.agentId == request.auth.uid
+                       );
+      allow delete: if isUserAdminForAgency(agencyId) ||
+                       (isUserInAgency(agencyId) && resource.data.agentId == request.auth.uid);
+    }
+
+    match /agencies/{agencyId}/sales/{saleId}/{nestedCollection}/{nestedDocument} {
+      allow read, write: if canAccessSale(agencyId, saleId);
     }
 
     // --- Agency Top-Level Document ---

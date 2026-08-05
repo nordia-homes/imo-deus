@@ -21,6 +21,17 @@ const api = {
   },
 
   getOlxPhoneNumber: (input) => ipcRenderer.invoke('olx-phone:get-number', input),
+  selectGmailRunnerFiles: () => ipcRenderer.invoke('gmail-runner:select-files'),
+  startGmailRunner: (input) => ipcRenderer.invoke('gmail-runner:start', input),
+  retryGmailRunner: () => ipcRenderer.invoke('gmail-runner:retry'),
+  stopGmailRunner: () => ipcRenderer.invoke('gmail-runner:stop'),
+  resetGmailRunnerProfile: () => ipcRenderer.invoke('gmail-runner:reset-profile'),
+  getGmailRunnerStatus: () => ipcRenderer.invoke('gmail-runner:get-status'),
+  onGmailRunnerStatusChanged: (callback) => {
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('gmail-runner:status-changed', listener);
+    return () => ipcRenderer.removeListener('gmail-runner:status-changed', listener);
+  },
   startFacebookRunner: (input) => ipcRenderer.invoke('facebook-runner:start', input),
   retryFacebookRunnerCurrentGroup: () => ipcRenderer.invoke('facebook-runner:retry-current-group'),
   markFacebookRunnerPosted: () => ipcRenderer.invoke('facebook-runner:mark-posted'),

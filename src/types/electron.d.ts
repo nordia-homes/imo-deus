@@ -4,6 +4,11 @@ import type {
   SaveFacebookRunnerSessionInput,
   StartFacebookRunnerInput,
 } from '@/lib/desktop/facebook-promotion';
+import type {
+  DesktopGmailRunnerStatus,
+  GmailRunnerAttachment,
+  StartGmailRunnerInput,
+} from '@/lib/desktop/gmail-runner';
 
 type FacebookLocalRunnerStatus = {
   paired: boolean;
@@ -42,6 +47,13 @@ declare global {
         body?: unknown;
       }) => Promise<{ canceled: boolean; filePath?: string | null }>;
       getOlxPhoneNumber: (input: { url: string }) => Promise<{ phone?: string; message?: string }>;
+      selectGmailRunnerFiles: () => Promise<{ canceled: boolean; files: GmailRunnerAttachment[] }>;
+      startGmailRunner: (input: StartGmailRunnerInput) => Promise<DesktopGmailRunnerStatus>;
+      retryGmailRunner: () => Promise<DesktopGmailRunnerStatus>;
+      stopGmailRunner: () => Promise<DesktopGmailRunnerStatus>;
+      resetGmailRunnerProfile: () => Promise<DesktopGmailRunnerStatus>;
+      getGmailRunnerStatus: () => Promise<DesktopGmailRunnerStatus>;
+      onGmailRunnerStatusChanged: (callback: (status: DesktopGmailRunnerStatus) => void) => () => void;
       startFacebookRunner: (input: StartFacebookRunnerInput) => Promise<DesktopFacebookRunnerStatus>;
       retryFacebookRunnerCurrentGroup: () => Promise<DesktopFacebookRunnerActionResult>;
       markFacebookRunnerPosted: () => Promise<DesktopFacebookRunnerActionResult>;

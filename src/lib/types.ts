@@ -1026,6 +1026,258 @@ export type FinancialStatus = 'Neprecalificat' | 'Credit Pre-aprobat' | 'Credit 
 
 export type ThemePreset = 'classic' | 'forest' | 'agentfinder';
 
+export type SaleStage =
+  | 'preparing'
+  | 'documents'
+  | 'notary_scheduling'
+  | 'ready_to_sign'
+  | 'completed'
+  | 'blocked'
+  | 'cancelled';
+
+export type SaleParticipantRole = 'buyer' | 'owner' | 'notary' | 'collaborator';
+
+export type SaleParticipant = {
+  id: string;
+  role: SaleParticipantRole;
+  contactId?: string | null;
+  name: string;
+  email: string;
+  phone?: string | null;
+  preferredChannel?: 'email' | 'phone' | 'whatsapp';
+};
+
+export type SaleChecklistStatus =
+  | 'required'
+  | 'requested'
+  | 'received_needs_review'
+  | 'verified'
+  | 'rejected'
+    | 'expired';
+
+export type SaleDocumentScanStatus =
+  | 'pending'
+  | 'safe_by_policy'
+  | 'safe'
+  | 'infected'
+  | 'unsupported'
+  | 'error';
+
+export type SaleDocumentOcrStatus = 'not_requested' | 'pending' | 'completed' | 'low_quality' | 'error';
+
+export type SaleDocumentReviewStatus = 'unreviewed' | 'needs_attention' | 'approved' | 'rejected';
+
+  export type SaleChecklistItem = {
+  id: string;
+  label: string;
+  participantRole: 'buyer' | 'owner';
+  status: SaleChecklistStatus;
+  required: boolean;
+  requestedAt?: string | null;
+  receivedAt?: string | null;
+  verifiedAt?: string | null;
+  fileName?: string | null;
+  downloadUrl?: string | null;
+    notes?: string | null;
+    storagePath?: string | null;
+    contentType?: string | null;
+    sizeBytes?: number | null;
+    checksumSha256?: string | null;
+    scanStatus?: SaleDocumentScanStatus;
+    scanProvider?: string | null;
+    scanMessage?: string | null;
+    ocrStatus?: SaleDocumentOcrStatus;
+    extractedTextPreview?: string | null;
+    classificationConfidence?: number | null;
+    qualityScore?: number | null;
+    reviewStatus?: SaleDocumentReviewStatus;
+    reviewedByUid?: string | null;
+    reviewedAt?: string | null;
+    expiresAt?: string | null;
+    revokedAt?: string | null;
+    version?: number;
+    duplicateOfDocumentId?: string | null;
+  };
+
+export type SaleQuestionStatus = 'pending' | 'answered' | 'partial' | 'unclear' | 'confirmed';
+
+  export type SaleEmailQuestion = {
+  id: string;
+  text: string;
+  required: boolean;
+  status: SaleQuestionStatus;
+  answer?: string | null;
+  evidence?: string | null;
+  confidence?: number | null;
+    confirmedAt?: string | null;
+    reviewStatus?: 'pending_agent_review' | 'confirmed' | 'corrected' | 'needs_clarification';
+    reviewedByUid?: string | null;
+    reviewedAt?: string | null;
+  };
+
+  export type SaleEmailMessageStatus =
+  | 'draft'
+  | 'prepared'
+  | 'opened_in_gmail'
+  | 'sent_ui_confirmed'
+  | 'sent_unconfirmed'
+  | 'replied'
+    | 'failed';
+
+  export type SaleEmailSendEvidence = {
+    level: 'none' | 'ui_observed' | 'agent_confirmed' | 'reply_confirmed';
+    source: 'gmail_runner' | 'agent' | 'inbound_reply' | 'web_fallback';
+    observedAt: string;
+    observedByUid?: string | null;
+    details?: string | null;
+  };
+
+  export type SaleReplyReview = {
+    status: 'pending' | 'confirmed' | 'corrected' | 'needs_clarification';
+    reviewedByUid?: string | null;
+    reviewedAt?: string | null;
+    note?: string | null;
+  };
+
+export type SaleEmailMessage = {
+  id: string;
+  saleId: string;
+  agencyId: string;
+  direction: 'outbound' | 'inbound';
+  status: SaleEmailMessageStatus;
+  trackingCode: string;
+  fromName?: string | null;
+  fromEmail?: string | null;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  bodyText: string;
+  bodyHtml?: string | null;
+  questions?: SaleEmailQuestion[];
+  attachmentNames?: string[];
+  providerMessageId?: string | null;
+  createdByUid?: string | null;
+  createdAt: string;
+  sentAt?: string | null;
+  receivedAt?: string | null;
+    updatedAt?: string | null;
+    sendEvidence?: SaleEmailSendEvidence | null;
+    replyReview?: SaleReplyReview | null;
+    relatedOutboundMessageId?: string | null;
+    runnerDiagnostics?: {
+      selectorProfile?: string | null;
+      completedFields?: string[];
+      missingFields?: string[];
+      attempt?: number;
+      canRetry?: boolean;
+    } | null;
+  };
+
+export type SaleTransaction = {
+  id: string;
+  agencyId: string;
+  trackingCode: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyAddress: string;
+  propertyImageUrl?: string | null;
+  agentId: string;
+  agentName: string;
+  collaboratorIds?: string[];
+  stage: SaleStage;
+  agreedPrice?: number | null;
+  financingType?: 'cash' | 'credit' | 'unknown';
+  participants: SaleParticipant[];
+  checklist?: SaleChecklistItem[];
+  notary?: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    appointmentAt?: string | null;
+  } | null;
+  nextAction?: string | null;
+  nextActionAt?: string | null;
+  lastCommunicationAt?: string | null;
+  unreadReplyCount?: number;
+  receivedDocumentCount?: number;
+  requiredDocumentCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+    source?: 'accepted_offer' | 'reserved_property' | 'sold_property' | 'manual';
+    setupStatus?: 'incomplete' | 'ready';
+    setupCompletedAt?: string | null;
+    setupCompletedByUid?: string | null;
+    pendingReviewCount?: number;
+    overdueActionCount?: number;
+    reminderPolicy?: {
+      enabled: boolean;
+      digestMode: 'instant' | 'daily';
+      remindBeforeHours: number;
+    } | null;
+    retentionPolicy?: {
+      attachmentRetentionDays: number;
+      completedSaleRetentionDays: number;
+    } | null;
+    dataRetentionState?: 'active' | 'redacted';
+    dataRedactedAt?: string | null;
+    retentionLastRunAt?: string | null;
+  };
+
+export type SalesEmailTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  recipientRole: SaleParticipantRole;
+  stage: SaleStage | 'any';
+  subject: string;
+  body: string;
+  defaultQuestions?: string[];
+  isSystem?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+    updatedAt?: string;
+    version?: number;
+    locale?: 'ro' | 'en';
+    approvalStatus?: 'draft' | 'pending_approval' | 'approved' | 'rejected';
+    createdByUid?: string | null;
+    updatedByUid?: string | null;
+    approvedByUid?: string | null;
+    approvedAt?: string | null;
+    signatureMode?: 'agent' | 'agency' | 'none';
+    variables?: string[];
+  };
+
+  export type SalesEmailSettings = {
+    id: 'default';
+    inboundProvider: 'generic' | 'mailgun' | 'sendgrid';
+    attachmentRetentionDays: number;
+    completedSaleRetentionDays: number;
+    ocrEnabled: boolean;
+    malwareScanRequired: boolean;
+    dailyDigestHour: number;
+    updatedAt: string;
+    updatedByUid: string;
+  };
+
+  export type SalesAuditEvent = {
+    id: string;
+    agencyId: string;
+    saleId: string;
+    actorUid: string | null;
+    actorType: 'agent' | 'system' | 'inbound';
+    action: string;
+    entityType: 'sale' | 'message' | 'document' | 'template' | 'settings';
+    entityId: string;
+    summary: string;
+    metadata?: Record<string, string | number | boolean | null>;
+    createdAt: string;
+    expiresAt?: string | null;
+  };
+
 
 export type Contact = {
     id: string;

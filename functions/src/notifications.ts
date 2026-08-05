@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, Timestamp, getFirestore, type DocumentReference } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
+import { getStorage } from 'firebase-admin/storage';
 import { logger } from 'firebase-functions';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -33,7 +34,10 @@ type NotificationEventType =
   | 'facebook_groups.publish_failed'
   | 'property.assigned'
   | 'property.assignment_changed'
-  | 'client_portal.feedback_updated';
+  | 'client_portal.feedback_updated'
+  | 'sale.reply_received'
+  | 'sale.document_received'
+  | 'sale.daily_digest';
 
 type NotificationEventDocument = {
   type: NotificationEventType;
@@ -232,6 +236,12 @@ async function resolveRecipients(event: NotificationEventDocument): Promise<Reci
       if (directAgentId) recipients.push({ uid: directAgentId });
       break;
     }
+    case 'sale.reply_received':
+    case 'sale.document_received':
+    case 'sale.daily_digest': {
+      if (directAgentId) recipients.push({ uid: directAgentId });
+      break;
+    }
     case 'viewing.reminder_2h': {
       const viewing = await db
         .collection('agencies').doc(event.agencyId)
@@ -272,7 +282,7 @@ async function resolveRecipients(event: NotificationEventDocument): Promise<Reci
         recipients = (await getAgencyAdmins(event.agencyId)).map((uid) => ({ uid }));
       }
       break;
-    }
+      }
   }
 
   const unique = new Map<string, Recipient>();
@@ -453,6 +463,35 @@ function buildPresentation(event: NotificationEventDocument, recipient: Recipien
         ttlSeconds: 24 * 60 * 60,
       };
     }
+    case 'sale.reply_received': {
+      const attachmentCount = Number(p.attachmentCount || 0);
+      return {
+        category: 'salesReplies',
+        title: attachmentCount ? 'Răspuns nou cu documente' : 'Răspuns nou în tranzacție',
+        body: `${stringValue(p.senderName, 'Clientul')} a răspuns pentru „${propertyTitle}”${attachmentCount ? ` și a trimis ${attachmentCount} document(e)` : ''}. Verifică interpretarea înainte de următorul mesaj.`,
+        actionUrl: `/sales-management?sale=${event.entityId}`,
+        tag: `sale-reply:${event.sourceEventId}`,
+        ttlSeconds: 24 * 60 * 60,
+      };
+    }
+    case 'sale.document_received':
+      return {
+        category: 'salesDocuments',
+        title: 'Documente noi de verificat',
+        body: `${Number(p.attachmentCount || 1)} document(e) au fost adăugate pentru „${propertyTitle}”.`,
+        actionUrl: `/sales-management?sale=${event.entityId}`,
+        tag: `sale-documents:${event.sourceEventId}`,
+        ttlSeconds: 24 * 60 * 60,
+      };
+    case 'sale.daily_digest':
+      return {
+        category: 'salesDigest',
+        title: 'Rezumatul tranzacțiilor de azi',
+        body: `${Number(p.saleCount || 0)} dosar(e) active · ${Number(p.pendingReviews || 0)} elemente de validat · ${Number(p.overdueActions || 0)} acțiuni scadente.`,
+        actionUrl: '/sales-management',
+        tag: `sale-digest:${recipient.uid}:${stringValue(p.date)}`,
+        ttlSeconds: 12 * 60 * 60,
+      };
   }
 }
 
@@ -1046,6 +1085,34 @@ export const notificationFacebookJobsWritten = onDocumentWritten(
   },
 );
 
+export const notificationSalesWritten = onDocumentWritten(
+  {
+    document: 'agencies/{agencyId}/sales/{saleId}',
+    region: REGION,
+    retry: true,
+  },
+  async (event) => {
+    const before = event.data?.before.exists ? event.data.before.data() as Record<string, unknown> : null;
+    const after = event.data?.after.exists ? event.data.after.data() as Record<string, unknown> : null;
+    if (!before || !after) return;
+    const agentId = nullableString(after.agentId);
+    if (!agentId) return;
+    const unreadDelta = Math.max(0, Number(after.unreadReplyCount || 0) - Number(before.unreadReplyCount || 0));
+    const documentDelta = Math.max(0, Number(after.receivedDocumentCount || 0) - Number(before.receivedDocumentCount || 0));
+    if (!unreadDelta && !documentDelta) return;
+    await createNotificationEvent({
+      type: unreadDelta ? 'sale.reply_received' : 'sale.document_received',
+      agencyId: event.params.agencyId,
+      entityType: 'sale',
+      entityId: event.params.saleId,
+      sourceEventId: `${event.id}:${unreadDelta ? 'reply' : 'documents'}`,
+      sourceUpdateTime: sourceUpdateTime(event.data?.after),
+      priority: 'action_required',
+      payload: { agentId, propertyTitle: after.propertyTitle || 'Proprietate', attachmentCount: documentDelta, pendingReviews: after.pendingReviewCount || 0 },
+    });
+  },
+);
+
 export const notificationEventsCreated = onDocumentCreated(
   {
     document: `${EVENT_COLLECTION}/{eventId}`,
@@ -1134,5 +1201,93 @@ export const viewingTomorrowDigest = onSchedule(
         payload: { agentId, count: data.viewingDates.length, firstViewingDate: data.viewingDates[0] || null, tomorrowDate: range.label },
       });
     });
+  },
+);
+
+export const salesDailyDigest = onSchedule(
+  {
+    schedule: '0 8 * * *',
+    timeZone: BUCHAREST_TIME_ZONE,
+    region: REGION,
+    memory: '512MiB',
+    timeoutSeconds: 240,
+    retryCount: 3,
+  },
+  async () => {
+    const snapshot = await db.collectionGroup('sales').get();
+    const grouped = new Map<string, { agencyId: string; agentId: string; saleCount: number; pendingReviews: number; overdueActions: number }>();
+    const currentTime = Date.now();
+    for (const sale of snapshot.docs) {
+      const data = sale.data();
+      if (['completed', 'cancelled'].includes(stringValue(data.stage))) continue;
+      const agentId = nullableString(data.agentId);
+      const parts = sale.ref.path.split('/');
+      const agencyId = parts[0] === 'agencies' ? parts[1] : '';
+      if (!agentId || !agencyId || isDemoAgency(agencyId)) continue;
+      const key = `${agencyId}:${agentId}`;
+      const current = grouped.get(key) || { agencyId, agentId, saleCount: 0, pendingReviews: 0, overdueActions: 0 };
+      current.saleCount += 1;
+      current.pendingReviews += Number(data.pendingReviewCount || 0);
+      const actionMillis = typeof data.nextActionAt === 'string' ? Date.parse(data.nextActionAt) : data.nextActionAt instanceof Timestamp ? data.nextActionAt.toMillis() : Number.NaN;
+      if (Number.isFinite(actionMillis) && actionMillis < currentTime) current.overdueActions += 1;
+      grouped.set(key, current);
+    }
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: BUCHAREST_TIME_ZONE }).format(new Date());
+    await runInChunks([...grouped.values()].filter((item) => item.pendingReviews || item.overdueActions), async (item) => {
+      await createNotificationEvent({
+        type: 'sale.daily_digest', agencyId: item.agencyId, entityType: 'saleDigest', entityId: `${item.agentId}:${date}`,
+        sourceEventId: `sale-digest:${item.agentId}:${date}`, priority: 'reminder', payload: { ...item, date },
+      });
+    });
+  },
+);
+
+export const salesRetentionCleanup = onSchedule(
+  {
+    schedule: '30 3 * * *',
+    timeZone: BUCHAREST_TIME_ZONE,
+    region: REGION,
+    memory: '512MiB',
+    timeoutSeconds: 540,
+    retryCount: 3,
+  },
+  async () => {
+    const snapshot = await db.collectionGroup('sales').limit(5000).get();
+    const currentTime = Date.now();
+    let deletedAttachments = 0;
+    let redactedSales = 0;
+    await runInChunks(snapshot.docs, async (saleSnapshot) => {
+      const data = saleSnapshot.data();
+      const policy = (data.retentionPolicy || {}) as Record<string, unknown>;
+      const attachmentDays = Math.max(30, Number(policy.attachmentRetentionDays || 365));
+      const completedDays = Math.max(365, Number(policy.completedSaleRetentionDays || 1825));
+      const toMillis = (value: unknown) => typeof value === 'string' ? Date.parse(value) : value instanceof Timestamp ? value.toMillis() : Number.NaN;
+      const completedAt = toMillis(data.completedAt);
+      const checklist = Array.isArray(data.checklist) ? data.checklist as Array<Record<string, unknown>> : [];
+      let checklistChanged = false;
+      const nextChecklist = await Promise.all(checklist.map(async (item) => {
+        const receivedAt = toMillis(item.receivedAt);
+        const expiredByAttachmentPolicy = Number.isFinite(receivedAt) && receivedAt + attachmentDays * 86_400_000 <= currentTime;
+        const expiredByCompletedPolicy = Number.isFinite(completedAt) && completedAt + completedDays * 86_400_000 <= currentTime;
+        if (!item.storagePath || (!expiredByAttachmentPolicy && !expiredByCompletedPolicy)) return item;
+        await getStorage().bucket().file(String(item.storagePath)).delete({ ignoreNotFound: true }).catch((error) => logger.warn('Sales attachment retention delete failed.', { path: item.storagePath, error: error instanceof Error ? error.message : String(error) }));
+        checklistChanged = true;
+        deletedAttachments += 1;
+        return { ...item, storagePath: null, downloadUrl: null, revokedAt: new Date().toISOString(), status: 'expired', reviewStatus: 'rejected' };
+      }));
+      const shouldRedact = Number.isFinite(completedAt) && completedAt + completedDays * 86_400_000 <= currentTime && data.dataRetentionState !== 'redacted';
+      const batch = db.batch();
+      if (checklistChanged) batch.set(saleSnapshot.ref, { checklist: nextChecklist, retentionLastRunAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
+      if (shouldRedact) {
+        const messages = await saleSnapshot.ref.collection('emailMessages').limit(450).get();
+        for (const message of messages.docs) batch.set(message.ref, { bodyText: '[Conținut eliminat conform politicii de retenție]', bodyHtml: null, fromEmail: null, to: [], questions: [], attachmentNames: [], updatedAt: new Date().toISOString() }, { merge: true });
+        const participants = (Array.isArray(data.participants) ? data.participants : []).map((participant: Record<string, unknown>) => ({ ...participant, email: '', phone: null }));
+        batch.set(saleSnapshot.ref, { participants, dataRetentionState: 'redacted', dataRedactedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { merge: true });
+        redactedSales += 1;
+      }
+      if (checklistChanged || shouldRedact) batch.set(saleSnapshot.ref.collection('audit').doc(), { agencyId: String(data.agencyId || ''), saleId: saleSnapshot.id, actorUid: null, actorType: 'system', action: shouldRedact ? 'retention.sale_redacted' : 'retention.attachments_deleted', entityType: 'sale', entityId: saleSnapshot.id, summary: shouldRedact ? 'Datele personale au fost eliminate conform retenției' : 'Atașamente expirate eliminate conform retenției', metadata: { deletedAttachments: nextChecklist.filter((item, index) => item.storagePath !== checklist[index]?.storagePath).length }, createdAt: new Date().toISOString(), expiresAt: new Date(currentTime + 7 * 365 * 86_400_000).toISOString() });
+      if (checklistChanged || shouldRedact) await batch.commit();
+    });
+    logger.info('Sales retention cleanup completed.', { scannedSales: snapshot.size, deletedAttachments, redactedSales });
   },
 );

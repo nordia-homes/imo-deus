@@ -13,6 +13,7 @@ let appIsQuitting = false;
 let mainWindow = null;
 let localFacebookRunner = null;
 let runnerProcess = null;
+let gmailRunnerProcess = null;
 const activeNativeNotifications = new Set();
 let pendingNotificationNavigation = null;
 
@@ -45,6 +46,14 @@ let runnerStatus = {
   totalCount: 0,
 };
 let currentSession = null;
+let lastGmailSession = null;
+let gmailRunnerStatus = {
+  state: 'idle',
+  message: 'Gmail runner este pregătit.',
+  jobId: null,
+  saleId: null,
+  messageRecordId: null,
+};
 
 function isIgnorableRunnerStderr(message) {
   const normalized = message.toLowerCase();
@@ -66,6 +75,10 @@ function isIgnorableRunnerStderr(message) {
 
 function getRunnerProfileDir() {
   return path.join(app.getPath('userData'), 'facebook-profile');
+}
+
+function getGmailRunnerProfileDir() {
+  return path.join(app.getPath('userData'), 'gmail-runner-profile');
 }
 
 function getOlxProfileDir() {
@@ -488,6 +501,71 @@ async function writeSessionToDisk(session) {
   return sessionPath;
 }
 
+async function writeGmailSessionToDisk(session) {
+  const runnerDir = path.join(app.getPath('userData'), 'gmail-runner');
+  await fs.mkdir(runnerDir, { recursive: true });
+  const safeJobId = String(session.jobId || Date.now()).replace(/[^a-zA-Z0-9_-]/g, '');
+  const sessionPath = path.join(runnerDir, `gmail-session-${safeJobId}.json`);
+  await fs.writeFile(sessionPath, `${JSON.stringify(session, null, 2)}\n`, 'utf8');
+  return sessionPath;
+}
+
+function emitGmailRunnerStatus() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('gmail-runner:status-changed', gmailRunnerStatus);
+  }
+}
+
+function setGmailRunnerStatus(nextStatus) {
+  gmailRunnerStatus = { ...gmailRunnerStatus, ...nextStatus };
+  emitGmailRunnerStatus();
+}
+
+function startGmailRunnerProcess(sessionPath) {
+  if (gmailRunnerProcess) {
+    gmailRunnerProcess.kill();
+    gmailRunnerProcess = null;
+  }
+  const workerPath = path.join(__dirname, 'automation', 'gmail-worker.mjs');
+  gmailRunnerProcess = spawn(process.execPath, [
+    workerPath,
+    '--session', sessionPath,
+    '--profile-dir', getGmailRunnerProfileDir(),
+  ], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+  });
+  const child = gmailRunnerProcess;
+  let stdoutBuffer = '';
+  child.stdout.on('data', (chunk) => {
+    stdoutBuffer += chunk.toString();
+    const lines = stdoutBuffer.split(/\r?\n/);
+    stdoutBuffer = lines.pop() || '';
+    for (const line of lines) {
+      try {
+        const payload = JSON.parse(line);
+        if (payload.type === 'status' && payload.status) setGmailRunnerStatus(payload.status);
+      } catch {
+        // Ignore Chromium diagnostics that are not part of the runner protocol.
+      }
+    }
+  });
+  child.stderr.on('data', (chunk) => {
+    const message = chunk.toString().trim();
+    if (!message || isIgnorableRunnerStderr(message)) return;
+    setGmailRunnerStatus({ state: 'error', message });
+  });
+  child.on('exit', (code) => {
+    void fs.rm(sessionPath, { force: true }).catch(() => undefined);
+    if (gmailRunnerProcess === child) gmailRunnerProcess = null;
+    if (code && gmailRunnerStatus.state !== 'error') {
+      setGmailRunnerStatus({ state: 'error', message: `Gmail runner s-a închis cu codul ${code}.` });
+    } else if (!code && ['starting', 'needs_login', 'preparing', 'waiting_for_send'].includes(gmailRunnerStatus.state)) {
+      setGmailRunnerStatus({ state: 'stopped', message: 'Fereastra Gmail a fost închisă înainte de confirmarea trimiterii.' });
+    }
+  });
+}
+
 async function readSessionFromDisk(sessionPath) {
   const raw = await fs.readFile(sessionPath, 'utf8');
   return JSON.parse(raw);
@@ -740,6 +818,7 @@ app.whenReady().then(async () => {
 app.on('before-quit', () => {
   appIsQuitting = true;
   void localFacebookRunner?.stop();
+  gmailRunnerProcess?.kill();
 });
 
 app.on('window-all-closed', () => {
@@ -787,6 +866,68 @@ ipcMain.handle('property-presentation:generate-pdf', async (_event, input) => {
 
 ipcMain.handle('olx-phone:get-number', async (_event, { url }) => {
   return getOlxPhoneNumberFromLocalBrowser(url);
+});
+
+ipcMain.handle('gmail-runner:select-files', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Selectează documentele pentru Gmail',
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: 'Documente', extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'webp', 'txt'] },
+      { name: 'Toate fișierele', extensions: ['*'] },
+    ],
+  });
+  if (result.canceled) return { canceled: true, files: [] };
+  const files = await Promise.all(result.filePaths.map(async (filePath) => {
+    const stat = await fs.stat(filePath);
+    return { name: path.basename(filePath), path: filePath, size: stat.size };
+  }));
+  return { canceled: false, files };
+});
+
+ipcMain.handle('gmail-runner:start', async (_event, { session }) => {
+  lastGmailSession = { ...session, attempt: 1 };
+  const sessionPath = await writeGmailSessionToDisk(session);
+  setGmailRunnerStatus({
+    state: 'starting',
+    message: 'Pornesc Gmail Local Runner…',
+    jobId: session.jobId,
+    saleId: session.saleId,
+    messageRecordId: session.messageRecordId,
+    completedFields: [],
+    missingFields: [],
+    attempt: 1,
+    canRetry: false,
+  });
+  startGmailRunnerProcess(sessionPath);
+  return gmailRunnerStatus;
+});
+
+ipcMain.handle('gmail-runner:retry', async () => {
+  if (!lastGmailSession) return setGmailRunnerStatus({ state: 'error', message: 'Nu există o sesiune Gmail de reluat.', canRetry: false, diagnosticCode: 'NO_RESUMABLE_SESSION' });
+  const attempt = Number(lastGmailSession.attempt || 1) + 1;
+  lastGmailSession = { ...lastGmailSession, attempt, jobId: `${lastGmailSession.jobId}-retry-${attempt}` };
+  const sessionPath = await writeGmailSessionToDisk(lastGmailSession);
+  setGmailRunnerStatus({ state: 'starting', message: `Reiau pregătirea Gmail (încercarea ${attempt})…`, jobId: lastGmailSession.jobId, saleId: lastGmailSession.saleId, messageRecordId: lastGmailSession.messageRecordId, completedFields: [], missingFields: [], attempt, canRetry: false, diagnosticCode: null });
+  startGmailRunnerProcess(sessionPath);
+  return gmailRunnerStatus;
+});
+
+ipcMain.handle('gmail-runner:get-status', async () => gmailRunnerStatus);
+
+ipcMain.handle('gmail-runner:stop', async () => {
+  gmailRunnerProcess?.kill();
+  gmailRunnerProcess = null;
+  setGmailRunnerStatus({ state: 'stopped', message: 'Gmail runner a fost oprit.' });
+  return gmailRunnerStatus;
+});
+
+ipcMain.handle('gmail-runner:reset-profile', async () => {
+  gmailRunnerProcess?.kill();
+  gmailRunnerProcess = null;
+  await fs.rm(getGmailRunnerProfileDir(), { recursive: true, force: true });
+  setGmailRunnerStatus({ state: 'idle', message: 'Profilul Gmail local a fost resetat.' });
+  return gmailRunnerStatus;
 });
 
 ipcMain.handle('facebook-runner:save-session-file', async (_event, { session }) => {

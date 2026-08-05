@@ -11,6 +11,9 @@ export const NOTIFICATION_CATEGORY_KEYS = [
   'facebookFailed',
   'propertyAssignments',
   'clientPortalFeedback',
+  'salesReplies',
+  'salesDocuments',
+  'salesDigest',
 ] as const;
 
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORY_KEYS)[number];
@@ -26,6 +29,9 @@ export const NOTIFICATION_CATEGORY_LABELS: Record<NotificationCategory, string> 
   facebookFailed: 'Publicare Facebook esuata',
   propertyAssignments: 'Proprietate atribuita sau realocata',
   clientPortalFeedback: 'Feedback din portalul clientului',
+  salesReplies: 'Răspunsuri în dosarele de vânzare',
+  salesDocuments: 'Documente noi în dosarele de vânzare',
+  salesDigest: 'Rezumat zilnic al tranzacțiilor',
 };
 
 export type NotificationPreferences = {
