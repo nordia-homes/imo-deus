@@ -188,3 +188,13 @@ env:
     value: studio-652232171-42fb6
     availability:
       - RUNTIME
+
+  - variable: SALES_DOCUMENT_SCAN_URL
+    value: "https://imodeus-document-scanner-lz5qfusjya-uc.a.run.app/scan"
+    availability:
+      - RUNTIME
+
+  - variable: SALES_DOCUMENT_SCAN_TOKEN
+    secret: SALES_DOCUMENT_SCAN_TOKEN
+    availability:
+      - RUNTIME
