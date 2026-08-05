@@ -299,10 +299,20 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
   }, [open, sale?.id]);
 
   useEffect(() => {
-    if (!open || !window.imodeusDesktop) return;
-    void window.imodeusDesktop.isDesktop().then(setIsDesktop).catch(() => setIsDesktop(false));
-    void window.imodeusDesktop.getGmailRunnerStatus().then(setRunnerStatus).catch(() => undefined);
-    return window.imodeusDesktop.onGmailRunnerStatusChanged((status) => {
+    const desktop = window.imodeusDesktop;
+    if (
+      !open
+      || !desktop
+      || typeof desktop.getGmailRunnerStatus !== 'function'
+      || typeof desktop.onGmailRunnerStatusChanged !== 'function'
+      || typeof desktop.startGmailRunner !== 'function'
+    ) {
+      setIsDesktop(false);
+      return;
+    }
+    void desktop.isDesktop().then(setIsDesktop).catch(() => setIsDesktop(false));
+    void desktop.getGmailRunnerStatus().then(setRunnerStatus).catch(() => undefined);
+    return desktop.onGmailRunnerStatusChanged((status) => {
       setRunnerStatus(status);
       const active = activeMessageRef.current;
       if (!active || !agencyId || status.messageRecordId !== active.messageId) return;
@@ -457,7 +467,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
   };
 
   const selectLocalFiles = async () => {
-    if (!window.imodeusDesktop) {
+    if (typeof window.imodeusDesktop?.selectGmailRunnerFiles !== 'function') {
       toast({ title: 'Atașamente locale indisponibile', description: 'Deschide Imodeus Desktop pentru atașarea automată. În browser poți atașa manual după deschiderea Gmail.' });
       return;
     }
@@ -521,7 +531,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
         .filter((item) => selectedDocumentIds.includes(item.id) && item.downloadUrl)
         .map((item) => ({ name: item.fileName || item.label, url: item.downloadUrl }));
 
-      if (isDesktop && window.imodeusDesktop) {
+      if (isDesktop && typeof window.imodeusDesktop?.startGmailRunner === 'function') {
         const status = await window.imodeusDesktop.startGmailRunner({
           session: {
             jobId: crypto.randomUUID(),
