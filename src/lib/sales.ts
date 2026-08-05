@@ -289,5 +289,6 @@ export function renderSalesTemplate(
     (result, [placeholder, replacement]) => result.split(placeholder).join(replacement),
     value
   );
-  return { subject: replace(template.subject), body: replace(template.body) };
+  const bodyHtml = template.bodyHtml ? Object.entries(values).reduce((result, [placeholder, replacement]) => result.split(placeholder).join(replacement.replace(/\\n/g, '<br>')), template.bodyHtml) : null;
+  return { subject: replace(template.subject), body: replace(template.body), bodyHtml };
 }

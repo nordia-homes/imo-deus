@@ -560,8 +560,8 @@ function startGmailRunnerProcess(sessionPath) {
     if (gmailRunnerProcess === child) gmailRunnerProcess = null;
     if (code && gmailRunnerStatus.state !== 'error') {
       setGmailRunnerStatus({ state: 'error', message: `Gmail runner s-a închis cu codul ${code}.` });
-    } else if (!code && ['starting', 'needs_login', 'preparing', 'waiting_for_send'].includes(gmailRunnerStatus.state)) {
-      setGmailRunnerStatus({ state: 'stopped', message: 'Fereastra Gmail a fost închisă înainte de confirmarea trimiterii.' });
+    } else if (!code && ['starting', 'needs_login', 'connected', 'preparing', 'waiting_for_send'].includes(gmailRunnerStatus.state)) {
+      setGmailRunnerStatus({ state: 'stopped', message: gmailRunnerStatus.state === 'connected' ? 'Fereastra Gmail a fost închisă.' : 'Fereastra Gmail a fost închisă înainte de confirmarea trimiterii.' });
     }
   });
 }
@@ -883,6 +883,15 @@ ipcMain.handle('gmail-runner:select-files', async () => {
     return { name: path.basename(filePath), path: filePath, size: stat.size };
   }));
   return { canceled: false, files };
+});
+
+ipcMain.handle('gmail-runner:connect', async () => {
+  const session = { jobId: `gmail-connect-${Date.now()}`, mode: 'connect', attachments: [] };
+  lastGmailSession = null;
+  const sessionPath = await writeGmailSessionToDisk(session);
+  setGmailRunnerStatus({ state: 'starting', message: 'Deschid profilul Gmail local…', jobId: session.jobId, completedFields: [], missingFields: [], attempt: 1, canRetry: false });
+  startGmailRunnerProcess(sessionPath);
+  return gmailRunnerStatus;
 });
 
 ipcMain.handle('gmail-runner:start', async (_event, { session }) => {

@@ -43,7 +43,6 @@ import { useToast } from '@/hooks/use-toast';
 import type { DesktopGmailRunnerStatus, GmailRunnerAttachment } from '@/lib/desktop/gmail-runner';
 import {
   DEFAULT_SALES_EMAIL_TEMPLATES,
-  getSaleReadiness,
   participantRoleLabel,
   renderSalesTemplate,
 } from '@/lib/sales';
@@ -68,7 +67,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+import { GmailRichTextEditor } from '@/components/sales/GmailRichTextEditor';
+import { isEmailAddress, parseEmailList, plainTextToEmailHtml } from '@/lib/email-compose';
 import { SalesOperationsPanel } from '@/components/sales/SalesOperationsPanel';
 
 type Connection = {
@@ -82,6 +82,8 @@ type Props = {
   sale: SaleTransaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialPanel?: 'context' | 'documents';
+  onOpenSetup?: (sale: SaleTransaction) => void;
 };
 
 const panelClass = 'rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] shadow-[0_18px_60px_-44px_rgba(15,23,42,.7)]';
@@ -206,6 +208,7 @@ function statusCopy(status: DesktopGmailRunnerStatus | null) {
     idle: 'Gmail este pregătit',
     starting: 'Pornesc Gmail…',
     needs_login: 'Autentifică-te în Gmail',
+    connected: 'Contul Gmail este conectat',
     preparing: 'Completez mesajul…',
     waiting_for_send: 'Mesaj pregătit — verifică și apasă Trimite',
     sent_ui_confirmed: 'Trimitere confirmată în Gmail',
@@ -215,7 +218,7 @@ function statusCopy(status: DesktopGmailRunnerStatus | null) {
   return titles[status.state];
 }
 
-export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
+export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'context', onOpenSetup }: Props) {
   const firestore = useFirestore();
   const { agencyId, userProfile, user } = useAgency();
   const { toast } = useToast();
@@ -223,6 +226,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
   const [templateId, setTemplateId] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [bodyHtml, setBodyHtml] = useState('');
+  const [showCc, setShowCc] = useState(false);
+  const [ccInput, setCcInput] = useState('');
+  const [ccRecipients, setCcRecipients] = useState<string[]>([]);
   const [questions, setQuestions] = useState<SaleEmailQuestion[]>([]);
   const [localFiles, setLocalFiles] = useState<GmailRunnerAttachment[]>([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
@@ -292,6 +299,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
     setTemplateId('');
     setSubject('');
     setBody('');
+    setBodyHtml('');
+    setShowCc(false);
+    setCcInput('');
+    setCcRecipients([]);
     setQuestions([]);
     setLocalFiles([]);
     setSelectedDocumentIds([]);
@@ -337,6 +348,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
     const rendered = renderSalesTemplate(template, { ...sale, checklist }, recipient, { name: userProfile?.name || sale.agentName });
     setSubject(rendered.subject);
     setBody(rendered.body);
+    setBodyHtml(rendered.bodyHtml || plainTextToEmailHtml(rendered.body));
+    setCcRecipients(template.defaultCc || []);
+    setShowCc(Boolean(template.defaultCc?.length));
     setQuestions((template.defaultQuestions || []).map(makeQuestion));
   };
 
@@ -383,6 +397,8 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
         stage: sale.stage,
         subject: subject.trim(),
         body: body.trim(),
+        bodyHtml,
+        defaultCc: ccRecipients,
         defaultQuestions: questions.map((item) => item.text.trim()).filter(Boolean),
         signatureMode: 'agent',
         }),
@@ -484,17 +500,19 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
 
   const prepareInGmail = async () => {
     if (!sale) return;
-    const readiness = getSaleReadiness({ ...sale, participants, checklist, notary });
-    if (!readiness.ready) {
-      toast({ title: 'Dosarul trebuie completat înainte de trimitere', description: readiness.issues.slice(0, 3).map((issue) => issue.label).join(', '), variant: 'destructive' });
-      return;
-    }
     if (!sale || !agencyId || !recipient?.email.trim()) {
       toast({ title: 'Completează destinatarul', description: 'Numele și adresa de email sunt necesare înainte de deschiderea Gmail.', variant: 'destructive' });
       return;
     }
     if (!subject.trim() || !body.trim()) {
       toast({ title: 'Mesaj incomplet', description: 'Adaugă subiectul și conținutul mesajului.', variant: 'destructive' });
+      return;
+    }
+    const pendingCc = parseEmailList(ccInput);
+    const finalCc = [...new Set([...ccRecipients, ...pendingCc])];
+    const invalidCc = finalCc.filter((email) => !isEmailAddress(email));
+    if (invalidCc.length) {
+      toast({ title: 'Adresă CC invalidă', description: invalidCc.join(', '), variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -504,6 +522,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
         ? `\n\nÎntrebări pentru confirmare:\n${questions.filter((item) => item.text.trim()).map((item, index) => `${index + 1}. ${item.text.trim()}`).join('\n')}`
         : '';
       const finalBody = `${body.trim()}${questionText}`;
+      const finalBodyHtml = `${bodyHtml || plainTextToEmailHtml(body.trim())}${questionText ? plainTextToEmailHtml(questionText) : ''}`;
       const messageRef = doc(collection(firestore, 'agencies', agencyId, 'sales', sale.id, 'emailMessages'));
       const now = new Date().toISOString();
       const message: SaleEmailMessage = {
@@ -516,8 +535,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
         fromName: userProfile?.name || sale.agentName,
         fromEmail: userProfile?.email || null,
         to: [recipient.email.trim()],
+        cc: finalCc,
         subject: trackingSubject,
         bodyText: finalBody,
+        bodyHtml: finalBodyHtml,
         questions,
         attachmentNames: [...localFiles.map((item) => item.name), ...checklist.filter((item) => selectedDocumentIds.includes(item.id) && item.fileName).map((item) => item.fileName as string)],
         sendEvidence: { level: 'none', source: isDesktop ? 'gmail_runner' : 'web_fallback', observedAt: now, observedByUid: userProfile?.id || null, details: 'Mesaj pregătit; trimiterea nu este încă confirmată.' },
@@ -539,8 +560,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
             messageRecordId: messageRef.id,
             trackingCode: sale.trackingCode,
             to: [recipient.email.trim()],
+            cc: finalCc,
             subject: trackingSubject,
             bodyText: finalBody,
+            bodyHtml: finalBodyHtml,
             attachments: [...storedAttachments, ...localFiles],
           },
         });
@@ -550,6 +573,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
         composeUrl.searchParams.set('view', 'cm');
         composeUrl.searchParams.set('fs', '1');
         composeUrl.searchParams.set('to', recipient.email.trim());
+        if (finalCc.length) composeUrl.searchParams.set('cc', finalCc.join(','));
         composeUrl.searchParams.set('su', trackingSubject);
         composeUrl.searchParams.set('body', finalBody);
         window.open(composeUrl.toString(), '_blank', 'noopener,noreferrer');
@@ -575,6 +599,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
               <div className="min-w-0"><DialogTitle className="truncate text-lg">Email · {sale.propertyTitle}</DialogTitle><DialogDescription className="truncate text-[var(--app-muted-foreground)]">{sale.propertyAddress} · {sale.trackingCode}</DialogDescription></div>
             </div>
             <div className="flex items-center gap-2">
+              {onOpenSetup ? <Button variant="outline" size="sm" className="hidden rounded-xl border-emerald-500/25 bg-emerald-500/10 text-emerald-700 md:flex" onClick={() => onOpenSetup({ ...sale, participants, checklist, notary })}><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Completează ghidat</Button> : null}
               <Badge variant="outline" className="hidden rounded-full border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-600 md:flex"><ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Agentul confirmă trimiterea</Badge>
               <Button variant="ghost" size="icon" className="rounded-full" onClick={() => onOpenChange(false)}><X className="h-5 w-5" /></Button>
             </div>
@@ -597,12 +622,24 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
                 <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
                   <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Către</div>
                   <div className="p-3">
-                    <Select value={recipientId} onValueChange={(value) => { setRecipientId(value); setTemplateId(''); }}>
-                      <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder="Alege cumpărătorul, proprietarul sau notarul" /></SelectTrigger>
-                      <SelectContent>{participants.map((item) => <SelectItem key={item.id} value={item.id}>{participantRoleLabel(item.role)} · {item.name || 'Nume necompletat'} {item.email ? `— ${item.email}` : ''}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Select value={recipientId} onValueChange={(value) => { setRecipientId(value); setTemplateId(''); }}>
+                        <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder="Alege cumpărătorul, proprietarul sau notarul" /></SelectTrigger>
+                        <SelectContent>{participants.map((item) => <SelectItem key={item.id} value={item.id}>{participantRoleLabel(item.role)} · {item.name || 'Nume necompletat'} {item.email ? `— ${item.email}` : ''}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Button type="button" variant="ghost" size="sm" className="rounded-lg text-xs" onClick={() => setShowCc((value) => !value)}>Cc</Button>
+                    </div>
                   </div>
                 </div>
+                {showCc ? (
+                  <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
+                    <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Cc</div>
+                    <div className="flex flex-wrap items-center gap-1.5 p-3">
+                      {ccRecipients.map((email) => <span key={email} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs', isEmailAddress(email) ? 'bg-sky-500/10 text-sky-700' : 'bg-red-500/10 text-red-700')}>{email}<button type="button" onClick={() => setCcRecipients((current) => current.filter((item) => item !== email))}><X className="h-3 w-3" /></button></span>)}
+                      <Input value={ccInput} onChange={(event) => setCcInput(event.target.value)} onBlur={() => { const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } }} onKeyDown={(event) => { if (['Enter', ',', ';'].includes(event.key)) { event.preventDefault(); const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } } }} className={cn(inputClass, 'h-9 min-w-[220px] flex-1 rounded-xl border-0 bg-transparent shadow-none focus-visible:ring-0')} placeholder="Adaugă una sau mai multe adrese CC" />
+                    </div>
+                  </div>
+                ) : null}
                 <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
                   <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Template</div>
                   <div className="p-3">
@@ -616,8 +653,8 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
                   <Label htmlFor="sales-email-subject" className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Subiect</Label>
                   <div className="p-3"><Input id="sales-email-subject" value={subject} onChange={(event) => setSubject(event.target.value)} className={cn(inputClass, 'h-11 rounded-xl border-0 bg-transparent shadow-none focus-visible:ring-0')} placeholder="Subiect clar și specific" /></div>
                 </div>
-                <div className="p-3 md:p-5">
-                  <Textarea value={body} onChange={(event) => setBody(event.target.value)} className={cn(inputClass, 'min-h-[330px] resize-none rounded-2xl border-0 bg-transparent p-2 text-[15px] leading-7 shadow-none focus-visible:ring-0')} placeholder="Scrie mesajul aici…" />
+                <div className="bg-[#f6f8fc] p-3 md:p-5">
+                  <GmailRichTextEditor value={bodyHtml} onChange={(value) => { setBodyHtml(value.html); setBody(value.text); }} minHeight={330} variables={['{{recipient.name}}', '{{property.title}}', '{{property.address}}', '{{documents.list}}', '{{notary.summary}}', '{{agent.name}}']} />
                 </div>
               </div>
 
@@ -637,7 +674,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange }: Props) {
           </ScrollArea>
 
           <div className="flex min-h-0 flex-col bg-muted/30">
-            <Tabs defaultValue="context" className="flex min-h-0 flex-1 flex-col">
+            <Tabs key={`${sale.id}-${initialPanel}`} defaultValue={initialPanel} className="flex min-h-0 flex-1 flex-col">
               <TabsList className="m-3 grid h-auto grid-cols-3 gap-1 rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-1 sm:grid-cols-6">
                 <TabsTrigger value="context" className="rounded-xl px-2 py-2.5 text-xs"><UserRound className="mr-1 h-3.5 w-3.5" /> Date</TabsTrigger>
                 <TabsTrigger value="templates" className="rounded-xl px-2 py-2.5 text-xs"><Sparkles className="mr-1 h-3.5 w-3.5" /> Template</TabsTrigger>

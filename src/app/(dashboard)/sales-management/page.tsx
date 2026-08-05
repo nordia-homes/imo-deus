@@ -40,7 +40,6 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   createSaleFromProperty,
-  getSaleReadiness,
   isReservedProperty,
   isSoldProperty,
   SALE_STAGE_META,
@@ -82,15 +81,13 @@ function nextStage(stage: SaleStage): SaleStage | null {
   return STAGE_ORDER[index + 1];
 }
 
-function SaleCard({ sale, onOpen, onStageChange }: { sale: SaleTransaction; onOpen: () => void; onStageChange: (stage: SaleStage) => void }) {
+function SaleCard({ sale, onEmail, onDossier, onStageChange }: { sale: SaleTransaction; onEmail: () => void; onDossier: () => void; onStageChange: (stage: SaleStage) => void }) {
   const progress = documentProgress(sale);
   const buyer = sale.participants?.find((item) => item.role === 'buyer');
   const owner = sale.participants?.find((item) => item.role === 'owner');
   const followingStage = nextStage(sale.stage);
-  const openDossier = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onOpen();
+  const runAction = (event: ReactMouseEvent<HTMLButtonElement>, action: () => void) => {
+    event.preventDefault(); event.stopPropagation(); action();
   };
   return (
     <article data-testid={`sale-card-${sale.id}`} className="group overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] shadow-[0_24px_70px_-52px_rgba(15,23,42,.9)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_80px_-48px_rgba(15,23,42,.85)]">
@@ -126,8 +123,8 @@ function SaleCard({ sale, onOpen, onStageChange }: { sale: SaleTransaction; onOp
         <div className="flex flex-col justify-between border-t border-[var(--app-surface-border)] bg-muted/30 p-5 md:border-l md:border-t-0">
           <div><p className="text-xs font-semibold uppercase tracking-[.15em] text-[var(--app-muted-foreground)]">Următoarea acțiune</p><p className="mt-2 text-sm font-medium leading-6">{sale.nextAction || SALE_STAGE_META[sale.stage].description}</p>{sale.nextActionAt ? <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600"><Clock3 className="h-3.5 w-3.5" />{new Date(sale.nextActionAt).toLocaleString('ro-RO')}</p> : null}</div>
           <div className="mt-5 space-y-2">
-            <Button type="button" onClick={openDossier} className="w-full rounded-xl bg-emerald-600 text-white shadow-[0_14px_28px_-15px_rgba(16,185,129,.9)] hover:bg-emerald-700"><Mail className="mr-2 h-4 w-4" /> Trimite e-mail</Button>
-            <Button type="button" variant="outline" onClick={openDossier} className="w-full rounded-xl border-[var(--app-surface-border)]"><FolderKanban className="mr-2 h-4 w-4" /> Deschide dosarul</Button>
+            <Button type="button" onClick={(event) => runAction(event, onEmail)} className="w-full rounded-xl bg-emerald-600 text-white shadow-[0_14px_28px_-15px_rgba(16,185,129,.9)] hover:bg-emerald-700"><Mail className="mr-2 h-4 w-4" /> Trimite e-mail</Button>
+            <Button type="button" variant="outline" onClick={(event) => runAction(event, onDossier)} className="w-full rounded-xl border-[var(--app-surface-border)]"><FolderKanban className="mr-2 h-4 w-4" /> Deschide dosarul</Button>
             {followingStage ? <Button variant="ghost" className="w-full rounded-xl text-xs" onClick={() => onStageChange(followingStage)}>Avansează la {SALE_STAGE_META[followingStage].shortLabel}<ChevronRight className="ml-1 h-3.5 w-3.5" /></Button> : null}
           </div>
         </div>
@@ -143,6 +140,7 @@ export default function SalesManagementPage() {
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState<'all' | 'active' | SaleStage>('active');
   const [selectedSale, setSelectedSale] = useState<SaleTransaction | null>(null);
+  const [initialPanel, setInitialPanel] = useState<'context' | 'documents'>('context');
   const [setupSale, setSetupSale] = useState<SaleTransaction | null>(null);
   const [creatingPropertyId, setCreatingPropertyId] = useState<string | null>(null);
 
@@ -191,7 +189,8 @@ export default function SalesManagementPage() {
       const sale = createSaleFromProperty(property, agencyId, { id: user.uid, name: userProfile?.name || user.displayName || 'Agent' });
       await setDoc(doc(firestore, 'agencies', agencyId, 'sales', property.id), sale);
       toast({ title: 'Dosarul de vânzare a fost creat', description: 'Completează cumpărătorul și documentele necesare.' });
-      setSetupSale({ id: property.id, ...sale });
+      setInitialPanel('context');
+      setSelectedSale({ id: property.id, ...sale });
     } catch (error) {
       toast({ title: 'Dosarul nu a putut fi creat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
     } finally {
@@ -215,20 +214,15 @@ export default function SalesManagementPage() {
     }
   };
 
-  const openSale = (sale: SaleTransaction) => {
+  const openSale = (sale: SaleTransaction, panel: 'context' | 'documents' = 'context') => {
     try {
       const workspaceSale = normalizeSaleForWorkspace(sale);
-      if (workspaceSale.setupStatus !== 'ready' || !getSaleReadiness(workspaceSale).ready) {
-        setSetupSale(workspaceSale);
-        return;
-      }
+      setInitialPanel(panel);
       setSelectedSale(workspaceSale);
-      if (workspaceSale.unreadReplyCount && agencyId) {
-        void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', workspaceSale.id), { unreadReplyCount: 0, updatedAt: new Date().toISOString() });
-      }
+      if (workspaceSale.unreadReplyCount && agencyId) void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', workspaceSale.id), { unreadReplyCount: 0, updatedAt: new Date().toISOString() });
     } catch (error) {
       console.error('Sales dossier could not be opened', error);
-      toast({ title: 'Dosarul nu a putut fi deschis', description: 'Datele dosarului au un format neasteptat. Reincarca pagina si incearca din nou.', variant: 'destructive' });
+      toast({ title: 'Dosarul nu a putut fi deschis', description: 'Datele dosarului au un format neașteptat.', variant: 'destructive' });
     }
   };
 
@@ -238,8 +232,8 @@ export default function SalesManagementPage() {
     if (!linkedSaleId) return;
     const linkedSale = allSales.find((item) => item.id === linkedSaleId);
     if (!linkedSale) return;
-    if (linkedSale.setupStatus !== 'ready' || !getSaleReadiness(linkedSale).ready) setSetupSale(linkedSale);
-    else setSelectedSale(linkedSale);
+    setInitialPanel('context');
+    setSelectedSale(normalizeSaleForWorkspace(linkedSale));
   }, [allSales]);
 
   return (
@@ -276,12 +270,12 @@ export default function SalesManagementPage() {
           <div className="flex gap-2 overflow-x-auto pb-1 xl:pb-0">{([{ id: 'active', label: 'Active' }, { id: 'all', label: 'Toate' }, ...STAGE_ORDER.map((stage) => ({ id: stage, label: SALE_STAGE_META[stage].shortLabel })), { id: 'blocked', label: 'Blocate' }] as { id: 'all' | 'active' | SaleStage; label: string }[]).map((item) => <Button key={item.id} size="sm" variant={stageFilter === item.id ? 'default' : 'outline'} className={cn('shrink-0 rounded-full border-[var(--app-surface-border)] px-4', stageFilter === item.id && 'bg-[var(--app-nav-active-bg)] text-[var(--app-nav-active-foreground)] hover:bg-[var(--app-nav-active-bg)]')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}</div>
         </div>
 
-        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[28px]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} onOpen={() => openSale(sale)} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
+        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[28px]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} onEmail={() => openSale(sale, 'context')} onDossier={() => openSale(sale, 'documents')} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
           <div className="rounded-[30px] border border-dashed border-[var(--app-surface-border)] bg-[var(--app-surface)] px-6 py-16 text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-[22px] bg-emerald-500/10 text-emerald-600"><ShieldCheck className="h-7 w-7" /></div><h2 className="mt-5 text-xl font-semibold">{search ? 'Nu am găsit tranzacții' : 'Nicio vânzare în acest filtru'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--app-muted-foreground)]">Dosarele apar aici când o proprietate este rezervată sau marcată ca vândută. Fiecare agent vede tranzacțiile sale, iar administratorul vede întreaga agenție.</p></div>
         )}
       </section>
 
-      <SalesEmailComposer sale={selectedSale} open={Boolean(selectedSale)} onOpenChange={(nextOpen) => { if (!nextOpen) setSelectedSale(null); }} />
+      <SalesEmailComposer sale={selectedSale} open={Boolean(selectedSale)} initialPanel={initialPanel} onOpenSetup={(saleToSetup) => { setSelectedSale(null); setSetupSale(saleToSetup); }} onOpenChange={(nextOpen) => { if (!nextOpen) setSelectedSale(null); }} />
       <SaleSetupWizard sale={setupSale} open={Boolean(setupSale)} onOpenChange={(nextOpen) => { if (!nextOpen) setSetupSale(null); }} onCompleted={(configuredSale) => { setSetupSale(null); setSelectedSale(configuredSale); }} />
     </div>
   );

@@ -254,6 +254,12 @@ async function run() {
       await page.waitForTimeout(2500);
     }
 
+    if (session.mode === 'connect') {
+      emit('status', { status: { state: 'connected', message: 'Contul Gmail este conectat pe acest calculator.', jobId: session.jobId } });
+      while (context.pages().length) await page.waitForTimeout(800);
+      return;
+    }
+
     emit('status', {
       status: {
         state: 'preparing',

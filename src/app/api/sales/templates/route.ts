@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import type { SalesEmailTemplate } from '@/lib/types';
+import { sanitizeEmailHtml } from '@/lib/email-compose';
 
 export const runtime = 'nodejs';
 
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
       stage: input.stage || 'any',
       subject: input.subject.trim().slice(0, 500),
       body: input.body.trim().slice(0, 30_000),
+      bodyHtml: typeof input.bodyHtml === 'string' ? sanitizeEmailHtml(input.bodyHtml.trim()).slice(0, 60_000) : null,
+      defaultCc: Array.isArray(input.defaultCc) ? input.defaultCc.map((item) => String(item).trim().toLowerCase()).filter(Boolean).slice(0, 20) : [],
       defaultQuestions: (input.defaultQuestions || []).map((item) => item.trim()).filter(Boolean).slice(0, 20),
       isSystem: false,
       isActive: true,

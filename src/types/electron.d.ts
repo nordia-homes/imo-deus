@@ -48,6 +48,7 @@ declare global {
       }) => Promise<{ canceled: boolean; filePath?: string | null }>;
       getOlxPhoneNumber: (input: { url: string }) => Promise<{ phone?: string; message?: string }>;
       selectGmailRunnerFiles: () => Promise<{ canceled: boolean; files: GmailRunnerAttachment[] }>;
+      connectGmailRunner: () => Promise<DesktopGmailRunnerStatus>;
       startGmailRunner: (input: StartGmailRunnerInput) => Promise<DesktopGmailRunnerStatus>;
       retryGmailRunner: () => Promise<DesktopGmailRunnerStatus>;
       stopGmailRunner: () => Promise<DesktopGmailRunnerStatus>;

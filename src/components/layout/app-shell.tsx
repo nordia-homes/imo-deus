@@ -29,6 +29,7 @@ import {
   UserRoundCog,
   Video,
   Handshake,
+  MailPlus,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -62,6 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     currentPath.startsWith('/properties') ||
     currentPath.startsWith('/sold-properties') ||
     currentPath.startsWith('/sales-management') ||
+    currentPath.startsWith('/gmail') ||
     currentPath.startsWith('/inbox');
   const publicWebsiteHref = agencyId
     ? buildAgencyPublicUrl(agency ?? { id: agencyId })
@@ -154,6 +156,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Handshake />
                         <span>Gestionare vânzări</span>
                     </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Gmail" asChild isActive={currentPath.startsWith('/gmail')}>
+                    <Link href="/gmail"><MailPlus /><span>Gmail</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

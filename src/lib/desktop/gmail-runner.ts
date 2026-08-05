@@ -23,6 +23,7 @@ export type GmailRunnerState =
   | 'idle'
   | 'starting'
   | 'needs_login'
+  | 'connected'
   | 'preparing'
   | 'waiting_for_send'
   | 'sent_ui_confirmed'

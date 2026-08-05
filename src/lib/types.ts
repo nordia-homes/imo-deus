@@ -1235,6 +1235,8 @@ export type SalesEmailTemplate = {
   stage: SaleStage | 'any';
   subject: string;
   body: string;
+  bodyHtml?: string | null;
+  defaultCc?: string[];
   defaultQuestions?: string[];
   isSystem?: boolean;
   isActive?: boolean;

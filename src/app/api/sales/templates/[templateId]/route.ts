@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import { sanitizeEmailHtml } from '@/lib/email-compose';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +17,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ t
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ message: 'Template-ul nu există.' }, { status: 404 });
     const current = snapshot.data() || {};
-    const input = await request.json() as { action?: string; name?: string; description?: string; subject?: string; body?: string; defaultQuestions?: string[] };
+    const input = await request.json() as { action?: string; name?: string; description?: string; subject?: string; body?: string; bodyHtml?: string; defaultCc?: string[]; defaultQuestions?: string[] };
     const admin = auth.role === 'admin' || auth.role === 'platform_admin';
     if (['approve', 'reject', 'activate', 'deactivate'].includes(input.action || '') && !admin) return NextResponse.json({ message: 'Acțiunea necesită rol de administrator.' }, { status: 403 });
     const now = new Date().toISOString();
@@ -29,6 +30,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ t
     else {
       if (current.createdByUid && current.createdByUid !== auth.uid && !admin) return NextResponse.json({ message: 'Poți edita doar template-urile tale.' }, { status: 403 });
       for (const key of ['name', 'description', 'subject', 'body'] as const) if (typeof input[key] === 'string') patch[key] = input[key]!.trim().slice(0, key === 'body' ? 30_000 : 500);
+      if (typeof input.bodyHtml === 'string') patch.bodyHtml = sanitizeEmailHtml(input.bodyHtml.trim()).slice(0, 60_000);
+      if (Array.isArray(input.defaultCc)) patch.defaultCc = input.defaultCc.map((item) => String(item).trim().toLowerCase()).filter(Boolean).slice(0, 20);
       if (Array.isArray(input.defaultQuestions)) patch.defaultQuestions = input.defaultQuestions.map((item) => String(item).trim()).filter(Boolean).slice(0, 20);
       patch.approvalStatus = 'draft';
     }

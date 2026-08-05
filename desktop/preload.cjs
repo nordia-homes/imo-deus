@@ -22,6 +22,7 @@ const api = {
 
   getOlxPhoneNumber: (input) => ipcRenderer.invoke('olx-phone:get-number', input),
   selectGmailRunnerFiles: () => ipcRenderer.invoke('gmail-runner:select-files'),
+  connectGmailRunner: () => ipcRenderer.invoke('gmail-runner:connect'),
   startGmailRunner: (input) => ipcRenderer.invoke('gmail-runner:start', input),
   retryGmailRunner: () => ipcRenderer.invoke('gmail-runner:retry'),
   stopGmailRunner: () => ipcRenderer.invoke('gmail-runner:stop'),
