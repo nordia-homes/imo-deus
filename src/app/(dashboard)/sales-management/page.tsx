@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { collection, doc, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import {
   AlertTriangle,
@@ -45,6 +45,7 @@ import {
   isSoldProperty,
   SALE_STAGE_META,
 } from '@/lib/sales';
+import { normalizeSaleForWorkspace } from '@/lib/sales-workspace';
 import type { Property, SaleStage, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -86,6 +87,11 @@ function SaleCard({ sale, onOpen, onStageChange }: { sale: SaleTransaction; onOp
   const buyer = sale.participants?.find((item) => item.role === 'buyer');
   const owner = sale.participants?.find((item) => item.role === 'owner');
   const followingStage = nextStage(sale.stage);
+  const openDossier = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onOpen();
+  };
   return (
     <article data-testid={`sale-card-${sale.id}`} className="group overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] shadow-[0_24px_70px_-52px_rgba(15,23,42,.9)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_80px_-48px_rgba(15,23,42,.85)]">
       <div className="grid min-h-[270px] md:grid-cols-[220px_minmax(0,1fr)_240px]">
@@ -120,8 +126,8 @@ function SaleCard({ sale, onOpen, onStageChange }: { sale: SaleTransaction; onOp
         <div className="flex flex-col justify-between border-t border-[var(--app-surface-border)] bg-muted/30 p-5 md:border-l md:border-t-0">
           <div><p className="text-xs font-semibold uppercase tracking-[.15em] text-[var(--app-muted-foreground)]">Următoarea acțiune</p><p className="mt-2 text-sm font-medium leading-6">{sale.nextAction || SALE_STAGE_META[sale.stage].description}</p>{sale.nextActionAt ? <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600"><Clock3 className="h-3.5 w-3.5" />{new Date(sale.nextActionAt).toLocaleString('ro-RO')}</p> : null}</div>
           <div className="mt-5 space-y-2">
-            <Button onClick={onOpen} className="w-full rounded-xl bg-emerald-600 text-white shadow-[0_14px_28px_-15px_rgba(16,185,129,.9)] hover:bg-emerald-700"><Mail className="mr-2 h-4 w-4" /> Trimite e-mail</Button>
-            <Button variant="outline" onClick={onOpen} className="w-full rounded-xl border-[var(--app-surface-border)]"><FolderKanban className="mr-2 h-4 w-4" /> Deschide dosarul</Button>
+            <Button type="button" onClick={openDossier} className="w-full rounded-xl bg-emerald-600 text-white shadow-[0_14px_28px_-15px_rgba(16,185,129,.9)] hover:bg-emerald-700"><Mail className="mr-2 h-4 w-4" /> Trimite e-mail</Button>
+            <Button type="button" variant="outline" onClick={openDossier} className="w-full rounded-xl border-[var(--app-surface-border)]"><FolderKanban className="mr-2 h-4 w-4" /> Deschide dosarul</Button>
             {followingStage ? <Button variant="ghost" className="w-full rounded-xl text-xs" onClick={() => onStageChange(followingStage)}>Avansează la {SALE_STAGE_META[followingStage].shortLabel}<ChevronRight className="ml-1 h-3.5 w-3.5" /></Button> : null}
           </div>
         </div>
@@ -210,13 +216,19 @@ export default function SalesManagementPage() {
   };
 
   const openSale = (sale: SaleTransaction) => {
-    if (sale.setupStatus !== 'ready' || !getSaleReadiness(sale).ready) {
-      setSetupSale(sale);
-      return;
-    }
-    setSelectedSale(sale);
-    if (sale.unreadReplyCount && agencyId) {
-      void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', sale.id), { unreadReplyCount: 0, updatedAt: new Date().toISOString() });
+    try {
+      const workspaceSale = normalizeSaleForWorkspace(sale);
+      if (workspaceSale.setupStatus !== 'ready' || !getSaleReadiness(workspaceSale).ready) {
+        setSetupSale(workspaceSale);
+        return;
+      }
+      setSelectedSale(workspaceSale);
+      if (workspaceSale.unreadReplyCount && agencyId) {
+        void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', workspaceSale.id), { unreadReplyCount: 0, updatedAt: new Date().toISOString() });
+      }
+    } catch (error) {
+      console.error('Sales dossier could not be opened', error);
+      toast({ title: 'Dosarul nu a putut fi deschis', description: 'Datele dosarului au un format neasteptat. Reincarca pagina si incearca din nou.', variant: 'destructive' });
     }
   };
 
