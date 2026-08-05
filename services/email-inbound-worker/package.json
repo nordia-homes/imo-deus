@@ -1,0 +1,23 @@
+{
+  "name": "imodeus-email-inbound-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test src/*.test.mjs",
+    "check": "wrangler deploy --dry-run --outdir=.tmp/dist",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "postal-mime": "^2.7.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.68.0"
+  },
+  "overrides": {
+    "undici": "7.29.0"
+  }
+}
