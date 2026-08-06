@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { CopyPlus, Mail, Save, Sparkles, X } from 'lucide-react';
+import { Mail, Save, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { GmailRichTextEditor } from '@/components/sales/GmailRichTextEditor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ export function GmailTemplateEditorDialog({ open, template, defaultRecipientRole
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[97dvh] w-[99vw] max-w-none flex-col gap-0 overflow-hidden rounded-[30px] border border-slate-200 bg-[#f6f8fc] p-0 text-slate-950 shadow-[0_42px_150px_-32px_rgba(15,23,42,.75)] sm:max-w-none [&>button]:hidden">
         <DialogHeader className="shrink-0 border-b border-slate-200 bg-[radial-gradient(circle_at_10%_0%,rgba(66,133,244,.16),transparent_28%),white] px-5 py-4 md:px-7">
-          <div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[conic-gradient(from_210deg,#34a853,#4285f4,#ea4335,#fbbc04,#34a853)] text-white shadow-[0_12px_30px_-12px_rgba(66,133,244,.85)]"><Mail className="h-5 w-5" /></div><div className="min-w-0"><DialogTitle className="truncate text-lg">{template ? 'Editează template-ul' : 'Template Gmail nou'}</DialogTitle><DialogDescription className="truncate text-slate-500">Mesajul va arăta în Gmail exact ca în previzualizare.</DialogDescription></div></div><div className="flex items-center gap-2">{template?.isSystem ? <Badge className="rounded-full bg-blue-50 text-blue-700 hover:bg-blue-50"><CopyPlus className="mr-1 h-3.5 w-3.5" /> Se salvează ca o copie</Badge> : null}<Button variant="ghost" size="icon" className="rounded-full" onClick={() => onOpenChange(false)}><X className="h-5 w-5" /></Button></div></div>
+          <div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[conic-gradient(from_210deg,#34a853,#4285f4,#ea4335,#fbbc04,#34a853)] text-white shadow-[0_12px_30px_-12px_rgba(66,133,244,.85)]"><Mail className="h-5 w-5" /></div><div className="min-w-0"><DialogTitle className="truncate text-lg">{template ? 'Editează template-ul' : 'Template Gmail nou'}</DialogTitle><DialogDescription className="truncate text-slate-500">{template ? 'Modificările sunt vizibile numai pentru tine.' : 'Mesajul va arăta în Gmail exact ca în previzualizare.'}</DialogDescription></div></div><div className="flex items-center gap-2">{template ? <Badge className="rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50"><ShieldCheck className="mr-1 h-3.5 w-3.5" /> Personalizare privată</Badge> : null}<Button variant="ghost" size="icon" className="rounded-full" onClick={() => onOpenChange(false)}><X className="h-5 w-5" /></Button></div></div>
         </DialogHeader>
         <div className="grid min-h-0 flex-1 xl:grid-cols-[340px_minmax(0,1fr)]">
           <aside className="overflow-y-auto border-b border-slate-200 bg-white p-5 xl:border-b-0 xl:border-r">
@@ -68,7 +68,7 @@ export function GmailTemplateEditorDialog({ open, template, defaultRecipientRole
             {invalidCc.length ? <p className="mx-auto mt-3 max-w-5xl text-sm text-red-600">Verifică adresele CC: {invalidCc.join(', ')}</p> : null}
           </main>
         </div>
-        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-slate-200 bg-white px-5 py-3 md:px-7"><p className="hidden text-sm text-slate-500 md:block">Template-ul salvat va fi disponibil în Gestionare vânzări.</p><div className="ml-auto flex gap-2"><Button variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Renunță</Button><Button className="rounded-xl bg-blue-600 px-6 text-white hover:bg-blue-700" disabled={saving || !name.trim() || !subject.trim() || !body.trim() || invalidCc.length > 0} onClick={() => void submit()}><Save className="mr-2 h-4 w-4" />{saving ? 'Se salvează…' : template?.isSystem ? 'Salvează ca template nou' : 'Salvează template-ul'}</Button></div></footer>
+        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-slate-200 bg-white px-5 py-3 md:px-7"><p className="hidden text-sm text-slate-500 md:block">Modificările unui template existent se salvează numai în profilul tău.</p><div className="ml-auto flex gap-2"><Button variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Renunță</Button><Button className="rounded-xl bg-blue-600 px-6 text-white hover:bg-blue-700" disabled={saving || !name.trim() || !subject.trim() || !body.trim() || invalidCc.length > 0} onClick={() => void submit()}><Save className="mr-2 h-4 w-4" />{saving ? 'Se salvează…' : template ? 'Salvează pentru mine' : 'Salvează template-ul'}</Button></div></footer>
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import {
   ArrowUpRight,
   CalendarCheck2,
@@ -20,6 +20,7 @@ import {
   Loader2,
   Mail,
   Plus,
+  RotateCcw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -32,13 +33,14 @@ import { SalesOperationsPanel } from '@/components/sales/SalesOperationsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { DesktopGmailRunnerStatus } from '@/lib/desktop/gmail-runner';
-import { DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
-import type { SaleParticipantRole, SalesEmailTemplate } from '@/lib/types';
+import { applySalesEmailTemplateOverrides, DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
+import type { SaleParticipantRole, SalesEmailTemplate, SalesEmailTemplateOverride } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 type TemplateAudience = Extract<SaleParticipantRole, 'owner' | 'buyer'>;
@@ -133,6 +135,7 @@ export default function GmailPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<SalesEmailTemplate | null>(null);
   const [saving, setSaving] = useState(false);
+  const [updatingTemplateIds, setUpdatingTemplateIds] = useState<Set<string>>(() => new Set());
   const [isDesktop, setIsDesktop] = useState(false);
   const [runnerStatus, setRunnerStatus] = useState<DesktopGmailRunnerStatus | null>(null);
 
@@ -141,7 +144,12 @@ export default function GmailPage() {
     [agencyId, firestore]
   );
   const { data: customTemplates } = useCollection<SalesEmailTemplate>(templatesQuery);
-  const templates = useMemo(
+  const templateOverridesQuery = useMemoFirebase(
+    () => user?.uid ? collection(firestore, 'users', user.uid, 'emailTemplateOverrides') : null,
+    [firestore, user?.uid]
+  );
+  const { data: templateOverrides } = useCollection<SalesEmailTemplateOverride>(templateOverridesQuery);
+  const baseTemplates = useMemo(
     () => [
       ...DEFAULT_SALES_EMAIL_TEMPLATES,
       ...(customTemplates || []).filter(
@@ -149,6 +157,31 @@ export default function GmailPage() {
       ),
     ],
     [customTemplates, userProfile?.id, userProfile?.role]
+  );
+  const templates = useMemo(
+    () => applySalesEmailTemplateOverrides(baseTemplates, templateOverrides),
+    [baseTemplates, templateOverrides]
+  );
+  const personalizedTemplateIds = useMemo(
+    () => new Set((templateOverrides || []).map((override) => override.baseTemplateId)),
+    [templateOverrides]
+  );
+
+  const enabledTemplateIds = userProfile?.enabledSalesEmailTemplateIds || [];
+  const enabledTemplateIdSet = useMemo(
+    () => new Set(enabledTemplateIds),
+    [enabledTemplateIds]
+  );
+  const activeTemplateCount = useMemo(
+    () => templates.filter((template) => template.isActive !== false && enabledTemplateIdSet.has(template.id)).length,
+    [enabledTemplateIdSet, templates]
+  );
+  const activeTemplateCounts = useMemo(
+    () => ({
+      owner: templates.filter((template) => template.recipientRole === 'owner' && template.isActive !== false && enabledTemplateIdSet.has(template.id)).length,
+      buyer: templates.filter((template) => template.recipientRole === 'buyer' && template.isActive !== false && enabledTemplateIdSet.has(template.id)).length,
+    }),
+    [enabledTemplateIdSet, templates]
   );
 
   const searchableTemplates = useMemo(() => {
@@ -232,25 +265,45 @@ export default function GmailPage() {
       });
       return;
     }
+    if (editingTemplate && !user) {
+      toast({ title: 'Sesiunea a expirat', variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
     try {
-      const editCustom = Boolean(editingTemplate && !editingTemplate.isSystem);
-      await apiRequest(
-        editCustom ? '/api/sales/templates/' + editingTemplate!.id : '/api/sales/templates',
-        {
-          method: editCustom ? 'PATCH' : 'POST',
+      if (editingTemplate && user) {
+        await setDoc(
+          doc(firestore, 'users', user.uid, 'emailTemplateOverrides', editingTemplate.id),
+          {
+            baseTemplateId: editingTemplate.id,
+            baseVersion: editingTemplate.version || 1,
+            ...draft,
+            signatureMode: 'agent',
+            variables: editingTemplate.variables || ['recipient.name', 'property.title', 'property.address', 'documents.list', 'notary.summary', 'agent.name'],
+            updatedAt: new Date().toISOString(),
+            updatedByUid: user.uid,
+          } satisfies Omit<SalesEmailTemplateOverride, 'id'>,
+          { merge: false }
+        );
+        toast({
+          title: 'Personalizarea a fost salvată',
+          description: 'Template-ul păstrează același loc în bibliotecă și este vizibil numai pentru tine.',
+        });
+      } else {
+        await apiRequest('/api/sales/templates', {
+          method: 'POST',
           body: JSON.stringify({
             ...draft,
-            name: editingTemplate?.isSystem ? draft.name + ' — personalizat' : draft.name,
             signatureMode: 'agent',
             variables: ['recipient.name', 'property.title', 'property.address', 'documents.list', 'notary.summary', 'agent.name'],
           }),
-        }
-      );
-      toast({
-        title: editCustom ? 'Template actualizat' : 'Template nou salvat',
-        description: 'Este disponibil imediat în dosarele de vânzare.',
-      });
+        });
+        toast({
+          title: 'Template nou salvat',
+          description: 'Activează-l din bibliotecă pentru a apărea în pagina de email.',
+        });
+      }
       setEditorOpen(false);
       setEditingTemplate(null);
     } catch (error) {
@@ -263,21 +316,79 @@ export default function GmailPage() {
       setSaving(false);
     }
   };
-
   const duplicate = async (template: SalesEmailTemplate) => {
-    if (template.isSystem) {
-      setEditingTemplate(template);
-      setEditorOpen(true);
-      return;
-    }
     try {
       await apiRequest('/api/sales/templates/' + template.id, { method: 'POST' });
-      toast({ title: 'Template duplicat' });
+      toast({ title: 'Template duplicat', description: 'Copia rămâne ascunsă până când o activezi explicit.' });
     } catch (error) {
       toast({
         title: 'Template-ul nu a putut fi duplicat',
         description: error instanceof Error ? error.message : undefined,
         variant: 'destructive',
+      });
+    }
+  };
+
+  const resetTemplateOverride = async (template: SalesEmailTemplate) => {
+    if (!user) {
+      toast({ title: 'Sesiunea a expirat', variant: 'destructive' });
+      return;
+    }
+    if (!window.confirm('Revii la versiunea standard pentru „' + template.name + '”?')) return;
+
+    setUpdatingTemplateIds((current) => new Set(current).add(template.id));
+    try {
+      await deleteDoc(doc(firestore, 'users', user.uid, 'emailTemplateOverrides', template.id));
+      toast({
+        title: 'Template readus la versiunea standard',
+        description: 'Personalizarea ta a fost eliminată. Vizibilitatea în pagina de email nu s-a schimbat.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Versiunea standard nu a putut fi restaurată',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingTemplateIds((current) => {
+        const next = new Set(current);
+        next.delete(template.id);
+        return next;
+      });
+    }
+  };
+  const setTemplateEnabledForComposer = async (templateId: string, enabled: boolean) => {
+    if (!user) {
+      toast({ title: 'Sesiunea a expirat', variant: 'destructive' });
+      return;
+    }
+    setUpdatingTemplateIds((current) => new Set(current).add(templateId));
+    try {
+      await setDoc(
+        doc(firestore, 'users', user.uid),
+        {
+          enabledSalesEmailTemplateIds: enabled ? arrayUnion(templateId) : arrayRemove(templateId),
+          salesEmailTemplatePreferencesUpdatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      toast({
+        title: enabled ? 'Template activat în pagina de email' : 'Template ascuns din pagina de email',
+        description: enabled
+          ? 'Va apărea în selectorul de template-uri al agentului curent.'
+          : 'Rămâne în bibliotecă și poate fi reactivat oricând.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Preferința nu a putut fi salvată',
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingTemplateIds((current) => {
+        const next = new Set(current);
+        next.delete(templateId);
+        return next;
       });
     }
   };
@@ -313,7 +424,7 @@ export default function GmailPage() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {[
-                  { label: '14 template-uri', Icon: Files },
+                  { label: activeTemplateCount + ' active în email', Icon: Files },
                   { label: 'Proprietar + cumpărător', Icon: UserRound },
                   { label: 'Fără acces OAuth la inbox', Icon: ShieldCheck },
                 ].map(({ label, Icon }) => (
@@ -479,7 +590,7 @@ export default function GmailPage() {
                     <div className="flex items-center gap-2">
                       <span className={cn('h-2.5 w-2.5 rounded-full', audience === 'owner' ? 'bg-cyan-500' : 'bg-fuchsia-500')} />
                       <p className="text-sm font-semibold">
-                        {roleTemplates.length} template-uri pentru {meta.label.toLocaleLowerCase('ro')}
+                        {roleTemplates.length} template-uri · {activeTemplateCounts[audience]} active în email
                       </p>
                     </div>
                     <p className="text-xs text-[var(--app-muted-foreground)]">
@@ -492,10 +603,16 @@ export default function GmailPage() {
                       {roleTemplates.map((template) => {
                         const visual = templateVisual(template);
                         const Glyph = visual.Glyph;
+                        const enabledInComposer = enabledTemplateIdSet.has(template.id);
+                        const updatingPreference = updatingTemplateIds.has(template.id);
+                        const personalized = personalizedTemplateIds.has(template.id);
                         return (
                           <article
                             key={template.id}
-                            className="group relative flex min-h-[300px] flex-col overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-5 shadow-[0_24px_75px_-58px_rgba(15,23,42,.95)] transition duration-300 hover:-translate-y-1.5 hover:border-emerald-500/25 hover:shadow-[0_34px_85px_-58px_rgba(15,23,42,.9)]"
+                            className={cn(
+                              'gmail-template-card group relative flex min-h-[340px] flex-col overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-5 shadow-[0_24px_75px_-58px_rgba(15,23,42,.95)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_34px_85px_-58px_rgba(15,23,42,.9)]',
+                              enabledInComposer && 'gmail-template-card--enabled'
+                            )}
                           >
                             <div className={cn('absolute inset-x-0 top-0 h-1', visual.bar)} />
                             <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-gradient-to-br from-white/0 to-emerald-400/5 blur-2xl transition-transform duration-500 group-hover:scale-125" />
@@ -504,20 +621,34 @@ export default function GmailPage() {
                                 <Glyph className="h-5 w-5" />
                               </div>
                               <div className="flex gap-1">
+                                {personalized ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-xl text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700"
+                                    title="Revino la versiunea standard"
+                                    disabled={updatingPreference}
+                                    onClick={() => void resetTemplateOverride(template)}
+                                  >
+                                    {updatingPreference ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                  </Button>
+                                ) : null}
+                                {!template.isSystem ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-xl text-[var(--app-muted-foreground)] hover:text-[var(--app-page-foreground)]"
+                                    title="Duplică template-ul"
+                                    onClick={() => void duplicate(template)}
+                                  >
+                                    <CopyPlus className="h-4 w-4" />
+                                  </Button>
+                                ) : null}
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="rounded-xl text-[var(--app-muted-foreground)] hover:text-[var(--app-page-foreground)]"
-                                  title="Duplică template-ul"
-                                  onClick={() => void duplicate(template)}
-                                >
-                                  <CopyPlus className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="rounded-xl text-[var(--app-muted-foreground)] hover:text-[var(--app-page-foreground)]"
-                                  title="Editează template-ul"
+                                  title="Editează doar pentru mine"
                                   onClick={() => {
                                     setEditingTemplate(template);
                                     setEditorOpen(true);
@@ -539,6 +670,12 @@ export default function GmailPage() {
                                     ? 'Aprobat'
                                     : 'Draft personal'}
                               </Badge>
+                              {personalized ? (
+                                <Badge className="rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300">
+                                  <ShieldCheck className="mr-1 h-3 w-3" />
+                                  Personalizat de tine
+                                </Badge>
+                              ) : null}
                             </div>
 
                             <h3 className="relative mt-4 text-lg font-semibold leading-6 tracking-[-.015em]">
@@ -547,6 +684,29 @@ export default function GmailPage() {
                             <p className="relative mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-[var(--app-muted-foreground)]">
                               {template.description}
                             </p>
+
+                            <div className={cn(
+                              'gmail-template-visibility relative mt-5 flex items-center justify-between gap-3 rounded-2xl border p-3',
+                              enabledInComposer && 'gmail-template-visibility--enabled'
+                            )}>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold">
+                                  {enabledInComposer ? 'Vizibil în pagina de email' : 'Ascuns din pagina de email'}
+                                </p>
+                                <p className="mt-0.5 text-[10px] leading-4 text-[var(--app-muted-foreground)]">
+                                  {enabledInComposer ? 'Apare în selectorul tău personal.' : 'Activează-l dacă vrei să îl folosești.'}
+                                </p>
+                              </div>
+                              {updatingPreference ? (
+                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" />
+                              ) : (
+                                <Switch
+                                  checked={enabledInComposer}
+                                  onCheckedChange={(checked) => void setTemplateEnabledForComposer(template.id, checked)}
+                                  aria-label={enabledInComposer ? 'Ascunde template-ul din pagina de email' : 'Activează template-ul în pagina de email'}
+                                />
+                              )}
+                            </div>
 
                             <div className="relative mt-auto pt-5">
                               <div className="rounded-2xl border border-[var(--app-surface-border)] bg-muted/35 p-3.5 transition-colors group-hover:bg-muted/50">
@@ -878,6 +1038,19 @@ export default function GmailPage() {
         }
         .gmail-audience-tab--buyer[data-state='active']::after {
           background: linear-gradient(90deg, #7c3aed, #d946ef) !important;
+        }
+
+        .gmail-template-card--enabled {
+          border-color: rgba(37,99,235,.24) !important;
+          box-shadow: 0 28px 75px -54px rgba(37,99,235,.48), inset 0 0 0 1px rgba(59,130,246,.05) !important;
+        }
+        .gmail-template-visibility {
+          border-color: rgba(148,163,184,.18) !important;
+          background: rgba(248,250,252,.86) !important;
+        }
+        .gmail-template-visibility--enabled {
+          border-color: rgba(59,130,246,.18) !important;
+          background: linear-gradient(135deg, rgba(239,246,255,.96), rgba(238,242,255,.9)) !important;
         }
 
         .gmail-workspace__guide {

@@ -31,6 +31,7 @@ import {
   Plus,
   RefreshCw,
   ShieldCheck,
+  Settings2,
   Sparkles,
   Trash2,
   UserRound,
@@ -42,7 +43,9 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { DesktopGmailRunnerStatus, GmailRunnerAttachment } from '@/lib/desktop/gmail-runner';
 import {
+  applySalesEmailTemplateOverrides,
   DEFAULT_SALES_EMAIL_TEMPLATES,
+  filterEnabledSalesEmailTemplates,
   participantRoleLabel,
   renderSalesTemplate,
 } from '@/lib/sales';
@@ -54,6 +57,7 @@ import type {
   SaleParticipantRole,
   SaleTransaction,
   SalesEmailTemplate,
+  SalesEmailTemplateOverride,
   SalesAuditEvent,
 } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -275,15 +279,35 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     return collection(firestore, 'agencies', agencyId, 'salesEmailTemplates');
   }, [agencyId, firestore]);
   const { data: customTemplates } = useCollection<SalesEmailTemplate>(customTemplatesQuery);
+  const templateOverridesQuery = useMemoFirebase(() => {
+    if (!user?.uid) return null;
+    return collection(firestore, 'users', user.uid, 'emailTemplateOverrides');
+  }, [firestore, user?.uid]);
+  const { data: templateOverrides } = useCollection<SalesEmailTemplateOverride>(templateOverridesQuery);
 
-  const templateLibrary = useMemo(
+  const baseTemplateLibrary = useMemo(
     () => [...DEFAULT_SALES_EMAIL_TEMPLATES, ...(customTemplates || []).filter((item) =>
       item.approvalStatus === 'approved' || item.createdByUid === userProfile?.id || userProfile?.role === 'admin'
     )],
     [customTemplates, userProfile?.id, userProfile?.role]
   );
-  const templates = useMemo(() => templateLibrary.filter((item) => item.isActive !== false), [templateLibrary]);
+  const templateLibrary = useMemo(
+    () => applySalesEmailTemplateOverrides(baseTemplateLibrary, templateOverrides),
+    [baseTemplateLibrary, templateOverrides]
+  );
+  const personalizedTemplateIds = useMemo(
+    () => new Set((templateOverrides || []).map((override) => override.baseTemplateId)),
+    [templateOverrides]
+  );
+  const templates = useMemo(
+    () => filterEnabledSalesEmailTemplates(templateLibrary, userProfile?.enabledSalesEmailTemplateIds),
+    [templateLibrary, userProfile?.enabledSalesEmailTemplateIds]
+  );
   const recipient = participants.find((item) => item.id === recipientId) || null;
+  const recipientTemplates = useMemo(
+    () => templates.filter((item) => !recipient || item.recipientRole === recipient.role),
+    [recipient?.role, templates]
+  );
 
   useEffect(() => {
     if (!open || !sale) return;
@@ -386,34 +410,71 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
       toast({ title: 'Template incomplet', description: 'Completează numele, destinatarul, subiectul și mesajul.', variant: 'destructive' });
       return;
     }
+    if (editingTemplateId && !user) {
+      toast({ title: 'Sesiunea a expirat', variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
     try {
-      const { payload } = await apiRequest(editingTemplateId ? `/api/sales/templates/${editingTemplateId}` : '/api/sales/templates', {
-        method: editingTemplateId ? 'PATCH' : 'POST',
-        body: JSON.stringify({
-        name: customTemplateName.trim(),
-        description: 'Template personalizat al agenției',
-        recipientRole: recipient.role,
-        stage: sale.stage,
-        subject: subject.trim(),
-        body: body.trim(),
-        bodyHtml,
-        defaultCc: ccRecipients,
-        defaultQuestions: questions.map((item) => item.text.trim()).filter(Boolean),
-        signatureMode: 'agent',
-        }),
-      });
-      setTemplateId(payload.template.id);
+      if (editingTemplateId && user) {
+        const currentTemplate = templateLibrary.find((template) => template.id === editingTemplateId);
+        await setDoc(
+          doc(firestore, 'users', user.uid, 'emailTemplateOverrides', editingTemplateId),
+          {
+            baseTemplateId: editingTemplateId,
+            baseVersion: currentTemplate?.version || 1,
+            name: customTemplateName.trim(),
+            description: currentTemplate?.description || 'Template personalizat',
+            recipientRole: recipient.role,
+            stage: sale.stage,
+            subject: subject.trim(),
+            body: body.trim(),
+            bodyHtml,
+            defaultCc: ccRecipients,
+            defaultQuestions: questions.map((item) => item.text.trim()).filter(Boolean),
+            signatureMode: 'agent',
+            variables: currentTemplate?.variables || ['recipient.name', 'property.title', 'property.address', 'documents.list', 'notary.summary', 'agent.name'],
+            updatedAt: new Date().toISOString(),
+            updatedByUid: user.uid,
+          } satisfies Omit<SalesEmailTemplateOverride, 'id'>,
+          { merge: false }
+        );
+        setTemplateId(editingTemplateId);
+        toast({
+          title: 'Personalizarea privată a fost salvată',
+          description: 'Același template a fost actualizat numai pentru tine; nu s-a creat nicio copie.',
+        });
+      } else {
+        const { payload } = await apiRequest('/api/sales/templates', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: customTemplateName.trim(),
+            description: 'Template personalizat al agenției',
+            recipientRole: recipient.role,
+            stage: sale.stage,
+            subject: subject.trim(),
+            body: body.trim(),
+            bodyHtml,
+            defaultCc: ccRecipients,
+            defaultQuestions: questions.map((item) => item.text.trim()).filter(Boolean),
+            signatureMode: 'agent',
+          }),
+        });
+        setTemplateId(userProfile?.enabledSalesEmailTemplateIds?.includes(payload.template.id) ? payload.template.id : '');
+        toast({
+          title: 'Template nou salvat pentru agenție',
+          description: 'Este ascuns până când îl activezi explicit din pagina Gmail.',
+        });
+      }
       setCustomTemplateName('');
       setEditingTemplateId(null);
-      toast({ title: editingTemplateId ? 'Versiunea template-ului a fost salvată ca draft' : 'Template salvat pentru agenție' });
     } catch (error) {
       toast({ title: 'Template-ul nu a putut fi salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
-
   const beginTemplateEdit = (template: SalesEmailTemplate) => {
     applyTemplate(template.id);
     setCustomTemplateName(template.name);
@@ -643,10 +704,20 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
                   <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Template</div>
                   <div className="p-3">
-                    <Select value={templateId} onValueChange={applyTemplate} disabled={!recipient}>
-                      <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder="Alege un mesaj prestabilit" /></SelectTrigger>
-                      <SelectContent>{templates.filter((item) => !recipient || item.recipientRole === recipient.role).map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+                    <Select value={templateId} onValueChange={applyTemplate} disabled={!recipient || recipientTemplates.length === 0}>
+                      <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder={recipientTemplates.length ? 'Alege un mesaj prestabilit' : 'Niciun template activ'} /></SelectTrigger>
+                      <SelectContent>{recipientTemplates.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
                     </Select>
+                    {recipient && recipientTemplates.length === 0 ? (
+                      <div className="mt-2 flex flex-col gap-2 rounded-xl border border-dashed border-blue-500/25 bg-blue-500/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs leading-5 text-[var(--app-muted-foreground)]">
+                          Nu ai activat niciun template pentru {participantRoleLabel(recipient.role).toLocaleLowerCase('ro')}. Poți scrie manual sau poți alege template-urile vizibile.
+                        </p>
+                        <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl border-blue-500/20">
+                          <a href="/gmail"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Gestionează</a>
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
@@ -701,17 +772,30 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 </TabsContent>
 
                 <TabsContent value="templates" className="m-0 space-y-4 p-4">
-                  <div><p className="font-semibold">Biblioteca de mesaje</p><p className="text-sm text-[var(--app-muted-foreground)]">Template-urile păstrează tonul consecvent și reduc mesajele inutile.</p></div>
+                  <div><p className="font-semibold">Biblioteca de mesaje</p><p className="text-sm text-[var(--app-muted-foreground)]">Aici apar numai template-urile activate de tine în pagina Gmail.</p></div>
                   <div className="space-y-2">
-                    {templateLibrary.filter((item) => !recipient || item.recipientRole === recipient.role).map((template) => (
+                    {recipientTemplates.length ? recipientTemplates.map((template) => (
                       <button key={template.id} type="button" onClick={() => applyTemplate(template.id)} className={cn(panelClass, 'w-full p-4 text-left transition hover:border-emerald-500/35 hover:bg-emerald-500/5', templateId === template.id && 'border-emerald-500/45 bg-emerald-500/8')}>
-                        <div className="flex items-center justify-between gap-2"><p className="font-medium">{template.name}</p><Badge variant="outline" className="rounded-full text-[10px]">{template.isSystem ? 'Imodeus' : template.isActive === false ? 'Dezactivat' : template.approvalStatus === 'approved' ? 'Aprobat' : template.approvalStatus === 'pending_approval' ? 'În aprobare' : 'Draft'}</Badge></div><p className="mt-1 text-xs leading-5 text-[var(--app-muted-foreground)]">{template.description}</p>
-                        {!template.isSystem ? <div className="mt-3 flex flex-wrap gap-1" onClick={(event) => event.stopPropagation()}><Button size="sm" variant="ghost" onClick={() => beginTemplateEdit(template)}>Editează</Button><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'duplicate')}>Duplică</Button>{template.approvalStatus === 'draft' ? <Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'submit')}>Trimite la aprobare</Button> : null}{userProfile?.role === 'admin' && template.approvalStatus === 'pending_approval' ? <><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'approve')}>Aprobă</Button><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'reject')}>Respinge</Button></> : null}{userProfile?.role === 'admin' ? <Button size="sm" variant="ghost" onClick={() => void templateAction(template, template.isActive === false ? 'activate' : 'deactivate')}>{template.isActive === false ? 'Reactivează' : 'Dezactivează'}</Button> : null}</div> : null}
+                        <div className="flex items-start justify-between gap-2"><p className="font-medium">{template.name}</p><div className="flex flex-wrap justify-end gap-1"><Badge variant="outline" className="rounded-full text-[10px]">{template.isSystem ? 'Imodeus' : template.isActive === false ? 'Dezactivat' : template.approvalStatus === 'approved' ? 'Aprobat' : template.approvalStatus === 'pending_approval' ? 'În aprobare' : 'Draft'}</Badge>{personalizedTemplateIds.has(template.id) ? <Badge className="rounded-full bg-emerald-500/10 text-[10px] text-emerald-700 hover:bg-emerald-500/10">Personalizat de tine</Badge> : null}</div></div><p className="mt-1 text-xs leading-5 text-[var(--app-muted-foreground)]">{template.description}</p>
+                        <div className="mt-3 flex flex-wrap gap-1" onClick={(event) => event.stopPropagation()}><Button size="sm" variant="ghost" onClick={() => beginTemplateEdit(template)}>Editează pentru mine</Button>{!template.isSystem ? <><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'duplicate')}>Duplică</Button>{template.approvalStatus === 'draft' ? <Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'submit')}>Trimite la aprobare</Button> : null}{userProfile?.role === 'admin' && template.approvalStatus === 'pending_approval' ? <><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'approve')}>Aprobă</Button><Button size="sm" variant="ghost" onClick={() => void templateAction(template, 'reject')}>Respinge</Button></> : null}{userProfile?.role === 'admin' ? <Button size="sm" variant="ghost" onClick={() => void templateAction(template, template.isActive === false ? 'activate' : 'deactivate')}>{template.isActive === false ? 'Reactivează' : 'Dezactivează'}</Button> : null}</> : null}</div>
                       </button>
-                    ))}
+                    )) : (
+                      <div className="rounded-[22px] border border-dashed border-blue-500/25 bg-blue-500/5 p-7 text-center">
+                        <div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-blue-500/10 text-blue-600">
+                          <Settings2 className="h-5 w-5" />
+                        </div>
+                        <p className="mt-3 text-sm font-semibold">Niciun template activ</p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--app-muted-foreground)]">
+                          Lista este personală și pornește goală. Activează numai mesajele pe care vrei să le vezi aici.
+                        </p>
+                        <Button asChild variant="outline" size="sm" className="mt-4 rounded-xl border-blue-500/20">
+                          <a href="/gmail">Alege template-urile</a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <Separator />
-                  <div className={cn(panelClass, 'space-y-3 p-4')}><div><p className="font-medium">{editingTemplateId ? 'Editează versiunea template-ului' : 'Salvează mesajul curent'}</p><p className="mt-1 text-xs text-[var(--app-muted-foreground)]">{editingTemplateId ? 'Orice editare revine în starea Draft și necesită din nou aprobare.' : 'Draftul rămâne privat autorului până la aprobare.'}</p></div><Input value={customTemplateName} onChange={(event) => setCustomTemplateName(event.target.value)} className={cn(inputClass, 'rounded-xl')} placeholder="Numele template-ului" /><div className="flex gap-2">{editingTemplateId ? <Button variant="ghost" className="rounded-xl" onClick={() => { setEditingTemplateId(null); setCustomTemplateName(''); }}>Renunță</Button> : null}<Button variant="outline" className="flex-1 rounded-xl" onClick={saveAsTemplate} disabled={saving}><Sparkles className="mr-2 h-4 w-4" /> {editingTemplateId ? 'Salvează versiunea' : 'Salvează ca template'}</Button></div></div>
+                  <div className={cn(panelClass, 'space-y-3 p-4')}><div><p className="font-medium">{editingTemplateId ? 'Editează versiunea template-ului' : 'Salvează mesajul curent'}</p><p className="mt-1 text-xs text-[var(--app-muted-foreground)]">{editingTemplateId ? 'Modificările se salvează numai pentru tine, pe același template.' : 'Draftul rămâne privat autorului până la aprobare.'}</p></div><Input value={customTemplateName} onChange={(event) => setCustomTemplateName(event.target.value)} className={cn(inputClass, 'rounded-xl')} placeholder="Numele template-ului" /><div className="flex gap-2">{editingTemplateId ? <Button variant="ghost" className="rounded-xl" onClick={() => { setEditingTemplateId(null); setCustomTemplateName(''); }}>Renunță</Button> : null}<Button variant="outline" className="flex-1 rounded-xl" onClick={saveAsTemplate} disabled={saving}><Sparkles className="mr-2 h-4 w-4" /> {editingTemplateId ? 'Salvează pentru mine' : 'Salvează ca template'}</Button></div></div>
                 </TabsContent>
 
                 <TabsContent value="documents" className="m-0 space-y-4 p-4">

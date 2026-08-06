@@ -1253,6 +1253,27 @@ export type SalesEmailTemplate = {
     variables?: string[];
   };
 
+  export type SalesEmailTemplateOverride = Pick<
+    SalesEmailTemplate,
+    | 'name'
+    | 'description'
+    | 'recipientRole'
+    | 'stage'
+    | 'subject'
+    | 'body'
+    | 'bodyHtml'
+    | 'defaultCc'
+    | 'defaultQuestions'
+    | 'signatureMode'
+    | 'variables'
+  > & {
+    id: string;
+    baseTemplateId: string;
+    baseVersion?: number;
+    updatedAt: string;
+    updatedByUid: string;
+  };
+
   export type SalesEmailSettings = {
     id: 'default';
     inboundProvider: 'generic' | 'mailgun' | 'sendgrid';
@@ -1594,6 +1615,8 @@ export type UserProfile = {
   pushTokens?: string[];
   pushNotificationsEnabled?: boolean;
   pushNotificationsUpdatedAt?: string;
+  enabledSalesEmailTemplateIds?: string[];
+  salesEmailTemplatePreferencesUpdatedAt?: string;
 };
 
 export type Invite = {

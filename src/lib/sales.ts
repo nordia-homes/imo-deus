@@ -4,6 +4,7 @@ import type {
   SaleStage,
   SaleTransaction,
   SalesEmailTemplate,
+  SalesEmailTemplateOverride,
 } from '@/lib/types';
 
 export const SALE_STAGE_META: Record<
@@ -315,6 +316,43 @@ export function getSaleReadiness(sale: Pick<SaleTransaction, 'participants' | 'f
     issues,
     progress: Math.max(0, Math.round(((7 - Math.min(7, issues.length)) / 7) * 100)),
   };
+}
+
+export function applySalesEmailTemplateOverrides(
+  templates: SalesEmailTemplate[],
+  overrides?: SalesEmailTemplateOverride[] | null
+) {
+  const overrideByTemplateId = new Map(
+    (overrides || []).map((override) => [override.baseTemplateId, override])
+  );
+
+  return templates.map((template) => {
+    const override = overrideByTemplateId.get(template.id);
+    if (!override) return template;
+
+    return {
+      ...template,
+      name: override.name,
+      description: override.description,
+      recipientRole: override.recipientRole,
+      stage: override.stage,
+      subject: override.subject,
+      body: override.body,
+      bodyHtml: override.bodyHtml,
+      defaultCc: override.defaultCc,
+      defaultQuestions: override.defaultQuestions,
+      signatureMode: override.signatureMode,
+      variables: override.variables,
+    };
+  });
+}
+
+export function filterEnabledSalesEmailTemplates(
+  templates: SalesEmailTemplate[],
+  enabledTemplateIds?: string[] | null
+) {
+  const enabledIds = new Set(enabledTemplateIds || []);
+  return templates.filter((template) => template.isActive !== false && enabledIds.has(template.id));
 }
 
 export const DEFAULT_SALE_DOCUMENTS: Array<{ label: string; role: 'buyer' | 'owner' }> = [

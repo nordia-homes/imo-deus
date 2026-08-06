@@ -45,6 +45,16 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Private per-agent content overrides. The base template remains shared,
+    // while only its owner can read, create, update or remove the override.
+    match /users/{userId}/emailTemplateOverrides/{templateId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn()
+                            && request.auth.uid == userId
+                            && request.resource.data.baseTemplateId == templateId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
     match /agencies/{agencyId}/properties/{propertyId} {
       allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
       allow create, update, delete: if isUserInAgency(agencyId);
