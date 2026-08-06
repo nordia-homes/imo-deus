@@ -13,11 +13,11 @@ import type { SaleParticipantRole, SaleStage, SalesEmailTemplate } from '@/lib/t
 import { cn } from '@/lib/utils';
 
 export type GmailTemplateDraft = { name: string; description: string; recipientRole: SaleParticipantRole; stage: SaleStage | 'any'; subject: string; body: string; bodyHtml: string; defaultCc: string[]; defaultQuestions: string[]; };
-type Props = { open: boolean; template: SalesEmailTemplate | null; saving?: boolean; onOpenChange: (open: boolean) => void; onSave: (draft: GmailTemplateDraft) => Promise<void> | void; };
+type Props = { open: boolean; template: SalesEmailTemplate | null; defaultRecipientRole?: SaleParticipantRole; saving?: boolean; onOpenChange: (open: boolean) => void; onSave: (draft: GmailTemplateDraft) => Promise<void> | void; };
 const VARIABLES = ['{{recipient.name}}', '{{property.title}}', '{{property.address}}', '{{documents.list}}', '{{notary.summary}}', '{{agent.name}}'];
 const roleName = (role: SaleParticipantRole) => role === 'buyer' ? 'Cumpărător' : role === 'owner' ? 'Proprietar' : role === 'notary' ? 'Notar' : 'Colaborator';
 
-export function GmailTemplateEditorDialog({ open, template, saving = false, onOpenChange, onSave }: Props) {
+export function GmailTemplateEditorDialog({ open, template, defaultRecipientRole = 'buyer', saving = false, onOpenChange, onSave }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [recipientRole, setRecipientRole] = useState<SaleParticipantRole>('buyer');
@@ -30,8 +30,8 @@ export function GmailTemplateEditorDialog({ open, template, saving = false, onOp
   const [questions, setQuestions] = useState('');
   useEffect(() => {
     if (!open) return;
-    setName(template?.name || ''); setDescription(template?.description || ''); setRecipientRole(template?.recipientRole || 'buyer'); setStage(template?.stage || 'any'); setSubject(template?.subject || ''); setBody(template?.body || ''); setBodyHtml(template?.bodyHtml || plainTextToEmailHtml(template?.body || '')); setDefaultCc(template?.defaultCc || []); setCcInput(''); setQuestions((template?.defaultQuestions || []).join('\n'));
-  }, [open, template]);
+    setName(template?.name || ''); setDescription(template?.description || ''); setRecipientRole(template?.recipientRole || defaultRecipientRole); setStage(template?.stage || 'any'); setSubject(template?.subject || ''); setBody(template?.body || ''); setBodyHtml(template?.bodyHtml || plainTextToEmailHtml(template?.body || '')); setDefaultCc(template?.defaultCc || []); setCcInput(''); setQuestions((template?.defaultQuestions || []).join('\n'));
+  }, [defaultRecipientRole, open, template]);
   const invalidCc = useMemo(() => defaultCc.filter((email) => !isEmailAddress(email)), [defaultCc]);
   const addCc = () => { const values = parseEmailList(ccInput); if (!values.length) return; setDefaultCc((current) => [...new Set([...current, ...values])]); setCcInput(''); };
   const submit = async () => {
