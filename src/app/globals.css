@@ -43307,3 +43307,36 @@
     font-size: clamp(2.05rem, 10.4vw, 2.3rem);
   }
 }
+/* Sales management: AgentFinder theme isolation */
+[data-app-theme='agentfinder'] .sales-management-property-media.sales-management-property-media {
+  background: #eef8f7 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-app-theme='agentfinder'] .sales-management-property-image.sales-management-property-image {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  visibility: visible !important;
+}
+
+[data-app-theme='agentfinder'] .sales-management-property-image-overlay.sales-management-property-image-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 48%, rgba(15, 118, 110, 0.14) 100%) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+[data-app-theme='agentfinder'] .sales-management-stage-tab--active.sales-management-stage-tab--active {
+  background: linear-gradient(135deg, #415782 0%, #30466f 100%) !important;
+  border-color: #415782 !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(65, 87, 130, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+[data-app-theme='agentfinder'] .sales-management-stage-tab--active.sales-management-stage-tab--active:hover {
+  background: linear-gradient(135deg, #4c6594 0%, #354e7b 100%) !important;
+  color: #ffffff !important;
+}
