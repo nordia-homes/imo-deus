@@ -40,7 +40,42 @@ export function GmailForwardingSetup({ compact = false, className }: { compact?:
       toast({ title: 'Configurarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
     } finally { setCreating(false); }
   };
-  if (loading) return <div className={cn('flex items-center gap-2 rounded-[26px] border border-white/10 bg-white/[.055] p-5 text-sm text-white/65', className)}><Loader2 className="h-4 w-4 animate-spin" /> Verific sincronizarea răspunsurilor…</div>;
+  if (loading) return <div className={cn('flex items-center gap-2 rounded-[20px] border border-white/10 bg-white/[.055] p-4 text-sm text-white/65', className)}><Loader2 className="h-4 w-4 animate-spin" /> Verific sincronizarea răspunsurilor…</div>;
+
+  if (compact && !connection) return (
+    <div className={cn('rounded-[20px] border border-white/10 bg-white/[.055] p-4 text-white backdrop-blur-xl', className)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="rounded-xl bg-emerald-400/12 p-2.5 text-emerald-300"><MessageSquareReply className="h-4 w-4" /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Sincronizează răspunsurile</p>
+            <p className="mt-0.5 text-xs leading-5 text-white/58">Primești în dosar o copie prin Gmail Forwarding.</p>
+          </div>
+        </div>
+        <Button onClick={create} disabled={creating} className="gmail-forwarding-compact__action h-10 shrink-0 rounded-xl px-4">
+          {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+          Generează adresa
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (compact && connection) return (
+    <div className={cn('rounded-[20px] border border-white/10 bg-white/[.055] p-4 text-white backdrop-blur-xl', className)}>
+      <div className="flex items-center gap-3">
+        <div className={cn('rounded-xl p-2.5', connection.status === 'connected' ? 'bg-emerald-400/12 text-emerald-300' : 'bg-amber-400/12 text-amber-300')}>
+          {connection.status === 'connected' ? <CheckCircle2 className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{connection.status === 'connected' ? 'Răspunsuri sincronizate' : 'Confirmă forwardingul în Gmail'}</p>
+          <p className="truncate text-xs text-white/48">{connection.inboundAddress}</p>
+        </div>
+        <Button variant="ghost" size="icon" className="gmail-forwarding-compact__refresh h-9 w-9 shrink-0 rounded-xl" onClick={() => void load()}><RefreshCw className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="gmail-forwarding-compact__refresh h-9 w-9 shrink-0 rounded-xl" onClick={() => { void navigator.clipboard.writeText(connection.inboundAddress); toast({ title: 'Adresa a fost copiată' }); }}><Copy className="h-4 w-4" /></Button>
+      </div>
+      {connection.verificationCode ? <div className="mt-3 rounded-xl bg-emerald-400/10 p-2.5 text-xs text-emerald-700">Cod Gmail detectat: <strong className="ml-1 tracking-[.2em]">{connection.verificationCode}</strong></div> : null}
+    </div>
+  );
   if (!connection) return (
     <div className={cn('rounded-[26px] border border-white/10 bg-white/[.055] p-5 text-white backdrop-blur-xl', className)}>
       <div className="flex items-start gap-3"><div className="rounded-2xl bg-emerald-400/12 p-3 text-emerald-300"><MessageSquareReply className="h-5 w-5" /></div><div><p className="font-semibold">Sincronizează răspunsurile</p><p className="mt-1 text-sm leading-6 text-white/58">Clienții răspund normal. Imodeus primește o copie prin Gmail Forwarding.</p></div></div>
