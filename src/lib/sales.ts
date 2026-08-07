@@ -1,6 +1,9 @@
 import type {
+  LegacySaleStage,
   Property,
+  SaleChecklistItem,
   SaleParticipantRole,
+  SaleChecklistStage,
   SaleStage,
   SaleTransaction,
   SalesEmailTemplate,
@@ -14,26 +17,26 @@ export const SALE_STAGE_META: Record<
   preparing: {
     label: 'În pregătire',
     shortLabel: 'Pregătire',
-    description: 'Oferta este acceptată și dosarul urmează să fie organizat.',
+    description: 'Dosarul și participanții tranzacției sunt în curs de organizare.',
     tone: 'info',
   },
-  documents: {
-    label: 'Documente',
-    shortLabel: 'Documente',
-    description: 'Se solicită, primesc și verifică documentele părților.',
+  reservation: {
+    label: 'În rezervare',
+    shortLabel: 'Rezervare',
+    description: 'Se gestionează rezervarea și condițiile agreate de părți.',
+    tone: 'info',
+  },
+  precontract: {
+    label: 'Antecontract',
+    shortLabel: 'Antecontract',
+    description: 'Se pregătesc actele și semnarea antecontractului.',
     tone: 'warning',
   },
-  notary_scheduling: {
-    label: 'Programare notar',
-    shortLabel: 'Notar',
-    description: 'Se confirmă notarul, data și disponibilitatea părților.',
+  contract: {
+    label: 'Contract',
+    shortLabel: 'Contract',
+    description: 'Se pregătesc actele și semnarea contractului final.',
     tone: 'info',
-  },
-  ready_to_sign: {
-    label: 'Pregătită pentru semnare',
-    shortLabel: 'Semnare',
-    description: 'Dosarul este complet și programarea este confirmată.',
-    tone: 'success',
   },
   completed: {
     label: 'Finalizată',
@@ -55,13 +58,41 @@ export const SALE_STAGE_META: Record<
   },
 };
 
+const SALE_STAGE_VALUES: readonly SaleStage[] = [
+  'preparing',
+  'reservation',
+  'precontract',
+  'contract',
+  'completed',
+  'blocked',
+  'cancelled',
+];
+
+const LEGACY_SALE_STAGE_MAP: Record<LegacySaleStage, SaleStage> = {
+  documents: 'reservation',
+  notary_scheduling: 'precontract',
+  ready_to_sign: 'contract',
+};
+
+export function normalizeSaleStage(stage: unknown): SaleStage {
+  const value = String(stage || '').trim();
+  if (SALE_STAGE_VALUES.includes(value as SaleStage)) return value as SaleStage;
+  return LEGACY_SALE_STAGE_MAP[value as LegacySaleStage] || 'preparing';
+}
+
+export function normalizeSalesEmailTemplateStage(stage: unknown): SaleStage | 'any' {
+  if (stage === 'any') return 'any';
+  if (stage === 'documents') return 'precontract';
+  return normalizeSaleStage(stage);
+}
+
 export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
   {
     id: "owner-required-documents-precontract",
     name: "Proprietar · Documente necesare antecontract",
     description: "Solicită într-un singur mesaj actele necesare pregătirii antecontractului.",
     recipientRole: "owner",
-    stage: "documents",
+    stage: "precontract",
     subject: "Documente necesare pentru antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nPentru pregătirea antecontractului aferent proprietății din {{property.address}}, vă rog să ne transmiteți, prin răspuns la acest email, documentele de mai jos:\n\n{{documents.list}}\n\nDacă unul dintre documente nu este disponibil momentan, vă rog să îmi spuneți când estimați că îl puteți trimite. După verificare, vă confirm imediat dacă dosarul este complet.\n\nCu bine,\n{{agent.name}}",
     isSystem: true,
@@ -72,7 +103,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Proprietar · Documente necesare contract vânzare-cumpărare",
     description: "Centralizează actele necesare semnării contractului final de vânzare-cumpărare.",
     recipientRole: "owner",
-    stage: "documents",
+    stage: "contract",
     subject: "Documente pentru contractul de vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nPentru pregătirea contractului de vânzare-cumpărare privind proprietatea din {{property.address}}, avem nevoie de următoarele documente:\n\n{{documents.list}}\n\nLe puteți atașa direct ca răspuns la acest email. Vă voi confirma după verificare dacă dosarul este complet sau dacă notarul solicită informații suplimentare.\n\nCu bine,\n{{agent.name}}",
     isSystem: true,
@@ -83,7 +114,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Proprietar · Documente lipsă antecontract",
     description: "Reminder politicos care afișează numai documentele încă lipsă pentru antecontract.",
     recipientRole: "owner",
-    stage: "documents",
+    stage: "precontract",
     subject: "Completare documente antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă mulțumesc pentru documentele transmise. Pentru a putea finaliza pregătirea antecontractului pentru {{property.address}}, mai avem nevoie doar de:\n\n{{documents.list}}\n\nLe puteți trimite direct prin răspuns la acest mesaj. Dacă aveți nevoie de ajutor pentru obținerea unui document, vă rog să îmi spuneți.\n\nMulțumesc,\n{{agent.name}}",
     isSystem: true,
@@ -94,7 +125,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Proprietar · Documente lipsă contract vânzare-cumpărare",
     description: "Solicită punctual elementele rămase pentru contractul final.",
     recipientRole: "owner",
-    stage: "documents",
+    stage: "contract",
     subject: "Completare dosar contract vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nDosarul pentru contractul de vânzare-cumpărare al proprietății din {{property.address}} este aproape complet. Mai avem nevoie de următoarele documente:\n\n{{documents.list}}\n\nVă rog să le transmiteți prin răspuns la acest email. Vă confirm imediat ce dosarul poate fi trimis notarului în forma completă.\n\nMulțumesc,\n{{agent.name}}",
     isSystem: true,
@@ -105,7 +136,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Proprietar · Confirmare programare antecontract",
     description: "Confirmă clar data, ora și locul semnării antecontractului.",
     recipientRole: "owner",
-    stage: "notary_scheduling",
+    stage: "precontract",
     subject: "Confirmare programare antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă confirm programarea pentru semnarea antecontractului aferent proprietății din {{property.address}}:\n\n{{notary.summary}}\n\nVă rog să aveți asupra dumneavoastră actul de identitate în original și să îmi confirmați prin răspuns că detaliile programării sunt în regulă.\n\nCu bine,\n{{agent.name}}",
     defaultQuestions: ["Confirmați disponibilitatea pentru data, ora și locul programării?"],
@@ -117,7 +148,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Proprietar · Confirmare programare contract vânzare-cumpărare",
     description: "Rezumatul final al programării pentru semnarea contractului de vânzare-cumpărare.",
     recipientRole: "owner",
-    stage: "ready_to_sign",
+    stage: "contract",
     subject: "Confirmare semnare contract vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă confirm programarea pentru semnarea contractului de vânzare-cumpărare privind proprietatea din {{property.address}}:\n\n{{notary.summary}}\n\nVă rog să aveți actul de identitate în original și să îmi comunicați cât mai curând dacă intervine orice schimbare.\n\nCu bine,\n{{agent.name}}",
     defaultQuestions: ["Confirmați participarea la programarea pentru semnarea contractului?"],
@@ -140,7 +171,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Documente necesare antecontract",
     description: "Explică simplu ce trebuie transmis pentru pregătirea antecontractului.",
     recipientRole: "buyer",
-    stage: "documents",
+    stage: "precontract",
     subject: "Documente necesare pentru antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nPentru pregătirea antecontractului aferent proprietății din {{property.address}}, vă rog să ne transmiteți, prin răspuns la acest email, documentele de mai jos:\n\n{{documents.list}}\n\nDacă achiziția se realizează prin credit, puteți include și documentele disponibile din partea băncii. Dacă un act nu este încă disponibil, este suficient să îmi comunicați termenul estimat.\n\nCu bine,\n{{agent.name}}",
     isSystem: true,
@@ -151,7 +182,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Documente necesare contract vânzare-cumpărare",
     description: "Centralizează actele și informațiile cumpărătorului pentru contractul final.",
     recipientRole: "buyer",
-    stage: "documents",
+    stage: "contract",
     subject: "Documente pentru contractul de vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nPentru redactarea contractului de vânzare-cumpărare privind proprietatea din {{property.address}}, avem nevoie de următoarele documente și informații:\n\n{{documents.list}}\n\nLe puteți atașa direct ca răspuns la acest email. După verificare, vă voi confirma dacă dosarul este complet pentru notar.\n\nCu bine,\n{{agent.name}}",
     isSystem: true,
@@ -162,7 +193,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Documente lipsă antecontract",
     description: "Reminder calm și clar pentru actele încă necesare antecontractului.",
     recipientRole: "buyer",
-    stage: "documents",
+    stage: "precontract",
     subject: "Completare documente antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă mulțumesc pentru documentele transmise. Pentru a finaliza pregătirea antecontractului pentru proprietatea din {{property.address}}, mai avem nevoie doar de:\n\n{{documents.list}}\n\nLe puteți trimite prin răspuns la acest mesaj. Dacă unul dintre documente depinde de bancă sau de o altă instituție, vă rog să îmi comunicați stadiul.\n\nMulțumesc,\n{{agent.name}}",
     isSystem: true,
@@ -173,7 +204,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Documente lipsă contract vânzare-cumpărare",
     description: "Solicită numai elementele rămase înaintea contractului final.",
     recipientRole: "buyer",
-    stage: "documents",
+    stage: "contract",
     subject: "Completare dosar contract vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nDosarul pentru contractul de vânzare-cumpărare al proprietății din {{property.address}} este aproape complet. Mai avem nevoie de:\n\n{{documents.list}}\n\nVă rog să transmiteți documentele prin răspuns la acest email. Dacă achiziția este finanțată prin credit, ne puteți comunica și stadiul aprobării finale.\n\nMulțumesc,\n{{agent.name}}",
     isSystem: true,
@@ -184,7 +215,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Confirmare programare antecontract",
     description: "Confirmă programarea și indică simplu ce trebuie pregătit pentru antecontract.",
     recipientRole: "buyer",
-    stage: "notary_scheduling",
+    stage: "precontract",
     subject: "Confirmare programare antecontract · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă confirm programarea pentru semnarea antecontractului aferent proprietății din {{property.address}}:\n\n{{notary.summary}}\n\nVă rog să aveți actul de identitate în original și să îmi confirmați prin răspuns că detaliile programării sunt potrivite. Dacă achiziția implică finanțare bancară, vă recomand să aveți la îndemână și datele consilierului bancar.\n\nCu bine,\n{{agent.name}}",
     defaultQuestions: ["Confirmați disponibilitatea pentru data, ora și locul programării?"],
@@ -196,7 +227,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
     name: "Cumpărător · Confirmare programare contract vânzare-cumpărare",
     description: "Rezumatul final pentru semnarea contractului de vânzare-cumpărare.",
     recipientRole: "buyer",
-    stage: "ready_to_sign",
+    stage: "contract",
     subject: "Confirmare semnare contract vânzare-cumpărare · {{property.address}}",
     body: "Bună ziua, {{recipient.name}},\n\nVă confirm programarea pentru semnarea contractului de vânzare-cumpărare privind proprietatea din {{property.address}}:\n\n{{notary.summary}}\n\nVă rog să aveți actul de identitate în original și să verificați din timp îndeplinirea eventualelor formalități bancare. Dacă intervine orice schimbare, vă rog să mă anunțați cât mai curând.\n\nCu bine,\n{{agent.name}}",
     defaultQuestions: ["Confirmați participarea la programarea pentru semnarea contractului?"],
@@ -308,7 +339,7 @@ export function getSaleReadiness(sale: Pick<SaleTransaction, 'participants' | 'f
   if (!sale.agreedPrice || sale.agreedPrice <= 0) issues.push({ id: 'agreed-price', label: 'Prețul agreat', section: 'transaction' });
   if (!sale.financingType || sale.financingType === 'unknown') issues.push({ id: 'financing', label: 'Forma de finanțare', section: 'transaction' });
   if (!(sale.checklist || []).some((item) => item.required)) issues.push({ id: 'checklist', label: 'Lista documentelor necesare', section: 'documents' });
-  if (['notary_scheduling', 'ready_to_sign'].includes(sale.stage) && !sale.notary?.name?.trim()) {
+  if (['precontract', 'contract'].includes(normalizeSaleStage(sale.stage)) && !sale.notary?.name?.trim()) {
     issues.push({ id: 'notary-name', label: 'Notarul tranzacției', section: 'notary' });
   }
   return {
@@ -338,14 +369,15 @@ export function applySalesEmailTemplateOverrides(
 
   return templates.map((template) => {
     const override = overrideByTemplateId.get(template.id);
-    if (!override) return template;
+    const normalizedTemplate = { ...template, stage: normalizeSalesEmailTemplateStage(template.stage) };
+    if (!override) return normalizedTemplate;
 
     return {
-      ...template,
+      ...normalizedTemplate,
       name: override.name,
       description: override.description,
       recipientRole: override.recipientRole,
-      stage: override.stage,
+      stage: normalizeSalesEmailTemplateStage(override.stage),
       subject: override.subject,
       body: override.body,
       bodyHtml: override.bodyHtml,
@@ -362,23 +394,84 @@ export function filterEnabledSalesEmailTemplates(
   enabledTemplateIds?: string[] | null
 ) {
   const enabledIds = new Set(enabledTemplateIds || []);
-  return templates.filter((template) => template.isActive !== false && enabledIds.has(template.id));
+  return templates
+    .filter((template) => template.isActive !== false && enabledIds.has(template.id))
+    .map((template) => ({ ...template, stage: normalizeSalesEmailTemplateStage(template.stage) }));
 }
 
-export const DEFAULT_SALE_DOCUMENTS: Array<{ label: string; role: 'buyer' | 'owner' }> = [
-  { label: 'Act de identitate cumpărător', role: 'buyer' },
-  { label: 'Dovada finanțării / preaprobare', role: 'buyer' },
-  { label: 'Act de identitate proprietar', role: 'owner' },
-  { label: 'Act de proprietate', role: 'owner' },
-  { label: 'Extras de carte funciară', role: 'owner' },
-  { label: 'Certificat fiscal', role: 'owner' },
-  { label: 'Certificat energetic', role: 'owner' },
-  { label: 'Cadastru / releveu', role: 'owner' },
+export type DefaultSaleDocument = {
+  label: string;
+  role: 'buyer' | 'owner';
+  stage: SaleChecklistStage;
+};
+
+export const DEFAULT_PRECONTRACT_OWNER_DOCUMENTS: DefaultSaleDocument[] = [
+  { label: 'Carte de identitate proprietar', role: 'owner', stage: 'precontract' },
+  { label: 'Carte de identitate soț/soție (dacă este cazul)', role: 'owner', stage: 'precontract' },
+  { label: 'Certificat de căsătorie (dacă este cazul)', role: 'owner', stage: 'precontract' },
+  { label: 'Act de proprietate / contract de vânzare-cumpărare', role: 'owner', stage: 'precontract' },
+  { label: 'RLV / releveu', role: 'owner', stage: 'precontract' },
+  { label: 'Extras de carte funciară pentru informare', role: 'owner', stage: 'precontract' },
+  { label: 'Certificat energetic', role: 'owner', stage: 'precontract' },
+  { label: 'Extras de cont bancar (prima pagină, cu titularul și IBAN-ul vizibile; cont RON și, dacă este cazul, EUR)', role: 'owner', stage: 'precontract' },
 ];
 
-function documentsForRole(sale: SaleTransaction, role: SaleParticipantRole) {
+export const DEFAULT_CONTRACT_OWNER_DOCUMENTS: DefaultSaleDocument[] = [
+  { label: 'Carte de identitate proprietar', role: 'owner', stage: 'contract' },
+  { label: 'Carte de identitate soț/soție (dacă este cazul)', role: 'owner', stage: 'contract' },
+  { label: 'Certificat de căsătorie (dacă este cazul)', role: 'owner', stage: 'contract' },
+  { label: 'Act de proprietate în original, cu istoricul complet', role: 'owner', stage: 'contract' },
+  { label: 'Act de proprietate pentru parcare, boxă sau alte anexe, în original, cu istoricul complet (dacă este cazul)', role: 'owner', stage: 'contract' },
+  { label: 'RLV / releveu', role: 'owner', stage: 'contract' },
+  { label: 'Extras de carte funciară pentru informare (poate fi obținut de notar)', role: 'owner', stage: 'contract' },
+  { label: 'Certificat energetic valabil', role: 'owner', stage: 'contract' },
+  { label: 'Poliță de asigurare PAD valabilă', role: 'owner', stage: 'contract' },
+  { label: 'Document de intabulare în numele proprietarului', role: 'owner', stage: 'contract' },
+  { label: 'Certificat fiscal cu mențiunea „Vânzare imobil”, pentru fiecare proprietar', role: 'owner', stage: 'contract' },
+  { label: 'Dovada achitării integrale a proprietății / OP-urile de plată (dacă este cazul)', role: 'owner', stage: 'contract' },
+  { label: 'Adeverință de la asociația de proprietari, în original (dacă este cazul)', role: 'owner', stage: 'contract' },
+  { label: 'Extras de cont pentru încasarea prețului (prima pagină, cu titularul și IBAN-ul vizibile; cont RON și, dacă este cazul, EUR)', role: 'owner', stage: 'contract' },
+  { label: 'Ultima factură de energie electrică și dovada plății', role: 'owner', stage: 'contract' },
+  { label: 'Ultima factură de gaze și dovada plății (dacă este cazul)', role: 'owner', stage: 'contract' },
+];
+
+export function createDefaultSaleChecklistItems(
+  documents: DefaultSaleDocument[],
+  createId: () => string
+): SaleChecklistItem[] {
+  return documents.map((item) => ({
+    id: createId(),
+    label: item.label,
+    participantRole: item.role,
+    stage: item.stage,
+    status: 'required',
+    required: true,
+    reviewStatus: 'unreviewed',
+    scanStatus: 'pending',
+    ocrStatus: 'not_requested',
+    version: 1,
+  }));
+}
+
+export function withDefaultSaleDocumentsForStage(
+  checklist: SaleChecklistItem[] | null | undefined,
+  documents: DefaultSaleDocument[],
+  createId: () => string
+) {
+  const current = checklist || [];
+  const stage = documents[0]?.stage;
+  if (!stage || current.some((item) => item.stage === stage)) return current;
+  return [...current, ...createDefaultSaleChecklistItems(documents, createId)];
+}
+
+// Alias păstrat pentru consumatorii existenți ai presetului inițial din wizard.
+export const DEFAULT_SALE_DOCUMENTS = DEFAULT_PRECONTRACT_OWNER_DOCUMENTS;
+
+function documentsForRole(sale: SaleTransaction, role: SaleParticipantRole, stage: SalesEmailTemplate['stage']) {
+  const checklistStage = ['reservation', 'precontract', 'contract'].includes(stage) ? stage : null;
   return (sale.checklist || [])
     .filter((item) => item.participantRole === role && item.status !== 'verified')
+    .filter((item) => !checklistStage || !item.stage || item.stage === checklistStage)
     .map((item) => `• ${item.label}`)
     .join('\n');
 }
@@ -402,7 +495,7 @@ export function renderSalesTemplate(
     '{{property.address}}': sale.propertyAddress,
     '{{property.title}}': sale.propertyTitle,
     '{{agent.name}}': agent.name,
-    '{{documents.list}}': documentsForRole(sale, recipient.role) || '• Nu există documente selectate încă',
+    '{{documents.list}}': documentsForRole(sale, recipient.role, template.stage) || '• Nu există documente selectate încă',
     '{{notary.summary}}': notarySummary,
   };
   const replace = (value: string) => Object.entries(values).reduce(

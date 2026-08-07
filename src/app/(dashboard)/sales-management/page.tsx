@@ -39,22 +39,24 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   createSaleFromProperty,
+  DEFAULT_CONTRACT_OWNER_DOCUMENTS,
   getSaleSetupState,
   isReservedProperty,
   isSoldProperty,
   SALE_STAGE_META,
+  withDefaultSaleDocumentsForStage,
 } from '@/lib/sales';
 import { normalizeSaleForWorkspace } from '@/lib/sales-workspace';
 import type { Property, SaleStage, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-const STAGE_ORDER: SaleStage[] = ['preparing', 'documents', 'notary_scheduling', 'ready_to_sign', 'completed'];
+const STAGE_ORDER: SaleStage[] = ['preparing', 'reservation', 'precontract', 'contract', 'completed'];
 const STAGE_COLORS: Record<SaleStage, string> = {
   preparing: 'border-emerald-500/30 bg-emerald-50 text-emerald-800',
-  documents: 'border-amber-500/25 bg-amber-500/10 text-amber-600',
-  notary_scheduling: 'border-orange-500/25 bg-orange-500/10 text-orange-700',
-  ready_to_sign: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600',
-  completed: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600',
+  reservation: 'border-sky-500/25 bg-sky-500/10 text-sky-700',
+  precontract: 'border-amber-500/25 bg-amber-500/10 text-amber-700',
+  contract: 'border-violet-500/25 bg-violet-500/10 text-violet-700',
+  completed: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700',
   blocked: 'border-red-500/25 bg-red-500/10 text-red-600',
   cancelled: 'border-slate-500/25 bg-slate-500/10 text-slate-500',
 };
@@ -307,9 +309,10 @@ export default function SalesManagementPage() {
   const propertiesQuery = useMemoFirebase(() => agencyId ? collection(firestore, 'agencies', agencyId, 'properties') : null, [agencyId, firestore]);
   const { data: allSales, isLoading: salesLoading } = useCollection<SaleTransaction>(salesQuery);
   const { data: properties, isLoading: propertiesLoading } = useCollection<Property>(propertiesQuery);
+  const normalizedSales = useMemo(() => (allSales || []).map(normalizeSaleForWorkspace), [allSales]);
 
   const visibleSales = useMemo(() => {
-    const owned = (allSales || []).filter((sale) => canSeeAll || sale.agentId === user?.uid || sale.collaboratorIds?.includes(user?.uid || ''));
+    const owned = normalizedSales.filter((sale) => canSeeAll || sale.agentId === user?.uid || sale.collaboratorIds?.includes(user?.uid || ''));
     const term = normalize(search);
     return owned
       .filter((sale) => stageFilter === 'all' || (stageFilter === 'active' ? !['completed', 'cancelled'].includes(sale.stage) : sale.stage === stageFilter))
@@ -318,15 +321,15 @@ export default function SalesManagementPage() {
         if ((right.unreadReplyCount || 0) !== (left.unreadReplyCount || 0)) return (right.unreadReplyCount || 0) - (left.unreadReplyCount || 0);
         return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
       });
-  }, [allSales, canSeeAll, search, stageFilter, user?.uid]);
+  }, [canSeeAll, normalizedSales, search, stageFilter, user?.uid]);
 
   const eligibleProperties = useMemo(() => {
-    const existingIds = new Set((allSales || []).map((sale) => sale.propertyId));
+    const existingIds = new Set(normalizedSales.map((sale) => sale.propertyId));
     return (properties || [])
       .filter((property) => (isSoldProperty(property) || isReservedProperty(property)) && !existingIds.has(property.id))
       .filter((property) => canSeeAll || property.agentId === user?.uid || !property.agentId)
       .slice(0, 6);
-  }, [allSales, canSeeAll, properties, user?.uid]);
+  }, [canSeeAll, normalizedSales, properties, user?.uid]);
 
   const propertyImageRecords = useMemo(() => {
     const records: Array<{ id: string; title: string; address: string; imageUrl: string }> = [];
@@ -351,10 +354,10 @@ export default function SalesManagementPage() {
     );
     return exact?.imageUrl || null;
   };
-  const ownedSales = useMemo(() => (allSales || []).filter((sale) => canSeeAll || sale.agentId === user?.uid || sale.collaboratorIds?.includes(user?.uid || '')), [allSales, canSeeAll, user?.uid]);
+  const ownedSales = useMemo(() => normalizedSales.filter((sale) => canSeeAll || sale.agentId === user?.uid || sale.collaboratorIds?.includes(user?.uid || '')), [canSeeAll, normalizedSales, user?.uid]);
   const metrics = {
     active: ownedSales.filter((sale) => !['completed', 'cancelled'].includes(sale.stage)).length,
-    documents: ownedSales.filter((sale) => sale.stage === 'documents').length,
+    precontracts: ownedSales.filter((sale) => sale.stage === 'precontract').length,
     unread: ownedSales.reduce((total, sale) => total + (sale.unreadReplyCount || 0), 0),
     completed: ownedSales.filter((sale) => sale.stage === 'completed').length,
   };
@@ -380,8 +383,13 @@ export default function SalesManagementPage() {
     if (!agencyId) return;
     try {
       const now = new Date().toISOString();
+      const checklist = stage === 'contract'
+        ? withDefaultSaleDocumentsForStage(sale.checklist, DEFAULT_CONTRACT_OWNER_DOCUMENTS, () => crypto.randomUUID())
+        : sale.checklist || [];
       await updateDoc(doc(firestore, 'agencies', agencyId, 'sales', sale.id), {
         stage,
+        checklist,
+        requiredDocumentCount: checklist.filter((item) => item.required).length,
         nextAction: SALE_STAGE_META[stage].description,
         updatedAt: now,
         completedAt: stage === 'completed' ? now : sale.completedAt || null,
@@ -415,14 +423,14 @@ export default function SalesManagementPage() {
   };
 
   useEffect(() => {
-    if (!allSales?.length) return;
+    if (!normalizedSales.length) return;
     const linkedSaleId = new URLSearchParams(window.location.search).get('sale');
     if (!linkedSaleId) return;
-    const linkedSale = allSales.find((item) => item.id === linkedSaleId);
+    const linkedSale = normalizedSales.find((item) => item.id === linkedSaleId);
     if (!linkedSale) return;
     setInitialPanel('context');
     setSelectedSale(normalizeSaleForWorkspace(linkedSale));
-  }, [allSales]);
+  }, [normalizedSales]);
 
   return (
     <div data-testid="sales-management-page" className="relative isolate space-y-6 rounded-[36px] bg-[radial-gradient(circle_at_0%_12%,rgba(209,250,229,.34),transparent_24%),radial-gradient(circle_at_100%_68%,rgba(224,242,254,.38),transparent_28%)] px-0 pb-12 text-slate-950 md:px-3">
@@ -438,7 +446,7 @@ export default function SalesManagementPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { label: 'În lucru', value: metrics.active, icon: CircleDot, tone: 'bg-sky-50 text-sky-600 ring-sky-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(224,242,254,.82))]' },
-              { label: 'La documente', value: metrics.documents, icon: FileCheck2, tone: 'bg-amber-50 text-amber-600 ring-amber-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(254,243,199,.72))]' },
+              { label: 'Antecontracte', value: metrics.precontracts, icon: FileCheck2, tone: 'bg-amber-50 text-amber-600 ring-amber-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(254,243,199,.72))]' },
               { label: 'Răspunsuri noi', value: metrics.unread, icon: Inbox, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(209,250,229,.78))]' },
               { label: 'Finalizate', value: metrics.completed, icon: BadgeCheck, tone: 'bg-violet-50 text-violet-600 ring-violet-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(237,233,254,.8))]' },
             ].map((metric) => (
@@ -463,7 +471,7 @@ export default function SalesManagementPage() {
             {([{ id: 'active', label: 'Active' }, { id: 'all', label: 'Toate' }] as const).map((item) => <Button key={item.id} size="sm" variant="ghost" className={cn('rounded-xl px-4', stageFilter === item.id && 'sales-management-stage-tab--active bg-[linear-gradient(135deg,#10b981,#0d9488)] text-white shadow-[0_10px_22px_-14px_rgba(13,148,136,.72)] hover:brightness-105')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}
           </div>
           <div className="relative min-w-0 flex-1 xl:max-w-xl"><Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Caută proprietate, client, agent sau cod de tranzacție…" className="h-12 rounded-[18px] border-slate-200/80 bg-white/90 pl-11 pr-11 shadow-[inset_0_1px_2px_rgba(15,23,42,.03)] transition focus-visible:border-teal-300 focus-visible:ring-teal-200/50" />{search ? <Button size="icon" variant="ghost" className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full" onClick={() => setSearch('')}><X className="h-4 w-4" /></Button> : null}</div>
-          <div className="sales-management-stage-tabs flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 xl:justify-end xl:pb-0">{([...STAGE_ORDER.map((stage) => ({ id: stage, label: SALE_STAGE_META[stage].shortLabel })), { id: 'blocked' as const, label: 'Blocate' }] as { id: SaleStage; label: string }[]).map((item) => <Button key={item.id} size="sm" variant={stageFilter === item.id ? 'default' : 'outline'} className={cn('sales-management-stage-tab shrink-0 rounded-full border-slate-200/80 bg-white/75 px-4 text-slate-600 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800', stageFilter === item.id && 'sales-management-stage-tab--active bg-[linear-gradient(135deg,#10b981,#0d9488)] text-white shadow-[0_10px_22px_-14px_rgba(13,148,136,.72)] hover:brightness-105')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}</div>
+          <div className="sales-management-stage-tabs flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 xl:justify-end xl:pb-0">{([...STAGE_ORDER.map((stage) => ({ id: stage, label: SALE_STAGE_META[stage].shortLabel })), { id: 'blocked' as const, label: SALE_STAGE_META.blocked.shortLabel }] as { id: SaleStage; label: string }[]).map((item) => <Button key={item.id} size="sm" variant={stageFilter === item.id ? 'default' : 'outline'} className={cn('sales-management-stage-tab shrink-0 rounded-full border-slate-200/80 bg-white/75 px-4 text-slate-600 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800', stageFilter === item.id && 'sales-management-stage-tab--active bg-[linear-gradient(135deg,#10b981,#0d9488)] text-white shadow-[0_10px_22px_-14px_rgba(13,148,136,.72)] hover:brightness-105')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}</div>
         </div>
         {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[32px] bg-[linear-gradient(110deg,#f8fafc,#ecfdf5,#f8fafc)]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} imageUrl={propertyImageForSale(sale)} onEmail={() => openSale(sale, 'context')} onDossier={() => openSale(sale, 'documents')} onSetup={() => openSetup(sale)} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
           <div className="rounded-[32px] border border-dashed border-teal-200 bg-[radial-gradient(circle_at_top,rgba(204,251,241,.68),transparent_45%),rgba(255,255,255,.9)] px-6 py-16 text-center shadow-[0_24px_60px_-42px_rgba(13,148,136,.32)]"><div className="mx-auto grid h-16 w-16 place-items-center rounded-[22px] bg-emerald-500/10 text-emerald-600"><ShieldCheck className="h-7 w-7" /></div><h2 className="mt-5 text-xl font-semibold">{search ? 'Nu am găsit tranzacții' : 'Nicio vânzare în acest filtru'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Dosarele apar aici când o proprietate este rezervată sau marcată ca vândută. Fiecare agent vede tranzacțiile sale, iar administratorul vede întreaga agenție.</p></div>

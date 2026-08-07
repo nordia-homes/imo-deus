@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { isEmailAddress, parseEmailList, plainTextToEmailHtml } from '@/lib/email-compose';
+import { normalizeSalesEmailTemplateStage } from '@/lib/sales';
 import type { SaleParticipantRole, SaleStage, SalesEmailTemplate } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +31,7 @@ export function GmailTemplateEditorDialog({ open, template, defaultRecipientRole
   const [questions, setQuestions] = useState('');
   useEffect(() => {
     if (!open) return;
-    setName(template?.name || ''); setDescription(template?.description || ''); setRecipientRole(template?.recipientRole || defaultRecipientRole); setStage(template?.stage || 'any'); setSubject(template?.subject || ''); setBody(template?.body || ''); setBodyHtml(template?.bodyHtml || plainTextToEmailHtml(template?.body || '')); setDefaultCc(template?.defaultCc || []); setCcInput(''); setQuestions((template?.defaultQuestions || []).join('\n'));
+    setName(template?.name || ''); setDescription(template?.description || ''); setRecipientRole(template?.recipientRole || defaultRecipientRole); setStage(normalizeSalesEmailTemplateStage(template?.stage || 'any')); setSubject(template?.subject || ''); setBody(template?.body || ''); setBodyHtml(template?.bodyHtml || plainTextToEmailHtml(template?.body || '')); setDefaultCc(template?.defaultCc || []); setCcInput(''); setQuestions((template?.defaultQuestions || []).join('\n'));
   }, [defaultRecipientRole, open, template]);
   const invalidCc = useMemo(() => defaultCc.filter((email) => !isEmailAddress(email)), [defaultCc]);
   const addCc = () => { const values = parseEmailList(ccInput); if (!values.length) return; setDefaultCc((current) => [...new Set([...current, ...values])]); setCcInput(''); };
@@ -51,7 +52,7 @@ export function GmailTemplateEditorDialog({ open, template, defaultRecipientRole
               <div><Label>Nume template</Label><Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1.5 h-11 rounded-xl bg-slate-50" placeholder="Acte necesare cumpărător" /></div>
               <div><Label>Descriere scurtă</Label><Input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1.5 h-11 rounded-xl bg-slate-50" placeholder="Când se folosește mesajul" /></div>
               <div><Label>Destinatar principal</Label><Select value={recipientRole} onValueChange={(value: SaleParticipantRole) => setRecipientRole(value)}><SelectTrigger className="mt-1.5 h-11 rounded-xl bg-slate-50"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="buyer">Cumpărător</SelectItem><SelectItem value="owner">Proprietar</SelectItem><SelectItem value="notary">Notar</SelectItem><SelectItem value="collaborator">Colaborator</SelectItem></SelectContent></Select></div>
-              <div><Label>Etapa tranzacției</Label><Select value={stage} onValueChange={(value: SaleStage | 'any') => setStage(value)}><SelectTrigger className="mt-1.5 h-11 rounded-xl bg-slate-50"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Orice etapă</SelectItem><SelectItem value="preparing">Pregătire</SelectItem><SelectItem value="documents">Documente</SelectItem><SelectItem value="notary_scheduling">Programare notar</SelectItem><SelectItem value="ready_to_sign">Gata de semnare</SelectItem><SelectItem value="completed">Finalizată</SelectItem></SelectContent></Select></div>
+              <div><Label>Etapa tranzacției</Label><Select value={stage} onValueChange={(value: SaleStage | 'any') => setStage(value)}><SelectTrigger className="mt-1.5 h-11 rounded-xl bg-slate-50"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="any">Orice etapă</SelectItem><SelectItem value="preparing">Pregătire</SelectItem><SelectItem value="reservation">Rezervare</SelectItem><SelectItem value="precontract">Antecontract</SelectItem><SelectItem value="contract">Contract</SelectItem><SelectItem value="completed">Finalizată</SelectItem><SelectItem value="blocked">Blocată</SelectItem></SelectContent></Select></div>
               <div><Label>Întrebări urmărite, una pe rând</Label><textarea value={questions} onChange={(e) => setQuestions(e.target.value)} className="mt-1.5 min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/30" placeholder="Confirmați că ați primit lista?&#10;Puteți trimite documentele până vineri?" /></div>
             </div>
           </aside>

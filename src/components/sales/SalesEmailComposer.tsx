@@ -44,10 +44,13 @@ import { useToast } from '@/hooks/use-toast';
 import type { DesktopGmailRunnerStatus, GmailRunnerAttachment } from '@/lib/desktop/gmail-runner';
 import {
   applySalesEmailTemplateOverrides,
+  DEFAULT_CONTRACT_OWNER_DOCUMENTS,
   DEFAULT_SALES_EMAIL_TEMPLATES,
   filterEnabledSalesEmailTemplates,
   participantRoleLabel,
   renderSalesTemplate,
+  SALE_STAGE_META,
+  withDefaultSaleDocumentsForStage,
 } from '@/lib/sales';
 import type {
   SaleChecklistItem,
@@ -313,7 +316,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     if (!open || !sale) return;
     const initialParticipants = sale.participants?.length ? sale.participants : [newParticipant('buyer'), newParticipant('owner')];
     setParticipants(initialParticipants);
-    setChecklist(sale.checklist || []);
+    setChecklist(sale.stage === 'contract'
+      ? withDefaultSaleDocumentsForStage(sale.checklist, DEFAULT_CONTRACT_OWNER_DOCUMENTS, () => crypto.randomUUID())
+      : sale.checklist || []);
     setNotary(sale.notary || {});
     setNextAction(sale.nextAction || '');
     setNextActionAt(sale.nextActionAt?.slice(0, 16) || '');
@@ -331,7 +336,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     setLocalFiles([]);
     setSelectedDocumentIds([]);
     activeMessageRef.current = null;
-  }, [open, sale?.id]);
+  }, [open, sale?.id, sale?.stage]);
 
   useEffect(() => {
     const desktop = window.imodeusDesktop;
@@ -555,7 +560,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   const addDocument = () => {
     const label = newDocument.trim();
     if (!label) return;
-    setChecklist((current) => [...current, { id: crypto.randomUUID(), label, participantRole: newDocumentRole, status: 'required', required: true }]);
+    const stage = sale?.stage === 'reservation' || sale?.stage === 'precontract' || sale?.stage === 'contract'
+      ? sale.stage
+      : 'precontract';
+    setChecklist((current) => [...current, { id: crypto.randomUUID(), label, participantRole: newDocumentRole, stage, status: 'required', required: true }]);
     setNewDocument('');
   };
 
@@ -805,7 +813,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                     <div key={item.id} className={cn(panelClass, 'p-4')}>
                       <div className="flex items-start gap-3">
                         <Checkbox disabled={!item.downloadUrl} checked={selectedDocumentIds.includes(item.id)} onCheckedChange={(checked) => setSelectedDocumentIds((current) => checked ? [...current, item.id] : current.filter((id) => id !== item.id))} className="mt-1" />
-                        <div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="mt-1 truncate text-xs text-[var(--app-muted-foreground)]">{participantRoleLabel(item.participantRole)} · {item.fileName || 'Fișier neprimit'}</p></div>
+                        <div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="mt-1 truncate text-xs text-[var(--app-muted-foreground)]">{item.stage ? `${SALE_STAGE_META[item.stage].shortLabel} · ` : ''}{participantRoleLabel(item.participantRole)} · {item.fileName || 'Fișier neprimit'}</p></div>
                         <Select value={item.status} onValueChange={(status: SaleChecklistItem['status']) => setChecklist((current) => current.map((document) => document.id === item.id ? { ...document, status } : document))}><SelectTrigger className={cn(inputClass, 'h-8 w-32 rounded-xl text-xs')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="required">Necesar</SelectItem><SelectItem value="requested">Solicitat</SelectItem><SelectItem value="received_needs_review">De verificat</SelectItem><SelectItem value="verified">Verificat</SelectItem><SelectItem value="rejected">Respins</SelectItem><SelectItem value="expired">Expirat</SelectItem></SelectContent></Select>
                       </div>
                       {item.fileName ? <div className="mt-3 space-y-2 border-t border-[var(--app-surface-border)] pt-3"><div className="flex flex-wrap gap-1.5"><Badge variant="outline" className="rounded-full text-[10px]">Scanare: {item.scanStatus || 'neefectuată'}</Badge><Badge variant="outline" className="rounded-full text-[10px]">OCR: {item.ocrStatus || 'neefectuat'}</Badge>{typeof item.qualityScore === 'number' ? <Badge variant="outline" className="rounded-full text-[10px]">Calitate {item.qualityScore}%</Badge> : null}{item.reviewStatus ? <Badge variant="outline" className="rounded-full text-[10px]">{item.reviewStatus}</Badge> : null}{item.duplicateOfDocumentId ? <Badge className="rounded-full bg-amber-500/15 text-amber-700">Posibil duplicat</Badge> : null}{item.expiresAt ? <Badge className="rounded-full bg-violet-500/15 text-violet-700">Expiră {new Date(item.expiresAt).toLocaleDateString('ro-RO')}</Badge> : null}</div>{item.extractedTextPreview ? <p className="line-clamp-3 text-xs text-[var(--app-muted-foreground)]">{item.extractedTextPreview}</p> : null}<div className="flex flex-wrap gap-1"><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'analyze')}>Analizează</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'approve')}>Aprobă</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'reject')}>Respinge</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'rotate_link')}>Rotește linkul</Button><Button variant="ghost" size="sm" className="text-red-600" onClick={() => void documentAction(item, 'delete')}>Șterge fișierul</Button></div></div> : null}

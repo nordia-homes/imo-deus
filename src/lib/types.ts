@@ -1028,12 +1028,17 @@ export type ThemePreset = 'classic' | 'forest' | 'agentfinder';
 
 export type SaleStage =
   | 'preparing'
-  | 'documents'
-  | 'notary_scheduling'
-  | 'ready_to_sign'
+  | 'reservation'
+  | 'precontract'
+  | 'contract'
   | 'completed'
   | 'blocked'
   | 'cancelled';
+
+export type LegacySaleStage =
+  | 'documents'
+  | 'notary_scheduling'
+  | 'ready_to_sign';
 
 export type SaleParticipantRole = 'buyer' | 'owner' | 'notary' | 'collaborator';
 
@@ -1067,10 +1072,13 @@ export type SaleDocumentOcrStatus = 'not_requested' | 'pending' | 'completed' | 
 
 export type SaleDocumentReviewStatus = 'unreviewed' | 'needs_attention' | 'approved' | 'rejected';
 
+export type SaleChecklistStage = Extract<SaleStage, 'reservation' | 'precontract' | 'contract'>;
+
   export type SaleChecklistItem = {
   id: string;
   label: string;
   participantRole: 'buyer' | 'owner';
+  stage?: SaleChecklistStage;
   status: SaleChecklistStatus;
   required: boolean;
   requestedAt?: string | null;

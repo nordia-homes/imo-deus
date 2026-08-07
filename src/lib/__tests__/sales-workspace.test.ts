@@ -26,6 +26,15 @@ describe('sales workspace normalization', () => {
     expect(typeof normalized.notary?.appointmentAt).toBe('string');
   });
 
+  it.each([
+    ['documents', 'reservation'],
+    ['notary_scheduling', 'precontract'],
+    ['ready_to_sign', 'contract'],
+  ] as const)('maps legacy stage %s to %s', (legacyStage, expectedStage) => {
+    const normalized = normalizeSaleForWorkspace({ stage: legacyStage } as unknown as SaleTransaction);
+    expect(normalized.stage).toBe(expectedStage);
+  });
+
   it('returns null for invalid legacy values instead of throwing', () => {
     expect(normalizeSalesWorkspaceDate({ toDate: () => { throw new Error('invalid'); } })).toBeNull();
     expect(normalizeSalesWorkspaceDate({ unexpected: true })).toBeNull();

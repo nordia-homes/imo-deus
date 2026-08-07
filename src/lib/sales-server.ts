@@ -3,6 +3,7 @@ import 'server-only';
 import type { NextRequest } from 'next/server';
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import { normalizeSaleForWorkspace } from '@/lib/sales-workspace';
 import type { SaleTransaction, SalesAuditEvent } from '@/lib/types';
 
 export class SalesApiError extends Error {
@@ -16,7 +17,7 @@ export async function requireSaleAccess(request: NextRequest, saleId: string, op
   const saleRef = auth.adminDb.collection('agencies').doc(auth.agencyId).collection('sales').doc(saleId);
   const saleSnapshot = await saleRef.get();
   if (!saleSnapshot.exists) throw new SalesApiError('Dosarul de vânzare nu există.', 404);
-  const sale = { id: saleSnapshot.id, ...saleSnapshot.data() } as SaleTransaction;
+  const sale = normalizeSaleForWorkspace({ id: saleSnapshot.id, ...saleSnapshot.data() } as SaleTransaction);
   const isAdmin = auth.role === 'admin';
   if (options?.adminOnly && !isAdmin) throw new SalesApiError('Operațiunea necesită rol de administrator.', 403);
   if (!isAdmin && sale.agentId !== auth.uid) throw new SalesApiError('Nu ai acces la această tranzacție.', 403);

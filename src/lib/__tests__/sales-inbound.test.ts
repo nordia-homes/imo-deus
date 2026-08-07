@@ -19,7 +19,7 @@ function saleFixture(): SaleTransaction {
     propertyAddress: 'Strada Test 1',
     agentId: 'agent-1',
     agentName: 'Agent Test',
-    stage: 'documents',
+    stage: 'precontract',
     participants: [],
     checklist: [{ id: 'fiscal', label: 'Certificat fiscal', participantRole: 'owner', status: 'requested', required: true }],
     createdAt: '2026-08-01T10:00:00.000Z',

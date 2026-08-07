@@ -1,3 +1,4 @@
+import { normalizeSaleStage } from '@/lib/sales';
 import type { SaleTransaction } from '@/lib/types';
 
 type FirestoreDateLike = {
@@ -34,6 +35,7 @@ export function normalizeSaleForWorkspace(sale: SaleTransaction): SaleTransactio
   const rawNotary = sale.notary as (SaleTransaction['notary'] & { appointmentAt?: unknown }) | null;
   return {
     ...sale,
+    stage: normalizeSaleStage(sale.stage),
     nextActionAt: normalizeSalesWorkspaceDate(sale.nextActionAt),
     notary: rawNotary
       ? { ...rawNotary, appointmentAt: normalizeSalesWorkspaceDate(rawNotary.appointmentAt) }

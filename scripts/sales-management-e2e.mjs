@@ -15,6 +15,12 @@ try {
   const page = await context.newPage();
   await page.goto(`${baseUrl}/sales-management`, { waitUntil: 'networkidle' });
   await page.getByTestId('sales-management-page').waitFor({ state: 'visible', timeout: 20_000 });
+  for (const stageLabel of ['Pregătire', 'Rezervare', 'Antecontract', 'Contract', 'Finalizată', 'Blocată']) {
+    await page.getByRole('button', { name: stageLabel, exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
+  }
+  if (await page.getByRole('button', { name: 'Documente', exact: true }).count()) {
+    throw new Error('Documente nu trebuie să mai fie o etapă a tranzacției.');
+  }
   const saleCard = page.locator('[data-testid^="sale-card-"]').first();
   if (!(await saleCard.count())) throw new Error('Datasetul E2E trebuie să conțină cel puțin un dosar vizibil agentului.');
 

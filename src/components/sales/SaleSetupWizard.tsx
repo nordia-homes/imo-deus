@@ -4,7 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, FileCheck2, Landmark, Loader2, Save, ShieldCheck, UserRound, X } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useToast } from '@/hooks/use-toast';
-import { DEFAULT_SALE_DOCUMENTS, getSaleReadiness } from '@/lib/sales';
+import {
+  createDefaultSaleChecklistItems,
+  DEFAULT_CONTRACT_OWNER_DOCUMENTS,
+  DEFAULT_SALE_DOCUMENTS,
+  getSaleReadiness,
+  withDefaultSaleDocumentsForStage,
+} from '@/lib/sales';
 import type { SaleChecklistItem, SaleParticipant, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,6 +39,36 @@ function participant(role: 'buyer' | 'owner', existing?: SaleParticipant): SaleP
   return existing || { id: `${role}-${crypto.randomUUID()}`, role, name: '', email: '', phone: '', preferredChannel: 'email' };
 }
 
+const LEGACY_DEFAULT_DOCUMENT_LABELS = new Set([
+  'Act de identitate cumpărător',
+  'Dovada finanțării / preaprobare',
+  'Act de identitate proprietar',
+  'Act de proprietate',
+  'Extras de carte funciară',
+  'Certificat fiscal',
+  'Certificat energetic',
+  'Cadastru / releveu',
+]);
+
+function isPristineLegacyChecklist(checklist: SaleChecklistItem[]) {
+  return checklist.length === LEGACY_DEFAULT_DOCUMENT_LABELS.size
+    && checklist.every((item) => LEGACY_DEFAULT_DOCUMENT_LABELS.has(item.label)
+      && item.status === 'required'
+      && !item.fileName
+      && !item.downloadUrl
+      && !item.requestedAt
+      && !item.receivedAt
+      && !item.verifiedAt);
+}
+
+
+function checklistStageLabel(stage: SaleChecklistItem['stage']) {
+  if (stage === 'reservation') return 'Rezervare';
+  if (stage === 'precontract') return 'Antecontract';
+  if (stage === 'contract') return 'Contract';
+  return null;
+}
+
 export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
   const { user } = useAgency();
   const { toast } = useToast();
@@ -52,10 +88,17 @@ export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
     setParticipants([participant('buyer', buyer), participant('owner', owner), ...others]);
     setAgreedPrice(String(sale.agreedPrice || ''));
     setFinancingType(sale.financingType || 'unknown');
-    setChecklist(sale.checklist?.length ? sale.checklist : DEFAULT_SALE_DOCUMENTS.map((item) => ({ id: crypto.randomUUID(), label: item.label, participantRole: item.role, status: 'required', required: true, reviewStatus: 'unreviewed', scanStatus: 'pending', ocrStatus: 'not_requested', version: 1 })));
+    const existingChecklist = sale.checklist || [];
+    let initialChecklist = !existingChecklist.length || isPristineLegacyChecklist(existingChecklist)
+      ? createDefaultSaleChecklistItems(DEFAULT_SALE_DOCUMENTS, () => crypto.randomUUID())
+      : existingChecklist;
+    if (sale.stage === 'contract') {
+      initialChecklist = withDefaultSaleDocumentsForStage(initialChecklist, DEFAULT_CONTRACT_OWNER_DOCUMENTS, () => crypto.randomUUID());
+    }
+    setChecklist(initialChecklist);
     setNotary(sale.notary || {});
     setStep(0);
-  }, [open, sale?.id]);
+  }, [open, sale?.id, sale?.stage]);
 
   const candidate = useMemo(() => sale ? { ...sale, participants, agreedPrice: Number(agreedPrice) || null, financingType, checklist, notary } : null, [agreedPrice, checklist, financingType, notary, participants, sale]);
   const readiness = candidate ? getSaleReadiness(candidate) : { ready: false, issues: [], progress: 0 };
@@ -113,7 +156,7 @@ export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
 
             {step === 1 ? <div className="grid gap-5 rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-5 md:grid-cols-2"><div><Label>Preț agreat (€)</Label><Input className="mt-1.5 h-12 rounded-xl" type="number" min="1" value={agreedPrice} onChange={(event) => setAgreedPrice(event.target.value)} /></div><div><Label>Finanțare</Label><Select value={financingType} onValueChange={(value: NonNullable<SaleTransaction['financingType']>) => setFinancingType(value)}><SelectTrigger className="mt-1.5 h-12 rounded-xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="credit">Credit</SelectItem><SelectItem value="unknown">De stabilit</SelectItem></SelectContent></Select></div><div className="md:col-span-2"><Label>Notar (poate fi completat și ulterior)</Label><div className="mt-1.5 grid gap-3 md:grid-cols-2"><Input className="rounded-xl" value={notary.name || ''} onChange={(event) => setNotary((current) => ({ ...current, name: event.target.value }))} placeholder="Nume notar/birou" /><Input className="rounded-xl" type="email" value={notary.email || ''} onChange={(event) => setNotary((current) => ({ ...current, email: event.target.value }))} placeholder="Email notar" /><Input className="rounded-xl md:col-span-2" value={notary.address || ''} onChange={(event) => setNotary((current) => ({ ...current, address: event.target.value }))} placeholder="Adresă birou" /></div></div></div> : null}
 
-            {step === 2 ? <div className="space-y-2">{checklist.map((item) => <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4"><Checkbox checked={item.required} onCheckedChange={(checked) => setChecklist((current) => current.map((entry) => entry.id === item.id ? { ...entry, required: Boolean(checked), status: checked ? 'required' : entry.status } : entry))} /><div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="text-xs text-[var(--app-muted-foreground)]">{item.participantRole === 'buyer' ? 'Cumpărător' : 'Proprietar'}</p></div></label>)}</div> : null}
+            {step === 2 ? <div className="space-y-2">{checklist.map((item) => <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4"><Checkbox checked={item.required} onCheckedChange={(checked) => setChecklist((current) => current.map((entry) => entry.id === item.id ? { ...entry, required: Boolean(checked), status: checked ? 'required' : entry.status } : entry))} /><div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="text-xs text-[var(--app-muted-foreground)]">{checklistStageLabel(item.stage) ? `${checklistStageLabel(item.stage)} · ` : ''}{item.participantRole === 'buyer' ? 'Cumpărător' : 'Proprietar'}</p></div></label>)}</div> : null}
 
             {step === 3 ? <div className="space-y-5"><div className={cn('rounded-[24px] border p-5', readiness.ready ? 'border-emerald-500/25 bg-emerald-500/8' : 'border-amber-500/25 bg-amber-500/8')}><div className="flex items-center gap-3">{readiness.ready ? <ShieldCheck className="h-6 w-6 text-emerald-600" /> : <AlertTriangle className="h-6 w-6 text-amber-600" />}<div><p className="font-semibold">{readiness.ready ? 'Configurarea poate fi finalizată' : 'Poți salva, chiar dacă mai sunt informații lipsă'}</p><p className="text-sm text-[var(--app-muted-foreground)]">Completitudine estimată: {readiness.progress}%</p></div></div></div>{readiness.issues.length ? <div className="space-y-2">{readiness.issues.map((issue) => <button type="button" key={issue.id} onClick={() => setStep(issue.section === 'participants' ? 0 : issue.section === 'documents' ? 2 : 1)} className="flex w-full items-center justify-between rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-left text-sm transition hover:border-amber-500/45 hover:bg-amber-500/12"><span>Lipsește: {issue.label}</span><ChevronRight className="h-4 w-4 text-amber-600" /></button>)}</div> : <div className="grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4"><p className="text-xs text-[var(--app-muted-foreground)]">Părți</p><p className="mt-1 font-semibold">{buyer?.name} · {owner?.name}</p></div><div className="rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4"><p className="text-xs text-[var(--app-muted-foreground)]">Preț</p><p className="mt-1 font-semibold">{Number(agreedPrice).toLocaleString('ro-RO')} €</p></div><div className="rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4"><p className="text-xs text-[var(--app-muted-foreground)]">Acte necesare</p><p className="mt-1 font-semibold">{checklist.filter((item) => item.required).length}</p></div></div>}</div> : null}
           </div>

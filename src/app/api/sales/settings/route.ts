@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest) {
       updatedByUid: auth.uid,
     };
     const settingsRef = auth.adminDb.collection('agencies').doc(auth.agencyId).collection('salesSettings').doc('default');
-    const activeSales = await auth.adminDb.collection('agencies').doc(auth.agencyId).collection('sales').where('stage', 'in', ['preparing', 'documents', 'notary_scheduling', 'ready_to_sign']).limit(400).get();
+    const activeSales = await auth.adminDb.collection('agencies').doc(auth.agencyId).collection('sales').where('stage', 'in', ['preparing', 'reservation', 'precontract', 'contract', 'documents', 'notary_scheduling', 'ready_to_sign']).limit(400).get();
     const batch = auth.adminDb.batch();
     batch.set(settingsRef, settings, { merge: true });
     for (const sale of activeSales.docs) batch.set(sale.ref, { retentionPolicy: { attachmentRetentionDays: settings.attachmentRetentionDays, completedSaleRetentionDays: settings.completedSaleRetentionDays }, updatedAt: settings.updatedAt }, { merge: true });

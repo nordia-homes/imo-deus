@@ -6,7 +6,7 @@ function fixture(): SaleTransaction {
   return {
     id: 'sale-1', agencyId: 'agency-1', trackingCode: 'IMD-VABC123', propertyId: 'property-1', propertyTitle: 'Apartament', propertyAddress: 'Strada 1', agentId: 'agent-1', agentName: 'Agent', stage: 'preparing', agreedPrice: 120000, financingType: 'cash',
     participants: [{ id: 'buyer', role: 'buyer', name: 'Cumpărător', email: 'buyer@gmail.com' }, { id: 'owner', role: 'owner', name: 'Proprietar', email: 'owner@gmail.com' }],
-    checklist: DEFAULT_SALE_DOCUMENTS.map((item, index) => ({ id: String(index), label: item.label, participantRole: item.role, status: 'required', required: true })),
+    checklist: DEFAULT_SALE_DOCUMENTS.map((item, index) => ({ id: String(index), label: item.label, participantRole: item.role, stage: item.stage, status: 'required', required: true })),
     setupStatus: 'ready', createdAt: '2026-08-01T00:00:00.000Z', updatedAt: '2026-08-01T00:00:00.000Z',
   };
 }
