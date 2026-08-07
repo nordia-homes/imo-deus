@@ -318,6 +318,16 @@ export function getSaleReadiness(sale: Pick<SaleTransaction, 'participants' | 'f
   };
 }
 
+export function getSaleSetupState(
+  sale: Pick<SaleTransaction, 'participants' | 'financingType' | 'agreedPrice' | 'checklist' | 'stage' | 'notary' | 'setupStatus'>
+) {
+  const readiness = getSaleReadiness(sale);
+  return {
+    ...readiness,
+    complete: sale.setupStatus === 'ready' && readiness.ready,
+  };
+}
+
 export function applySalesEmailTemplateOverrides(
   templates: SalesEmailTemplate[],
   overrides?: SalesEmailTemplateOverride[] | null

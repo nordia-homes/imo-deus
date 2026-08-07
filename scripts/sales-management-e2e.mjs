@@ -17,6 +17,17 @@ try {
   await page.getByTestId('sales-management-page').waitFor({ state: 'visible', timeout: 20_000 });
   const saleCard = page.locator('[data-testid^="sale-card-"]').first();
   if (!(await saleCard.count())) throw new Error('Datasetul E2E trebuie să conțină cel puțin un dosar vizibil agentului.');
+
+  const setupCta = saleCard.locator('[data-testid^="sale-setup-cta-"]');
+  if (!(await setupCta.count())) throw new Error('Dosarul aflat în Pregătire trebuie să afișeze butonul de completare ghidată.');
+  const setupLabel = await setupCta.getAttribute('aria-label');
+  if (!setupLabel?.includes('Informațiile')) throw new Error('Butonul de completare ghidată trebuie să comunice starea informațiilor.');
+  await setupCta.click();
+  const setupWizard = page.getByText('Pregătește dosarul de vânzare').first();
+  await setupWizard.waitFor({ state: 'visible', timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await setupWizard.waitFor({ state: 'hidden', timeout: 10_000 });
+
   await saleCard.getByRole('button', { name: 'Trimite e-mail' }).click();
   const composer = page.getByTestId('sales-email-composer');
   const wizard = page.getByText('Pregătește dosarul de vânzare').first();

@@ -39,6 +39,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   createSaleFromProperty,
+  getSaleSetupState,
   isReservedProperty,
   isSoldProperty,
   SALE_STAGE_META,
@@ -105,7 +106,7 @@ function nextStage(stage: SaleStage): SaleStage | null {
   return STAGE_ORDER[index + 1];
 }
 
-function SaleCard({ sale, imageUrl, onEmail, onDossier, onStageChange }: { sale: SaleTransaction; imageUrl?: string | null; onEmail: () => void; onDossier: () => void; onStageChange: (stage: SaleStage) => void }) {
+function SaleCard({ sale, imageUrl, onEmail, onDossier, onSetup, onStageChange }: { sale: SaleTransaction; imageUrl?: string | null; onEmail: () => void; onDossier: () => void; onSetup: () => void; onStageChange: (stage: SaleStage) => void }) {
   const progress = documentProgress(sale);
   const buyer = sale.participants?.find((item) => item.role === 'buyer');
   const owner = sale.participants?.find((item) => item.role === 'owner');
@@ -113,6 +114,9 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onStageChange }: { sale:
   const requiredDocuments = (sale.checklist || []).filter((item) => item.required).length;
   const verifiedDocuments = (sale.checklist || []).filter((item) => item.required && item.status === 'verified').length;
   const effectiveImageUrl = imageUrl || sale.propertyImageUrl;
+  const setupReadiness = getSaleSetupState(sale);
+  const setupComplete = setupReadiness.complete;
+  const setupProgress = setupComplete ? 100 : Math.min(setupReadiness.progress, 92);
   const runAction = (event: ReactMouseEvent<HTMLButtonElement>, action: () => void) => {
     event.preventDefault();
     event.stopPropagation();
@@ -177,17 +181,76 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onStageChange }: { sale:
           </div>
 
           <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(220px,.65fr)]">
-            <div className="relative overflow-hidden rounded-[22px] border border-amber-200/75 bg-[linear-gradient(135deg,rgba(255,251,235,.96),rgba(255,247,237,.78))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
-              <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full border-[18px] border-white/45" />
-              <div className="relative flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] border border-amber-200/70 bg-white text-amber-600 shadow-[0_12px_26px_-17px_rgba(217,119,6,.58)]"><Clock3 className="h-[18px] w-[18px]" /></div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[.15em] text-amber-800/60">Următorul pas recomandat</p>
-                  <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-900">{sale.nextAction || SALE_STAGE_META[sale.stage].description}</p>
-                  {sale.nextActionAt ? <p className="mt-1.5 text-[11px] text-amber-700">{new Date(sale.nextActionAt).toLocaleString('ro-RO')}</p> : null}
+            {sale.stage === 'preparing' ? (
+              <button
+                type="button"
+                data-testid={'sale-setup-cta-' + sale.id}
+                aria-label={'Completează participanții și documentele. ' + (setupComplete ? 'Informațiile sunt complete.' : 'Informațiile nu sunt complete.')}
+                onClick={(event) => runAction(event, onSetup)}
+                className={cn(
+                  'sales-management-setup-cta group/setup relative min-h-[150px] w-full overflow-hidden rounded-[24px] border-2 p-4 text-left transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2',
+                  setupComplete ? 'sales-management-setup-cta--complete' : 'sales-management-setup-cta--incomplete'
+                )}
+              >
+                <span className="sales-management-setup-cta__accent pointer-events-none absolute inset-y-0 left-0 w-1.5" />
+                <span className="sales-management-setup-cta__glow pointer-events-none absolute -right-8 -top-14 h-36 w-36 rounded-full blur-2xl transition duration-500 group-hover/setup:scale-110" />
+                <div className="relative flex h-full items-start gap-4 sm:items-center">
+                  <div className="sales-management-setup-cta__icon grid h-14 w-14 shrink-0 place-items-center rounded-[18px] border shadow-sm transition duration-300 group-hover/setup:rotate-3 group-hover/setup:scale-105">
+                    {setupComplete ? <CheckCircle2 className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="sales-management-setup-cta__eyebrow text-[10px] font-extrabold uppercase tracking-[.18em]">Completare ghidată</p>
+                      <span className="sales-management-setup-cta__badge inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.1em]">
+                        {setupComplete ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                        {setupComplete ? 'Finalizat' : 'Necesită atenție'}
+                      </span>
+                    </div>
+
+                    <p className="sales-management-setup-cta__title mt-2 text-[17px] font-bold leading-5 tracking-[-.015em]">Completează participanții și documentele</p>
+
+                    <div className="sales-management-setup-cta__status mt-3 flex items-start gap-2.5 rounded-xl border px-3 py-2">
+                      {setupComplete ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold">{setupComplete ? 'Informațiile sunt complete' : 'Informațiile nu sunt complete'}</p>
+                        <p className="mt-0.5 text-[10px] font-medium opacity-75">
+                          {setupComplete
+                            ? 'Configurarea ghidată a fost finalizată.'
+                            : setupReadiness.issues.length
+                              ? setupReadiness.issues.length + (setupReadiness.issues.length === 1 ? ' element rămas de completat.' : ' elemente rămase de completat.')
+                              : 'Datele există, dar wizardul trebuie finalizat.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="sales-management-setup-cta__progress h-2 min-w-0 flex-1 overflow-hidden rounded-full">
+                        <div className="sales-management-setup-cta__progress-fill h-full rounded-full transition-all duration-500" style={{ width: setupProgress + '%' }} />
+                      </div>
+                      <span className="sales-management-setup-cta__progress-label text-[10px] font-bold">{setupProgress}% completat</span>
+                    </div>
+                  </div>
+
+                  <span className="sales-management-setup-cta__action hidden shrink-0 items-center gap-2 rounded-full border px-3.5 py-2.5 text-[11px] font-bold transition duration-300 group-hover/setup:translate-x-0.5 sm:inline-flex">
+                    Deschide wizardul
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <div className="relative overflow-hidden rounded-[22px] border border-amber-200/75 bg-[linear-gradient(135deg,rgba(255,251,235,.96),rgba(255,247,237,.78))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
+                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full border-[18px] border-white/45" />
+                <div className="relative flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] border border-amber-200/70 bg-white text-amber-600 shadow-[0_12px_26px_-17px_rgba(217,119,6,.58)]"><Clock3 className="h-[18px] w-[18px]" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[.15em] text-amber-800/60">Următorul pas recomandat</p>
+                    <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-900">{sale.nextAction || SALE_STAGE_META[sale.stage].description}</p>
+                    {sale.nextActionAt ? <p className="mt-1.5 text-[11px] text-amber-700">{new Date(sale.nextActionAt).toLocaleString('ro-RO')}</p> : null}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="rounded-[22px] border border-teal-200/70 bg-[linear-gradient(145deg,rgba(240,253,250,.96),rgba(236,254,255,.82))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
               <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-[.15em] text-teal-950/50">Documente verificate</span><span className="text-xl font-semibold tracking-[-.03em] text-teal-700">{progress}%</span></div>
@@ -232,6 +295,7 @@ export default function SalesManagementPage() {
   const [selectedSale, setSelectedSale] = useState<SaleTransaction | null>(null);
   const [initialPanel, setInitialPanel] = useState<'context' | 'documents'>('context');
   const [setupSale, setSetupSale] = useState<SaleTransaction | null>(null);
+  const [returnToComposerAfterSetup, setReturnToComposerAfterSetup] = useState(false);
   const [creatingPropertyId, setCreatingPropertyId] = useState<string | null>(null);
 
   const canSeeAll = userProfile?.role === 'admin';
@@ -302,8 +366,9 @@ export default function SalesManagementPage() {
       const sale = createSaleFromProperty(property, agencyId, { id: user.uid, name: userProfile?.name || user.displayName || 'Agent' });
       await setDoc(doc(firestore, 'agencies', agencyId, 'sales', property.id), sale);
       toast({ title: 'Dosarul de vânzare a fost creat', description: 'Completează cumpărătorul și documentele necesare.' });
-      setInitialPanel('context');
-      setSelectedSale({ id: property.id, ...sale });
+      setSelectedSale(null);
+      setReturnToComposerAfterSetup(false);
+      setSetupSale({ id: property.id, ...sale });
     } catch (error) {
       toast({ title: 'Dosarul nu a putut fi creat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
     } finally {
@@ -336,6 +401,16 @@ export default function SalesManagementPage() {
     } catch (error) {
       console.error('Sales dossier could not be opened', error);
       toast({ title: 'Dosarul nu a putut fi deschis', description: 'Datele dosarului au un format neașteptat.', variant: 'destructive' });
+    }
+  };
+
+  const openSetup = (sale: SaleTransaction, returnToComposer = false) => {
+    try {
+      setReturnToComposerAfterSetup(returnToComposer);
+      setSetupSale(normalizeSaleForWorkspace(sale));
+    } catch (error) {
+      console.error('Sales setup wizard could not be opened', error);
+      toast({ title: 'Wizardul nu a putut fi deschis', description: 'Datele dosarului au un format neașteptat.', variant: 'destructive' });
     }
   };
 
@@ -390,13 +465,27 @@ export default function SalesManagementPage() {
           <div className="relative min-w-0 flex-1 xl:max-w-xl"><Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Caută proprietate, client, agent sau cod de tranzacție…" className="h-12 rounded-[18px] border-slate-200/80 bg-white/90 pl-11 pr-11 shadow-[inset_0_1px_2px_rgba(15,23,42,.03)] transition focus-visible:border-teal-300 focus-visible:ring-teal-200/50" />{search ? <Button size="icon" variant="ghost" className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full" onClick={() => setSearch('')}><X className="h-4 w-4" /></Button> : null}</div>
           <div className="sales-management-stage-tabs flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 xl:justify-end xl:pb-0">{([...STAGE_ORDER.map((stage) => ({ id: stage, label: SALE_STAGE_META[stage].shortLabel })), { id: 'blocked' as const, label: 'Blocate' }] as { id: SaleStage; label: string }[]).map((item) => <Button key={item.id} size="sm" variant={stageFilter === item.id ? 'default' : 'outline'} className={cn('sales-management-stage-tab shrink-0 rounded-full border-slate-200/80 bg-white/75 px-4 text-slate-600 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800', stageFilter === item.id && 'sales-management-stage-tab--active bg-[linear-gradient(135deg,#10b981,#0d9488)] text-white shadow-[0_10px_22px_-14px_rgba(13,148,136,.72)] hover:brightness-105')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}</div>
         </div>
-        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[32px] bg-[linear-gradient(110deg,#f8fafc,#ecfdf5,#f8fafc)]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} imageUrl={propertyImageForSale(sale)} onEmail={() => openSale(sale, 'context')} onDossier={() => openSale(sale, 'documents')} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
+        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[32px] bg-[linear-gradient(110deg,#f8fafc,#ecfdf5,#f8fafc)]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} imageUrl={propertyImageForSale(sale)} onEmail={() => openSale(sale, 'context')} onDossier={() => openSale(sale, 'documents')} onSetup={() => openSetup(sale)} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
           <div className="rounded-[32px] border border-dashed border-teal-200 bg-[radial-gradient(circle_at_top,rgba(204,251,241,.68),transparent_45%),rgba(255,255,255,.9)] px-6 py-16 text-center shadow-[0_24px_60px_-42px_rgba(13,148,136,.32)]"><div className="mx-auto grid h-16 w-16 place-items-center rounded-[22px] bg-emerald-500/10 text-emerald-600"><ShieldCheck className="h-7 w-7" /></div><h2 className="mt-5 text-xl font-semibold">{search ? 'Nu am găsit tranzacții' : 'Nicio vânzare în acest filtru'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Dosarele apar aici când o proprietate este rezervată sau marcată ca vândută. Fiecare agent vede tranzacțiile sale, iar administratorul vede întreaga agenție.</p></div>
         )}
       </section>
 
-      <SalesEmailComposer sale={selectedSale} open={Boolean(selectedSale)} initialPanel={initialPanel} onOpenSetup={(saleToSetup) => { setSelectedSale(null); setSetupSale(saleToSetup); }} onOpenChange={(nextOpen) => { if (!nextOpen) setSelectedSale(null); }} />
-      <SaleSetupWizard sale={setupSale} open={Boolean(setupSale)} onOpenChange={(nextOpen) => { if (!nextOpen) setSetupSale(null); }} onCompleted={(configuredSale) => { setSetupSale(null); setSelectedSale(configuredSale); }} />
+      <SalesEmailComposer sale={selectedSale} open={Boolean(selectedSale)} initialPanel={initialPanel} onOpenSetup={(saleToSetup) => { setSelectedSale(null); openSetup(saleToSetup, true); }} onOpenChange={(nextOpen) => { if (!nextOpen) setSelectedSale(null); }} />
+      <SaleSetupWizard
+        sale={setupSale}
+        open={Boolean(setupSale)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setSetupSale(null);
+            setReturnToComposerAfterSetup(false);
+          }
+        }}
+        onSaved={(configuredSale) => {
+          setSetupSale(null);
+          if (returnToComposerAfterSetup) setSelectedSale(configuredSale);
+          setReturnToComposerAfterSetup(false);
+        }}
+      />
     </div>
   );
 }

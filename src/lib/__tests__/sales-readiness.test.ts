@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SALE_DOCUMENTS, getSaleReadiness } from '@/lib/sales';
+import { DEFAULT_SALE_DOCUMENTS, getSaleReadiness, getSaleSetupState } from '@/lib/sales';
 import type { SaleTransaction } from '@/lib/types';
 
 function fixture(): SaleTransaction {
@@ -23,5 +23,18 @@ describe('sales dossier readiness', () => {
     const result = getSaleReadiness(sale);
     expect(result.ready).toBe(false);
     expect(result.issues.map((issue) => issue.id)).toEqual(expect.arrayContaining(['buyer-email', 'agreed-price']));
+  });
+
+  it('keeps the setup warning visible until the wizard is explicitly finalized', () => {
+    const sale = fixture();
+    sale.setupStatus = 'incomplete';
+
+    expect(getSaleSetupState(sale)).toMatchObject({ ready: true, complete: false, progress: 100 });
+
+    sale.setupStatus = 'ready';
+    expect(getSaleSetupState(sale).complete).toBe(true);
+
+    sale.participants[0].email = '';
+    expect(getSaleSetupState(sale).complete).toBe(false);
   });
 });

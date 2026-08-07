@@ -26,7 +26,7 @@ const checklistSchema = z.object({
 
 const setupSchema = z.object({
   participants: z.array(participantSchema).min(2).max(20),
-  agreedPrice: z.number().positive().max(1_000_000_000),
+  agreedPrice: z.number().positive().max(1_000_000_000).nullable(),
   financingType: z.enum(['cash', 'credit', 'unknown']),
   checklist: z.array(checklistSchema).max(100),
   notary: z.object({
@@ -52,20 +52,18 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
       notary: input.notary,
     } satisfies SaleTransaction;
     const readiness = getSaleReadiness(candidate);
-    if (!readiness.ready) {
-      return NextResponse.json({ message: 'Dosarul este încă incomplet.', issues: readiness.issues }, { status: 422 });
-    }
+    const setupCompleted = readiness.ready;
     const now = new Date().toISOString();
     const audit = appendSalesAudit(access.adminDb, access.saleRef, {
       agencyId: access.agencyId,
       saleId,
       actorUid: access.uid,
       actorType: 'agent',
-      action: 'sale.setup_completed',
+      action: setupCompleted ? 'sale.setup_completed' : 'sale.setup_progress_saved',
       entityType: 'sale',
       entityId: saleId,
-      summary: 'Configurarea inițială a dosarului a fost finalizată.',
-      metadata: { participantCount: input.participants.length, documentCount: input.checklist.length },
+      summary: setupCompleted ? 'Configurarea inițială a dosarului a fost finalizată.' : 'Progresul configurării inițiale a fost salvat.',
+      metadata: { participantCount: input.participants.length, documentCount: input.checklist.length, readinessProgress: readiness.progress },
     });
     const update = {
       participants: input.participants,
@@ -73,9 +71,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
       financingType: input.financingType,
       checklist: input.checklist,
       notary: input.notary,
-      setupStatus: 'ready',
-      setupCompletedAt: now,
-      setupCompletedByUid: access.uid,
+      setupStatus: setupCompleted ? 'ready' : 'incomplete',
+      setupCompletedAt: setupCompleted ? now : null,
+      setupCompletedByUid: setupCompleted ? access.uid : null,
       requiredDocumentCount: input.checklist.filter((item) => item.required).length,
       updatedAt: now,
     };
